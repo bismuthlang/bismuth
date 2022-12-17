@@ -11,6 +11,7 @@ define program :: c : Channel<-int> = {
 }
 
 
+
 define bar :: c : Channel<?(?-int);+int> = {
     more(c) # Why is it more(c) vs c.more() ? 
     weaken(c)
