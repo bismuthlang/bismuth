@@ -97,7 +97,6 @@ bool ProtocolSequence::canRecv() const
 optional<const Type *> ProtocolSequence::recv() const
 {
     // FIXME: BETTER ERROR HANDLING
-    // std::cout << " CAN RECV" << this->toString() << " is " << canRecv() << std::endl;
     if (canRecv())
     {
         // FIXME: DO BETTER:
@@ -115,7 +114,6 @@ optional<const Type *> ProtocolSequence::recv() const
 
 bool ProtocolSequence::isWN() const
 {
-    // std::cout << "320" << std::endl;
     if (isComplete())
         return false;
     const Protocol *proto = steps.front();
@@ -234,7 +232,6 @@ bool ProtocolSequence::project(const ProtocolSequence *ps) const
 
         for (const ProtocolSequence *p : ic->getOptions())
         {
-            std::cout << "237" << ps->toString() << " VS " << p->toString() << std::endl;
             if (ps->toString() == p->toString()) // FIXME: DO BETTER
             {
                 ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);

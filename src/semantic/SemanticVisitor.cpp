@@ -26,9 +26,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
             if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
             {
                 const TypeProgram *funcType = new TypeProgram(channel, false);
-                std::cout << funcType->toString() << std::endl;
                 Symbol *funcSymbol = new Symbol(id, funcType, true, true);
-                std::cout << "31 " << funcSymbol->toString() << std::endl;
                 // FIXME: test name collisions with externs
                 stmgr->addSymbol(funcSymbol);
                 bindings->bind(fnCtx->defineProc(), funcSymbol);
@@ -1359,7 +1357,6 @@ const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ct
 
             for (const Symbol *orig : syms)
             {
-                std::cout << "1357 " << orig->toString() << std::endl;
                 // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS!
                 if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
                 {
@@ -1526,15 +1523,12 @@ const Type *SemanticVisitor::TvisitAssignableExec(WPLParser::AssignableExecConte
     }
 
     Symbol *sym = opt.value();
-    std::cout << "1392" << sym->toString() << std::endl;
 
     if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
     {
-        std::cout << "1394" << inv->getChannelType()->toString() << std::endl;
         return new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse()));
     }
 
-    // std::cout << "1384" << type->toString() << std::endl;
     // FIXME: DO BETTER
     errorHandler.addSemanticError(ctx->getStart(), "Cannot exec: " + sym->toString());
     return Types::UNDEFINED;

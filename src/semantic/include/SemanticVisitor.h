@@ -294,7 +294,6 @@ public:
         stmgr->addSymbol(funcSymbol);
         stmgr->enterScope(StopType::GLOBAL); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
 
-        // std::cout << "265: " << ctx->channelName->getText() << std::endl;
         stmgr->addSymbol(new Symbol(ctx->channelName->getText(), funcType->getChannelType()->getCopy(), false, false));
         // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
         // stmgr->addSymbol(new Symbol("@RETURN", funcType->getReturnType(), false, false));
@@ -347,10 +346,9 @@ private:
     // INFO: TEST UNERLYING FNS!!!
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
-        std::cout << "SV.h 350" << std::endl;
         // First, try exiting the scope
         std::pair<std::optional<Scope *>, std::optional<Scope *>> res = stmgr->exitScope();
-        std::cout << "SV.h 350" << std::endl;
+
         // If we did so and got a value back, then we can do type inferencing.
         if (res.first)
         {
@@ -392,7 +390,6 @@ private:
                 errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
             }
         }
-// std::cout << "SV.h 391" << std::endl;
         // return res;
     }
 
