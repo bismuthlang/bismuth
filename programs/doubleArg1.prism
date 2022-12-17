@@ -10,6 +10,7 @@ define program :: c : Channel<-int> = {
  # return -1;
 }
 
+# FIXME: Multiassign is most probably broken. It'll be invoked for each term.....
 
 
 define bar :: c : Channel<?(?-int);+int> = {
@@ -31,7 +32,7 @@ define bar1 :: c : Channel<?(?-int);+int> = {
     }
     weaken(c) # NOTE: THIS DOESN'T DO WHAT YOU THINK IT DOES OF JUST SHIFTING THE LEVEL
 
-    # int x := c.recv(); 
+    int x := c.recv(); 
 
     # Channel<!!(+int);-int> y := exec bar; # FIXME: DOESNT WORK 
     Channel<!(!(+int));-int> y := exec bar; 
@@ -72,13 +73,8 @@ define bar3 :: c2 : Channel<-int> = {
         }
     )
 
-    c2.send(5)
+    # c2.send(5)
     o.send("hey")
-
-    #str s := "hey";
-    #str s := "hey";
-
-    #str s := "hey";
 }
 
 
