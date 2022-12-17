@@ -2,11 +2,49 @@
 
 std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::CompilationUnitContext *ctx)
 {
+    /***********************************
+     *
+     *
+     * Runtime Stuff
+     *
+     *
+     ***********************************/
+
+    {
+        {
+            llvm::FunctionType *writeChanFnTy = llvm::FunctionType::get(
+                VoidTy,
+                {Int32Ty,
+                 VoidTy->getPointerTo()},
+                false);
+
+            Function *fn = Function::Create(writeChanFnTy, GlobalValue::ExternalLinkage, "WriteChannel", module);
+        }
+
+        {
+            Function::Create(
+                llvm::FunctionType::get(
+                    VoidTy->getPointerTo(),
+                    {Int32Ty},
+                    false),
+                GlobalValue::ExternalLinkage,
+                "ReadChannel",
+                module);
+        }
+    }
+
+    /***********************************
+     *
+     *
+     * Actual Code
+     *
+     *
+     ***********************************/
     for (auto e : ctx->defs)
     {
-        if (WPLParser::DefineProgramContext *octx = dynamic_cast<WPLParser::DefineProgramContext *>(e)) //FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
+        if (WPLParser::DefineProgramContext *octx = dynamic_cast<WPLParser::DefineProgramContext *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
         {
-            WPLParser::DefineProcContext * fnCtx = octx->defineProc(); 
+            WPLParser::DefineProcContext *fnCtx = octx->defineProc();
             std::optional<Symbol *> optSym = props->getBinding(fnCtx);
 
             if (!optSym)
@@ -61,7 +99,7 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
         // Generate code for statement
         if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
         {
-            std::cout << "64 " << fnCtx->getText() << std::endl; 
+            std::cout << "64 " << fnCtx->getText() << std::endl;
             // this->visitInvokeable(fnCtx);
             e->accept(this);
         }
@@ -313,6 +351,19 @@ std::optional<Value *> CodegenVisitor::TvisitInvocation(WPLParser::InvocationCon
 
     errorHandler.addCodegenError(ctx->getStart(), "Invocation got non-invokable type!");
     return {};
+}
+
+std::optional<Value *> CodegenVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx)
+{
+     std::optional<Symbol *> symOpt = props->getBinding(ctx);
+    if (!symOpt)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); //FIXME: DO BETTER
+        return {};
+    }
+    //FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
+    llvm::Function *progFn = module->getFunction("ReadChannel"); //FIXME: BAD OPTIONAL ACCESS
+    return builder->CreateCall(progFn, {symOpt.value()->val.value()});
 }
 
 std::optional<Value *> CodegenVisitor::TvisitInitProduct(WPLParser::InitProductContext *ctx)
@@ -974,7 +1025,7 @@ std::optional<Value *> CodegenVisitor::TvisitExternStatement(WPLParser::ExternSt
 
 std::optional<Value *> CodegenVisitor::TvisitFuncDef(WPLParser::ProgDefContext *ctx) // FIXME: RENAME?
 {
-    std::cout << "976" << std::endl;  //FIXME: IS THIS EVER CALLED????
+    std::cout << "976" << std::endl; // FIXME: IS THIS EVER CALLED????
     return this->visitInvokeable(ctx->defineProc());
 }
 

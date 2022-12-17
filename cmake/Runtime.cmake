@@ -24,4 +24,6 @@ set (CORE_INCLUDE ${CORE_DIR}/include)
 
 set (CORE_SOURCES 
   ${CORE_DIR}/IPCBuffer.cpp
+  ${CORE_DIR}/Messages.cpp
+  ${CORE_DIR}/StateManager.cpp
 )

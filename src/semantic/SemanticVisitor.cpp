@@ -1309,6 +1309,7 @@ const Type *SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvConte
             return Types::UNDEFINED;
         }
 
+        bindings->bind(ctx, sym);
         return ty.value();
     }
 

@@ -105,11 +105,10 @@ public:
 
     virtual const Protocol *getInverse() const = 0;
 
-    virtual const Protocol *getCopy() const = 0;  //FIXME: DO BETTER!
+    virtual const Protocol *getCopy() const = 0; // FIXME: DO BETTER!
 };
 
-
-//FIXME: DO BETTER
+// FIXME: DO BETTER
 struct ProtocolCompare
 {
     bool operator()(const Protocol *a, const Protocol *b) const
@@ -117,7 +116,6 @@ struct ProtocolCompare
         return a->toString() < b->toString();
     }
 };
-
 
 /*******************************************
  *
@@ -149,7 +147,7 @@ public:
 
     const Protocol *getInverse() const override;
 
-    const Protocol *getCopy() const override; 
+    const Protocol *getCopy() const override;
 
     bool isComplete() const
     {
@@ -162,7 +160,7 @@ public:
 
     bool canRecv() const;
 
-    optional<const Type*> recv() const;
+    optional<const Type *> recv() const;
 
     bool isWN() const;
 
@@ -170,25 +168,25 @@ public:
 
     bool weaken() const;
 
-    bool isWNWN() const; 
+    bool isWNWN() const;
 
-    optional<const ProtocolSequence*> shearLoop() const; 
+    optional<const ProtocolSequence *> shearLoop() const;
 
-    bool isOC() const; 
+    bool isOC() const;
 
-    optional<const ProtocolSequence*> acceptLoop() const; 
+    optional<const ProtocolSequence *> acceptLoop() const;
 
-    bool isIntChoice() const; 
+    bool isIntChoice() const;
 
-    bool project(const ProtocolSequence* ps) const; 
+    bool project(const ProtocolSequence *ps) const;
 
-    bool isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const; 
+    bool isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const;
 
-    void append(const ProtocolSequence* proto) const 
+    void append(const ProtocolSequence *proto) const
     {
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = proto->steps;
-        mthis->steps.insert(steps.end(), other.begin(), other.end()); //FIXME: WE PROBABLY NEED TO DO BETTER FLATTENING!
+        mthis->steps.insert(steps.end(), other.begin(), other.end()); // FIXME: WE PROBABLY NEED TO DO BETTER FLATTENING!
     }
 
     // optional<vector<const Protocol *>> extChoice()
@@ -196,20 +194,18 @@ public:
     // }
 };
 
-
-inline const ProtocolSequence * toSequence(const Protocol* proto)
+inline const ProtocolSequence *toSequence(const Protocol *proto)
 {
-    if(const ProtocolSequence * seq = dynamic_cast<const ProtocolSequence*>(proto))
+    if (const ProtocolSequence *seq = dynamic_cast<const ProtocolSequence *>(proto))
     {
-        return seq; 
+        return seq;
     }
 
-    vector<const Protocol *> a; 
-    a.push_back(proto); 
+    vector<const Protocol *> a;
+    a.push_back(proto);
 
-    return new ProtocolSequence(a); 
+    return new ProtocolSequence(a);
 }
-
 
 /*******************************************
  *
@@ -236,7 +232,7 @@ public:
     }
 
     const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override; 
+    const Protocol *getCopy() const override;
 
     const Type *getRecvType() const { return recvType; }
 };
@@ -266,11 +262,10 @@ public:
     }
 
     const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override; 
+    const Protocol *getCopy() const override;
 
     const Type *getSendType() const { return sendType; }
 };
-
 
 /*******************************************
  *
@@ -297,7 +292,7 @@ public:
     }
 
     const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override; 
+    const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
 };
@@ -327,11 +322,10 @@ public:
     }
 
     const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override; 
+    const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
 };
-
 
 /*******************************************
  *
@@ -361,7 +355,7 @@ public:
     }
 
     const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override; 
+    const Protocol *getCopy() const override;
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
 };
@@ -394,7 +388,7 @@ public:
     }
 
     const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override; 
+    const Protocol *getCopy() const override;
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
 };
@@ -636,19 +630,20 @@ public:
         return protocol;
     }
 
-    const ProtocolSequence * getProtocolCopy() const 
+    const ProtocolSequence *getProtocolCopy() const
     {
         return toSequence(protocol->getCopy());
     }
 
-    const TypeChannel * getCopy () const {
+    const TypeChannel *getCopy() const
+    {
         return new TypeChannel(getProtocolCopy());
     }
 
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
-        return toString() == other->toString(); //FIXME: DO BETTER
+        return toString() == other->toString(); // FIXME: DO BETTER
         // // Checks that the other type is also invokable
         // if (const TypeInvoke *p = dynamic_cast<const TypeInvoke *>(other))
         // {
@@ -733,14 +728,14 @@ public:
     llvm::Type *getLLVMType(llvm::Module *M) const override
     {
         // Cretae a vector for our argument types
-        std::vector<llvm::Type *> typeVec;
-        llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
+        // std::vector<llvm::Type *> typeVec;
+        // llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
 
         llvm::Type *ret = llvm::Type::getVoidTy(M->getContext());
 
         llvm::FunctionType *fnType = llvm::FunctionType::get(
             ret,
-            paramRef,
+            {llvm::Type::getInt32Ty(M->getContext())},
             false);
 
         return fnType->getPointerTo();

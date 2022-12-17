@@ -295,7 +295,9 @@ public:
         stmgr->addSymbol(funcSymbol);
         stmgr->enterScope(StopType::GLOBAL); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
 
-        stmgr->addSymbol(new Symbol(ctx->channelName->getText(), funcType->getChannelType()->getCopy(), false, false));
+        Symbol * channelSymbol = new Symbol(ctx->channelName->getText(), funcType->getChannelType()->getCopy(), false, false);
+
+        stmgr->addSymbol(channelSymbol);
         // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
         // stmgr->addSymbol(new Symbol("@RETURN", funcType->getReturnType(), false, false));
 
@@ -313,6 +315,7 @@ public:
 
         // Add a binding in the property manager
         bindings->bind(ctx, funcSymbol);
+        bindings->bind(ctx->VARIABLE().at(1), channelSymbol);
 
         return funcType;
     }

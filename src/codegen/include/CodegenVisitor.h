@@ -185,6 +185,10 @@ public:
 
     std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return visitInvokeable(ctx->defineProc()); } // FIXME: DO BETTER!!!
 
+    std::optional<Value *> TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx);
+    std::any visitAssignableRecv(WPLParser::AssignableRecvContext *ctx) override { return TvisitAssignableRecv(ctx); }
+    
+
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
 
@@ -243,6 +247,19 @@ public:
                 builder->SetInsertPoint(bBlk);
 
                 // Bind all of the arguments
+                llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, ctx->channelName->getText());
+                std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1)); // FIXME: DO BETTER
+                if (!symOpt)
+                {
+                    errorHandler.addCodegenError(ctx->getStart(), "Unable to generate channel id");
+                }
+                else
+                {
+                    symOpt.value()->val = v;
+
+                    builder->CreateStore((fn->args()).begin(), v);
+                }
+
                 /*
                 for (auto &arg : fn->args())
                 {
@@ -369,10 +386,10 @@ public:
 
     std::optional<Value *> any2Value(std::any any)
     {
-        return anyOpt2Val<Value*>(any);
+        return anyOpt2Val<Value *>(any);
         // std::optional<std::optional<Value *>> temp = any2Opt<std::optional<Value *>>(any);
-        // if(temp) return temp.value(); 
-        // return {}; 
+        // if(temp) return temp.value();
+        // return {};
     }
 
 protected:
