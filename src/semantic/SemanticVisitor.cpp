@@ -11,7 +11,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
         {
             std::string id = fnCtx->defineProc()->name->getText();
 
-            std::optional<Symbol *> opt = stmgr->lookup(id);
+            std::optional<SymbolContext> opt = stmgr->lookup(id);
 
             if (opt)
             {
@@ -79,14 +79,14 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
 
         // Check that program is invokeable and correctly defined.
         {
-            std::optional<Symbol *> opt = stmgr->lookup("program");
+            std::optional<SymbolContext> opt = stmgr->lookup("program");
             if (!opt)
             {
                 errorHandler.addSemanticError(ctx->getStart(), "When compiling with no-runtime, program() must be defined!");
             }
             else
             {
-                Symbol *sym = opt.value();
+                Symbol *sym = opt.value().second;
 
                 if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type))
                 {
@@ -241,7 +241,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
 const Type *SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
 {
     std::string name = ctx->v->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(name);
+    std::optional<SymbolContext> opt = stmgr->lookup(name);
 
     if (!opt)
     {
@@ -249,7 +249,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     // TODO: METHODIZE WITH INVOKE?
     bindings->bind(ctx, sym);
@@ -343,7 +343,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
          * Get the variable name and look it up in the symbol table
          */
         std::string id = ctx->var->getText();
-        std::optional<Symbol *> opt = stmgr->lookup(id);
+        std::optional<SymbolContext> opt = stmgr->lookup(id);
 
         // If we can't find the variable, report an error as it is undefined.
         if (!opt)
@@ -353,7 +353,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
         }
 
         // Otherwise, get the symbol's value
-        Symbol *symbol = opt.value();
+        Symbol *symbol = opt.value().second;
 
         // Bind the larger context to the symbol, and return the symbol's type.
         bindings->bind(ctx, symbol);
@@ -524,14 +524,14 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CallExprContext *ctx) { return 
 const Type *SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx)
 {
     // Determine the type of the expression we are visiting
-    std::optional<Symbol *> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
+    std::optional<SymbolContext> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Undefined variable reference: " + ctx->VARIABLE().at(0)->getText());
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
     bindings->bind(ctx->VARIABLE().at(0), sym);
 
     const Type *ty = sym->type;
@@ -712,7 +712,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ExternStatementContext *ctx)
 
     std::string id = ctx->name->getText();
 
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
 
     if (opt)
     {
@@ -960,7 +960,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
     /*
      * Lookup the @RETURN symbol which can ONLY be defined by entering FUNC/PROC
      */
-    std::optional<Symbol *> symOpt = stmgr->lookup("@RETURN");
+    std::optional<SymbolContext> symOpt = stmgr->lookup("@RETURN");
 
     // If we don't have the symbol, we're not in a place that we can return from.
     if (!symOpt)
@@ -969,7 +969,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = symOpt.value();
+    Symbol *sym = symOpt.value().second;
     bindings->bind(ctx, sym);
 
     // If the return statement has an expression...
@@ -1111,7 +1111,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
 const Type *SemanticVisitor::visitCtx(WPLParser::DefineEnumContext *ctx)
 {
     std::string id = ctx->name->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
     if (opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + id);
@@ -1144,7 +1144,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::DefineEnumContext *ctx)
 const Type *SemanticVisitor::visitCtx(WPLParser::DefineStructContext *ctx)
 {
     std::string id = ctx->name->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
     if (opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + id);
@@ -1180,14 +1180,14 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CustomTypeContext *ctx)
 {
     std::string name = ctx->VARIABLE()->getText();
 
-    std::optional<Symbol *> opt = stmgr->lookup(name);
+    std::optional<SymbolContext> opt = stmgr->lookup(name);
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     if (!sym->type || !sym->isDefinition)
     {
@@ -1260,7 +1260,7 @@ const Type *SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ct
 {
     // FIXME: HAVE TO POTENTIALLY DELETE FROM CONTEXT OTHER VAR
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
 
     if (!opt)
     {
@@ -1268,7 +1268,7 @@ const Type *SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ct
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1288,7 +1288,7 @@ const Type *SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ct
 const Type *SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
 
     if (!opt)
     {
@@ -1296,7 +1296,7 @@ const Type *SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvConte
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1318,7 +1318,7 @@ const Type *SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvConte
 const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
 
     if (!opt)
     {
@@ -1326,7 +1326,7 @@ const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ct
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1384,7 +1384,7 @@ const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ct
 const Type *SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
 
     if (!opt)
     {
@@ -1392,7 +1392,7 @@ const Type *SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectConte
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1413,7 +1413,7 @@ const Type *SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectConte
 const Type *SemanticVisitor::TvisitProgramContract(WPLParser::ProgramContractContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
 
     if (!opt)
     {
@@ -1421,7 +1421,7 @@ const Type *SemanticVisitor::TvisitProgramContract(WPLParser::ProgramContractCon
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1438,7 +1438,7 @@ const Type *SemanticVisitor::TvisitProgramContract(WPLParser::ProgramContractCon
 const Type *SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
 
     if (!opt)
     {
@@ -1446,7 +1446,7 @@ const Type *SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1463,14 +1463,14 @@ const Type *SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext
 const Type *SemanticVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Unbound identifier: " + id);
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1515,14 +1515,14 @@ const Type *SemanticVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext
 const Type *SemanticVisitor::TvisitAssignableExec(WPLParser::AssignableExecContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Unbound identifier: " + id);
         return Types::UNDEFINED;
     }
 
-    Symbol *sym = opt.value();
+    Symbol *sym = opt.value().second;
 
     if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
     {

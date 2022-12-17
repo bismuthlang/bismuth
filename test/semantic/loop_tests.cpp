@@ -130,25 +130,25 @@ TEST_CASE("Check example - adv", "[semantic][loop]")
   CHECK_FALSE(sv->hasErrors(ERROR));
 
   {
-    std::optional<Symbol *> opt = stmgr->lookup("a");
+    std::optional<SymbolContext> opt = stmgr->lookup("a");
     CHECK_FALSE(opt.has_value());
   }
 
   {
-    std::optional<Symbol *> opt = stmgr->lookup("i");
+    std::optional<SymbolContext> opt = stmgr->lookup("i"); //FIXME: CHECK CONTEXT
     CHECK(opt.has_value());
-    CHECK(opt.value()->type->isSubtype(Types::INT));
+    CHECK(opt.value().second->type->isSubtype(Types::INT));
   }
 
 
   {
-    std::optional<Symbol *> opt = stmgr->lookup("sum");
+    std::optional<SymbolContext> opt = stmgr->lookup("sum");
     CHECK(opt.has_value());
-    CHECK(opt.value()->type->isSubtype(Types::INT));
+    CHECK(opt.value().second->type->isSubtype(Types::INT));
   }
 
   {
-    std::optional<Symbol *> opt = stmgr->lookup("s");
+    std::optional<SymbolContext> opt = stmgr->lookup("s");
     CHECK_FALSE(opt.has_value());
   }
 }

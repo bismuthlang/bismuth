@@ -32,10 +32,10 @@ TEST_CASE("Basic Assignments", "[semantic]")
 
     CHECK_FALSE(sv->hasErrors(ERROR));
 
-    std::optional<Symbol *> opt = stmgr->lookup("a");
+    std::optional<SymbolContext> opt = stmgr->lookup("a");
 
     CHECK(opt.has_value());
-    CHECK(opt.value()->type->isSubtype(Types::INT));
+    CHECK(opt.value().second->type->isSubtype(Types::INT));
   }
 }
 
@@ -62,10 +62,10 @@ TEST_CASE("Assignment: Int Expr", "[semantic]")
 
   CHECK_FALSE(sv->hasErrors(ERROR));
 
-  std::optional<Symbol *> opt = stmgr->lookup("a");
+  std::optional<SymbolContext> opt = stmgr->lookup("a");
 
   CHECK(opt.has_value());
-  CHECK(opt.value()->type->isSubtype(Types::INT));
+  CHECK(opt.value().second->type->isSubtype(Types::INT));
 }
 
 TEST_CASE("Assignment: Bool const", "[semantic]")
@@ -91,10 +91,10 @@ TEST_CASE("Assignment: Bool const", "[semantic]")
 
   CHECK_FALSE(sv->hasErrors(ERROR));
 
-  std::optional<Symbol *> opt = stmgr->lookup("a");
+  std::optional<SymbolContext> opt = stmgr->lookup("a");
 
   CHECK(opt.has_value());
-  CHECK(opt.value()->type->isSubtype(Types::BOOL));
+  CHECK(opt.value().second->type->isSubtype(Types::BOOL));
 }
 
 TEST_CASE("Assignment: Bool expr", "[semantic]")
@@ -120,10 +120,10 @@ TEST_CASE("Assignment: Bool expr", "[semantic]")
 
   CHECK_FALSE(sv->hasErrors(ERROR));
 
-  std::optional<Symbol *> opt = stmgr->lookup("a");
+  std::optional<SymbolContext> opt = stmgr->lookup("a");
 
   CHECK(opt.has_value());
-  CHECK(opt.value()->type->isSubtype(Types::BOOL));
+  CHECK(opt.value().second->type->isSubtype(Types::BOOL));
 }
 
 TEST_CASE("Assignment: String const", "[semantic]")
@@ -149,10 +149,10 @@ TEST_CASE("Assignment: String const", "[semantic]")
 
   CHECK_FALSE(sv->hasErrors(ERROR));
 
-  std::optional<Symbol *> opt = stmgr->lookup("a");
+  std::optional<SymbolContext> opt = stmgr->lookup("a");
 
   CHECK(opt.has_value());
-  CHECK(opt.value()->type->isSubtype(Types::STR));
+  CHECK(opt.value().second->type->isSubtype(Types::STR)); //FIXME: SHOULD TEST CONTEXTS AS WELL!!
 }
 
 

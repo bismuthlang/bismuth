@@ -25,6 +25,13 @@ enum StopType {
 };
 
 
+enum ScopeType {
+  LINEAR_SCOPE, 
+  NON_LINEAR_SCOPE
+};
+
+typedef std::pair<ScopeType, Symbol*> SymbolContext; 
+
 class STManager {
   public:
     STManager(){};
@@ -34,10 +41,6 @@ class STManager {
      * 
      * @return Scope& the scope we entered
      */
-    // void enterScope() {
-    //   enterScope(false);
-    // };
-
     void enterScope(StopType stopType) {
 
       linearContext.enterScope(stopType == LINEAR || stopType == GLOBAL);
@@ -72,11 +75,14 @@ class STManager {
      * @param id The symbol name to lookup
      * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found. 
      */
-    std::optional<Symbol*> lookup(std::string id) {
-      std::optional<Symbol*> opt1 = linearContext.lookup(id); 
-      if(opt1) return opt1; 
-      // return linearContext.lookup(id).value_or(dangerContext.lookup(id));
-      return dangerContext.lookup(id); 
+    std::optional<SymbolContext> lookup(std::string id) {
+      std::optional<Symbol*> opt = linearContext.lookup(id); 
+      if(opt) return (SymbolContext) {LINEAR_SCOPE, opt.value()}; 
+
+      opt = dangerContext.lookup(id); 
+      if(opt) return (SymbolContext) {NON_LINEAR_SCOPE, opt.value()};
+
+      return {}; 
     }
 
     /**
