@@ -1,0 +1,14 @@
+extern int func printf(...);
+
+boolean [1] a; 
+
+
+int func program () {
+    a[0] := true;
+
+    printf("A is %d\n", a);
+    a[0] := false; 
+
+    printf("A is %d\n", a);
+    return -1; 
+}

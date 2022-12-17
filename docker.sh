@@ -1,0 +1,1 @@
+docker run -it -v ~/Documents/projects/prism:/home/shared ahfriedman/cs544-cs4533-docker

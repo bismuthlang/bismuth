@@ -1,0 +1,30 @@
+extern int func printf(...);
+
+int func program() {
+
+
+    var ref := (int x) : int {
+        printf("LAM: %u:\n", x);
+        return x; 
+    }; 
+
+    ref(10); 
+    printf("ref(1) = %u\n", ref(1));
+
+    ref := (int z) : int {
+        printf("LAM2: %u\n", z);
+        return z; 
+    };
+
+    ref(10);
+
+    printf("ref(1) = %u\n", ref(1));
+
+    (*
+        # FIXME: Can set lambda types like this,  but not explicit types
+        var ref2 := program; 
+        ref2(); 
+    *)
+
+    return 0;
+}

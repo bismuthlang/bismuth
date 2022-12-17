@@ -1,0 +1,171 @@
+extern int func printf(...);
+
+define foo :: c : Channel<+int;+int;-int> = {
+}
+
+define program :: c : Channel<-int> = {
+ var current := 1;
+ c.send(current)
+
+ # return -1;
+}
+
+
+define bar :: c : Channel<?(?-int);+int> = {
+    more(c) # Why is it more(c) vs c.more() ? 
+    weaken(c)
+    weaken(c)
+    int a := c.recv(); # FIXME: CANNOT USE VAR! 
+    # c.send(5)
+}
+
+define bar1 :: c : Channel<?(?-int);+int> = {
+    while true {
+        # more(c)
+        # var b := c; # FIXME: THIS SHOULDNT BE ALLOWED!!!!
+        while true {
+
+        }
+        weaken(c)
+    }
+    weaken(c) # NOTE: THIS DOESN'T DO WHAT YOU THINK IT DOES OF JUST SHIFTING THE LEVEL
+
+    # int x := c.recv(); 
+
+    # Channel<!!(+int);-int> y := exec bar; # FIXME: DOESNT WORK 
+    Channel<!(!(+int));-int> y := exec bar; 
+
+    accept (y) {
+        accept (y) {
+            int temp := y.recv(); 
+        }
+    }
+
+    y.send(10)
+}
+
+define bar2 :: c : Channel<InternalChoice<-int;+boolean, ?-int>;+str> = {
+    c[?(-int)] # FIXME: USE BETTER SYNTAX!!!
+    weaken(c)
+
+    str s := c.recv();
+
+}
+
+define bar3 :: c2 : Channel<-int> = {
+    Channel<ExternalChoice<+int;-boolean, !+int>;-str> o := exec bar2; 
+
+    o.case(
+        +int;-boolean => {
+            # c2.send(5)
+            
+            int x := o.recv();
+            o.send(false)
+        }
+        !+int => {
+            c2.send(5)
+            accept(o) {
+                int x := o.recv();
+            }
+            
+        }
+    )
+
+    c2.send(5)
+    o.send("hey")
+
+    #str s := "hey";
+    #str s := "hey";
+
+    #str s := "hey";
+}
+
+
+
+define struct CappedArray {
+    int cap; 
+    int[12] data; 
+}
+
+
+define QuickSort :: c : Channel<+CappedArray; -CappedArray> = {
+    CappedArray input := c.recv(); 
+
+    # TODO: Set it so that way select can have a default case?
+
+    if input.cap = 1 {
+        c.send(input)
+    } else {
+        if input.cap = 2 {
+            if input.data[0] > input.data[1] {
+                int temp := input.data[0];
+                input.data[0] := input.data[1];
+                input.data[1] := temp; 
+            }
+
+            c.send(input)
+        }
+        else 
+        {
+            int current := input.data[0];
+            int[12] lV;
+            int[12] gV;
+
+            CappedArray less := CappedArray::init(0, lV), greater := CappedArray::init(0, gV); 
+
+            int i := 1; 
+
+            while i < input.data.length {
+                if input.data[i] < current {
+                    less.data[less.cap] := input.data[i];
+                #    less.cap := less.cap + 1; 
+                } else {
+                    greater.data[greater.cap] := input.data[i];
+                #     greater.cap := greater.cap + 1; 
+                }
+
+                i := i + 1; 
+            }
+
+            var p1 := exec QuickSort; 
+            var p2 := exec QuickSort; 
+
+            p1.send(less)
+            p2.send(greater)
+
+            less := p1.recv();
+            greater := p2.recv(); 
+
+
+            int[12] ans; 
+            int cap := 0;
+
+            {
+                int i := 0; 
+
+                while i < less.cap {
+                    ans[cap] := less.data[i];
+                    i := i + 1;
+                    cap := cap + 1;
+                }
+            }
+
+            ans[cap] := current; 
+            cap := cap + 1;
+
+
+            {
+                int i := 0; 
+
+                while i < greater.cap {
+                    ans[cap] := greater.data[i];
+                    i := i + 1;
+                    cap := cap + 1;
+                }
+            }
+
+
+            c.send(CappedArray::init(cap, ans))
+        }
+    }
+}

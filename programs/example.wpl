@@ -1,0 +1,144 @@
+extern int func printf(str s, ...);
+
+# Defines a unit type (A type with no value)
+define struct Unit {}
+
+# Define structs for various color representations
+define struct RGBColor {
+  int red; 
+  int green; 
+  int blue; 
+}
+
+define struct HSVColor {
+  int hue; 
+  int sat; 
+  int value; 
+}
+
+define struct HexColor {
+  str representation; 
+}
+
+# Define an enum to act as a wrapper
+define enum Color {
+  RGBColor, 
+  HSVColor, 
+  HexColor
+}
+
+# Helper struct to demonstrate storing functions
+define struct ColorHelper {
+    int, int, int -> Color getRGB; 
+    int, int, int -> Color getHSV; 
+    str -> Color getHex; 
+}
+
+int func program() {
+    # Define three helper functions which we then use to create a ColorHelper
+    Color func getRGBColor(int red, int green, int blue) {
+        return RGBColor::init(red, green, blue); 
+    }
+
+    Color func getHSVColor(int h, int s, int v) {
+        return HSVColor::init(h, s, v);
+    }
+
+    Color func getHexColor(str s) {
+        return HexColor::init(s);
+    }
+
+    var helper := ColorHelper::init(
+        getRGBColor, 
+        getHSVColor, 
+        getHexColor
+    );
+
+    # Get an array of sample colors
+    var samples := getSampleColors(helper);
+
+    # Print out each of the colors 
+    int i := 0;
+    while i < samples.length {
+        toString(samples[i]);
+        i := i + 1; 
+    }
+
+    return 0; 
+}
+
+Color[3] func getSampleColors(ColorHelper helper)
+{
+    Color[3] ans; 
+
+    ans[0] := helper.getRGB(255, 255, 255);
+    ans[1] := helper.getHSV(128, 128, 128);
+    ans[2] := helper.getHex("FFFFFF");
+
+
+    return ans; 
+}
+
+(*
+ * Foo cannot access local variables; however, it can access 
+ * any function definition in the global scope as well as 
+ * any function definitions prior to it in the local scope
+ *)
+Unit func printPrimitive((int + boolean + str) toPrint) {
+  match toPrint {
+    int i => printf("int: %u", i);
+    str s => {
+      # Like a select statement, any statement is allowed to act as 
+      # a case in a match 
+      printf("string: %s", s); 
+    }
+    boolean b => printf("boolean: %s", 
+      # Here we define anonymous function and invoke it
+      (boolean bool) : str { 
+        if bool then {
+          return "true";
+        }
+        return "false"; 
+      } (b) # Function invoked with parameter b
+    );
+  }
+
+  return Unit::init(); 
+}
+
+Unit func toString((Color + int + boolean + str) obj) {
+    match obj {
+        int i => printPrimitive(i); 
+        boolean b => printPrimitive(b);
+        str s => printPrimitive(s);
+        Color c => {
+            match c {
+                  RGBColor rgb => {
+                    printf("[Color type=RGB, red=");
+                    printPrimitive(rgb.red);
+                    printf(", green=");
+                    printPrimitive(rgb.green);
+                    printf(", blue="); 
+                    printPrimitive(rgb.blue);
+                    printf("]\n");
+                  }
+                  HSVColor hsv => {
+                    printf("[Color type=HSV, hue=");
+                    printPrimitive(hsv.hue);
+                    printf(", sat=");
+                    printPrimitive(hsv.sat);
+                    printf(", value="); 
+                    printPrimitive(hsv.value);
+                    printf("]\n");
+                  }
+                  HexColor hex => {
+                    printf("[Color type=HEX, value=");
+                    printPrimitive(hex.representation);
+                    printf("]\n");
+                  }
+            }
+        }  
+    }
+
+    return Unit::init(); 
+}

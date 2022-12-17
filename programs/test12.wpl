@@ -1,0 +1,26 @@
+extern int func printf(...);
+
+boolean func isPrime(int n) {
+ var i := 3;
+ while (i < n) { 
+   if (n / i * i = n) then { return false; } 
+   i := i + 2;
+   {
+     int i := 0;
+   }
+ }
+ return true;
+}
+
+int func program() {
+ var current := 3;        
+ int nPrimes := 2;       # explicit type 
+ while current < 100 { 
+   if isPrime(current) then { 
+    printf("%d is the %dth prime!\n", current, nPrimes);
+    nPrimes := nPrimes + 1;
+    }
+   current := current + 2;
+ }
+ return nPrimes;
+}

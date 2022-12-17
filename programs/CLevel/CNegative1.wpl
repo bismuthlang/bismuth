@@ -1,0 +1,4 @@
+func program() {
+  int i;
+  i := 1;
+}

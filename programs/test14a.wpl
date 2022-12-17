@@ -1,0 +1,48 @@
+extern int func printf(...);
+
+proc nested(int a) {
+
+    if a <= 0 & (a < -5 | a < 0 | a = 0) then {
+        if a < -5 then {
+            printf("Less than -5\n");
+        }
+
+        if ~(a < -5) & a < -5 then {
+            printf("Less than -5 - BROKEN\n"); # Helps to test we don't fall through. Can't actually check that conditions are the same
+        }
+
+        if ~(a < -5) & a < 0 then {
+            printf("Less than 0; Greater than -5\n"); 
+        }
+
+        if ~(a < -5) & ~(a < 0) & (a = 0) then {
+            printf("ZERO!\n");
+        }
+    }
+
+    if ~(a <= 0) & a = 0 then {
+        printf("Wrong zero!\n");
+    }
+
+    if ~(a <= 0) & (a >= 5 | a < 5) then {
+        if a >= 5 then {
+            printf("Greater than 5\n");
+        }
+        if a < 5 then {
+            printf("Less than 5\n");
+        }
+    }
+    
+}
+
+int func program() {
+
+    var i := -10; 
+    while i <= 15 {
+        printf("For %d:\n\t", i);
+        nested(i);
+        i := i + 1;
+    }
+    
+    return -1; 
+}

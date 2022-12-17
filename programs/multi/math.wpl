@@ -1,0 +1,25 @@
+
+(*
+ * 
+ * Math Helper functions to be called from other file
+ *
+ *)
+
+int func pow(int number, int power) {
+    if power = 0 then {
+        return 1; 
+    }
+
+    if power < 0 then {
+        return 0; 
+    }
+
+    var ans  := 1; 
+
+    while power >= 1 {
+        ans := ans * number; 
+        power := power - 1; 
+    }
+
+    return ans; 
+}

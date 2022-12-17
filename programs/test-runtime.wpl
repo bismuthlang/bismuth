@@ -1,0 +1,15 @@
+extern int func printf(str a,         ...);
+extern int func getArgCount();
+extern int func getIntArg(int i);
+
+int func program() {
+  int nArgs := getArgCount();
+  int sum := 0;
+  int i := 1;
+  while (i < nArgs) {
+    sum := sum + getIntArg(i);
+    i := i + 1; 
+  }
+  printf("The sum of the arguments is: %d\n", sum);
+  return sum;
+}

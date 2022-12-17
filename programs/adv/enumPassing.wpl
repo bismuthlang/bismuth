@@ -1,0 +1,22 @@
+extern int func printf(str s, ...);
+
+proc test ((int + boolean) sum)
+{
+    match sum {
+        int i => printf("integer: %u\n", i);
+        boolean b => printf("boolean: %s\n", (boolean b) : str {
+            if b then {
+                return "true";
+            }
+
+            return "false"; 
+        }(b));
+    }
+}
+
+
+int func program() 
+{
+    test(5);
+    return 0; 
+}

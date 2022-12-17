@@ -1,0 +1,28 @@
+extern int func printf(str a,...);
+
+str a := "Hello there";
+
+
+
+proc other() {
+    printf("other: a=%s\n", a);
+
+    a := "Goodbye!";
+    printf("other: a := \"Goodbye!\"\n");
+
+    printf("other: a=%s\n", a);
+}
+
+int func program() {
+    printf("a=%s\n", a);
+
+    a := "Hi!";
+    printf("a := \"Hi!\"\n");
+    printf("a=%s\n", a);
+
+    other(); 
+
+    printf("a=%s\n", a);
+
+    return 0;
+}

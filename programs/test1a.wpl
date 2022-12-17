@@ -1,0 +1,133 @@
+#extern int func test(str a,...);
+extern int func printf(...);
+#extern int func testtwo(...);
+
+int func chayos() {
+    var a, b; # := 1; 
+
+    a := b; 
+
+    return -1; 
+}
+
+
+int func idk() { 
+    var x; 
+    if (1 < 2) {
+        x := 3; 
+    } else {
+        x := 2; 
+    }
+
+    return x;
+}
+
+int func branchtest() {
+    int[5] a; 
+
+    var count := 0; 
+
+    while count < a.length do {
+        a[count] := count; 
+        printf("a[%i] = %i\n", count, count); 
+        count := count + 1; 
+    }
+
+
+    if(true) then { # a[1] < a[2]
+        printf("TRUE\n");
+        return -1;
+    } else {
+        printf("FALSE\n");
+        return -22; # printf("B"); # return -2; 
+    }
+
+    return 0;
+}
+
+
+int func otherbranch() {
+    int a := 0; 
+    int b := 1; 
+
+    if(a < 5) then {
+        b := 3; 
+    } else {
+        b := 5; 
+    }
+
+    return b; 
+}
+
+str func otherbranchtwo() {
+    int a := 0; 
+    str b := "Why hello there!"; 
+
+    if(a < 5) then {
+        b := "Well, we fel into the first case"; 
+    } else {
+        b := "Second case this time!"; 
+    }
+
+    return b; 
+}
+
+str func otherbranchthree() {
+    int a := 0; 
+    str b := "Why hello there!"; 
+
+    str ca := "Well, we fel into the first case";
+    str cb := "Second case this time!";
+
+    if(~(a < 5)) then {
+        b := ca; 
+    } else {
+        b := cb; 
+    }
+
+    return b; 
+}
+
+int func program() {
+    printf("Hello World!\n");
+    # printf(); 
+    int [50] a; 
+    int c; 
+
+    c := 2; 
+
+    printf("C is: %i\n", c);
+
+    
+    # int a; 
+    a[0] := 1; 
+    a[1] := 2; 
+    a[2] := 3;
+    a[3] := 4; 
+    a[4] := 5; 
+
+    printf("C is: %i; a = [%i, %i, %i, %i, %i]\n", c, a[0], a[1], a[2], a[3], a[4]);
+
+    # int ANS := branchtest(); 
+    printf("From test, got: %i\n", branchtest());
+    printf("Other test, got %i\n", otherbranch());
+    printf("Other other test, %s\n", otherbranchtwo());
+    printf("Other other other test, %s\n", otherbranchthree());
+
+    # int b := a[2];
+    # str b := a[2];
+    # testtwo(1, 2, 3);
+    return -1; 
+}
+
+(*
+proc procedurezero () {
+    int a := 0; 
+
+    while a < 10 do {
+        a := a + 1; 
+        str b := "Hello"; 
+    }
+
+}
+*)

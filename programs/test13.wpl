@@ -1,0 +1,19 @@
+extern int func printf(...);
+
+int func fib(int n) {
+  if(n = 0 | n = 1) {
+    return n;
+  }
+
+  return fib(n - 1) + fib(n - 2);
+}
+
+int func program() {
+ var current := 1;        
+ while current < 20 do { 
+   var i := fib(current); 
+   printf("The %dth fibonacci number is: %d\n", current, i);
+   current := current + 1; 
+ }
+ return -1;
+}

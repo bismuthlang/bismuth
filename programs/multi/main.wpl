@@ -1,0 +1,35 @@
+extern int func printf(str a,...);
+extern int func getArgCount();
+extern str func getStrArg(int i);
+extern int func getIntArg(int i); 
+extern int func pow(int number, int power);
+
+
+
+int func program () {
+    if getArgCount() < 2 then {
+        printf("Needs at least two arguments!\n");
+    return -1; 
+  }
+
+  var i := 1; 
+
+  while i + 1 < getArgCount() {
+    str a_str := getStrArg(i); 
+    str b_str := getStrArg(i + 1);
+
+    int a_int := getIntArg(i); 
+    int b_int := getIntArg(i + 1);
+
+
+    printf("Got strings: {%s}, {%s}\n", a_str, b_str); 
+
+    int ans := pow(a_int, b_int);
+
+    printf("%d^%d = %d\n\n", a_int, b_int, ans);
+
+    i := i + 1; 
+  }
+
+  return 0; 
+}

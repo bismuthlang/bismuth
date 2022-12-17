@@ -1,0 +1,55 @@
+extern int func printf(str s, ...);
+
+define enum lambdaOp {
+    str, int -> str,
+    str -> str
+}
+
+
+define enum a {
+    int, 
+    boolean,
+    str,
+    #(str, int -> str + str -> str) 
+    lambdaOp
+}
+
+int func program() {
+    var fn := (str msg, int times) : str {
+        while times > 0 {
+            printf("msg=%s\n", msg);
+            times := times -1; 
+        }
+        return msg; 
+    };
+
+    
+    var t2; 
+
+    t2 := fn; 
+
+    lambdaOp op;
+    op := fn; 
+    
+    match op {
+        str, int -> str fn => fn("Hello", 2);
+        str -> str fn => fn("Goodbye");
+    }
+
+
+    a obscured;
+    obscured := op; 
+
+    match obscured {
+        int i => printf("Integer: %u\n", i);
+        boolean b => if b then { printf("Boolean: true\n"); } else { printf("Boolean: false\n"); }
+        str s => printf("String: %s\n", s);
+        lambdaOp s => {
+            match s {
+                str, int -> str fn => fn("Repeat 2 times!", 2);
+                str -> str fn => fn("Plain old print!");
+            }
+        }
+    }
+    return 0; 
+}

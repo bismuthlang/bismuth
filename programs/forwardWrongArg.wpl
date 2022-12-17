@@ -1,0 +1,14 @@
+extern int func printf(...);
+
+extern proc foo(int z);
+
+
+int func program() {
+    foo(10); 
+
+    return 1; 
+}
+
+proc foo(int a) {
+    printf("a=%u\n", a);
+}

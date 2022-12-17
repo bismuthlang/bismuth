@@ -1,0 +1,15 @@
+extern int func printf(...);
+
+# var a := 10, b := 2 * a, c :=  b / a; 
+#var a := 10, b := a * 2, c := 30; 
+
+var a := 10; 
+var b := 20; 
+var c := a/2; 
+
+int func program () {
+    
+    
+    printf("a=%d, b=%d, c=%d\n", a, b, c);
+    return -1; 
+}

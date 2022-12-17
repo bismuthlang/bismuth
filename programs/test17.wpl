@@ -1,0 +1,11 @@
+extern int func printf(...);
+
+int func program() {
+    var a; 
+
+    var b := a; 
+
+    a := 1; 
+
+    return -1;
+}

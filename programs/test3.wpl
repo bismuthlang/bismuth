@@ -1,0 +1,15 @@
+extern int func printf(...);
+
+
+
+int func program() {
+    if 1 < 2 then {
+        printf("Correct!\n");
+    }
+
+    if 2 < 1 then {
+        printf("Not correct!\n");
+    }
+
+    return -1; 
+}

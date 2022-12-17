@@ -1,0 +1,7 @@
+extern int func printf(...);
+extern proc foo (int a, int b, int a);
+
+int func program() {
+ var current := 1;        
+ return -1;
+}

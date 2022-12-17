@@ -1,0 +1,10 @@
+int func program() {
+  int i := 31;
+  int b;
+  if (i < 42) then {
+    b := 0;
+  } else {
+    b := 42;
+  }
+  return b;
+}

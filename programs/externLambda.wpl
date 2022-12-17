@@ -1,0 +1,9 @@
+extern int func printf(str s, ...);
+
+int func program() {
+    var a := printf; 
+
+    a("Hello \n");
+
+    return 0;
+}

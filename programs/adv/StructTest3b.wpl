@@ -1,0 +1,91 @@
+extern int func printf(str s, ...);
+
+define struct Unit {}
+
+define struct RGBData {
+    int[3] rgb; 
+}
+
+define struct HSVData {
+    int[3] hsv; 
+}
+
+define struct RGBColor {
+    RGBData rgb; 
+    RGBData -> int getRed; 
+    RGBData -> int getGreen; 
+    RGBData -> int getBlue; 
+}
+
+define struct HSVColor {
+    HSVData hsv; 
+    HSVData -> int getHue; 
+    HSVData -> int getSat; 
+    HSVData -> int getVal;
+}
+
+define enum ColorType {
+    RGBColor, 
+    HSVColor
+}
+
+define struct Color {
+    ColorType colorType; 
+    ColorType -> str toString; 
+}
+
+Color func getRGBColor(int r, int g, int b) 
+{
+    int[3] data; 
+    data[0] := r; 
+    data[1] := g; 
+    data[2] := b; 
+
+    RGBData rgbDat := RGBData::init(data);
+
+    return Color::init(
+        RGBColor::init(
+            rgbDat, 
+            (RGBData d) : int { return d.rgb[0]; },
+            (RGBData d) : int { return d.rgb[1]; },
+            (RGBData d) : int { return d.rgb[2]; }
+        ),
+        (ColorType c) : str { return "rgb"; }
+    );
+}
+
+
+# FIXME: TRY MORE NESTED STRUCTS SO WE HAVE 3+ ACCESSES AT ONCE!!
+
+
+proc fancyPrint(Color c) {
+
+    str s := c.toString(c.colorType);
+    
+    printf("Color[type=%s, ", c.toString(c.colorType));
+
+    match c.colorType {
+         RGBColor rgbcolor => {
+             printf("r=%u, g=%u, b=%u]\n", rgbcolor.getRed(rgbcolor.rgb), rgbcolor.getBlue(rgbcolor.rgb), rgbcolor.getGreen(rgbcolor.rgb));
+         }
+         HSVColor hsv => printf("r=%u, g=%u, b=%u]\n", hsv.getHue(hsv.hsv), hsv.getSat(hsv.hsv), hsv.getVal(hsv.hsv));
+    }
+}
+
+
+int func program() {
+
+    HSVColor hsv; 
+    RGBColor rgb; 
+
+    #Color z := getColor(58, 166, 63);
+
+    #printf("Color: %u, %u, %u\n", z.red, z.green, z.blue);
+
+    Color col := getRGBColor(58, 166, 63);
+
+    fancyPrint(col); 
+
+
+    return 0; 
+}

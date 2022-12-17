@@ -1,0 +1,38 @@
+extern int func printf(...);
+
+str func nestedIf(int a) {
+    if( a > 0) {
+        if(a > 10)
+        {
+            return "CASE 1 (10)"; 
+        }
+        else 
+        {
+            return "CASE 2 (5)"; 
+        }
+    }
+    else 
+    {
+        if( a = 0 )
+        {
+            return "CASE 3 (0)";  # NOTE: DIV BY ZERO CAUSES EXCEPION?
+        }
+        else 
+        {
+            return "CASE 4 (a)";
+        }
+    }
+
+    return "CASE IMPOSSIBLE (-1)"; 
+}
+
+int func program() {
+
+    var i := -10; 
+    while i <= 15 {
+        printf("f(%d) = %s\n", i, nestedIf(i));
+        i := i + 1;
+    }
+    
+    return -1; 
+}

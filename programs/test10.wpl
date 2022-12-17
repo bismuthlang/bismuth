@@ -1,0 +1,11 @@
+extern int func printf(...);
+
+int func program () {
+    int [5] a; 
+
+    var i := 0; 
+    
+    while i < (2 * a.length) {
+        a[i % ]
+    }
+}

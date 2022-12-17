@@ -1,0 +1,14 @@
+extern int func printf(str s, ...);
+
+int func program() {
+
+    printf("Prior to decl\n");
+    
+    proc inner() {
+        printf("Hey friends!\n");
+    }
+
+    inner(); 
+
+    return -1; 
+}

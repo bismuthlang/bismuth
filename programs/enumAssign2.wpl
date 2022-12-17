@@ -1,0 +1,79 @@
+extern int func printf(str s, ...);
+
+define enum lambdaOp {
+    str, int -> str,
+    str -> str
+}
+
+
+define enum a {
+    int, 
+    boolean,
+    str,
+    #(str, int -> str + str -> str) 
+    lambdaOp
+}
+
+str, int -> str func getPrintLambda() {
+    str, int -> str fn := (str msg, int times) : str {
+        while times > 0 {
+            printf("msg=%s\n", msg);
+            times := times -1; 
+        }
+        return msg; 
+    };
+
+    return fn;
+}
+
+define struct Unit {}
+
+a func aFromLambdaOp(lambdaOp op) {
+    a obscured := op; 
+
+    return obscured; 
+}
+
+Unit -> int func getMain() {
+    int func main(Unit u) {
+        var t2; 
+
+        t2 := getPrintLambda(); 
+
+        lambdaOp op; # FIXME: I FI CHANGE t2, WILL fn CHANGE?
+        op := getPrintLambda(); 
+        
+        match op {
+            str, int -> str fn => fn("Hello", 2);
+            str -> str fn => fn("Goodbye");
+        }
+
+
+        a obscured;
+        obscured := aFromLambdaOp(op); 
+
+        match obscured {
+            int i => printf("Integer: %u\n", i);
+            boolean b => if b then { printf("Boolean: true\n"); } else { printf("Boolean: false\n"); }
+            str s => printf("String: %s\n", s);
+            lambdaOp s => {
+                match s {
+                    str, int -> str fn => fn("Repeat 2 times!", 2);
+                    str -> str fn => fn("Plain old print!");
+                }
+            }
+        }
+        return 0; 
+    }
+
+    return main; 
+}
+
+int func program() {
+
+    Unit u := Unit::init(); 
+
+    Unit -> int main := getMain(); 
+
+    return main(u);
+}

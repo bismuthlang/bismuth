@@ -1,0 +1,7 @@
+int func add(int i, int j) {
+  return i + j;
+}
+
+int func program() {
+  return add(5, 6, 7);
+}

@@ -1,0 +1,20 @@
+extern int func printf(...);
+
+# FIXME: Make it so that way we can't have naming conflicts with DEFs
+
+int func program() {
+
+    int func foo(int x) {
+        printf("FOO: %u\n", x);
+        return x; 
+    }
+
+    var ref := foo; 
+
+    ref(10); 
+    foo(11); 
+
+    printf("ref (:= foo(1)) = %u\n", ref(1));
+
+    return 0;
+}

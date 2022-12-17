@@ -1,0 +1,36 @@
+extern int func printf(str a,...);
+
+int a := 10;
+
+
+proc foo(int a) {
+    printf("foo: a=%d\n", a);
+
+    a := a * 2; 
+
+    printf("foo: a := a * 2\n");
+    printf("foo: a=%d\n", a);
+}
+
+
+int func program() {
+    printf("prog: a=%d\n", a);
+
+    a := a + 1; 
+    printf("prog: a := a + 1\n");
+
+    printf("prog: a=%d\n", a);
+
+    int a := 20; 
+
+    printf("prog: int a := 20;\n");
+
+    printf("prog: a=%d\n", a);
+
+    printf("prog: foo(a)\n");
+    foo(a); 
+
+    printf("prog: a=%d\n", a);
+
+    return 0;
+}

@@ -1,0 +1,13 @@
+extern int func printf(...);
+
+int a := 5, b := 6; #, c := a + b; 
+
+int func program() {
+    int i := 7, j := 8, k := i + j; 
+
+    printf("i=%u, j=%u, k=%u\n", i, j, k);
+
+    # var [5] arr; 
+
+    return 0; 
+}

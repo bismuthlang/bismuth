@@ -1,0 +1,11 @@
+extern int func printf(...);
+
+int func program () {
+    
+    int func lambda () {
+        return 0; 
+    }
+
+    
+    return -1; 
+}

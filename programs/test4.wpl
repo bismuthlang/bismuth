@@ -1,0 +1,57 @@
+extern int func printf(...);
+
+int func mutArgsOne(int i) {
+    if ~(5 < 10) then {
+        i := 20;
+    } else {
+        i := 50; 
+    }
+    printf("GOT: %d\n", i);
+
+    return i; 
+}
+
+
+int func mutArgsTwo(int i) {
+    if (5 < 10) then {
+        i := 20;
+    } else {
+        i := 50; 
+    }
+    printf("GOT: %d\n", i);
+
+    return i; 
+}
+
+proc PROCmutArgsOne(int i) {
+    if ~(5 < 10) then {
+        i := 20;
+    } else {
+        i := 50; 
+    }
+    printf("GOT: %d\n", i);
+
+    return; 
+}
+
+
+proc PROCmutArgsTwo(int i) {
+    if (5 < 10) then {
+        i := 20;
+    } else {
+        i := 50; 
+    }
+    printf("GOT: %d\n", i);
+
+    return; 
+}
+
+int func program() {
+
+    printf("ANS: %d\n", mutArgsOne(0));
+    printf("ANS: %d\n", mutArgsTwo(0));
+    printf("ANS: %d\n", PROCmutArgsOne(0));
+    printf("ANS: %d\n", PROCmutArgsTwo(0));
+
+    return -1; 
+}

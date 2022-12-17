@@ -1,0 +1,17 @@
+extern int func printf(str a,         ...);
+
+
+int func program() {
+  var a := -1; 
+  var b := 20; 
+
+  var test := a > 0 & b = 2;
+  if (test) then {
+    printf("true\n");
+  }
+  else 
+  {
+    printf("false\n");
+  }
+  return -1; 
+}

@@ -1,0 +1,5 @@
+int func program() {
+  int i;
+  i := getIntArg(1);
+  return i;
+}

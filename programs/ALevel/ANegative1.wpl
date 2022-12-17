@@ -1,0 +1,6 @@
+var x;
+int func program() {
+  x := 2;
+  x := "oops";
+  return x;
+}

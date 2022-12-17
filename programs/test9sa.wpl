@@ -1,0 +1,14 @@
+extern int func printf(...);
+
+str [1] a; 
+
+
+int func program () {
+    a[0] := "A";
+
+    printf("A is %s\n", a);
+    a[0] := "B"; 
+
+    printf("A is %s\n", a);
+    return -1; 
+}
