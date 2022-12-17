@@ -9,3 +9,19 @@ set (RUNTIME_DIR ${CMAKE_SOURCE_DIR}/src/runtime)
 set (RUNTIME_SOURCES
   ${RUNTIME_DIR}/wpl_runtime.c
 )
+
+
+
+
+###################################################
+#
+# PRISM Core Includes
+#
+###################################################
+
+set (CORE_DIR ${RUNTIME_DIR}/core)
+set (CORE_INCLUDE ${CORE_DIR}/include)
+
+set (CORE_SOURCES 
+  ${CORE_DIR}/IPCBuffer.cpp
+)
