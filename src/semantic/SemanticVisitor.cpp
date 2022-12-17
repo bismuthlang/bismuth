@@ -741,6 +741,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ExternStatementContext *ctx)
 
 const Type *SemanticVisitor::visitCtx(WPLParser::ProgDefContext *ctx)
 {
+    std::cout << "744 Codegen is dumb" << std::endl; 
     return this->visitInvokeable(ctx->defineProc());
 }
 

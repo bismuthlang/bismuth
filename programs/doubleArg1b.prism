@@ -1,0 +1,75 @@
+extern int func printf(...);
+
+
+define program :: c : Channel<-int> = {
+    var current := 1;
+    c.send(current)
+}
+
+# FIXME: Multiassign is most probably broken. It'll be invoked for each term.....
+
+
+define bar :: c : Channel<?(?-int);+int> = {
+    more(c) # Why is it more(c) vs c.more() ? 
+    weaken(c)
+    weaken(c)
+    int a := c.recv(); # FIXME: CANNOT USE VAR! 
+    # c.send(5)
+}
+(*
+define bar1 :: c : Channel<?(?-int);+int> = {
+    while true {
+        # more(c)
+        # var b := c; # FIXME: THIS SHOULDNT BE ALLOWED!!!!
+        while true {
+
+        }
+        weaken(c)
+    }
+    weaken(c) # NOTE: THIS DOESN'T DO WHAT YOU THINK IT DOES OF JUST SHIFTING THE LEVEL
+
+    int x := c.recv(); 
+
+    # Channel<!!(+int);-int> y := exec bar; # FIXME: DOESNT WORK 
+    Channel<!(!(+int));-int> y := exec bar; 
+
+    accept (y) {
+        accept (y) {
+            int temp := y.recv(); 
+        }
+    }
+
+    y.send(10)
+}
+
+define bar2 :: c : Channel<InternalChoice<-int;+boolean, ?-int>;+str> = {
+    c[?(-int)] # FIXME: USE BETTER SYNTAX!!!
+    weaken(c)
+
+    str s := c.recv();
+
+}
+
+define bar3 :: c2 : Channel<-int> = {
+    Channel<ExternalChoice<+int;-boolean, !+int>;-str> o := exec bar2; 
+
+    o.case(
+        +int;-boolean => {
+            c2.send(5)
+            
+            int x := o.recv();
+            o.send(false)
+        }
+        !+int => {
+            c2.send(5)
+            accept(o) {
+                int x := o.recv();
+            }
+            
+        }
+    )
+
+    # c2.send(5)
+    o.send("hey")
+}
+*)

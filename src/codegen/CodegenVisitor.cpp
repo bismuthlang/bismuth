@@ -25,7 +25,7 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
 
             const Type *generalType = symbol->type;
 
-            if (const TypeInvoke *type = dynamic_cast<const TypeInvoke *>(generalType))
+            if (const TypeProgram *type = dynamic_cast<const TypeProgram *>(generalType))
             {
                 llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
 
@@ -61,6 +61,8 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
         // Generate code for statement
         if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
         {
+            std::cout << "64 " << fnCtx->getText() << std::endl; 
+            // this->visitInvokeable(fnCtx);
             e->accept(this);
         }
     }
@@ -972,8 +974,13 @@ std::optional<Value *> CodegenVisitor::TvisitExternStatement(WPLParser::ExternSt
 
 std::optional<Value *> CodegenVisitor::TvisitFuncDef(WPLParser::ProgDefContext *ctx) // FIXME: RENAME?
 {
-    return CodegenVisitor::visitInvokeable(ctx);
+    std::cout << "976" << std::endl;  //FIXME: IS THIS EVER CALLED????
+    return this->visitInvokeable(ctx->defineProc());
 }
+
+// std::optional<Value *> CodegenVisitor::TvisitDefineProgram(WPLParser::DefineProgramContext * ctx) {
+//     return TvisitFuncDef(ctx->defineProc());
+// }
 
 std::optional<Value *> CodegenVisitor::TvisitAssignStatement(WPLParser::AssignStatementContext *ctx)
 {

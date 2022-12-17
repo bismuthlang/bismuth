@@ -25,6 +25,8 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/NoFolder.h"
 
+#include "CastUtils.h"
+
 #include <any>
 #include <string>
 #include <regex>
@@ -131,6 +133,8 @@ public:
     std::optional<Value *> TvisitMatchStatement(WPLParser::MatchStatementContext *ctx);
     std::optional<Value *> TvisitInitProduct(WPLParser::InitProductContext *ctx);
 
+    // std::optional<Value *> TvisitDefineProgram(WPLParser::DefineProgramContext * ctx);
+
     /******************************************************************
      * Standard visitor methods all defined to use the typed versions
      ******************************************************************/
@@ -179,6 +183,8 @@ public:
     std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return TvisitMatchStatement(ctx); }
     std::any visitInitProduct(WPLParser::InitProductContext *ctx) override { return TvisitInitProduct(ctx); }
 
+    std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return visitInvokeable(ctx->defineProc()); } // FIXME: DO BETTER!!!
+
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
 
@@ -193,7 +199,7 @@ public:
      * @param sum The FuncDefContext to build the function from
      * @return std::optional<Value *> Empty as this shouldn't be seen as a value
      */
-    std::optional<Value *> visitInvokeable(WPLParser::ProgDefContext *ctx)
+    std::optional<Value *> visitInvokeable(WPLParser::DefineProcContext *ctx)
     {
         BasicBlock *ins = builder->GetInsertBlock();
 
@@ -201,7 +207,7 @@ public:
         std::optional<Symbol *> symOpt = props->getBinding(ctx);
 
         // Get the function name. Done separatley from sym in case the symbol isn't found
-        std::string funcId = ctx->defineProc()->name->getText();
+        std::string funcId = ctx->name->getText();
 
         // If we couldn't find the function, throw an error.
         if (!symOpt)
@@ -219,14 +225,15 @@ public:
 
         const Type *type = sym->type;
 
-        if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(type))
+        if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(type))
         {
 
             llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
 
             if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
             {
-                Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);; // Lookup the function first
+                Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);
+                ; // Lookup the function first
                 inv->setName(fn->getName().str());
 
                 // Get the parameter list context for the invokable
@@ -268,7 +275,7 @@ public:
                 */
 
                 // Get the codeblock for the PROC/FUNC
-                WPLParser::BlockContext *block = ctx->defineProc()->block();
+                WPLParser::BlockContext *block = ctx->block();
 
                 // Generate code for the block
                 for (auto e : block->stmts)
@@ -278,7 +285,7 @@ public:
 
                 // If we are a PROC, make sure to add a return type (if we don't already have one)
                 // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
-                if (!CodegenVisitor::blockEndsInReturn(block)) //FIXME: THIS SHOULD BECOME ALWAYS TRUE
+                if (!CodegenVisitor::blockEndsInReturn(block)) // FIXME: THIS SHOULD BECOME ALWAYS TRUE
                 {
                     builder->CreateRetVoid();
                 }
@@ -288,9 +295,9 @@ public:
                 errorHandler.addCodegenError(ctx->getStart(), "Invocation type could not be cast to function!");
             }
         }
-        else 
+        else
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Could not generate a function call for type of: " + type->toString()); 
+            errorHandler.addCodegenError(ctx->getStart(), "Could not generate a function call for type of: " + type->toString());
         }
 
         builder->SetInsertPoint(ins);
@@ -322,11 +329,12 @@ public:
         if (!sym->val)
         {
             // If the symbol is a global var
-            if (const TypeInvoke* inv = dynamic_cast<const TypeInvoke *>(sym->type))
+            if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type))
             {
-                if(!inv->getLLVMName()) {
+                if (!inv->getLLVMName())
+                {
                     errorHandler.addCodegenError(ctx->getStart(), "Could not locate IR name for function " + sym->toString());
-                    return {}; 
+                    return {};
                 }
 
                 Function *fn = module->getFunction(inv->getLLVMName().value());
@@ -361,12 +369,10 @@ public:
 
     std::optional<Value *> any2Value(std::any any)
     {
-        // if(!any) return {}; 
-
-        if(std::optional<Value *> valOpt = std::any_cast<std::optional<Value *>>(any))
-            return valOpt; 
-        
-        return {}; 
+        return anyOpt2Val<Value*>(any);
+        // std::optional<std::optional<Value *>> temp = any2Opt<std::optional<Value *>>(any);
+        // if(temp) return temp.value(); 
+        // return {}; 
     }
 
 protected:
