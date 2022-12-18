@@ -15,7 +15,7 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
             llvm::FunctionType *writeChanFnTy = llvm::FunctionType::get(
                 VoidTy,
                 {Int32Ty,
-                 VoidTy->getPointerTo()},
+                 i8p},
                 false);
 
             Function *fn = Function::Create(writeChanFnTy, GlobalValue::ExternalLinkage, "WriteChannel", module);
@@ -24,7 +24,7 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
         {
             Function::Create(
                 llvm::FunctionType::get(
-                    VoidTy->getPointerTo(),
+                    i8p,
                     {Int32Ty},
                     false),
                 GlobalValue::ExternalLinkage,
@@ -355,15 +355,39 @@ std::optional<Value *> CodegenVisitor::TvisitInvocation(WPLParser::InvocationCon
 
 std::optional<Value *> CodegenVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx)
 {
-     std::optional<Symbol *> symOpt = props->getBinding(ctx);
+    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
     if (!symOpt)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); //FIXME: DO BETTER
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
         return {};
     }
-    //FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
-    llvm::Function *progFn = module->getFunction("ReadChannel"); //FIXME: BAD OPTIONAL ACCESS
-    return builder->CreateCall(progFn, {symOpt.value()->val.value()});
+
+
+    std::optional<Symbol *> tySymOpt = props->getBinding(ctx); // For the type of the expr
+    if (!tySymOpt)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel recv type"); // FIXME: DO BETTER
+        return {};
+    }
+
+    llvm::Type * recvType = tySymOpt.value()->type->getLLVMType(module);
+
+    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
+    llvm::Function *progFn = module->getFunction("ReadChannel"); // FIXME: BAD OPTIONAL ACCESS
+    Value * valPtr = builder->CreateCall(progFn, {
+        builder->CreateLoad(Int32Ty, symOpt.value()->val.value())
+    }); // Will be a void*
+    Value * casted = builder->CreateBitCast(valPtr, recvType->getPointerTo()); //Cast the void* to the correct type ptr
+    // return builder->CreateStore(corrected, )
+
+    // FIXME: Methodize things so that way we don't have to do this as its just a redundant alloca given we have to have another for the var its self... 
+    // llvm::AllocaInst *v = builder->CreateAlloca(recvType, 0, "");
+    // builder->CreateStore(casted, v);
+    return builder->CreateLoad(recvType, casted);
+    // return v; 
+
+    // return casted; 
+
 }
 
 std::optional<Value *> CodegenVisitor::TvisitInitProduct(WPLParser::InitProductContext *ctx)

@@ -87,8 +87,8 @@ static llvm::cl::opt<CompileType>
                 llvm::cl::desc("If set, will compile to an executable with the specified compiler."),
                 llvm::cl::values(
                     clEnumVal(none, "Will not generate an executable"),
-                    clEnumVal(clang, "Will generate an executable using clang"),
-                    clEnumVal(gcc, "Will generate an executable using gcc")),
+                    clEnumVal(clang, "Will generate an executable using clang++"), //FIXME: UPDATE ENUM?
+                    clEnumVal(gcc, "Will generate an executable using g++")),
                 llvm::cl::init(none),
                 llvm::cl::cat(WPLCOptions));
 /**
@@ -346,10 +346,10 @@ int main(int argc, const char *argv[])
     switch (compileWith)
     {
     case clang:
-      cmd << "clang ";
+      cmd << "clang++ ";
       break;
     case gcc:
-      cmd << "gcc ";
+      cmd << "g++ ";
       break;
     case none:
       return -1; // Not even possible

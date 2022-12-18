@@ -1,7 +1,10 @@
-extern int func printf(...);
+extern int func printf(str s, ...);
+extern int func getArgCount();
 
 
 define program :: c : Channel<-int> = {
+    printf("why");
+    getArgCount(); 
     var current := 1;
     c.send(current)
 }
@@ -12,6 +15,7 @@ define bar :: c : Channel<?(?-int);+int> = {
     more(c) # Why is it more(c) vs c.more() ? 
     weaken(c)
     weaken(c)
+    getArgCount(); 
     int a := c.recv(); # FIXME: CANNOT USE VAR! 
     # c.send(5)
 }

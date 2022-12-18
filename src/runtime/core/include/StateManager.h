@@ -12,7 +12,7 @@ std::map<unsigned int, IPCBuffer<Message> *> State;
 
 std::map<unsigned int, unsigned int> LookupOther; // FIXME: NAME BETTER
 
-void Execute(void (*func)(unsigned int))
+extern "C" void Execute(void (*func)(unsigned int))
 {
     IPCBuffer<Message> *aIn = new IPCBuffer<Message>();
     IPCBuffer<Message> *aOut = new IPCBuffer<Message>();
@@ -32,7 +32,7 @@ void Execute(void (*func)(unsigned int))
     // func(idIn); //FIXME: RUN IN THREAD!
 }
 
-void WriteChannel(unsigned int aId, void *value)
+extern "C" void WriteChannel(unsigned int aId, void *value)
 {
     auto i_oAId = LookupOther.find(aId);
 
@@ -55,7 +55,7 @@ void WriteChannel(unsigned int aId, void *value)
 }
 
 
-void* ReadChannel(unsigned int aId)
+extern "C" void* ReadChannel(unsigned int aId)
 {
     auto i_buffer = State.find(aId);
 

@@ -1309,7 +1309,8 @@ const Type *SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvConte
             return Types::UNDEFINED;
         }
 
-        bindings->bind(ctx, sym);
+        bindings->bind(ctx->VARIABLE(), sym); //For Channel 
+        bindings->bind(ctx, new Symbol("", ty.value(), false, false)); //FIXME: DO BETTER, DONE SO WE CAN DO CORRECT BITCAST
         return ty.value();
     }
 
