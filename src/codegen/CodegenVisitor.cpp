@@ -362,7 +362,6 @@ std::optional<Value *> CodegenVisitor::TvisitAssignableRecv(WPLParser::Assignabl
         return {};
     }
 
-
     std::optional<Symbol *> tySymOpt = props->getBinding(ctx); // For the type of the expr
     if (!tySymOpt)
     {
@@ -370,24 +369,49 @@ std::optional<Value *> CodegenVisitor::TvisitAssignableRecv(WPLParser::Assignabl
         return {};
     }
 
-    llvm::Type * recvType = tySymOpt.value()->type->getLLVMType(module);
+    llvm::Type *recvType = tySymOpt.value()->type->getLLVMType(module);
 
     // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
-    llvm::Function *progFn = module->getFunction("ReadChannel"); // FIXME: BAD OPTIONAL ACCESS
-    Value * valPtr = builder->CreateCall(progFn, {
-        builder->CreateLoad(Int32Ty, symOpt.value()->val.value())
-    }); // Will be a void*
-    Value * casted = builder->CreateBitCast(valPtr, recvType->getPointerTo()); //Cast the void* to the correct type ptr
+    llvm::Function *progFn = module->getFunction("ReadChannel");                                              // FIXME: BAD OPTIONAL ACCESS
+    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, symOpt.value()->val.value())}); // Will be a void*
+    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                                 // Cast the void* to the correct type ptr
     // return builder->CreateStore(corrected, )
 
-    // FIXME: Methodize things so that way we don't have to do this as its just a redundant alloca given we have to have another for the var its self... 
+    // FIXME: Methodize things so that way we don't have to do this as its just a redundant alloca given we have to have another for the var its self...
     // llvm::AllocaInst *v = builder->CreateAlloca(recvType, 0, "");
     // builder->CreateStore(casted, v);
     return builder->CreateLoad(recvType, casted);
-    // return v; 
+    // return v;
 
-    // return casted; 
+    // return casted;
+}
 
+std::optional<Value *> CodegenVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)
+{
+    std::optional<Value *> valOpt = any2Value(ctx->expr->accept(this));
+    if (!valOpt)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code");
+        return {};
+    }
+
+    Value *stoVal = valOpt.value();
+
+    llvm::AllocaInst *v = builder->CreateAlloca(stoVal->getType(), 0, "");
+    builder->CreateStore(stoVal, v);
+
+    Value *corrected = builder->CreateBitCast(v, i8p);
+
+    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
+    if (!symOpt)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
+        return {};
+    }
+
+    llvm::Function *progFn = module->getFunction("WriteChannel");                                              // FIXME: BAD OPTIONAL ACCESS
+    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, symOpt.value()->val.value()), corrected}); // Will be a void*
+    return {};
 }
 
 std::optional<Value *> CodegenVisitor::TvisitInitProduct(WPLParser::InitProductContext *ctx)

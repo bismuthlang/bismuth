@@ -1270,6 +1270,7 @@ const Type *SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ct
     }
 
     Symbol *sym = opt.value().second;
+    bindings->bind(ctx->VARIABLE(), sym); //For Channel 
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {

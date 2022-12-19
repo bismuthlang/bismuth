@@ -188,6 +188,9 @@ public:
     std::optional<Value *> TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx);
     std::any visitAssignableRecv(WPLParser::AssignableRecvContext *ctx) override { return TvisitAssignableRecv(ctx); }
     
+    std::any visitProgramSend(WPLParser::ProgramSendContext *ctx) override { return TvisitProgramSend(ctx); }
+    std::optional<Value *> TvisitProgramSend(WPLParser::ProgramSendContext *ctx);
+
 
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
