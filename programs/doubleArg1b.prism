@@ -3,9 +3,10 @@ extern int func getArgCount();
 
 
 define program :: c : Channel<-int> = {
-    printf("why");
+    printf("why\n");
     getArgCount(); 
     var current := 1;
+    printf("why2\n");
     c.send(current)
 }
 

@@ -1,4 +1,7 @@
 #pragma once
+
+#include "StateManager.h"
+
 /**
  * @file wpl_runtime.h
  * @author gpollice

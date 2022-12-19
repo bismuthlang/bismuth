@@ -12,23 +12,35 @@ std::map<unsigned int, IPCBuffer<Message> *> State;
 
 std::map<unsigned int, unsigned int> LookupOther; // FIXME: NAME BETTER
 
-extern "C" void Execute(void (*func)(unsigned int))
+extern "C" void helper(void (*func)(unsigned int), unsigned int i)
+{
+    func(i); 
+}
+
+extern "C" unsigned int Execute(void (*func)(unsigned int))
 {
     IPCBuffer<Message> *aIn = new IPCBuffer<Message>();
     IPCBuffer<Message> *aOut = new IPCBuffer<Message>();
+    // std::cout << "EXEC 20" << std::endl; 
 
     unsigned int idIn = State.size();
-
     State.insert({idIn, aIn});
 
     unsigned int idOut = State.size();
-
     State.insert({idOut, aOut});
 
     LookupOther.insert({idOut, idIn});
     LookupOther.insert({idIn, idOut});
-
+// func(idIn); 
+    // std::thread t (helper, func, idIn);
     std::thread t(func, idIn);
+    // std::thread t ([func](){
+    //     std::cout << "THREADED" << std::endl;
+    // });
+    t.detach();
+    // t.join();
+// std::cout << "EXEC 34" << std::endl; 
+    return idOut;
     // func(idIn); //FIXME: RUN IN THREAD!
 }
 

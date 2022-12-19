@@ -13,13 +13,16 @@
 #include <stdlib.h>
 
 // The WPL program entry function
-int program();
+void program(unsigned int i);
+
+unsigned int Execute(void (*func)(unsigned int));
+void* ReadChannel(unsigned int aId);
 
 int argCount;
 char **args;
 
 /**
- * @brief mai program that calls the WPL program() function
+ * @brief main program that calls the WPL program() function
  * 
  * @param argc 
  * @param argv 
@@ -28,7 +31,15 @@ char **args;
 int main(int argc, char *argv[]) {
   argCount = argc;
   args = argv;
-  return program();
+
+  unsigned int idOut = Execute(&program);
+  
+  void * ptr = ReadChannel(idOut);
+  return 0; 
+  // return *((int *) ptr);
+
+
+  // return program();
 }
 
 /**
