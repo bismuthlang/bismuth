@@ -18,6 +18,8 @@ void program(unsigned int i);
 unsigned int Execute(void (*func)(unsigned int));
 void* ReadChannel(unsigned int aId);
 
+void waitForAllToFinish(); 
+
 int argCount;
 char **args;
 
@@ -35,6 +37,8 @@ int main(int argc, char *argv[]) {
   unsigned int idOut = Execute(&program);
   
   void * ptr = ReadChannel(idOut);
+
+  waitForAllToFinish();
   return 0; 
   // return *((int *) ptr);
 

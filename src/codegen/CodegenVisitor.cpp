@@ -45,6 +45,17 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
                 "Execute",
                 module);
         }
+
+        {
+            Function::Create(
+                llvm::FunctionType::get(
+                    i8p,
+                    {Int32Ty},
+                    false),
+                GlobalValue::ExternalLinkage,
+                "malloc",
+                module);
+        }
     }
 
     /***********************************
@@ -471,7 +482,12 @@ std::optional<Value *> CodegenVisitor::TvisitProgramSend(WPLParser::ProgramSendC
 
     Value *stoVal = valOpt.value();
 
-    llvm::AllocaInst *v = builder->CreateAlloca(stoVal->getType(), 0, "");
+    llvm::Function *mallocFn = module->getFunction("malloc");   // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)                                                     
+    Value *v = builder->CreateCall(mallocFn, {
+        builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))
+    }); 
+
+    // llvm::AllocaInst *v = builder->CreateAlloca(stoVal->getType(), 0, "");
     builder->CreateStore(stoVal, v);
 
     Value *corrected = builder->CreateBitCast(v, i8p);

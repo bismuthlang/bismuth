@@ -23,7 +23,7 @@ public:
     void enqueue(T t)
     {
         std::lock_guard<std::mutex> lock(m);
-        std::cout << "+" << std::endl; 
+        // std::cout << "+" << std::endl; 
         q.push(t);
         c.notify_one();
     }
@@ -40,7 +40,7 @@ public:
         }
         T val = q.front();
         q.pop();
-        std::cout << "-" << std::endl; 
+        // std::cout << "-" << std::endl; 
         return val;
     }
 
