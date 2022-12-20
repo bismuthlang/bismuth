@@ -20,4 +20,4 @@ struct START_LOOP {};
 struct END_LOOP {}; 
 struct SEL  {}; //FIXME: WILL NEED WORK 
 
-typedef std::variant<Value, START_LOOP, END_LOOP, END_LOOP, SEL> Message; 
+typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message; 

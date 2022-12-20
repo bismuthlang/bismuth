@@ -1426,6 +1426,7 @@ const Type *SemanticVisitor::TvisitProgramContract(WPLParser::ProgramContractCon
     }
 
     Symbol *sym = opt.value().second;
+    bindings->bind(ctx->VARIABLE(), sym);
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1451,7 +1452,8 @@ const Type *SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext
     }
 
     Symbol *sym = opt.value().second;
-
+    bindings->bind(ctx->VARIABLE(), sym);
+    
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
         if (!channel->getProtocol()->weaken())

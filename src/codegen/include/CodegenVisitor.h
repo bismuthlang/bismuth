@@ -196,6 +196,13 @@ public:
     std::optional<Value *> TvisitAssignableExec(WPLParser::AssignableExecContext *ctx);
 
 
+    std::any visitProgramContract(WPLParser::ProgramContractContext *ctx) override { return TvisitProgramContract(ctx); }
+    std::optional<Value *> TvisitProgramContract(WPLParser::ProgramContractContext *ctx);
+
+    std::any visitProgramWeaken(WPLParser::ProgramWeakenContext *ctx) override { return TvisitProgramWeaken(ctx); }
+    std::optional<Value *> TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx);
+
+
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
 

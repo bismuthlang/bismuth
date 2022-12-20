@@ -107,3 +107,78 @@ extern "C" uint8_t *ReadChannel(unsigned int aId)
     // std::cout << "Read " << (*(int *) v) << "@" << i_buffer->first << std::endl;
     return v; // FIXME: RENAME TO BE MESSAGE VALUE OR SOMETHING
 }
+
+extern "C" bool ShouldLoop(unsigned int aId)
+{
+    auto i_buffer = State.find(aId);
+
+    if (i_buffer == State.end())
+    {
+        std::cout << "79" << std::endl;
+        return false; // FIXME: DO BETTER
+    }
+
+    Message m = i_buffer->second->dequeue();
+
+    if(std::holds_alternative<START_LOOP>(m)) return true; 
+    if(std::holds_alternative<END_LOOP>(m)) return false; 
+
+    std::cout << "E126" << std::endl; //FIXME: DO BETTER
+
+    return false; 
+}
+
+
+extern "C" void ContractChannel(unsigned int aId)
+{
+    auto i_oAId = LookupOther.find(aId);
+
+    if (i_oAId == LookupOther.end())
+    {
+        std::cout << "E138" << std::endl;
+        return; // FIXME: DO BETTER
+    }
+
+    unsigned int oAId = i_oAId->second;
+
+    auto i_buffer = State.find(oAId);
+
+    if (i_buffer == State.end())
+    {
+        std::cout << "E148" << std::endl;
+        return; // FIXME: DO BETTER
+    }
+
+    START_LOOP v;
+    // v.v = value;
+
+    // std::cout << "Write " << (*(int *) value) << "@" << i_buffer->first << std::endl;
+    i_buffer->second->enqueue(v);
+}
+
+extern "C" void WeakenChannel(unsigned int aId)
+{
+    auto i_oAId = LookupOther.find(aId);
+
+    if (i_oAId == LookupOther.end())
+    {
+        std::cout << "E165" << std::endl;
+        return; // FIXME: DO BETTER
+    }
+
+    unsigned int oAId = i_oAId->second;
+
+    auto i_buffer = State.find(oAId);
+
+    if (i_buffer == State.end())
+    {
+        std::cout << "E175" << std::endl;
+        return; // FIXME: DO BETTER
+    }
+
+    END_LOOP v;
+    // v.v = value;
+
+    // std::cout << "Write " << (*(int *) value) << "@" << i_buffer->first << std::endl;
+    i_buffer->second->enqueue(v);
+}

@@ -37,9 +37,10 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
                 llvm::FunctionType::get(
                     Int32Ty,
                     {llvm::FunctionType::get(
-                        VoidTy,
-                        {Int32Ty},
-                        false)->getPointerTo()},
+                         VoidTy,
+                         {Int32Ty},
+                         false)
+                         ->getPointerTo()},
                     false),
                 GlobalValue::ExternalLinkage,
                 "Execute",
@@ -54,6 +55,39 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
                     false),
                 GlobalValue::ExternalLinkage,
                 "malloc",
+                module);
+        }
+
+        {
+            Function::Create(
+                llvm::FunctionType::get(
+                    Int1Ty,
+                    {Int32Ty},
+                    false),
+                GlobalValue::ExternalLinkage,
+                "ShouldLoop",
+                module);
+        }
+
+        {
+            Function::Create(
+                llvm::FunctionType::get(
+                    VoidTy,
+                    {Int32Ty},
+                    false),
+                GlobalValue::ExternalLinkage,
+                "ContractChannel",
+                module);
+        }
+
+        {
+            Function::Create(
+                llvm::FunctionType::get(
+                    VoidTy,
+                    {Int32Ty},
+                    false),
+                GlobalValue::ExternalLinkage,
+                "WeakenChannel",
                 module);
         }
     }
@@ -463,10 +497,10 @@ std::optional<Value *> CodegenVisitor::TvisitAssignableExec(WPLParser::Assignabl
         // std::cout << "438" << std::endl; // :)
         Value *val = builder->CreateCall(progFn, {lambdaThread});
         // std::cout << "442" << std::endl;
-        module->dump(); 
+        module->dump();
         return val;
     }
-    std::cout << "416" << std::endl;
+    // std::cout << "416" << std::endl; //FIXME: REPORT ERROR?
 
     return {};
 }
@@ -482,10 +516,8 @@ std::optional<Value *> CodegenVisitor::TvisitProgramSend(WPLParser::ProgramSendC
 
     Value *stoVal = valOpt.value();
 
-    llvm::Function *mallocFn = module->getFunction("malloc");   // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)                                                     
-    Value *v = builder->CreateCall(mallocFn, {
-        builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))
-    }); 
+    llvm::Function *mallocFn = module->getFunction("malloc"); // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
+    Value *v = builder->CreateCall(mallocFn, {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
 
     // llvm::AllocaInst *v = builder->CreateAlloca(stoVal->getType(), 0, "");
     builder->CreateStore(stoVal, v);
@@ -501,6 +533,60 @@ std::optional<Value *> CodegenVisitor::TvisitProgramSend(WPLParser::ProgramSendC
 
     llvm::Function *progFn = module->getFunction("WriteChannel");                                                        // FIXME: BAD OPTIONAL ACCESS
     Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, symOpt.value()->val.value()), corrected}); // Will be a void*
+    return {};
+}
+
+std::optional<Value *> CodegenVisitor::TvisitProgramContract(WPLParser::ProgramContractContext *ctx)
+{
+    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
+    if (!symOpt)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
+        return {};
+    }
+
+    Symbol *sym = symOpt.value();
+
+    if (!sym->val)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
+        return {};
+    }
+
+    Value *chanVal = sym->val.value();
+
+    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
+    llvm::Function *progFn = module->getFunction("ContractChannel"); // FIXME: BAD OPTIONAL ACCESS
+
+    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+
+    return {};
+}
+
+std::optional<Value *> CodegenVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx)
+{
+    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
+    if (!symOpt)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
+        return {};
+    }
+
+    Symbol *sym = symOpt.value();
+
+    if (!sym->val)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
+        return {};
+    }
+
+    Value *chanVal = sym->val.value();
+
+    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
+    llvm::Function *progFn = module->getFunction("WeakenChannel"); // FIXME: BAD OPTIONAL ACCESS
+
+    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+
     return {};
 }
 
@@ -1304,11 +1390,11 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
             errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + e->a->getText());
             return {};
         }
-std::cout << "1291" << std::endl;
+        std::cout << "1291" << std::endl;
         // For each of the variabes being assigned to that value
         for (auto var : e->VARIABLE())
         {
-std::cout << "1295" << std::endl;
+            std::cout << "1295" << std::endl;
             // Get the Symbol for the var based on its binding
             std::optional<Symbol *> varSymbolOpt = props->getBinding(var);
 
@@ -1317,14 +1403,14 @@ std::cout << "1295" << std::endl;
                 errorHandler.addCodegenError(ctx->getStart(), "Issue creating variable: " + var->getText());
                 return {};
             }
-std::cout << "1304" << std::endl;
+            std::cout << "1304" << std::endl;
             Symbol *varSymbol = varSymbolOpt.value();
 
             //  Get the type of the symbol
             llvm::Type *ty = varSymbol->type->getLLVMType(module);
-std::cout << "1309" << std::endl;
+            std::cout << "1309" << std::endl;
             ty = varSymbol->type->getLLVMType(module);
-std::cout << "1311" << std::endl;
+            std::cout << "1311" << std::endl;
             // Branch depending on if the var is global or not
             if (varSymbol->isGlobal)
             {
