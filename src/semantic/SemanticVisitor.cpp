@@ -1527,6 +1527,8 @@ const Type *SemanticVisitor::TvisitAssignableExec(WPLParser::AssignableExecConte
     }
 
     Symbol *sym = opt.value().second;
+    bindings->bind(ctx->VARIABLE(), sym);
+    std::cout << "BOUND " << ctx->VARIABLE()->getText() << " to " << sym->toString() << std::endl; 
 
     if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
     {

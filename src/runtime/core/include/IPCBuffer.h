@@ -3,6 +3,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <iostream> //FIXME:REMOVE
 
 // A threadsafe-queue from https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
 template <class T>
@@ -22,6 +23,7 @@ public:
     void enqueue(T t)
     {
         std::lock_guard<std::mutex> lock(m);
+        std::cout << "+" << std::endl; 
         q.push(t);
         c.notify_one();
     }
@@ -38,6 +40,7 @@ public:
         }
         T val = q.front();
         q.pop();
+        std::cout << "-" << std::endl; 
         return val;
     }
 

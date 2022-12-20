@@ -622,7 +622,7 @@ public:
     // TODO: Build LLVM Type here instead of in codegen!
     llvm::Type *getLLVMType(llvm::Module *M) const override
     {
-        return nullptr; // FIXME: DO BETTER
+        return llvm::Type::getInt32Ty(M->getContext());; // FIXME: DO BETTER
     }
 
     const ProtocolSequence *getProtocol() const

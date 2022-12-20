@@ -10,9 +10,10 @@
  * 
  */
 #include <variant>
+#include "stdint.h" // uint8_t
 
 struct Value {
-    void * v; 
+    uint8_t * v; 
 };
 
 struct START_LOOP {}; 

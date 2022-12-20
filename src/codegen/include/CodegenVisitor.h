@@ -192,6 +192,10 @@ public:
     std::optional<Value *> TvisitProgramSend(WPLParser::ProgramSendContext *ctx);
 
 
+    std::any visitAssignableExec(WPLParser::AssignableExecContext *ctx) override { return TvisitAssignableExec(ctx); }
+    std::optional<Value *> TvisitAssignableExec(WPLParser::AssignableExecContext *ctx);
+
+
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
 
@@ -349,7 +353,19 @@ public:
         if (!sym->val)
         {
             // If the symbol is a global var
-            if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type))
+            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type)) //FIXME: Potentially lots of places that say TypeInvoke when they mean TypeProgram 
+            {
+                if (!inv->getLLVMName())
+                {
+                    errorHandler.addCodegenError(ctx->getStart(), "Could not locate IR name for function " + sym->toString());
+                    return {};
+                }
+
+                Function *fn = module->getFunction(inv->getLLVMName().value());
+
+                return fn;
+            }
+            else if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type)) //FIXME: This is annoying that we have to have duplicate code despite both APIs being the same
             {
                 if (!inv->getLLVMName())
                 {

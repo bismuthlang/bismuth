@@ -31,6 +31,20 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
                 "ReadChannel",
                 module);
         }
+
+        {
+            Function::Create(
+                llvm::FunctionType::get(
+                    Int32Ty,
+                    {llvm::FunctionType::get(
+                        VoidTy,
+                        {Int32Ty},
+                        false)->getPointerTo()},
+                    false),
+                GlobalValue::ExternalLinkage,
+                "Execute",
+                module);
+        }
     }
 
     /***********************************
@@ -362,6 +376,16 @@ std::optional<Value *> CodegenVisitor::TvisitAssignableRecv(WPLParser::Assignabl
         return {};
     }
 
+    Symbol *sym = symOpt.value();
+
+    if (!sym->val)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
+        return {};
+    }
+
+    Value *chanVal = sym->val.value();
+
     std::optional<Symbol *> tySymOpt = props->getBinding(ctx); // For the type of the expr
     if (!tySymOpt)
     {
@@ -372,9 +396,10 @@ std::optional<Value *> CodegenVisitor::TvisitAssignableRecv(WPLParser::Assignabl
     llvm::Type *recvType = tySymOpt.value()->type->getLLVMType(module);
 
     // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
-    llvm::Function *progFn = module->getFunction("ReadChannel");                                              // FIXME: BAD OPTIONAL ACCESS
-    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, symOpt.value()->val.value())}); // Will be a void*
-    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                                 // Cast the void* to the correct type ptr
+    llvm::Function *progFn = module->getFunction("ReadChannel"); // FIXME: BAD OPTIONAL ACCESS
+
+    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
+    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());             // Cast the void* to the correct type ptr
     // return builder->CreateStore(corrected, )
 
     // FIXME: Methodize things so that way we don't have to do this as its just a redundant alloca given we have to have another for the var its self...
@@ -384,6 +409,55 @@ std::optional<Value *> CodegenVisitor::TvisitAssignableRecv(WPLParser::Assignabl
     // return v;
 
     // return casted;
+}
+
+std::optional<Value *> CodegenVisitor::TvisitAssignableExec(WPLParser::AssignableExecContext *ctx)
+{
+    // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
+    // if (!symOpt)
+    // {
+    //     errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
+    //     return {};
+    // }
+
+    // std::cout << "398" << std::endl;
+
+    // std::optional<Value *> fnOpt = any2Value(ctx->VARIABLE()->accept(this));
+    std::cout << !!(props->getBinding(ctx->VARIABLE())) << std::endl;
+    std::optional<Value *> fnOpt = visitVariable(
+        ctx->VARIABLE()->getText(),
+        props->getBinding(ctx->VARIABLE()),
+        ctx);
+
+    // std::cout << "402" << std::endl;
+    if (!fnOpt)
+    {
+        // std::cout << "405" << std::endl;
+        errorHandler.addCodegenError(ctx->getStart(), "Could not locate function for invocation: " + ctx->VARIABLE()->getText() + ". Has it been defined in IR yet?");
+        return {};
+    }
+    // std::cout << "408" << std::endl;
+
+    Value *fnVal = fnOpt.value();
+
+    llvm::Type *ty = fnVal->getType();
+
+    if (llvm::isa<llvm::Function>(fnVal))
+    {
+        // std::cout << "412" << std::endl;
+        llvm::Function *lambdaThread = static_cast<llvm::Function *>(fnVal);
+        // std::cout << "436" << std::endl;
+        // module->dump();
+        llvm::Function *progFn = module->getFunction("Execute");
+        // std::cout << "438" << std::endl; // :)
+        Value *val = builder->CreateCall(progFn, {lambdaThread});
+        // std::cout << "442" << std::endl;
+        module->dump(); 
+        return val;
+    }
+    std::cout << "416" << std::endl;
+
+    return {};
 }
 
 std::optional<Value *> CodegenVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)
@@ -409,7 +483,7 @@ std::optional<Value *> CodegenVisitor::TvisitProgramSend(WPLParser::ProgramSendC
         return {};
     }
 
-    llvm::Function *progFn = module->getFunction("WriteChannel");                                              // FIXME: BAD OPTIONAL ACCESS
+    llvm::Function *progFn = module->getFunction("WriteChannel");                                                        // FIXME: BAD OPTIONAL ACCESS
     Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, symOpt.value()->val.value()), corrected}); // Will be a void*
     return {};
 }
@@ -1176,24 +1250,28 @@ std::optional<Value *> CodegenVisitor::TvisitAssignStatement(WPLParser::AssignSt
         builder->CreateStore(stoVal, v);
     }
 
+    std::cout << "1217" << std::endl;
+
     return {};
 }
 
 std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx)
 {
+    // std::cout << "1224" << std::endl;
     /*
      * Visit each of the assignments in the context (variables paired with an expression)
      */
     for (auto e : ctx->assignments)
     {
-
+        // std::cout << "1230" << std::endl;
         std::optional<Value *> exVal = std::nullopt;
 
         // If the declaration has a value, attempt to generate that value
         if (e->a)
         {
+            // std::cout << "1236 " << e->a->getText() << std::endl;
             std::any anyVal = e->a->accept(this);
-
+            // std::cout << "1238" << std::endl;
             if (std::optional<Value *> opt = any2Value(anyVal))
             {
                 exVal = opt;
@@ -1204,17 +1282,17 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
                 return {};
             }
         }
-
+        std::cout << "1247" << std::endl;
         if ((e->a) && !exVal)
         {
             errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + e->a->getText());
             return {};
         }
-
+std::cout << "1291" << std::endl;
         // For each of the variabes being assigned to that value
         for (auto var : e->VARIABLE())
         {
-
+std::cout << "1295" << std::endl;
             // Get the Symbol for the var based on its binding
             std::optional<Symbol *> varSymbolOpt = props->getBinding(var);
 
@@ -1223,14 +1301,14 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
                 errorHandler.addCodegenError(ctx->getStart(), "Issue creating variable: " + var->getText());
                 return {};
             }
-
+std::cout << "1304" << std::endl;
             Symbol *varSymbol = varSymbolOpt.value();
 
             //  Get the type of the symbol
             llvm::Type *ty = varSymbol->type->getLLVMType(module);
-
+std::cout << "1309" << std::endl;
             ty = varSymbol->type->getLLVMType(module);
-
+std::cout << "1311" << std::endl;
             // Branch depending on if the var is global or not
             if (varSymbol->isGlobal)
             {
