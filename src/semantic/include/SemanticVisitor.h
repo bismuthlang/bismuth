@@ -378,7 +378,7 @@ private:
         if(res.second)
         {
             Scope *scope = res.second.value();
-            std::vector<const Symbol *> lins = scope->getRemainingLinearTypes();
+            std::vector<Symbol *> lins = scope->getRemainingLinearTypes();
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope

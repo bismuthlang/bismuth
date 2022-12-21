@@ -89,9 +89,9 @@ std::optional<Symbol *> Context::lookup(std::string id)
     return {};
 }
 
-std::vector<const Symbol *> Context::getAvaliableLinears()
+std::vector<Symbol *> Context::getAvaliableLinears()
 { // FOXME: DO BETTER
-    std::vector<const Symbol *> ans;
+    std::vector<Symbol *> ans;
 
     std::optional<Scope *> opt = currentScope;
 

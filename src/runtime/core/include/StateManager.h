@@ -124,6 +124,7 @@ extern "C" bool ShouldLoop(unsigned int aId)
     if(std::holds_alternative<END_LOOP>(m)) return false; 
 
     std::cout << "E126" << std::endl; //FIXME: DO BETTER
+    std::cout << "SL: " << std::holds_alternative<START_LOOP>(m) << " EL: " << std::holds_alternative<END_LOOP>(m) << " VAL: " << std::holds_alternative<Value>(m) << " SEL: " << std::holds_alternative<SEL>(m) << std::endl; 
 
     return false; 
 }

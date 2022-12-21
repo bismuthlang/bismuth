@@ -114,10 +114,10 @@ public:
     }
 
     // FIXME: DO BETTER
-    std::vector<const Symbol *> getRemainingLinearTypes()
+    std::vector<Symbol *> getRemainingLinearTypes()
     {
         // Create an answer vector
-        std::vector<const Symbol *> ans;
+        std::vector<Symbol *> ans;
 
         // Iterate through the symbols looking for TypeInfers which have not been inferred
         for (auto item : symbols)

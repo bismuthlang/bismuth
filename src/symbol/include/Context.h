@@ -54,7 +54,7 @@ class Context {
      */
     std::optional<Symbol*> lookup(std::string id);
 
-    std::vector<const Symbol *> getAvaliableLinears(); 
+    std::vector<Symbol *> getAvaliableLinears();  //FIXME: SHOULD WE TRY TO SET THIS STUFF BACK TO CONST? 
     void deleteAvaliableLinears(); 
 
     /**

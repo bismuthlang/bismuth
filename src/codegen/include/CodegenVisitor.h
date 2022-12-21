@@ -203,6 +203,9 @@ public:
     std::optional<Value *> TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx);
 
 
+    std::any visitProgramAccept(WPLParser::ProgramAcceptContext *ctx) override { return TvisitProgramAccept(ctx); }
+    std::optional<Value *> TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx);
+
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
 

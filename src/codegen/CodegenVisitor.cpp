@@ -158,9 +158,10 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
         // Generate code for statement
         if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
         {
-            std::cout << "64 " << fnCtx->getText() << std::endl;
+            std::cout << "64 " << fnCtx->defineProc()->name->getText() << std::endl;
             // this->visitInvokeable(fnCtx);
             e->accept(this);
+            std::cout << "-----" << std::endl;
         }
     }
 
@@ -497,7 +498,7 @@ std::optional<Value *> CodegenVisitor::TvisitAssignableExec(WPLParser::Assignabl
         // std::cout << "438" << std::endl; // :)
         Value *val = builder->CreateCall(progFn, {lambdaThread});
         // std::cout << "442" << std::endl;
-        module->dump();
+        // module->dump();
         return val;
     }
     // std::cout << "416" << std::endl; //FIXME: REPORT ERROR?
@@ -531,13 +532,24 @@ std::optional<Value *> CodegenVisitor::TvisitProgramSend(WPLParser::ProgramSendC
         return {};
     }
 
-    llvm::Function *progFn = module->getFunction("WriteChannel");                                                        // FIXME: BAD OPTIONAL ACCESS
-    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, symOpt.value()->val.value()), corrected}); // Will be a void*
+    Symbol *sym = symOpt.value();
+
+    if (!sym->val)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
+        return {};
+    }
+
+    Value *chanVal = sym->val.value();
+
+    llvm::Function *progFn = module->getFunction("WriteChannel");                                             // FIXME: BAD OPTIONAL ACCESS
+    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return {};
 }
 
 std::optional<Value *> CodegenVisitor::TvisitProgramContract(WPLParser::ProgramContractContext *ctx)
 {
+
     std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
     if (!symOpt)
     {
@@ -584,9 +596,71 @@ std::optional<Value *> CodegenVisitor::TvisitProgramWeaken(WPLParser::ProgramWea
 
     // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
     llvm::Function *progFn = module->getFunction("WeakenChannel"); // FIXME: BAD OPTIONAL ACCESS
-
     Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
 
+    // FIXME: MAKE SURE TO FREE ON RECV!
+    return {};
+}
+
+std::optional<Value *> CodegenVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx)
+{
+    std::cout << "596" << std::endl;
+    // Very similar to regular loop
+
+    // std::optional<Value *> check = this->TvisitCondition(ctx->check); // any2Value(ctx->check->accept(this));
+
+    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
+    if (!symOpt)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
+        return {};
+    }
+
+    Symbol *sym = symOpt.value();
+
+    if (!sym->val)
+    {
+        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
+        return {};
+    }
+
+    Value *chanVal = sym->val.value();
+
+    llvm::Function *checkFn = module->getFunction("ShouldLoop"); // FIXME: BAD OPTIONAL ACCESS
+    Value *check = builder->CreateCall(checkFn, {builder->CreateLoad(Int32Ty, chanVal)});
+
+    auto parent = builder->GetInsertBlock()->getParent();
+
+    BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop", parent);
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
+
+    builder->CreateCondBr(check, loopBlk, restBlk);
+
+    // Need to add here otherwise we will overwrite it
+    // parent->getBasicBlockList().push_back(loopBlk);
+
+    /*
+     * In the loop block
+     */
+    builder->SetInsertPoint(loopBlk);
+    for (auto e : ctx->block()->stmts)
+    {
+        e->accept(this);
+    }
+
+    // Re-calculate the loop condition
+    check = builder->CreateCall(checkFn, {builder->CreateLoad(Int32Ty, chanVal)});
+
+    // Check if we need to loop back again...
+    builder->CreateCondBr(check, loopBlk, restBlk);
+    loopBlk = builder->GetInsertBlock();
+
+    /*
+     * Out of loop
+     */
+    parent->getBasicBlockList().push_back(restBlk);
+    builder->SetInsertPoint(restBlk);
+    std::cout << "652" << std::endl;
     return {};
 }
 
@@ -1359,21 +1433,18 @@ std::optional<Value *> CodegenVisitor::TvisitAssignStatement(WPLParser::AssignSt
 
 std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx)
 {
-    // std::cout << "1224" << std::endl;
     /*
      * Visit each of the assignments in the context (variables paired with an expression)
      */
     for (auto e : ctx->assignments)
     {
-        // std::cout << "1230" << std::endl;
         std::optional<Value *> exVal = std::nullopt;
 
         // If the declaration has a value, attempt to generate that value
         if (e->a)
         {
-            // std::cout << "1236 " << e->a->getText() << std::endl;
             std::any anyVal = e->a->accept(this);
-            // std::cout << "1238" << std::endl;
+
             if (std::optional<Value *> opt = any2Value(anyVal))
             {
                 exVal = opt;
@@ -1384,17 +1455,16 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
                 return {};
             }
         }
-        std::cout << "1247" << std::endl;
+
         if ((e->a) && !exVal)
         {
             errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + e->a->getText());
             return {};
         }
-        std::cout << "1291" << std::endl;
+
         // For each of the variabes being assigned to that value
         for (auto var : e->VARIABLE())
         {
-            std::cout << "1295" << std::endl;
             // Get the Symbol for the var based on its binding
             std::optional<Symbol *> varSymbolOpt = props->getBinding(var);
 
@@ -1403,14 +1473,11 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
                 errorHandler.addCodegenError(ctx->getStart(), "Issue creating variable: " + var->getText());
                 return {};
             }
-            std::cout << "1304" << std::endl;
             Symbol *varSymbol = varSymbolOpt.value();
 
             //  Get the type of the symbol
             llvm::Type *ty = varSymbol->type->getLLVMType(module);
-            std::cout << "1309" << std::endl;
             ty = varSymbol->type->getLLVMType(module);
-            std::cout << "1311" << std::endl;
             // Branch depending on if the var is global or not
             if (varSymbol->isGlobal)
             {
@@ -1486,23 +1553,25 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
 
 std::optional<Value *> CodegenVisitor::TvisitProgramLoop(WPLParser::ProgramLoopContext *ctx)
 {
+    //FIXME: WE NEED TO START LOOP IN HERE :\
+    std::cout << "1546" << std::endl;
     // Very similar to conditionals
 
     std::optional<Value *> check = this->TvisitCondition(ctx->check); // any2Value(ctx->check->accept(this));
-
+    std::cout << "1550" << std::endl;
     if (!check)
     {
         errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->check->getText());
         return {};
     }
-
+    std::cout << "1556" << std::endl;
     auto parent = builder->GetInsertBlock()->getParent();
-
+    std::cout << "1558" << std::endl;
     BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop", parent);
     BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
-
+    std::cout << "1561" << std::endl;
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
-
+    std::cout << "1563" << std::endl;
     // Need to add here otherwise we will overwrite it
     // parent->getBasicBlockList().push_back(loopBlk);
 
@@ -1510,11 +1579,13 @@ std::optional<Value *> CodegenVisitor::TvisitProgramLoop(WPLParser::ProgramLoopC
      * In the loop block
      */
     builder->SetInsertPoint(loopBlk);
+    std::cout << "1571" << std::endl;
     for (auto e : ctx->block()->stmts)
     {
+        std::cout << "1574 " << e->getText() << std::endl;
         e->accept(this);
     }
-
+    std::cout << "1575" << std::endl;
     // Re-calculate the loop condition
     check = this->TvisitCondition(ctx->check);
     if (!check)
@@ -1522,16 +1593,17 @@ std::optional<Value *> CodegenVisitor::TvisitProgramLoop(WPLParser::ProgramLoopC
         errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->check->getText());
         return {};
     }
+    std::cout << "1583" << std::endl;
     // Check if we need to loop back again...
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
     loopBlk = builder->GetInsertBlock();
-
+    std::cout << "1587" << std::endl;
     /*
      * Out of loop
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-
+    std::cout << "1592" << std::endl;
     return {};
 }
 

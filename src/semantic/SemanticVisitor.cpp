@@ -741,7 +741,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ExternStatementContext *ctx)
 
 const Type *SemanticVisitor::visitCtx(WPLParser::ProgDefContext *ctx)
 {
-    std::cout << "744 Codegen is dumb" << std::endl; 
+    std::cout << "744 Codegen is dumb" << std::endl;
     return this->visitInvokeable(ctx->defineProc());
 }
 
@@ -892,11 +892,13 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
 {
     this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
 
-    std::vector<const Symbol *> syms = stmgr->getAvaliableLinears();
+    std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
 
     stmgr->enterScope(StopType::LINEAR); // TODO: DO BETTER
 
-    for (const Symbol *orig : syms)
+    std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
+
+    for (Symbol *orig : syms)
     {
         if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
         {
@@ -904,7 +906,10 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
             if (protoOpt)
             {
 
-                stmgr->addSymbol(new Symbol(orig->getIdentifier(), new TypeChannel(protoOpt.value()), false, false));
+                // stmgr->addSymbol(new Symbol(orig->getIdentifier(), new TypeChannel(protoOpt.value()), false, false));
+                to_fix.push_back({channel, channel->getProtocol()});
+                channel->setProtocol(protoOpt.value());
+                stmgr->addSymbol(orig);
             }
         }
     }
@@ -912,6 +917,11 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
     this->visitCtx(ctx->block()); // Visiting block to make sure everything type checks there as well
 
     safeExitScope(ctx);
+
+    for (auto pair : to_fix)
+    {
+        pair.first->setProtocol(pair.second);
+    }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
     return Types::UNDEFINED;
@@ -1270,7 +1280,7 @@ const Type *SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ct
     }
 
     Symbol *sym = opt.value().second;
-    bindings->bind(ctx->VARIABLE(), sym); //For Channel 
+    bindings->bind(ctx->VARIABLE(), sym); // For Channel
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1310,8 +1320,8 @@ const Type *SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvConte
             return Types::UNDEFINED;
         }
 
-        bindings->bind(ctx->VARIABLE(), sym); //For Channel 
-        bindings->bind(ctx, new Symbol("", ty.value(), false, false)); //FIXME: DO BETTER, DONE SO WE CAN DO CORRECT BITCAST
+        bindings->bind(ctx->VARIABLE(), sym);                          // For Channel
+        bindings->bind(ctx, new Symbol("", ty.value(), false, false)); // FIXME: DO BETTER, DONE SO WE CAN DO CORRECT BITCAST
         return ty.value();
     }
 
@@ -1348,8 +1358,8 @@ const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ct
             return Types::UNDEFINED;
         }
 
-        std::vector<const Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
-        stmgr->deleteAvaliableLinears();                                 // FIXME: UNSAFE
+        std::vector<Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+        stmgr->deleteAvaliableLinears();                           // FIXME: UNSAFE
 
         for (auto alt : ctx->protoAlternative())
         {
@@ -1361,7 +1371,7 @@ const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ct
 
             for (const Symbol *orig : syms)
             {
-                // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS!
+                // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
                 if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
                 {
                     stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
@@ -1453,7 +1463,7 @@ const Type *SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext
 
     Symbol *sym = opt.value().second;
     bindings->bind(ctx->VARIABLE(), sym);
-    
+
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
         if (!channel->getProtocol()->weaken())
@@ -1477,6 +1487,8 @@ const Type *SemanticVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext
     }
 
     Symbol *sym = opt.value().second;
+    std::cout << "1480 ACCEPT " << sym->toString() << "@" << sym << std::endl;
+    bindings->bind(ctx->VARIABLE(), sym);
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1487,29 +1499,43 @@ const Type *SemanticVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext
             return Types::UNDEFINED;
         }
 
-        std::vector<const Symbol *> syms = stmgr->getAvaliableLinears();
+        std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
         // FIXME: DO BETTER B/C HERE WE TRY TO ASSIGN TO THE VAR WE MANUALLY NEED TO ASSIGN? NO BC IT FAILS CHECK!
 
         stmgr->enterScope(StopType::LINEAR); // TODO: DO BETTER
 
-        for (const Symbol *orig : syms)
+        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
+
+        for (Symbol *orig : syms)
         {
             if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
             {
                 std::optional<const ProtocolSequence *> protoOpt = channel->getProtocol()->shearLoop();
                 if (protoOpt)
                 {
+                    // Symbol * tempSym = new Symbol(orig->getIdentifier(), new TypeChannel(protoOpt.value()), false, false);
+                    // tempSym->val = orig->val;
+                    // stmgr->addSymbol(tempSym);
 
-                    stmgr->addSymbol(new Symbol(orig->getIdentifier(), new TypeChannel(protoOpt.value()), false, false));
+                    to_fix.push_back({channel, channel->getProtocol()});
+                    channel->setProtocol(protoOpt.value());
+                    stmgr->addSymbol(orig);
                 }
             }
         }
-
-        stmgr->addSymbol(new Symbol(id, new TypeChannel(acceptOpt.value()), false, false));
+        to_fix.push_back({channel, channel->getProtocol()});
+        channel->setProtocol(acceptOpt.value());
+        stmgr->addSymbol(sym);
+        // stmgr->addSymbol(new Symbol(id, new TypeChannel(acceptOpt.value()), false, false));
 
         this->visitCtx(ctx->block());
 
         safeExitScope(ctx);
+
+        for (auto pair : to_fix)
+        {
+            pair.first->setProtocol(pair.second);
+        }
 
         return Types::UNDEFINED;
         // return new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse()));
@@ -1530,7 +1556,7 @@ const Type *SemanticVisitor::TvisitAssignableExec(WPLParser::AssignableExecConte
 
     Symbol *sym = opt.value().second;
     bindings->bind(ctx->VARIABLE(), sym);
-    std::cout << "BOUND " << ctx->VARIABLE()->getText() << " to " << sym->toString() << std::endl; 
+    std::cout << "BOUND " << ctx->VARIABLE()->getText() << " to " << sym->toString() << std::endl;
 
     if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
     {

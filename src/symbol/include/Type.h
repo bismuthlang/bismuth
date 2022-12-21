@@ -640,6 +640,12 @@ public:
         return new TypeChannel(getProtocolCopy());
     }
 
+    void setProtocol(const ProtocolSequence *p) const //FIXME: DO BETTER
+    {
+        TypeChannel *mthis = const_cast<TypeChannel *>(this);
+        mthis->protocol = p;
+    }
+
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
