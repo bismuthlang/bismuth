@@ -479,10 +479,10 @@ struct TypeCompare
 
 namespace Types
 {
-    inline const Type *INT = new TypeInt();
-    inline const Type *BOOL = new TypeBool();
-    inline const Type *STR = new TypeStr();
-    inline const Type *UNDEFINED = new TypeBot();
+    inline const TypeInt *INT = new TypeInt();
+    inline const TypeBool *BOOL = new TypeBool();
+    inline const TypeStr *STR = new TypeStr();
+    inline const TypeBot *UNDEFINED = new TypeBot();
 };
 
 /*******************************************

@@ -1,9 +1,12 @@
 #include "SemanticVisitor.h"
 
-const Type *SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
+std::optional<CompilationUnitNode*> SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
 {
     // Enter initial scope
     stmgr->enterScope(StopType::NONE);
+
+    std::vector<ExternNode *> externs;
+    std::vector<DefinitionNode> defs;
 
     for (auto e : ctx->defs)
     {
@@ -29,7 +32,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
                 Symbol *funcSymbol = new Symbol(id, funcType, true, true);
                 // FIXME: test name collisions with externs
                 stmgr->addSymbol(funcSymbol);
-                bindings->bind(fnCtx->defineProc(), funcSymbol);
+                // bindings->bind(fnCtx->defineProc(), funcSymbol);
             }
             else
             {
@@ -39,14 +42,26 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
         }
         else
         {
-            e->accept(this);
+            std::optional<TypedNode *> opt = any2Opt<TypedNode*>(e->accept(this));
+            if(!opt) return {}; //FIXME: DO BETTER
+
+            if(dynamic_cast<WPLParser::DefineStructContext *>(e)) //FIXME: DO BETTER
+            {
+                defs.push_back(dynamic_cast<DefineStructNode *>(opt.value()));
+            }
+            else
+            {
+                defs.push_back(dynamic_cast<DefineEnumNode *>(opt.value()));
+            }
         }
     }
 
     // Visit externs first; they will report any errors if they have any.
     for (auto e : ctx->extens)
     {
-        this->visitCtx(e);
+        std::optional<ExternNode*>  extOpt = this->visitCtx(e);
+        if(!extOpt) return {}; //FIXME: DO BETTER
+        externs.push_back(extOpt.value());
     }
 
     // Auto forward decl
@@ -57,7 +72,10 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
         // e->accept(this);
         if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
         {
-            e->accept(this);
+            std::optional<ProgramDefNode *> progOpt = visitInvokeable(fnCtx->defineProc());//e->accept(this);
+
+            if(!progOpt) return {}; //FIXME: DO BETTER
+            defs.push_back(progOpt.value());
         }
     }
 
@@ -128,39 +146,19 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
         errorHandler.addSemanticError(ctx->getStart(), "Uninferred types in context: " + details.str());
     }
     // Return UNDEFINED as this should be viewed as a statement and not something assignable
-    return Types::UNDEFINED;
+    return new CompilationUnitNode(externs, defs);
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
+std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
 {
-    const Type *type = [this](WPLParser::InvocationContext *ctx) // Huh, interesting how we probably can't get the ctx from this
-    {
-        if (ctx->lam)
-            return visitCtx(ctx->lam);
+    std::optional<TypedNode *> typeOpt = (ctx->lam) ? (std::optional<TypedNode *>)visitCtx(ctx->lam) : (std::optional<TypedNode *>)visitCtx(ctx->field); // FIXME: DO BETTER, PRESERVE TYPE, MAYBE VARIADIC
 
-        /*
-         * Look up the symbol to make sure that it is defined
-         */
+    if (!typeOpt)
+        return {}; // FIXME: DO BETTER
 
-        const Type *type = any2Type(ctx->field->accept(this));
-        std::optional<Symbol *> opt = bindings->getBinding(ctx->field->VARIABLE().at(ctx->field->VARIABLE().size() - 1)); // FIXME: Verify that the symbol type matches the return type ?
+    TypedNode *tn = typeOpt.value();
 
-        if (!opt)
-        {
-            errorHandler.addSemanticError(ctx->getStart(), "Cannot invoke undefined function: " + ctx->field->getText());
-            return Types::UNDEFINED;
-        }
-
-        /*
-         * Given that the symbol is defined, check that it is a FUNC/PROC (something that we can invoke)
-         */
-        Symbol *sym = opt.value();
-
-        // Bind the symbol
-        bindings->bind(ctx, sym);
-
-        return sym->type;
-    }(ctx);
+    const Type *type = tn->getType();
 
     std::string name = (ctx->lam) ? "lambda " : ctx->field->getText();
 
@@ -186,8 +184,10 @@ const Type *SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
             std::ostringstream errorMsg;
             errorMsg << "Invocation of " << name << " expected " << fnParams.size() << " argument(s), but got " << ctx->args.size();
             errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
-            return Types::UNDEFINED; // TODO: Could change this to the return type to catch more errors?
+            return {}; // TODO: Could change this to the return type to catch more errors?
         }
+
+        std::vector<TypedNode *> args;
 
         /*
          * Now that we have a valid number of parameters, we can make sure that
@@ -199,7 +199,16 @@ const Type *SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
         for (unsigned int i = 0; i < ctx->args.size(); i++)
         {
             // Get the type of the current argument
-            const Type *providedType = any2Type(ctx->args.at(i)->accept(this));
+            // const Type *providedType = any2Type(ctx->args.at(i)->accept(this));
+            std::optional<TypedNode *> providedOpt = any2Opt<TypedNode *>(ctx->args.at(i)->accept(this));
+
+            if (!providedOpt)
+                return {}; // FIXME: DO BETTER
+
+            TypedNode *provided = providedOpt.value();
+            args.push_back(provided);
+
+            const Type *providedType = provided->getType();
 
             // If the invokable is variadic and has no specified type parameters, then we can
             // skip over subsequent checks--we just needed to run type checking on each parameter.
@@ -230,15 +239,16 @@ const Type *SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
         }
 
         // Return the type of the invokable or BOT if it has none.
-        return invokeable->getReturnType(); //.has_value() ? invokeable->getReturnType().value() : Types::UNDEFINED;
+        // return invokeable->getReturnType(); //.has_value() ? invokeable->getReturnType().value() : Types::UNDEFINED;
+        return new InvocationNode(tn, args);
     }
 
     // Symbol was not an invokeable type, so report an error & return UNDEFINED.
     errorHandler.addSemanticError(ctx->getStart(), "Can only invoke PROC and FUNC, not " + name + " : " + type->toString());
-    return Types::UNDEFINED;
+    return {};
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
+std::optional<InitProductNode*> SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
 {
     std::string name = ctx->v->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(name);
@@ -246,7 +256,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Cannot initialize undefined product: " + name);
-        return Types::UNDEFINED;
+        return {};
     }
 
     Symbol *sym = opt.value().second;
@@ -262,15 +272,23 @@ const Type *SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
             std::ostringstream errorMsg;
             errorMsg << "Initialization of " << name << " expected " << elements.size() << " argument(s), but got " << ctx->exprs.size();
             errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
-            return Types::UNDEFINED; // TODO: Could change this to the return type to catch more errors?
+            return {}; // TODO: Could change this to the return type to catch more errors?
         }
+
+        std::vector<TypedNode *> n; 
 
         {
             unsigned int i = 0;
 
             for (auto eleItr : elements)
             {
-                const Type *providedType = any2Type(ctx->exprs.at(i)->accept(this));
+                // const Type *providedType = any2Type(ctx->exprs.at(i)->accept(this));
+                std::optional<TypedNode *> opt = any2Opt<TypedNode*>(ctx->exprs.at(i)->accept(this));
+                if(!opt) return {}; //FIXME: DO BETTER
+
+                TypedNode * tn = opt.value(); 
+                n.push_back(tn);
+                const Type * providedType = tn->getType(); 
 
                 if (providedType->isNotSubtype(eleItr.second))
                 {
@@ -284,20 +302,25 @@ const Type *SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
             }
         }
 
-        return sym->type;
+        // return sym->type;
+        return new InitProductNode(product, n); //FIXME: SHOULD NOT RETURN THIS IF THE ARGS FAIL!!
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString());
-    return Types::UNDEFINED;
+    return {};
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::ArrayAccessContext *ctx)
+std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAccessContext *ctx)
 {
     /*
      * Check that we are provided an INT for the index.
      */
+    std::optional<TypedNode *> exprOpt = any2Opt<TypedNode *>(ctx->index->accept(this));
+    if (!exprOpt)
+        return {}; // FIXME: DO BETTER
+    TypedNode *expr = exprOpt.value();
 
-    const Type *exprType = any2Type(ctx->index->accept(this));
+    const Type *exprType = expr->getType(); // any2Type(ctx->index->accept(this));
     if (exprType->isNotSubtype(Types::INT))
     {
         errorHandler.addSemanticError(ctx->getStart(), "Array access index expected type INT but got " + exprType->toString());
@@ -307,33 +330,38 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ArrayAccessContext *ctx)
      * Look up the symbol and check that it is defined.
      */
 
-    const Type *type = any2Type(ctx->field->accept(this));
-    std::optional<Symbol *> opt = bindings->getBinding(ctx->field->VARIABLE().at(ctx->field->VARIABLE().size() - 1));
-
+    // const Type *type = any2Type(ctx->field->accept(this));
+    // std::optional<Symbol *> opt = bindings->getBinding(ctx->field->VARIABLE().at(ctx->field->VARIABLE().size() - 1));
+    std::optional<FieldAccessNode *> opt = visitCtx(ctx->field);
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Cannot access value from undefined array: " + ctx->field->getText());
-        return Types::UNDEFINED;
+        return {};
     }
 
     /*
      * Check that the symbol is of array type.
      */
 
-    Symbol *sym = opt.value();
-    if (const TypeArray *arr = dynamic_cast<const TypeArray *>(sym->type)) // FIXME: Verify that the symbol type matches the return type ?
+    // Symbol *sym = opt.value();
+    FieldAccessNode *field = opt.value();
+
+    if (const TypeArray *arr = dynamic_cast<const TypeArray *>(field->getType())) // FIXME: Verify that the symbol type matches the return type ?
     {
-        bindings->bind(ctx, sym);
-        return arr->getValueType(); // Return type of array
+        // bindings->bind(ctx, sym);
+        // return arr->getValueType(); // Return type of array
+        return new ArrayAccessNode(field, expr); // FIXME: THIS SHOULD NOT HAPPEN IF INDEX CHECK FAILS!
     }
 
     // Report error
-    errorHandler.addSemanticError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->field->getText() + " : " + type->toString());
-    return Types::UNDEFINED;
+    errorHandler.addSemanticError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->field->getText() + " : " + field->getType()->toString());
+    return {};
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
+std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
 {
+    // FIXME: WHEN WE SWITCH VAR TO FIELD ACCESS, MAY BE ABLE TO DELETE VAR NODE!
+
     // Check if we are a var or an array
     if (ctx->var)
     {
@@ -349,42 +377,85 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
         if (!opt)
         {
             errorHandler.addSemanticError(ctx->getStart(), "Undefined variable in expression: " + id);
-            return Types::UNDEFINED;
+            return {};
         }
 
         // Otherwise, get the symbol's value
         Symbol *symbol = opt.value().second;
 
         // Bind the larger context to the symbol, and return the symbol's type.
-        bindings->bind(ctx, symbol);
-        return symbol->type;
+        // bindings->bind(ctx, symbol);
+        return new VariableIDNode(symbol);
     }
 
     /*
      * As we are not a var, we must be an array access, so we must visit that context.
      */
-    const Type *arrType = this->visitCtx(ctx->array);
+    // const Type *arrType = this->visitCtx(ctx->array);
 
-    // Lookup the binding of the array
-    std::optional<Symbol *> binding = bindings->getBinding(ctx->array);
+    // // Lookup the binding of the array
+    // std::optional<Symbol *> binding = bindings->getBinding(ctx->array);
 
-    // If we didn't get a binding, report an error.
-    if (!binding)
-    {
-        errorHandler.addSemanticError(ctx->array->getStart(), "Could not correctly bind to array access!");
-        return Types::UNDEFINED;
-    }
+    // // If we didn't get a binding, report an error.
+    // if (!binding)
+    // {
+    //     errorHandler.addSemanticError(ctx->array->getStart(), "Could not correctly bind to array access!");
+    //     return Types::UNDEFINED;
+    // }
 
-    // Otherwise, bind this context to the same binding as the array access, and return its type.
-    bindings->bind(ctx, binding.value());
-    return arrType;
+    // // Otherwise, bind this context to the same binding as the array access, and return its type.
+    // bindings->bind(ctx, binding.value());
+    return this->visitCtx(ctx->array);
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::IConstExprContext *ctx) { return Types::INT; }
+IConstExprNode *SemanticVisitor::visitCtx(WPLParser::IConstExprContext *ctx)
+{
+    return new IConstExprNode(std::stoi(ctx->i->getText()));
+    // return Types::INT;
+}
 
-const Type *SemanticVisitor::visitCtx(WPLParser::ArrayAccessExprContext *ctx) { return this->visitCtx(ctx->arrayAccess()); }
+StringConstNode *SemanticVisitor::visitCtx(WPLParser::SConstExprContext *ctx)
+{
+    // TODO: do this better, ensure that we can only escape these chars...
+    std::string full(ctx->s->getText());
+    std::string actual = full.substr(1, full.length() - 2);
 
-const Type *SemanticVisitor::visitCtx(WPLParser::SConstExprContext *ctx) { return Types::STR; }
+    std::vector<std::pair<std::regex, std::string>> replacements;
+
+    // Reference of all escape characters: https://en.cppreference.com/w/cpp/language/escape
+    std::regex SQ("\\\\'");
+    std::regex DQ("\\\\\"");
+    std::regex QM("\\\\\\?");
+    std::regex SL("\\\\\\\\");
+    std::regex AB("\\\\a");
+    std::regex BS("\\\\b");
+    std::regex FF("\\\\f");
+    std::regex NL("\\\\n");
+    std::regex CR("\\\\r");
+    std::regex HT("\\\\t");
+    std::regex VT("\\\\v");
+
+    replacements.push_back({SQ, "\'"});
+    replacements.push_back({DQ, "\""});
+    replacements.push_back({QM, "\?"});
+    replacements.push_back({AB, "\a"});
+    replacements.push_back({BS, "\b"});
+    replacements.push_back({FF, "\f"});
+    replacements.push_back({NL, "\n"});
+    replacements.push_back({CR, "\r"});
+    replacements.push_back({HT, "\t"});
+    replacements.push_back({VT, "\v"});
+    replacements.push_back({SL, "\\"});
+
+    std::string out = actual;
+
+    for (auto e : replacements)
+    {
+        out = regex_replace(out, e.first, e.second);
+    }
+
+    return new StringConstNode(out);
+}
 
 /**
  * @brief Typechecks Unary Expressions
@@ -392,10 +463,16 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SConstExprContext *ctx) { retur
  * @param ctx The UnaryExpressionContext to type check
  * @return const Type* Returns the type of the inner expression if valid; UNDEFINED otherwise.
  */
-const Type *SemanticVisitor::visitCtx(WPLParser::UnaryExprContext *ctx)
+std::optional<UnaryExprNode *> SemanticVisitor::visitCtx(WPLParser::UnaryExprContext *ctx)
 {
     // Lookup the inner type
-    const Type *innerType = any2Type(ctx->ex->accept(this));
+    std::optional<TypedNode *> innerNodeOpt = any2Opt<TypedNode *>(ctx->ex->accept(this));
+    if (!innerNodeOpt)
+        return {};
+
+    TypedNode *innerNode = innerNodeOpt.value();
+
+    const Type *innerType = innerNode->getType();
 
     // Switch on the operation so we can ensure that the type and operation are compatable.
     switch (ctx->op->getType())
@@ -404,19 +481,19 @@ const Type *SemanticVisitor::visitCtx(WPLParser::UnaryExprContext *ctx)
         if (innerType->isNotSubtype(Types::INT))
         {
             errorHandler.addSemanticError(ctx->getStart(), "INT expected in unary minus, but got " + innerType->toString());
-            return Types::UNDEFINED;
+            return {};
         }
-        break;
+        return new UnaryExprNode(UNARY_MINUS, innerNode);
     case WPLParser::NOT:
         if (innerType->isNotSubtype(Types::BOOL))
         {
             errorHandler.addSemanticError(ctx->getStart(), "BOOL expected in unary not, but got " + innerType->toString());
-            return Types::UNDEFINED;
+            return {};
         }
-        break;
+        return new UnaryExprNode(UNARY_NOT, innerNode);
     }
 
-    return innerType;
+    return {}; // FIXME: ERROR?
 }
 
 /**
@@ -425,45 +502,69 @@ const Type *SemanticVisitor::visitCtx(WPLParser::UnaryExprContext *ctx)
  * @param ctx The BinaryArithExprContext to Visit
  * @return const Type* INT if lhs and rhs are INT; UNDEFINED otherwise.
  */
-const Type *SemanticVisitor::visitCtx(WPLParser::BinaryArithExprContext *ctx)
+std::optional<BinaryArithNode *> SemanticVisitor::visitCtx(WPLParser::BinaryArithExprContext *ctx)
 {
-    // Based on starter
     bool valid = true;
 
-    auto left = any2Type(ctx->left->accept(this));
-    if (left->isNotSubtype(Types::INT))
+    auto leftOpt = any2Opt<TypedNode *>(ctx->left->accept(this));
+    if (!leftOpt)
+        return {}; // FIXME: THROW ERROR?
+
+    auto left = leftOpt.value();
+
+    if (left->getType()->isNotSubtype(Types::INT))
     {
-        errorHandler.addSemanticError(ctx->getStart(), "INT left expression expected, but was " + left->toString());
+        errorHandler.addSemanticError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString());
         valid = false;
     }
 
-    auto right = any2Type(ctx->right->accept(this));
-    if (right->isNotSubtype(Types::INT))
+    auto rightOpt = any2Opt<TypedNode *>(ctx->right->accept(this));
+    if (!rightOpt)
+        return {}; // FIXME: DO BETTER
+
+    auto right = rightOpt.value();
+
+    if (right->getType()->isNotSubtype(Types::INT))
     {
-        errorHandler.addSemanticError(ctx->getStart(), "INT right expression expected, but was " + right->toString());
+        errorHandler.addSemanticError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
         valid = false;
     }
 
-    return (valid) ? Types::INT : Types::UNDEFINED;
+    if (valid)
+        return new BinaryArithNode(
+            ctx->MULTIPLY() ? BINARY_ARITH_MULT : ctx->DIVIDE() ? BINARY_ARITH_DIV
+                                              : ctx->PLUS()     ? BINARY_ARITH_PLUS
+                                                                : BINARY_ARITH_MINUS,
+            left,
+            right);
+
+    return {};
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::EqExprContext *ctx)
+EqExprNode *SemanticVisitor::visitCtx(WPLParser::EqExprContext *ctx)
 {
-    auto right = any2Type(ctx->right->accept(this));
-    auto left = any2Type(ctx->left->accept(this));
-    if (right->isNotSubtype(left))
+    std::optional<TypedNode *> rhsOpt = any2Opt<TypedNode *>(ctx->right->accept(this));
+    std::optional<TypedNode *> lhsOpt = any2Opt<TypedNode *>(ctx->left->accept(this));
+
+    // FIXME: BAD ACCESS
+
+    TypedNode *lhs = lhsOpt.value();
+    TypedNode *rhs = rhsOpt.value();
+
+    if (rhs->getType()->isNotSubtype(lhs->getType()))
     {
         errorHandler.addSemanticError(ctx->getStart(), "Both sides of '=' must have the same type");
-        return Types::UNDEFINED;
+        // return Types::UNDEFINED;
     }
 
     // Note: As per C spec, arrays cannot be compared
-    if (dynamic_cast<const TypeArray *>(left) || dynamic_cast<const TypeArray *>(right))
+    if (dynamic_cast<const TypeArray *>(lhs->getType()) || dynamic_cast<const TypeArray *>(rhs->getType()))
     {
         errorHandler.addSemanticError(ctx->getStart(), "Cannot perform equality operation on arrays; they are always seen as unequal!");
     }
 
-    return Types::BOOL;
+    // return Types::BOOL;
+    return new EqExprNode(lhs, rhs);
 }
 
 /**
@@ -472,21 +573,52 @@ const Type *SemanticVisitor::visitCtx(WPLParser::EqExprContext *ctx)
  * @param ctx The LogAndExprContext to Visit
  * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
  */
-const Type *SemanticVisitor::visitCtx(WPLParser::LogAndExprContext *ctx)
+LogAndExprNode *SemanticVisitor::visitCtx(WPLParser::LogAndExprContext *ctx)
 {
-    bool valid = true;
+    std::vector<WPLParser::ExpressionContext *> toVisit = ctx->exprs;
+    std::vector<WPLParser::ExpressionContext *> toGen;
 
-    for (auto e : ctx->exprs)
+    while (toVisit.size() > 0)
     {
-        const Type *type = any2Type(e->accept(this));
-        if (type->isNotSubtype(Types::BOOL))
+        WPLParser::ExpressionContext *curr = toVisit.at(0);
+        toVisit.erase(toVisit.begin());
+
+        if (WPLParser::LogAndExprContext *orCtx = dynamic_cast<WPLParser::LogAndExprContext *>(curr))
         {
-            errorHandler.addSemanticError(e->getStart(), "BOOL expression expected, but was " + type->toString());
-            valid = false;
+            toVisit.insert(toVisit.end(), orCtx->exprs.begin(), orCtx->exprs.end());
+        }
+        else
+        {
+            toGen.push_back(curr);
         }
     }
 
-    return (valid) ? Types::BOOL : Types::UNDEFINED;
+    std::vector<TypedNode *> nodes;
+
+    for (WPLParser::ExpressionContext *e : toGen)
+    {
+        // const Type *type = any2Type(e->accept(this));
+        std::optional<TypedNode *> nodeOpt = any2Opt<TypedNode *>(e->accept(this));
+        if (!nodeOpt)
+        {
+            // FIXME: DO WE NEED TO THROW ERROR? OR IS IT ALREADY HANDLED
+        }
+        else
+        {
+            TypedNode *node = nodeOpt.value();
+            const Type *type = node->getType();
+
+            if (type->isNotSubtype(Types::BOOL))
+            {
+                errorHandler.addSemanticError(e->getStart(), "BOOL expression expected, but was " + type->toString());
+            }
+            else
+            {
+                nodes.push_back(node);
+            }
+        }
+    }
+    return new LogAndExprNode(nodes);
 }
 
 /**
@@ -495,25 +627,53 @@ const Type *SemanticVisitor::visitCtx(WPLParser::LogAndExprContext *ctx)
  * @param ctx The LogOrExprContext to Visit
  * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
  */
-const Type *SemanticVisitor::visitCtx(WPLParser::LogOrExprContext *ctx)
+LogOrExprNode *SemanticVisitor::visitCtx(WPLParser::LogOrExprContext *ctx)
 {
-    bool valid = true;
+    std::vector<WPLParser::ExpressionContext *> toVisit = ctx->exprs;
+    std::vector<WPLParser::ExpressionContext *> toGen;
 
-    for (auto e : ctx->exprs)
+    while (toVisit.size() > 0)
     {
-        const Type *type = any2Type(e->accept(this));
-        if (type->isNotSubtype(Types::BOOL))
+        WPLParser::ExpressionContext *curr = toVisit.at(0);
+        toVisit.erase(toVisit.begin());
+
+        if (WPLParser::LogOrExprContext *orCtx = dynamic_cast<WPLParser::LogOrExprContext *>(curr))
         {
-            errorHandler.addSemanticError(e->getStart(), "BOOL expression expected, but was " + type->toString());
-            valid = false;
+            toVisit.insert(toVisit.end(), orCtx->exprs.begin(), orCtx->exprs.end());
+        }
+        else
+        {
+            toGen.push_back(curr);
         }
     }
 
-    return (valid) ? Types::BOOL : Types::UNDEFINED;
-}
+    std::vector<TypedNode *> nodes;
 
-// Passthrough to visitInvocation
-const Type *SemanticVisitor::visitCtx(WPLParser::CallExprContext *ctx) { return this->visitCtx(ctx->call); }
+    for (WPLParser::ExpressionContext *e : toGen)
+    {
+        // const Type *type = any2Type(e->accept(this));
+        std::optional<TypedNode *> nodeOpt = any2Opt<TypedNode *>(e->accept(this));
+        if (!nodeOpt)
+        {
+            // FIXME: DO WE NEED TO THROW ERROR? OR IS IT ALREADY HANDLED
+        }
+        else
+        {
+            TypedNode *node = nodeOpt.value();
+            const Type *type = node->getType();
+
+            if (type->isNotSubtype(Types::BOOL))
+            {
+                errorHandler.addSemanticError(e->getStart(), "BOOL expression expected, but was " + type->toString());
+            }
+            else
+            {
+                nodes.push_back(node);
+            }
+        }
+    }
+    return new LogOrExprNode(nodes);
+}
 
 /**
  * @brief Visits a FieldAccessExprContext---Currently limited to array lengths
@@ -521,18 +681,19 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CallExprContext *ctx) { return 
  * @param ctx the FieldAccessExprContext to visit
  * @return const Type* INT if correctly used to test array length; UNDEFINED if any errors.
  */
-const Type *SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx)
+std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx)
 {
     // Determine the type of the expression we are visiting
     std::optional<SymbolContext> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Undefined variable reference: " + ctx->VARIABLE().at(0)->getText());
-        return Types::UNDEFINED;
+        return {};
     }
 
     Symbol *sym = opt.value().second;
-    bindings->bind(ctx->VARIABLE().at(0), sym);
+    std::vector<std::pair<std::string, const Type *>> a;
+    // bindings->bind(ctx->VARIABLE().at(0), sym);
 
     const Type *ty = sym->type;
 
@@ -546,34 +707,41 @@ const Type *SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx)
             if (eleOpt)
             {
                 ty = eleOpt.value();
-                Symbol *bnd = new Symbol("", ty, false, false);
-                bindings->bind(ctx->VARIABLE().at(i), bnd); // FIXME: DO BETTER
+                a.push_back({fieldName,
+                             ty});
+                // Symbol *bnd = new Symbol("", ty, false, false);
+                // bindings->bind(ctx->VARIABLE().at(i), bnd); // FIXME: DO BETTER
             }
             else
             {
                 errorHandler.addSemanticError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
-                return Types::UNDEFINED;
+                return {};
             }
         }
         else if (i + 1 == ctx->fields.size() && dynamic_cast<const TypeArray *>(ty) && ctx->fields.at(i)->getText() == "length")
         {
             bindings->bind(ctx->VARIABLE().at(i), new Symbol("", Types::INT, false, false)); // FIXME: DO BETTER
-            return Types::INT;
+            // return Types::INT;
+
+            a.push_back({"length",
+                         Types::INT});
+
+            break; // FIXME: SHOULDNT BE NEEDED, BUT PROBS IS BC OF LOOP WEIRDNESSES?
         }
         else
         {
             errorHandler.addSemanticError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
-            return Types::UNDEFINED;
+            return {};
         }
     }
 
     // errorHandler.addSemanticError(ctx->getStart(), "Unsupported operation on " + ty->toString());
 
-    return ty;
+    return new FieldAccessNode(sym, a);
 }
 
 // Passthrough to expression
-const Type *SemanticVisitor::visitCtx(WPLParser::ParenExprContext *ctx) { return any2Type(ctx->ex->accept(this)); }
+std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ParenExprContext *ctx) { return any2Opt<TypedNode *>(ctx->ex->accept(this)); }
 
 /**
  * @brief Visits a BinaryRelational Expression ensuring both lhs and rhs are INT.
@@ -581,35 +749,43 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ParenExprContext *ctx) { return
  * @param ctx The BinaryRelExprContext to visit.
  * @return const Type* BOOL if lhs and rhs INT; UNDEFINED otherwise.
  */
-const Type *SemanticVisitor::visitCtx(WPLParser::BinaryRelExprContext *ctx)
+std::optional<BinaryRelNode *> SemanticVisitor::visitCtx(WPLParser::BinaryRelExprContext *ctx)
 {
-    // Based on starter
     bool valid = true;
 
-    auto left = any2Type(ctx->left->accept(this));
+    auto leftOpt = any2Opt<TypedNode *>(ctx->left->accept(this));
+    if (!leftOpt)
+        return {}; // FIXME: THROW ERROR?
 
-    if (left->isNotSubtype(Types::INT))
+    auto left = leftOpt.value();
+
+    if (left->getType()->isNotSubtype(Types::INT))
     {
-        errorHandler.addSemanticError(ctx->getStart(), "INT left expression expected, but was " + left->toString());
+        errorHandler.addSemanticError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString());
         valid = false;
     }
 
-    auto right = any2Type(ctx->right->accept(this));
+    auto rightOpt = any2Opt<TypedNode *>(ctx->right->accept(this));
+    if (!rightOpt)
+        return {}; // FIXME: DO BETTER
 
-    if (right->isNotSubtype(Types::INT))
+    auto right = rightOpt.value();
+
+    if (right->getType()->isNotSubtype(Types::INT))
     {
-        errorHandler.addSemanticError(ctx->getStart(), "INT right expression expected, but was " + right->toString() + " in " + ctx->getText());
+        errorHandler.addSemanticError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
         valid = false;
     }
-    return valid ? Types::BOOL : Types::UNDEFINED;
-}
 
-// This here basically means that we don't need to do anything for booleanConst, but I'll leave it just in case
-const Type *SemanticVisitor::visitCtx(WPLParser::BConstExprContext *ctx) { return Types::BOOL; }
+    if (valid)
+        return new BinaryRelNode(
+            ctx->LESS() ? BINARY_Rel_LESS : ctx->LESS_EQ() ? BINARY_Rel_LESS_EQ
+                                        : ctx->GREATER()   ? BINARY_Rel_GREATER
+                                                           : BINARY_Rel_GREATER_EQ,
+            left,
+            right);
 
-const Type *SemanticVisitor::visitCtx(WPLParser::BlockContext *ctx)
-{
-    return this->safeVisitBlock(ctx, true);
+    return {};
 }
 
 /**
@@ -618,24 +794,35 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BlockContext *ctx)
  * @param ctx The ConditionContext to visit
  * @return const Type* Always returns UNDEFINED as to prevent assignments
  */
-const Type *SemanticVisitor::visitCtx(WPLParser::ConditionContext *ctx)
+std::optional<ConditionNode *> SemanticVisitor::visitCtx(WPLParser::ConditionContext *ctx)
 {
-    auto conditionType = any2Type(ctx->ex->accept(this));
+    // auto conditionType = any2Type(ctx->ex->accept(this));
+    std::optional<TypedNode *> condOpt = any2Opt<TypedNode *>(ctx->ex->accept(this));
+
+    if (!condOpt)
+        return {}; // FIXME: DO BETTER
+
+    TypedNode *cond = condOpt.value();
+    const Type *conditionType = cond->getType();
 
     if (conditionType->isNotSubtype(Types::BOOL))
     {
         errorHandler.addSemanticError(ctx->getStart(), "Condition expected BOOL, but was given " + conditionType->toString());
+        return {};
     }
 
-    return Types::UNDEFINED;
+    return new ConditionNode(cond); // FIXME: THIS SEEMS KIND OF POINTLESS...
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
+std::optional<SelectAlternativeNode *> SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
 {
     // Enter the scope (needed as we may define variables or do other stuff)
     stmgr->enterScope(StopType::LINEAR);
     // Accept the evaluation context
-    ctx->eval->accept(this);
+    std::optional<TypedNode *> evalOpt = any2Opt<TypedNode *>(ctx->eval->accept(this)); // FIXME: So these are all wrong b/c like, we return optionals
+    if (!evalOpt)
+        return {}; // FIXME: DO BETTER
+
     // Safe exit the scope
     this->safeExitScope(ctx);
 
@@ -649,18 +836,19 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
     }
 
     // Confirm that the check type is a boolean
-    const Type *checkType = any2Type(ctx->check->accept(this));
+    std::optional<TypedNode *> checkOpt = any2Opt<TypedNode *>(ctx->check->accept(this));
+    if (!checkOpt)
+        return {}; // FIXME: DO BETTER
+
+    TypedNode *check = checkOpt.value();
+    const Type *checkType = check->getType();
 
     if (const TypeBool *b = dynamic_cast<const TypeBool *>(checkType))
     {
+        return new SelectAlternativeNode(check, evalOpt.value());
     }
-    else
-    {
-        errorHandler.addSemanticError(ctx->getStart(), "Select alternative expected BOOL but got " + checkType->toString());
-    }
-
-    // Return UNDEFINED as its a statement.
-    return Types::UNDEFINED;
+    errorHandler.addSemanticError(ctx->getStart(), "Select alternative expected BOOL but got " + checkType->toString());
+    return {};
 }
 
 /**
@@ -669,10 +857,11 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
  * @param ctx The ParameterListContext to process.
  * @return const Type* TypeInvoke representing the parameter types.
  */
-const Type *SemanticVisitor::visitCtx(WPLParser::ParameterListContext *ctx)
+std::optional<ParameterListNode> SemanticVisitor::visitCtx(WPLParser::ParameterListContext *ctx)
 {
-    std::vector<const Type *> params;
     std::map<std::string, WPLParser::ParameterContext *> map;
+
+    ParameterListNode paramList;
 
     for (auto param : ctx->params)
     {
@@ -688,16 +877,17 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ParameterListContext *ctx)
             map.insert({name, param});
         }
 
-        const Type *type = this->visitCtx(param);
-        params.push_back(type);
+        ParameterNode pn = this->visitCtx(param); // FIXME: WHAT SHOULD BE POINTERS?
+        paramList.push_back(pn);
     }
 
-    const Type *type = new TypeInvoke(params); // Needs to be two separate lines b/c of how C++ handles returns?
-    return type;
+    return paramList;
 }
 
-// Passthrough to visit the inner expression
-const Type *SemanticVisitor::visitCtx(WPLParser::ParameterContext *ctx) { return any2Type(ctx->ty->accept(this)); }
+ParameterNode SemanticVisitor::visitCtx(WPLParser::ParameterContext *ctx)
+{
+    return ParameterNode(any2Type(ctx->ty->accept(this)), ctx->name->getText()); // FIXME: WHAT AB ERRORS?
+}
 
 const Type *SemanticVisitor::visitCtx(WPLParser::AssignmentContext *ctx)
 {
@@ -705,7 +895,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::AssignmentContext *ctx)
     return Types::UNDEFINED;
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::ExternStatementContext *ctx)
+std::optional<ExternNode *> SemanticVisitor::visitCtx(WPLParser::ExternStatementContext *ctx)
 {
 
     bool variadic = ctx->variadic || ctx->ELLIPSIS();
@@ -717,60 +907,65 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ExternStatementContext *ctx)
     if (opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + id);
+        return {};
         // return Types::UNDEFINED;
     }
 
-    const Type *ty = (ctx->paramList) ? this->visitCtx(ctx->paramList)
-                                      : new TypeInvoke();
-
-    const TypeInvoke *procType = dynamic_cast<const TypeInvoke *>(ty); // Always true, but needs separate statement to make C happy.
+    std::optional<ParameterListNode> tyOpt = (ctx->paramList) ? this->visitCtx(ctx->paramList)
+                                                              : ParameterListNode();
 
     const Type *retType = ctx->ty ? any2Type(ctx->ty->accept(this)) // this->visitCtx(ctx->ty)
                                   : Types::UNDEFINED;
 
-    const TypeInvoke *funcType = (ctx->ty) ? new TypeInvoke(procType->getParamTypes(), retType, variadic, true)
-                                           : new TypeInvoke(procType->getParamTypes(), variadic, true);
+    ExternNode *node = new ExternNode(id, tyOpt.value(), retType, variadic); // FIXME: BAD OPT ACCESS!
 
-    Symbol *funcSymbol = new Symbol(id, funcType, true, true);
+    // const TypeInvoke *funcType = (ctx->ty) ? new TypeInvoke(procType->getParamTypes(), retType, variadic, true)
+    //                                        : new TypeInvoke(procType->getParamTypes(), variadic, true);
 
-    stmgr->addSymbol(funcSymbol);
-    bindings->bind(ctx, funcSymbol);
+    // Symbol *funcSymbol = new Symbol(id, funcType, true, true);
 
-    return Types::UNDEFINED;
+    stmgr->addSymbol(node->getSymbol());
+    // bindings->bind(ctx, funcSymbol);
+
+    return node;
 };
 
-const Type *SemanticVisitor::visitCtx(WPLParser::ProgDefContext *ctx)
-{
-    std::cout << "744 Codegen is dumb" << std::endl;
-    return this->visitInvokeable(ctx->defineProc());
-}
-
-const Type *SemanticVisitor::visitCtx(WPLParser::AssignStatementContext *ctx)
+std::optional<AssignNode *> SemanticVisitor::visitCtx(WPLParser::AssignStatementContext *ctx)
 {
     // This one is the update one!
 
     // Determine the expression type
-    const Type *exprType = any2Type(ctx->a->accept(this));
+    std::optional<TypedNode *> exprOpt = any2Opt<TypedNode *>(ctx->a->accept(this));
+
+    if (!exprOpt)
+        return {}; // FIXME: DO BETTER?
+
+    TypedNode *expr = exprOpt.value();
+    const Type *exprType = expr->getType();
 
     // Determine the expected type
-    const Type *type = this->visitCtx(ctx->to);
+    std::optional<TypedNode *> varOpt = this->visitCtx(ctx->to);
 
     // If we actually have a type... (prevents things like null ptrs)
-    if (type)
-    {
-        // Make sure that the types are compatible. Inference automatically managed here.
-        if (exprType->isNotSubtype(type))
-        {
-            errorHandler.addSemanticError(ctx->getStart(), "Assignment statement expected " + type->toString() + " but got " + exprType->toString());
-        }
-    }
-    else
+    if (!varOpt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Cannot assign to undefined variable: " + ctx->to->getText());
+        return {};
+    }
+
+    TypedNode *var = varOpt.value();
+
+    const Type *type = var->getType();
+
+    // Make sure that the types are compatible. Inference automatically managed here.
+    if (exprType->isNotSubtype(type))
+    {
+        errorHandler.addSemanticError(ctx->getStart(), "Assignment statement expected " + type->toString() + " but got " + exprType->toString());
+        return {};
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return Types::UNDEFINED;
+    return new AssignNode(var, expr);
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::VarDeclStatementContext *ctx)
@@ -888,9 +1083,12 @@ const Type *SemanticVisitor::visitCtx(WPLParser::MatchStatementContext *ctx)
  * @param ctx The LoopStatementContext to type check
  * @return const Type* UNDEFINED as this is a statement.
  */
-const Type *SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
+std::optional<WhileLoopNode *> SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
 {
-    this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+    std::optional<ConditionNode *> checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+
+    if (!checkOpt)
+        return {}; // FIXME: DO BETTER
 
     std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
 
@@ -905,7 +1103,6 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
             std::optional<const ProtocolSequence *> protoOpt = channel->getProtocol()->shearLoop();
             if (protoOpt)
             {
-
                 // stmgr->addSymbol(new Symbol(orig->getIdentifier(), new TypeChannel(protoOpt.value()), false, false));
                 to_fix.push_back({channel, channel->getProtocol()});
                 channel->setProtocol(protoOpt.value());
@@ -914,9 +1111,13 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
         }
     }
 
-    this->visitCtx(ctx->block()); // Visiting block to make sure everything type checks there as well
+    // FIXME: CANT DO THIS ANYMORE B/C NEED BLOCKS AS PART OF AST!!!
+    std::optional<BlockNode *> blkOpt = this->visitCtx(ctx->block()); // Visiting block to make sure everything type checks there as well
 
     safeExitScope(ctx);
+
+    if (!blkOpt)
+        return {}; // FIXME: DO BETTER, ALSO THERE ARE A LOT OF THESE BEFORE SAFE EXIT. WILL SUCH THINGS CAUSE PROBLEMS?
 
     for (auto pair : to_fix)
     {
@@ -924,49 +1125,64 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return Types::UNDEFINED;
+    // return Types::UNDEFINED;
+    return new WhileLoopNode(checkOpt.value(), blkOpt.value());
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::ConditionalStatementContext *ctx)
+std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::ConditionalStatementContext *ctx)
 {
     // Automatically handles checking that we have a valid condition
-    this->visitCtx(ctx->check);
+    std::optional<ConditionNode *> condOpt = this->visitCtx(ctx->check);
 
     // Type check the then/true block
-    this->visitCtx(ctx->trueBlk);
+    std::optional<BlockNode *> trueOpt = this->visitCtx(ctx->trueBlk);
+
+    if (!condOpt || !trueOpt)
+        return {}; // FIXME: DO BETTER
 
     // If we have an else block, then type check it
     if (ctx->falseBlk)
     {
-        this->visitCtx(ctx->falseBlk);
+        std::optional<BlockNode *> falseOpt = this->visitCtx(ctx->falseBlk);
+
+        if (!falseOpt)
+            return {}; // FIXME: DO BETTER{}
+
+        return new ConditionalStatementNode(condOpt.value(), trueOpt.value(), falseOpt.value());
     }
 
+    return new ConditionalStatementNode(condOpt.value(), trueOpt.value());
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return Types::UNDEFINED;
+    // return Types::UNDEFINED;
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
+std::optional<SelectStatementNode *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
 {
 
     if (ctx->cases.size() < 1)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Select statement expected at least one alternative, but was given 0!");
-        return Types::UNDEFINED; // Shouldn't matter as the for loop won't have anything to do
+        // return Types::UNDEFINED; // Shouldn't matter as the for loop won't have anything to do
+        return {};
     }
+
+    std::vector<SelectAlternativeNode *> alts;
     // Here we just need to visit each of the individual cases; they each handle their own logic.
     for (auto e : ctx->cases)
     {
-        this->visitCtx(e);
+        std::optional<SelectAlternativeNode *> altOpt = this->visitCtx(e);
+        if (!altOpt)
+            return {}; // FIXME: DO BETTER?
+
+        alts.push_back(altOpt.value());
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return Types::UNDEFINED;
+    // return Types::UNDEFINED;
+    return new SelectStatementNode(alts);
 }
 
-// Passthrough to visit invocation
-const Type *SemanticVisitor::visitCtx(WPLParser::CallStatementContext *ctx) { return this->visitCtx(ctx->call); }
-
-const Type *SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
+std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
 {
     /*
      * Lookup the @RETURN symbol which can ONLY be defined by entering FUNC/PROC
@@ -977,23 +1193,30 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
     if (!symOpt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Cannot use return outside of FUNC or PROC");
-        return Types::UNDEFINED;
+        return {};
     }
 
     Symbol *sym = symOpt.value().second;
-    bindings->bind(ctx, sym);
+    // bindings->bind(ctx, sym);
 
     // If the return statement has an expression...
     if (ctx->expression())
     {
         // Evaluate the expression type
-        const Type *valType = any2Type(ctx->expression()->accept(this));
+        std::optional<TypedNode *> valOpt = any2Opt<TypedNode *>(ctx->expression()->accept(this));
+
+        if (!valOpt)
+            return {}; // FIXME: DO BETTER
+
+        TypedNode *val = valOpt.value();
+
+        const Type *valType = val->getType();
 
         // If the type of the return symbol is a BOT, then we must be in a PROC and, thus, we cannot return anything
         if (const TypeBot *b = dynamic_cast<const TypeBot *>(sym->type))
         {
             errorHandler.addSemanticError(ctx->getStart(), "PROC cannot return value, yet it was given a " + valType->toString() + " to return!");
-            return Types::UNDEFINED;
+            return {};
         }
 
         // As the return type is not a BOT, we have to make sure that it is the correct type to return
@@ -1001,30 +1224,22 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
         if (valType->isNotSubtype(sym->type))
         {
             errorHandler.addSemanticError(ctx->getStart(), "Expected return type of " + sym->type->toString() + " but got " + valType->toString());
-            return Types::UNDEFINED;
+            return {};
         }
 
         // Valid return statement; return UNDEFINED as its a statement.
-        return Types::UNDEFINED;
+        return new ReturnNode(val);
     }
-    else
+
+    // We do not have an expression to return, so make sure that the return type is also a BOT.
+    if (const TypeBot *b = dynamic_cast<const TypeBot *>(sym->type))
     {
-        // We do not have an expression to return, so make sure that the return type is also a BOT.
-        if (const TypeBot *b = dynamic_cast<const TypeBot *>(sym->type))
-        {
-            return Types::UNDEFINED;
-        }
-
-        errorHandler.addSemanticError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but recieved nothing.");
-        return Types::UNDEFINED;
+        return new ReturnNode();
     }
 
-    errorHandler.addSemanticError(ctx->getStart(), "Unknown case");
-    return Types::UNDEFINED;
+    errorHandler.addSemanticError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but recieved nothing.");
+    return {};
 }
-
-// Passthrough to visitBlock
-const Type *SemanticVisitor::visitCtx(WPLParser::BlockStatementContext *ctx) { return this->visitCtx(ctx->block()); }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
 {
@@ -1042,42 +1257,54 @@ const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
     return type;
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::LambdaConstExprContext *ctx)
+std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaConstExprContext *ctx)
 {
     // FIXME: VERIFY THIS IS ALWAYS SAFE!!!
-    const TypeInvoke *paramType = dynamic_cast<const TypeInvoke *>(visitCtx(ctx->parameterList()));
+    std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
+
+    if (!paramTypeOpt)
+        return {}; // FIXME: DO BETTER?
+
+    ParameterListNode params = paramTypeOpt.value();
+
     const Type *retType = any2Type(ctx->ret->accept(this));
 
-    const TypeInvoke *funcType = new TypeInvoke(paramType->getParamTypes(), retType);
+    // const TypeInvoke *funcType = new TypeInvoke(paramType->getParamTypes(), retType);
 
     stmgr->enterScope(StopType::GLOBAL);
     stmgr->addSymbol(new Symbol("@RETURN", retType, false, false));
 
-    for (unsigned int i = 0; i < ctx->parameterList()->params.size(); i++)
+    for (ParameterNode param : params) //(unsigned int i = 0; i < ctx->parameterList()->params.size(); i++)
     {
-        const Type *ty = funcType->getParamTypes().at(i);
-        auto param = ctx->parameterList()->params.at(i);
+        // const Type *ty = funcType->getParamTypes().at(i);
+        // auto param = ctx->parameterList()->params.at(i);
 
-        Symbol *paramSymbol = new Symbol(param->name->getText(), ty, false, false);
-
+        Symbol *paramSymbol = new Symbol(param.name, param.type, false, false); // new Symbol(param->name->getText(), ty, false, false);
         stmgr->addSymbol(paramSymbol);
 
-        bindings->bind(param, paramSymbol);
+        // bindings->bind(param, paramSymbol);
     }
 
-    this->safeVisitBlock(ctx->block(), false);
+    std::optional<BlockNode *> blkOpt = this->safeVisitBlock(ctx->block(), false);
+
+    if (!blkOpt)
+        return {};
+    BlockNode *blk = blkOpt.value();
 
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
     if (ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1)))
     {
+        // FIXME: DO THIS CHECK BETTER WITH BLOCK NODE?
         errorHandler.addSemanticError(ctx->getStart(), "Lambda must end in return statement");
     }
     safeExitScope(ctx);
 
-    Symbol *funcSymbol = new Symbol("@LAMBDA", funcType, false, false);
-    bindings->bind(ctx, funcSymbol);
+    // Symbol *funcSymbol = new Symbol("@LAMBDA", funcType, false, false);
+    // bindings->bind(ctx, funcSymbol);
 
-    return funcType;
+    // return funcType;
+
+    return new LambdaConstNode(params, retType, blk);
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::LambdaTypeContext *ctx)
@@ -1119,14 +1346,14 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
     return sum;
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::DefineEnumContext *ctx)
+std::optional<DefineEnumNode*> SemanticVisitor::visitCtx(WPLParser::DefineEnumContext *ctx)
 {
     std::string id = ctx->name->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
     if (opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + id);
-        return Types::UNDEFINED;
+        return {};
     }
 
     std::set<const Type *, TypeCompare> cases = {};
@@ -1140,26 +1367,27 @@ const Type *SemanticVisitor::visitCtx(WPLParser::DefineEnumContext *ctx)
     if (cases.size() != ctx->cases.size())
     {
         errorHandler.addSemanticError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
-        return Types::UNDEFINED;
+        return {};
     }
 
-    const TypeSum *sum = new TypeSum(cases, id);
+    TypeSum *sum = new TypeSum(cases, id); //FIXME: SHOULD THIS BE CONST?
     Symbol *enumSym = new Symbol(id, sum, true, true);
 
     stmgr->addSymbol(enumSym);
-    bindings->bind(ctx, enumSym);
+    // bindings->bind(ctx, enumSym);
 
-    return Types::UNDEFINED;
+    // return Types::UNDEFINED;
+    return new DefineEnumNode(id, sum);
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::DefineStructContext *ctx)
+std::optional<DefineStructNode*> SemanticVisitor::visitCtx(WPLParser::DefineStructContext *ctx)
 {
     std::string id = ctx->name->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
     if (opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + id);
-        return Types::UNDEFINED;
+        return {};
     }
 
     LinkedMap<std::string, const Type *> el;
@@ -1170,19 +1398,20 @@ const Type *SemanticVisitor::visitCtx(WPLParser::DefineStructContext *ctx)
         if (el.lookup(caseName))
         {
             errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + caseName);
-            return Types::UNDEFINED;
+            return {};
         }
         const Type *caseTy = any2Type(caseCtx->ty->accept(this));
 
         el.insert({caseName, caseTy});
     }
 
-    const TypeStruct *product = new TypeStruct(el, id);
+    TypeStruct *product = new TypeStruct(el, id); //FIXME: SHOULD THIS BE CONST?
     Symbol *prodSym = new Symbol(id, product, true, true);
     stmgr->addSymbol(prodSym);
-    bindings->bind(ctx, prodSym);
+    // bindings->bind(ctx, prodSym);
 
-    return Types::UNDEFINED;
+    // return Types::UNDEFINED;
+    return new DefineStructNode(id, product);
 
     // FIXME: TRY USING FUNC DEFS AS TYPES!
 }
@@ -1258,7 +1487,10 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BaseTypeContext *ctx)
 }
 
 // Should never be needed due to how BConstExpr works, but leaving here just in case.
-const Type *SemanticVisitor::visitCtx(WPLParser::BooleanConstContext *ctx) { return Types::BOOL; }
+BooleanConstNode *SemanticVisitor::visitCtx(WPLParser::BooleanConstContext *ctx)
+{
+    return new BooleanConstNode(ctx->TRUE() ? true : false);
+}
 
 const Type *SemanticVisitor::visitCtx(WPLParser::ChannelTypeContext *ctx)
 {
@@ -1267,7 +1499,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ChannelTypeContext *ctx)
     return new TypeChannel(proto);
 }
 
-const Type *SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)
+std::optional<ProgramSendNode*> SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)
 {
     // FIXME: HAVE TO POTENTIALLY DELETE FROM CONTEXT OTHER VAR
     std::string id = ctx->channel->getText();
@@ -1276,7 +1508,7 @@ const Type *SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ct
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Could not find channel: " + id);
-        return Types::UNDEFINED;
+        return {};
     }
 
     Symbol *sym = opt.value().second;
@@ -1284,20 +1516,25 @@ const Type *SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ct
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
-        const Type *ty = any2Type(ctx->expr->accept(this));
+        std::optional<TypedNode *> tnOpt = any2Opt<TypedNode*>(ctx->expr->accept(this));
+        if(!tnOpt) return {};  //FIXME: DO BETTER
+
+        TypedNode * tn  = tnOpt.value();
+        const Type *ty = tn->getType(); 
 
         if (!channel->getProtocol()->send(ty))
         {
             errorHandler.addSemanticError(ctx->getStart(), "Failed to send " + ty->toString() + " over channel " + sym->toString());
+            return {}; 
         }
-        return Types::UNDEFINED;
+        return new ProgramSendNode(sym, tn);
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot send on non-channel: " + id);
-    return Types::UNDEFINED;
+    return {};
 }
 
-const Type *SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx)
+std::optional<ProgramRecvNode*> SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1305,7 +1542,7 @@ const Type *SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvConte
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Could not find channel: " + id);
-        return Types::UNDEFINED;
+        return {};
     }
 
     Symbol *sym = opt.value().second;
@@ -1317,18 +1554,18 @@ const Type *SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvConte
         if (!ty)
         {
             errorHandler.addSemanticError(ctx->getStart(), "Failed to recv over channel: " + sym->toString());
-            return Types::UNDEFINED;
+            return {};
         }
 
-        bindings->bind(ctx->VARIABLE(), sym);                          // For Channel
-        bindings->bind(ctx, new Symbol("", ty.value(), false, false)); // FIXME: DO BETTER, DONE SO WE CAN DO CORRECT BITCAST
-        return ty.value();
+        // bindings->bind(ctx->VARIABLE(), sym);                          // For Channel
+        // bindings->bind(ctx, new Symbol("", ty.value(), false, false)); // FIXME: DO BETTER, DONE SO WE CAN DO CORRECT BITCAST
+        return new ProgramRecvNode(sym, ty.value());
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot recv on non-channel: " + id);
-    return Types::UNDEFINED;
+    return {};
 }
-// const Type *SemanticVisitor::TvisitProgramLoop(WPLParser::ProgramLoopContext *ctx) { errorHandler.addSemanticError(ctx->getStart(), "UNIMPLEMENTED"); return Types::UNDEFINED; }
+
 const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ctx)
 {
     std::string id = ctx->channel->getText();
@@ -1424,7 +1661,7 @@ const Type *SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectConte
     errorHandler.addSemanticError(ctx->getStart(), "Cannot project on non-channel: " + id);
     return Types::UNDEFINED;
 }
-const Type *SemanticVisitor::TvisitProgramContract(WPLParser::ProgramContractContext *ctx)
+std::optional<ProgramContractNode*> SemanticVisitor::TvisitProgramContract(WPLParser::ProgramContractContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1432,25 +1669,26 @@ const Type *SemanticVisitor::TvisitProgramContract(WPLParser::ProgramContractCon
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Could not find channel: " + id);
-        return Types::UNDEFINED;
+        return {};
     }
 
     Symbol *sym = opt.value().second;
-    bindings->bind(ctx->VARIABLE(), sym);
+    // bindings->bind(ctx->VARIABLE(), sym);
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
         if (!channel->getProtocol()->contract())
         {
-            errorHandler.addSemanticError(ctx->getStart(), "Failed to contract weaken: " + id);
+            errorHandler.addSemanticError(ctx->getStart(), "Failed to contract: " + id);
+            return {};
         }
-        return Types::UNDEFINED;
+        return new ProgramContractNode(sym);
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot contract on non-channel: " + id);
-    return Types::UNDEFINED;
+    return {};
 }
-const Type *SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx)
+std::optional<ProgramWeakenNode*> SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1458,7 +1696,7 @@ const Type *SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Could not find channel: " + id);
-        return Types::UNDEFINED;
+        return {};
     }
 
     Symbol *sym = opt.value().second;
@@ -1469,26 +1707,27 @@ const Type *SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext
         if (!channel->getProtocol()->weaken())
         {
             errorHandler.addSemanticError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString());
+            return {}; 
         }
-        return Types::UNDEFINED;
+        return new ProgramWeakenNode(sym);
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot weaken on non-channel: " + id);
-    return Types::UNDEFINED;
+    return {};
 }
-const Type *SemanticVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx)
+std::optional<ProgramAcceptNode*> SemanticVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Unbound identifier: " + id);
-        return Types::UNDEFINED;
+        return {};
     }
 
     Symbol *sym = opt.value().second;
-    std::cout << "1480 ACCEPT " << sym->toString() << "@" << sym << std::endl;
-    bindings->bind(ctx->VARIABLE(), sym);
+    // std::cout << "1480 ACCEPT " << sym->toString() << "@" << sym << std::endl;
+    // bindings->bind(ctx->VARIABLE(), sym);
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1496,7 +1735,7 @@ const Type *SemanticVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext
         if (!acceptOpt)
         {
             errorHandler.addSemanticError(ctx->getStart(), "Cannot accept on " + channel->toString());
-            return Types::UNDEFINED;
+            return {};
         }
 
         std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
@@ -1528,44 +1767,52 @@ const Type *SemanticVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext
         stmgr->addSymbol(sym);
         // stmgr->addSymbol(new Symbol(id, new TypeChannel(acceptOpt.value()), false, false));
 
-        this->visitCtx(ctx->block());
+        std::optional<BlockNode *> blkOpt = this->visitCtx(ctx->block());
 
         safeExitScope(ctx);
+
 
         for (auto pair : to_fix)
         {
             pair.first->setProtocol(pair.second);
         }
 
-        return Types::UNDEFINED;
+        if(!blkOpt) return {}; //FIXME: DO BETTER
+
+
+        return new ProgramAcceptNode(sym, blkOpt.value());
+        // return Types::UNDEFINED;
         // return new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse()));
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot accept: " + sym->toString());
-    return Types::UNDEFINED;
+    return {};
 }
-const Type *SemanticVisitor::TvisitAssignableExec(WPLParser::AssignableExecContext *ctx)
+std::optional<ProgramExecNode*> SemanticVisitor::TvisitAssignableExec(WPLParser::AssignableExecContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Unbound identifier: " + id);
-        return Types::UNDEFINED;
+        return {};
     }
 
     Symbol *sym = opt.value().second;
-    bindings->bind(ctx->VARIABLE(), sym);
-    std::cout << "BOUND " << ctx->VARIABLE()->getText() << " to " << sym->toString() << std::endl;
+    // bindings->bind(ctx->VARIABLE(), sym);
 
     if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
     {
-        return new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse()));
+        return new ProgramExecNode(
+            sym, 
+            new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse()))
+        );
     }
 
     // FIXME: DO BETTER
     errorHandler.addSemanticError(ctx->getStart(), "Cannot exec: " + sym->toString());
-    return Types::UNDEFINED;
+    // return Types::UNDEFINED;
+    return {}; 
 }
 
 /*************************************************************
