@@ -5,13 +5,103 @@
 
 using namespace std;
 
+template <class T>
+class TypedASTVisitor;
+
 class TypedNode
 {
 public:
     virtual ~TypedNode() = default;
 
     virtual const Type *getType() = 0;
+
+    // virtual void accept(visitor &v) = 0;
+    virtual std::any accept(TypedASTVisitor<std::any> *a) = 0;
 };
+
+
+class SelectAlternativeNode;
+class SelectStatementNode; 
+class ConditionNode; 
+class BlockNode; 
+
+class LambdaConstNode; 
+class ProgramDefNode;
+class ConditionalStatementNode;
+class ReturnNode; 
+class ProgramSendNode; 
+class ProgramRecvNode;
+class ProgramContractNode; 
+class ProgramWeakenNode;
+class ProgramExecNode;
+class ProgramAcceptNode;
+class DefineEnumNode;
+class DefineStructNode;
+class InitProductNode;
+class WhileLoopNode; 
+class ExternNode;
+class InvocationNode;
+class FieldAccessNode; 
+class VariableIDNode;
+class ArrayAccessNode; 
+class AssignNode; 
+class BinaryRelNode;
+class BinaryArithNode;
+class EqExprNode;
+class UnaryExprNode;
+class LogAndExprNode; 
+class LogOrExprNode; 
+class StringConstNode;
+class BooleanConstNode; 
+class IConstExprNode;
+class CompilationUnitNode;
+
+template <class T>
+class TypedASTVisitor
+{
+public:
+    virtual ~TypedASTVisitor() = 0;
+    virtual T visit(SelectAlternativeNode *n);
+    virtual T visit(SelectStatementNode *n);
+    virtual T visit(ConditionNode* n);
+    virtual T visit(BlockNode *n);
+    virtual T visit(LambdaConstNode *n);
+    virtual T visit(ProgramDefNode *n);
+    virtual T visit(ConditionalStatementNode *n);
+    virtual T visit(ReturnNode *n);
+    virtual T visit(ProgramSendNode *n);
+    virtual T visit(ProgramRecvNode *n);
+    virtual T visit(ProgramContractNode *n);
+    virtual T visit(ProgramWeakenNode *n);
+    virtual T visit(ProgramExecNode *n);
+    virtual T visit(ProgramAcceptNode *n);
+    virtual T visit(DefineEnumNode *n);
+    virtual T visit(DefineStructNode *n);
+    virtual T visit(InitProductNode *n);
+    virtual T visit(WhileLoopNode *n);
+    virtual T visit(ExternNode *n);
+    virtual T visit(InvocationNode *n);
+    virtual T visit(FieldAccessNode *n);
+    virtual T visit(VariableIDNode *n);
+    virtual T visit(ArrayAccessNode *n);
+    virtual T visit(AssignNode *n);
+    virtual T visit(BinaryRelNode *n);
+    virtual T visit(BinaryArithNode *n);
+    virtual T visit(EqExprNode *n);
+    virtual T visit(UnaryExprNode *n);
+    virtual T visit(LogAndExprNode *n);
+    virtual T visit(LogOrExprNode *n);
+    virtual T visit(StringConstNode *n);
+    virtual T visit(BooleanConstNode *n);
+    virtual T visit(IConstExprNode *n);
+    virtual T visit(CompilationUnitNode *n);
+
+    T accept(TypedNode *n) {
+        return dynamic_cast<T>(n->accept(this)); //Hacky, but completley safe
+    }
+};
+
+
 
 class SelectAlternativeNode : public TypedNode // FIXME: DO BETTER!
 {
@@ -26,6 +116,14 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; }
+
+    // template <class T>
+    // virtual void accept(TypedASTVisitor<T> v)
+    // {
+
+    // }
+
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class SelectStatementNode : public TypedNode
@@ -39,6 +137,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ConditionNode : public TypedNode // FIXME: DO BETTER
@@ -52,6 +151,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 // FIXME: SHOULD THERE BE A EXPRESSION VS STATEMENT DIFFERENCE IN THESE? MAYBE NOT I GUESS B/C TECHNICALLY CALLS COULD HAVE BEEN SORT OF EITHER? BUT NOT ANYMORE? IDK EVERYTHING KIND OF BECOMES EXPR WHEN FUNCTIONAL
@@ -68,6 +168,7 @@ public:
     vector<TypedNode *> getExprs() { return exprs; }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ParameterNode
@@ -115,6 +216,7 @@ public:
     {
         return type;
     }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ProgramDefNode : public TypedNode
@@ -142,6 +244,7 @@ public:
     {
         return type;
     }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ConditionalStatementNode : public TypedNode
@@ -159,6 +262,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ReturnNode : public TypedNode
@@ -176,6 +280,7 @@ public:
     //  } // FIXME: DO BETTER
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ProgramSendNode : public TypedNode
@@ -191,6 +296,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ProgramRecvNode : public TypedNode
@@ -207,6 +313,7 @@ public:
     }
 
     const Type *getType() override { return ty; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ProgramContractNode : public TypedNode
@@ -220,6 +327,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ProgramWeakenNode : public TypedNode // FIXME: COMBINE THIS WITH PREV AND USE ENUM FOR OP?
@@ -233,6 +341,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ProgramExecNode : public TypedNode // FIXME: DO BETTER
@@ -248,6 +357,7 @@ public:
     }
 
     const TypeChannel *getType() override { return chanType; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ProgramAcceptNode : public TypedNode // FIXME: DO BETTER
@@ -263,6 +373,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class DefineEnumNode : public TypedNode
@@ -279,6 +390,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class DefineStructNode : public TypedNode
@@ -295,6 +407,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class InitProductNode : public TypedNode
@@ -310,6 +423,7 @@ public:
     }
 
     const TypeStruct *getType() override { return product; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class WhileLoopNode : public TypedNode
@@ -325,6 +439,7 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ExternNode : public TypedNode
@@ -353,6 +468,7 @@ public:
     }
 
     Symbol *getSymbol() { return sym; } // FIXME: WHY ARENT THINGS LIKE THIS CONST?
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class InvocationNode : public TypedNode
@@ -373,6 +489,7 @@ public:
 
         return dynamic_cast<const TypeInvoke *>(fn->getType())->getReturnType();
     }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class FieldAccessNode : public TypedNode
@@ -403,6 +520,7 @@ public:
     {
         return type;
     }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class VariableIDNode : public TypedNode // FIXME: DO BETTER
@@ -420,6 +538,8 @@ public:
     {
         return symbol->type;
     }
+
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class ArrayAccessNode : public TypedNode
@@ -438,6 +558,7 @@ public:
     {
         return dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
     }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class AssignNode : public TypedNode
@@ -456,6 +577,7 @@ public:
     {
         return Types::UNDEFINED; // FIXME: DO BETTER
     }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 enum BinaryRelOperator
@@ -481,6 +603,7 @@ public:
     }
 
     const TypeBool *getType() override { return Types::BOOL; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 enum BinaryArithOperator
@@ -506,6 +629,7 @@ public:
     }
 
     const TypeInt *getType() override { return Types::INT; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class EqExprNode : public TypedNode
@@ -521,6 +645,7 @@ public:
     }
 
     const TypeBool *getType() override { return Types::BOOL; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 enum UnaryOperator
@@ -551,6 +676,7 @@ public:
             return Types::BOOL;
         }
     }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class LogAndExprNode : public TypedNode
@@ -566,6 +692,7 @@ public:
     vector<TypedNode *> getExprs() { return exprs; }
 
     const TypeBool *getType() override { return Types::BOOL; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class LogOrExprNode : public TypedNode
@@ -581,6 +708,7 @@ public:
     vector<TypedNode *> getExprs() { return exprs; }
 
     const TypeBool *getType() override { return Types::BOOL; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class StringConstNode : public TypedNode
@@ -594,6 +722,7 @@ public:
     }
 
     const TypeStr *getType() override { return Types::STR; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class BooleanConstNode : public TypedNode
@@ -607,6 +736,7 @@ public:
     }
 
     const TypeBool *getType() override { return Types::BOOL; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 class IConstExprNode : public TypedNode
@@ -620,6 +750,7 @@ public:
     }
 
     const TypeInt *getType() override { return Types::INT; }
+    virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
 /////////////////////
@@ -637,4 +768,6 @@ public:
         externs = e;
         defs = d;
     }
+
+    std::any accept(TypedASTVisitor<std::any> *a) { return a->visit(this); }
 };
