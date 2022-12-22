@@ -60,6 +60,7 @@ struct WPLError
 
   std::string toString()
   {
+    if(!token) return message; //FIXME: DO BETTER
     std::ostringstream e;
     e << getStringForSeverity(severity) << ": " << getStringForErrorType(type) << ": [" << token->getLine() << ',' << token->getCharPositionInLine()
       << "]: " << message;
