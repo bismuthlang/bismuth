@@ -310,7 +310,7 @@ std::optional<InitProductNode*> SemanticVisitor::visitCtx(WPLParser::InitProduct
     return {};
 }
 
-std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAccessContext *ctx)
+std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAccessContext *ctx, bool is_rvalue)
 {
     /*
      * Check that we are provided an INT for the index.
@@ -350,7 +350,7 @@ std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAcces
     {
         // bindings->bind(ctx, sym);
         // return arr->getValueType(); // Return type of array
-        return new ArrayAccessNode(field, expr); // FIXME: THIS SHOULD NOT HAPPEN IF INDEX CHECK FAILS!
+        return new ArrayAccessNode(field, expr, is_rvalue); // FIXME: THIS SHOULD NOT HAPPEN IF INDEX CHECK FAILS!
     }
 
     // Report error
@@ -385,7 +385,7 @@ std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContex
 
         // Bind the larger context to the symbol, and return the symbol's type.
         // bindings->bind(ctx, symbol);
-        return new VariableIDNode(symbol);
+        return new VariableIDNode(symbol, false);
     }
 
     /*
@@ -405,7 +405,7 @@ std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContex
 
     // // Otherwise, bind this context to the same binding as the array access, and return its type.
     // bindings->bind(ctx, binding.value());
-    return this->visitCtx(ctx->array);
+    return this->visitCtx(ctx->array, false);
 }
 
 IConstExprNode *SemanticVisitor::visitCtx(WPLParser::IConstExprContext *ctx)
@@ -1229,8 +1229,9 @@ std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatement
             return {};
         }
 
+        std::pair<const Type*, TypedNode*> ans = {sym->type, val};
         // Valid return statement; return UNDEFINED as its a statement.
-        return new ReturnNode(val);
+        return new ReturnNode(ans); //FIXME: VERIFY CORRETC TYPE
     }
 
     // We do not have an expression to return, so make sure that the return type is also a BOT.

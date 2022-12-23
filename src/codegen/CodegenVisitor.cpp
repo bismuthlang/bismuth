@@ -123,18 +123,18 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
         else if (std::holds_alternative<DefineEnumNode *>(e)) // FIXME: DO BETTER
         {
             DefineEnumNode *a = std::get<DefineEnumNode *>(e);
-            this->accept(a); // TODO: remove this?
+            AcceptType(this, a); // TODO: remove this?
         }
         else
         {
             DefineStructNode *a = std::get<DefineStructNode *>(e);
-            this->accept(a); // TODO: remove this?
+            AcceptType(this, a); // TODO: remove this?
         }
     }
 
     for (auto e : n->externs)
     {
-        this->accept(e);
+        AcceptType(this, e);
     }
 
     for (auto e : n->defs)
@@ -143,7 +143,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
         if (std::holds_alternative<ProgramDefNode *>(e))
         {
             ProgramDefNode *a = std::get<ProgramDefNode *>(e);
-            this->accept(a);
+            AcceptType(this, a);
         }
     }
 
@@ -311,7 +311,7 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
     // Populate the argument vector, breaking out of compilation if any argument fails to generate.
     for (TypedNode *e : argNodes)
     {
-        std::optional<Value *> valOpt = this->accept(e);
+        std::optional<Value *> valOpt = AcceptType(this, e);
         if (!valOpt)
         {
             errorHandler.addCodegenError(nullptr, "Failed to generate code");
@@ -362,7 +362,7 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
     // }
 
     // llvm::Function *call = module->getFunction(ctx->VARIABLE()->getText());
-    std::optional<Value *> fnOpt = this->accept(n->fn); // any2Value(ctx->field->accept(this));
+    std::optional<Value *> fnOpt = AcceptType(this, n->fn); // any2Value(ctx->field->accept(this));
     if (!fnOpt)
     {
         errorHandler.addCodegenError(nullptr, "Could not locate function for invocation. Has it been defined in IR yet?");
@@ -446,7 +446,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 {
-    std::optional<Value *> valOpt = this->accept(n->expr); //(ctx->expr->accept(this));
+    std::optional<Value *> valOpt = AcceptType(this, n->expr); //(ctx->expr->accept(this));
     if (!valOpt)
     {
         errorHandler.addCodegenError(nullptr, "Failed to generate code");
@@ -556,7 +556,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
     for (auto e : n->blk->exprs)
     {
         // e->accept(this);
-        this->accept(e);
+        AcceptType(this, e);
     }
 
     // Re-calculate the loop condition
@@ -582,7 +582,7 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
     for (TypedNode *e : n->exprs)
     {
         // std::optional<Value *> valOpt = any2Value(e->accept(this));
-        std::optional<Value *> valOpt = this->accept(e);
+        std::optional<Value *> valOpt = AcceptType(this, e);
         if (!valOpt)
         {
             errorHandler.addCodegenError(nullptr, "Failed to generate code");
@@ -638,7 +638,7 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
 {
-    std::optional<Value *> index = this->accept(n->indexExpr);
+    std::optional<Value *> index = AcceptType(this, n->indexExpr);
 
     if (!index)
     {
@@ -646,7 +646,7 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
         return {};
     }
 
-    std::optional<Value *> arrayPtr = this->accept(n->field);
+    std::optional<Value *> arrayPtr = AcceptType(this, n->field);
     if (!arrayPtr)
     {
         errorHandler.addCodegenError(nullptr, "Failed to locate array in access");
@@ -659,8 +659,9 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
     builder->CreateStore(baseValue, v);
 
     auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
-    Value *val = builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
-    return val;
+    if(n->is_rvalue)
+     return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+    return ptr;
 }
 
 std::optional<Value *> CodegenVisitor::visit(IConstExprNode *n)
@@ -703,7 +704,7 @@ std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
     {
     case UNARY_MINUS:
     {
-        std::optional<Value *> innerVal = this->accept(n->value);
+        std::optional<Value *> innerVal = AcceptType(this, n->value);
 
         if (!innerVal)
         {
@@ -717,7 +718,7 @@ std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
 
     case UNARY_NOT:
     {
-        std::optional<Value *> innerVal = this->accept(n->value);
+        std::optional<Value *> innerVal = AcceptType(this, n->value);
 
         if (!innerVal)
         {
@@ -733,8 +734,8 @@ std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(BinaryArithNode *n)
 {
-    std::optional<Value *> lhs = accept(n->lhs);
-    std::optional<Value *> rhs = accept(n->rhs);
+    std::optional<Value *> lhs = AcceptType(this, n->lhs);
+    std::optional<Value *> rhs = AcceptType(this, n->rhs);
 
     if (!lhs || !rhs)
     {
@@ -757,8 +758,8 @@ std::optional<Value *> CodegenVisitor::visit(BinaryArithNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
 {
-    std::optional<Value *> lhs = accept(n->lhs);
-    std::optional<Value *> rhs = accept(n->rhs);
+    std::optional<Value *> lhs = AcceptType(this, n->lhs);
+    std::optional<Value *> rhs = AcceptType(this, n->rhs);
 
     // FIXME: CAN WE REMOVE ANY2VALUE ONCE WERE DONE USING AST?
 
@@ -811,7 +812,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
 
     builder->SetInsertPoint(current);
 
-    std::optional<Value *> first = this->accept(n->exprs.at(0));
+    std::optional<Value *> first = AcceptType(this, n->exprs.at(0));
 
     if (!first)
     {
@@ -837,7 +838,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
          */
         builder->SetInsertPoint(falseBlk);
 
-        std::optional<Value *> rhs = this->accept(n->exprs.at(i));
+        std::optional<Value *> rhs = AcceptType(this, n->exprs.at(i));
 
         if (!rhs)
         {
@@ -886,7 +887,7 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
 
     builder->SetInsertPoint(current);
 
-    std::optional<Value *> first = this->accept(n->exprs.at(0));
+    std::optional<Value *> first = AcceptType(this, n->exprs.at(0));
 
     if (!first)
     {
@@ -912,7 +913,7 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
          */
         builder->SetInsertPoint(falseBlk);
 
-        std::optional<Value *> rhs = this->accept(n->exprs.at(i));
+        std::optional<Value *> rhs = AcceptType(this, n->exprs.at(i));
 
         if (!rhs)
         {
@@ -1025,8 +1026,8 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
 {
     // Generate code for LHS and RHS
-    std::optional<Value *> lhs = this->accept(n->lhs);
-    std::optional<Value *> rhs = this->accept(n->rhs);
+    std::optional<Value *> lhs = AcceptType(this, n->lhs);
+    std::optional<Value *> rhs = AcceptType(this, n->rhs);
 
     // Ensure we successfully generated LHS and RHS
     if (!lhs || !rhs)
@@ -1060,7 +1061,7 @@ std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
 std::optional<Value *> CodegenVisitor::visit(ConditionNode *n)
 {
     // Passthrough to visiting the conditon
-    return this->accept(n->condition);
+    return AcceptType(this, n->condition);
 }
 
 std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
@@ -1092,7 +1093,7 @@ std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
 std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
 {
     // Visit the expression to get the value we will assign
-    std::optional<Value *> exprVal = this->accept(n->val); // any2Value(ctx->a->accept(this));
+    std::optional<Value *> exprVal = AcceptType(this, n->val); // any2Value(ctx->a->accept(this));
 
     // Check that the expression generated
     if (!exprVal)
@@ -1102,18 +1103,20 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     }
 
     // Lookup the binding for the variable we are assigning to and and ensure that we find it
-    std::optional<Symbol *> varSymOpt = props->getBinding(ctx->to);
-    if (!varSymOpt)
-    {
-        errorHandler.addCodegenError(nullptr, "Incorrectly processed variable in assignment: " + ctx->to->getText());
-        return {};
-    }
+    // std::optional<Symbol *> varSymOpt = props->getBinding(ctx->to);
+    // if (!varSymOpt)
+    // {
+    //     errorHandler.addCodegenError(nullptr, "Incorrectly processed variable in assignment: " + ctx->to->getText());
+    //     return {};
+    // }
 
+    /*
     Symbol *varSym = varSymOpt.value();
-
+    */
     // Get the allocation instruction for the symbol
-    std::optional<Value *> val = varSym->val;
+    std::optional<Value *> val = AcceptType(this, n->var);//varSym->val;
 
+    /*
     // If the symbol is global
     if (varSym->isGlobal)
     {
@@ -1130,14 +1133,15 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
         // Load a pointer to the global variable
         val = builder->CreateLoad(glob)->getPointerOperand();
     }
-
+    */
     // Sanity check to ensure that we now have a value for the variable
     if (!val)
     {
-        errorHandler.addCodegenError(nullptr, "Improperly initialized variable in assignment: " + ctx->to->getText() + "@" + varSym->identifier);
+        errorHandler.addCodegenError(nullptr, "Improperly initialized variable in assignment: "); //FIXME: DO BETTER + ctx->to->getText() + "@" + varSym->identifier);
         return {};
     }
 
+    /*
     // Checks to see if we are dealing with an array
     if (!ctx->to->var)
     {
@@ -1155,18 +1159,20 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
         Value *built = builder->CreateGEP(val.value(), {Int32Zero, index.value()});
         val = built;
     }
+    */
 
     // Store the expression's value
     // TODO: METHODIZE?
     Value *v = val.value();
     Value *stoVal = exprVal.value();
-    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSym->type))
+    const Type * varSymType = n->var->getType(); 
+    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymType))
     {
         unsigned int index = sum->getIndex(module, stoVal->getType());
 
         if (index == 0)
         {
-            Value *corrected = builder->CreateBitCast(stoVal, varSym->type->getLLVMType(module));
+            Value *corrected = builder->CreateBitCast(stoVal, varSymType->getLLVMType(module));
             builder->CreateStore(corrected, v);
             return {};
         }
@@ -1309,17 +1315,17 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitProgramLoop(WPLParser::ProgramLoopContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 {
-    //FIXME: WE NEED TO START LOOP IN HERE :\
+    //FIXME: WE NEED TO START LOOP IN HERE 
     std::cout << "1546" << std::endl;
     // Very similar to conditionals
 
-    std::optional<Value *> check = this->TvisitCondition(ctx->check); // any2Value(ctx->check->accept(this));
+    std::optional<Value *> check = this->visit(n->cond); //TvisitCondition(ctx->check); // any2Value(ctx->check->accept(this));
     std::cout << "1550" << std::endl;
     if (!check)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: " + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
     std::cout << "1556" << std::endl;
@@ -1338,17 +1344,17 @@ std::optional<Value *> CodegenVisitor::TvisitProgramLoop(WPLParser::ProgramLoopC
      */
     builder->SetInsertPoint(loopBlk);
     std::cout << "1571" << std::endl;
-    for (auto e : ctx->block()->stmts)
+    for (auto e : n->blk->exprs)
     {
-        std::cout << "1574 " << e->getText() << std::endl;
-        e->accept(this);
+        // std::cout << "1574 " << e->getText() << std::endl;
+        AcceptType(this, e); 
     }
     std::cout << "1575" << std::endl;
     // Re-calculate the loop condition
-    check = this->TvisitCondition(ctx->check);
+    check = this->visit(n->cond);//this->TvisitCondition(ctx->check);
     if (!check)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: " + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
     std::cout << "1583" << std::endl;
@@ -1396,7 +1402,8 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
     builder->SetInsertPoint(thenBlk);
     for (auto e : n->trueBlk->exprs)
     {
-        e->accept(this);
+        // e->accept(this);
+        AcceptType(this, e);
     }
 
     // If the block ends in a return, then we can't make the branch; things would break
@@ -1418,7 +1425,8 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
         // Generate the code for the else block; follows the same logic as the then block.
         for (auto e : n->falseOpt.value()->exprs)
         {
-            e->accept(this);
+            // e->accept(this);
+            AcceptType(this, e); 
         }
 
         if (!CodegenVisitor::blockEndsInReturn(n->falseOpt.value()))
@@ -1450,7 +1458,7 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
         SelectAlternativeNode *evalCase = n->nodes.at(i);
 
         // Visit the check code
-        std::optional<Value *> optVal = this->accept(evalCase->check);
+        std::optional<Value *> optVal = AcceptType(this, evalCase->check);
 
         // Check that the optional, in fact, has a value. Otherwise, something went wrong.
         if (!optVal)
@@ -1481,7 +1489,8 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
         builder->SetInsertPoint(thenBlk);
 
         // Visit the evaluation code for the case
-        evalCase->eval->accept(this);
+        // evalCase->eval->accept(this);
+        AcceptType(this, evalCase->eval);
 
         /*
          * As codegen worked, we now need to determine if
@@ -1529,64 +1538,47 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::TvisitReturnStatement(WPLParser::ReturnStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
 {
     // Check if we are returning an expression or not
-    if (ctx->expression())
+    if (n->expr)
     {
-        // If we are, then visit that expression
-        std::any anyInner = ctx->expression()->accept(this);
-
+        std::pair<const Type*, TypedNode *> expr = n->expr.value(); 
         // Perform some checks to make sure that code was generated
-        if (std::optional<Value *> innerOpt = any2Value(anyInner))
+        std::optional<Value *> innerOpt = AcceptType(this, expr.second);
+
+        if (!innerOpt)
         {
-            if (!innerOpt)
-            {
-                errorHandler.addCodegenError(nullptr, "Failed to generate code for: " + ctx->getText());
-                return {};
-            }
-
-            Value *inner = innerOpt.value();
-
-            std::optional<Symbol *> symOpt = props->getBinding(ctx);
-            if (!symOpt)
-            {
-                errorHandler.addCodegenError(nullptr, "Unable to find binding for return");
-                return {};
-            }
-
-            Symbol *varSym = symOpt.value();
-
-            // TODO: METHODIZE
-            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSym->type))
-            {
-                unsigned int index = sum->getIndex(module, inner->getType());
-
-                if (index != 0)
-                {
-                    llvm::Type *sumTy = sum->getLLVMType(module);
-                    llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
-                    Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-                    builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-                    Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-                    Value *corrected = builder->CreateBitCast(valuePtr, inner->getType()->getPointerTo());
-                    builder->CreateStore(inner, corrected);
-
-                    inner = builder->CreateLoad(sumTy, alloc);
-                }
-            }
-
-            // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.
-            Value *v = builder->CreateRet(inner);
-
-            return v;
-        }
-        else
-        {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: " + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + ctx->getText());
             return {};
         }
+
+        Value *inner = innerOpt.value();
+
+        // TODO: METHODIZE
+        if (const TypeSum *sum = dynamic_cast<const TypeSum *>(expr.first))
+        {
+            unsigned int index = sum->getIndex(module, inner->getType());
+
+            if (index != 0)
+            {
+                llvm::Type *sumTy = sum->getLLVMType(module);
+                llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+
+                Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+                builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+                Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+                Value *corrected = builder->CreateBitCast(valuePtr, inner->getType()->getPointerTo());
+                builder->CreateStore(inner, corrected);
+
+                inner = builder->CreateLoad(sumTy, alloc);
+            }
+        }
+
+        // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.
+        Value *v = builder->CreateRet(inner);
+
+        return v;
     }
 
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
@@ -1604,7 +1596,8 @@ std::optional<Value *> CodegenVisitor::visit(BlockNode *n)
 {
     for (auto e : n->exprs)
     {
-        e->accept(this);
+        // e->accept(this);
+        AcceptType(this, e);
     }
 
     return {};
@@ -1647,8 +1640,8 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 
             // Try to find the parameter's bnding to determine what value to bind to it.
             // std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber)); // FIXME: STILL NEED TO DO THIS
-            
-            param->val = v; //FIXME: DO WE NEED TO CHECK IF ALREADY SET?
+
+            param->val = v; // FIXME: DO WE NEED TO CHECK IF ALREADY SET?
 
             builder->CreateStore(&arg, v);
         }
@@ -1656,7 +1649,7 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
         // Generate code for the block
         for (auto e : n->block->exprs)
         {
-            this->accept(e); 
+            AcceptType(this, e);
         }
 
         // NOTE HOW WE DONT NEED TO CREATE RET VOID EVER BC NO FN!
