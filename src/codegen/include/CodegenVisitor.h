@@ -149,7 +149,7 @@ public:
 
         const TypeProgram *inv = n->getType();
 
-        llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
+        llvm::Type *genericType = inv->getLLVMType(module)->getPointerElementType();
 
         if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
         {
@@ -164,18 +164,13 @@ public:
             builder->SetInsertPoint(bBlk);
 
             // Bind all of the arguments
-            llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, ctx->channelName->getText());
-            std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1)); // FIXME: DO BETTER
-            if (!symOpt)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Unable to generate channel id");
-            }
-            else
-            {
-                symOpt.value()->val = v;
+            llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
+            // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1)); // FIXME: DO BETTER
 
-                builder->CreateStore((fn->args()).begin(), v);
-            }
+            //FIXME: DO WE NEED TO CHECK THAT WE HAVENT PREVIOUSLY SET VAL?
+            n->channelSymbol->val = v; // FIXME: BECAUSE THIS IS ON THE DEFINITION, DO WE HAVE ISSUES WITH ALLOCATION REUSE?
+
+            builder->CreateStore((fn->args()).begin(), v);
 
             /*
             for (auto &arg : fn->args())
@@ -197,7 +192,7 @@ public:
 
                 if (!symOpt)
                 {
-                    errorHandler.addCodegenError(ctx->getStart(), "Unable to generate parameter for function: " + argName);
+                    errorHandler.addCodegenError(nullptr, "Unable to generate parameter for function: " + argName);
                 }
                 else
                 {
@@ -209,48 +204,38 @@ public:
             */
 
             // Get the codeblock for the PROC/FUNC
-            WPLParser::BlockContext *block = ctx->block();
+            // WPLParser::BlockContext *block = ctx->block();
 
             // Generate code for the block
-            for (auto e : block->stmts)
+            for (auto e : n->block->exprs)
             {
-                e->accept(this);
+                // e->accept(this);
+                this->accept(e);
             }
 
             // If we are a PROC, make sure to add a return type (if we don't already have one)
             // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
-            if (!CodegenVisitor::blockEndsInReturn(block)) // FIXME: THIS SHOULD BECOME ALWAYS TRUE
+            if (!CodegenVisitor::blockEndsInReturn(n->block)) // FIXME: THIS SHOULD BECOME ALWAYS TRUE
             {
                 builder->CreateRetVoid();
             }
         }
         else
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Invocation type could not be cast to function!");
+            errorHandler.addCodegenError(nullptr, "Invocation type could not be cast to function!");
         }
 
         builder->SetInsertPoint(ins);
         return {};
     }
 
-    std::optional<Value *> visitVariable(std::string id, std::optional<Symbol *> symOpt, antlr4::ParserRuleContext *ctx)
+    std::optional<Value *> visitVariable(Symbol *sym)
     {
-        //  = props->getBinding(ctx);
-
-        // If the symbol could not be found, raise an error
-        if (!symOpt)
-        {
-            errorHandler.addCodegenError(ctx->getStart(), "Undefined variable access: " + id);
-            return {};
-        }
-
-        Symbol *sym = symOpt.value();
-
         // Try getting the type for the symbol, raising an error if it could not be determined
         llvm::Type *type = sym->type->getLLVMType(module);
         if (!type)
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Unable to find type for variable: " + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
             return {};
         }
 
@@ -262,7 +247,7 @@ public:
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(ctx->getStart(), "Could not locate IR name for function " + sym->toString());
+                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for function " + sym->toString());
                     return {};
                 }
 
@@ -274,7 +259,7 @@ public:
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(ctx->getStart(), "Could not locate IR name for function " + sym->toString());
+                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for function " + sym->toString());
                     return {};
                 }
 
@@ -290,7 +275,7 @@ public:
                 // Check that we found the variable. If not, throw an error.
                 if (!glob)
                 {
-                    errorHandler.addCodegenError(ctx->getStart(), "Unable to find global variable: " + id);
+                    errorHandler.addCodegenError(nullptr, "Unable to find global variable: " + sym->getIdentifier());
                     return {};
                 }
 
@@ -299,12 +284,12 @@ public:
                 return val;
             }
 
-            errorHandler.addCodegenError(ctx->getStart(), "Unable to find allocation for variable: " + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Unable to find allocation for variable: " + sym->getIdentifier());
             return {};
         }
 
         // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
-        Value *v = builder->CreateLoad(type, sym->val.value(), id);
+        Value *v = builder->CreateLoad(type, sym->val.value(), sym->getIdentifier());
         return v;
     }
 

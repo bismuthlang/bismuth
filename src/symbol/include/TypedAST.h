@@ -192,21 +192,22 @@ private:
     TypeInvoke *type;
 
 public:
-    ParameterListNode paramList;
+    vector<Symbol*> paramSymbols;
     const Type *retType;
     BlockNode *block;
 
-    LambdaConstNode(ParameterListNode p, const Type *r, BlockNode *b)
+    LambdaConstNode(vector<Symbol*> p, const Type *r, BlockNode *b)
     {
-        paramList = p;
+        // paramList = p;
+        paramSymbols = p; 
         retType = r;
         block = b;
 
         vector<const Type *> paramTypes;
 
-        for (ParameterNode p : paramList)
+        for (Symbol* p : paramSymbols)
         {
-            paramTypes.push_back(p.type);
+            paramTypes.push_back(p->type);
         }
 
         type = new TypeInvoke(paramTypes, retType);
@@ -226,14 +227,14 @@ private:
 
 public:
     string name;
-    string channelName;
+    Symbol * channelSymbol;
     // TypeChannel * channelType;
     BlockNode *block;
 
-    ProgramDefNode(string n, string cn, BlockNode *b, const TypeProgram *ty)
+    ProgramDefNode(string n, Symbol* cn, BlockNode *b, const TypeProgram *ty)
     {
         name = n;
-        channelName = cn;
+        channelSymbol = cn;
         // channelType = ct;
         block = b;
         type = ty;
@@ -632,14 +633,22 @@ public:
     virtual std::any accept(TypedASTVisitor<std::any> *a) override { return a->visit(this); }
 };
 
+enum EqExprOperator
+{
+    EQUAL_OP,
+    NOT_EQUAL_OP
+};
+
 class EqExprNode : public TypedNode
 {
 public:
+    EqExprOperator op; 
     TypedNode *lhs;
     TypedNode *rhs;
 
-    EqExprNode(TypedNode *l, TypedNode *r)
+    EqExprNode(EqExprOperator o, TypedNode *l, TypedNode *r)
     {
+        op = o; 
         lhs = l;
         rhs = r;
     }

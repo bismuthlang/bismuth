@@ -564,7 +564,9 @@ EqExprNode *SemanticVisitor::visitCtx(WPLParser::EqExprContext *ctx)
     }
 
     // return Types::BOOL;
-    return new EqExprNode(lhs, rhs);
+    return new EqExprNode(
+        ctx->EQUAL() ? EQUAL_OP : NOT_EQUAL_OP,
+        lhs, rhs);
 }
 
 /**
@@ -1266,6 +1268,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
         return {}; // FIXME: DO BETTER?
 
     ParameterListNode params = paramTypeOpt.value();
+    std::vector<Symbol *> ps; 
 
     const Type *retType = any2Type(ctx->ret->accept(this));
 
@@ -1282,6 +1285,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
         Symbol *paramSymbol = new Symbol(param.name, param.type, false, false); // new Symbol(param->name->getText(), ty, false, false);
         stmgr->addSymbol(paramSymbol);
 
+        ps.push_back(paramSymbol);
         // bindings->bind(param, paramSymbol);
     }
 
@@ -1304,7 +1308,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
 
     // return funcType;
 
-    return new LambdaConstNode(params, retType, blk);
+    return new LambdaConstNode(ps, retType, blk);
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::LambdaTypeContext *ctx)

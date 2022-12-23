@@ -380,7 +380,7 @@ public:
         // bindings->bind(ctx, funcSymbol);
         // bindings->bind(ctx->VARIABLE().at(1), channelSymbol);
 
-        return new ProgramDefNode(funcId, ctx->channelName->getText(), blkOpt.value(), funcType);
+        return new ProgramDefNode(funcId, channelSymbol, blkOpt.value(), funcType);
     }
 
 
