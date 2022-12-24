@@ -1,0 +1,13 @@
+# int func program() {
+#   var x;
+#   int i := 42;
+#   x := i;
+#   return x;
+# }
+
+define program :: c : Channel<-int> = {
+  var x; 
+  int i := 42; 
+  x := i;
+  c.send(x)
+}

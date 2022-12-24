@@ -111,7 +111,7 @@ public:
     std::optional<Value *> visit(ExternNode *n) override;
     std::optional<Value *> visit(InvocationNode *n) override;
     std::optional<Value *> visit(FieldAccessNode *n) override;
-    std::optional<Value *> visit(VariableIDNode *n) override { return {}; };
+    std::optional<Value *> visit(VariableIDNode *n) override { return visitVariable(n->symbol, n->is_rvalue); };
     std::optional<Value *> visit(ArrayAccessNode *n) override;
     std::optional<Value *> visit(AssignNode *n) override;
     std::optional<Value *> visit(BinaryRelNode *n) override;
@@ -232,7 +232,7 @@ public:
         return {};
     }
 
-    std::optional<Value *> visitVariable(Symbol *sym)
+    std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {
         // Try getting the type for the symbol, raising an error if it could not be determined
         llvm::Type *type = sym->type->getLLVMType(module);
@@ -291,6 +291,7 @@ public:
             return {};
         }
 
+        if(!is_rvalue) return sym->val.value(); 
         // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
         Value *v = builder->CreateLoad(type, sym->val.value(), sym->getIdentifier());
         return v;

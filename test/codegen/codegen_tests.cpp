@@ -1799,7 +1799,7 @@ TEST_CASE("B Level Positive Test #2", "[codegen]")
  ************************************/
 TEST_CASE("A Level Positive Test #1", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/APositive1.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/APositive1.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1822,12 +1822,12 @@ TEST_CASE("A Level Positive Test #1", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "2838be9e472fa2455af9851905f03f970170d67e7c1ba49cc110a274d578651b");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "2f0c3eee9fe38237070d46f6cad1c8c11511932b4e70b5f44dd1259168101bf8");
 }
 
 TEST_CASE("A Level Positive Test #2", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/APositive2.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/APositive2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1850,5 +1850,5 @@ TEST_CASE("A Level Positive Test #2", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "3ab074cdd00ea287689233a158d1bc268eaa11ac1d07fb1e2fb633e8bca8eaca");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "274e9b13e41b0c6202eb2cefb1401fb917e7711a9dfd796e19ea24f1868ffa69");
 }

@@ -969,7 +969,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
     const Type *ty = sym->type;
     // std::optional<Value *> baseOpt = visitVariable(ctx->VARIABLE().at(0)->getText(), props->getBinding(ctx->VARIABLE().at(0)), ctx); // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
-    std::optional<Value *> baseOpt = visitVariable(sym); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
+    std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
     // std::optional<Value *> val = {};
 
     // for (unsigned int i = 1; i < ctx->fields.size(); i++)
