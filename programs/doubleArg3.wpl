@@ -7,7 +7,7 @@ proc foo(int a, str a, int b) {
     var c := a; 
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
  var current := 1;        
  return -1;
 }

@@ -69,7 +69,7 @@ Unit -> int func getMain() {
     return main; 
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
 
     Unit u := Unit::init(); 
 

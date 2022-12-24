@@ -102,7 +102,7 @@ int func lamePrint(Color c) {
     printf("133\n");
     return 0;
 }
-int func program() {
+define program :: c : Channel<-int> = {
 
     HSVColor hsv; 
     RGBColor rgb; 

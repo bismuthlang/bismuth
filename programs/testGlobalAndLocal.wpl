@@ -13,7 +13,7 @@ proc foo(int a) {
 }
 
 
-int func program() {
+define program :: c : Channel<-int> = {
     printf("prog: a=%d\n", a);
 
     a := a + 1; 

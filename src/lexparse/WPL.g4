@@ -100,7 +100,7 @@ VariadicParam : ',' [ \t]* '...'; //For some reason, need to match the whitespac
  * Assignment fragment: this contains the information about variables
  * that we wish to declare as well as a potential expression to serve as their 
  * value. This is used by the VarDeclStatement to help separate multiple 
- * assigments. Ie those of the form:   var a <- 1, b <- 2, ... 
+ * assigments. Ie those of the form:   var a := 1, b := 2, ... 
  */
 assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=assignable)? ;
 
@@ -117,8 +117,8 @@ assignable : ex=expression                          # AssignableExpr
  * 1. Definition of external functions/procedures. 
  * 2. Definition of functions
  * 3. Definition of procedures
- * 4. Assignments (updates to existing variables) such as: a <- 2; 
- * 5. Variable definitions such as: var a; int [5] b; var a, b; var a, b <- 1; var a, b <- 1, c, d, e <- 2; etc.
+ * 4. Assignments (updates to existing variables) such as: a := 2; 
+ * 5. Variable definitions such as: var a; int [5] b; var a, b; var a, b := 1; var a, b := 1, c, d, e := 2; etc.
  * 6. Looping statements (while loops)
  * 7. Conditional statements (if with optional else)
  * 8. Select statements (which require at least one select alternative)

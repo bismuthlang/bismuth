@@ -11,7 +11,7 @@ TEST_CASE("Basic Assignments", "[semantic]")
 {
   SECTION("Basic Int Test")
   {
-    antlr4::ANTLRInputStream input("int a <- 2;");
+    antlr4::ANTLRInputStream input("int a := 2;");
     WPLLexer lexer(&input);
     // lexer.removeErrorListeners();
     // lexer.addErrorListener(new TestErrorListener());
@@ -41,7 +41,7 @@ TEST_CASE("Basic Assignments", "[semantic]")
 
 TEST_CASE("Assignment: Int Expr", "[semantic]")
 {
-  antlr4::ANTLRInputStream input("int a; {a <- 2 * (2 / 4 + 3 - -2);}");
+  antlr4::ANTLRInputStream input("int a; {a := 2 * (2 / 4 + 3 - -2);}");
   WPLLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
@@ -70,7 +70,7 @@ TEST_CASE("Assignment: Int Expr", "[semantic]")
 
 TEST_CASE("Assignment: Bool const", "[semantic]")
 {
-  antlr4::ANTLRInputStream input("boolean a <- false;");
+  antlr4::ANTLRInputStream input("boolean a := false;");
   WPLLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
@@ -99,7 +99,7 @@ TEST_CASE("Assignment: Bool const", "[semantic]")
 
 TEST_CASE("Assignment: Bool expr", "[semantic]")
 {
-  antlr4::ANTLRInputStream input("boolean a; {a <- (false | true) & ~false;}");
+  antlr4::ANTLRInputStream input("boolean a; {a := (false | true) & ~false;}");
   WPLLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
@@ -128,7 +128,7 @@ TEST_CASE("Assignment: Bool expr", "[semantic]")
 
 TEST_CASE("Assignment: String const", "[semantic]")
 {
-  antlr4::ANTLRInputStream input("str a <- \"Hello world!\";");
+  antlr4::ANTLRInputStream input("str a := \"Hello world!\";");
   WPLLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
@@ -163,7 +163,7 @@ TEST_CASE("Inequal array lengths 1", "[semantic][conditional]")
       int [3] a; 
       int [5] b; 
 
-      a <- b;
+      a := b;
     )""""
   );
   WPLLexer lexer(&input);
@@ -193,7 +193,7 @@ TEST_CASE("Inequal array lengths 2", "[semantic][conditional]")
       int [5] a; 
       int [3] b; 
 
-      a <- b;
+      a := b;
     )""""
   );
   WPLLexer lexer(&input);

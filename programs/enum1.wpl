@@ -13,7 +13,7 @@ define enum b {
 }
 
 
-int func program() {
+define program :: c : Channel<-int> = {
     #a idk0, idk1, idk2 := 1;
     a idk1 := 1; 
     a idk2 := false;

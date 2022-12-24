@@ -1,6 +1,8 @@
 extern int func printf(...);
 
-proc nested(int a) {
+# proc nested(int a) {
+define nested :: io : Channel<+int> = {
+    int a := io.recv(); 
 
     if a <= 0 & (a < -5 | a < 0 | a = 0) then {
         if a < -5 then {
@@ -35,14 +37,19 @@ proc nested(int a) {
     
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
 
     var i := -10; 
     while i <= 15 {
         printf("For %d:\n\t", i);
-        nested(i);
+        # nested(i);
+        Channel<-int> io := exec nested; 
+        io.send(i)
+
+
         i := i + 1;
     }
     
-    return -1; 
+    # return -1; 
+    c.send(-1)
 }

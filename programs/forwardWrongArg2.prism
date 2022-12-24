@@ -1,0 +1,17 @@
+extern int func printf(...);
+
+# extern proc foo(int z);
+
+
+# define program :: c : Channel<-int> = {
+define program :: c : Channel<-int> = {
+    foo(10); 
+
+    return 1; 
+}
+
+# proc foo(int a) {
+define foo :: c : Channel<+int> = {
+    int a := c.recv(); # FIXME: CLUNKY SYNTAX
+    printf("a=%u\n", a);
+}

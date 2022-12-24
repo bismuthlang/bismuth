@@ -12,7 +12,7 @@ boolean func isPrime(int n) {
  return true;
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
  var current := 3;        
  int nPrimes := 2;       # explicit type 
  while current < 100 { 

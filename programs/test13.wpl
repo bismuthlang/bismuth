@@ -8,7 +8,7 @@ int func fib(int n) {
   return fib(n - 1) + fib(n - 2);
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
  var current := 1;        
  while current < 20 do { 
    var i := fib(current); 

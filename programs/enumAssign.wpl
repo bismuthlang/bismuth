@@ -14,7 +14,7 @@ define enum a {
     lambdaOp
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
     var fn := (str msg, int times) : str {
         while times > 0 {
             printf("msg=%s\n", msg);

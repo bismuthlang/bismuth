@@ -103,6 +103,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
     {
         if (std::holds_alternative<ProgramDefNode *>(e)) // ProgramDefNode *octx = dynamic_cast<ProgramDefNode *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
         {
+            std::cout << "PREDEF!" << std::endl; 
             ProgramDefNode *octx = std::get<ProgramDefNode *>(e);
 
             const TypeProgram *type = octx->getType();
@@ -111,8 +112,10 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
 
             if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
             {
+                std::cout << "CREATE: " << octx->name << std::endl; 
                 Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, octx->name, module);
                 type->setName(fn->getName().str());
+                std::cout << "SET NAME: " << fn->getName().str() << std::endl;
             }
             else
             {
@@ -422,7 +425,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
 {
-    std::optional<Value *> fnOpt = n->sym->val;
+    std::optional<Value *> fnOpt = visitVariable(n->sym, true); //FIXME: DO BETTER?
 
     if (!fnOpt)
     {

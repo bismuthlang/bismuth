@@ -11,7 +11,7 @@ define enum E2 {
     boolean
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
     # E2 e2 := 10; 
     E1 e1 := 10; 
     E2 e2 := false;#e1;

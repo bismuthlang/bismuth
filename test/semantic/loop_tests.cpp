@@ -15,8 +15,8 @@ TEST_CASE("Undefined Params", "[semantic][loop]")
 {
   antlr4::ANTLRInputStream input(
     "while i < 10 {"
-    " sum <- sum * 2; "
-    " i <- i + 1; "    
+    " sum := sum * 2; "
+    " i := i + 1; "    
     "}"
   );
   WPLLexer lexer(&input);
@@ -43,10 +43,10 @@ TEST_CASE("Undefined Params", "[semantic][loop]")
 TEST_CASE("Undefined Params 2", "[semantic][loop]")
 {
   antlr4::ANTLRInputStream input(
-    "int i <- 0;"
+    "int i := 0;"
     "while i < 10 {"
-    " sum <- sum * 2; "
-    " i <- i + 1; "    
+    " sum := sum * 2; "
+    " i := i + 1; "    
     "}"
   );
   WPLLexer lexer(&input);
@@ -73,10 +73,10 @@ TEST_CASE("Undefined Params 2", "[semantic][loop]")
 TEST_CASE("Check example", "[semantic][loop]")
 {
   antlr4::ANTLRInputStream input(
-    "int i <- 0, sum <- 1;"
+    "int i := 0, sum := 1;"
     "while i < 10 {"
-    " sum <- sum * 2; "
-    " i <- i + 1; "    
+    " sum := sum * 2; "
+    " i := i + 1; "    
     "}"
   );
   WPLLexer lexer(&input);
@@ -102,11 +102,11 @@ TEST_CASE("Check example", "[semantic][loop]")
 TEST_CASE("Check example - adv", "[semantic][loop]")
 {
   antlr4::ANTLRInputStream input(
-    "int i <- 0, sum <- 1;"
+    "int i := 0, sum := 1;"
     "while i < 10 {"
-    " sum <- sum * 2; "
-    " i <- i + 1; "  
-    " str s <- \"scope\";"  
+    " sum := sum * 2; "
+    " i := i + 1; "  
+    " str s := \"scope\";"  
     "}"
   );
   WPLLexer lexer(&input);

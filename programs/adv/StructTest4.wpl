@@ -59,7 +59,7 @@ Color func getRGBColor(int r)
 }
 
 
-int func program() {
+define program :: c : Channel<-int> = {
     getRGBColor(128);
     return 0; 
 }

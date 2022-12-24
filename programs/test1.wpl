@@ -2,16 +2,19 @@
 extern int func printf(...);
 #extern int func testtwo(...);
 
-int func chayos() {
+# int func chayos() {
+define chayos :: c : Channel<-int> = {
     var a, b := 1; 
 
     a := b;
 
-    return -1; 
+    # return -1; 
+    c.send(-1)
 }
 
 
-int func idk() { 
+# int func idk() { 
+define idk :: c : Channel<-int> = {
     var x; 
     if (1 < 2) {
         x := 3; 
@@ -19,10 +22,12 @@ int func idk() {
         x := 2; 
     }
 
-    return x;
+    # return x;
+    c.send(x)
 }
 
-int func branchtest() {
+# int func branchtest() {
+define branchtest :: c : Channel<-int> = {
     int[5] a; 
 
     var count := 0; 
@@ -36,17 +41,21 @@ int func branchtest() {
 
     if(true) then { # a[1] < a[2]
         printf("TRUE\n");
-        return -1;
+        # return -1;
+        c.send(-1)
     } else {
         printf("FALSE\n");
-        return -22; # printf("B"); # return -2; 
+        # return -22; # printf("B"); # return -2; 
+        c.send(-22)
     }
 
-    return 0;
+    # return 0;
+    c.send(0)
 }
 
 
-int func otherbranch() {
+# int func otherbranch() {
+define otherbranch :: c : Channel<-int> = {
     int a := 0; 
     int b := 1; 
 
@@ -56,10 +65,12 @@ int func otherbranch() {
         b := 5; 
     }
 
-    return b; 
+    # return b; 
+    c.send(b)
 }
 
-str func otherbranchtwo() {
+# str func otherbranchtwo() {
+define otherbranchtwo :: c : Channel<-str> = {
     int a := 0; 
     str b := "Why hello there!"; 
 
@@ -70,10 +81,12 @@ str func otherbranchtwo() {
         b := "Second case this time!"; 
     }
 
-    return b; 
+    # return b; 
+    c.send(b)
 }
 
-str func otherbranchthree() {
+# str func otherbranchthree() {
+define otherbranchthree :: c : Channel<-str> = {
     int a := 0; 
     str b := "Why hello there!"; 
 
@@ -87,10 +100,12 @@ str func otherbranchthree() {
         b := cb; 
     }
 
-    return b; 
+    # return b; 
+    c.send(b)
 }
 
-int func program() {
+# define program :: c : Channel<-int> = {
+define program :: c : Channel<-int> = {
     printf("Hello World!\n");
     # printf(); 
     int [50] a; 
@@ -111,6 +126,13 @@ int func program() {
     printf("C is: %i; a = [%i, %i, %i, %i, %i]\n", c, a[0], a[1], a[2], a[3], a[4]);
 
     # int ANS := branchtest(); 
+
+    # # FIXME: CLUNKY SYNTAX
+    # Channel<+int> t1 = exec branchtest; 
+    # Channel<+int> t2 = exec otherbranch;
+    # Channel<+str> t3 = exec otherbranchtwo; 
+    # Channel<+str> t4 = exec otherbranchthree;
+
     printf("From test, got: %i\n", branchtest());
     printf("Other test, got %i\n", otherbranch());
     printf("Other other test, %s\n", otherbranchtwo());
@@ -119,17 +141,6 @@ int func program() {
     # int b := a[2];
     # str b := a[2];
     # testtwo(1, 2, 3);
-    return -1; 
+    # return -1; 
+    c.send(-1)
 }
-
-(*
-proc procedurezero () {
-    int a := 0; 
-
-    while a < 10 {
-        a := a + 1; 
-        str b := "Hello"; 
-    }
-
-}
-*)

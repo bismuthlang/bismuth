@@ -16,20 +16,20 @@ TEST_CASE("Sample Progam one", "[semantic]")
       " * We know that n is odd, so just start with 3\n"
       " *)\n"
       "boolean func isPrime(int n) {\n"
-      " int i <- 3;\n"
+      " int i := 3;\n"
       " while (i < n) { \n"
       "   if (n / i * i = n) then { return false; } \n"
-      "   i <- i + 2;\n"
+      "   i := i + 2;\n"
       " }\n"
       " return true;\n"
       "}\n"
       "\n"
-      "int func program() {\n"
-      " int current <- 3;       \n"
-      " int nPrimes <- 2;       # explicit type \n"
+      "define program :: c : Channel<-int> = {\n"
+      " int current := 3;       \n"
+      " int nPrimes := 2;       # explicit type \n"
       " while current < 100 { \n"
-      "   if isPrime(current) then { nPrimes <- nPrimes + 1;}\n"
-      "   current <- current + 2;\n"
+      "   if isPrime(current) then { nPrimes := nPrimes + 1;}\n"
+      "   current := current + 2;\n"
       " }\n"
       " return nPrimes;\n"
       "}");
@@ -66,20 +66,20 @@ TEST_CASE("Sample Progam one w/ Inf", "[semantic]")
       " * We know that n is odd, so just start with 3\n"
       " *)\n"
       "boolean func isPrime(int n) {\n"
-      " var i <- 3;\n"
+      " var i := 3;\n"
       " while (i < n) { \n"
       "   if (n / i * i = n) then { return false; } \n"
-      "   i <- i + 2;\n"
+      "   i := i + 2;\n"
       " }\n"
       " return true;\n"
       "}\n"
       "\n"
-      "int func program() {\n"
-      " var current <- 3;       \n"
-      " int nPrimes <- 2;       # explicit type \n"
+      "define program :: c : Channel<-int> = {\n"
+      " var current := 3;       \n"
+      " int nPrimes := 2;       # explicit type \n"
       " while current < 100 { \n"
-      "   if isPrime(current) then { nPrimes <- nPrimes + 1;}\n"
-      "   current <- current + 2;\n"
+      "   if isPrime(current) then { nPrimes := nPrimes + 1;}\n"
+      "   current := current + 2;\n"
       " }\n"
       " return nPrimes;\n"
       "}");
@@ -111,23 +111,23 @@ TEST_CASE("Block", "[semantic]")
 {
   antlr4::ANTLRInputStream input(
       "boolean func isPrime(int n) {\n"
-      " var i <- 3;\n"
+      " var i := 3;\n"
       " while (i < n) { \n"
       "   if (n / i * i = n) then { return false; } \n"
-      "   i <- i + 2;\n"
+      "   i := i + 2;\n"
       "   {\n"
-      "     int i <- 0;\n"
+      "     int i := 0;\n"
       "   }\n"
       " }\n"
       " return true;\n"
       "}\n"
       "\n"
-      "int func program() {\n"
-      " var current <- 3;       \n"
-      " int nPrimes <- 2;       # explicit type \n"
+      "define program :: c : Channel<-int> = {\n"
+      " var current := 3;       \n"
+      " int nPrimes := 2;       # explicit type \n"
       " while current < 100 { \n"
-      "   if isPrime(current) then { nPrimes <- nPrimes + 1;}\n"
-      "   current <- current + 2;\n"
+      "   if isPrime(current) then { nPrimes := nPrimes + 1;}\n"
+      "   current := current + 2;\n"
       " }\n"
       " return nPrimes;\n"
       "}");
@@ -358,7 +358,7 @@ TEST_CASE("Comment EOF", "[semantic]")
 
 TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -378,7 +378,7 @@ TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
 
 TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16a.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16a.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -398,7 +398,7 @@ TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
 
 TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -418,7 +418,7 @@ TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
 
 TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-1.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-1.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -439,7 +439,7 @@ TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
 
 TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-2.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-2.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -460,7 +460,7 @@ TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
 
 TEST_CASE("programs/test16d - chain var", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16d.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16d.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -481,7 +481,7 @@ TEST_CASE("programs/test16d - chain var", "[semantic]")
 
 TEST_CASE("programs/test16e - chain var 2", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16e.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16e.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -503,7 +503,7 @@ TEST_CASE("programs/test16e - chain var 2", "[semantic]")
 
 TEST_CASE("programs/test16f - var loop", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16f.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16f.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -517,12 +517,12 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
   PropertyManager *pm = new PropertyManager();
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(0));
+  REQUIRE_FALSE(sv->hasErrors(0)); //FIXME: SHOULD WE COMPILE THESE?
 }
 
 TEST_CASE("programs/test17 - var inf in decl", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test17.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test17.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -537,6 +537,8 @@ TEST_CASE("programs/test17 - var inf in decl", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(0));
+
+  //FIXME: REQUIRE dd078039953b6a079ba980b9e1194ea063a9cf8c44194aece3adb115125877f3? 
 }
 
 TEST_CASE("Test program() should return int warning", "[semantic][conditional]")
@@ -601,7 +603,7 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
+    define program :: c : Channel<-int> = {
 
         return 1; 
 
@@ -636,7 +638,7 @@ TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
+    define program :: c : Channel<-int> = {
 
     if true then {
         return 0; 
@@ -719,7 +721,7 @@ TEST_CASE("Infer In return", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
+    define program :: c : Channel<-int> = {
         var a; 
         return a;
     }
@@ -749,7 +751,7 @@ TEST_CASE("Uninferred", "[semantic][program]")
   antlr4::ANTLRInputStream input(
       R""""(
     var a; 
-    int func program() {
+    define program :: c : Channel<-int> = {
         return 0;
     }
     )"""");
@@ -781,7 +783,7 @@ TEST_CASE("Nested programs (TEMPORARY)", "[semantic][program]")
   antlr4::ANTLRInputStream input(
       R""""(
     var a; 
-    int func program() {
+    define program :: c : Channel<-int> = {
         int func test() {
             return 0; 
         }
@@ -817,7 +819,7 @@ TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
     proc foo (int a) {
 
     }
-    int func program() {
+    define program :: c : Channel<-int> = {
       foo("hello");  
     }
     )"""");
@@ -847,8 +849,8 @@ TEST_CASE("Invoke on Non-Invokable (str)", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
-      var x <- "hey there!"; 
+    define program :: c : Channel<-int> = {
+      var x := "hey there!"; 
       x();
     }
     )"""");
@@ -879,8 +881,8 @@ TEST_CASE("Invoke on Non-Invokable (int)", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
-      var x <- 10; 
+    define program :: c : Channel<-int> = {
+      var x := 10; 
       x();
     }
     )"""");
@@ -916,7 +918,7 @@ TEST_CASE("Redeclaration of function 1", "[semantic][program]")
     str func foo() {
       return "";
     }
-    int func program() {
+    define program :: c : Channel<-int> = {
       return 0; 
     }
     )"""");
@@ -952,7 +954,7 @@ TEST_CASE("Redeclaration of function 2", "[semantic][program]")
     proc  foo() {
       return;
     }
-    int func program() {
+    define program :: c : Channel<-int> = {
       return 0; 
     }
     )"""");
@@ -988,7 +990,7 @@ TEST_CASE("Redeclaration of function 3", "[semantic][program]")
     int func foo() {
       return 1;
     }
-    int func program() {
+    define program :: c : Channel<-int> = {
       return 0; 
     }
     )"""");
@@ -1024,7 +1026,7 @@ TEST_CASE("Redeclaration of function 4", "[semantic][program]")
     int func foo(int a) {
       return 1;
     }
-    int func program() {
+    define program :: c : Channel<-int> = {
       return 0; 
     }
     )"""");
@@ -1060,7 +1062,7 @@ TEST_CASE("Redeclaration in extern", "[semantic][program]")
     extern int func foo();
     extern int func foo(int a);
     
-    int func program() {
+    define program :: c : Channel<-int> = {
       return 0; 
     }
     )"""");
@@ -1094,9 +1096,9 @@ extern int func printf(...);
 
 extern proc foo(); 
 
-str a <- "hello";
+str a := "hello";
 
-int func program() {
+define program :: c : Channel<-int> = {
     foo(); 
     return 0;
 }
@@ -1136,7 +1138,7 @@ extern proc foo();
 
 
 
-int func program() {
+define program :: c : Channel<-int> = {
     foo(); 
     return 0;
 }
@@ -1145,7 +1147,7 @@ proc foo() {
     printf("a = %s\n", a);
 }
 
-str a <- "hello";
+str a := "hello";
     )"""");
   WPLLexer lexer(&input);
   // lexer.removeErrorListeners();
@@ -1178,7 +1180,7 @@ extern proc foo(int a, ...);
 
 
 
-int func program() {
+define program :: c : Channel<-int> = {
     foo(); 
     return 0;
 }
@@ -1187,7 +1189,7 @@ proc foo(int a) {
     printf("a = %s\n", a);
 }
 
-str a <- "hello";
+str a := "hello";
     )"""");
   WPLLexer lexer(&input);
   // lexer.removeErrorListeners();
@@ -1220,7 +1222,7 @@ extern proc foo(int a);
 
 
 
-int func program() {
+define program :: c : Channel<-int> = {
     foo(); 
     return 0;
 }
@@ -1229,7 +1231,7 @@ proc foo(int a, int b) {
     printf("a = %s\n", a);
 }
 
-str a <- "hello";
+str a := "hello";
     )"""");
 
   WPLLexer lexer(&input);
@@ -1263,7 +1265,7 @@ extern proc foo(int a);
 
 
 
-int func program() {
+define program :: c : Channel<-int> = {
     foo(); 
     return 0;
 }
@@ -1272,7 +1274,7 @@ proc foo(int a, str b) {
     printf("a = %s\n", a);
 }
 
-str a <- "hello";
+str a := "hello";
     )"""");
 
   WPLLexer lexer(&input);
@@ -1306,7 +1308,7 @@ extern proc foo(int a);
 
 
 
-int func program() {
+define program :: c : Channel<-int> = {
     foo(); 
     return 0;
 }
@@ -1315,7 +1317,7 @@ proc foo(str a) {
     printf("a = %s\n", a);
 }
 
-str a <- "hello";
+str a := "hello";
     )"""");
 
   WPLLexer lexer(&input);
@@ -1343,8 +1345,8 @@ TEST_CASE("Wrong UnaryNot", "[semantic][program][bool]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
-    boolean a <- ~0; 
+define program :: c : Channel<-int> = {
+    boolean a := ~0; 
     return 0;
 }
     )"""");
@@ -1374,8 +1376,8 @@ TEST_CASE("Wrong UnaryMinus", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
-    int a <- -"hey"; 
+define program :: c : Channel<-int> = {
+    int a := -"hey"; 
     return 0;
 }
     )"""");
@@ -1406,8 +1408,8 @@ TEST_CASE("Wrong RHS Arithmetic", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
-    int a <- 0 - "hey?"; 
+define program :: c : Channel<-int> = {
+    int a := 0 - "hey?"; 
     return 0;
 }
     )"""");
@@ -1438,8 +1440,8 @@ TEST_CASE("Wrong LogAnd LHS", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
-    boolean a <- 1 & false; 
+define program :: c : Channel<-int> = {
+    boolean a := 1 & false; 
     return 0;
 }
     )"""");
@@ -1470,8 +1472,8 @@ TEST_CASE("Wrong LogAnd RHS", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
-    boolean a <- false & 1; 
+define program :: c : Channel<-int> = {
+    boolean a := false & 1; 
     return 0;
 }
     )"""");
@@ -1502,8 +1504,8 @@ TEST_CASE("Wrong LogOr LHS", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
-    boolean a <- 1 | false; 
+define program :: c : Channel<-int> = {
+    boolean a := 1 | false; 
     return 0;
 }
     )"""");
@@ -1534,8 +1536,8 @@ TEST_CASE("Wrong LogOr RHS", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
-    boolean a <- false | 1; 
+define program :: c : Channel<-int> = {
+    boolean a := false | 1; 
     return 0;
 }
     )"""");
@@ -1566,9 +1568,9 @@ TEST_CASE("Field Access - var", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
+define program :: c : Channel<-int> = {
     var a;
-    var b <- a.length; 
+    var b := a.length; 
     return 0;
 }
     )"""");
@@ -1599,9 +1601,9 @@ TEST_CASE("Field Access - int", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
+define program :: c : Channel<-int> = {
     int a;
-    var b <- a.length; 
+    var b := a.length; 
     return 0;
 }
     )"""");
@@ -1632,9 +1634,9 @@ TEST_CASE("ArrayAccess - Wrong Type", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
+define program :: c : Channel<-int> = {
     int [5] a;
-    var b <- a[true | false];
+    var b := a[true | false];
     return 0;
 }
     )"""");
@@ -1665,9 +1667,9 @@ TEST_CASE("Field Access - Unsupported/Undefined", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
+define program :: c : Channel<-int> = {
     int [5] a;
-    var b <- a.testing; 
+    var b := a.testing; 
     return 0;
 }
     )"""");
@@ -1698,8 +1700,8 @@ TEST_CASE("Field Access - Undefined Var", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
-    var b <- a.testing; 
+define program :: c : Channel<-int> = {
+    var b := a.testing; 
     return 0;
 }
     )"""");
@@ -1730,8 +1732,8 @@ TEST_CASE("Equals Different types", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-int func program() {
-    var a <- "hello" = 1; 
+define program :: c : Channel<-int> = {
+    var a := "hello" = 1; 
     return 0;
 }
     )"""");
@@ -1762,8 +1764,8 @@ TEST_CASE("Assign to undefined", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
-      a <- 10; 
+    define program :: c : Channel<-int> = {
+      a := 10; 
       return 0; 
     }
     )"""");
@@ -1797,7 +1799,7 @@ TEST_CASE("Proc Returning", "[semantic][program]")
       return 1;
     }
 
-    int func program() {
+    define program :: c : Channel<-int> = {
       return 0; 
     }
     )"""");
@@ -1831,7 +1833,7 @@ TEST_CASE("Function return nothing", "[semantic][program]")
     int func foo() {
       return;
     }
-    int func program() {
+    define program :: c : Channel<-int> = {
       return 0; 
     }
     )"""");
@@ -1862,7 +1864,7 @@ TEST_CASE("Function return wrong type", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
+    define program :: c : Channel<-int> = {
       return "hey"; 
     }
     )"""");
@@ -1893,11 +1895,11 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program]
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
-      var a <- 0; 
+    define program :: c : Channel<-int> = {
+      var a := 0; 
 
       proc foo() {
-        a <- 2; 
+        a := 2; 
       }
 
       return 0; 
@@ -1930,12 +1932,12 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 2", "[semantic][program]
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
-      var a <- 0; 
+    define program :: c : Channel<-int> = {
+      var a := 0; 
 
       proc foo() {
         var a;
-        a <- 2; 
+        a := 2; 
       }
 
       return 0; 
@@ -1968,9 +1970,9 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3", "[semantic][program]
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
+    define program :: c : Channel<-int> = {
       proc other () {
-        var c <- 10; 
+        var c := 10; 
       }
 
       proc foo() {
@@ -2007,14 +2009,14 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 4", "[semantic][program]
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func program() {
+    define program :: c : Channel<-int> = {
       proc other () {
-        var c <- 10; 
+        var c := 10; 
       }
 
       proc foo() {
         other(); 
-        var a <- c + 2; 
+        var a := c + 2; 
       }
 
       return 0; 
@@ -2048,10 +2050,10 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 5", "[semantic][program]
   antlr4::ANTLRInputStream input(
       R""""(
     proc other () {
-      var c <- 10; 
+      var c := 10; 
     }
 
-    int func program() {
+    define program :: c : Channel<-int> = {
 
 
       proc foo() {
@@ -2089,15 +2091,15 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 6", "[semantic][program]
   antlr4::ANTLRInputStream input(
       R""""(
     proc other () {
-      var c <- 10; 
+      var c := 10; 
     }
     
-    int func program() {
+    define program :: c : Channel<-int> = {
 
 
       proc foo() {
         other(); 
-        var a <- c + 2; 
+        var a := c + 2; 
       }
 
       return 0; 
@@ -2142,9 +2144,9 @@ define enum Outer {
     str
 }
 
-int func program() {
-    int i <- 5; 
-    Outer o <- i; 
+define program :: c : Channel<-int> = {
+    int i := 5; 
+    Outer o := i; 
 
     match o {
         Inner in => {
@@ -2198,9 +2200,9 @@ define enum Outer {
     str
 }
 
-int func program() {
-    (int + boolean) i <- 5; 
-    Outer o <- i; 
+define program :: c : Channel<-int> = {
+    (int + boolean) i := 5; 
+    Outer o := i; 
 
     match o {
         Inner in => {
@@ -2348,7 +2350,7 @@ define struct Inner {
     int c;
 }
 
-Inner I <- I::init(5, false, 6);
+Inner I := I::init(5, false, 6);
     )"""");
   WPLLexer lexer(&input);
   // lexer.removeErrorListeners();
@@ -2377,7 +2379,7 @@ TEST_CASE("Global sum def", "[semantic][program][sum]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-(int + boolean) b <- false; 
+(int + boolean) b := false; 
     )"""");
   WPLLexer lexer(&input);
   // lexer.removeErrorListeners();
@@ -2406,7 +2408,7 @@ TEST_CASE("Global lambda def", "[semantic][program][lambda]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-var lam <- (int a, int b) : int {
+var lam := (int a, int b) : int {
     return a * b; 
 };
     )"""");

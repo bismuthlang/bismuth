@@ -17,7 +17,7 @@ define struct Color {
 }
 
 
-int func program() {
+define program :: c : Channel<-int> = {
 
 
     Color z := Color::init(25, 24, 23);

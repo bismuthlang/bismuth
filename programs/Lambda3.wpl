@@ -1,6 +1,6 @@
 extern int func printf(...);
 
-int func program() {
+define program :: c : Channel<-int> = {
 
 
     var ref := (int x) : int {

@@ -46,7 +46,7 @@ proc PROCmutArgsTwo(int i) {
     return; 
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
 
     printf("ANS: %d\n", mutArgsOne(0));
     printf("ANS: %d\n", mutArgsTwo(0));

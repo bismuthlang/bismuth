@@ -6,7 +6,7 @@ int func foo(int x) {
 }
 
 
-int func program() {
+define program :: c : Channel<-int> = {
     var ref := foo; 
 
     ref(10); 

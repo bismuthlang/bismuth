@@ -1,6 +1,7 @@
 extern int func printf(...);
 
-int func program() {
+# define program :: c : Channel<-int> = {
+define program :: io : Channel<-int> = {
     var a, b := "Hello world!", c, d := 10 * 2; 
 
     printf("a = %s, b = %s, c = %d, d = %d\n", a, b, c, d); # a = Hello world!, b = Hello world!, c = 20, d = 20
@@ -14,10 +15,11 @@ int func program() {
 
     int [5] e, f; 
 
-    e[0] := 3; 
+    e[0] := 3;  # FIXME: THIS DOESNT WORK!!!!
     f[0] := 1; 
 
     printf("e[0] = %d, f[0] = %d\n", e[0], f[0]); # e[0] = 3, f[0] = 1
     
-    return -1; 
+    # return -1; 
+    io.send(-1)
 }

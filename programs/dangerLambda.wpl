@@ -21,7 +21,7 @@ Unit -> int func getMain2() {
     return main; 
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
 
     Unit u := Unit::init(); 
 

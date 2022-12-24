@@ -13,7 +13,7 @@ proc other() {
     printf("other: a=%s\n", a);
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
     printf("a=%s\n", a);
 
     a := "Hi!";

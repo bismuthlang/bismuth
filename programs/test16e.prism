@@ -1,6 +1,7 @@
 extern int func printf(...);
 
-int func program() {
+# define program :: c : Channel<-int> = {
+define program :: io : Channel<-int> = {
     # var a, b, c, d, e, f, K;
     var a; 
     var b; 
@@ -24,5 +25,6 @@ int func program() {
 
 
 
-    return -1;
+    # return -1;
+    io.send(-1)
 }

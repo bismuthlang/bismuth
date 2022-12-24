@@ -70,9 +70,9 @@ TEST_CASE("If Example 1", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     "if a < b {"
-    " isNegative <- true;"  
+    " isNegative := true;"  
     "} else {"
-    " isNegative <- false;"
+    " isNegative := false;"
     "}"
   );
   WPLLexer lexer(&input);
@@ -99,11 +99,11 @@ TEST_CASE("If Example 1", "[semantic][conditional]")
 TEST_CASE("If Example 1-2", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
-    "int a, b <- 0;"
+    "int a, b := 0;"
     "if a < b {"
-    " isNegative <- true;"  
+    " isNegative := true;"  
     "} else {"
-    " isNegative <- false;"
+    " isNegative := false;"
     "}"
   );
   WPLLexer lexer(&input);
@@ -130,12 +130,12 @@ TEST_CASE("If Example 1-2", "[semantic][conditional]")
 TEST_CASE("If Example 1-3", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
-    "int a, b <- 0;"
+    "int a, b := 0;"
     "int isNegative;"
     "if a < b {"
-    " isNegative <- true;"  
+    " isNegative := true;"  
     "} else {"
-    " isNegative <- false;"
+    " isNegative := false;"
     "}"
   );
   WPLLexer lexer(&input);
@@ -161,12 +161,12 @@ TEST_CASE("If Example 1-3", "[semantic][conditional]")
 TEST_CASE("If Example 1-4", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
-    "int a, b <- 0;"
-    "int isNegative <- 1;"
+    "int a, b := 0;"
+    "int isNegative := 1;"
     "if a < b {"
-    " isNegative <- true;"  
+    " isNegative := true;"  
     "} else {"
-    " isNegative <- false;"
+    " isNegative := false;"
     "}"
   );
   WPLLexer lexer(&input);
@@ -193,12 +193,12 @@ TEST_CASE("If Example 1-4", "[semantic][conditional]")
 TEST_CASE("If Example 1-5", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
-    "int a, b <- 0;"
+    "int a, b := 0;"
     "boolean isNegative;"
     "if a < b {"
-    " isNegative <- true;"  
+    " isNegative := true;"  
     "} else {"
-    " isNegative <- false;"
+    " isNegative := false;"
     "}"
   );
   WPLLexer lexer(&input);
@@ -230,9 +230,9 @@ TEST_CASE("Inference If Errors - 1", "[semantic]")
         var a; 
         
         if(1 < 2) then {
-          a <- true; 
+          a := true; 
         } else {
-          a <- 10; 
+          a := 10; 
         }
       }
       )""""
@@ -268,9 +268,9 @@ TEST_CASE("Inference If - 1", "[semantic]")
         var a; 
         
         if(1 < 2) then {
-          var a <- false; 
+          var a := false; 
         } else {
-          a <- 10; 
+          a := 10; 
         }
       }
       )""""
@@ -306,9 +306,9 @@ TEST_CASE("Inference If - 2", "[semantic]")
         var a; 
         
         if(1 < 2) then {
-          a <- false; 
+          a := false; 
         } else {
-          var a <- 10; 
+          var a := 10; 
         }
       }
       )""""
@@ -344,7 +344,7 @@ TEST_CASE("No Array Equality 1", "[semantic][conditional]")
       int [5] a; 
       int [5] b; 
 
-      boolean test <- a = b; 
+      boolean test := a = b; 
     )""""
   );
   WPLLexer lexer(&input);
@@ -374,7 +374,7 @@ TEST_CASE("No Array Equality 2", "[semantic][conditional]")
       int [5] a; 
       int [5] b; 
 
-      boolean test <- a ~= b; 
+      boolean test := a ~= b; 
     )""""
   );
   WPLLexer lexer(&input);

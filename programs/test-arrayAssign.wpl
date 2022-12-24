@@ -35,7 +35,7 @@ proc addOneToInt5(str name, int [5] array) {
   printf("Exiting add one!\n");
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
   int [5] a; 
 
   {

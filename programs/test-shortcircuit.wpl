@@ -1,7 +1,7 @@
 extern int func printf(str a,         ...);
 
 
-int func program() {
+define program :: c : Channel<-int> = {
   var a := -1; 
   var b := 20; 
 

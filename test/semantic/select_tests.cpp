@@ -16,7 +16,7 @@ TEST_CASE("Basic select", "[semantic][conditional]")
   antlr4::ANTLRInputStream input(
     R""""(
       select {
-        false : {int a <- 2;}
+        false : {int a := 2;}
 
 
       }
@@ -82,8 +82,8 @@ TEST_CASE("Basic select inf error 1", "[semantic][conditional]")
       var a; 
 
       select {
-        false : {a <- true;} 
-        true : {a <- 10;}
+        false : {a := true;} 
+        true : {a := 10;}
         
 
       }
@@ -116,8 +116,8 @@ TEST_CASE("Basic select inf 1", "[semantic][conditional]")
       var a; 
 
       select {
-        false : {boolean a <- true;} 
-        true : {a <- 10; }
+        false : {boolean a := true;} 
+        true : {a := 10; }
         
 
       }
@@ -151,8 +151,8 @@ TEST_CASE("Basic select inf 2", "[semantic][conditional]")
       var a; 
 
       select {
-        false : {a <- true;} 
-        true : {int a <- 10; }
+        false : {a := true;} 
+        true : {int a := 10; }
         
 
       }
@@ -187,8 +187,8 @@ TEST_CASE("Basic select inf 3", "[semantic][conditional]")
       var a; 
 
       select {
-        false : a <- 11; 
-        true : a <- 10; 
+        false : a := 11; 
+        true : a := 10; 
         
 
       }
@@ -222,7 +222,7 @@ TEST_CASE("Basic select - Dead Code - var", "[semantic][conditional]")
   antlr4::ANTLRInputStream input(
     R""""(
       select {
-        false : int a <- 2;
+        false : int a := 2;
 
 
       }
@@ -320,8 +320,8 @@ TEST_CASE("Wrong case Type in Select", "[semantic][conditional]")
       var a; 
 
       select {
-        "hey" : a <- 11; 
-        10 : a <- 10; 
+        "hey" : a := 11; 
+        10 : a := 10; 
         
 
       }

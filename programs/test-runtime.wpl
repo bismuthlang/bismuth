@@ -2,7 +2,7 @@ extern int func printf(str a,         ...);
 extern int func getArgCount();
 extern int func getIntArg(int i);
 
-int func program() {
+define program :: c : Channel<-int> = {
   int nArgs := getArgCount();
   int sum := 0;
   int i := 1;

@@ -28,7 +28,7 @@ proc sel1(int a) {
     }   
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
 
     var i := -10; 
     while i <= 15 {

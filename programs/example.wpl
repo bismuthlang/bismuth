@@ -34,7 +34,7 @@ define struct ColorHelper {
     str -> Color getHex; 
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
     # Define three helper functions which we then use to create a ColorHelper
     Color func getRGBColor(int red, int green, int blue) {
         return RGBColor::init(red, green, blue); 

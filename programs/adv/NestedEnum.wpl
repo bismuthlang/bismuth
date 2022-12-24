@@ -10,7 +10,7 @@ define enum Outer {
     str
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
     Inner i := 5; 
     Outer o := i; 
 

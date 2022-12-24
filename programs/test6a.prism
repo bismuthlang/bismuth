@@ -1,6 +1,9 @@
 extern int func printf(...);
 
-proc sel1(int a) {
+# proc sel1(int a) {
+define sel1 :: io : Channel<+int> = {
+    int a := io.recv(); # SHOULD THIS CHANGE TO READ?
+
     select {
         a <= 0 : select {
                     a < -5 : printf("Less than -5\n");
@@ -15,14 +18,18 @@ proc sel1(int a) {
     
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
 
     var i := -10; 
     while i <= 15 {
         printf("For %d:\n\t", i);
-        sel1(i);
+        # sel1(i);
+        Channel<-int> s := exec sel1; 
+        s.send(i)
+        
         i := i + 1;
     }
     
-    return -1; 
+    # return -1; 
+    c.send(-1)
 }

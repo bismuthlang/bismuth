@@ -17,7 +17,7 @@
 
 TEST_CASE("Development Codegen Tests", "[codegen]")
 {
-    antlr4::ANTLRInputStream input("int func program() { return -1; }");
+    antlr4::ANTLRInputStream input("define program :: c : Channel<-int> = { return -1; }");
     WPLLexer lexer(&input);
     antlr4::CommonTokenStream tokens(&lexer);
     WPLParser parser(&tokens);
@@ -152,7 +152,7 @@ TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)"
 
 TEST_CASE("programs/test3 - If w/o else", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test3.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test3.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -180,7 +180,7 @@ TEST_CASE("programs/test3 - If w/o else", "[codegen]")
 
 TEST_CASE("programs/test4a - Use and redeclaration of parameters", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test4a.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test4a.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -203,7 +203,7 @@ TEST_CASE("programs/test4a - Use and redeclaration of parameters", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "18abfc620390385733b70c402618a1d51c779c39021c07a5d0800be830e70513");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "b707071f5babbaa7ef5ec3fc83789e39005823a32f7e90162df63d6399b3c68d");
 }
 
 TEST_CASE("programs/test5 - Nested ifs and if equality", "[codegen]")
@@ -291,9 +291,9 @@ TEST_CASE("programs/testSelectBlock1 - Basic Select with Blocks that Return", "[
     REQUIRE(llvmIrToSHA256(cv->getModule()) == "686f9e63c3f0c7f09de2dbc0ca6a6e8ae5161be63048a68814c74c5164c33305");
 }
 
-TEST_CASE("programs/test6a - Basic Nested Selects, LEQ, GEQ", "[codegen]")
+TEST_CASE("programs/test6a (CAFE!) - Basic Nested Selects, LEQ, GEQ", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test6a.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test6a.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -316,7 +316,7 @@ TEST_CASE("programs/test6a - Basic Nested Selects, LEQ, GEQ", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "d86d9c224f8b22cfc4a52bab88aa5f9ce60016604aafe0e865dc6fc0aa177093");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "cafe2b3e17335a03444e7c3e1be095eaea8cb901741e8c0d8f1f79a17a8fe6c4");
 }
 
 TEST_CASE("programs/testSelectBlock2 - Select with blocks that don't return", "[codegen]")
@@ -378,7 +378,7 @@ TEST_CASE("programs/test7 - Test String equality + Nested Loops", "[codegen]")
 
 TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test8.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test8.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -401,7 +401,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "c632ea5d57a074cd477ef3d48798816a64858c619830e98b463bb3360fdf085b");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "ad105752e5a6a363aed01d596c1b0257749b0afd3eda4d0f6e2e04deec6530ed");
 }
 
 TEST_CASE("programs/test9i - Global Integers", "[codegen]")
@@ -686,7 +686,7 @@ TEST_CASE("programs/test9sa-1 - Global String Array - CORRECT", "[codegen]")
 
 TEST_CASE("programs/test11 - Expressions in decl (let*) ", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test11.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test11.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -709,7 +709,7 @@ TEST_CASE("programs/test11 - Expressions in decl (let*) ", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "52c5ebd78944d1733c68270498483c16acc997d9e33fddcde44dc45d53a26a0b");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "9e1b331472a316541239a93687ac5794b3e1639454edcef5346da26ab774d694");
 }
 
 TEST_CASE("programs/test12 - Scopes & Prime Finder Example! ", "[codegen]")
@@ -914,7 +914,7 @@ TEST_CASE("programs/externProc - Declaring an external proc", "[codegen]")
 TEST_CASE("programs/test14a - Test nested/more complex shorting", "[codegen]")
 {
     // TODO: MANY OF THE SHORT CIRCUITING CASES COULD BE OPTIMIZED!!! -> Done?
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test14a.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test14a.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -937,7 +937,7 @@ TEST_CASE("programs/test14a - Test nested/more complex shorting", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "a4ac4a3664f5835bc88328e2dd925472074de7b0f9977106f0685508130628f8");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "18befe8b4fb8d570eafe45e73d2437c499accadd56aa8bc9a653abd90cb6ebce");
 }
 
 TEST_CASE("programs/test18 - Parody", "[codegen]")
@@ -1026,7 +1026,7 @@ TEST_CASE("programs/testGlobalAndLocal - Parody", "[codegen]")
 
 TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/forwardWrongArg.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/forwardWrongArg.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1050,6 +1050,32 @@ TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[
     REQUIRE(cv->hasErrors(0));
 
     // REQUIRE(llvmIrToSHA256(cv->getModule()) == "c1698114ebca6c348ee9f7ae41ea95a8d0377d0eda8f21711d3bb5501bee49ba");
+}
+
+TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
+{
+    std::fstream *inStream = new std::fstream("/home/shared/programs/forwardWrongArg2.prism");
+    antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
+
+    WPLLexer lexer(input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    WPLParser parser(&tokens);
+    parser.removeErrorListeners();
+    WPLParser::CompilationUnitContext *tree = NULL;
+    REQUIRE_NOTHROW(tree = parser.compilationUnit());
+    REQUIRE(tree != NULL);
+    STManager *stm = new STManager();
+    PropertyManager *pm = new PropertyManager();
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
+    REQUIRE(cuOpt.has_value());
+
+    REQUIRE(sv->hasErrors(0));
+
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    cv->visitCompilationUnit(cuOpt.value());
+
+    REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("programs/Lambda1 - Basic lambda Test", "[codegen][lambda]")
@@ -1614,7 +1640,7 @@ TEST_CASE("programs/Lambda2b - More nested lambdas", "[codegen][struct]")
 
 TEST_CASE("Out of order function", "[codegen][program]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/ooof.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/ooof.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1641,7 +1667,7 @@ TEST_CASE("Out of order function", "[codegen][program]")
     cv->visitCompilationUnit(cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "c226659bfe066e66d2491aa77e5073a4d512f3ddb376a29a8355cfe7b7022e18");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "64619d22222218e680ba738a540068053b6f865e7a1624f9826593fe81123069");
 }
 // FIXME: TRY REDECL OF ENUM IE. SETTING IT AGAIN
 TEST_CASE("programs/example", "[codegen][program]")
@@ -1709,7 +1735,7 @@ TEST_CASE("C Level Positive Test #1", "[codegen]")
 
 TEST_CASE("C Level Positive Test #2", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/CLevel/CPositive2.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/CLevel/CPositive2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1732,7 +1758,7 @@ TEST_CASE("C Level Positive Test #2", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "638d4d94b07e609e157cf894755225435fd1d19d52f47f5c4a0b1eb8ca08e2b2");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "48cb77e5507b649f1419b5103f57370503c760eaffc0af03d8cb2fc1a09a537c");
 }
 
 /************************************
@@ -1740,7 +1766,7 @@ TEST_CASE("C Level Positive Test #2", "[codegen]")
  ************************************/
 TEST_CASE("B Level Positive Test #1", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BPositive1.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BPositive1.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1763,12 +1789,12 @@ TEST_CASE("B Level Positive Test #1", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "989e43c3b967d4cc7e230e39a6d1d00bf14e3306e50c1fd2d6dbed6b668924eb");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "7922bda2b9a5f69ef4e0040d7fa5eac21c9c50a93a9e6fd45cd7a1bb1aa43aea");
 }
 
 TEST_CASE("B Level Positive Test #2", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BPositive2.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BPositive2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1791,7 +1817,7 @@ TEST_CASE("B Level Positive Test #2", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "a7d0860f47d046fb0a819057f8abc6cac2fc3046f0dd8b9ad631a6ededb7c328");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "52024c89f56d4b8f79c1cbfc20a778f87c0ded0890dc40f9aeed25310a27a6ff");
 }
 
 /************************************

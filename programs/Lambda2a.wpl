@@ -1,6 +1,6 @@
 extern int func printf(...);
 
-int func program() {
+define program :: c : Channel<-int> = {
 
     int func foo(int x) {
         printf("FOO: %u\n", x);

@@ -1,5 +1,5 @@
 var x;
-int func program() {
+define program :: c : Channel<-int> = {
   x := 2;
   x := "oops";
   return x;
