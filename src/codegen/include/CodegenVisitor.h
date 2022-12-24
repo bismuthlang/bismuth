@@ -90,12 +90,12 @@ public:
     /******************************************************************
      * Standard visitor methods all defined to use the typed versions
      ******************************************************************/
-    std::optional<Value *> visit(SelectAlternativeNode *n) override;
+    // std::optional<Value *> visit(SelectAlternativeNode *n) override;
     std::optional<Value *> visit(SelectStatementNode *n) override;
     std::optional<Value *> visit(ConditionNode *n) override;
     std::optional<Value *> visit(BlockNode *n) override;
     std::optional<Value *> visit(LambdaConstNode *n) override;
-    std::optional<Value *> visit(ProgramDefNode *n) override;
+    std::optional<Value *> visit(ProgramDefNode *n) override { return visitInvokeable(n); };
     std::optional<Value *> visit(ConditionalStatementNode *n) override;
     std::optional<Value *> visit(ReturnNode *n) override;
     std::optional<Value *> visit(ProgramSendNode *n) override;
@@ -104,14 +104,14 @@ public:
     std::optional<Value *> visit(ProgramWeakenNode *n) override;
     std::optional<Value *> visit(ProgramExecNode *n) override;
     std::optional<Value *> visit(ProgramAcceptNode *n) override;
-    std::optional<Value *> visit(DefineEnumNode *n) override;
-    std::optional<Value *> visit(DefineStructNode *n) override;
+    // std::optional<Value *> visit(DefineEnumNode *n) override;
+    // std::optional<Value *> visit(DefineStructNode *n) override;
     std::optional<Value *> visit(InitProductNode *n) override;
     std::optional<Value *> visit(WhileLoopNode *n) override;
     std::optional<Value *> visit(ExternNode *n) override;
     std::optional<Value *> visit(InvocationNode *n) override;
     std::optional<Value *> visit(FieldAccessNode *n) override;
-    std::optional<Value *> visit(VariableIDNode *n) override;
+    std::optional<Value *> visit(VariableIDNode *n) override { return {}; };
     std::optional<Value *> visit(ArrayAccessNode *n) override;
     std::optional<Value *> visit(AssignNode *n) override;
     std::optional<Value *> visit(BinaryRelNode *n) override;

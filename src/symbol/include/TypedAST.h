@@ -61,44 +61,44 @@ class TypedASTVisitor
 {
 public:
     virtual ~TypedASTVisitor() = default;
+    
+    // virtual std::optional<Value *> visit(SelectAlternativeNode *n) = 0;
+    virtual std::optional<Value *> visit(SelectStatementNode *n) = 0;
+    virtual std::optional<Value *> visit(ConditionNode *n) = 0;
+    virtual std::optional<Value *> visit(BlockNode *n) = 0;
+    virtual std::optional<Value *> visit(LambdaConstNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramDefNode *n) = 0;
+    virtual std::optional<Value *> visit(ConditionalStatementNode *n) = 0;
+    virtual std::optional<Value *> visit(ReturnNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramSendNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramRecvNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramContractNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramWeakenNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramExecNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramAcceptNode *n) = 0;
+    // virtual std::optional<Value *> visit(DefineEnumNode *n) = 0;
+    // virtual std::optional<Value *> visit(DefineStructNode *n) = 0;
+    virtual std::optional<Value *> visit(InitProductNode *n) = 0;
+    virtual std::optional<Value *> visit(WhileLoopNode *n) = 0;
+    virtual std::optional<Value *> visit(ExternNode *n) = 0;
+    virtual std::optional<Value *> visit(InvocationNode *n) = 0;
+    virtual std::optional<Value *> visit(FieldAccessNode *n) = 0;
+    virtual std::optional<Value *> visit(VariableIDNode *n) = 0;
+    virtual std::optional<Value *> visit(ArrayAccessNode *n) = 0;
+    virtual std::optional<Value *> visit(AssignNode *n) = 0;
+    virtual std::optional<Value *> visit(BinaryRelNode *n) = 0;
+    virtual std::optional<Value *> visit(BinaryArithNode *n) = 0;
+    virtual std::optional<Value *> visit(EqExprNode *n) = 0;
+    virtual std::optional<Value *> visit(UnaryExprNode *n) = 0;
+    virtual std::optional<Value *> visit(LogAndExprNode *n) = 0;
+    virtual std::optional<Value *> visit(LogOrExprNode *n) = 0;
+    virtual std::optional<Value *> visit(StringConstNode *n) = 0;
+    virtual std::optional<Value *> visit(BooleanConstNode *n) = 0;
+    virtual std::optional<Value *> visit(IConstExprNode *n) = 0;
+    virtual std::optional<Value *> visit(CompilationUnitNode *n) = 0;
+    virtual std::optional<Value *> visit(VarDeclNode *n) = 0;
 
-    virtual std::optional<Value *> visit(SelectAlternativeNode *n);
-    virtual std::optional<Value *> visit(SelectStatementNode *n);
-    virtual std::optional<Value *> visit(ConditionNode *n);
-    virtual std::optional<Value *> visit(BlockNode *n);
-    virtual std::optional<Value *> visit(LambdaConstNode *n);
-    virtual std::optional<Value *> visit(ProgramDefNode *n);
-    virtual std::optional<Value *> visit(ConditionalStatementNode *n);
-    virtual std::optional<Value *> visit(ReturnNode *n);
-    virtual std::optional<Value *> visit(ProgramSendNode *n);
-    virtual std::optional<Value *> visit(ProgramRecvNode *n);
-    virtual std::optional<Value *> visit(ProgramContractNode *n);
-    virtual std::optional<Value *> visit(ProgramWeakenNode *n);
-    virtual std::optional<Value *> visit(ProgramExecNode *n);
-    virtual std::optional<Value *> visit(ProgramAcceptNode *n);
-    virtual std::optional<Value *> visit(DefineEnumNode *n);
-    virtual std::optional<Value *> visit(DefineStructNode *n);
-    virtual std::optional<Value *> visit(InitProductNode *n);
-    virtual std::optional<Value *> visit(WhileLoopNode *n);
-    virtual std::optional<Value *> visit(ExternNode *n);
-    virtual std::optional<Value *> visit(InvocationNode *n);
-    virtual std::optional<Value *> visit(FieldAccessNode *n);
-    virtual std::optional<Value *> visit(VariableIDNode *n);
-    virtual std::optional<Value *> visit(ArrayAccessNode *n);
-    virtual std::optional<Value *> visit(AssignNode *n);
-    virtual std::optional<Value *> visit(BinaryRelNode *n);
-    virtual std::optional<Value *> visit(BinaryArithNode *n);
-    virtual std::optional<Value *> visit(EqExprNode *n);
-    virtual std::optional<Value *> visit(UnaryExprNode *n);
-    virtual std::optional<Value *> visit(LogAndExprNode *n);
-    virtual std::optional<Value *> visit(LogOrExprNode *n);
-    virtual std::optional<Value *> visit(StringConstNode *n);
-    virtual std::optional<Value *> visit(BooleanConstNode *n);
-    virtual std::optional<Value *> visit(IConstExprNode *n);
-    virtual std::optional<Value *> visit(CompilationUnitNode *n);
-    virtual std::optional<Value *> visit(VarDeclNode *n);
-
-    // private:
+    // private: //FIXME: DO SOMETHING FOR THE ONES WE DONT NEED/USE
     std::any any_visit(SelectAlternativeNode *n) { return this->visit(n); }
     std::any any_visit(SelectStatementNode *n) { return this->visit(n); }
     std::any any_visit(ConditionNode *n) { return this->visit(n); }
@@ -135,6 +135,7 @@ public:
     std::any any_visit(CompilationUnitNode *n) { return this->visit(n); }
     std::any any_visit(VarDeclNode *n) { return this->visit(n); }
 
+   std::any visit(std::any n) { return "DUMB"; } 
     std::any accept(TypedNode *n)
     {
         return n->accept(this);

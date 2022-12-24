@@ -120,16 +120,16 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
                 return {};
             }
         }
-        else if (std::holds_alternative<DefineEnumNode *>(e)) // FIXME: DO BETTER
-        {
-            DefineEnumNode *a = std::get<DefineEnumNode *>(e);
-            AcceptType(this, a); // TODO: remove this?
-        }
-        else
-        {
-            DefineStructNode *a = std::get<DefineStructNode *>(e);
-            AcceptType(this, a); // TODO: remove this?
-        }
+        // else if (std::holds_alternative<DefineEnumNode *>(e)) // FIXME: DO BETTER
+        // {
+        //     DefineEnumNode *a = std::get<DefineEnumNode *>(e);
+        //     AcceptType(this, a); // TODO: remove this?
+        // }
+        // else
+        // {
+        //     DefineStructNode *a = std::get<DefineStructNode *>(e);
+        //     AcceptType(this, a); // TODO: remove this?
+        // }
     }
 
     for (auto e : n->externs)
@@ -1291,6 +1291,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode * n)
     }
     return {};
 }
+
 
 std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 {

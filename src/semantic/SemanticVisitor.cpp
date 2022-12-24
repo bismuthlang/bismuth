@@ -36,14 +36,17 @@ std::optional<CompilationUnitNode*> SemanticVisitor::visitCtx(WPLParser::Compila
             }
             else
             {
-                errorHandler.addSemanticError(ctx->getStart(), "Process expected channel!");
+                errorHandler.addSemanticError(ctx->getStart(), "Process expected channel but got " + ty->toString());
             }
             // errorHandler.addSemanticCritWarning(ctx->getStart(), "Currently, only FUNC, PROC, EXTERN, and variable declarations allowed at top-level. Not: " + e->getText());
         }
         else
         {
-            std::optional<TypedNode *> opt = any2Opt<TypedNode*>(e->accept(this));
-            if(!opt) return {}; //FIXME: DO BETTER
+            std::optional<TypedNode *> opt = anyOpt2Val<TypedNode*>(e->accept(this));
+            if(!opt) {
+                std::cout << "47" << std::endl; 
+                return {};
+            } //FIXME: DO BETTER
 
             if(dynamic_cast<WPLParser::DefineStructContext *>(e)) //FIXME: DO BETTER
             {
@@ -60,7 +63,9 @@ std::optional<CompilationUnitNode*> SemanticVisitor::visitCtx(WPLParser::Compila
     for (auto e : ctx->extens)
     {
         std::optional<ExternNode*>  extOpt = this->visitCtx(e);
+        std::cout << "66" << std::endl; 
         if(!extOpt) return {}; //FIXME: DO BETTER
+        std::cout << "68" << std::endl; 
         externs.push_back(extOpt.value());
     }
 
@@ -73,8 +78,9 @@ std::optional<CompilationUnitNode*> SemanticVisitor::visitCtx(WPLParser::Compila
         if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
         {
             std::optional<ProgramDefNode *> progOpt = visitInvokeable(fnCtx->defineProc());//e->accept(this);
-
+            std::cout << "81" << std::endl; 
             if(!progOpt) return {}; //FIXME: DO BETTER
+            std::cout << "83" << std::endl; 
             defs.push_back(progOpt.value());
         }
     }
@@ -151,8 +157,9 @@ std::optional<CompilationUnitNode*> SemanticVisitor::visitCtx(WPLParser::Compila
 
 std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
 {
+    std::cout << "160" << std::endl;
     std::optional<TypedNode *> typeOpt = (ctx->lam) ? (std::optional<TypedNode *>)visitCtx(ctx->lam) : (std::optional<TypedNode *>)visitCtx(ctx->field); // FIXME: DO BETTER, PRESERVE TYPE, MAYBE VARIADIC
-
+std::cout << "162" << std::endl;
     if (!typeOpt)
         return {}; // FIXME: DO BETTER
 
@@ -200,11 +207,11 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
         {
             // Get the type of the current argument
             // const Type *providedType = any2Type(ctx->args.at(i)->accept(this));
-            std::optional<TypedNode *> providedOpt = any2Opt<TypedNode *>(ctx->args.at(i)->accept(this));
-
+            std::optional<TypedNode *> providedOpt = anyOpt2Val<TypedNode *>(ctx->args.at(i)->accept(this));
+std::cout << "211 " <<  ctx->args.at(i)->getText() << " " << typeid(ctx->args.at(i)).name() << " " << ctx->args.at(i)->accept(this).type().name() << std::endl;
             if (!providedOpt)
                 return {}; // FIXME: DO BETTER
-
+std::cout << "214" << std::endl;
             TypedNode *provided = providedOpt.value();
             args.push_back(provided);
 
@@ -283,7 +290,7 @@ std::optional<InitProductNode*> SemanticVisitor::visitCtx(WPLParser::InitProduct
             for (auto eleItr : elements)
             {
                 // const Type *providedType = any2Type(ctx->exprs.at(i)->accept(this));
-                std::optional<TypedNode *> opt = any2Opt<TypedNode*>(ctx->exprs.at(i)->accept(this));
+                std::optional<TypedNode *> opt = anyOpt2Val<TypedNode*>(ctx->exprs.at(i)->accept(this));
                 if(!opt) return {}; //FIXME: DO BETTER
 
                 TypedNode * tn = opt.value(); 
@@ -315,7 +322,7 @@ std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAcces
     /*
      * Check that we are provided an INT for the index.
      */
-    std::optional<TypedNode *> exprOpt = any2Opt<TypedNode *>(ctx->index->accept(this));
+    std::optional<TypedNode *> exprOpt = anyOpt2Val<TypedNode *>(ctx->index->accept(this));
     if (!exprOpt)
         return {}; // FIXME: DO BETTER
     TypedNode *expr = exprOpt.value();
@@ -408,14 +415,15 @@ std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContex
     return this->visitCtx(ctx->array, false);
 }
 
-IConstExprNode *SemanticVisitor::visitCtx(WPLParser::IConstExprContext *ctx)
+std::optional<IConstExprNode*> SemanticVisitor::visitCtx(WPLParser::IConstExprContext *ctx)
 {
     return new IConstExprNode(std::stoi(ctx->i->getText()));
     // return Types::INT;
 }
 
-StringConstNode *SemanticVisitor::visitCtx(WPLParser::SConstExprContext *ctx)
+std::optional<StringConstNode *> SemanticVisitor::visitCtx(WPLParser::SConstExprContext *ctx)
 {
+    std::cout << "426" << std::endl;
     // TODO: do this better, ensure that we can only escape these chars...
     std::string full(ctx->s->getText());
     std::string actual = full.substr(1, full.length() - 2);
@@ -466,7 +474,7 @@ StringConstNode *SemanticVisitor::visitCtx(WPLParser::SConstExprContext *ctx)
 std::optional<UnaryExprNode *> SemanticVisitor::visitCtx(WPLParser::UnaryExprContext *ctx)
 {
     // Lookup the inner type
-    std::optional<TypedNode *> innerNodeOpt = any2Opt<TypedNode *>(ctx->ex->accept(this));
+    std::optional<TypedNode *> innerNodeOpt = anyOpt2Val<TypedNode *>(ctx->ex->accept(this));
     if (!innerNodeOpt)
         return {};
 
@@ -506,7 +514,7 @@ std::optional<BinaryArithNode *> SemanticVisitor::visitCtx(WPLParser::BinaryArit
 {
     bool valid = true;
 
-    auto leftOpt = any2Opt<TypedNode *>(ctx->left->accept(this));
+    auto leftOpt = anyOpt2Val<TypedNode *>(ctx->left->accept(this));
     if (!leftOpt)
         return {}; // FIXME: THROW ERROR?
 
@@ -518,7 +526,7 @@ std::optional<BinaryArithNode *> SemanticVisitor::visitCtx(WPLParser::BinaryArit
         valid = false;
     }
 
-    auto rightOpt = any2Opt<TypedNode *>(ctx->right->accept(this));
+    auto rightOpt = anyOpt2Val<TypedNode *>(ctx->right->accept(this));
     if (!rightOpt)
         return {}; // FIXME: DO BETTER
 
@@ -541,10 +549,10 @@ std::optional<BinaryArithNode *> SemanticVisitor::visitCtx(WPLParser::BinaryArit
     return {};
 }
 
-EqExprNode *SemanticVisitor::visitCtx(WPLParser::EqExprContext *ctx)
+std::optional<EqExprNode *> SemanticVisitor::visitCtx(WPLParser::EqExprContext *ctx)
 {
-    std::optional<TypedNode *> rhsOpt = any2Opt<TypedNode *>(ctx->right->accept(this));
-    std::optional<TypedNode *> lhsOpt = any2Opt<TypedNode *>(ctx->left->accept(this));
+    std::optional<TypedNode *> rhsOpt = anyOpt2Val<TypedNode *>(ctx->right->accept(this));
+    std::optional<TypedNode *> lhsOpt = anyOpt2Val<TypedNode *>(ctx->left->accept(this));
 
     // FIXME: BAD ACCESS
 
@@ -575,7 +583,7 @@ EqExprNode *SemanticVisitor::visitCtx(WPLParser::EqExprContext *ctx)
  * @param ctx The LogAndExprContext to Visit
  * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
  */
-LogAndExprNode *SemanticVisitor::visitCtx(WPLParser::LogAndExprContext *ctx)
+std::optional<LogAndExprNode *> SemanticVisitor::visitCtx(WPLParser::LogAndExprContext *ctx)
 {
     std::vector<WPLParser::ExpressionContext *> toVisit = ctx->exprs;
     std::vector<WPLParser::ExpressionContext *> toGen;
@@ -600,7 +608,7 @@ LogAndExprNode *SemanticVisitor::visitCtx(WPLParser::LogAndExprContext *ctx)
     for (WPLParser::ExpressionContext *e : toGen)
     {
         // const Type *type = any2Type(e->accept(this));
-        std::optional<TypedNode *> nodeOpt = any2Opt<TypedNode *>(e->accept(this));
+        std::optional<TypedNode *> nodeOpt = anyOpt2Val<TypedNode *>(e->accept(this));
         if (!nodeOpt)
         {
             // FIXME: DO WE NEED TO THROW ERROR? OR IS IT ALREADY HANDLED
@@ -629,7 +637,7 @@ LogAndExprNode *SemanticVisitor::visitCtx(WPLParser::LogAndExprContext *ctx)
  * @param ctx The LogOrExprContext to Visit
  * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
  */
-LogOrExprNode *SemanticVisitor::visitCtx(WPLParser::LogOrExprContext *ctx)
+std::optional<LogOrExprNode *>  SemanticVisitor::visitCtx(WPLParser::LogOrExprContext *ctx)
 {
     std::vector<WPLParser::ExpressionContext *> toVisit = ctx->exprs;
     std::vector<WPLParser::ExpressionContext *> toGen;
@@ -654,7 +662,7 @@ LogOrExprNode *SemanticVisitor::visitCtx(WPLParser::LogOrExprContext *ctx)
     for (WPLParser::ExpressionContext *e : toGen)
     {
         // const Type *type = any2Type(e->accept(this));
-        std::optional<TypedNode *> nodeOpt = any2Opt<TypedNode *>(e->accept(this));
+        std::optional<TypedNode *> nodeOpt = anyOpt2Val<TypedNode *>(e->accept(this));
         if (!nodeOpt)
         {
             // FIXME: DO WE NEED TO THROW ERROR? OR IS IT ALREADY HANDLED
@@ -685,6 +693,7 @@ LogOrExprNode *SemanticVisitor::visitCtx(WPLParser::LogOrExprContext *ctx)
  */
 std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx)
 {
+    std::cout << "696 " << ctx->getText() << std::endl; 
     // Determine the type of the expression we are visiting
     std::optional<SymbolContext> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
     if (!opt)
@@ -694,6 +703,9 @@ std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAcces
     }
 
     Symbol *sym = opt.value().second;
+
+    std::cout << "707 " << sym->toString() << std::endl; 
+
     std::vector<std::pair<std::string, const Type *>> a;
     // bindings->bind(ctx->VARIABLE().at(0), sym);
 
@@ -743,7 +755,7 @@ std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAcces
 }
 
 // Passthrough to expression
-std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ParenExprContext *ctx) { return any2Opt<TypedNode *>(ctx->ex->accept(this)); }
+std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ParenExprContext *ctx) { return anyOpt2Val<TypedNode *>(ctx->ex->accept(this)); }
 
 /**
  * @brief Visits a BinaryRelational Expression ensuring both lhs and rhs are INT.
@@ -755,7 +767,7 @@ std::optional<BinaryRelNode *> SemanticVisitor::visitCtx(WPLParser::BinaryRelExp
 {
     bool valid = true;
 
-    auto leftOpt = any2Opt<TypedNode *>(ctx->left->accept(this));
+    auto leftOpt = anyOpt2Val<TypedNode *>(ctx->left->accept(this));
     if (!leftOpt)
         return {}; // FIXME: THROW ERROR?
 
@@ -767,7 +779,7 @@ std::optional<BinaryRelNode *> SemanticVisitor::visitCtx(WPLParser::BinaryRelExp
         valid = false;
     }
 
-    auto rightOpt = any2Opt<TypedNode *>(ctx->right->accept(this));
+    auto rightOpt = anyOpt2Val<TypedNode *>(ctx->right->accept(this));
     if (!rightOpt)
         return {}; // FIXME: DO BETTER
 
@@ -799,7 +811,7 @@ std::optional<BinaryRelNode *> SemanticVisitor::visitCtx(WPLParser::BinaryRelExp
 std::optional<ConditionNode *> SemanticVisitor::visitCtx(WPLParser::ConditionContext *ctx)
 {
     // auto conditionType = any2Type(ctx->ex->accept(this));
-    std::optional<TypedNode *> condOpt = any2Opt<TypedNode *>(ctx->ex->accept(this));
+    std::optional<TypedNode *> condOpt = anyOpt2Val<TypedNode *>(ctx->ex->accept(this));
 
     if (!condOpt)
         return {}; // FIXME: DO BETTER
@@ -821,7 +833,7 @@ std::optional<SelectAlternativeNode *> SemanticVisitor::visitCtx(WPLParser::Sele
     // Enter the scope (needed as we may define variables or do other stuff)
     stmgr->enterScope(StopType::LINEAR);
     // Accept the evaluation context
-    std::optional<TypedNode *> evalOpt = any2Opt<TypedNode *>(ctx->eval->accept(this)); // FIXME: So these are all wrong b/c like, we return optionals
+    std::optional<TypedNode *> evalOpt = anyOpt2Val<TypedNode *>(ctx->eval->accept(this)); // FIXME: So these are all wrong b/c like, we return optionals
     if (!evalOpt)
         return {}; // FIXME: DO BETTER
 
@@ -838,7 +850,7 @@ std::optional<SelectAlternativeNode *> SemanticVisitor::visitCtx(WPLParser::Sele
     }
 
     // Confirm that the check type is a boolean
-    std::optional<TypedNode *> checkOpt = any2Opt<TypedNode *>(ctx->check->accept(this));
+    std::optional<TypedNode *> checkOpt = anyOpt2Val<TypedNode *>(ctx->check->accept(this));
     if (!checkOpt)
         return {}; // FIXME: DO BETTER
 
@@ -937,7 +949,7 @@ std::optional<AssignNode *> SemanticVisitor::visitCtx(WPLParser::AssignStatement
     // This one is the update one!
 
     // Determine the expression type
-    std::optional<TypedNode *> exprOpt = any2Opt<TypedNode *>(ctx->a->accept(this));
+    std::optional<TypedNode *> exprOpt = anyOpt2Val<TypedNode *>(ctx->a->accept(this));
 
     if (!exprOpt)
         return {}; // FIXME: DO BETTER?
@@ -979,7 +991,7 @@ std::optional<VarDeclNode*> SemanticVisitor::visitCtx(WPLParser::VarDeclStatemen
         // Needs to happen in case we have vars
         const Type *assignType = this->visitCtx(ctx->typeOrVar());
         // auto exprType = (e->a) ? any2Type(e->a->accept(this)) : assignType;
-        std::optional<TypedNode *> exprOpt = (e->a) ? any2Opt<TypedNode *> (e->a->accept(this)) : std::nullopt;
+        std::optional<TypedNode *> exprOpt = (e->a) ? anyOpt2Val<TypedNode *> (e->a->accept(this)) : std::nullopt;
         const Type * exprType = exprOpt ? exprOpt.value()->getType() : assignType; 
 
         if (e->a && stmgr->isGlobalScope())
@@ -1020,9 +1032,11 @@ std::optional<VarDeclNode*> SemanticVisitor::visitCtx(WPLParser::VarDeclStatemen
             {
                 // Needed to ensure vars get their own inf type
                 const Type *newAssignType = this->visitCtx(ctx->typeOrVar());
-                const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? any2Type(e->a->accept(this)) : newAssignType;
+                std::cout << "1035 " << newAssignType->toString() << std::endl; 
+                const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? anyOpt2Val<TypedNode *> (e->a->accept(this)).value()->getType() : newAssignType;
                 Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later inferencing purposes
                 stmgr->addSymbol(symbol);
+                std::cout << "1038 var decl " << symbol->toString() << std::endl; 
                 // bindings->bind(var, symbol);
                 s.push_back(symbol); 
             }
@@ -1216,7 +1230,7 @@ std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatement
     if (ctx->expression())
     {
         // Evaluate the expression type
-        std::optional<TypedNode *> valOpt = any2Opt<TypedNode *>(ctx->expression()->accept(this));
+        std::optional<TypedNode *> valOpt = anyOpt2Val<TypedNode *>(ctx->expression()->accept(this));
 
         if (!valOpt)
             return {}; // FIXME: DO BETTER
@@ -1503,7 +1517,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BaseTypeContext *ctx)
 }
 
 // Should never be needed due to how BConstExpr works, but leaving here just in case.
-BooleanConstNode *SemanticVisitor::visitCtx(WPLParser::BooleanConstContext *ctx)
+std::optional<BooleanConstNode *> SemanticVisitor::visitCtx(WPLParser::BooleanConstContext *ctx)
 {
     return new BooleanConstNode(ctx->TRUE() ? true : false);
 }
@@ -1532,7 +1546,7 @@ std::optional<ProgramSendNode*> SemanticVisitor::TvisitProgramSend(WPLParser::Pr
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
-        std::optional<TypedNode *> tnOpt = any2Opt<TypedNode*>(ctx->expr->accept(this));
+        std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode*>(ctx->expr->accept(this));
         if(!tnOpt) return {};  //FIXME: DO BETTER
 
         TypedNode * tn  = tnOpt.value();

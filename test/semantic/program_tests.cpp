@@ -176,9 +176,7 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test9Err - Test assign var to array", "[semantic]")
@@ -203,9 +201,7 @@ TEST_CASE("programs/test9Err - Test assign var to array", "[semantic]")
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test11Err - Prevent global exprs", "[semantic]")
@@ -230,9 +226,7 @@ TEST_CASE("programs/test11Err - Prevent global exprs", "[semantic]")
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
@@ -257,9 +251,7 @@ TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]")
@@ -284,9 +276,7 @@ TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]"
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don't crash", "[semantic]")
@@ -311,9 +301,7 @@ TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don'
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test15 - No array equalities", "[semantic]")
@@ -338,9 +326,7 @@ TEST_CASE("programs/test15 - No array equalities", "[semantic]")
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Comment EOF", "[semantic]")
@@ -387,9 +373,7 @@ TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
@@ -409,9 +393,7 @@ TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
@@ -431,9 +413,7 @@ TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
@@ -454,9 +434,7 @@ TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
@@ -477,9 +455,7 @@ TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test16d - chain var", "[semantic]")
@@ -500,9 +476,7 @@ TEST_CASE("programs/test16d - chain var", "[semantic]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test16e - chain var 2", "[semantic]")
@@ -524,9 +498,7 @@ TEST_CASE("programs/test16e - chain var 2", "[semantic]")
   REQUIRE(sv->hasErrors(0));
 
   // TODO: WHEN OPTIONAL TYPES
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("programs/test16f - var loop", "[semantic]")
@@ -658,9 +630,6 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
 
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
@@ -700,9 +669,6 @@ TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
 
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Dead code in select", "[semantic][program][select]")
@@ -747,9 +713,6 @@ int func program () {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Infer In return", "[semantic][program]")
@@ -811,9 +774,6 @@ TEST_CASE("Uninferred", "[semantic][program]")
   REQUIRE(sv->hasErrors(ERROR));
 
   // TODO: WHEN USING OPTIONALS FOR getLLVMTYPE?
-  //  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  //  cv->visitCompilationUnit(tree);
-  //  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Nested programs (TEMPORARY)", "[semantic][program]")
@@ -847,10 +807,7 @@ TEST_CASE("Nested programs (TEMPORARY)", "[semantic][program]")
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
   sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  REQUIRE(sv->hasErrors(ERROR)); //FIXME: TEST THAT WHEN HAS ERRORS TREE EMPTY?
 }
 
 TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
@@ -884,9 +841,6 @@ TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
 
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Invoke on Non-Invokable (str)", "[semantic][program]")
@@ -917,9 +871,6 @@ TEST_CASE("Invoke on Non-Invokable (str)", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
 }
 
 //FIXME: TYPE INFERENCE ON FUNCTIONS? AND TEST FUNCTION SUBTYPER!
@@ -952,9 +903,6 @@ TEST_CASE("Invoke on Non-Invokable (int)", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Redeclaration of function 1", "[semantic][program]")
@@ -991,9 +939,6 @@ TEST_CASE("Redeclaration of function 1", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Redeclaration of function 2", "[semantic][program]")
@@ -1030,9 +975,6 @@ TEST_CASE("Redeclaration of function 2", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Redeclaration of function 3", "[semantic][program]")
@@ -1069,9 +1011,6 @@ TEST_CASE("Redeclaration of function 3", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Redeclaration of function 4", "[semantic][program]")
@@ -1109,9 +1048,9 @@ TEST_CASE("Redeclaration of function 4", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
+  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
+  // cv->visitCompilationUnit(tree);
+  // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Redeclaration in extern", "[semantic][program]")
@@ -1145,9 +1084,6 @@ TEST_CASE("Redeclaration in extern", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Out of order function w/ forward declaration", "[semantic][program]")
@@ -1188,10 +1124,6 @@ proc foo() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Out of order function w/ forward declaration with Out of order global", "[semantic][program]")
@@ -1234,9 +1166,6 @@ str a <- "hello";
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Forward Decl with Variadic", "[semantic][program][function][forward-decl]")
@@ -1279,9 +1208,6 @@ str a <- "hello";
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Forward Decl with wrong num args", "[semantic][program][function][forward-decl]")
@@ -1325,9 +1251,6 @@ str a <- "hello";
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Forward Decl with wrong num args and type", "[semantic][program][function][forward-decl]")
@@ -1371,9 +1294,6 @@ str a <- "hello";
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Forward Decl with wrong arg type", "[semantic][program][function][forward-decl]")
@@ -1417,9 +1337,6 @@ str a <- "hello";
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Wrong UnaryNot", "[semantic][program][bool]")
@@ -1451,9 +1368,6 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Wrong UnaryMinus", "[semantic][program]")
@@ -1485,9 +1399,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Wrong RHS Arithmetic", "[semantic][program]")
@@ -1519,9 +1431,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Wrong LogAnd LHS", "[semantic][program]")
@@ -1553,9 +1463,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Wrong LogAnd RHS", "[semantic][program]")
@@ -1587,9 +1495,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Wrong LogOr LHS", "[semantic][program]")
@@ -1621,9 +1527,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Wrong LogOr RHS", "[semantic][program]")
@@ -1655,9 +1559,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Field Access - var", "[semantic][program]")
@@ -1690,9 +1592,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Field Access - int", "[semantic][program]")
@@ -1725,9 +1625,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("ArrayAccess - Wrong Type", "[semantic][program]")
@@ -1760,9 +1658,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Field Access - Unsupported/Undefined", "[semantic][program]")
@@ -1795,9 +1691,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Field Access - Undefined Var", "[semantic][program]")
@@ -1829,9 +1723,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Equals Different types", "[semantic][program]")
@@ -1863,9 +1755,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Assign to undefined", "[semantic][program]")
@@ -1897,9 +1787,6 @@ TEST_CASE("Assign to undefined", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("Proc Returning", "[semantic][program]")
@@ -1934,9 +1821,7 @@ TEST_CASE("Proc Returning", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Function return nothing", "[semantic][program]")
@@ -1970,9 +1855,7 @@ TEST_CASE("Function return nothing", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Function return wrong type", "[semantic][program]")
@@ -2003,9 +1886,7 @@ TEST_CASE("Function return wrong type", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program][local-function]")
@@ -2042,9 +1923,7 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 2", "[semantic][program][local-function]")
@@ -2082,9 +1961,7 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 2", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3", "[semantic][program][local-function]")
@@ -2123,9 +2000,7 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 4", "[semantic][program][local-function]")
@@ -2165,9 +2040,7 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 4", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 5", "[semantic][program][local-function]")
@@ -2208,9 +2081,7 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 5", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 6", "[semantic][program][local-function]")
@@ -2252,9 +2123,7 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 6", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Nested Enums - Disallow Local Assign", "[semantic][program][enum]")
@@ -2310,9 +2179,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Nested Enums - Disallow Local Assign with mismatch", "[semantic][program][enum]")
@@ -2368,9 +2235,7 @@ int func program() {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Duplicated enum keys", "[semantic][program][enum]")
@@ -2403,9 +2268,7 @@ define enum Inner {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Duplicated product keys - 1", "[semantic][program][product]")
@@ -2438,9 +2301,7 @@ define struct Inner {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Duplicated product keys - 2", "[semantic][program][product]")
@@ -2473,9 +2334,7 @@ define struct Inner {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 
@@ -2511,9 +2370,7 @@ Inner I <- I::init(5, false, 6);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Global sum def", "[semantic][program][sum]")
@@ -2542,9 +2399,7 @@ TEST_CASE("Global sum def", "[semantic][program][sum]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Global lambda def", "[semantic][program][lambda]")
@@ -2575,9 +2430,7 @@ var lam <- (int a, int b) : int {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 
@@ -2629,9 +2482,7 @@ int func program()
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 
@@ -2664,9 +2515,7 @@ define foo :: c : Channel<+int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("Channel Assignment 2", "[semantic]")
@@ -2698,9 +2547,7 @@ define foo :: c : Channel<+int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 /*********************************
@@ -2728,9 +2575,7 @@ TEST_CASE("C Level Negative Test #1", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("C Level Negative Test #2", "[semantic]")
@@ -2756,9 +2601,7 @@ TEST_CASE("C Level Negative Test #2", "[semantic]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
   // std::cout << sv->getErrors() << std::endl;
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 /*********************************
@@ -2781,9 +2624,7 @@ TEST_CASE("B Level Negative Test #1", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  cv->visitCompilationUnit(tree);
-  REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("B Level Negative Test #2", "[semantic]")
@@ -2803,9 +2644,7 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 /*********************************
@@ -2828,9 +2667,7 @@ TEST_CASE("A Level Negative Test #1", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
 
 TEST_CASE("A Level Negative Test #2", "[semantic]")
@@ -2850,7 +2687,5 @@ TEST_CASE("A Level Negative Test #2", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  // CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
-  // cv->visitCompilationUnit(tree);
-  // REQUIRE(cv->hasErrors(0));
+  
 }
