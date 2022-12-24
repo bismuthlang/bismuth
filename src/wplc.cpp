@@ -11,26 +11,8 @@
  * loop through them so that you can compile multiple
  * files with one command line.
  */
-#include <iostream>
-#include <fstream>
-#include "antlr4-runtime.h"
-#include "WPLLexer.h"
-#include "WPLParser.h"
-// #include "WPLErrorHandler.h"
-#include "SemanticVisitor.h"
-#include "CodegenVisitor.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/InitLLVM.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/Host.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Target/TargetOptions.h"
-#include "llvm/Target/TargetMachine.h"
-#include "llvm/IR/LegacyPassManager.h"
 
-#include "ExecUtils.h"
-#include <sstream> //String stream
+#include "wplc.h"
 
 llvm::cl::OptionCategory WPLCOptions("wplc Options");
 static llvm::cl::list<std::string>
@@ -246,7 +228,7 @@ int main(int argc, const char *argv[])
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, flags);
-    sv->visitCompilationUnit(tree);
+    std::optional<CompilationUnitNode*> TypedOpt = sv->visitCtx(tree); //FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
 
     if (sv->hasErrors(0)) // Want to see all errors
     {
@@ -255,6 +237,15 @@ int main(int argc, const char *argv[])
       isValid = false;
       continue;
     }
+
+    if(!TypedOpt)
+    {
+      std::cerr << "Failed to generate Typed AST" << std::endl; 
+      isValid = false; 
+      continue; 
+    }
+
+    CompilationUnitNode * cu = TypedOpt.value(); 
 
     if (isVerbose)
     {
@@ -268,7 +259,7 @@ int main(int argc, const char *argv[])
      * generate code for it.
      *******************************************************************/
     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", flags);
-    cv->visitCompilationUnit(tree);
+    cv->visitCompilationUnit(cu);
     if (cv->hasErrors(0)) // Want to see all errors
     {
       std::cerr << cv->getErrors() << std::endl;

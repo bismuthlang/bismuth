@@ -6,7 +6,6 @@
 using namespace std;
 using llvm::Value;
 
-// template <class T>
 class TypedASTVisitor;
 
 class TypedNode
@@ -16,7 +15,7 @@ public:
 
     virtual const Type *getType() = 0;
 
-    // virtual void accept(visitor &v) = 0;
+
     virtual std::any accept(TypedASTVisitor *a) = 0;
 };
 
@@ -56,103 +55,50 @@ class BooleanConstNode;
 class IConstExprNode;
 class CompilationUnitNode;
 
-/*
-template <class T>
-class TypedASTVisitor2
-{
-public:
-    virtual ~TypedASTVisitor2() = 0;
-    virtual T visit(SelectAlternativeNode *n);
-    virtual T visit(SelectStatementNode *n);
-    virtual T visit(ConditionNode *n);
-    virtual T visit(BlockNode *n);
-    virtual T visit(LambdaConstNode *n);
-    virtual T visit(ProgramDefNode *n);
-    virtual T visit(ConditionalStatementNode *n);
-    virtual T visit(ReturnNode *n);
-    virtual T visit(ProgramSendNode *n);
-    virtual T visit(ProgramRecvNode *n);
-    virtual T visit(ProgramContractNode *n);
-    virtual T visit(ProgramWeakenNode *n);
-    virtual T visit(ProgramExecNode *n);
-    virtual T visit(ProgramAcceptNode *n);
-    virtual T visit(DefineEnumNode *n);
-    virtual T visit(DefineStructNode *n);
-    virtual T visit(InitProductNode *n);
-    virtual T visit(WhileLoopNode *n);
-    virtual T visit(ExternNode *n);
-    virtual T visit(InvocationNode *n);
-    virtual T visit(FieldAccessNode *n);
-    virtual T visit(VariableIDNode *n);
-    virtual T visit(ArrayAccessNode *n);
-    virtual T visit(AssignNode *n);
-    virtual T visit(BinaryRelNode *n);
-    virtual T visit(BinaryArithNode *n);
-    virtual T visit(EqExprNode *n);
-    virtual T visit(UnaryExprNode *n);
-    virtual T visit(LogAndExprNode *n);
-    virtual T visit(LogOrExprNode *n);
-    virtual T visit(StringConstNode *n);
-    virtual T visit(BooleanConstNode *n);
-    virtual T visit(IConstExprNode *n);
-    virtual T visit(CompilationUnitNode *n);
-
-    T accept(TypedNode *n)
-    {
-        return dynamic_cast<T>(n->accept(this)); // Hacky, but completley safe
-    }
-};
-*/
+class VarDeclNode; 
 
 class TypedASTVisitor
 {
-// private:
-//     TypedASTVisitor2<T> *inner;
-
 public:
-    // TypedASTVisitor(TypedASTVisitor2<T> *i)
-    // {
-    //     inner = i;
-    // }
+    virtual ~TypedASTVisitor() = default;
 
-    virtual ~TypedASTVisitor() = 0;
+    virtual std::optional<Value *> visit(SelectAlternativeNode *n);
+    virtual std::optional<Value *> visit(SelectStatementNode *n);
+    virtual std::optional<Value *> visit(ConditionNode *n);
+    virtual std::optional<Value *> visit(BlockNode *n);
+    virtual std::optional<Value *> visit(LambdaConstNode *n);
+    virtual std::optional<Value *> visit(ProgramDefNode *n);
+    virtual std::optional<Value *> visit(ConditionalStatementNode *n);
+    virtual std::optional<Value *> visit(ReturnNode *n);
+    virtual std::optional<Value *> visit(ProgramSendNode *n);
+    virtual std::optional<Value *> visit(ProgramRecvNode *n);
+    virtual std::optional<Value *> visit(ProgramContractNode *n);
+    virtual std::optional<Value *> visit(ProgramWeakenNode *n);
+    virtual std::optional<Value *> visit(ProgramExecNode *n);
+    virtual std::optional<Value *> visit(ProgramAcceptNode *n);
+    virtual std::optional<Value *> visit(DefineEnumNode *n);
+    virtual std::optional<Value *> visit(DefineStructNode *n);
+    virtual std::optional<Value *> visit(InitProductNode *n);
+    virtual std::optional<Value *> visit(WhileLoopNode *n);
+    virtual std::optional<Value *> visit(ExternNode *n);
+    virtual std::optional<Value *> visit(InvocationNode *n);
+    virtual std::optional<Value *> visit(FieldAccessNode *n);
+    virtual std::optional<Value *> visit(VariableIDNode *n);
+    virtual std::optional<Value *> visit(ArrayAccessNode *n);
+    virtual std::optional<Value *> visit(AssignNode *n);
+    virtual std::optional<Value *> visit(BinaryRelNode *n);
+    virtual std::optional<Value *> visit(BinaryArithNode *n);
+    virtual std::optional<Value *> visit(EqExprNode *n);
+    virtual std::optional<Value *> visit(UnaryExprNode *n);
+    virtual std::optional<Value *> visit(LogAndExprNode *n);
+    virtual std::optional<Value *> visit(LogOrExprNode *n);
+    virtual std::optional<Value *> visit(StringConstNode *n);
+    virtual std::optional<Value *> visit(BooleanConstNode *n);
+    virtual std::optional<Value *> visit(IConstExprNode *n);
+    virtual std::optional<Value *> visit(CompilationUnitNode *n);
+    virtual std::optional<Value *> visit(VarDeclNode *n);
 
-    virtual std::optional<Value*> visit(SelectAlternativeNode *n);
-    virtual std::optional<Value*> visit(SelectStatementNode *n);
-    virtual std::optional<Value*> visit(ConditionNode *n);
-    virtual std::optional<Value*> visit(BlockNode *n);
-    virtual std::optional<Value*> visit(LambdaConstNode *n);
-    virtual std::optional<Value*> visit(ProgramDefNode *n);
-    virtual std::optional<Value*> visit(ConditionalStatementNode *n);
-    virtual std::optional<Value*> visit(ReturnNode *n);
-    virtual std::optional<Value*> visit(ProgramSendNode *n);
-    virtual std::optional<Value*> visit(ProgramRecvNode *n);
-    virtual std::optional<Value*> visit(ProgramContractNode *n);
-    virtual std::optional<Value*> visit(ProgramWeakenNode *n);
-    virtual std::optional<Value*> visit(ProgramExecNode *n);
-    virtual std::optional<Value*> visit(ProgramAcceptNode *n);
-    virtual std::optional<Value*> visit(DefineEnumNode *n);
-    virtual std::optional<Value*> visit(DefineStructNode *n);
-    virtual std::optional<Value*> visit(InitProductNode *n);
-    virtual std::optional<Value*> visit(WhileLoopNode *n);
-    virtual std::optional<Value*> visit(ExternNode *n);
-    virtual std::optional<Value*> visit(InvocationNode *n);
-    virtual std::optional<Value*> visit(FieldAccessNode *n);
-    virtual std::optional<Value*> visit(VariableIDNode *n);
-    virtual std::optional<Value*> visit(ArrayAccessNode *n);
-    virtual std::optional<Value*> visit(AssignNode *n);
-    virtual std::optional<Value*> visit(BinaryRelNode *n);
-    virtual std::optional<Value*> visit(BinaryArithNode *n);
-    virtual std::optional<Value*> visit(EqExprNode *n);
-    virtual std::optional<Value*> visit(UnaryExprNode *n);
-    virtual std::optional<Value*> visit(LogAndExprNode *n);
-    virtual std::optional<Value*> visit(LogOrExprNode *n);
-    virtual std::optional<Value*> visit(StringConstNode *n);
-    virtual std::optional<Value*> visit(BooleanConstNode *n);
-    virtual std::optional<Value*> visit(IConstExprNode *n);
-    virtual std::optional<Value*> visit(CompilationUnitNode *n);
-
-// private:
+    // private:
     std::any any_visit(SelectAlternativeNode *n) { return this->visit(n); }
     std::any any_visit(SelectStatementNode *n) { return this->visit(n); }
     std::any any_visit(ConditionNode *n) { return this->visit(n); }
@@ -187,18 +133,19 @@ public:
     std::any any_visit(BooleanConstNode *n) { return this->visit(n); }
     std::any any_visit(IConstExprNode *n) { return this->visit(n); }
     std::any any_visit(CompilationUnitNode *n) { return this->visit(n); }
+    std::any any_visit(VarDeclNode *n) { return this->visit(n); }
 
     std::any accept(TypedNode *n)
     {
-        return n->accept(this); 
+        return n->accept(this);
         // return dynamic_cast<T>(n->accept(this)); // Hacky, but completley safe
         // return n->accept(this);
     }
 };
 
-std::optional<Value*> AcceptType(TypedASTVisitor* visitor, TypedNode * n)
+inline std::optional<Value *> AcceptType(TypedASTVisitor *visitor, TypedNode *n)
 {
-    return any_cast<std::optional<Value*>>(n->accept(visitor));
+    return any_cast<std::optional<Value *>>(n->accept(visitor));
 }
 
 class SelectAlternativeNode : public TypedNode // FIXME: DO BETTER!
@@ -214,12 +161,6 @@ public:
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; }
-
-    // template <class T>
-    // virtual void accept(TypedASTVisitor<T> v)
-    // {
-
-    // }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -367,10 +308,10 @@ public:
 class ReturnNode : public TypedNode
 {
 public:
-    //First is the actual type
-    optional<pair<const Type*, TypedNode *>> expr;
+    // First is the actual type
+    optional<pair<const Type *, TypedNode *>> expr;
 
-    ReturnNode(optional<pair<const Type*, TypedNode *>> e = {})
+    ReturnNode(optional<pair<const Type *, TypedNode *>> e = {})
     {
         expr = e;
     }
@@ -628,12 +569,12 @@ class VariableIDNode : public TypedNode // FIXME: DO BETTER
 
 public:
     Symbol *symbol;
-    bool is_rvalue; 
+    bool is_rvalue;
 
     VariableIDNode(Symbol *f, bool r)
     {
         symbol = f;
-        is_rvalue = r; 
+        is_rvalue = r;
     }
 
     const Type *getType() override
@@ -649,13 +590,13 @@ class ArrayAccessNode : public TypedNode
 public:
     FieldAccessNode *field;
     TypedNode *indexExpr;
-    bool is_rvalue; 
+    bool is_rvalue;
 
     ArrayAccessNode(FieldAccessNode *f, TypedNode *i, bool r)
     {
         field = f;
         indexExpr = i;
-        is_rvalue = r; 
+        is_rvalue = r;
     }
 
     const Type *getType() override
@@ -882,4 +823,35 @@ public:
     }
 
     std::any accept(TypedASTVisitor *a) { return a->any_visit(this); }
+};
+
+class AssignmentNode
+{
+public:
+    vector<Symbol *> syms;
+    std::optional<TypedNode *> val; //FIXME: REFACTOR SUCH THAT ASSIGNMENTS ARE DIFF FROM VAR DECL?
+
+    AssignmentNode(vector<Symbol *> s, std::optional<TypedNode *> v)
+    {
+        syms = s;
+        val = v;
+    }
+};
+
+class VarDeclNode : public TypedNode
+{
+public:
+    vector<AssignmentNode *> assignments; 
+    VarDeclNode(vector<AssignmentNode *> a)
+    {
+        assignments = a; 
+    }
+
+
+    const TypeBot *getType() override
+    {
+        return Types::UNDEFINED; // FIXME: DO BETTER
+    }
+
+    std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };

@@ -970,13 +970,17 @@ std::optional<AssignNode *> SemanticVisitor::visitCtx(WPLParser::AssignStatement
     return new AssignNode(var, expr);
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::VarDeclStatementContext *ctx)
+std::optional<VarDeclNode*> SemanticVisitor::visitCtx(WPLParser::VarDeclStatementContext *ctx)
 {
+    std::vector<AssignmentNode *> a; 
+
     for (auto e : ctx->assignments)
     {
         // Needs to happen in case we have vars
         const Type *assignType = this->visitCtx(ctx->typeOrVar());
-        auto exprType = (e->a) ? any2Type(e->a->accept(this)) : assignType;
+        // auto exprType = (e->a) ? any2Type(e->a->accept(this)) : assignType;
+        std::optional<TypedNode *> exprOpt = (e->a) ? any2Opt<TypedNode *> (e->a->accept(this)) : std::nullopt;
+        const Type * exprType = exprOpt ? exprOpt.value()->getType() : assignType; 
 
         if (e->a && stmgr->isGlobalScope())
         {
@@ -999,6 +1003,9 @@ const Type *SemanticVisitor::visitCtx(WPLParser::VarDeclStatementContext *ctx)
             errorHandler.addSemanticError(e->getStart(), "Expression of type " + exprType->toString() + " cannot be assigned to " + assignType->toString());
         }
 
+
+        std::vector<Symbol *> s; 
+
         for (auto var : e->VARIABLE())
         {
             std::string id = var->getText();
@@ -1016,12 +1023,16 @@ const Type *SemanticVisitor::visitCtx(WPLParser::VarDeclStatementContext *ctx)
                 const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? any2Type(e->a->accept(this)) : newAssignType;
                 Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later inferencing purposes
                 stmgr->addSymbol(symbol);
-                bindings->bind(var, symbol);
+                // bindings->bind(var, symbol);
+                s.push_back(symbol); 
             }
         }
+        a.push_back(new AssignmentNode(s, exprOpt));
     }
+    //FIXME: SHOULDNT RETURN IF ERRORS!!
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return Types::UNDEFINED;
+    // return Types::UNDEFINED;
+    return new VarDeclNode(a);
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::MatchStatementContext *ctx)

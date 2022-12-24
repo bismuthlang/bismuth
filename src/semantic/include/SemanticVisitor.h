@@ -170,9 +170,14 @@ public:
     std::optional<CompilationUnitNode*> visitCtx(WPLParser::CompilationUnitContext *ctx);
     std::any visitCompilationUnit(WPLParser::CompilationUnitContext *ctx) override { return visitCtx(ctx); }
 
+
+    std::optional<VarDeclNode*> visitCtx(WPLParser::VarDeclStatementContext *ctx);
+    std::any visitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx) override { return visitCtx(ctx); }
+
+
+
     // const Type *visitCtx(WPLParser::VariableExprContext *ctx);
     const Type *visitCtx(WPLParser::AssignmentContext *ctx);
-    const Type *visitCtx(WPLParser::VarDeclStatementContext *ctx);
 
 
     /*
@@ -236,7 +241,6 @@ public:
      */
     // std::any visitVariableExpr(WPLParser::VariableExprContext *ctx) override { return visitCtx(ctx); }
     std::any visitAssignment(WPLParser::AssignmentContext *ctx) override { return visitCtx(ctx); }
-    std::any visitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx) override { return visitCtx(ctx); }
     
 
     std::any visitProgramCase(WPLParser::ProgramCaseContext *ctx) override { return TvisitProgramCase(ctx); }

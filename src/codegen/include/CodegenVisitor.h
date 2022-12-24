@@ -53,7 +53,7 @@ using llvm::PHINode;
 using llvm::StringRef;
 using llvm::Value;
 
-class CodegenVisitor : TypedASTVisitor//<std::optional<Value *>>
+class CodegenVisitor : TypedASTVisitor
 {
 
 public:
@@ -90,7 +90,6 @@ public:
     /******************************************************************
      * Standard visitor methods all defined to use the typed versions
      ******************************************************************/
-
     std::optional<Value *> visit(SelectAlternativeNode *n) override;
     std::optional<Value *> visit(SelectStatementNode *n) override;
     std::optional<Value *> visit(ConditionNode *n) override;
@@ -125,6 +124,10 @@ public:
     std::optional<Value *> visit(BooleanConstNode *n) override;
     std::optional<Value *> visit(IConstExprNode *n) override;
     std::optional<Value *> visit(CompilationUnitNode *n) override;
+    std::optional<Value *> visit(VarDeclNode *n) override;
+
+
+    std::optional<Value *> visitCompilationUnit(CompilationUnitNode *n) { return visit(n); }
 
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }

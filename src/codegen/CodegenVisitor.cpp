@@ -174,6 +174,9 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
     return {};
 }
 
+
+
+
 /*
 std::optional<Value *> CodegenVisitor::TvisitMatchStatement(WPLParser::MatchStatementContext *ctx)
 {
@@ -1166,7 +1169,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     Value *v = val.value();
     Value *stoVal = exprVal.value();
     const Type * varSymType = n->var->getType(); 
-    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymType))
+    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymType)) //FIXME: WILL THIS WORK IF USING TYPE INF?
     {
         unsigned int index = sum->getIndex(module, stoVal->getType());
 
@@ -1195,50 +1198,24 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(VarDeclNode * n)
 {
     /*
      * Visit each of the assignments in the context (variables paired with an expression)
      */
-    for (auto e : ctx->assignments)
+    for (auto e : n->assignments)
     {
-        std::optional<Value *> exVal = std::nullopt;
+        std::optional<Value *> exVal = (e->val) ? AcceptType(this, e->val.value()) : std::nullopt;
 
-        // If the declaration has a value, attempt to generate that value
-        if (e->a)
+        if ((e->val) && !exVal)
         {
-            std::any anyVal = e->a->accept(this);
-
-            if (std::optional<Value *> opt = any2Value(anyVal))
-            {
-                exVal = opt;
-            }
-            else
-            {
-                errorHandler.addCodegenError(e->a->getStart(), "Could not generate code for: " + e->a->getText());
-                return {};
-            }
-        }
-
-        if ((e->a) && !exVal)
-        {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: " + e->a->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + e->a->getText());
             return {};
         }
 
         // For each of the variabes being assigned to that value
-        for (auto var : e->VARIABLE())
+        for (Symbol * varSymbol : e->syms)
         {
-            // Get the Symbol for the var based on its binding
-            std::optional<Symbol *> varSymbolOpt = props->getBinding(var);
-
-            if (!varSymbolOpt)
-            {
-                errorHandler.addCodegenError(nullptr, "Issue creating variable: " + var->getText());
-                return {};
-            }
-            Symbol *varSymbol = varSymbolOpt.value();
-
             //  Get the type of the symbol
             llvm::Type *ty = varSymbol->type->getLLVMType(module);
             ty = varSymbol->type->getLLVMType(module);
@@ -1248,13 +1225,13 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
                 // If it is global, then we need to insert a new gobal variable of this type.
                 // A lot of these options are done to make it match what a C program would
                 // generate for global vars
-                module->getOrInsertGlobal(var->getText(), ty);
-                llvm::GlobalVariable *glob = module->getNamedGlobal(var->getText());
+                module->getOrInsertGlobal(varSymbol->getIdentifier(), ty);
+                llvm::GlobalVariable *glob = module->getNamedGlobal(varSymbol->getIdentifier());
                 glob->setLinkage(GlobalValue::ExternalLinkage);
                 glob->setDSOLocal(true);
 
                 // If we had an expression to set the var equal to
-                if (e->a)
+                if (e->val)
                 {
                     // Ensure that the value is a constant, then, if so, initialize it.
                     if (llvm::Constant *constant = static_cast<llvm::Constant *>(exVal.value()))
@@ -1278,14 +1255,14 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
             else
             {
                 //  As this is a local var we can just create an allocation for it
-                llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, var->getText());
+                llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, varSymbol->getIdentifier());
                 varSymbol->val = v;
 
                 // Similarly, if we have an expression for the local var, we can store it. Otherwise, we can leave it undefined.
-                if (e->a)
+                if (e->val)
                 {
                     Value *stoVal = exVal.value();
-                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type))
+                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type)) //FIXME: WILL THIS WORK IF USING TYPE INF?
                     {
                         unsigned int index = sum->getIndex(module, stoVal->getType());
 
