@@ -943,7 +943,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
     if (n->accesses.size() > 0 && n->accesses.at(n->accesses.size() - 1).first == "length")
     {
-        const Type *modOpt = n->accesses.at(n->accesses.size() - 2).second;
+        const Type *modOpt = (n->accesses.size() > 1) ? n->accesses.at(n->accesses.size() - 2).second : sym->type;
         if (const TypeArray *ar = dynamic_cast<const TypeArray *>(modOpt))
         {
             // FIXME: VERIFY THIS STILL WORKS WHEN NESTED!
@@ -994,7 +994,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
             Value *baseValue = baseOpt.value();
             const Type *fieldType = n->accesses.at(i).second;
             llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
-            module->dump();
+            // module->dump();
             builder->CreateStore(baseValue, v);
             Value *valPtr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, index, false)});
 

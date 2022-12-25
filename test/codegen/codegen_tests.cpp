@@ -321,7 +321,7 @@ TEST_CASE("programs/test6a (CAFE!) - Basic Nested Selects, LEQ, GEQ", "[codegen]
 
 TEST_CASE("programs/testSelectBlock2 - Select with blocks that don't return", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/testSelectBlock2.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/testSelectBlock2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -345,12 +345,12 @@ TEST_CASE("programs/testSelectBlock2 - Select with blocks that don't return", "[
     REQUIRE_FALSE(cv->hasErrors(0));
 
     // NOTE: Should be same as test6a
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "d86d9c224f8b22cfc4a52bab88aa5f9ce60016604aafe0e865dc6fc0aa177093");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "aab19eeabfaa6d2a6837e91b816f8b2b668e7597d8be5915e7eaa837b8bc6fae");
 }
 
 TEST_CASE("programs/test7 - Test String equality + Nested Loops", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test7.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test7.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -373,7 +373,7 @@ TEST_CASE("programs/test7 - Test String equality + Nested Loops", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "19032701f53255d06397da61e16546db973fd3347ddfed33f7629d64508935fb");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "cad97e5c713948d5c36f848c5ac3f43eb3bf6d69ede56b6d7453e20ee57ebac9");
 }
 
 TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
@@ -1472,7 +1472,7 @@ TEST_CASE("programs/StructTest4", "[codegen][struct]")
 
 TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/NestedEnum.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/NestedEnum.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1495,7 +1495,7 @@ TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "25c3e6bbdf9ecb257815732a7f75a2be1cb209a503bde63cd92658b4ee8c5977");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "9b61cbf31790496ddd1da29db6d7f412ac8e8890ad822ef7230bf32740899407");
 }
 
 TEST_CASE("programs/dangerLambda - lambdas with dupl function names", "[codegen][struct]")

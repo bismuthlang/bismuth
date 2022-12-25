@@ -24,5 +24,6 @@ define program :: c : Channel<-int> = {
         str s => printf("str: %s\n", s);
     }
 
-    return 0; 
+    # return 0; 
+    c.send(0)
 }

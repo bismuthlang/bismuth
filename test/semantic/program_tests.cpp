@@ -2674,7 +2674,7 @@ TEST_CASE("A Level Negative Test #1", "[semantic]")
 
 TEST_CASE("A Level Negative Test #2", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/ANegative2.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/ANegative2.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);

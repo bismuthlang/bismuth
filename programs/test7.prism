@@ -17,7 +17,6 @@ define program :: io : Channel<-int> = {
     var x, y := 0; 
 
     while x < array.length {
-
         y := 0; 
 
         while y < array.length {

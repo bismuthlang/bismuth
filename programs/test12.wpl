@@ -1,26 +1,35 @@
 extern int func printf(...);
 
-boolean func isPrime(int n) {
- var i := 3;
- while (i < n) { 
-   if (n / i * i = n) then { return false; } 
-   i := i + 2;
-   {
-     int i := 0;
-   }
- }
- return true;
+#FIXME: Params named by what they are, ret named by fn name...
+# boolean func isPrime(int n) {
+define isPrime :: c : Channel<+int;-boolean> = {
+  int n := c.recv(); # FIXME: TEST WITH RECV VARS--ESP CHANNELS! THIS HASNT WORKED IN THE PAST
+  var i := 3;
+  while (i < n) { 
+    if (n / i * i = n) then { return false; } 
+    i := i + 2;
+    {
+      int i := 0;
+    }
+  }
+  # return true;
+  c.send(true)
 }
 
 define program :: c : Channel<-int> = {
- var current := 3;        
- int nPrimes := 2;       # explicit type 
- while current < 100 { 
-   if isPrime(current) then { 
-    printf("%d is the %dth prime!\n", current, nPrimes);
-    nPrimes := nPrimes + 1;
+  var current := 3;        
+  int nPrimes := 2;       # explicit type 
+  while current < 100 { 
+    Channel<-int; +boolean> c1 := exec isPrime; 
+    c1.send(current)
+    boolean ans := c1.recv();
+
+    if ans { 
+      printf("%d is the %dth prime!\n", current, nPrimes);
+      nPrimes := nPrimes + 1;
     }
-   current := current + 2;
- }
- return nPrimes;
+    current := current + 2;
+  }
+#  return nPrimes;
+  c.send(nPrimes)
 }
