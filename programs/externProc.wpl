@@ -1,6 +1,0 @@
-extern proc foo (int a, int b);
-
-define program :: c : Channel<-int> = {
- var current := 1;        
- return -1;
-}

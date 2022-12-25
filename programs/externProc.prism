@@ -1,0 +1,7 @@
+extern proc foo (int a, int b);
+
+define program :: c : Channel<-int> = {
+    var current := 1;        # FIXME: is this testing what its supposed to? see extern lambda...
+#  return -1;
+    c.send(-1)
+}

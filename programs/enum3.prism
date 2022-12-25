@@ -17,7 +17,7 @@ define program :: c : Channel<-int> = {
     E2 e2 := false;#e1;
     E2 e2a := e2; 
 
-    match e2a {
+    match e2a { # bool: false
         E1 e => match e {
             int i => printf("int: %u\n", i);
             str s => printf("str: %s\n", s);
@@ -30,5 +30,6 @@ define program :: c : Channel<-int> = {
             return "false"; 
         }(b));
     }
-    return 0; 
+    # return 0; 
+    c.send(0)
 }

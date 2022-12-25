@@ -339,7 +339,7 @@ std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAcces
 
     // const Type *type = any2Type(ctx->field->accept(this));
     // std::optional<Symbol *> opt = bindings->getBinding(ctx->field->VARIABLE().at(ctx->field->VARIABLE().size() - 1));
-    std::optional<FieldAccessNode *> opt = visitCtx(ctx->field, is_rvalue);
+    std::optional<FieldAccessNode *> opt = visitCtx(ctx->field, false); //Always have to load the array field
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Cannot access value from undefined array: " + ctx->field->getText());
@@ -1049,12 +1049,19 @@ std::optional<VarDeclNode*> SemanticVisitor::visitCtx(WPLParser::VarDeclStatemen
     return new VarDeclNode(a);
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::MatchStatementContext *ctx)
+std::optional<MatchStatementNode*>  SemanticVisitor::visitCtx(WPLParser::MatchStatementContext *ctx)
 {
-    const Type *condType = any2Type(ctx->check->ex->accept(this));
+    // const Type *condType = any2Type(ctx->check->ex->accept(this));
+    std::optional<TypedNode *> condOpt = anyOpt2Val<TypedNode *>(ctx->check->ex->accept(this));
 
-    if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(condType))
+    if(!condOpt) return {}; //FIXME: DO BETTER
+
+    TypedNode * cond = condOpt.value(); 
+
+    if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(cond->getType()))
     {
+        std::vector<std::pair<Symbol *, TypedNode *>> cases; 
+
         std::set<const Type *> foundCaseTypes = {};
         // TODO: Maybe make so these can return values?
 
@@ -1079,16 +1086,21 @@ const Type *SemanticVisitor::visitCtx(WPLParser::MatchStatementContext *ctx)
             stmgr->enterScope(StopType::LINEAR);
             Symbol *local = new Symbol(altCtx->name->getText(), caseType, false, false);
             stmgr->addSymbol(local);
-            bindings->bind(altCtx->VARIABLE(), local);
+            // bindings->bind(altCtx->VARIABLE(), local);
 
-            altCtx->eval->accept(this);
+            std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode*>(altCtx->eval->accept(this));
             this->safeExitScope(altCtx);
+
+            if(!tnOpt) return {}; //FIXME: DO BETTER
+            
 
             if (dynamic_cast<WPLParser::ProgDefContext *>(altCtx->eval) ||
                 dynamic_cast<WPLParser::VarDeclStatementContext *>(altCtx->eval))
             {
                 errorHandler.addSemanticError(altCtx->getStart(), "Dead code: definition as select alternative.");
             }
+
+            cases.push_back({local, tnOpt.value()});
         }
 
         if (foundCaseTypes.size() != sumType->getCases().size())
@@ -1096,12 +1108,12 @@ const Type *SemanticVisitor::visitCtx(WPLParser::MatchStatementContext *ctx)
             errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
         }
 
-        bindings->bind(ctx->check, new Symbol(ctx->check->ex->getText(), sumType, false, false));
-        return Types::UNDEFINED;
+        // bindings->bind(ctx->check, new Symbol(ctx->check->ex->getText(), sumType, false, false));
+        return new MatchStatementNode(sumType, cond, cases);
     }
 
-    errorHandler.addSemanticError(ctx->check->getStart(), "Can only case on Sum Types, not " + condType->toString());
-    return Types::UNDEFINED;
+    errorHandler.addSemanticError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString());
+    return {};
 }
 
 /**

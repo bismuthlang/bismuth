@@ -103,7 +103,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
     {
         if (std::holds_alternative<ProgramDefNode *>(e)) // ProgramDefNode *octx = dynamic_cast<ProgramDefNode *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
         {
-            std::cout << "PREDEF!" << std::endl; 
+            std::cout << "PREDEF!" << std::endl;
             ProgramDefNode *octx = std::get<ProgramDefNode *>(e);
 
             const TypeProgram *type = octx->getType();
@@ -112,7 +112,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
 
             if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
             {
-                std::cout << "CREATE: " << octx->name << std::endl; 
+                std::cout << "CREATE: " << octx->name << std::endl;
                 Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, octx->name, module);
                 type->setName(fn->getName().str());
                 std::cout << "SET NAME: " << fn->getName().str() << std::endl;
@@ -177,133 +177,117 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
     return {};
 }
 
-
-
-
-/*
-std::optional<Value *> CodegenVisitor::TvisitMatchStatement(WPLParser::MatchStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
 {
-    std::optional<Symbol *> symOpt = props->getBinding(ctx->check);
-    if (!symOpt)
+    // std::optional<Symbol *> symOpt = props->getBinding(ctx->check);
+    // if (!symOpt)
+    // {
+    //     errorHandler.addCodegenError(nullptr, "Could not locate symbol for case");
+    //     return {};
+    // }
+
+    const TypeSum *sumType = n->matchType;
+
+    auto origParent = builder->GetInsertBlock()->getParent();
+    BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
+
+    // std::any anyCheck = ctx->check->accept(this);
+
+    // Attempt to cast the check; if this fails, then codegen for the check failed
+    std::optional<Value *> optVal = AcceptType(this, n->checkExpr);
+
+    // Check that the optional, in fact, has a value. Otherwise, something went wrong.
+    if (!optVal)
     {
-        errorHandler.addCodegenError(nullptr, "Could not locate symbol for case");
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
 
-    if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(symOpt.value()->type))
+    Value *sumVal = optVal.value();
+    llvm::AllocaInst *SumPtr = builder->CreateAlloca(sumVal->getType());
+    builder->CreateStore(sumVal, SumPtr);
+
+    Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
+
+    Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
+
+    llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size()); //sumType->getCases().size());
+
+    for (std::pair<Symbol *, TypedNode *> caseNode : n->cases)
     {
-        auto origParent = builder->GetInsertBlock()->getParent();
-        BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
+        // std::optional<Symbol *> localSymOpt = props->getBinding(altCtx->VARIABLE());
 
-        std::any anyCheck = ctx->check->accept(this);
+        // if (!localSymOpt)
+        // {
+        //     errorHandler.addCodegenError(nullptr, "Failed to lookup type for case");
+        //     return {};
+        // }
 
-        // Attempt to cast the check; if this fails, then codegen for the check failed
-        if (std::optional<Value *> optVal = any2Value(anyCheck))
+        Symbol * localSym = caseNode.first; 
+
+
+        llvm::Type *toFind = localSym->type->getLLVMType(module);
+
+        unsigned int index = sumType->getIndex(module, toFind);
+
+        if (index == 0)
         {
-            // Check that the optional, in fact, has a value. Otherwise, something went wrong.
-            if (!optVal)
-            {
-                errorHandler.addCodegenError(nullptr, "Failed to generate code for: " + ctx->check->getText());
-                return {};
-            }
-
-            Value *sumVal = optVal.value();
-            llvm::AllocaInst *SumPtr = builder->CreateAlloca(sumVal->getType());
-            builder->CreateStore(sumVal, SumPtr);
-
-            Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
-
-            Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
-
-            llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
-
-            for (WPLParser::MatchAlternativeContext *altCtx : ctx->cases)
-            {
-                std::optional<Symbol *> localSymOpt = props->getBinding(altCtx->VARIABLE());
-
-                if (!localSymOpt)
-                {
-                    errorHandler.addCodegenError(nullptr, "Failed to lookup type for case");
-                    return {};
-                }
-
-                llvm::Type *toFind = localSymOpt.value()->type->getLLVMType(module);
-
-                unsigned int index = sumType->getIndex(module, toFind);
-
-                if (index == 0)
-                {
-                    errorHandler.addCodegenError(nullptr, "Unable to find key for type " + localSymOpt.value()->type->toString() + " in sum");
-                    return {};
-                }
-
-                BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(index));
-
-                builder->SetInsertPoint(matchBlk);
-
-                switchInst->addCase(ConstantInt::get(Int32Ty, index, true), matchBlk);
-                origParent->getBasicBlockList().push_back(matchBlk);
-
-                std::optional<Symbol *> varSymbolOpt = props->getBinding(altCtx->VARIABLE());
-
-                if (!varSymbolOpt)
-                {
-                    errorHandler.addCodegenError(nullptr, "Failed to find symbol in match");
-                    return {};
-                }
-
-                Symbol *varSymbol = varSymbolOpt.value();
-
-                //  Get the type of the symbol
-                llvm::Type *ty = varSymbol->type->getLLVMType(module);
-
-                // Can skip global stuff
-                llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, altCtx->VARIABLE()->getText());
-                varSymbol->val = v;
-                // varSymbol->val = v;
-
-                // Now to store the var
-                Value *valuePtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32One});
-
-                Value *corrected = builder->CreateBitCast(valuePtr, ty->getPointerTo());
-
-                Value *val = builder->CreateLoad(ty, corrected);
-
-                builder->CreateStore(val, v);
-
-                altCtx->eval->accept(this);
-
-                if (WPLParser::BlockStatementContext *blkStmtCtx = dynamic_cast<WPLParser::BlockStatementContext *>(altCtx->eval))
-                {
-                    WPLParser::BlockContext *blkCtx = blkStmtCtx->block();
-                    if (!CodegenVisitor::blockEndsInReturn(blkCtx))
-                    {
-                        builder->CreateBr(mergeBlk);
-                    }
-                    // if it ends in a return, we're good!
-                }
-                else if (WPLParser::ReturnStatementContext *retCtx = dynamic_cast<WPLParser::ReturnStatementContext *>(altCtx->eval))
-                {
-                    // Similarly, we don't need to generate the branch
-                }
-                else
-                {
-                    builder->CreateBr(mergeBlk);
-                }
-            }
+            errorHandler.addCodegenError(nullptr, "Unable to find key for type " + localSym->type->toString() + " in sum");
+            return {};
         }
 
-        origParent->getBasicBlockList().push_back(mergeBlk);
-        builder->SetInsertPoint(mergeBlk);
+        BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(index));
 
-        return {};
+        builder->SetInsertPoint(matchBlk);
+
+        switchInst->addCase(ConstantInt::get(Int32Ty, index, true), matchBlk);
+        origParent->getBasicBlockList().push_back(matchBlk);
+
+
+        //  Get the type of the symbol
+        llvm::Type *ty = localSym->type->getLLVMType(module);
+
+        // Can skip global stuff
+        llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, localSym->getIdentifier());
+        localSym->val = v;
+        // varSymbol->val = v;
+
+        // Now to store the var
+        Value *valuePtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32One});
+
+        Value *corrected = builder->CreateBitCast(valuePtr, ty->getPointerTo());
+
+        Value *val = builder->CreateLoad(ty, corrected);
+
+        builder->CreateStore(val, v);
+
+        // altCtx->eval->accept(this);
+        AcceptType(this, caseNode.second);
+
+        if (BlockNode *blkStmtCtx = dynamic_cast<BlockNode *>(caseNode.second))
+        {
+            // WPLParser::BlockContext *blkCtx = blkStmtCtx->block();
+            if (!CodegenVisitor::blockEndsInReturn(blkStmtCtx))
+            {
+                builder->CreateBr(mergeBlk);
+            }
+            // if it ends in a return, we're good!
+        }
+        else if (ReturnNode *retCtx = dynamic_cast<ReturnNode *>(caseNode.second))
+        {
+            // Similarly, we don't need to generate the branch
+        }
+        else
+        {
+            builder->CreateBr(mergeBlk);
+        }
     }
 
-    errorHandler.addCodegenError(nullptr, "Failed to lookup type for case");
+    origParent->getBasicBlockList().push_back(mergeBlk);
+    builder->SetInsertPoint(mergeBlk);
 
     return {};
 }
-*/
 
 std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
 {
@@ -425,7 +409,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
 {
-    std::optional<Value *> fnOpt = visitVariable(n->sym, true); //FIXME: DO BETTER?
+    std::optional<Value *> fnOpt = visitVariable(n->sym, true); // FIXME: DO BETTER?
 
     if (!fnOpt)
     {
@@ -659,14 +643,16 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
         return {};
     }
 
-    Value *baseValue = arrayPtr.value();
 
-    llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
-    builder->CreateStore(baseValue, v);
+    Value *v = arrayPtr.value();
+
+    // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
+    // module->dump();
+    // builder->CreateStore(baseValue, v);
 
     auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
-    if(n->is_rvalue)
-     return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+    if (n->is_rvalue)
+        return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
     return ptr;
 }
 
@@ -972,7 +958,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
     const Type *ty = sym->type;
     // std::optional<Value *> baseOpt = visitVariable(ctx->VARIABLE().at(0)->getText(), props->getBinding(ctx->VARIABLE().at(0)), ctx); // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
-    std::optional<Value *> baseOpt = visitVariable(sym, n->is_rvalue);//n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
+    std::optional<Value *> baseOpt = visitVariable(sym, n->is_rvalue); // n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
     // std::optional<Value *> val = {};
 
     // for (unsigned int i = 1; i < ctx->fields.size(); i++)
@@ -1120,7 +1106,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     Symbol *varSym = varSymOpt.value();
     */
     // Get the allocation instruction for the symbol
-    std::optional<Value *> val = AcceptType(this, n->var);//varSym->val;
+    std::optional<Value *> val = AcceptType(this, n->var); // varSym->val;
 
     /*
     // If the symbol is global
@@ -1143,7 +1129,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     // Sanity check to ensure that we now have a value for the variable
     if (!val)
     {
-        errorHandler.addCodegenError(nullptr, "Improperly initialized variable in assignment: "); //FIXME: DO BETTER + ctx->to->getText() + "@" + varSym->identifier);
+        errorHandler.addCodegenError(nullptr, "Improperly initialized variable in assignment: "); // FIXME: DO BETTER + ctx->to->getText() + "@" + varSym->identifier);
         return {};
     }
 
@@ -1171,8 +1157,8 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     // TODO: METHODIZE?
     Value *v = val.value();
     Value *stoVal = exprVal.value();
-    const Type * varSymType = n->var->getType(); 
-    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymType)) //FIXME: WILL THIS WORK IF USING TYPE INF?
+    const Type *varSymType = n->var->getType();
+    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymType)) // FIXME: WILL THIS WORK IF USING TYPE INF?
     {
         unsigned int index = sum->getIndex(module, stoVal->getType());
 
@@ -1201,7 +1187,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::visit(VarDeclNode * n)
+std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 {
     /*
      * Visit each of the assignments in the context (variables paired with an expression)
@@ -1212,12 +1198,12 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode * n)
 
         if ((e->val) && !exVal)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + e->a->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + e->a->getText());
             return {};
         }
 
         // For each of the variabes being assigned to that value
-        for (Symbol * varSymbol : e->syms)
+        for (Symbol *varSymbol : e->syms)
         {
             //  Get the type of the symbol
             llvm::Type *ty = varSymbol->type->getLLVMType(module);
@@ -1265,7 +1251,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode * n)
                 if (e->val)
                 {
                     Value *stoVal = exVal.value();
-                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type)) //FIXME: WILL THIS WORK IF USING TYPE INF?
+                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type)) // FIXME: WILL THIS WORK IF USING TYPE INF?
                     {
                         unsigned int index = sum->getIndex(module, stoVal->getType());
 
@@ -1295,18 +1281,17 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode * n)
     return {};
 }
 
-
 std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 {
-    //FIXME: WE NEED TO START LOOP IN HERE 
+    // FIXME: WE NEED TO START LOOP IN HERE
     std::cout << "1546" << std::endl;
     // Very similar to conditionals
 
-    std::optional<Value *> check = this->visit(n->cond); //TvisitCondition(ctx->check); // any2Value(ctx->check->accept(this));
+    std::optional<Value *> check = this->visit(n->cond); // TvisitCondition(ctx->check); // any2Value(ctx->check->accept(this));
     std::cout << "1550" << std::endl;
     if (!check)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
     std::cout << "1556" << std::endl;
@@ -1328,14 +1313,14 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
     for (auto e : n->blk->exprs)
     {
         // std::cout << "1574 " << e->getText() << std::endl;
-        AcceptType(this, e); 
+        AcceptType(this, e);
     }
     std::cout << "1575" << std::endl;
     // Re-calculate the loop condition
-    check = this->visit(n->cond);//this->TvisitCondition(ctx->check);
+    check = this->visit(n->cond); // this->TvisitCondition(ctx->check);
     if (!check)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
     std::cout << "1583" << std::endl;
@@ -1407,7 +1392,7 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
         for (auto e : n->falseOpt.value()->exprs)
         {
             // e->accept(this);
-            AcceptType(this, e); 
+            AcceptType(this, e);
         }
 
         if (!CodegenVisitor::blockEndsInReturn(n->falseOpt.value()))
@@ -1524,13 +1509,13 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
     // Check if we are returning an expression or not
     if (n->expr)
     {
-        std::pair<const Type*, TypedNode *> expr = n->expr.value(); 
+        std::pair<const Type *, TypedNode *> expr = n->expr.value();
         // Perform some checks to make sure that code was generated
         std::optional<Value *> innerOpt = AcceptType(this, expr.second);
 
         if (!innerOpt)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + ctx->getText());
             return {};
         }
 

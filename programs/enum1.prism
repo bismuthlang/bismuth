@@ -23,15 +23,16 @@ define program :: c : Channel<-int> = {
 
     b oth1 := 1 = 4; 
 
-    match oth1 {
+    match oth1 { # Boolean!
         int a => printf("Integer\n");
         boolean b => printf("Boolean!\n");
     }
 
-    match idkStr {
+    match idkStr { # hello there!!!
         int a => printf("Integer\n");
         boolean b => printf("Boolean!\n");
         str s => printf("%s!!\n", s); 
     }
-    return 0; 
+    # return 0; 
+    c.send(0)
 }

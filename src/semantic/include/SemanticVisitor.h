@@ -166,14 +166,14 @@ public:
     std::optional<ProgramAcceptNode*> TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx);
     std::any visitProgramAccept(WPLParser::ProgramAcceptContext *ctx) override { return (std::optional<TypedNode*>) TvisitProgramAccept(ctx); }
     
-
-//CompilationUnitNode
     std::optional<CompilationUnitNode*> visitCtx(WPLParser::CompilationUnitContext *ctx);
     std::any visitCompilationUnit(WPLParser::CompilationUnitContext *ctx) override { return visitCtx(ctx); }
 
-
     std::optional<VarDeclNode*> visitCtx(WPLParser::VarDeclStatementContext *ctx);
     std::any visitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx); }
+
+    std::optional<MatchStatementNode*> visitCtx(WPLParser::MatchStatementContext *ctx);
+    std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx); } //FIXME: CASTS NEEDED B/C OF HOW C++ HANDLES ANYS BY MANGLED NAME!
 
 
 
@@ -204,14 +204,6 @@ public:
 
     const Type *visitCtx(WPLParser::SumTypeContext *ctx); // FIXME: NEED TO DO THIS & OTHERS!
     std::any visitSumType(WPLParser::SumTypeContext *ctx) override { return visitCtx(ctx); }
-
-
-
-
-
-
-    const Type *visitCtx(WPLParser::MatchStatementContext *ctx);
-    std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return visitCtx(ctx); }
     
 
 

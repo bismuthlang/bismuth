@@ -15,7 +15,6 @@ public:
 
     virtual const Type *getType() = 0;
 
-
     virtual std::any accept(TypedASTVisitor *a) = 0;
 };
 
@@ -55,13 +54,14 @@ class BooleanConstNode;
 class IConstExprNode;
 class CompilationUnitNode;
 
-class VarDeclNode; 
+class VarDeclNode;
+class MatchStatementNode; 
 
 class TypedASTVisitor
 {
 public:
     virtual ~TypedASTVisitor() = default;
-    
+
     // virtual std::optional<Value *> visit(SelectAlternativeNode *n) = 0;
     virtual std::optional<Value *> visit(SelectStatementNode *n) = 0;
     virtual std::optional<Value *> visit(ConditionNode *n) = 0;
@@ -97,6 +97,7 @@ public:
     virtual std::optional<Value *> visit(IConstExprNode *n) = 0;
     virtual std::optional<Value *> visit(CompilationUnitNode *n) = 0;
     virtual std::optional<Value *> visit(VarDeclNode *n) = 0;
+    virtual std::optional<Value *> visit(MatchStatementNode *n) = 0;
 
     // private: //FIXME: DO SOMETHING FOR THE ONES WE DONT NEED/USE
     std::any any_visit(SelectAlternativeNode *n) { return this->visit(n); }
@@ -134,8 +135,9 @@ public:
     std::any any_visit(IConstExprNode *n) { return this->visit(n); }
     std::any any_visit(CompilationUnitNode *n) { return this->visit(n); }
     std::any any_visit(VarDeclNode *n) { return this->visit(n); }
+    std::any any_visit(MatchStatementNode * n) {return this->visit(n); }
 
-   std::any visit(std::any n) { return "DUMB"; } 
+    std::any visit(std::any n) { return "FIXME"; }
     std::any accept(TypedNode *n)
     {
         return n->accept(this);
@@ -547,7 +549,7 @@ public:
     FieldAccessNode(Symbol *f, bool rv, vector<pair<string, const Type *>> r = {})
     {
         symbol = f;
-        is_rvalue = rv; 
+        is_rvalue = rv;
         accesses = r;
 
         if (r.empty())
@@ -832,7 +834,7 @@ class AssignmentNode
 {
 public:
     vector<Symbol *> syms;
-    std::optional<TypedNode *> val; //FIXME: REFACTOR SUCH THAT ASSIGNMENTS ARE DIFF FROM VAR DECL?
+    std::optional<TypedNode *> val; // FIXME: REFACTOR SUCH THAT ASSIGNMENTS ARE DIFF FROM VAR DECL?
 
     AssignmentNode(vector<Symbol *> s, std::optional<TypedNode *> v)
     {
@@ -844,12 +846,11 @@ public:
 class VarDeclNode : public TypedNode
 {
 public:
-    vector<AssignmentNode *> assignments; 
+    vector<AssignmentNode *> assignments;
     VarDeclNode(vector<AssignmentNode *> a)
     {
-        assignments = a; 
+        assignments = a;
     }
-
 
     const TypeBot *getType() override
     {
@@ -857,4 +858,26 @@ public:
     }
 
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+class MatchStatementNode : public TypedNode
+{
+public:
+    const TypeSum * matchType; 
+    TypedNode * checkExpr; 
+    vector<pair<Symbol *, TypedNode *>> cases; 
+
+    MatchStatementNode(const TypeSum * m, TypedNode * e, vector<pair<Symbol *, TypedNode *>> c)
+    {
+        matchType = m; 
+        checkExpr = e; 
+        cases = c; 
+    }
+
+    std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    const TypeBot *getType() override
+    {
+        return Types::UNDEFINED; // FIXME: DO BETTER
+    }
 };

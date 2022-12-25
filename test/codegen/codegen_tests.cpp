@@ -885,7 +885,7 @@ TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editin
 
 TEST_CASE("programs/externProc - Declaring an external proc", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/externProc.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/externProc.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -908,7 +908,7 @@ TEST_CASE("programs/externProc - Declaring an external proc", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "0f2daef6c7dfd9b16fb7fa267083989eabdd95407e23e97064eef23fd7a4a319");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "d2bd88d75c3fcb9a3a4d2c449ced75bca5a9e0abb8475449b6c7b4e7d14cd208");
 }
 
 TEST_CASE("programs/test14a - Test nested/more complex shorting", "[codegen]")
@@ -942,7 +942,7 @@ TEST_CASE("programs/test14a - Test nested/more complex shorting", "[codegen]")
 
 TEST_CASE("programs/test18 - Parody", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test18.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test18.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -965,7 +965,7 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "171d2045fbfe890b72ef57ae92b798e8bcc88a099aa1791e58fa653cc2d94c22");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "5b81e72524788ad415f3be54356a81cba2d97249b0e67a3f98ca06fdb0c5609d");
 }
 
 TEST_CASE("programs/test19 - Editing Global String and Using Across Inv", "[codegen]")
@@ -1192,7 +1192,7 @@ TEST_CASE("programs/externLambda", "[codegen][lambda]")
 
 TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/enum1.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/enum1.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1215,7 +1215,7 @@ TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "c8988c284c4ae357ff29cf4e222a3ea2a53e1ce6e641b2098355c4c0c57b5279");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "2613567a29a7f41d945623f61c09ab5da66dc87dcc58046474fcf210004dd966");
 }
 
 TEST_CASE("programs/enum2 - Basic Enum 2", "[codegen][enum]")
@@ -1304,7 +1304,7 @@ TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[co
 
 TEST_CASE("programs/enum3", "[codegen][enum]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/enum3.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/enum3.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1327,7 +1327,7 @@ TEST_CASE("programs/enum3", "[codegen][enum]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "fd533dcb6fae0d185130d6d6a017aee1d67b890a336ded81829b1f1ac2e3234c");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "1cfe785dbe04efbe834cf809d64497a8da6b54f1851d41d0196eb6e03b3419b3");
 }
 
 TEST_CASE("programs/StructTest2", "[codegen][struct]")
