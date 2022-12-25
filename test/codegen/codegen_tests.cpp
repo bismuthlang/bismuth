@@ -1332,7 +1332,7 @@ TEST_CASE("programs/enum3", "[codegen][enum]")
 
 TEST_CASE("programs/StructTest2", "[codegen][struct]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/StructTest2.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/StructTest2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1355,7 +1355,7 @@ TEST_CASE("programs/StructTest2", "[codegen][struct]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "959a3a3209316c2f10186c59f5db5552fd2f8b9ca5624a95f4b837e1cc0e8b0e");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "1b8654f1a5acc793c11543a1e703eb114d365a7993ff4ebe1f829b8e2d55e046");
 }
 
 TEST_CASE("programs/StructTest3", "[codegen][struct]")

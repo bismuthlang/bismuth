@@ -158,7 +158,7 @@ std::optional<CompilationUnitNode*> SemanticVisitor::visitCtx(WPLParser::Compila
 std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
 {
     std::cout << "160" << std::endl;
-    std::optional<TypedNode *> typeOpt = (ctx->lam) ? (std::optional<TypedNode *>)visitCtx(ctx->lam) : (std::optional<TypedNode *>)visitCtx(ctx->field); // FIXME: DO BETTER, PRESERVE TYPE, MAYBE VARIADIC
+    std::optional<TypedNode *> typeOpt = (ctx->lam) ? (std::optional<TypedNode *>)visitCtx(ctx->lam) : (std::optional<TypedNode *>)visitCtx(ctx->field, true); // FIXME: DO BETTER, PRESERVE TYPE, MAYBE VARIADIC
 std::cout << "162" << std::endl;
     if (!typeOpt)
         return {}; // FIXME: DO BETTER
@@ -339,7 +339,7 @@ std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAcces
 
     // const Type *type = any2Type(ctx->field->accept(this));
     // std::optional<Symbol *> opt = bindings->getBinding(ctx->field->VARIABLE().at(ctx->field->VARIABLE().size() - 1));
-    std::optional<FieldAccessNode *> opt = visitCtx(ctx->field);
+    std::optional<FieldAccessNode *> opt = visitCtx(ctx->field, is_rvalue);
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Cannot access value from undefined array: " + ctx->field->getText());
@@ -691,7 +691,7 @@ std::optional<LogOrExprNode *>  SemanticVisitor::visitCtx(WPLParser::LogOrExprCo
  * @param ctx the FieldAccessExprContext to visit
  * @return const Type* INT if correctly used to test array length; UNDEFINED if any errors.
  */
-std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx)
+std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx, bool is_rvalue)
 {
     std::cout << "696 " << ctx->getText() << std::endl; 
     // Determine the type of the expression we are visiting
@@ -751,7 +751,7 @@ std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAcces
 
     // errorHandler.addSemanticError(ctx->getStart(), "Unsupported operation on " + ty->toString());
 
-    return new FieldAccessNode(sym, a);
+    return new FieldAccessNode(sym, is_rvalue, a);
 }
 
 // Passthrough to expression

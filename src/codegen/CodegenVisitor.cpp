@@ -972,7 +972,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
     const Type *ty = sym->type;
     // std::optional<Value *> baseOpt = visitVariable(ctx->VARIABLE().at(0)->getText(), props->getBinding(ctx->VARIABLE().at(0)), ctx); // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
-    std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
+    std::optional<Value *> baseOpt = visitVariable(sym, n->is_rvalue);//n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
     // std::optional<Value *> val = {};
 
     // for (unsigned int i = 1; i < ctx->fields.size(); i++)
@@ -1006,11 +1006,11 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
             // }
 
             Value *baseValue = baseOpt.value();
-
             const Type *fieldType = n->accesses.at(i).second;
             llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
+            module->dump();
             builder->CreateStore(baseValue, v);
-            Value *valPtr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, index, true)});
+            Value *valPtr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, index, false)});
 
             llvm::Type *ansType = fieldType->getLLVMType(module);
 

@@ -36,8 +36,16 @@ define struct ColorHelper {
 
 define program :: c : Channel<-int> = {
     # Define three helper functions which we then use to create a ColorHelper
-    Color func getRGBColor(int red, int green, int blue) {
-        return RGBColor::init(red, green, blue); 
+    # Color func getRGBColor(int red, int green, int blue) {
+    define getRGBColor :: c : Channel<+int;+int;+int;-Color> = { # SEEMS WASTEFUL TO HAVE TO SEND EACH SEPARATLEY
+        int red := c.recv(), green := c.recv(), blue := c.recv(); # FIXME, ALSO, CHANNELS ERASE NAMES OF WHAT EACH VAR MEANS...
+        # return RGBColor::init(red, green, blue); 
+        c.send(RGBColor::init(red, green, blue))
+    }
+
+    define getRGBColor :: c : Channel<+int;+int;+int;-Color> = { 
+        int red := c.recv(), green := c.recv(), blue := c.recv(); 
+        c.send(RGBColor::init(red, green, blue))
     }
 
     Color func getHSVColor(int h, int s, int v) {
@@ -64,11 +72,15 @@ define program :: c : Channel<-int> = {
         i := i + 1; 
     }
 
-    return 0; 
+    # return 0; 
+    c.send(0)
 }
 
-Color[3] func getSampleColors(ColorHelper helper)
+# Color[3] func getSampleColors(ColorHelper helper)
+define getSampleColors :: io : Channel<+ColorHelper;-Color[3]> = {
 {
+    ColorHelper helper := io.recv(); 
+
     Color[3] ans; 
 
     ans[0] := helper.getRGB(255, 255, 255);
@@ -76,7 +88,8 @@ Color[3] func getSampleColors(ColorHelper helper)
     ans[2] := helper.getHex("FFFFFF");
 
 
-    return ans; 
+    # return ans; 
+    io.send(ans)
 }
 
 (*
@@ -84,7 +97,10 @@ Color[3] func getSampleColors(ColorHelper helper)
  * any function definition in the global scope as well as 
  * any function definitions prior to it in the local scope
  *)
-Unit func printPrimitive((int + boolean + str) toPrint) {
+# Unit func printPrimitive((int + boolean + str) toPrint) {
+define printPrimitive :: io : Channel<+(int + boolean + str)> = {
+  (int + boolean + str) toPrint := io.recv(); # FIXME: FEELS REDUNDANT TO HAVE TO WRITE TYEPS
+
   match toPrint {
     int i => printf("int: %u", i);
     str s => {
@@ -103,10 +119,13 @@ Unit func printPrimitive((int + boolean + str) toPrint) {
     );
   }
 
-  return Unit::init(); 
+  # return Unit::init(); 
 }
 
-Unit func toString((Color + int + boolean + str) obj) {
+# Unit func toString((Color + int + boolean + str) obj) {
+define toString :: io : Channel<+(Color + int + boolean + str)> = {
+    (Color + int + boolean + str) obj := io.recv(); 
+
     match obj {
         int i => printPrimitive(i); 
         boolean b => printPrimitive(b);
@@ -140,5 +159,5 @@ Unit func toString((Color + int + boolean + str) obj) {
         }  
     }
 
-    return Unit::init(); 
+    # return Unit::init(); 
 }

@@ -72,8 +72,8 @@ public:
     std::optional<TypedNode *> visitCtx(WPLParser::ParenExprContext *ctx);
     std::any visitParenExpr(WPLParser::ParenExprContext *ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx); }
 
-    std::optional<FieldAccessNode*> visitCtx(WPLParser::FieldAccessExprContext *ctx);
-    std::any visitFieldAccessExpr(WPLParser::FieldAccessExprContext *ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx); }
+    std::optional<FieldAccessNode*> visitCtx(WPLParser::FieldAccessExprContext *ctx, bool is_rvalue);
+    std::any visitFieldAccessExpr(WPLParser::FieldAccessExprContext *ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx, true); }
 
     // std::optional<ArrayAccessNode*> visitCtx(WPLParser::ArrayAccessContext *ctx);
     std::optional<ArrayAccessNode*> visitCtx(WPLParser::ArrayAccessContext *ctx, bool is_rvalue);

@@ -542,10 +542,12 @@ private:
 public:
     Symbol *symbol; // FIXME: SHOULD THESE BE SYMBOLS OR SYMBOL CONTEXTS?
     vector<pair<string, const Type *>> accesses;
+    bool is_rvalue;
 
-    FieldAccessNode(Symbol *f, vector<pair<string, const Type *>> r = {})
+    FieldAccessNode(Symbol *f, bool rv, vector<pair<string, const Type *>> r = {})
     {
         symbol = f;
+        is_rvalue = rv; 
         accesses = r;
 
         if (r.empty())
