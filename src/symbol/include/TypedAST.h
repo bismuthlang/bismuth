@@ -297,11 +297,14 @@ public:
     BlockNode *trueBlk;
     std::optional<BlockNode *> falseOpt;
 
-    ConditionalStatementNode(ConditionNode *c, BlockNode *t, std::optional<BlockNode *> f = {})
+    std::vector<TypedNode*> post;
+
+    ConditionalStatementNode(ConditionNode *c, BlockNode *t, std::vector<TypedNode*> p, std::optional<BlockNode *> f = {})
     {
         cond = c;
         trueBlk = t;
         falseOpt = f;
+        post = p;
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER

@@ -2,6 +2,7 @@ extern int func printf(...);
 
 define program :: c : Channel<-int> = {
 
+    # FIXME: THESE MAY BE WRONG NOW DUE TO PASS BY REF LAMBDAS?
     int func foo(int x) {
         int func foo(int x) {
             printf("FOO_I: %u\n", x);
@@ -31,5 +32,6 @@ define program :: c : Channel<-int> = {
         printf("ref (:= foo(1)) = %u\n", ref(1));
     }
 
-    return 0;
+    # return 0;
+    c.send(0)
 }

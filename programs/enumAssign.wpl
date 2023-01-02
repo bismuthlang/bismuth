@@ -51,5 +51,6 @@ define program :: c : Channel<-int> = {
             }
         }
     }
-    return 0; 
+    # return 0; //FIXME: THIS SHOULD BE AN ERROR (NO RETURNS IN PROCESSES)
+    c.send(0)
 }

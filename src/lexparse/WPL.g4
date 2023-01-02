@@ -130,9 +130,9 @@ statement           : defineProc                                                
                     | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                  # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'   # VarDeclStatement
                     // | WHILE check=condition DO block                                    # LoopStatement 
-                    | IF check=condition IF_THEN? trueBlk=block (ELSE falseBlk=block)?  # ConditionalStatement
-                    | SELECT LSQB (cases+=selectAlternative)* '}'                        # SelectStatement  
-                    | MATCH check=condition LSQB (cases+=matchAlternative)* '}'          # MatchStatement
+                    | IF check=condition IF_THEN? trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement // FIXME: HANDLE REST
+                    | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement      // FIXME: HANDLE REST
+                    | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement       // FIXME: HANDLE REST
                     | call=invocation  ';'?     # CallStatement 
                     | RETURN expression? ';'    # ReturnStatement 
                     | block                     # BlockStatement

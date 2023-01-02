@@ -26,5 +26,6 @@ define program :: c : Channel<-int> = {
         ref2(); 
     *)
 
-    return 0;
+    # return 0;
+    c.send(0)
 }

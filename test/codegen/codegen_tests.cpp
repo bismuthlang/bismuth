@@ -1136,7 +1136,7 @@ TEST_CASE("programs/Lambda2 - Basic lambda Test w/ return", "[codegen][lambda]")
 
 TEST_CASE("programs/Lambda3 - Basic lambda Test w/ return and same name", "[codegen][lambda]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/Lambda3.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/Lambda3.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1159,7 +1159,7 @@ TEST_CASE("programs/Lambda3 - Basic lambda Test w/ return and same name", "[code
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "c3d2c9ca20cd487e4612d275384a9801dbfef0e70cb2e7a799fff643f605d523");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "779b9d305874f74e23f2b26bb232e087786227f6cf36ebe40bf2166b6bedfc65");
 }
 
 TEST_CASE("programs/externLambda", "[codegen][lambda]")
