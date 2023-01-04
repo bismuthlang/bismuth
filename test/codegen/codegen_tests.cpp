@@ -1220,7 +1220,7 @@ TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
 
 TEST_CASE("programs/enum2 - Basic Enum 2", "[codegen][enum]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/enum2.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/enum2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1243,7 +1243,7 @@ TEST_CASE("programs/enum2 - Basic Enum 2", "[codegen][enum]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "523f0fdd247182b25da3af5c5e19e8878a4e1a98a9b42511a9a82bfc9922918b");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "81bf96b4ed3ebfba61974be24713eb5db1490ffa2f7b3f0d173fa2cd591fe6fd");
 }
 
 TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignmens outside of decl", "[codegen][enum]")

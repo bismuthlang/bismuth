@@ -1073,7 +1073,6 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
         // stmgr->deleteAvaliableLinears();
 
         std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
-
         for (Symbol *orig : syms)
         {
             // FIXME: DO BETTER, WONT WORK WITH VALUES!
@@ -1236,19 +1235,36 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
     std::vector<TypedNode *> restVec; // FIXME: DO BETTER
     bool valid = true;
 
-    std::vector<Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
-    stmgr->deleteAvaliableLinears();                           // FIXME: UNSAFE
-
-    // Type check the then/true block
-    stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
-    for (const Symbol *orig : syms)    // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
+    std::vector<Symbol *> syms = stmgr->getAvaliableLinears();                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+    std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
+    for (Symbol *orig : syms)
     {
-        // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
+        // FIXME: DO BETTER, WONT WORK WITH VALUES!
         if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
         {
-            stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
+            to_fix.push_back({channel, channel->getProtocolCopy()});
+            // channel->setProtocol(protoOpt.value());
+            // stmgr->addSymbol(orig);
         }
     }
+    // stmgr->deleteAvaliableLinears();                           // FIXME: UNSAFE
+
+    // Type check the then/true block
+    stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS) -> No???
+    for (auto pair : to_fix)
+    {
+        // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
+        pair.first->setProtocol(pair.second->getCopy());
+    }
+
+    // for (const Symbol *orig : syms)    // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
+    // {
+    //     // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
+    //     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+    //     {
+    //         stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
+    //     }
+    // }
     std::optional<BlockNode *> trueOpt = this->visitCtx(ctx->trueBlk);
     for (auto s : ctx->rest)
     {
@@ -1268,13 +1284,10 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
     {
         // FIXME: VERIFY GOOD ENOUGH, METHODIZE
         stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
-        for (const Symbol *orig : syms)    // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
+        for (auto pair : to_fix)
         {
-            // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
-            }
+            // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
+            pair.first->setProtocol(pair.second->getCopy());
         }
 
         std::optional<BlockNode *> falseOpt = this->visitCtx(ctx->falseBlk);
