@@ -147,7 +147,7 @@ public:
 
     const Protocol *getInverse() const override;
 
-    const Protocol *getCopy() const override;
+    const ProtocolSequence *getCopy() const override;
 
     bool isComplete() const
     {

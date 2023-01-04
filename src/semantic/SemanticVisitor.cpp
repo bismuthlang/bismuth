@@ -1070,19 +1070,24 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
         // TODO: Maybe make so these can return values?
 
         std::vector<Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
-        stmgr->deleteAvaliableLinears();
+        // stmgr->deleteAvaliableLinears();
+
+        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
+
+        for (Symbol *orig : syms)
+        {
+            // FIXME: DO BETTER, WONT WORK WITH VALUES!
+            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+            {
+                to_fix.push_back({channel, channel->getProtocolCopy()});
+                // channel->setProtocol(protoOpt.value());
+                // stmgr->addSymbol(orig);
+            }
+        }
 
         for (WPLParser::MatchAlternativeContext *altCtx : ctx->cases)
         {
-            stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
-            for (const Symbol *orig : syms)    // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
-            {
-                // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
-                if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-                {
-                    stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
-                }
-            }
+            // stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
 
             const Type *caseType = any2Type(altCtx->type()->accept(this));
 
@@ -1100,9 +1105,19 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
                 foundCaseTypes.insert(caseType); // FIXME: DO BETTER TRACKING OF SATISFYING RQMTS. Right now, can pass check for having all cases due to having invalid ones!!
             }
 
-            stmgr->enterScope(StopType::LINEAR); // FIXME: COMMENT WHAT THIS DOES AND VERIFY WITH NEW CHANGES!
-            Symbol *local = new Symbol(altCtx->name->getText(), caseType, false, false);
+            stmgr->enterScope(StopType::NONE); // Once for the case variable, and once to ensure all linears used
+
+            for (auto pair : to_fix)
+            {
+                // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
+                pair.first->setProtocol(pair.second->getCopy());
+            }
+
+            stmgr->enterScope(StopType::NONE);
+            // stmgr->enterScope(StopType::LINEAR); // FIXME: COMMENT WHAT THIS DOES AND VERIFY WITH NEW CHANGES!
+            Symbol *local = new Symbol(altCtx->name->getText(), caseType, false, false); // FIXME: DO WE EVER CHECK THIS NAME IS UNIQUE? THIS MAY MATTER NOW W/ LINEARS? IDK MAYBE NOT
             stmgr->addSymbol(local);
+
             // bindings->bind(altCtx->VARIABLE(), local);
 
             std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(altCtx->eval->accept(this));
@@ -1132,18 +1147,14 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
             errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
         }
 
-        
         std::vector<TypedNode *> restVec; // FIXME: DO BETTER
         bool valid = true;
 
-        //Need to re-add symbols for fallthrough case. Really seems like this all could be done more efficiently, though...
-        for (const Symbol *orig : syms) // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
+        // Need to re-add symbols for fallthrough case. Really seems like this all could be done more efficiently, though...
+        for (auto pair : to_fix)
         {
-            // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
-            }
+            // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
+            pair.first->setProtocol(pair.second->getCopy());
         }
 
         for (auto s : ctx->rest)
