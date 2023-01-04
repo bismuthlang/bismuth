@@ -125,7 +125,7 @@ TEST_CASE("programs/test1a", "[codegen]")
 
 TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test2.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -148,7 +148,7 @@ TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)"
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "6fe85492b8cabea3bee19c2fc54a5276861eb992ebdb4a97de10008cefb0832e");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "371c38f7ba67c50ac1ed90ec21808dd7287076e2ec27967982453112effe2eab");
 }
 
 TEST_CASE("programs/test3 - If w/o else", "[codegen]")
@@ -969,33 +969,33 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
     REQUIRE(llvmIrToSHA256(cv->getModule()) == "5b81e72524788ad415f3be54356a81cba2d97249b0e67a3f98ca06fdb0c5609d");
 }
 
-TEST_CASE("programs/test19 - Editing Global String and Using Across Inv", "[codegen]")
-{
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test19.wpl");
-    antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
+// TEST_CASE("programs/test19 - Editing Global String and Using Across Inv", "[codegen]")
+// {
+//     std::fstream *inStream = new std::fstream("/home/shared/programs/test19.wpl");
+//     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-    WPLLexer lexer(input);
-    antlr4::CommonTokenStream tokens(&lexer);
-    WPLParser parser(&tokens);
-    parser.removeErrorListeners();
-    WPLParser::CompilationUnitContext *tree = NULL;
-    REQUIRE_NOTHROW(tree = parser.compilationUnit());
-    REQUIRE(tree != NULL);
-    STManager *stm = new STManager();
-    PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
-    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
-    REQUIRE(cuOpt.has_value());
+//     WPLLexer lexer(input);
+//     antlr4::CommonTokenStream tokens(&lexer);
+//     WPLParser parser(&tokens);
+//     parser.removeErrorListeners();
+//     WPLParser::CompilationUnitContext *tree = NULL;
+//     REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//     REQUIRE(tree != NULL);
+//     STManager *stm = new STManager();
+//     PropertyManager *pm = new PropertyManager();
+//     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+//     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
+//     REQUIRE(cuOpt.has_value());
 
-    REQUIRE_FALSE(sv->hasErrors(0));
+//     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
-    cv->visitCompilationUnit(cuOpt.value());
+//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     cv->visitCompilationUnit(cuOpt.value());
 
-    REQUIRE_FALSE(cv->hasErrors(0));
+//     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "bd911e955a6da1d18d92cf4ca430456daa8ea8c4c8601f778e0f8bb83178222e");
-}
+//     REQUIRE(llvmIrToSHA256(cv->getModule()) == "bd911e955a6da1d18d92cf4ca430456daa8ea8c4c8601f778e0f8bb83178222e");
+// }
 
 // TEST_CASE("programs/testGlobalAndLocal - Parody", "[codegen]")
 // {
@@ -1081,7 +1081,7 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
 
 TEST_CASE("programs/Lambda1 - Basic lambda Test", "[codegen][lambda]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/Lambda1.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/Lambda1.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1104,12 +1104,12 @@ TEST_CASE("programs/Lambda1 - Basic lambda Test", "[codegen][lambda]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "d06bbb8013c6cfccd7f79ab269425b221c3a5dcb802949480b79fa28228d48bb");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "7f85ab3efb00ae5989d8993b35f32b6ba719a3167210e5dbb7ed438ba5135524");
 }
 
 TEST_CASE("programs/Lambda2 - Basic lambda Test w/ return", "[codegen][lambda]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/Lambda2.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/Lambda2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1132,7 +1132,7 @@ TEST_CASE("programs/Lambda2 - Basic lambda Test w/ return", "[codegen][lambda]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "3aca1c5d463a66b5ed899084647b2ed1ed6c76a4277b935c17fd3ca6ba30644a");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "fc18974a336ba7f64c2b1f4ad7087c558ea8be6a242ce29613f2b3039b09c331");
 }
 
 TEST_CASE("programs/Lambda3 - Basic lambda Test w/ return and same name", "[codegen][lambda]")
@@ -1277,7 +1277,7 @@ TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignmens outside of d
 
 TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[codegen][enum][lambda]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/enumAssign2.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/enumAssign2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1300,7 +1300,7 @@ TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[co
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "bf7f5d87893b5afd5fe2ba76cbc633153d7fc26b10331ad8da8dfd6f86dfa22b");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "638573525dadddca5f5e924e4cafc22b1a16e6228aa39fce3a701db7e72abe87");
 }
 
 TEST_CASE("programs/enum3", "[codegen][enum]")
@@ -1501,7 +1501,7 @@ TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
 
 TEST_CASE("programs/dangerLambda - lambdas with dupl function names", "[codegen][struct]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/dangerLambda.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/dangerLambda.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1524,7 +1524,7 @@ TEST_CASE("programs/dangerLambda - lambdas with dupl function names", "[codegen]
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "19c387e4371170bb078319a7323018c2bd6488f01e8a5a98d0c3ebadf3356048");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "c1d7ec0503975ede149360b32780003757deccf84c78862ad7bbc0d54e5e2f65");
 }
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")

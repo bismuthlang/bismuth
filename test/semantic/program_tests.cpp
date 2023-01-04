@@ -1182,14 +1182,19 @@ extern proc foo(int a, ...);
 
 define program :: c : Channel<-int> = {
     foo(); 
-    return 0;
+    # return 0;
+    c.send(0)
 }
 
-proc foo(int a) {
-    printf("a = %s\n", a);
+# proc foo(int a) {
+define foo :: c : Channel<+int> = {
+    int a := c.recv();
+    # printf("a = %s\n", a);
+    printf("a = %u\n", a);
+
 }
 
-str a := "hello";
+# str a := "hello";
     )"""");
   WPLLexer lexer(&input);
   // lexer.removeErrorListeners();

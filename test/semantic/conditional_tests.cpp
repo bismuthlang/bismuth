@@ -226,7 +226,7 @@ TEST_CASE("Inference If Errors - 1", "[semantic]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-      proc infTest() {
+      define program :: c : Channel<-int> = {
         var a; 
         
         if(1 < 2) then {
@@ -234,6 +234,8 @@ TEST_CASE("Inference If Errors - 1", "[semantic]")
         } else {
           a := 10; 
         }
+
+        c.send(0)
       }
       )""""
     );
@@ -264,7 +266,7 @@ TEST_CASE("Inference If - 1", "[semantic]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-      proc infTest() {
+      define program :: c : Channel<-int> = {
         var a; 
         
         if(1 < 2) then {
@@ -272,6 +274,8 @@ TEST_CASE("Inference If - 1", "[semantic]")
         } else {
           a := 10; 
         }
+
+        c.send(0)
       }
       )""""
     );
@@ -302,7 +306,7 @@ TEST_CASE("Inference If - 2", "[semantic]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-      proc infTest() {
+      define program :: c : Channel<-int> = {
         var a; 
         
         if(1 < 2) then {
@@ -310,6 +314,8 @@ TEST_CASE("Inference If - 2", "[semantic]")
         } else {
           var a := 10; 
         }
+
+        c.send(0)
       }
       )""""
     );

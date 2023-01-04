@@ -1,6 +1,7 @@
 extern int func printf(...);
 
-int func program () {
+# int func program () {
+define program :: io : Channel<-int> = {
     int a, b, c := 10;
     printf("Int equality test I: %d, %d, %d\n", a = b, a ~= b, a = c); 
     printf("a = %d, b = %d, c = %d\n", a, b, c);
@@ -61,5 +62,6 @@ int func program () {
     }
 
     printf("Ints still are: a = %d, b = %d, c = %d\n", a, b, c);
-    return -1; 
+    # return -1; 
+    io.send(-1)
 }

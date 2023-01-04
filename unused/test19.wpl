@@ -1,3 +1,5 @@
+# Unused: Global State
+
 extern int func printf(str a,...);
 
 str a := "Hello there";
