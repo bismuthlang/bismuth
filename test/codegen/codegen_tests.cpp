@@ -15,6 +15,7 @@
 #include "HashUtils.h"
 #include "CompilerFlags.h"
 
+//FIXME: REMOVE NO RUNTIME 
 TEST_CASE("Development Codegen Tests", "[codegen]")
 {
     antlr4::ANTLRInputStream input("define program :: c : Channel<-int> = { return -1; }");
@@ -27,11 +28,11 @@ TEST_CASE("Development Codegen Tests", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "test", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "test", 0);
     cv->visitCompilationUnit(cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
@@ -108,7 +109,7 @@ TEST_CASE("programs/test1a", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
@@ -164,13 +165,13 @@ TEST_CASE("programs/test3 - If w/o else", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -192,13 +193,13 @@ TEST_CASE("programs/test4a - Use and redeclaration of parameters", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -208,7 +209,7 @@ TEST_CASE("programs/test4a - Use and redeclaration of parameters", "[codegen]")
 
 TEST_CASE("programs/test5 - Nested ifs and if equality", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test5.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test5.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -220,18 +221,18 @@ TEST_CASE("programs/test5 - Nested ifs and if equality", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "6499fa76c19d5f518248a26b68be585002588e2a52851469d37dd3c6e7529f0b");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "b9c39606c29424eed14e72a29f68e1b5b2dcb98e3c66af1eddec758e5843b1b6");
 }
 
 TEST_CASE("programs/test6 - Basic Select with Return", "[codegen]")
@@ -248,13 +249,13 @@ TEST_CASE("programs/test6 - Basic Select with Return", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -276,13 +277,13 @@ TEST_CASE("programs/testSelectBlock1 - Basic Select with Blocks that Return", "[
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -305,13 +306,13 @@ TEST_CASE("programs/test6a (CAFE!) - Basic Nested Selects, LEQ, GEQ", "[codegen]
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -333,13 +334,13 @@ TEST_CASE("programs/testSelectBlock2 - Select with blocks that don't return", "[
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -390,13 +391,13 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -418,13 +419,13 @@ TEST_CASE("programs/test9i - Global Integers", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -446,13 +447,13 @@ TEST_CASE("programs/test9iv - Global Integer Inference", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -474,13 +475,13 @@ TEST_CASE("programs/test9b - Global Booleans", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -502,13 +503,13 @@ TEST_CASE("programs/test9bv - Global Boolean Inference", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -530,13 +531,13 @@ TEST_CASE("programs/test9s - Global Strings", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -558,13 +559,13 @@ TEST_CASE("programs/test9sv - Global String Inference", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -586,13 +587,13 @@ TEST_CASE("programs/test9ba - Global Boolean Array", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -614,13 +615,13 @@ TEST_CASE("programs/test9ia - Global Integer Array", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -642,13 +643,13 @@ TEST_CASE("programs/test9sa - Global String Array - FLAWED", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -698,13 +699,13 @@ TEST_CASE("programs/test11 - Expressions in decl (let*) ", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -726,13 +727,13 @@ TEST_CASE("programs/test12 - Scopes & Prime Finder Example! ", "[codegen]")
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, CompilerFlags::NO_RUNTIME);
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", CompilerFlags::NO_RUNTIME);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
