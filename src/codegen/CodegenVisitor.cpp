@@ -1412,6 +1412,11 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
         builder->SetInsertPoint(restBlk);
     }
 
+    for(auto s : n->post)
+    {
+        AcceptType(this, s);
+    }
+
     return {};
 }
 

@@ -13,5 +13,6 @@ define program :: c : Channel<-int> = {
   {
     printf("false\n");
   }
-  return -1; 
+  # return -1; 
+  c.send(0)
 }

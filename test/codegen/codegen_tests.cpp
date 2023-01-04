@@ -799,7 +799,7 @@ TEST_CASE("programs/test-runtime - Basic runtime tests", "[codegen]")
 
 TEST_CASE("programs/test-shortcircuit - Basic Short Circuit (and)", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test-shortcircuit.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test-shortcircuit.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -822,7 +822,7 @@ TEST_CASE("programs/test-shortcircuit - Basic Short Circuit (and)", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "e664f3cf5af34edd6f3fecb5248e4c6390565443c942e01f5652c7b5b3c3d4ba");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "7c2396be13623687194b4199b8fa3abadafddb89b1a4e36240455010c7914d1f");
 }
 
 TEST_CASE("programs/test-shortcircuit-rt - Basic Short Circuit (and + or) w/ Runtime", "[codegen]")
@@ -1164,7 +1164,7 @@ TEST_CASE("programs/Lambda3 - Basic lambda Test w/ return and same name", "[code
 
 TEST_CASE("programs/externLambda", "[codegen][lambda]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/externLambda.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/externLambda.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1187,7 +1187,7 @@ TEST_CASE("programs/externLambda", "[codegen][lambda]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "d81102c34794423af00dc4a13e2f2a3a1c37f4d4956655fb88e9527e37cb3b78");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "b5235ff4d234116c2b168d6a11f2930bdfa53b07ab36e7af895ef52cba31913a");
 }
 
 TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
@@ -1248,7 +1248,7 @@ TEST_CASE("programs/enum2 - Basic Enum 2", "[codegen][enum]")
 
 TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignmens outside of decl", "[codegen][enum]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/enumAssign.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/enumAssign.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1271,7 +1271,7 @@ TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignmens outside of d
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "a754100cd398e8c52269bdf94bf069a461c5310f705b00cf984ca688ab622c04");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "d28141fda4ffe2943a80619005d1b53a485b8edeb1b0a6a9d7b5e6efb6d9186d");
 }
 
 TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[codegen][enum][lambda]")
