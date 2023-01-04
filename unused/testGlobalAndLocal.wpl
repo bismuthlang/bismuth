@@ -1,3 +1,5 @@
+# UNUSED: GLOBAL 
+
 extern int func printf(str a,...);
 
 int a := 10;

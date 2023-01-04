@@ -1,3 +1,6 @@
+# Unused because now runtmme is needed for processes, and these functions here won't be part of runtime...
+
+
 extern int func printf(str a,         ...);
 extern int func getArgCount();
 extern int func getIntArg(int i);

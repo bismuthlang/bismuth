@@ -1,0 +1,196 @@
+extern int func printf(str s, ...);
+
+define struct Unit {}
+
+define struct RGBData {
+    int[3] rgb; 
+}
+
+define struct HSVData {
+    int[3] hsv; 
+}
+
+define struct RGBColor {
+    RGBData rgb; 
+    RGBData -> int getRed; 
+    RGBData -> int getGreen; 
+    RGBData -> int getBlue; 
+    # Program<+RGBData;-int> getRed;   # FIXME: TEST THIS!
+    # Program<+RGBData;-int> getGreen; 
+    # Program<+RGBData;-int> getBlue; 
+    
+}
+
+define struct HSVColor {
+    HSVData hsv; 
+    HSVData -> int getHue; 
+    HSVData -> int getSat; 
+    HSVData -> int getVal;
+    # Program<+HSVData;-int> getHue;
+    # Program<+HSVData;-int> getSat;
+    # Program<+HSVData;-int> getVal;
+}
+
+define enum ColorType { # FIXME: TEST THESE WITH ANON. ENUMS
+    RGBColor, 
+    HSVColor
+}
+
+define struct Color {
+    ColorType colorType; 
+    ColorType -> str toString; 
+}
+
+# Color func getRGBColor(int r, int g, int b) 
+define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # FIXME: Meaning of params gets lost...
+{
+    int[3] data; 
+    data[0] := io.recv();# r; 
+    data[1] := io.recv();# g; 
+    data[2] := io.recv();# b; 
+
+    RGBData rgbDat := RGBData::init(data);
+
+    # int func getChannel(RGBData d, int c) {
+    define getChannel :: c : Channel<+RGBData;+int;-int> = {
+        RGBData d := c.recv();
+        int[3] channels := d.rgb; 
+        # int[3] channels := c.recv(); 
+        # c.send(channels[c.recv()]) # FIXME: THIS DOESNT WORK
+        int c_index := c.recv();
+
+        c.send(channels[c_index])
+        # return channels[c]; 
+    }
+
+    var c := Color::init(
+        RGBColor::init(
+            rgbDat, 
+            (RGBData d) : int { 
+                Channel<-RGBData;-int;+int> io := exec getChannel; 
+                io.send(d)
+                io.send(0)
+                int ans := io.recv(); # FIXME: RETURN RECV?
+                return ans;
+                # return getChannel(d, 0); 
+            },
+            (RGBData d) : int { 
+                Channel<-RGBData;-int;+int> io := exec getChannel; 
+                io.send(d)
+                io.send(1)
+                int ans := io.recv();
+                return ans;
+                # return getChannel(d, 1); 
+            },
+            (RGBData d) : int { 
+                Channel<-RGBData;-int;+int> io := exec getChannel; 
+                io.send(d)
+                io.send(2)
+                int ans := io.recv();
+                return ans;
+                # return getChannel(d, 2); # FIXME: WHY ARE ERRORS SO STRANGE WHEN USING THIS?
+            }
+        ),
+        (ColorType c) : str { return "rgb"; }
+    );
+
+    # lamePrint(c); 
+    {
+        Channel<-Color> io := exec lamePrint; 
+        io.send(c)
+    }
+
+    io.send(Color::init(
+        RGBColor::init(
+            rgbDat, 
+            (RGBData d) : int { 
+                Channel<-RGBData;-int;+int> io := exec getChannel; 
+                io.send(d)
+                io.send(0)
+                int ans := io.recv(); # FIXME: RETURN RECV?
+                return ans;
+                # return getChannel(d, 0); 
+            },
+            (RGBData d) : int { 
+                Channel<-RGBData;-int;+int> io := exec getChannel; 
+                io.send(d)
+                io.send(1)
+                int ans := io.recv();
+                return ans;
+                # return getChannel(d, 1); 
+            },
+            (RGBData d) : int { 
+                Channel<-RGBData;-int;+int> io := exec getChannel; 
+                io.send(d)
+                io.send(2)
+                int ans := io.recv();
+                return ans;
+                # return getChannel(d, 2); # FIXME: WHY ARE ERRORS SO STRANGE WHEN USING THIS?
+            }
+        ),
+        (ColorType c) : str { return "rgb"; }
+    ))
+}
+
+
+# int func lamePrint(Color c) {
+define lamePrint :: io : Channel<+Color> = {
+    Color c := io.recv(); 
+
+    {
+        ColorType -> str lam := c.toString;
+        printf("Color[type=%s, ", lam(c.colorType));
+    }
+
+    printf("112\n");
+
+    {
+        match c.colorType {
+            RGBColor rgb => {
+                RGBData -> int getRed := rgb.getRed; 
+                RGBData -> int getGreen := rgb.getGreen; 
+                RGBData -> int getBlue := rgb.getBlue;
+
+                # TODO: DEADCODE IF BLOCKS ARE ALL ASSIGNMENTS? DO BETTER OPT!
+                printf("r=%u, g=%u, b=%u]\n", getRed(rgb.rgb), getBlue(rgb.rgb), getGreen(rgb.rgb));
+            }
+            HSVColor hsv => {
+                HSVData -> int getHue := hsv.getHue; 
+                HSVData -> int getSat := hsv.getSat; 
+                HSVData -> int getVal := hsv.getVal;
+
+                printf("r=%u, g=%u, b=%u]\n", getHue(hsv.hsv), getSat(hsv.hsv), getVal(hsv.hsv));
+            }
+        }
+    }
+    printf("133\n");
+    # return 0;
+}
+define program :: c : Channel<-int> = {
+
+    HSVColor hsv; 
+    RGBColor rgb; 
+
+    #Color z := getColor(58, 166, 63);
+
+    #printf("Color: %u, %u, %u\n", z.red, z.green, z.blue);
+
+    # Color col := getRGBColor(58, 166, 63);
+    Channel<-int;-int;-int;+Color> io := exec getRGBColor; 
+    io.send(58)
+    io.send(166)
+    io.send(63)
+
+    Color col := io.recv();
+
+    Channel<-Color> io2 := exec lamePrint;
+    io2.send(col)
+
+
+    # lamePrint(col); 
+
+
+    # return 0; # FIXME: SHOULD THROW ERROR!!!
+
+    c.send(0)
+}

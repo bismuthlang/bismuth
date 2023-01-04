@@ -1,15 +1,14 @@
+# Unused: Global Scope
+
 extern int func printf(...);
 
-boolean a; 
-boolean b := true;  
+var a := 10; 
 
+# printf("A is %d\n", a);
 
 int func program () {
-    a := true; 
-    a[10] := true;
-
     printf("A is %d\n", a);
-    a[0] := false; 
+    a := 11; 
 
     printf("A is %d\n", a);
     return -1; 

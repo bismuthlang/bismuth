@@ -1,3 +1,5 @@
+# Unused: Global Scope
+
 extern int func printf(...);
 
 str [1] a; 

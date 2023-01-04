@@ -1,8 +1,8 @@
+# Unused: Global Scope
+
 extern int func printf(...);
 
-boolean a := true; 
-
-# printf("A is %d\n", a);
+var a := true; 
 
 int func program () {
     printf("A is %d\n", a);

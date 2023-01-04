@@ -292,12 +292,17 @@ std::optional<InitProductNode *> SemanticVisitor::visitCtx(WPLParser::InitProduc
 
             for (auto eleItr : elements)
             {
+                std::cout << "295 " << ctx->exprs.at(i)->getText() << std::endl; 
                 // const Type *providedType = any2Type(ctx->exprs.at(i)->accept(this));
                 std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(ctx->exprs.at(i)->accept(this));
+                std::cout << "298 " << opt.has_value() << std::endl; 
                 if (!opt)
                     return {}; // FIXME: DO BETTER
 
+std::cout << "301" << std::endl; 
+
                 TypedNode *tn = opt.value();
+                std::cout << "304" << std::endl; 
                 n.push_back(tn);
                 const Type *providedType = tn->getType();
 
@@ -697,15 +702,15 @@ std::optional<LogOrExprNode *> SemanticVisitor::visitCtx(WPLParser::LogOrExprCon
  */
 std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx, bool is_rvalue)
 {
-    std::cout << "696 " << ctx->getText() << std::endl;
+    std::cout << "696 " << ctx->getText() << " " << ctx->getStart()->getLine() << std::endl;
     // Determine the type of the expression we are visiting
     std::optional<SymbolContext> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
     if (!opt)
     {
+        std::cout << "709 - var undefined!" << std::endl; 
         errorHandler.addSemanticError(ctx->getStart(), "Undefined variable reference: " + ctx->VARIABLE().at(0)->getText());
         return {};
     }
-
     Symbol *sym = opt.value().second;
 
     std::cout << "707 " << sym->toString() << std::endl;
@@ -995,9 +1000,11 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
         // Needs to happen in case we have vars
         const Type *assignType = this->visitCtx(ctx->typeOrVar());
         // auto exprType = (e->a) ? any2Type(e->a->accept(this)) : assignType;
+        std::cout << "1003" << std::endl; 
         std::optional<TypedNode *> exprOpt = (e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)) : std::nullopt;
+        std::cout << "1005" << std::endl; 
         const Type *exprType = exprOpt ? exprOpt.value()->getType() : assignType;
-
+std::cout << "1007" << std::endl; 
         if (e->a && stmgr->isGlobalScope())
         {
             if (!(dynamic_cast<WPLParser::BConstExprContext *>(e->a) ||
@@ -1036,10 +1043,34 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
                 // Needed to ensure vars get their own inf type
                 const Type *newAssignType = this->visitCtx(ctx->typeOrVar());
                 std::cout << "1035 " << newAssignType->toString() << std::endl;
-                const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)).value()->getType() : newAssignType;
+                // FIXME: BAD OPT ACCESS
+                // const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)).value()->getType() : newAssignType;
+                std::optional<const Type*> newExprTypeOpt = [this, e, newAssignType]() -> std::optional<const Type*> {
+                    // const Type *newExprType = newAssignType;
+                    if(dynamic_cast<const TypeInfer*>(newAssignType) && e->a)
+                    {
+                        std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(e->a->accept(this));
+
+                        if(!opt) 
+                            return std::nullopt; //FIXME: DO BETTER
+
+                        TypedNode * tn = opt.value(); 
+
+                        return tn->getType();
+
+
+                    }
+
+                    return newAssignType;
+                }();
+                
+                if(!newExprTypeOpt) return {}; //FIXME: DO BETTER
+
+                const Type* newExprType = newExprTypeOpt.value(); 
+
                 Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later inferencing purposes
                 stmgr->addSymbol(symbol);
-                std::cout << "1038 var decl " << symbol->toString() << std::endl;
+                // std::cout << "1038 var decl " << symbol->toString() << std::endl;
                 // bindings->bind(var, symbol);
                 s.push_back(symbol);
             }

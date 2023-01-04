@@ -1,6 +1,8 @@
+# Unused: Global Scope
+
 extern int func printf(...);
 
-var a := 10; 
+int a := 10; 
 
 # printf("A is %d\n", a);
 

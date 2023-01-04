@@ -25,29 +25,22 @@ define struct Color {
     ColorType colorType; 
 }
 
-Color func getRGBColor(int r) 
-{
+# Color func getRGBColor(int r) 
+define getRGBColor :: io : Channel<+int;-Color> = {
+    int r := io.recv();
+
     RGBData rgbDat := RGBData::init(r);
 
     ColorType ct := RGBColor::init(rgbDat); 
     var c := Color::init(
-        # ct
         RGBColor::init(
             rgbDat
         )
     );
-
-    # ColorType v := RGBColor::init(
-    #         rgbDat, 
-    #         (RGBData d) : int { return d.r; }
-    #     );
-
     
     match c.colorType {
         RGBColor rgb => {
             printf("DEBUG=%u\n", 0);
-            # RGBData -> int getRed := rgb.getRed; 
-            # printf("r=%u]\n", getRed(rgb.rgb));
             printf("r=%u]\n", rgb.rgb.r);
         }
         HSVColor hsv => { # TODO: THESE BLOCKS CAN BE EMPTY?
@@ -55,11 +48,19 @@ Color func getRGBColor(int r)
         }
     }
 
-    return c;
+    # return c;
+    io.send(c)
 }
 
 
 define program :: c : Channel<-int> = {
-    getRGBColor(128);
-    return 0; 
+    # getRGBColor(128);
+    Channel<-int;+Color> chan := exec getRGBColor;
+
+    chan.send(128)
+
+    Color t := chan.recv();
+
+    # return 0; 
+    c.send(0)
 }
