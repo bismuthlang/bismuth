@@ -1069,8 +1069,21 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
         std::set<const Type *> foundCaseTypes = {};
         // TODO: Maybe make so these can return values?
 
+        std::vector<Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+        stmgr->deleteAvaliableLinears();
+
         for (WPLParser::MatchAlternativeContext *altCtx : ctx->cases)
         {
+            stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
+            for (const Symbol *orig : syms)    // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
+            {
+                // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
+                if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+                {
+                    stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
+                }
+            }
+
             const Type *caseType = any2Type(altCtx->type()->accept(this));
 
             if (!sumType->contains(caseType))
@@ -1087,7 +1100,7 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
                 foundCaseTypes.insert(caseType); // FIXME: DO BETTER TRACKING OF SATISFYING RQMTS. Right now, can pass check for having all cases due to having invalid ones!!
             }
 
-            stmgr->enterScope(StopType::LINEAR);
+            stmgr->enterScope(StopType::LINEAR); // FIXME: COMMENT WHAT THIS DOES AND VERIFY WITH NEW CHANGES!
             Symbol *local = new Symbol(altCtx->name->getText(), caseType, false, false);
             stmgr->addSymbol(local);
             // bindings->bind(altCtx->VARIABLE(), local);
@@ -1105,6 +1118,13 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
             }
 
             cases.push_back({local, tnOpt.value()});
+
+            // For tracking linear stuff //FIXMEL TRACK RETURN/EXIT
+            for (auto s : ctx->rest)
+            {
+                s->accept(this); // FIXME: DO BETTER
+            }
+            safeExitScope(ctx);
         }
 
         if (foundCaseTypes.size() != sumType->getCases().size())
@@ -1112,8 +1132,34 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
             errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
         }
 
+        
+        std::vector<TypedNode *> restVec; // FIXME: DO BETTER
+        bool valid = true;
+
+        //Need to re-add symbols for fallthrough case. Really seems like this all could be done more efficiently, though...
+        for (const Symbol *orig : syms) // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
+        {
+            // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
+            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+            {
+                stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
+            }
+        }
+
+        for (auto s : ctx->rest)
+        {
+            std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
+            if (!tnOpt)
+                valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
+            else
+                restVec.push_back(tnOpt.value());
+        }
+
+        if (!valid)
+            return {}; // FIXME: DO BETTER
+
         // bindings->bind(ctx->check, new Symbol(ctx->check->ex->getText(), sumType, false, false));
-        return new MatchStatementNode(sumType, cond, cases);
+        return new MatchStatementNode(sumType, cond, cases, restVec);
     }
 
     errorHandler.addSemanticError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString());
@@ -1231,11 +1277,12 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
             if (!tnOpt)
                 valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
             // else
-                // restVec.push_back(tnOpt.value());
+            // restVec.push_back(tnOpt.value());
         }
         safeExitScope(ctx);
 
-        if(!valid) return {};
+        if (!valid)
+            return {};
 
         return new ConditionalStatementNode(condOpt.value(), trueOpt.value(), restVec, falseOpt.value());
     }
@@ -1256,11 +1303,11 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
         if (!tnOpt)
             valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
         // else
-            // restVec.push_back(tnOpt.value());
+        // restVec.push_back(tnOpt.value());
     }
     safeExitScope(ctx);
 
-    return new ConditionalStatementNode(condOpt.value(), trueOpt.value(),restVec);
+    return new ConditionalStatementNode(condOpt.value(), trueOpt.value(), restVec);
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
     // return Types::UNDEFINED;
 }

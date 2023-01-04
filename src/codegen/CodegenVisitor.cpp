@@ -286,6 +286,11 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     origParent->getBasicBlockList().push_back(mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
+    for(TypedNode * s : n->post)
+    {
+        AcceptType(this, s);
+    }
+
     return {};
 }
 

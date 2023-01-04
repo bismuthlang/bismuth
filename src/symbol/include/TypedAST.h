@@ -870,11 +870,15 @@ public:
     TypedNode * checkExpr; 
     vector<pair<Symbol *, TypedNode *>> cases; 
 
-    MatchStatementNode(const TypeSum * m, TypedNode * e, vector<pair<Symbol *, TypedNode *>> c)
+    vector<TypedNode*> post;
+
+    MatchStatementNode(const TypeSum * m, TypedNode * e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode*> p)
     {
         matchType = m; 
         checkExpr = e; 
         cases = c; 
+        
+        post = p; 
     }
 
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
