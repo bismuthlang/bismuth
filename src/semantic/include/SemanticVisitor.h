@@ -196,6 +196,9 @@ public:
     const Type *visitCtx(WPLParser::ChannelTypeContext *ctx);
     std::any visitChannelType(WPLParser::ChannelTypeContext *ctx) override { return visitCtx(ctx); }
 
+    const Type *visitCtx(WPLParser::ProgramTypeContext *ctx);
+    std::any visitProgramType(WPLParser::ProgramTypeContext *ctx) override { return visitCtx(ctx); }
+
     const Type *visitCtx(WPLParser::CustomTypeContext *ctx);
     std::any visitCustomType(WPLParser::CustomTypeContext *ctx) override { return visitCtx(ctx); }
     

@@ -199,7 +199,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     // Check that the optional, in fact, has a value. Otherwise, something went wrong.
     if (!optVal)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); //FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 202"); //FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
 
@@ -435,8 +435,13 @@ std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
         return val;
     }
     // std::cout << "416" << std::endl; //FIXME: REPORT ERROR?
+    //FIXME: REFACTOR, BOTH WITH THIS METHOD AND INVOCATION!
 
-    return {};
+    // llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(ty->getPointerElementType());
+llvm::Function *progFn = module->getFunction("Execute");
+        Value *val = builder->CreateCall(progFn, {fnVal});
+        return val;
+    // return {};
 }
 
 std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
@@ -839,7 +844,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
 
         if (!rhs)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + toGen.at(i)->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 842"); // FIXME: DO BETTER + toGen.at(i)->getText());
             return {};
         }
         lastValue = rhs.value();
@@ -888,7 +893,7 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
 
     if (!first)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + toGen.at(0)->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 891"); // FIXME: DO BETTER + toGen.at(0)->getText());
         return {};
     }
 
@@ -914,7 +919,7 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
 
         if (!rhs)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + toGen.at(i)->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 917"); // FIXME: DO BETTER + toGen.at(i)->getText());
             return {};
         }
         lastValue = rhs.value();
@@ -1029,7 +1034,7 @@ std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
     // Ensure we successfully generated LHS and RHS
     if (!lhs || !rhs)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1032"); // FIXME: DO BETTER
         return {};
     }
 
@@ -1095,7 +1100,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     // Check that the expression generated
     if (!exprVal)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + ctx->a->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1098"); // FIXME: DO BETTER + ctx->a->getText());
         return {};
     }
 
@@ -1203,7 +1208,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
         if ((e->val) && !exVal)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + e->a->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1206"); // FIXME: DO BETTER + e->a->getText());
             return {};
         }
 
@@ -1296,7 +1301,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
     std::cout << "1550" << std::endl;
     if (!check)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1299"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
     std::cout << "1556" << std::endl;
@@ -1325,7 +1330,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
     check = this->visit(n->cond); // this->TvisitCondition(ctx->check);
     if (!check)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1328"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
     std::cout << "1583" << std::endl;
@@ -1349,7 +1354,7 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
 
     if (!cond)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME:  + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1352"); // FIXME:  + ctx->check->getText());
         return {};
     }
 
@@ -1439,7 +1444,7 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
         // Check that the optional, in fact, has a value. Otherwise, something went wrong.
         if (!optVal)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // + evalCase->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1442"); // + evalCase->getText());
             return {};
         }
 
@@ -1525,7 +1530,7 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
 
         if (!innerOpt)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: "); // FIXME: DO BETTER + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1528"); // FIXME: DO BETTER + ctx->getText());
             return {};
         }
 

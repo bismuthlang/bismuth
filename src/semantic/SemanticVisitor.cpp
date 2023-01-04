@@ -1473,9 +1473,9 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
     BlockNode *blk = blkOpt.value();
 
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
-    if (!endsInReturn(blk)) //ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1)))
+    if (!endsInReturn(blk)) // ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1)))
     {
-        std::cout << ctx->block()->getText() << std::endl; 
+        std::cout << ctx->block()->getText() << std::endl;
         // FIXME: DO THIS CHECK BETTER WITH BLOCK NODE?
         errorHandler.addSemanticError(ctx->getStart(), "Lambda must end in return statement");
     }
@@ -1679,6 +1679,12 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ChannelTypeContext *ctx)
     const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
 
     return new TypeChannel(proto);
+}
+
+const Type *SemanticVisitor::visitCtx(WPLParser::ProgramTypeContext *ctx)
+{
+    const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
+    return new TypeProgram(new TypeChannel(proto), true); //FIXME: SEEMS A BIT ODD TO INC CHANNEL IN PROGRAM?
 }
 
 std::optional<ProgramSendNode *> SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)

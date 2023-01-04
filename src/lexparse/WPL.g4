@@ -71,7 +71,7 @@ lambdaConstExpr     : LPAR parameterList RPAR ':' ret=type block ;
  * its own statement as well as as parts of functions, procedures, 
  * conditions, loops, etc. 
  */
-block      : LSQB (stmts+=statement)* '}' ;
+block      : LSQB (stmts+=statement)* RSQB ;
 
 
 // Parenthesis are optional around a condition
@@ -92,9 +92,9 @@ protoAlternative    : check=protocol '=>' eval=statement ;
  *
  * Parameter defines a parameter: its just a type and name.
  */
-parameterList          : params+=parameter (',' params+=parameter)*? ;
-parameter           :  ty=type name=VARIABLE ;
-VariadicParam : ',' [ \t]* '...'; //For some reason, need to match the whitespace so that way we can allow spaces between the two...
+parameterList       : params+=parameter (',' params+=parameter)*? ;
+parameter           : ty=type name=VARIABLE ;
+VariadicParam       : ',' [ \t]* '...'; //For some reason, need to match the whitespace so that way we can allow spaces between the two...
 
 /*
  * Assignment fragment: this contains the information about variables
@@ -179,17 +179,17 @@ MAPS_TO     :       '->'    ;
 
 
 //Separators
-LPAR      :     '('     ;
-RPAR      :     ')'     ;
-LBRC      :     '['     ;
-RBRC      :     ']'     ;
-LSQB      :     '{'     ;
-RSQB      :     '}'     ;
-SEMICOLON :     ';'     ;
-COLON     :     ':'     ;
-QUOTE     :     '"'     ;
-COMMA     :     ','     ;
-ELLIPSIS  :     '...'   ;
+LPAR        :     '('     ;
+RPAR        :     ')'     ;
+LBRC        :     '['     ;
+RBRC        :     ']'     ;
+LSQB        :     '{'     ;
+RSQB        :     '}'     ;
+SEMICOLON   :     ';'     ;
+COLON       :     ':'     ;
+QUOTE       :     '"'     ;
+COMMA       :     ','     ;
+ELLIPSIS    :     '...'   ;
 
 /* 
  * Types
@@ -207,18 +207,19 @@ subProtocol     :   '+' ty=type                 # RecvType
                 |   '-' ty=type                 # SendType
                 |   '?' proto=protocol          # WnProto
                 |   '!' proto=protocol          # OcProto
-                |   'ExternalChoice' '<' protoOpts+=protocol (',' protoOpts+=protocol)+ '>'     # ExtChoiceProto
-                |   'InternalChoice' '<' protoOpts+=protocol (',' protoOpts+=protocol)+ '>'     # IntChoiceProto
+                |   'ExternalChoice' LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # ExtChoiceProto
+                |   'InternalChoice' LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # IntChoiceProto
                 ;
 
 
 //Allows us to have a type of ints, bools, or strings with the option for them to become 1d arrays. 
-type            :    ty=type LBRC len=INTEGER RBRC                                  # ArrayType
-                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR)                           # BaseType
-                |    paramTypes+=type (',' paramTypes+=type)* '->' returnType=type  # LambdaType
-                |    LPAR type ('+' type)+ RPAR                                     # SumType 
-                |    'Channel' '<' proto=protocol '>'                               # ChannelType
-                |    VARIABLE                                                       # CustomType
+type            :    ty=type LBRC len=INTEGER RBRC                                          # ArrayType
+                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR)                                   # BaseType
+                |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
+                |    LPAR type (PLUS type)+ RPAR                                            # SumType 
+                |    'Channel' LESS proto=protocol GREATER                                  # ChannelType
+                |    'Program' LESS proto=protocol GREATER                                  # ProgramType
+                |    VARIABLE                                                               # CustomType
                 ;
 
 TYPE_INT        :   'int' ; 
@@ -242,11 +243,11 @@ DEFINE          :   'define';
 
 //Booleans
 booleanConst        :   TRUE | FALSE ; 
-FALSE       :   'false' ; 
-TRUE        :   'true'  ; 
+FALSE               :   'false' ; 
+TRUE                :   'true'  ; 
 
 //Integer 
-INTEGER     :   '0' | [1-9][0-9]* ; //Negative numbers handled by unary minus 
+INTEGER             :   '0' | [1-9][0-9]* ; //Negative numbers handled by unary minus 
 
 /*
  * Strings
@@ -260,7 +261,7 @@ INTEGER     :   '0' | [1-9][0-9]* ; //Negative numbers handled by unary minus
 STRING      :   QUOTE (ESCAPE_STRING | SAFE_STRING)* QUOTE;
 
 //Variables 
-VARIABLE  :     [a-zA-Z][a-zA-Z0-9_]*  ;
+VARIABLE    :     [a-zA-Z][a-zA-Z0-9_]*  ;
 
 //String escapes are a \ that must be followed by any character
 fragment ESCAPE_STRING  : '\\'. ; 

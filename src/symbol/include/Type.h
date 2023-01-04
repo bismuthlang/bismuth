@@ -709,7 +709,7 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeProgram(const TypeChannel *c, bool d)
+    TypeProgram(const TypeChannel *c, bool d) //FIXME: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
     {
         channel = c;
 
@@ -804,6 +804,10 @@ protected:
         //     // Makes sure that the return type of this function is a subtype of the other
         //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
         // }
+        if(const TypeProgram *p = dynamic_cast<const TypeProgram*>(other))
+        {
+            return channel->isSubtype(p->channel); //FIXME: DO BETTER/VERIFY!
+        }
         return false;
     }
 };
