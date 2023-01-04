@@ -6,6 +6,10 @@
 using namespace std;
 using llvm::Value;
 
+
+//FIXME: HAVE COMPILER ADD COMMENTS TO DOCUMENT COMPLEX TYPES?
+
+
 class TypedASTVisitor;
 
 class TypedNode
@@ -888,3 +892,54 @@ public:
         return Types::UNDEFINED; // FIXME: DO BETTER
     }
 };
+
+
+
+
+
+/**************************************************
+ * 
+ * UTILITIES
+ * 
+ **************************************************/
+inline bool endsInReturn(TypedNode * n);
+
+inline bool endsInReturn(vector<TypedNode *> n)
+{
+    if(n.size() == 0) return false; 
+    return endsInReturn(n.at(n.size() - 1));
+}
+
+inline bool endsInReturn(TypedNode * n)
+{
+    if(dynamic_cast<ReturnNode *>(n)) return true; 
+
+    if(BlockNode * bn = dynamic_cast<BlockNode*>(n))
+    {
+        return endsInReturn(bn->exprs);
+        // if(bn->exprs.size() == 0) return false; 
+        // return endsInReturn((bn->exprs.at(bn->exprs.size() - 1)));
+        // return bn->exprs.size() > 0 && dynamic_cast<ReturnNode *>(bn->exprs.at(bn->exprs.size() - 1));
+    }
+
+    //FIXME: DO THESE BETTER!
+    if(ConditionalStatementNode * cn = dynamic_cast<ConditionalStatementNode *>(n))
+    {
+        // if(cn->post.size())
+        return endsInReturn(cn->post);
+    }
+
+    if(MatchStatementNode * cn = dynamic_cast<MatchStatementNode *>(n))
+    {
+        // if(cn->post.size())
+        return endsInReturn(cn->post);
+    }
+
+    // if(MatchStatementNode * cn = dynamic_cast<MatchStatementNode *>(n))
+    // {
+    //     // if(cn->post.size())
+    //     return endsInReturn(cn->post);
+    // }
+
+    return false; 
+}   

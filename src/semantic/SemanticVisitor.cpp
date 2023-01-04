@@ -1313,14 +1313,12 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
 
     // Type check the then/true block
     stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
-    for (const Symbol *orig : syms)    // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
+    for (auto pair : to_fix)
     {
-        // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
-        if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-        {
-            stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
-        }
+        // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
+        pair.first->setProtocol(pair.second->getCopy());
     }
+
     for (auto s : ctx->rest)
     {
         std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
@@ -1475,8 +1473,9 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
     BlockNode *blk = blkOpt.value();
 
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
-    if (ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1)))
+    if (!endsInReturn(blk)) //ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1)))
     {
+        std::cout << ctx->block()->getText() << std::endl; 
         // FIXME: DO THIS CHECK BETTER WITH BLOCK NODE?
         errorHandler.addSemanticError(ctx->getStart(), "Lambda must end in return statement");
     }

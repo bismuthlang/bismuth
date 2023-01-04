@@ -316,6 +316,7 @@ protected:
      */
     static bool blockEndsInReturn(BlockNode *n)
     {
+        // FIXME: DOES THIS EVEN WORK STILL GIVEN THE NEW REST GRAMMAR?
         return n->exprs.size() > 0 && dynamic_cast<ReturnNode *>(n->exprs.at(n->exprs.size() - 1));
     }
 
