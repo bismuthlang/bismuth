@@ -11,9 +11,12 @@ structCase        :  (ty=type name=VARIABLE) ';' ;
 
 defineProc        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '=' block  ;
 
+defineFunc        : DEFINE 'func' name=VARIABLE lam=lambdaConstExpr ;
+
 defineType        : DEFINE 'enum' name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB # DefineEnum
                   | DEFINE 'struct' name=VARIABLE LSQB (cases+=structCase)*  RSQB        # DefineStruct
                   | defineProc                                                           # DefineProgram
+                  | defineFunc                                                           # DefineFunction
                   ; 
 
 externStatement : EXTERN (ty=type FUNC | PROC) name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?)? | ELLIPSIS) RPAR ';';
@@ -127,7 +130,8 @@ assignable : ex=expression                          # AssignableExpr
  * 11. Block statements. 
  */
 statement           : defineProc                                                            # ProgDef 
-                    | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                  # AssignStatement 
+                    | defineFunc                                                            # FuncDef
+                    | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                   # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'   # VarDeclStatement
                     // | WHILE check=condition DO block                                    # LoopStatement 
                     | IF check=condition IF_THEN? trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement // FIXME: HANDLE REST

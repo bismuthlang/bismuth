@@ -29,6 +29,7 @@ class BlockNode;
 
 class LambdaConstNode;
 class ProgramDefNode;
+class FunctionDefNode;
 class ConditionalStatementNode;
 class ReturnNode;
 class ProgramSendNode;
@@ -72,6 +73,7 @@ public:
     virtual std::optional<Value *> visit(BlockNode *n) = 0;
     virtual std::optional<Value *> visit(LambdaConstNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramDefNode *n) = 0;
+    // virtual std::optional<Value *> visit(FunctionDefNode *n) = 0; //FIXME
     virtual std::optional<Value *> visit(ConditionalStatementNode *n) = 0;
     virtual std::optional<Value *> visit(ReturnNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramSendNode *n) = 0;
@@ -110,6 +112,7 @@ public:
     std::any any_visit(BlockNode *n) { return this->visit(n); }
     std::any any_visit(LambdaConstNode *n) { return this->visit(n); }
     std::any any_visit(ProgramDefNode *n) { return this->visit(n); }
+    std::any any_visit(FunctionDefNode *n) { return this->visit(n); }
     std::any any_visit(ConditionalStatementNode *n) { return this->visit(n); }
     std::any any_visit(ReturnNode *n) { return this->visit(n); }
     std::any any_visit(ProgramSendNode *n) { return this->visit(n); }
@@ -238,16 +241,19 @@ private:
     TypeInvoke *type;
 
 public:
+    string name; 
     vector<Symbol *> paramSymbols;
     const Type *retType;
     BlockNode *block;
 
-    LambdaConstNode(vector<Symbol *> p, const Type *r, BlockNode *b)
+    LambdaConstNode(vector<Symbol *> p, const Type *r, BlockNode *b, string n="LAM")
     {
         // paramList = p;
         paramSymbols = p;
         retType = r;
         block = b;
+
+        name = n; 
 
         vector<const Type *> paramTypes;
 
@@ -290,6 +296,36 @@ public:
     const TypeProgram *getType() override
     {
         return type;
+    }
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+class FunctionDefNode : public TypedNode
+{
+public:
+    Symbol *sym;
+    const TypeInvoke *ty; // FIXME: ISNT REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
+    BlockNode *block;
+
+    //FIXME: WHY DO WE REQUIRE PARAM LIST NODE AND SUCH WEHEN WE HAVE TO CREATE THAT MANUALLY AS PART OF TYPECHECK ANYWAYS?
+    FunctionDefNode(std::string id, ParameterListNode p, const Type *r, BlockNode * b)//string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
+    {
+        vector<const Type *> paramTypes;
+
+        for (ParameterNode param : p)
+        {
+            paramTypes.push_back(param.type);
+        }
+
+        ty = new TypeInvoke(paramTypes, r, false, true);
+        sym = new Symbol(id, ty, true, true);
+
+        block = b;
+    }
+
+    const TypeInvoke *getType() override
+    {
+        return ty;
     }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };

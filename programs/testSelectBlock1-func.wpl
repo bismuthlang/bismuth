@@ -1,0 +1,24 @@
+extern int func printf(...);
+
+# str func selReturnOne(int a) {
+define func selReturnOne (int a) : str {
+    select {
+        a > 10: {return "CASE 1 (10)";}
+        a > 0 : {return "CASE 2 (5)";}
+        a = 0 : {return "CASE 3 (0)";}
+        a < 0 : {return "CASE 4 (a)";}
+    }
+    return "CASE IMPOSSIBLE (-1)"; 
+}
+
+define program :: c : Channel<-int> = {
+
+    var i := -10; 
+    while i <= 15 {
+        printf("f(%d) = %s\n", i, selReturnOne(i));
+        i := i + 1;
+    }
+    
+    # return -1; 
+    c.send(-1)
+}

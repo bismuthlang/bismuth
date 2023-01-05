@@ -127,6 +127,11 @@ public:
     std::any visitProgDef(WPLParser::ProgDefContext *ctx) override { return (std::optional<TypedNode*>) this->visitInvokeable(ctx->defineProc()); }
     std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return (std::optional<TypedNode*>) visitInvokeable(ctx->defineProc()); } // FIXME: DO BETTER!!!
 
+    std::optional<LambdaConstNode*> visitCtx(WPLParser::DefineFuncContext * ctx);
+    std::any visitDefineFunc(WPLParser::DefineFuncContext * ctx) override { return visitCtx(ctx); }
+    std::any visitFuncDef(WPLParser::FuncDefContext * ctx) override { return visitCtx(ctx->defineFunc()); }
+    std::any visitDefineFunction(WPLParser::DefineFunctionContext * ctx) override { return visitCtx(ctx->defineFunc()); }
+
     std::optional<SelectStatementNode *> visitCtx(WPLParser::SelectStatementContext *ctx);
     std::any visitSelectStatement(WPLParser::SelectStatementContext *ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx); }
 
@@ -303,11 +308,9 @@ std::cout << "276" << std::endl;
      */
     std::optional<ProgramDefNode *> visitInvokeable(WPLParser::DefineProcContext *ctx)
     {
-        std::optional<std::pair<const TypeProgram *, Symbol *>> pairOpt = invokableHelper(ctx);
-std::cout << "311" << std::endl; 
+        std::optional<std::pair<const TypeProgram *, Symbol *>> pairOpt = invokableHelperProgram(ctx);
         if (!pairOpt)
             return {}; // Errors already caught
-std::cout << "314" << std::endl; 
         std::pair<const TypeProgram *, Symbol *> pair = pairOpt.value();
 
         const TypeProgram *funcType = pair.first;
@@ -464,7 +467,9 @@ private:
         // return res;
     }
 
-    std::optional<const TypeProgram *> invokableHelper2(WPLParser::DefineProcContext *ctx)
+    //FIXME: IS THERE A WAY FOR ME TO PROVIDE ONE OF TWO TYPES TO A FN, AND THEN HAVE THAT BE RET TYPE? (BUT ONLY ONE OF TWO...)
+
+    std::optional<const TypeProgram *> invokableHelper2Program(WPLParser::DefineProcContext *ctx)
     {
         std::optional<Symbol *> opt = stmgr->lookupInCurrentScope(ctx->name->getText()); // FIXME: VERIFY?
 
@@ -496,9 +501,9 @@ private:
         return {};
     }
 
-    std::optional<std::pair<const TypeProgram *, Symbol *>> invokableHelper(WPLParser::DefineProcContext *ctx)
+    std::optional<std::pair<const TypeProgram *, Symbol *>> invokableHelperProgram(WPLParser::DefineProcContext *ctx)
     {
-        std::optional<const TypeProgram *> funcTypeOpt = invokableHelper2(ctx);
+        std::optional<const TypeProgram *> funcTypeOpt = invokableHelper2Program(ctx);
 
         if (!funcTypeOpt)
             return {};

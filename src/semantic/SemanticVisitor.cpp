@@ -258,6 +258,61 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
     return {};
 }
 
+std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFuncContext *ctx)
+{
+    // FIXME: HANDLE REDECLS HERE INSTEAD OF AT TOP LEVEL?
+
+    // std::optional<const TypeInvoke *> tyOpt = [errorHandler, ctx]()
+    // {
+    //     std::optional<Symbol *> opt = stmgr->lookupInCurrentScope(ctx->name->getText());
+
+    //     if (opt)
+    //     {
+    //         Symbol * sym = opt.value(); 
+
+    //         if(const TypeInvoke * inv = dynamic_cast<const TypeInvoke *>(sym->type))
+    //         {
+    //             return inv; 
+    //         }
+
+    //         errorHandler.addSemanticError(ctx->getStart(), "Cannot invoke " + sym->toString());
+    //         return {};
+    //     }
+
+    //     const Type * 
+
+    // }();
+
+    std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
+
+    if (!paramTypeOpt)
+        return {}; // FIXME: DO BETTER?
+
+    ParameterListNode params = paramTypeOpt.value(); //FIXME: WHY NO POINTER?
+    std::vector<const Type *> ps;
+
+    for (ParameterNode param : params) //(unsigned int i = 0; i < ctx->parameterList()->params.size(); i++)
+    {
+        ps.push_back(param.type);
+    }
+
+    const Type *retType = any2Type(ctx->lam->ret->accept(this));
+
+    Symbol * funcSym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); //FIXME: DO BETTER
+
+    stmgr->addSymbol(funcSym);
+
+    std::optional<LambdaConstNode*> lamOpt = visitCtx(ctx->lam);
+
+    if(!lamOpt) return {};
+
+    LambdaConstNode * lam = lamOpt.value(); 
+
+    lam->name = funcSym->getIdentifier(); //Not really needed.
+
+    return lam; 
+}
+
 std::optional<InitProductNode *> SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
 {
     std::string name = ctx->v->getText();
@@ -292,17 +347,17 @@ std::optional<InitProductNode *> SemanticVisitor::visitCtx(WPLParser::InitProduc
 
             for (auto eleItr : elements)
             {
-                std::cout << "295 " << ctx->exprs.at(i)->getText() << std::endl; 
+                std::cout << "295 " << ctx->exprs.at(i)->getText() << std::endl;
                 // const Type *providedType = any2Type(ctx->exprs.at(i)->accept(this));
                 std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(ctx->exprs.at(i)->accept(this));
-                std::cout << "298 " << opt.has_value() << std::endl; 
+                std::cout << "298 " << opt.has_value() << std::endl;
                 if (!opt)
                     return {}; // FIXME: DO BETTER
 
-std::cout << "301" << std::endl; 
+                std::cout << "301" << std::endl;
 
                 TypedNode *tn = opt.value();
-                std::cout << "304" << std::endl; 
+                std::cout << "304" << std::endl;
                 n.push_back(tn);
                 const Type *providedType = tn->getType();
 
@@ -707,7 +762,7 @@ std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAcces
     std::optional<SymbolContext> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
     if (!opt)
     {
-        std::cout << "709 - var undefined!" << std::endl; 
+        std::cout << "709 - var undefined!" << std::endl;
         errorHandler.addSemanticError(ctx->getStart(), "Undefined variable reference: " + ctx->VARIABLE().at(0)->getText());
         return {};
     }
@@ -1000,11 +1055,11 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
         // Needs to happen in case we have vars
         const Type *assignType = this->visitCtx(ctx->typeOrVar());
         // auto exprType = (e->a) ? any2Type(e->a->accept(this)) : assignType;
-        std::cout << "1003" << std::endl; 
+        std::cout << "1003" << std::endl;
         std::optional<TypedNode *> exprOpt = (e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)) : std::nullopt;
-        std::cout << "1005" << std::endl; 
+        std::cout << "1005" << std::endl;
         const Type *exprType = exprOpt ? exprOpt.value()->getType() : assignType;
-std::cout << "1007" << std::endl; 
+        std::cout << "1007" << std::endl;
         if (e->a && stmgr->isGlobalScope())
         {
             if (!(dynamic_cast<WPLParser::BConstExprContext *>(e->a) ||
@@ -1045,28 +1100,28 @@ std::cout << "1007" << std::endl;
                 std::cout << "1035 " << newAssignType->toString() << std::endl;
                 // FIXME: BAD OPT ACCESS
                 // const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)).value()->getType() : newAssignType;
-                std::optional<const Type*> newExprTypeOpt = [this, e, newAssignType]() -> std::optional<const Type*> {
+                std::optional<const Type *> newExprTypeOpt = [this, e, newAssignType]() -> std::optional<const Type *>
+                {
                     // const Type *newExprType = newAssignType;
-                    if(dynamic_cast<const TypeInfer*>(newAssignType) && e->a)
+                    if (dynamic_cast<const TypeInfer *>(newAssignType) && e->a)
                     {
                         std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(e->a->accept(this));
 
-                        if(!opt) 
-                            return std::nullopt; //FIXME: DO BETTER
+                        if (!opt)
+                            return std::nullopt; // FIXME: DO BETTER
 
-                        TypedNode * tn = opt.value(); 
+                        TypedNode *tn = opt.value();
 
                         return tn->getType();
-
-
                     }
 
                     return newAssignType;
                 }();
-                
-                if(!newExprTypeOpt) return {}; //FIXME: DO BETTER
 
-                const Type* newExprType = newExprTypeOpt.value(); 
+                if (!newExprTypeOpt)
+                    return {}; // FIXME: DO BETTER
+
+                const Type *newExprType = newExprTypeOpt.value();
 
                 Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later inferencing purposes
                 stmgr->addSymbol(symbol);
@@ -1715,7 +1770,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ChannelTypeContext *ctx)
 const Type *SemanticVisitor::visitCtx(WPLParser::ProgramTypeContext *ctx)
 {
     const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
-    return new TypeProgram(new TypeChannel(proto), true); //FIXME: SEEMS A BIT ODD TO INC CHANNEL IN PROGRAM?
+    return new TypeProgram(new TypeChannel(proto), true); // FIXME: SEEMS A BIT ODD TO INC CHANNEL IN PROGRAM?
 }
 
 std::optional<ProgramSendNode *> SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)

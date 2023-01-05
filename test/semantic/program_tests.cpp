@@ -281,7 +281,7 @@ TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]"
 
 TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don't crash", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/doubleArg3.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/doubleArg3.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
