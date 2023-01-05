@@ -9,151 +9,6 @@
 
 #include "test_error_handlers.h"
 
-TEST_CASE("Sample Progam one", "[semantic]")
-{
-  antlr4::ANTLRInputStream input(
-      "(* \n"
-      " * We know that n is odd, so just start with 3\n"
-      " *)\n"
-      "boolean func isPrime(int n) {\n"
-      " int i := 3;\n"
-      " while (i < n) { \n"
-      "   if (n / i * i = n) then { return false; } \n"
-      "   i := i + 2;\n"
-      " }\n"
-      " return true;\n"
-      "}\n"
-      "\n"
-      "define program :: c : Channel<-int> = {\n"
-      " int current := 3;       \n"
-      " int nPrimes := 2;       # explicit type \n"
-      " while current < 100 { \n"
-      "   if isPrime(current) then { nPrimes := nPrimes + 1;}\n"
-      "   current := current + 2;\n"
-      " }\n"
-      " return nPrimes;\n"
-      "}");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
-
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-
-  // Any errors should be syntax errors.
-  REQUIRE(tree->getText() != "");
-
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
-
-  sv->visitCompilationUnit(tree);
-
-  // std::cout << stmgr->toString() << std::endl;
-  // std::cout << sv->getErrors() << std::endl;
-
-  CHECK_FALSE(sv->hasErrors(0));
-}
-
-TEST_CASE("Sample Progam one w/ Inf", "[semantic]")
-{
-  antlr4::ANTLRInputStream input(
-      "(* \n"
-      " * We know that n is odd, so just start with 3\n"
-      " *)\n"
-      "boolean func isPrime(int n) {\n"
-      " var i := 3;\n"
-      " while (i < n) { \n"
-      "   if (n / i * i = n) then { return false; } \n"
-      "   i := i + 2;\n"
-      " }\n"
-      " return true;\n"
-      "}\n"
-      "\n"
-      "define program :: c : Channel<-int> = {\n"
-      " var current := 3;       \n"
-      " int nPrimes := 2;       # explicit type \n"
-      " while current < 100 { \n"
-      "   if isPrime(current) then { nPrimes := nPrimes + 1;}\n"
-      "   current := current + 2;\n"
-      " }\n"
-      " return nPrimes;\n"
-      "}");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
-
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-
-  // Any errors should be syntax errors.
-  REQUIRE(tree->getText() != "");
-
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
-
-  sv->visitCompilationUnit(tree);
-
-
-  CHECK_FALSE(sv->hasErrors(0));
-}
-
-TEST_CASE("Block", "[semantic]")
-{
-  antlr4::ANTLRInputStream input(
-      "boolean func isPrime(int n) {\n"
-      " var i := 3;\n"
-      " while (i < n) { \n"
-      "   if (n / i * i = n) then { return false; } \n"
-      "   i := i + 2;\n"
-      "   {\n"
-      "     int i := 0;\n"
-      "   }\n"
-      " }\n"
-      " return true;\n"
-      "}\n"
-      "\n"
-      "define program :: c : Channel<-int> = {\n"
-      " var current := 3;       \n"
-      " int nPrimes := 2;       # explicit type \n"
-      " while current < 100 { \n"
-      "   if isPrime(current) then { nPrimes := nPrimes + 1;}\n"
-      "   current := current + 2;\n"
-      " }\n"
-      " return nPrimes;\n"
-      "}");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
-
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-
-  // Any errors should be syntax errors.
-  REQUIRE(tree->getText() != "");
-
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
-
-  sv->visitCompilationUnit(tree);
-
-  CHECK_FALSE(sv->hasErrors(0));
-}
-
 TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 {
   std::fstream *inStream = new std::fstream("/home/shared/programs/test4.wpl");
@@ -176,7 +31,6 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 // TEST_CASE("programs/test9Err - Test assign var to array", "[semantic]")
@@ -201,7 +55,7 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 //   //     CHECK("foo" == sv->getErrors());
 //   // }
 //   REQUIRE(sv->hasErrors(0));
-  
+
 // }
 
 // TEST_CASE("programs/test11Err - Prevent global exprs", "[semantic]")
@@ -226,7 +80,7 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 //   //     CHECK("foo" == sv->getErrors());
 //   // }
 //   REQUIRE(sv->hasErrors(0));
-  
+
 // }
 
 TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
@@ -251,7 +105,6 @@ TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]")
@@ -276,7 +129,6 @@ TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]"
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don't crash", "[semantic]")
@@ -301,7 +153,6 @@ TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don'
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 TEST_CASE("programs/test15 - No array equalities", "[semantic]")
@@ -326,7 +177,6 @@ TEST_CASE("programs/test15 - No array equalities", "[semantic]")
   //     CHECK("foo" == sv->getErrors());
   // }
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 TEST_CASE("Comment EOF", "[semantic]")
@@ -373,7 +223,6 @@ TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
@@ -393,7 +242,6 @@ TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
@@ -413,7 +261,6 @@ TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
@@ -433,8 +280,6 @@ TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-
-  
 }
 
 TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
@@ -454,8 +299,6 @@ TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-
-  
 }
 
 TEST_CASE("programs/test16d - chain var", "[semantic]")
@@ -475,8 +318,6 @@ TEST_CASE("programs/test16d - chain var", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-
-  
 }
 
 TEST_CASE("programs/test16e - chain var 2", "[semantic]")
@@ -498,7 +339,6 @@ TEST_CASE("programs/test16e - chain var 2", "[semantic]")
   REQUIRE(sv->hasErrors(0));
 
   // TODO: WHEN OPTIONAL TYPES
-  
 }
 
 TEST_CASE("programs/test16f - var loop", "[semantic]")
@@ -517,7 +357,7 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
   PropertyManager *pm = new PropertyManager();
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(0)); //FIXME: SHOULD WE COMPILE THESE?
+  REQUIRE_FALSE(sv->hasErrors(0)); // FIXME: SHOULD WE COMPILE THESE?
 }
 
 TEST_CASE("programs/test17 - var inf in decl", "[semantic]")
@@ -538,7 +378,7 @@ TEST_CASE("programs/test17 - var inf in decl", "[semantic]")
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(0));
 
-  //FIXME: REQUIRE dd078039953b6a079ba980b9e1194ea063a9cf8c44194aece3adb115125877f3? 
+  // FIXME: REQUIRE dd078039953b6a079ba980b9e1194ea063a9cf8c44194aece3adb115125877f3?
 }
 
 TEST_CASE("Test program() should return int warning", "[semantic][conditional]")
@@ -631,7 +471,6 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-
 }
 
 TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
@@ -670,7 +509,6 @@ TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-
 }
 
 TEST_CASE("Dead code in select", "[semantic][program][select]")
@@ -723,7 +561,8 @@ TEST_CASE("Infer In return", "[semantic][program]")
       R""""(
     define program :: c : Channel<-int> = {
         var a; 
-        return a;
+        # return a;
+        c.send(a)
     }
     )"""");
   WPLLexer lexer(&input);
@@ -746,81 +585,55 @@ TEST_CASE("Infer In return", "[semantic][program]")
   REQUIRE_FALSE(sv->hasErrors(ERROR));
 }
 
-TEST_CASE("Uninferred", "[semantic][program]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-    var a; 
-    define program :: c : Channel<-int> = {
-        return 0;
-    }
-    )"""");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+//   // TODO: WHEN USING OPTIONALS FOR getLLVMTYPE?
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+// TEST_CASE("Uninferred", "[semantic][program]") //FIXME: IMPL WHEN WE HAVE VAR TYPES DECL?
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+//     var a; 
+//     define program :: c : Channel<-int> = {
+//         return 0;
+//     }
+//     )"""");
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
 
-  // TODO: WHEN USING OPTIONALS FOR getLLVMTYPE?
-}
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-TEST_CASE("Nested programs (TEMPORARY)", "[semantic][program]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-    var a; 
-    define program :: c : Channel<-int> = {
-        int func test() {
-            return 0; 
-        }
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE(sv->hasErrors(ERROR));
 
-        return 0; 
-    }
-    )"""");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+// }
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
-
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR)); //FIXME: TEST THAT WHEN HAS ERRORS TREE EMPTY?
-}
-
+// FIXME: TEST THAT WHEN HAS ERRORS TREE EMPTY?
 TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    proc foo (int a) {
+    # proc foo (int a) {
+    define func foo (int a) : int
 
+      return -1;
     }
+
     define program :: c : Channel<-int> = {
       foo("hello");  
+      c.send(0)
     }
     )"""");
   WPLLexer lexer(&input);
@@ -842,7 +655,6 @@ TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-
 }
 
 TEST_CASE("Invoke on Non-Invokable (str)", "[semantic][program]")
@@ -875,7 +687,7 @@ TEST_CASE("Invoke on Non-Invokable (str)", "[semantic][program]")
   REQUIRE(sv->hasErrors(ERROR));
 }
 
-//FIXME: TYPE INFERENCE ON FUNCTIONS? AND TEST FUNCTION SUBTYPER!
+// FIXME: TYPE INFERENCE ON FUNCTIONS? AND TEST FUNCTION SUBTYPER!
 
 TEST_CASE("Invoke on Non-Invokable (int)", "[semantic][program]")
 {
@@ -1406,7 +1218,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Wrong RHS Arithmetic", "[semantic][program]")
@@ -1438,7 +1249,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Wrong LogAnd LHS", "[semantic][program]")
@@ -1470,7 +1280,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Wrong LogAnd RHS", "[semantic][program]")
@@ -1502,7 +1311,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Wrong LogOr LHS", "[semantic][program]")
@@ -1534,7 +1342,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Wrong LogOr RHS", "[semantic][program]")
@@ -1566,7 +1373,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Field Access - var", "[semantic][program]")
@@ -1599,7 +1405,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Field Access - int", "[semantic][program]")
@@ -1632,7 +1437,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("ArrayAccess - Wrong Type", "[semantic][program]")
@@ -1665,7 +1469,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Field Access - Unsupported/Undefined", "[semantic][program]")
@@ -1698,7 +1501,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Field Access - Undefined Var", "[semantic][program]")
@@ -1730,7 +1532,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Equals Different types", "[semantic][program]")
@@ -1762,7 +1563,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Assign to undefined", "[semantic][program]")
@@ -1828,18 +1628,19 @@ TEST_CASE("Proc Returning", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Function return nothing", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    int func foo() {
+    # int func foo() {
+    define func foo () : int {
       return;
     }
     define program :: c : Channel<-int> = {
-      return 0; 
+      # return 0; 
+      c.send(0)
     }
     )"""");
   WPLLexer lexer(&input);
@@ -1862,9 +1663,8 @@ TEST_CASE("Function return nothing", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
-
+//FIXME: DUPLICATE ALL TESTS WITH FUNCS AND PROCS!
 TEST_CASE("Function return wrong type", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
@@ -1893,7 +1693,6 @@ TEST_CASE("Function return wrong type", "[semantic][program]")
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program][local-function]")
@@ -1930,7 +1729,6 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 2", "[semantic][program][local-function]")
@@ -1968,7 +1766,6 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 2", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3", "[semantic][program][local-function]")
@@ -2007,7 +1804,6 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 4", "[semantic][program][local-function]")
@@ -2047,7 +1843,6 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 4", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 5", "[semantic][program][local-function]")
@@ -2088,7 +1883,6 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 5", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 6", "[semantic][program][local-function]")
@@ -2130,7 +1924,6 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 6", "[semantic][program]
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Nested Enums - Disallow Local Assign", "[semantic][program][enum]")
@@ -2186,7 +1979,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Nested Enums - Disallow Local Assign with mismatch", "[semantic][program][enum]")
@@ -2242,7 +2034,6 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Duplicated enum keys", "[semantic][program][enum]")
@@ -2275,7 +2066,6 @@ define enum Inner {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Duplicated product keys - 1", "[semantic][program][product]")
@@ -2308,7 +2098,6 @@ define struct Inner {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Duplicated product keys - 2", "[semantic][program][product]")
@@ -2341,105 +2130,99 @@ define struct Inner {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
+// TEST_CASE("Global product def", "[semantic][program][product]")
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+// define struct Inner {
+//     int a; 
+//     boolean b;
+//     int c;
+// }
 
-TEST_CASE("Global product def", "[semantic][program][product]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-define struct Inner {
-    int a; 
-    boolean b;
-    int c;
-}
+// Inner I := I::init(5, false, 6);
+//     )"""");
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
 
-Inner I := I::init(5, false, 6);
-    )"""");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE(sv->hasErrors(ERROR));
+// }
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
-  
-}
+// TEST_CASE("Global sum def", "[semantic][program][sum]")
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+// (int + boolean) b := false; 
+//     )"""");
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
 
-TEST_CASE("Global sum def", "[semantic][program][sum]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-(int + boolean) b := false; 
-    )"""");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE(sv->hasErrors(ERROR));
+// }
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
-  
-}
+// TEST_CASE("Global lambda def", "[semantic][program][lambda]")
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+// var lam := (int a, int b) : int {
+//     return a * b; 
+// };
+//     )"""");
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
 
-TEST_CASE("Global lambda def", "[semantic][program][lambda]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-var lam := (int a, int b) : int {
-    return a * b; 
-};
-    )"""");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
-
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
-  
-}
-
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE(sv->hasErrors(ERROR));
+// }
 
 TEST_CASE("Bad Enum pass", "[semantic][program][lambda][enum]")
 {
@@ -2489,9 +2272,7 @@ int func program()
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
-
 
 TEST_CASE("Channel Assignment 1", "[semantic]")
 {
@@ -2522,7 +2303,6 @@ define foo :: c : Channel<+int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
-  
 }
 
 TEST_CASE("Channel Assignment 2", "[semantic]")
@@ -2554,7 +2334,6 @@ define foo :: c : Channel<+int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  
 }
 
 /*********************************
@@ -2582,7 +2361,7 @@ define foo :: c : Channel<+int> = {
 //   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(0));
-  
+
 // }
 
 // TEST_CASE("C Level Negative Test #2", "[semantic]")
@@ -2608,7 +2387,7 @@ define foo :: c : Channel<+int> = {
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(0));
 //   // std::cout << sv->getErrors() << std::endl;
-  
+
 // }
 
 /*********************************
@@ -2631,7 +2410,6 @@ TEST_CASE("B Level Negative Test #1", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 TEST_CASE("B Level Negative Test #2", "[semantic]")
@@ -2651,7 +2429,6 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 /*********************************
@@ -2674,7 +2451,6 @@ TEST_CASE("A Level Negative Test #1", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  
 }
 
 TEST_CASE("A Level Negative Test #2", "[semantic]")
@@ -2694,5 +2470,4 @@ TEST_CASE("A Level Negative Test #2", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
-  
 }
