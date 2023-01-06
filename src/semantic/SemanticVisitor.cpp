@@ -268,18 +268,18 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
 
     //     if (opt)
     //     {
-    //         Symbol * sym = opt.value(); 
+    //         Symbol * sym = opt.value();
 
     //         if(const TypeInvoke * inv = dynamic_cast<const TypeInvoke *>(sym->type))
     //         {
-    //             return inv; 
+    //             return inv;
     //         }
 
     //         errorHandler.addSemanticError(ctx->getStart(), "Cannot invoke " + sym->toString());
     //         return {};
     //     }
 
-    //     const Type * 
+    //     const Type *
 
     // }();
 
@@ -288,7 +288,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
     if (!paramTypeOpt)
         return {}; // FIXME: DO BETTER?
 
-    ParameterListNode params = paramTypeOpt.value(); //FIXME: WHY NO POINTER?
+    ParameterListNode params = paramTypeOpt.value(); // FIXME: WHY NO POINTER?
     std::vector<const Type *> ps;
 
     for (ParameterNode param : params) //(unsigned int i = 0; i < ctx->parameterList()->params.size(); i++)
@@ -298,19 +298,20 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
 
     const Type *retType = any2Type(ctx->lam->ret->accept(this));
 
-    Symbol * funcSym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); //FIXME: DO BETTER
+    Symbol *funcSym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER
 
     stmgr->addSymbol(funcSym);
 
-    std::optional<LambdaConstNode*> lamOpt = visitCtx(ctx->lam);
+    std::optional<LambdaConstNode *> lamOpt = visitCtx(ctx->lam);
 
-    if(!lamOpt) return {};
+    if (!lamOpt)
+        return {};
 
-    LambdaConstNode * lam = lamOpt.value(); 
+    LambdaConstNode *lam = lamOpt.value();
 
-    lam->name = funcSym->getIdentifier(); //Not really needed.
+    lam->name = funcSym->getIdentifier(); // Not really needed.
 
-    return lam; 
+    return lam;
 }
 
 std::optional<InitProductNode *> SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
@@ -894,39 +895,8 @@ std::optional<ConditionNode *> SemanticVisitor::visitCtx(WPLParser::ConditionCon
 
 std::optional<SelectAlternativeNode *> SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
 {
-    // Enter the scope (needed as we may define variables or do other stuff)
-    stmgr->enterScope(StopType::LINEAR);
-    // Accept the evaluation context
-    std::optional<TypedNode *> evalOpt = anyOpt2Val<TypedNode *>(ctx->eval->accept(this)); // FIXME: So these are all wrong b/c like, we return optionals
-    if (!evalOpt)
-        return {}; // FIXME: DO BETTER
-
-    // Safe exit the scope
-    this->safeExitScope(ctx);
-
-    /*
-     *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
-     */
-    if (dynamic_cast<WPLParser::ProgDefContext *>(ctx->eval) ||
-        dynamic_cast<WPLParser::VarDeclStatementContext *>(ctx->eval))
-    {
-        errorHandler.addSemanticError(ctx->getStart(), "Dead code: definition as select alternative.");
-    }
-
-    // Confirm that the check type is a boolean
-    std::optional<TypedNode *> checkOpt = anyOpt2Val<TypedNode *>(ctx->check->accept(this));
-    if (!checkOpt)
-        return {}; // FIXME: DO BETTER
-
-    TypedNode *check = checkOpt.value();
-    const Type *checkType = check->getType();
-
-    if (const TypeBool *b = dynamic_cast<const TypeBool *>(checkType))
-    {
-        return new SelectAlternativeNode(check, evalOpt.value());
-    }
-    errorHandler.addSemanticError(ctx->getStart(), "Select alternative expected BOOL but got " + checkType->toString());
-    return {};
+    errorHandler.addSemanticError(ctx->getStart(), "COMP ERROR");
+    return {}; // FIXME: REMOVE?
 }
 
 /**
@@ -1190,11 +1160,11 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
                 foundCaseTypes.insert(caseType); // FIXME: DO BETTER TRACKING OF SATISFYING RQMTS. Right now, can pass check for having all cases due to having invalid ones!!
             }
 
-            stmgr->enterScope(StopType::NONE); // Once for the case variable, and once to ensure all linears used
+            stmgr->enterScope(StopType::NONE); // Once for the case variable, and once to ensure all linears used //FIXME: VERIFY THIS CANT BE DONE ALL IN ONE!
 
             for (auto pair : to_fix)
             {
-                // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
+                // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL! IF NOT, WHY DO WE REBIND ABOVE?
                 pair.first->setProtocol(pair.second->getCopy());
             }
 
@@ -1253,6 +1223,8 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
 
         if (!valid)
             return {}; // FIXME: DO BETTER
+
+        // FIXME: DO WE NEED A SAFE EXIT HERE?
 
         // bindings->bind(ctx->check, new Symbol(ctx->check->ex->getText(), sumType, false, false));
         return new MatchStatementNode(sumType, cond, cases, restVec);
@@ -1430,20 +1402,113 @@ std::optional<SelectStatementNode *> SemanticVisitor::visitCtx(WPLParser::Select
         return {};
     }
 
+    std::vector<Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+
+    std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
+    for (Symbol *orig : syms)
+    {
+        // FIXME: DO BETTER, WONT WORK WITH VALUES!
+        if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+        {
+            to_fix.push_back({channel, channel->getProtocol()}); // NOTE HOW THIS ONE ISNT A COPY!
+        }
+    }
+
+    /*
+     *  Now to test the select cases.... which can be a bit complicated
+     */
+
     std::vector<SelectAlternativeNode *> alts;
     // Here we just need to visit each of the individual cases; they each handle their own logic.
     for (auto e : ctx->cases)
     {
-        std::optional<SelectAlternativeNode *> altOpt = this->visitCtx(e);
-        if (!altOpt)
-            return {}; // FIXME: DO BETTER?
+        // Enter the scope (needed as we may define variables or do other stuff)
+        // stmgr->enterScope(StopType::LINEAR);
+        // Accept the evaluation context
 
-        alts.push_back(altOpt.value());
+        // Safe exit the scope
+        // this->safeExitScope(e);
+
+        /*
+         *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
+         */
+        if (dynamic_cast<WPLParser::ProgDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
+            dynamic_cast<WPLParser::VarDeclStatementContext *>(e->eval))
+        {
+            errorHandler.addSemanticError(e->getStart(), "Dead code: definition as select alternative.");
+        }
+
+        // Confirm that the check type is a boolean
+        std::optional<TypedNode *> checkOpt = anyOpt2Val<TypedNode *>(e->check->accept(this));
+        if (!checkOpt)
+            return {}; // FIXME: DO BETTER
+
+        TypedNode *check = checkOpt.value();
+        const Type *checkType = check->getType();
+
+        if (!dynamic_cast<const TypeBool *>(checkType))
+        {
+            errorHandler.addSemanticError(ctx->getStart(), "Select alternative expected BOOL but got " + checkType->toString());
+            return {};
+        }
+
+        stmgr->enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
+
+        for (auto pair : to_fix)
+        {
+            // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL! IF NOT, WHY DO WE REBIND ABOVE?
+            pair.first->setProtocol(pair.second->getCopy());
+        }
+
+        std::optional<TypedNode *> evalOpt = anyOpt2Val<TypedNode *>(e->eval->accept(this)); // FIXME: So these are all wrong b/c like, we return optionals
+        if (!evalOpt)
+            return {}; // FIXME: DO BETTER
+
+        // For tracking linear stuff //FIXMEL TRACK RETURN/EXIT
+        for (auto s : ctx->rest)
+        {
+            s->accept(this); // FIXME: DO BETTER
+        }
+        safeExitScope(ctx);
+
+        // std::optional<SelectAlternativeNode *> altOpt = this->visitCtx(e);
+        // if (!altOpt)
+        //     return {}; // FIXME: DO BETTER?
+
+        alts.push_back(new SelectAlternativeNode(check, evalOpt.value()));
     }
+
+    /*
+     * Last, we test the rest block.... (bc theoretical use of linears in cond?) //FIXME: USE THEORY TO DETERMINE IF LINEARS CAN BE USED IN THINGS LIKE CONDITIONS AND THUS IF WE CAN SIMPLIFY SOME OF THE CHECKS!
+     */
+
+    std::vector<TypedNode *> restVec; // FIXME: DO BETTER
+    bool valid = true;
+
+    // Need to re-add symbols for fallthrough case. Really seems like this all could be done more efficiently, though...
+    for (auto pair : to_fix)
+    {
+        // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
+        pair.first->setProtocol(pair.second->getCopy());
+    }
+
+    for (auto s : ctx->rest)
+    {
+        std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
+        if (!tnOpt)
+            valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
+        else
+            restVec.push_back(tnOpt.value());
+    }
+
+    if (!valid)
+        return {}; // FIXME: DO BETTER
+
+    // FIXME: DO WE NEED A SAFE EXIT HERE?
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
     // return Types::UNDEFINED;
-    return new SelectStatementNode(alts);
+    return new SelectStatementNode(alts, restVec);
 }
 
 std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)

@@ -199,7 +199,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     // Check that the optional, in fact, has a value. Otherwise, something went wrong.
     if (!optVal)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 202"); //FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 202"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
 
@@ -211,7 +211,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
 
     Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
 
-    llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size()); //sumType->getCases().size());
+    llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size()); // sumType->getCases().size());
 
     for (std::pair<Symbol *, TypedNode *> caseNode : n->cases)
     {
@@ -223,8 +223,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
         //     return {};
         // }
 
-        Symbol * localSym = caseNode.first; 
-
+        Symbol *localSym = caseNode.first;
 
         llvm::Type *toFind = localSym->type->getLLVMType(module);
 
@@ -242,7 +241,6 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
 
         switchInst->addCase(ConstantInt::get(Int32Ty, index, true), matchBlk);
         origParent->getBasicBlockList().push_back(matchBlk);
-
 
         //  Get the type of the symbol
         llvm::Type *ty = localSym->type->getLLVMType(module);
@@ -286,7 +284,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     origParent->getBasicBlockList().push_back(mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
-    for(TypedNode * s : n->post)
+    for (TypedNode *s : n->post)
     {
         AcceptType(this, s);
     }
@@ -435,12 +433,12 @@ std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
         return val;
     }
     // std::cout << "416" << std::endl; //FIXME: REPORT ERROR?
-    //FIXME: REFACTOR, BOTH WITH THIS METHOD AND INVOCATION!
+    // FIXME: REFACTOR, BOTH WITH THIS METHOD AND INVOCATION!
 
     // llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(ty->getPointerElementType());
-llvm::Function *progFn = module->getFunction("Execute");
-        Value *val = builder->CreateCall(progFn, {fnVal});
-        return val;
+    llvm::Function *progFn = module->getFunction("Execute");
+    Value *val = builder->CreateCall(progFn, {fnVal});
+    return val;
     // return {};
 }
 
@@ -652,7 +650,6 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
         errorHandler.addCodegenError(nullptr, "Failed to locate array in access");
         return {};
     }
-
 
     Value *v = arrayPtr.value();
 
@@ -1417,7 +1414,7 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
         builder->SetInsertPoint(restBlk);
     }
 
-    for(auto s : n->post)
+    for (auto s : n->post)
     {
         AcceptType(this, s);
     }
@@ -1515,6 +1512,11 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
     origParent->getBasicBlockList().push_back(mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
+    for (TypedNode *s : n->post)
+    {
+        AcceptType(this, s);
+    }
+
     // std::optional<Value *> ans = {};
     return std::nullopt;
 }
@@ -1595,7 +1597,7 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 
     if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType)) // FIXME: MAKE THIS THE RETURN TYPE OF TypeInvoke's getLLVMTYPE
     {
-        Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, "LAM", module);
+        Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module); ///"LAM", module);
         std::vector<Symbol *> paramList = n->paramSymbols;
 
         // Create basic block

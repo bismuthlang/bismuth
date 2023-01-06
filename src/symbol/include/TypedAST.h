@@ -179,10 +179,12 @@ class SelectStatementNode : public TypedNode
 {
 public:
     vector<SelectAlternativeNode *> nodes;
+    vector<TypedNode*> post;
 
-    SelectStatementNode(vector<SelectAlternativeNode *> n)
+    SelectStatementNode(vector<SelectAlternativeNode *> n, vector<TypedNode*> p)
     {
         nodes = n;
+        post = p; 
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; }
@@ -966,6 +968,12 @@ inline bool endsInReturn(TypedNode * n)
     }
 
     if(MatchStatementNode * cn = dynamic_cast<MatchStatementNode *>(n))
+    {
+        // if(cn->post.size())
+        return endsInReturn(cn->post);
+    }
+
+    if(SelectStatementNode * cn = dynamic_cast<SelectStatementNode *>(n))
     {
         // if(cn->post.size())
         return endsInReturn(cn->post);
