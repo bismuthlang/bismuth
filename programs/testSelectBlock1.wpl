@@ -1,22 +1,33 @@
 extern int func printf(...);
 
-str func selReturnOne(int a) {
+# str func selReturnOne(int a) {
+define selReturnOne :: c : Channel<+int;-str> = {
+    int a := c.recv(); 
+    
     select {
-        a > 10: {return "CASE 1 (10)";}
-        a > 0 : {return "CASE 2 (5)";}
-        a = 0 : {return "CASE 3 (0)";}
-        a < 0 : {return "CASE 4 (a)";}
+        a > 10: {c.send("CASE 1 (10)")}
+        a > 0 : {c.send("CASE 2 (5)")}
+        a = 0 : {c.send("CASE 3 (0)")}
+        a < 0 : {c.send("CASE 4 (a)")}
     }
-    return "CASE IMPOSSIBLE (-1)"; 
+    c.send("CASE IMPOSSIBLE (-1)")
 }
 
 define program :: c : Channel<-int> = {
 
     var i := -10; 
     while i <= 15 {
-        printf("f(%d) = %s\n", i, selReturnOne(i));
+        Channel<-int;+str> io := exec selReturnOne; 
+        io.send(i)
+
+        # FIXME: NEED TO REDO FN TESTS WITH PASS BY REFERENCE!
+
+        str s := io.recv(); 
+
+        printf("f(%d) = %s\n", i, s);
         i := i + 1;
     }
     
-    return -1; 
+    # return -1; 
+    c.send(-1)
 }

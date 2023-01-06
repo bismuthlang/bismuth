@@ -45,7 +45,7 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
             std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(e->accept(this));
             if (!opt)
             {
-                std::cout << "47" << std::endl;
+                std::cout << "47 " << e->getText() << std::endl;
                 return {};
             } // FIXME: DO BETTER
 
@@ -260,6 +260,7 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
 
 std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFuncContext *ctx)
 {
+    std::cout << "263" << std::endl; 
     // FIXME: HANDLE REDECLS HERE INSTEAD OF AT TOP LEVEL?
 
     // std::optional<const TypeInvoke *> tyOpt = [errorHandler, ctx]()
@@ -310,7 +311,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
     LambdaConstNode *lam = lamOpt.value();
 
     lam->name = funcSym->getIdentifier(); // Not really needed.
-
+    std::cout << "314" << std::endl; 
     return lam;
 }
 

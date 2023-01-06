@@ -128,9 +128,9 @@ public:
     std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return (std::optional<TypedNode*>) visitInvokeable(ctx->defineProc()); } // FIXME: DO BETTER!!!
 
     std::optional<LambdaConstNode*> visitCtx(WPLParser::DefineFuncContext * ctx);
-    std::any visitDefineFunc(WPLParser::DefineFuncContext * ctx) override { return visitCtx(ctx); }
-    std::any visitFuncDef(WPLParser::FuncDefContext * ctx) override { return visitCtx(ctx->defineFunc()); }
-    std::any visitDefineFunction(WPLParser::DefineFunctionContext * ctx) override { return visitCtx(ctx->defineFunc()); }
+    std::any visitDefineFunc(WPLParser::DefineFuncContext * ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx); }
+    std::any visitFuncDef(WPLParser::FuncDefContext * ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx->defineFunc()); }
+    std::any visitDefineFunction(WPLParser::DefineFunctionContext * ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx->defineFunc()); }
 
     std::optional<SelectStatementNode *> visitCtx(WPLParser::SelectStatementContext *ctx);
     std::any visitSelectStatement(WPLParser::SelectStatementContext *ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx); }
@@ -292,7 +292,7 @@ std::cout << "276" << std::endl;
         // If we entered a new scope, then we can now safely exit a scope
         if (newScope)
             this->safeExitScope(ctx);
-
+    std::cout << "295" << std::endl; 
         return new BlockNode(nodes); //FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
 
