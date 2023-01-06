@@ -18,7 +18,7 @@
 //FIXME: REMOVE NO RUNTIME 
 TEST_CASE("Development Codegen Tests", "[codegen]")
 {
-    antlr4::ANTLRInputStream input("define program :: c : Channel<-int> = { return -1; }");
+    antlr4::ANTLRInputStream input("define program :: c : Channel<-int> = { c.send(-1) }");
     WPLLexer lexer(&input);
     antlr4::CommonTokenStream tokens(&lexer);
     WPLParser parser(&tokens);
@@ -32,11 +32,11 @@ TEST_CASE("Development Codegen Tests", "[codegen]")
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "test", 0);
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "5176d9cbe3d5f39bad703b71f652afd972037c5cb97818fa01297aa2bb185188");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "cecbb03bb006f8ecf4e2c26f2002f3ca4e32da8bc74314405ef37da147ad2df2");
 }
 
 TEST_CASE("programs/test1 - General Overview", "[codegen]")

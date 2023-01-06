@@ -1,13 +1,1 @@
-define program :: c : Channel<-int> = {
-      define other :: io : Channel<-int> = {
-        var c := 10; 
-        io.send(c)
-      }
-
-      define foo :: io : Channel<-Channel<+int>> = {
-        Channel<+int> ans := exec other; 
-        io.send(ans)
-      }
-
-      c.send(0)
-    }
+define program :: c : Channel<-int> = { c.send(-1) }
