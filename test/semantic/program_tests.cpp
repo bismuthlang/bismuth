@@ -1756,7 +1756,7 @@ TEST_CASE("Function return nothing", "[semantic][program]")
   antlr4::ANTLRInputStream input(
       R""""(
     # int func foo() {
-    define func foo () : int {
+    define func foo (int x) : int {
       return;
     }
     define program :: c : Channel<-int> = {
