@@ -69,7 +69,7 @@ static llvm::cl::opt<CompileType>
                 llvm::cl::desc("If set, will compile to an executable with the specified compiler."),
                 llvm::cl::values(
                     clEnumVal(none, "Will not generate an executable"),
-                    clEnumVal(clang, "Will generate an executable using clang++"), //FIXME: UPDATE ENUM?
+                    clEnumVal(clang, "Will generate an executable using clang++"), // FIXME: UPDATE ENUM?
                     clEnumVal(gcc, "Will generate an executable using g++")),
                 llvm::cl::init(none),
                 llvm::cl::cat(WPLCOptions));
@@ -83,6 +83,21 @@ int main(int argc, const char *argv[])
    * @see https://llvm.org/docs/CommandLine.html
    * ******************************************************************/
   llvm::cl::HideUnrelatedOptions(WPLCOptions);
+  //Note: Sub zero font
+  llvm::cl::SetVersionPrinter([](llvm::raw_ostream &o) 
+                              { o << R""""( 
+      ______   ______     __     ______     __    __    
+     /\  == \ /\  == \   /\ \   /\  ___\   /\ "-./  \   
+     \ \  _-/ \ \  __<   \ \ \  \ \___  \  \ \ \-./\ \  
+      \ \_\    \ \_\ \_\  \ \_\  \/\_____\  \ \_\ \ \_\ 
+       \/_/     \/_/ /_/   \/_/   \/_____/   \/_/  \/_/ 
+     ===================================================
+     Process Calculus Compiler - Created by Alex Friedman
+     Website: https://ahfriedman.com
+     Version: Pre-Alpha 1.0
+
+
+       )""""; });
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
   // FIXME: ENABLE SEPARATLEY?
@@ -142,7 +157,7 @@ int main(int argc, const char *argv[])
    * we create a vector of input streams/output file pairs.
    *******************************************************************/
   std::vector<std::pair<antlr4::ANTLRInputStream *, std::string>> inputs;
-  
+
   bool useOutputFileName = outputFileName != "-.ll";
 
   // Case 1: We were given input files
@@ -228,7 +243,7 @@ int main(int argc, const char *argv[])
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, flags);
-    std::optional<CompilationUnitNode*> TypedOpt = sv->visitCtx(tree); //FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
+    std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree); // FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
 
     if (sv->hasErrors(0)) // Want to see all errors
     {
@@ -238,14 +253,14 @@ int main(int argc, const char *argv[])
       continue;
     }
 
-    if(!TypedOpt)
+    if (!TypedOpt)
     {
-      std::cerr << "Failed to generate Typed AST" << std::endl; 
-      isValid = false; 
-      continue; 
+      std::cerr << "Failed to generate Typed AST" << std::endl;
+      isValid = false;
+      continue;
     }
 
-    CompilationUnitNode * cu = TypedOpt.value(); 
+    CompilationUnitNode *cu = TypedOpt.value();
 
     if (isVerbose)
     {
@@ -276,7 +291,7 @@ int main(int argc, const char *argv[])
                 << std::endl;
       cv->modPrint();
     }
-    
+
     // Dump the code to an output file
     if (!noCode)
     {
@@ -354,7 +369,7 @@ int main(int argc, const char *argv[])
     // cmd << "./runtime.o -no-pie ";
     cmd << "./build/bin/runtime/libwpl_runtime_archive.a -no-pie ";
 
-    if(useOutputFileName) 
+    if (useOutputFileName)
     {
       cmd << "-o " << outputFileName;
     }
