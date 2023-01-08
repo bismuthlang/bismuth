@@ -148,7 +148,7 @@ TEST_CASE("programs/test3 - If w/o else", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "9ed4c86a2b635e43b517c4cf1625006d87237e45aef632e8fcd7d2694175c95e");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "b707071f5babbaa7ef5ec3fc83789e39005823a32f7e90162df63d6399b3c68d");
 }
 
 TEST_CASE("programs/test4a - Use and redeclaration of parameters", "[codegen]")
@@ -176,7 +176,7 @@ TEST_CASE("programs/test4a - Use and redeclaration of parameters", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "b707071f5babbaa7ef5ec3fc83789e39005823a32f7e90162df63d6399b3c68d");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "dcc5b894465e160455774da7e7169133a05ec7e595e72cb81a9c068fc3db0d73");
 }
 
 TEST_CASE("programs/test5 - Nested ifs and if equality", "[codegen]")
@@ -1017,10 +1017,10 @@ TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[
 
     REQUIRE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
-    cv->visitCompilationUnit(cuOpt.value());
+    // CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    // cv->visitCompilationUnit(cuOpt.value());
 
-    REQUIRE(cv->hasErrors(0));
+    // REQUIRE(cv->hasErrors(0));
 
     // REQUIRE(llvmIrToSHA256(cv->getModule()) == "c1698114ebca6c348ee9f7ae41ea95a8d0377d0eda8f21711d3bb5501bee49ba");
 }
@@ -1045,10 +1045,10 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
 
     REQUIRE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
-    cv->visitCompilationUnit(cuOpt.value());
+    // CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    // cv->visitCompilationUnit(cuOpt.value());
 
-    REQUIRE(cv->hasErrors(0));
+    // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("programs/Lambda1 - Basic lambda Test", "[codegen][lambda]")

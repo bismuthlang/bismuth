@@ -10,7 +10,8 @@ define program :: c : Channel<-int> = {
 
   if getArgCount() < 2 then {
     printf("Needs at least two arguments!\n");
-    return -1; 
+    # return -1; 
+    c.send(-1)
   }
 
   while i < getArgCount() {
@@ -41,5 +42,6 @@ define program :: c : Channel<-int> = {
     i := i + 2; 
   }
 
-  return 0; 
+  # return 0; 
+  c.send(0)
 }
