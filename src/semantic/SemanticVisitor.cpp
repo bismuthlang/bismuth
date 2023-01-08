@@ -53,8 +53,7 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
                 // return Types::UNDEFINED;
             }
 
-
-            //FIXME: DUPLICATED FROM visitCtx(WPLParser::DefineFuncContext *ctx)!!!!
+            // FIXME: DUPLICATED FROM visitCtx(WPLParser::DefineFuncContext *ctx)!!!!
 
             std::optional<ParameterListNode> paramTypeOpt = visitCtx(fnCtx->defineFunc()->lam->parameterList());
 
@@ -127,9 +126,10 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
         }
         else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))
         {
-            std::optional<LambdaConstNode*> opt = visitCtx(fnCtx->defineFunc());
+            std::optional<LambdaConstNode *> opt = visitCtx(fnCtx->defineFunc());
 
-            if(!opt) return {}; //FIXME: DO BETTER
+            if (!opt)
+                return {}; // FIXME: DO BETTER
 
             defs.push_back(opt.value());
         }
@@ -1513,9 +1513,14 @@ std::optional<SelectStatementNode *> SemanticVisitor::visitCtx(WPLParser::Select
             return {}; // FIXME: DO BETTER
 
         // For tracking linear stuff //FIXMEL TRACK RETURN/EXIT
-        for (auto s : ctx->rest)
+        TypedNode *eval = evalOpt.value();
+
+        if (!endsInReturn(eval))
         {
-            s->accept(this); // FIXME: DO BETTER
+            for (auto s : ctx->rest)
+            {
+                s->accept(this); // FIXME: DO BETTER
+            }
         }
         safeExitScope(ctx);
 
@@ -1523,7 +1528,7 @@ std::optional<SelectStatementNode *> SemanticVisitor::visitCtx(WPLParser::Select
         // if (!altOpt)
         //     return {}; // FIXME: DO BETTER?
 
-        alts.push_back(new SelectAlternativeNode(check, evalOpt.value()));
+        alts.push_back(new SelectAlternativeNode(check, eval));
     }
 
     /*
@@ -1561,7 +1566,7 @@ std::optional<SelectStatementNode *> SemanticVisitor::visitCtx(WPLParser::Select
 
 std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
 {
-    std::cout << "1556" << std::endl; 
+    std::cout << "1556" << std::endl;
     /*
      * Lookup the @RETURN symbol which can ONLY be defined by entering FUNC/PROC
      */
@@ -1575,7 +1580,7 @@ std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatement
     }
 
     Symbol *sym = symOpt.value().second;
-    std::cout << "MUST RETURN " << sym->toString() << std::endl; 
+    std::cout << "MUST RETURN " << sym->toString() << std::endl;
     // bindings->bind(ctx, sym);
 
     // If the return statement has an expression...
@@ -1621,9 +1626,9 @@ std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatement
     return {};
 }
 
-std::optional<ExitNode*> SemanticVisitor::visitCtx(WPLParser::ExitStatementContext *ctx)
+std::optional<ExitNode *> SemanticVisitor::visitCtx(WPLParser::ExitStatementContext *ctx)
 {
-    //FIXME: ADD TESTS FOR EXIT FOR EACH RETURN TEST!!!
+    // FIXME: ADD TESTS FOR EXIT FOR EACH RETURN TEST!!!
 
     std::optional<SymbolContext> symOpt = stmgr->lookup("@EXIT");
 
@@ -1634,7 +1639,7 @@ std::optional<ExitNode*> SemanticVisitor::visitCtx(WPLParser::ExitStatementConte
         return {};
     }
 
-    return new ExitNode(); 
+    return new ExitNode();
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)

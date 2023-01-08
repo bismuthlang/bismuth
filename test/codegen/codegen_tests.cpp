@@ -209,7 +209,7 @@ TEST_CASE("programs/test5 - Nested ifs and if equality", "[codegen]")
 
 TEST_CASE("programs/test6 - Basic Select with Return", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test6.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test6.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -232,7 +232,7 @@ TEST_CASE("programs/test6 - Basic Select with Return", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "686f9e63c3f0c7f09de2dbc0ca6a6e8ae5161be63048a68814c74c5164c33305");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "ca3f3f9c96ae7a947256e1f2207577069fd60bd1cd30cce39f3d0e33ba66b7b8");
 }
 
 TEST_CASE("programs/testSelectBlock1 - Basic Select with Blocks that Return", "[codegen]")

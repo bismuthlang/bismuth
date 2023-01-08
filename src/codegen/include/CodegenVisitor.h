@@ -220,7 +220,7 @@ public:
 
             // If we are a PROC, make sure to add a return type (if we don't already have one)
             // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
-            if (!CodegenVisitor::blockEndsInReturn(n->block)) // FIXME: THIS SHOULD BECOME ALWAYS TRUE
+            if (!endsInReturn(n->block)) // FIXME: THIS SHOULD BECOME ALWAYS TRUE
             {
                 builder->CreateRetVoid();
             }
@@ -305,20 +305,6 @@ public:
         // std::optional<std::optional<Value *>> temp = any2Opt<std::optional<Value *>>(any);
         // if(temp) return temp.value();
         // return {};
-    }
-
-protected:
-    /**
-     * @brief Helper function to determine if a Block ends in a return or not
-     *
-     * @param ctx The BlockContext to check
-     * @return true If it ends in a return
-     * @return false If it does not end in a return
-     */
-    static bool blockEndsInReturn(BlockNode *n)
-    {
-        // FIXME: DOES THIS EVEN WORK STILL GIVEN THE NEW REST GRAMMAR?
-        return n->exprs.size() > 0 && dynamic_cast<ReturnNode *>(n->exprs.at(n->exprs.size() - 1));
     }
 
 private:

@@ -265,7 +265,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
         if (BlockNode *blkStmtCtx = dynamic_cast<BlockNode *>(caseNode.second))
         {
             // WPLParser::BlockContext *blkCtx = blkStmtCtx->block();
-            if (!CodegenVisitor::blockEndsInReturn(blkStmtCtx))
+            if (!endsInReturn(blkStmtCtx))
             {
                 builder->CreateBr(mergeBlk);
             }
@@ -1380,7 +1380,7 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
     }
 
     // If the block ends in a return, then we can't make the branch; things would break
-    if (!CodegenVisitor::blockEndsInReturn(n->trueBlk))
+    if (!endsInReturn(n->trueBlk))
     {
         builder->CreateBr(restBlk);
     }
@@ -1402,7 +1402,7 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
             AcceptType(this, e);
         }
 
-        if (!CodegenVisitor::blockEndsInReturn(n->falseOpt.value()))
+        if (!endsInReturn(n->falseOpt.value()))
         {
             builder->CreateBr(restBlk);
         }
@@ -1479,7 +1479,8 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
          */
         if (BlockNode *blk = dynamic_cast<BlockNode *>(evalCase->eval))
         {
-            if (!CodegenVisitor::blockEndsInReturn(blk))
+            // if (!CodegenVisitor::blockEndsInReturn(blk))
+            if(!endsInReturn(blk))
             {
                 builder->CreateBr(mergeBlk);
             }

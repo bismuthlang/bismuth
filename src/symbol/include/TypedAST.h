@@ -966,6 +966,7 @@ inline bool endsInReturn(vector<TypedNode *> n)
 inline bool endsInReturn(TypedNode * n)
 {
     if(dynamic_cast<ReturnNode *>(n)) return true; 
+    if(dynamic_cast<ExitNode *>(n)) return true; 
 
     if(BlockNode * bn = dynamic_cast<BlockNode*>(n))
     {
