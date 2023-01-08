@@ -125,6 +125,14 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
             std::cout << "83" << std::endl;
             defs.push_back(progOpt.value());
         }
+        else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))
+        {
+            std::optional<LambdaConstNode*> opt = visitCtx(fnCtx->defineFunc());
+
+            if(!opt) return {}; //FIXME: DO BETTER
+
+            defs.push_back(opt.value());
+        }
     }
 
     /*******************************************
@@ -1553,6 +1561,7 @@ std::optional<SelectStatementNode *> SemanticVisitor::visitCtx(WPLParser::Select
 
 std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
 {
+    std::cout << "1556" << std::endl; 
     /*
      * Lookup the @RETURN symbol which can ONLY be defined by entering FUNC/PROC
      */
@@ -1566,6 +1575,7 @@ std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatement
     }
 
     Symbol *sym = symOpt.value().second;
+    std::cout << "MUST RETURN " << sym->toString() << std::endl; 
     // bindings->bind(ctx, sym);
 
     // If the return statement has an expression...

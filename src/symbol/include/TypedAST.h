@@ -858,7 +858,7 @@ public:
 
 /////////////////////
 
-typedef variant<DefineEnumNode *, DefineStructNode *, ProgramDefNode *> DefinitionNode;
+typedef variant<DefineEnumNode *, DefineStructNode *, ProgramDefNode *, LambdaConstNode*> DefinitionNode;
 
 class CompilationUnitNode
 {
