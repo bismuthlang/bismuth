@@ -516,7 +516,7 @@ TEST_CASE("Dead code in select", "[semantic][program][select]")
   antlr4::ANTLRInputStream input(
       R""""(
 # int func program () {
-define func program () : int { # FIXME: MAKE THROW ERROR B/C THIS MAKES MAIN PROG IMPOSSIBLE
+define func program (int idk) : int { # FIXME: MAKE THROW ERROR B/C THIS MAKES MAIN PROG IMPOSSIBLE # FIXME: MAKE IT SO WE CAN HAVE ZERO ARGS?
 
     select {
         true : {
@@ -627,7 +627,7 @@ TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
   antlr4::ANTLRInputStream input(
       R""""(
     # proc foo (int a) {
-    define func foo (int a) : int
+    define func foo (int a) : int {
 
       return -1;
     }
@@ -1027,17 +1027,22 @@ TEST_CASE("Out of order function w/ forward declaration", "[semantic][program]")
       R""""(
 extern int func printf(...);
 
-extern proc foo(); 
+# extern proc foo();  # FIXME: DELETE PROC?
+extern int func foo(str a); # FIXME CHANGE SYNTAX OF THIS/FUNC TO MATCH?
 
-str a := "hello";
+# str a := "hello";
 
 define program :: c : Channel<-int> = {
+    printf("hey!!"); 
     foo(); 
-    return 0;
+    # return 0;
+    c.send(0)
 }
 
-proc foo() {
+# proc foo() {
+define func foo (str a) : int {
     printf("a = %s\n", a);
+    return 0; # FIXME: REMOVE NEED FOR RETURN HERE?
 }
     )"""");
   WPLLexer lexer(&input);
@@ -1061,47 +1066,48 @@ proc foo() {
   REQUIRE(sv->hasErrors(ERROR));
 }
 
-TEST_CASE("Out of order function w/ forward declaration with Out of order global", "[semantic][program]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-extern int func printf(...);
+// UNSED: GLOBAL
+// TEST_CASE("Out of order function w/ forward declaration with Out of order global", "[semantic][program]")
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+// extern int func printf(...);
 
-extern proc foo(); 
+// extern proc foo(); 
 
 
 
-define program :: c : Channel<-int> = {
-    foo(); 
-    return 0;
-}
+// define program :: c : Channel<-int> = {
+//     foo(); 
+//     return 0;
+// }
 
-proc foo() {
-    printf("a = %s\n", a);
-}
+// proc foo() {
+//     printf("a = %s\n", a);
+// }
 
-str a := "hello";
-    )"""");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+// str a := "hello";
+//     )"""");
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
-}
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE(sv->hasErrors(ERROR));
+// }
 
 TEST_CASE("Forward Decl with Variadic", "[semantic][program][function][forward-decl]")
 {

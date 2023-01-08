@@ -10,6 +10,7 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
 
     for (auto e : ctx->defs)
     {
+        // FIXME: DO WE NEED TO HANDLE FUNCTIONS????
         if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
         {
             std::string id = fnCtx->defineProc()->name->getText();
@@ -40,6 +41,40 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
             }
             // errorHandler.addSemanticCritWarning(ctx->getStart(), "Currently, only FUNC, PROC, EXTERN, and variable declarations allowed at top-level. Not: " + e->getText());
         }
+        else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))
+        {
+            std::string id = fnCtx->defineFunc()->name->getText();
+
+            std::optional<SymbolContext> opt = stmgr->lookup(id);
+
+            if (opt)
+            {
+                errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of program " + id);
+                // return Types::UNDEFINED;
+            }
+
+
+            //FIXME: DUPLICATED FROM visitCtx(WPLParser::DefineFuncContext *ctx)!!!!
+
+            std::optional<ParameterListNode> paramTypeOpt = visitCtx(fnCtx->defineFunc()->lam->parameterList());
+
+            if (!paramTypeOpt)
+                return {}; // FIXME: DO BETTER?
+
+            ParameterListNode params = paramTypeOpt.value(); // FIXME: WHY NO POINTER?
+            std::vector<const Type *> ps;
+
+            for (ParameterNode param : params) //(unsigned int i = 0; i < ctx->parameterList()->params.size(); i++)
+            {
+                ps.push_back(param.type);
+            }
+
+            const Type *retType = any2Type(fnCtx->defineFunc()->lam->ret->accept(this));
+
+            Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true); // FIXME: DO BETTER
+
+            stmgr->addSymbol(funcSym);
+        }
         else
         {
             std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(e->accept(this));
@@ -53,9 +88,13 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
             {
                 defs.push_back(dynamic_cast<DefineStructNode *>(opt.value()));
             }
-            else
+            else if (dynamic_cast<WPLParser::DefineEnumContext *>(e))
             {
                 defs.push_back(dynamic_cast<DefineEnumNode *>(opt.value()));
+            }
+            else
+            {
+                errorHandler.addSemanticError(ctx->getStart(), "Unhandled case");
             }
         }
     }
@@ -260,7 +299,7 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
 
 std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFuncContext *ctx)
 {
-    std::cout << "263" << std::endl; 
+    std::cout << "263" << std::endl;
     // FIXME: HANDLE REDECLS HERE INSTEAD OF AT TOP LEVEL?
 
     // std::optional<const TypeInvoke *> tyOpt = [errorHandler, ctx]()
@@ -311,7 +350,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
     LambdaConstNode *lam = lamOpt.value();
 
     lam->name = funcSym->getIdentifier(); // Not really needed.
-    std::cout << "314" << std::endl; 
+    std::cout << "314" << std::endl;
     return lam;
 }
 
