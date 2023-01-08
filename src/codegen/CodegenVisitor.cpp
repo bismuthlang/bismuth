@@ -1569,6 +1569,14 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
     return v;
 }
 
+std::optional<Value *> CodegenVisitor::visit(ExitNode *n) //FIXME: VERIFY/DO BETTER
+{
+    // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
+    Value *v = builder->CreateRetVoid();
+    return v;
+}
+
+
 std::optional<Value *> CodegenVisitor::visit(BooleanConstNode *n)
 {
     Value *val = n->value ? builder->getTrue() : builder->getFalse();

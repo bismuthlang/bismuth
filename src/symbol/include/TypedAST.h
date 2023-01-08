@@ -61,6 +61,7 @@ class CompilationUnitNode;
 
 class VarDeclNode;
 class MatchStatementNode; 
+class ExitNode; 
 
 class TypedASTVisitor
 {
@@ -104,6 +105,7 @@ public:
     virtual std::optional<Value *> visit(CompilationUnitNode *n) = 0;
     virtual std::optional<Value *> visit(VarDeclNode *n) = 0;
     virtual std::optional<Value *> visit(MatchStatementNode *n) = 0;
+    virtual std::optional<Value *> visit(ExitNode *n) = 0;
 
     // private: //FIXME: DO SOMETHING FOR THE ONES WE DONT NEED/USE
     std::any any_visit(SelectAlternativeNode *n) { return this->visit(n); }
@@ -143,6 +145,7 @@ public:
     std::any any_visit(CompilationUnitNode *n) { return this->visit(n); }
     std::any any_visit(VarDeclNode *n) { return this->visit(n); }
     std::any any_visit(MatchStatementNode * n) {return this->visit(n); }
+    std::any any_visit(ExitNode *n) { return this->visit(n); }
 
     std::any visit(std::any n) { return "FIXME"; }
     std::any accept(TypedNode *n)
@@ -367,6 +370,18 @@ public:
     // const Type *getType() override {
     //     return (expr) ? expr.value()->getType() : Types::UNDEFINED;
     //  } // FIXME: DO BETTER
+
+    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+class ExitNode : public TypedNode
+{
+public:
+
+    ExitNode()
+    {
+    }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }

@@ -126,6 +126,7 @@ public:
     std::optional<Value *> visit(CompilationUnitNode *n) override;
     std::optional<Value *> visit(VarDeclNode *n) override;
     std::optional<Value *> visit(MatchStatementNode *n) override;
+    std::optional<Value *> visit(ExitNode *n) override;
 
 
     std::optional<Value *> visitCompilationUnit(CompilationUnitNode *n) { return visit(n); }

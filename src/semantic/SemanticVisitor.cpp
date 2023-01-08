@@ -1621,6 +1621,22 @@ std::optional<ReturnNode *> SemanticVisitor::visitCtx(WPLParser::ReturnStatement
     return {};
 }
 
+std::optional<ExitNode*> SemanticVisitor::visitCtx(WPLParser::ExitStatementContext *ctx)
+{
+    //FIXME: ADD TESTS FOR EXIT FOR EACH RETURN TEST!!!
+
+    std::optional<SymbolContext> symOpt = stmgr->lookup("@EXIT");
+
+    // If we don't have the symbol, we're not in a place that we can return from.
+    if (!symOpt)
+    {
+        errorHandler.addSemanticError(ctx->getStart(), "Cannot use exit outside of program");
+        return {};
+    }
+
+    return new ExitNode(); 
+}
+
 const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
 {
     // If we don't have a type context, then we know that we must be doing inference

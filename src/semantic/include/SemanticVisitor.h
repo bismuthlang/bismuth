@@ -180,7 +180,8 @@ public:
     std::optional<MatchStatementNode*> visitCtx(WPLParser::MatchStatementContext *ctx);
     std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx); } //FIXME: CASTS NEEDED B/C OF HOW C++ HANDLES ANYS BY MANGLED NAME!
 
-
+    std::optional<ExitNode*> visitCtx(WPLParser::ExitStatementContext *ctx);
+    std::any visitExitStatement(WPLParser::ExitStatementContext *ctx) override { return (std::optional<TypedNode*>) visitCtx(ctx); }
 
     // const Type *visitCtx(WPLParser::VariableExprContext *ctx);
     const Type *visitCtx(WPLParser::AssignmentContext *ctx);
@@ -366,6 +367,7 @@ std::cout << "276" << std::endl;
         stmgr->addSymbol(channelSymbol);
         // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
         // stmgr->addSymbol(new Symbol("@RETURN", funcType->getReturnType(), false, false));
+        stmgr->addSymbol(new Symbol("@EXIT", Types::UNDEFINED, false, false)); //FIXME: DO BETTER 
 std::cout << "370" << std::endl; 
         // Safe visit the program block without creating a new scope (as we are managing the scope)
         std::optional<BlockNode*> blkOpt = this->safeVisitBlock(ctx->block(), false);

@@ -139,6 +139,7 @@ statement           : defineProc                                                
                     | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement       // FIXME: HANDLE REST
                     | call=invocation  ';'?     # CallStatement 
                     | RETURN expression? ';'    # ReturnStatement 
+                    | EXIT                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
                     | block                     # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')'   # ProgramSend
                     | WHILE check=condition block                                                       # ProgramLoop
@@ -243,6 +244,7 @@ DO              :   'do'    ;
 EXTERN          :   'extern';
 MATCH           :   'match' ;
 DEFINE          :   'define';
+EXIT            :   'exit'  ;
 
 
 //Booleans
