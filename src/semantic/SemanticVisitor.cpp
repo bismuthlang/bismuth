@@ -1230,7 +1230,8 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
                 return {}; // FIXME: DO BETTER
 
             if (dynamic_cast<WPLParser::ProgDefContext *>(altCtx->eval) ||
-                dynamic_cast<WPLParser::VarDeclStatementContext *>(altCtx->eval))
+                dynamic_cast<WPLParser::VarDeclStatementContext *>(altCtx->eval) || 
+                dynamic_cast<WPLParser::FuncDefContext *>(altCtx->eval))
             {
                 errorHandler.addSemanticError(altCtx->getStart(), "Dead code: definition as select alternative.");
             }
@@ -1481,7 +1482,8 @@ std::optional<SelectStatementNode *> SemanticVisitor::visitCtx(WPLParser::Select
          *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
          */
         if (dynamic_cast<WPLParser::ProgDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
-            dynamic_cast<WPLParser::VarDeclStatementContext *>(e->eval))
+            dynamic_cast<WPLParser::VarDeclStatementContext *>(e->eval) ||
+            dynamic_cast<WPLParser::FuncDefContext *>(e->eval))
         {
             errorHandler.addSemanticError(e->getStart(), "Dead code: definition as select alternative.");
         }
@@ -1660,6 +1662,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
 
 std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaConstExprContext *ctx)
 {
+    // std::cout << "1664" << std::endl; 
     // FIXME: VERIFY THIS IS ALWAYS SAFE!!!
     std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
 

@@ -276,7 +276,7 @@ TEST_CASE("Basic select - Dead Code - proc", "[semantic][conditional]")
     R""""(
       define program :: c : Channel<-int> = {
       select {
-        false : proc prog() {}
+        false : define func foo (int a) : int {return a;}
 
 
       }
@@ -311,7 +311,7 @@ TEST_CASE("Basic select - Dead Code - func", "[semantic][conditional]")
     R""""(
       define program :: c : Channel<-int> = {
       select {
-        false : int func prog() {return -1;}
+        false : define foo :: c : Channel<-int> = {c.send(0)}
 
 
       }
