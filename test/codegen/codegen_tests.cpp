@@ -67,37 +67,9 @@ TEST_CASE("programs/test1 - General Overview", "[codegen]")
     REQUIRE(llvmIrToSHA256(cv->getModule()) == "61b8248a0a19ddaffe7c76567451b884bd47c6064c9193d1895f356dd84faa9b");
 }
 
-TEST_CASE("programs/test1-full - General Overview - full", "[codegen]")
-{
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test1-full.wpl");
-    antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-    WPLLexer lexer(input);
-    antlr4::CommonTokenStream tokens(&lexer);
-    WPLParser parser(&tokens);
-    parser.removeErrorListeners();
-    WPLParser::CompilationUnitContext *tree = NULL;
-    REQUIRE_NOTHROW(tree = parser.compilationUnit());
-    REQUIRE(tree != NULL);
-    STManager *stm = new STManager();
-    PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
-    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
-    REQUIRE(cuOpt.has_value());
-
-    REQUIRE_FALSE(sv->hasErrors(0));
-
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
-    cv->visitCompilationUnit(cuOpt.value());
-
-    REQUIRE_FALSE(cv->hasErrors(0));
-
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "7207846e3c3466a82caba824eef32c06a12c4300d879e474a5beec37e0fe50eb");
-}
-
 TEST_CASE("programs/test1a", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test1a.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test1a.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
