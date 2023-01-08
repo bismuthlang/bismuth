@@ -41,7 +41,7 @@ TEST_CASE("Development Codegen Tests", "[codegen]")
 
 TEST_CASE("programs/test1 - General Overview", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test1.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test1.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -64,7 +64,7 @@ TEST_CASE("programs/test1 - General Overview", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "c0bdac31a8ebe95ce34c84fc87340507f924e81315be3f4fea0d7c5f9d732019");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "61b8248a0a19ddaffe7c76567451b884bd47c6064c9193d1895f356dd84faa9b");
 }
 
 TEST_CASE("programs/test1-full - General Overview - full", "[codegen]")

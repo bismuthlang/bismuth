@@ -50,7 +50,7 @@ define branchtest :: c : Channel<-int> = {
     }
 
     # return 0;
-    c.send(0)
+    # c.send(0)
 }
 
 
@@ -75,7 +75,7 @@ define otherbranchtwo :: c : Channel<-str> = {
     str b := "Why hello there!"; 
 
     if(a < 5) then {
-        b := "Well, we fel into the first case"; 
+        b := "Well, we fell into the first case"; 
     } else {
         printf("ERROR: THIS CODE SHOULDN'T BE RUN\n");
         b := "Second case this time!"; 
@@ -105,7 +105,7 @@ define otherbranchthree :: c : Channel<-str> = {
 }
 
 # define program :: c : Channel<-int> = {
-define program :: c : Channel<-int> = {
+define program :: io : Channel<-int> = {
     printf("Hello World!\n");
     # printf(); 
     int [50] a; 
@@ -128,19 +128,24 @@ define program :: c : Channel<-int> = {
     # int ANS := branchtest(); 
 
     # # FIXME: CLUNKY SYNTAX
-    # Channel<+int> t1 = exec branchtest; 
-    # Channel<+int> t2 = exec otherbranch;
-    # Channel<+str> t3 = exec otherbranchtwo; 
-    # Channel<+str> t4 = exec otherbranchthree;
+    Channel<+int> t1 := exec branchtest; 
+    Channel<+int> t2 := exec otherbranch;
+    Channel<+str> t3 := exec otherbranchtwo; 
+    Channel<+str> t4 := exec otherbranchthree;
 
-    printf("From test, got: %i\n", branchtest());
-    printf("Other test, got %i\n", otherbranch());
-    printf("Other other test, %s\n", otherbranchtwo());
-    printf("Other other other test, %s\n", otherbranchthree());
+    int t1a := t1.recv(); 
+    int t2a := t2.recv(); 
+    str t3a := t3.recv();
+    str t4a := t4.recv(); 
+
+    printf("From test, got: %i\n", t1a);
+    printf("Other test, got %i\n", t2a);
+    printf("Other other test, %s\n", t3a);
+    printf("Other other other test, %s\n", t4a);
 
     # int b := a[2];
     # str b := a[2];
     # testtwo(1, 2, 3);
     # return -1; 
-    c.send(-1)
+    io.send(-1)
 }
