@@ -12,6 +12,7 @@ define program :: c : Channel<-int> = {
     printf("Needs at least two arguments!\n");
     # return -1; 
     c.send(-1)
+    exit
   }
 
   while i < getArgCount() {
@@ -25,14 +26,14 @@ define program :: c : Channel<-int> = {
     printf("%d > 0 | %d = 2\n", a, b);
     var test2 := a > 0 | b = 2; 
 
-    if test then {
+    if test {
       printf("true + ");
     } else {
       printf("false + ");
     }
 
     
-    if test2 then {
+    if test2 {
       printf("true\n");
     } else {
       printf("false\n");

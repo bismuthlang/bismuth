@@ -237,7 +237,7 @@ TEST_CASE("programs/test6 - Basic Select with Return", "[codegen]")
 
 TEST_CASE("programs/testSelectBlock1 - Basic Select with Blocks that Return", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/testSelectBlock1.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/testSelectBlock1.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -261,7 +261,7 @@ TEST_CASE("programs/testSelectBlock1 - Basic Select with Blocks that Return", "[
     REQUIRE_FALSE(cv->hasErrors(0));
 
     // NOTE: THIS SHOULD BE THE SAME AS test6!!!
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "686f9e63c3f0c7f09de2dbc0ca6a6e8ae5161be63048a68814c74c5164c33305");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "41e1d6adb20f26fc561d6b0d36033edab33918e16cc8fd1c4361548240758563");
 }
 
 TEST_CASE("programs/test6a (CAFE!) - Basic Nested Selects, LEQ, GEQ", "[codegen]")
@@ -715,7 +715,7 @@ TEST_CASE("programs/test12 - Scopes & Prime Finder Example! ", "[codegen]")
 
 TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test13.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test13.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -738,7 +738,7 @@ TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "fd2a506796e162de9e1a00a12e154827fa25a34833b68c68aa83750e3c4ab657");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "5810f4c05288eb8c89bb4e1d6c76fa9b427281d14c395dc7d10bfe742d0c1861");
 }
 
 // TEST_CASE("programs/test-runtime - Basic runtime tests", "[codegen]")
@@ -800,7 +800,7 @@ TEST_CASE("programs/test-shortcircuit - Basic Short Circuit (and)", "[codegen]")
 
 TEST_CASE("programs/test-shortcircuit-rt - Basic Short Circuit (and + or) w/ Runtime", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test-shortcircuit-rt.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test-shortcircuit-rt.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -823,7 +823,7 @@ TEST_CASE("programs/test-shortcircuit-rt - Basic Short Circuit (and + or) w/ Run
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "2309d18c37760ca695b7acd1fe81c7bf428ea5e44764f35e6c993780a3815459");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "f631a86416e667b8e9050f1673869d54ff07490ca3ed8bf592020861bc0eb7aa");
 }
 
 TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editing arrays in functions", "[codegen]")

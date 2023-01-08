@@ -15,3 +15,6 @@ list(APPEND CMAKE_MODULE_PATH ${catch2_SOURCE_DIR}/extras)
 # See: https://github.com/catchorg/Catch2/blob/devel/docs/command-line.md
 # Also, run ctest --extra-verbose
 set(CMAKE_CTEST_ARGUMENTS "--verbose; --output-on-failure")
+
+# FetchContent_MakeAvailable(HashMap)
+# include(HashMap)

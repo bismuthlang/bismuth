@@ -6,7 +6,7 @@ define fib :: c : Channel<+int;-int> = {
 
   if(n = 0 | n = 1) {
     # return n;
-    c.send(n) # FIXME: NEED EXIT
+    c.send(n) exit
   }
 
   Channel<-int;+int> f1 := exec fib; 

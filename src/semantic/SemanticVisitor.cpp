@@ -1230,7 +1230,7 @@ std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchSt
                 return {}; // FIXME: DO BETTER
 
             if (dynamic_cast<WPLParser::ProgDefContext *>(altCtx->eval) ||
-                dynamic_cast<WPLParser::VarDeclStatementContext *>(altCtx->eval) || 
+                dynamic_cast<WPLParser::VarDeclStatementContext *>(altCtx->eval) ||
                 dynamic_cast<WPLParser::FuncDefContext *>(altCtx->eval))
             {
                 errorHandler.addSemanticError(altCtx->getStart(), "Dead code: definition as select alternative.");
@@ -1339,8 +1339,13 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
 {
     // Automatically handles checking that we have a valid condition
     std::optional<ConditionNode *> condOpt = this->visitCtx(ctx->check);
+
+    if (!condOpt)
+        return {}; // FIXME: DO BETTER
+
     std::vector<TypedNode *> restVec; // FIXME: DO BETTER
     bool valid = true;
+    bool restGenerated = false; 
 
     std::vector<Symbol *> syms = stmgr->getAvaliableLinears();                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
     std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
@@ -1373,18 +1378,24 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
     //     }
     // }
     std::optional<BlockNode *> trueOpt = this->visitCtx(ctx->trueBlk);
-    for (auto s : ctx->rest)
+    if (!trueOpt)
+        return {}; // FIXME: DO BETTER
+
+    BlockNode *trueBlk = trueOpt.value();
+    if (!endsInReturn(trueBlk))
     {
-        std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
-        if (!tnOpt)
-            valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
-        else
-            restVec.push_back(tnOpt.value());
+        restGenerated = true; 
+
+        for (auto s : ctx->rest)
+        {
+            std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
+            if (!tnOpt)
+                valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
+            else
+                restVec.push_back(tnOpt.value());
+        }
     }
     safeExitScope(ctx);
-
-    if (!condOpt || !trueOpt)
-        return {}; // FIXME: DO BETTER
 
     // If we have an else block, then type check it
     if (ctx->falseBlk)
@@ -1402,20 +1413,26 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
         if (!falseOpt)
             return {}; // FIXME: DO BETTER{}
 
-        for (auto s : ctx->rest)
+        BlockNode *falseBlk = falseOpt.value();
+
+        if (!endsInReturn(falseBlk))
         {
-            std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
-            if (!tnOpt)
-                valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
-            // else
-            // restVec.push_back(tnOpt.value());
+            for (auto s : ctx->rest)
+            {
+                std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
+                if (!tnOpt)
+                    valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
+                else if(!restGenerated) //FIXME: DO OPTIMIZATIONS IF THIS ISNT NEEDED!
+                    restVec.push_back(tnOpt.value());
+            }
+            restGenerated = true; 
         }
         safeExitScope(ctx);
 
         if (!valid)
             return {};
 
-        return new ConditionalStatementNode(condOpt.value(), trueOpt.value(), restVec, falseOpt.value());
+        return new ConditionalStatementNode(condOpt.value(), trueBlk, restVec, falseBlk);
     }
 
     // Type check the then/true block
@@ -1431,12 +1448,13 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
         std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
         if (!tnOpt)
             valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
-        // else
-        // restVec.push_back(tnOpt.value());
+        else if(!restGenerated)
+            restVec.push_back(tnOpt.value());
     }
+    restGenerated = true; 
     safeExitScope(ctx);
 
-    return new ConditionalStatementNode(condOpt.value(), trueOpt.value(), restVec);
+    return new ConditionalStatementNode(condOpt.value(), trueBlk, restVec);
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
     // return Types::UNDEFINED;
 }
@@ -1662,7 +1680,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
 
 std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaConstExprContext *ctx)
 {
-    // std::cout << "1664" << std::endl; 
+    // std::cout << "1664" << std::endl;
     // FIXME: VERIFY THIS IS ALWAYS SAFE!!!
     std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
 
