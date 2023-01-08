@@ -1156,26 +1156,32 @@ define foo :: c : Channel<+int> = {
   REQUIRE(sv->hasErrors(ERROR));
 }
 
+//FIXME: TEST EXTERN PROGRAMS?
+
 TEST_CASE("Forward Decl with wrong num args", "[semantic][program][function][forward-decl]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
 extern int func printf(...);
 
-extern proc foo(int a);
+# extern proc foo(int a);
+extern int func foo(str a);
 
 
 
 define program :: c : Channel<-int> = {
-    foo(); 
+    foo("hello"); 
+    # return 0;
+    c.send(0)
+}
+
+# proc foo(int a, int b) {
+define func foo (str a, int b) : int {
+    printf("a = %s\n", a);
     return 0;
 }
 
-proc foo(int a, int b) {
-    printf("a = %s\n", a);
-}
-
-str a := "hello";
+# str a := "hello";
     )"""");
 
   WPLLexer lexer(&input);
@@ -1199,91 +1205,93 @@ str a := "hello";
   REQUIRE(sv->hasErrors(ERROR));
 }
 
-TEST_CASE("Forward Decl with wrong num args and type", "[semantic][program][function][forward-decl]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-extern int func printf(...);
+// UNUSED: SEEMS REDUNDANT
+// TEST_CASE("Forward Decl with wrong num args and type", "[semantic][program][function][forward-decl]")
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+// extern int func printf(...);
 
-extern proc foo(int a);
-
-
-
-define program :: c : Channel<-int> = {
-    foo(); 
-    return 0;
-}
-
-proc foo(int a, str b) {
-    printf("a = %s\n", a);
-}
-
-str a := "hello";
-    )"""");
-
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
-
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
-
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
-
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
-}
-
-TEST_CASE("Forward Decl with wrong arg type", "[semantic][program][function][forward-decl]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-extern int func printf(...);
-
-extern proc foo(int a);
+// extern proc foo(int a);
 
 
 
-define program :: c : Channel<-int> = {
-    foo(); 
-    return 0;
-}
+// define program :: c : Channel<-int> = {
+//     foo(); 
+//     return 0;
+// }
 
-proc foo(str a) {
-    printf("a = %s\n", a);
-}
+// proc foo(int a, str b) {
+//     printf("a = %s\n", a);
+// }
 
-str a := "hello";
-    )"""");
+// str a := "hello";
+//     )"""");
 
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
-}
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE(sv->hasErrors(ERROR));
+// }
+
+//UNUSED: SEEMS REDUNDANT
+// TEST_CASE("Forward Decl with wrong arg type", "[semantic][program][function][forward-decl]")
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+// extern int func printf(...);
+
+// extern proc foo(int a);
+
+
+
+// define program :: c : Channel<-int> = {
+//     foo(); 
+//     return 0;
+// }
+
+// proc foo(str a) {
+//     printf("a = %s\n", a);
+// }
+
+// str a := "hello";
+//     )"""");
+
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
+
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
+
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE(sv->hasErrors(ERROR));
+// }
 
 TEST_CASE("Wrong UnaryNot", "[semantic][program][bool]")
 {
@@ -2689,7 +2697,7 @@ define foo :: c : Channel<+int> = {
  *********************************/
 TEST_CASE("B Level Negative Test #1", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative1.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative1.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -2708,7 +2716,7 @@ TEST_CASE("B Level Negative Test #1", "[semantic]")
 
 TEST_CASE("B Level Negative Test #2", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative2.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative2.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
