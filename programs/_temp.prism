@@ -17,7 +17,3 @@ define program :: c : Channel<-int> = {
     #     c.send(-2)
     # }
 }
-
-define func foo () {
-      return 1;
-    }

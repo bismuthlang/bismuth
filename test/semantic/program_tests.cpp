@@ -385,8 +385,8 @@ TEST_CASE("Test program() should return int warning", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-      proc program () {
-
+      define func program () {
+        return; # FIXME: DO THESE HAVE TO END IN RETURN?
       }
     )"""");
   WPLLexer lexer(&input);
