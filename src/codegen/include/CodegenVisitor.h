@@ -236,6 +236,8 @@ public:
 
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {
+        std::cout << "visitVariable " << sym->toString() << " " << is_rvalue << std::endl; 
+        // module->dump();
         // Try getting the type for the symbol, raising an error if it could not be determined
         llvm::Type *type = sym->type->getLLVMType(module);
         if (!type)
@@ -252,7 +254,7 @@ public:
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for function " + sym->toString());
+                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for program: " + sym->toString());
                     return {};
                 }
 
@@ -264,7 +266,7 @@ public:
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for function " + sym->toString());
+                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for function: " + sym->toString());
                     return {};
                 }
 
@@ -293,9 +295,16 @@ public:
             return {};
         }
 
+        std::cout << "297 rv" << is_rvalue << std::endl; 
         if(!is_rvalue) return sym->val.value(); 
-        // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
+        // return sym->val.value();
+        // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
         Value *v = builder->CreateLoad(type, sym->val.value(), sym->getIdentifier());
+
+        // //FIXME: DO BETTER
+        // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
+        // builder->CreateStore(v, alloc);
+        // return alloc; 
         return v;
     }
 

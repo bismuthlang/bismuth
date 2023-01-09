@@ -242,14 +242,15 @@ typedef vector<ParameterNode> ParameterListNode; // FIXME: NOT EXACTLY A NODE
 
 class LambdaConstNode : public TypedNode
 {
-private:
-    TypeInvoke *type;
+// private:
+    
 
 public:
     string name; 
     vector<Symbol *> paramSymbols;
     const Type *retType;
     BlockNode *block;
+    TypeInvoke *type;
 
     LambdaConstNode(vector<Symbol *> p, const Type *r, BlockNode *b, string n="LAM")
     {

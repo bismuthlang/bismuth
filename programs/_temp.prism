@@ -1,1 +1,19 @@
-define program :: c : Channel<-int> = { c.send(-1) }
+define program :: c : Channel<-int> = { 
+    int[5] a; 
+    a[0] := 0; 
+
+    # int BRK := 0;
+
+    int b := a[0];
+
+    c.send(-1) 
+
+    # FIXME: THIS IS AN ERROR!!!!
+    # define program :: c : Channel<-int> = { 
+    #     c.send(-1)
+    # }
+
+    # define program :: c : Channel<-int> = { 
+    #     c.send(-2)
+    # }
+}

@@ -73,6 +73,7 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
             Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true); // FIXME: DO BETTER
 
             stmgr->addSymbol(funcSym);
+            bindings->bind(fnCtx->defineFunc(), funcSym);
         }
         else
         {
@@ -308,47 +309,41 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
 std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFuncContext *ctx)
 {
     std::cout << "263" << std::endl;
-    // FIXME: HANDLE REDECLS HERE INSTEAD OF AT TOP LEVEL?
+    // FIXME: HANDLE REDECLS HERE INSTEAD OF AT TOP LEVEL? -> need to do something to prevent dupl issues!!
 
-    // std::optional<const TypeInvoke *> tyOpt = [errorHandler, ctx]()
-    // {
-    //     std::optional<Symbol *> opt = stmgr->lookupInCurrentScope(ctx->name->getText());
-
-    //     if (opt)
-    //     {
-    //         Symbol * sym = opt.value();
-
-    //         if(const TypeInvoke * inv = dynamic_cast<const TypeInvoke *>(sym->type))
-    //         {
-    //             return inv;
-    //         }
-
-    //         errorHandler.addSemanticError(ctx->getStart(), "Cannot invoke " + sym->toString());
-    //         return {};
-    //     }
-
-    //     const Type *
-
-    // }();
-
-    std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
-
-    if (!paramTypeOpt)
-        return {}; // FIXME: DO BETTER?
-
-    ParameterListNode params = paramTypeOpt.value(); // FIXME: WHY NO POINTER?
-    std::vector<const Type *> ps;
-
-    for (ParameterNode param : params) //(unsigned int i = 0; i < ctx->parameterList()->params.size(); i++)
+    std::optional<Symbol *> funcSymOpt = [this, ctx]() -> std::optional<Symbol *>
     {
-        ps.push_back(param.type);
-    }
+        std::optional<Symbol *> opt = bindings->getBinding(ctx);
+        if (opt)
+            return opt.value();
 
-    const Type *retType = any2Type(ctx->lam->ret->accept(this));
+        std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
 
-    Symbol *funcSym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER
+        if (!paramTypeOpt)
+            return {}; // FIXME: DO BETTER?
 
-    stmgr->addSymbol(funcSym);
+        ParameterListNode params = paramTypeOpt.value(); // FIXME: WHY NO POINTER?
+        std::vector<const Type *> ps;
+
+        for (ParameterNode param : params) //(unsigned int i = 0; i < ctx->parameterList()->params.size(); i++)
+        {
+            ps.push_back(param.type);
+        }
+
+        const Type *retType = any2Type(ctx->lam->ret->accept(this));
+
+        Symbol * sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
+
+        stmgr->addSymbol(sym); 
+
+        return sym;
+    }();
+    
+    if(!funcSymOpt) return {};
+
+    Symbol * funcSym = funcSymOpt.value(); 
+
+    // stmgr->addSymbol(funcSym);
 
     std::optional<LambdaConstNode *> lamOpt = visitCtx(ctx->lam);
 
@@ -356,6 +351,8 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
         return {};
 
     LambdaConstNode *lam = lamOpt.value();
+
+    lam->type = const_cast<TypeInvoke*>(dynamic_cast<const TypeInvoke * >(funcSym->type)); //FIXME: DO BETTER! NEEDED B/C OF NAME RES!
 
     lam->name = funcSym->getIdentifier(); // Not really needed.
     std::cout << "314" << std::endl;
@@ -470,6 +467,7 @@ std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAcces
     {
         // bindings->bind(ctx, sym);
         // return arr->getValueType(); // Return type of array
+        std::cout << "473 is rvalue " << is_rvalue << " for " << ctx->getText() << std::endl;
         return new ArrayAccessNode(field, expr, is_rvalue); // FIXME: THIS SHOULD NOT HAPPEN IF INDEX CHECK FAILS!
     }
 
@@ -1345,7 +1343,7 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
 
     std::vector<TypedNode *> restVec; // FIXME: DO BETTER
     bool valid = true;
-    bool restGenerated = false; 
+    bool restGenerated = false;
 
     std::vector<Symbol *> syms = stmgr->getAvaliableLinears();                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
     std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
@@ -1384,7 +1382,7 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
     BlockNode *trueBlk = trueOpt.value();
     if (!endsInReturn(trueBlk))
     {
-        restGenerated = true; 
+        restGenerated = true;
 
         for (auto s : ctx->rest)
         {
@@ -1421,11 +1419,11 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
             {
                 std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
                 if (!tnOpt)
-                    valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
-                else if(!restGenerated) //FIXME: DO OPTIMIZATIONS IF THIS ISNT NEEDED!
+                    valid = false;       // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
+                else if (!restGenerated) // FIXME: DO OPTIMIZATIONS IF THIS ISNT NEEDED!
                     restVec.push_back(tnOpt.value());
             }
-            restGenerated = true; 
+            restGenerated = true;
         }
         safeExitScope(ctx);
 
@@ -1448,10 +1446,10 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
         std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(s->accept(this));
         if (!tnOpt)
             valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
-        else if(!restGenerated)
+        else if (!restGenerated)
             restVec.push_back(tnOpt.value());
     }
-    restGenerated = true; 
+    restGenerated = true;
     safeExitScope(ctx);
 
     return new ConditionalStatementNode(condOpt.value(), trueBlk, restVec);

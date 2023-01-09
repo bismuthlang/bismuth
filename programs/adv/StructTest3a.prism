@@ -44,7 +44,8 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
 
     RGBData rgbDat := RGBData::init(data);
 
-    int func getChannel(RGBData d, int c) {
+    # int func getChannel(RGBData d, int c) {
+    define func getChannel (RGBData d, int c) : int {
         int[3] channels := d.rgb; 
         return channels[c]; 
     }
@@ -61,7 +62,7 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
 
     lamePrint(c); 
 
-    return Color::init(
+    io.send(Color::init(
         RGBColor::init(
             rgbDat, 
             (RGBData d) : int { return d.rgb[0]; },
@@ -69,7 +70,7 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
             (RGBData d) : int { return d.rgb[2]; }
         ),
         (ColorType c) : str { return "rgb"; }
-    );
+    ))
 }
 
 
@@ -88,7 +89,8 @@ Color func getColor(int r, int g, int b) {
 } 
 *)
 
-int func lamePrint(Color c) {
+# int func lamePrint(Color c) {
+define func lamePrint (Color c) : int {
     {
         ColorType -> str lam := c.toString;
         printf("Color[type=%s, ", lam(c.colorType));
@@ -126,10 +128,17 @@ define program :: c : Channel<-int> = {
 
     #printf("Color: %u, %u, %u\n", z.red, z.green, z.blue);
 
-    Color col := getRGBColor(58, 166, 63);
+    # Color col := getRGBColor(58, 166, 63);
+    Channel<-int;-int;-int;+Color> t := exec getRGBColor; # FIXME: WILL HAVING TO WRITE OUT EACH VAR GET ANNOYING (JUST LIKE WE HAVE FOR LOOPS?)
+    t.send(58)
+    t.send(166)
+    t.send(63)
+
+    Color col := t.recv();
 
     lamePrint(col); 
 
 
-    return 0; 
+    # return 0; 
+    c.send(0)
 }

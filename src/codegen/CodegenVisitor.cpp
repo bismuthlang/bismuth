@@ -123,6 +123,28 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
                 return {};
             }
         }
+        else if (std::holds_alternative<LambdaConstNode *>(e)) // ProgramDefNode *octx = dynamic_cast<ProgramDefNode *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
+        {
+            std::cout << "PREDEF!" << std::endl;
+            LambdaConstNode *octx = std::get<LambdaConstNode *>(e);
+
+            const TypeInvoke *type = octx->getType();
+
+            llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
+
+            if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
+            {
+                std::cout << "CREATE: " << octx->name << std::endl;
+                Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, octx->name, module);
+                type->setName(fn->getName().str());
+                std::cout << "SET NAME: " << fn->getName().str() << " ON @" << type << std::endl;
+            }
+            else
+            {
+                errorHandler.addCodegenError(nullptr, "Could not treat function type as function.");
+                return {};
+            }
+        }
         // else if (std::holds_alternative<DefineEnumNode *>(e)) // FIXME: DO BETTER
         // {
         //     DefineEnumNode *a = std::get<DefineEnumNode *>(e);
@@ -147,6 +169,11 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
         {
             ProgramDefNode *a = std::get<ProgramDefNode *>(e);
             AcceptType(this, a);
+        }
+        else if(std::holds_alternative<LambdaConstNode *>(e))
+        {
+            LambdaConstNode *a = std::get<LambdaConstNode *>(e); 
+            AcceptType(this, a); 
         }
     }
 
@@ -206,9 +233,9 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     Value *sumVal = optVal.value();
     llvm::AllocaInst *SumPtr = builder->CreateAlloca(sumVal->getType());
     builder->CreateStore(sumVal, SumPtr);
-
+std::cout << "209" << std::endl; 
     Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
-
+std::cout << "211" << std::endl; 
     Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size()); // sumType->getCases().size());
@@ -251,8 +278,9 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
         // varSymbol->val = v;
 
         // Now to store the var
+        std::cout << "254" << std::endl; 
         Value *valuePtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32One});
-
+std::cout << "256" << std::endl; 
         Value *corrected = builder->CreateBitCast(valuePtr, ty->getPointerTo());
 
         Value *val = builder->CreateLoad(ty, corrected);
@@ -324,10 +352,13 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
                 {
                     llvm::Type *sumTy = sum->getLLVMType(module);
                     llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
+std::cout << "328" << std::endl; 
                     Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+                    std::cout << "330" << std::endl; 
                     builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+                    std::cout << "332" << std::endl; 
                     Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+                    std::cout << "578" << std::endl; 
                     Value *corrected = builder->CreateBitCast(valuePtr, val->getType()->getPointerTo());
                     builder->CreateStore(val, corrected);
 
@@ -402,11 +433,11 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
     Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
     Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());             // Cast the void* to the correct type ptr
-    // return builder->CreateStore(corrected, )
+    // return builder->Create Store(corrected, )
 
     // FIXME: Methodize things so that way we don't have to do this as its just a redundant alloca given we have to have another for the var its self...
     // llvm::AllocaInst *v = builder->CreateAlloca(recvType, 0, "");
-    // builder->CreateStore(casted, v);
+    // builder->Create Store(casted, v);
     return builder->CreateLoad(recvType, casted);
 }
 
@@ -575,11 +606,13 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
 {
+    std::cout << "578" << std::endl; 
     std::vector<Value *> args;
 
     for (TypedNode *e : n->exprs)
     {
         // std::optional<Value *> valOpt = any2Value(e->accept(this));
+        std::cout << "584" << std::endl; 
         std::optional<Value *> valOpt = AcceptType(this, e);
         if (!valOpt)
         {
@@ -593,6 +626,7 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
 
         args.push_back(stoVal);
     }
+    std::cout << "598" << std::endl; 
 
     const TypeStruct *product = n->product;
 
@@ -612,30 +646,34 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
                 {
                     llvm::Type *sumTy = sum->getLLVMType(module);
                     llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
+std::cout << "616" << std::endl; 
                     Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
                     builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+                    std::cout << "619" << std::endl; 
                     Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+                    std::cout << "621" << std::endl; 
                     Value *corrected = builder->CreateBitCast(valuePtr, a->getType()->getPointerTo());
                     builder->CreateStore(a, corrected);
 
                     a = builder->CreateLoad(sumTy, alloc);
                 }
             }
-
+std::cout << "634" << std::endl; 
             Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
+            std::cout << "636" << std::endl; 
             builder->CreateStore(a, ptr);
 
             i++;
         }
     }
-
+    std::cout << "633" << std::endl; 
     Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
     return loaded;
 }
 
 std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
 {
+    std::cout << "649" << std::endl; 
     std::optional<Value *> index = AcceptType(this, n->indexExpr);
 
     if (!index)
@@ -651,13 +689,26 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
         return {};
     }
 
+    /*
+    Value *baseValue = arrayPtr.value();
+    llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
+    builder->CreateStore(baseValue, v);
+
+    auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
+    if (n->is_rvalue)
+    return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+    return ptr;
+    */
+
+
     Value *v = arrayPtr.value();
 
     // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
     // module->dump();
     // builder->CreateStore(baseValue, v);
-
+std::cout << "669" << std::endl; 
     auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
+    std::cout << "671" << std::endl; 
     if (n->is_rvalue)
         return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
     return ptr;
@@ -965,7 +1016,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
     const Type *ty = sym->type;
     // std::optional<Value *> baseOpt = visitVariable(ctx->VARIABLE().at(0)->getText(), props->getBinding(ctx->VARIABLE().at(0)), ctx); // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
-    std::optional<Value *> baseOpt = visitVariable(sym, n->is_rvalue); // n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
+    std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0 ? n->is_rvalue : false);//n->is_rvalue); // n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
     // std::optional<Value *> val = {};
 
     // for (unsigned int i = 1; i < ctx->fields.size(); i++)
@@ -1000,14 +1051,21 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
             Value *baseValue = baseOpt.value();
             const Type *fieldType = n->accesses.at(i).second;
-            llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
+            // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
+            // builder->CreateStore(baseValue, v);
             // module->dump();
-            builder->CreateStore(baseValue, v);
-            Value *valPtr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, index, false)});
-
+            std::cout << "1017" << std::endl; 
+            Value *valPtr = builder->CreateGEP(baseValue, {Int32Zero, ConstantInt::get(Int32Ty, index, false)});
+std::cout << "1019" << std::endl; 
             llvm::Type *ansType = fieldType->getLLVMType(module);
 
             ty = fieldType;
+            std::cout << "1025 " << (n->is_rvalue && i + 1 == n->accesses.size()) << std::endl; 
+            if(!n->is_rvalue && i + 1 == n->accesses.size())
+            {
+                return valPtr;
+            }
+
             baseOpt = builder->CreateLoad(ansType, valPtr);
             // return val;
         }
@@ -1175,12 +1233,12 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
             builder->CreateStore(corrected, v);
             return {};
         }
-
+std::cout << "1190" << std::endl; 
         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
-
+std::cout << "1192" << std::endl; 
         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
         Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
-
+std::cout << "1195" << std::endl; 
         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
         builder->CreateStore(stoVal, corrected);
     }
@@ -1268,12 +1326,12 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
                             builder->CreateStore(corrected, v);
                             return {};
                         }
-
+std::cout << "1283" << std::endl; 
                         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
-
+std::cout << "1285" << std::endl; 
                         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
                         Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
-
+std::cout << "1288" << std::endl; 
                         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
                         builder->CreateStore(stoVal, corrected);
                     }
@@ -1548,10 +1606,12 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
             {
                 llvm::Type *sumTy = sum->getLLVMType(module);
                 llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
+std::cout << "1556" << std::endl; 
                 Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
                 builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+                std::cout << "1559" << std::endl; 
                 Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+                std::cout << "1561" << std::endl; 
                 Value *corrected = builder->CreateBitCast(valuePtr, inner->getType()->getPointerTo());
                 builder->CreateStore(inner, corrected);
 
@@ -1606,7 +1666,8 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 
     if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType)) // FIXME: MAKE THIS THE RETURN TYPE OF TypeInvoke's getLLVMTYPE
     {
-        Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module); ///"LAM", module);
+        // Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module); ///"LAM", module);
+        Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
         std::vector<Symbol *> paramList = n->paramSymbols;
 
         // Create basic block

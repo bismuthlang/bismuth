@@ -1361,7 +1361,7 @@ TEST_CASE("programs/StructTest3", "[codegen][struct]")
 
 TEST_CASE("programs/StructTest3a - nested fields", "[codegen][struct]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/StructTest3a.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/StructTest3a.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1384,7 +1384,7 @@ TEST_CASE("programs/StructTest3a - nested fields", "[codegen][struct]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "58c43527727e01ae069ff43a95d8d62aed6e850d3f9693c3cb7c74efdab41b13");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "64ed6c921cd41e9b378526db9423f1c69f2f16817bdb2fb2d9a9e20fd362bdc0");
 }
 
 TEST_CASE("programs/StructTest3b - nested fields", "[codegen][struct]")

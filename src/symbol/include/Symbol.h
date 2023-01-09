@@ -63,7 +63,7 @@ struct Symbol
     {
         std::ostringstream description;
         std::string typeName = type->toString(); // getStringFor(type);
-        description << '[' << identifier << ", " << typeName << ']';
+        description << '[' << identifier << ", " << typeName << ']' << '@' << this;
         return description.str();
     }
 };
