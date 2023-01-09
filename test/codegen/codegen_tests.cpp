@@ -830,7 +830,7 @@ TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editin
 {
     // WPL is pass by value!
 
-    std::fstream *inStream = new std::fstream("/home/shared/programs/test-arrayAssign.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/test-arrayAssign.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -853,7 +853,7 @@ TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editin
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "ea6cf3bb36fb69f95ea73e48f616f5dc4415f3184579cfe08d668d3722e865e3");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "431a809c5045616658b07247385cad348f27abce4e209c25cc2bdbd893e80a00");
 }
 
 TEST_CASE("programs/externProc - Declaring an external proc", "[codegen]")
