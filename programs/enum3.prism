@@ -23,7 +23,7 @@ define program :: c : Channel<-int> = {
             str s => printf("str: %s\n", s);
         }
         boolean b => printf("bool: %s\n", (boolean b) : str {
-            if b then {
+            if b {
                 return "true";
             }
 

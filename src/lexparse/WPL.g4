@@ -134,7 +134,7 @@ statement           : defineProc                                                
                     | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                   # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'   # VarDeclStatement
                     // | WHILE check=condition DO block                                    # LoopStatement 
-                    | IF check=condition IF_THEN? trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement
+                    | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement     
                     | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement      
                     | call=invocation  ';'?     # CallStatement 
@@ -236,12 +236,10 @@ TYPE_STR        :   'str' ;
 FUNC            :   'func'  ;
 PROC            :   'proc'  ;
 IF              :   'if'    ;
-IF_THEN         :   'then'  ;
 ELSE            :   'else'  ;
 WHILE           :   'while' ;
 RETURN          :   'return';
 SELECT          :   'select';
-DO              :   'do'    ;
 EXTERN          :   'extern';
 MATCH           :   'match' ;
 DEFINE          :   'define';

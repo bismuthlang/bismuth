@@ -8,7 +8,7 @@ define program :: c : Channel<-int> = {
 
   var i := 1;
 
-  if getArgCount() < 2 then {
+  if getArgCount() < 2 {
     printf("Needs at least two arguments!\n");
     # return -1; 
     c.send(-1)

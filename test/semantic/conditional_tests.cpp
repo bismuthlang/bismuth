@@ -229,7 +229,7 @@ TEST_CASE("Inference If Errors - 1", "[semantic]")
       define program :: c : Channel<-int> = {
         var a; 
         
-        if(1 < 2) then {
+        if(1 < 2) {
           a := true; 
         } else {
           a := 10; 
@@ -269,7 +269,7 @@ TEST_CASE("Inference If - 1", "[semantic]")
       define program :: c : Channel<-int> = {
         var a; 
         
-        if(1 < 2) then {
+        if(1 < 2) {
           var a := false; 
         } else {
           a := 10; 
@@ -309,7 +309,7 @@ TEST_CASE("Inference If - 2", "[semantic]")
       define program :: c : Channel<-int> = {
         var a; 
         
-        if(1 < 2) then {
+        if(1 < 2) {
           a := false; 
         } else {
           var a := 10; 

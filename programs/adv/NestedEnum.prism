@@ -18,7 +18,7 @@ define program :: c : Channel<-int> = {
         Inner in => {
             match in {
                 int i => printf("int: %u\n", i);
-                boolean b => printf("boolean: %s\n", (boolean b) : str { if b then { return "true"; } return "false"; }(b));
+                boolean b => printf("boolean: %s\n", (boolean b) : str { if b { return "true"; } return "false"; }(b));
             }
         }
         str s => printf("str: %s\n", s);

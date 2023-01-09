@@ -27,14 +27,14 @@ int func branchtest() {
 
     var count := 0; 
 
-    while count < a.length do {
+    while count < a.length {
         a[count] := count; 
         printf("a[%i] = %i\n", count, count); 
         count := count + 1; 
     }
 
 
-    if(true) then { # a[1] < a[2]
+    if(true) { # a[1] < a[2]
         printf("TRUE\n");
         return -1;
     } else {
@@ -50,7 +50,7 @@ int func otherbranch() {
     int a := 0; 
     int b := 1; 
 
-    if(a < 5) then {
+    if(a < 5) {
         b := 3; 
     } else {
         b := 5; 
@@ -63,7 +63,7 @@ str func otherbranchtwo() {
     int a := 0; 
     str b := "Why hello there!"; 
 
-    if(a < 5) then {
+    if(a < 5) {
         b := "Well, we fel into the first case"; 
     } else {
         b := "Second case this time!"; 
@@ -79,7 +79,7 @@ str func otherbranchthree() {
     str ca := "Well, we fel into the first case";
     str cb := "Second case this time!";
 
-    if(~(a < 5)) then {
+    if(~(a < 5)) {
         b := ca; 
     } else {
         b := cb; 
@@ -124,7 +124,7 @@ define program :: c : Channel<-int> = {
 proc procedurezero () {
     int a := 0; 
 
-    while a < 10 do {
+    while a < 10 {
         a := a + 1; 
         str b := "Hello"; 
     }

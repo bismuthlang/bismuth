@@ -3,11 +3,11 @@ extern int func printf(...);
 
 
 define program :: c : Channel<-int> = {
-    if 1 < 2 then {
+    if 1 < 2 {
         printf("Correct!\n");
     }
 
-    if 2 < 1 then {
+    if 2 < 1 {
         printf("Not correct!\n");
     }
 

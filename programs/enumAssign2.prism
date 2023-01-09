@@ -68,7 +68,7 @@ define getMain :: c : Channel<-Program<-int>> = {
 
         match obscured {
             int i => printf("Integer: %u\n", i);
-            boolean b => if b then { printf("Boolean: true\n"); } else { printf("Boolean: false\n"); }
+            boolean b => if b { printf("Boolean: true\n"); } else { printf("Boolean: false\n"); }
             str s => printf("String: %s\n", s);
             lambdaOp s => {
                 match s {

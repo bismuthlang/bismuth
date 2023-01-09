@@ -127,7 +127,7 @@ define func printPrimitive ((int + boolean + str) toPrint) : Unit {
     boolean b => printf("boolean: %s", 
       # Here we define anonymous function and invoke it
       (boolean bool) : str { 
-        if bool then {
+        if bool {
           return "true";
         }
         return "false"; 

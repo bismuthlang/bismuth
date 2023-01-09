@@ -6,7 +6,7 @@ define program :: c : Channel<-int> = {
   var b := 20; 
 
   var test := a > 0 & b = 2;
-  if (test) then {
+  if (test) {
     printf("true\n");
   }
   else 

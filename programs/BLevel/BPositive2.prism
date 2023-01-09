@@ -1,7 +1,7 @@
 # define program :: c : Channel<-int> = {
 #   int i := 31;
 #   int b;
-#   if (i < 42) then {
+#   if (i < 42) {
 #     b := 0;
 #   } else {
 #     b := 42;
@@ -12,7 +12,7 @@
 define program :: c : Channel<-int> = {
   int i := 31;
   int b;
-  if (i < 42) then {
+  if (i < 42) {
     b := 0;
   } else {
     b := 42;

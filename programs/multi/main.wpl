@@ -7,7 +7,7 @@ extern int func pow(int number, int power);
 
 
 int func program () {
-    if getArgCount() < 2 then {
+    if getArgCount() < 2 {
         printf("Needs at least two arguments!\n");
     return -1; 
   }

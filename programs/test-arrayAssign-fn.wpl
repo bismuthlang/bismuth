@@ -3,11 +3,11 @@ extern int func printf(...);
 proc printInt5Array(str name, int [5] array) {
   var i := 0; 
 
-  while i < array.length do {
+  while i < array.length {
 
     printf("%s[%d] = %d", name, i, array[i]);
 
-    if(i + 1 < array.length) then {
+    if(i + 1 < array.length) {
       printf(", ");
     }
 
@@ -25,7 +25,7 @@ proc addOneToInt5(str name, int [5] array) {
   {
     var i := 0; 
 
-    while i < array.length do {
+    while i < array.length {
       array[i] := array[i] + 1; 
       i := i + 1; 
     }
@@ -41,7 +41,7 @@ define program :: c : Channel<-int> = {
   {
     var i := 0; 
 
-    while i < a.length do {
+    while i < a.length {
       a[i] := i; 
       i := i + 1; 
     }
@@ -55,7 +55,7 @@ define program :: c : Channel<-int> = {
   {
     var i := 0; 
 
-    while i < b.length do {
+    while i < b.length {
       b[i] := 0; 
 
       i := i + 1; 

@@ -39,7 +39,7 @@ define branchtest :: c : Channel<-int> = {
     }
 
 
-    if(true) then { # a[1] < a[2]
+    if(true) { # a[1] < a[2]
         printf("TRUE\n");
         # return -1;
         c.send(-1)
@@ -59,7 +59,7 @@ define otherbranch :: c : Channel<-int> = {
     int a := 0; 
     int b := 1; 
 
-    if(a < 5) then {
+    if(a < 5) {
         b := 3; 
     } else {
         b := 5; 
@@ -74,7 +74,7 @@ define otherbranchtwo :: c : Channel<-str> = {
     int a := 0; 
     str b := "Why hello there!"; 
 
-    if(a < 5) then {
+    if(a < 5) {
         b := "Well, we fel into the first case"; 
     } else {
         printf("ERROR: THIS CODE SHOULDN'T BE RUN\n");
@@ -93,7 +93,7 @@ define otherbranchthree :: c : Channel<-str> = {
     str ca := "Well, we fel into the first case";
     str cb := "Second case this time!";
 
-    if(~(a < 5)) then {
+    if(~(a < 5)) {
         printf("ERROR: THIS CODE SHOULDN'T BE RUN\n");
         b := ca; 
     } else {

@@ -8,7 +8,7 @@ define func test ((int + boolean) sum) : int { #FIXME: PROC
     match sum {
         int i => printf("integer: %u\n", i);
         boolean b => printf("boolean: %s\n", (boolean b) : str {
-            if b then {
+            if b {
                 return "true";
             }
 

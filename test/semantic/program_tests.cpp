@@ -479,7 +479,7 @@ TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
       R""""(
     define program :: c : Channel<-int> = {
 
-    if true then {
+    if true {
         return 0; 
 
         int a; 
@@ -2253,7 +2253,7 @@ define program :: c : Channel<-int> = {
         Inner in => {
             match in {
                 int i => printf("int: %u\n", i);
-                boolean b => printf("boolean: %s\n", (boolean b) : str { if b then { return "true"; } return "false"; }(b));
+                boolean b => printf("boolean: %s\n", (boolean b) : str { if b { return "true"; } return "false"; }(b));
             }
         }
         str s => printf("str: %s\n", s);
@@ -2308,7 +2308,7 @@ define program :: c : Channel<-int> = {
         Inner in => {
             match in {
                 int i => printf("int: %u\n", i);
-                boolean b => printf("boolean: %s\n", (boolean b) : str { if b then { return "true"; } return "false"; }(b));
+                boolean b => printf("boolean: %s\n", (boolean b) : str { if b { return "true"; } return "false"; }(b));
             }
         }
         str s => printf("str: %s\n", s);
@@ -2537,7 +2537,7 @@ define func test ((int + boolean + (str + boolean)) sum) : int {
     match sum {
         int i => printf("integer: %u\n", i);
         boolean b => printf("boolean: %s\n", (boolean b) : str {
-            if b then {
+            if b {
                 return "true";
             }
 
