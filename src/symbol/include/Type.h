@@ -943,7 +943,7 @@ public:
 
         description << "-> ";
 
-        description << retType->toString()  << "@" << this;
+        description << retType->toString();
         return description.str();
     }
 

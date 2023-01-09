@@ -20,7 +20,7 @@ define struct RGBColor {
 define struct HSVColor {
     HSVData hsv; 
     HSVData -> int getHue; 
-    HSVData -> int getSat; 
+    HSVData -> int getSat; # FIXME: DO A TEST W/ STORES PROCESSES IF WE DONT ALREADY
     HSVData -> int getVal;
 }
 
@@ -34,16 +34,18 @@ define struct Color {
     ColorType -> str toString; 
 }
 
-Color func getRGBColor(int r, int g, int b) 
-{
+#FIXME: REASON FIELD ACCESS MAY HAVE ISSUE ON LINEARS IS THAT DESTROYING PARENT WOULD DESTROY ACCESS TO THE LINEAR INNER TYPES...
+
+# Color func getRGBColor(int r, int g, int b) 
+define getRGBColor :: c : Channel<+int;+int;+int;-Color> = {
     int[3] data; 
-    data[0] := r; 
-    data[1] := g; 
-    data[2] := b; 
+    data[0] := c.recv(); # r; 
+    data[1] := c.recv(); # g; 
+    data[2] := c.recv(); # b; 
 
     RGBData rgbDat := RGBData::init(data);
 
-    return Color::init(
+    c.send(Color::init(
         RGBColor::init(
             rgbDat, 
             (RGBData d) : int { return d.rgb[0]; },
@@ -51,15 +53,15 @@ Color func getRGBColor(int r, int g, int b)
             (RGBData d) : int { return d.rgb[2]; }
         ),
         (ColorType c) : str { return "rgb"; }
-    );
+    ))
 }
 
 
 # FIXME: TRY MORE NESTED STRUCTS SO WE HAVE 3+ ACCESSES AT ONCE!!
 
 
-proc fancyPrint(Color c) {
-
+# proc fancyPrint(Color c) {
+define func fancyPrint (Color c) : Unit { #FIXME: DO BETTER PROC!
     str s := c.toString(c.colorType);
     
     printf("Color[type=%s, ", c.toString(c.colorType));
@@ -70,6 +72,8 @@ proc fancyPrint(Color c) {
          }
          HSVColor hsv => printf("r=%u, g=%u, b=%u]\n", hsv.getHue(hsv.hsv), hsv.getSat(hsv.hsv), hsv.getVal(hsv.hsv));
     }
+
+    return Unit::init(); 
 }
 
 
@@ -82,10 +86,17 @@ define program :: c : Channel<-int> = {
 
     #printf("Color: %u, %u, %u\n", z.red, z.green, z.blue);
 
-    Color col := getRGBColor(58, 166, 63);
+    # Color col := getRGBColor(58, 166, 63);
+    Channel<-int;-int;-int;+Color> t := exec getRGBColor;
+    t.send(58)
+    t.send(166)
+    t.send(63)
+
+    Color col := t.recv();
 
     fancyPrint(col); 
 
 
-    return 0; 
+    # return 0; 
+    c.send(0)
 }
