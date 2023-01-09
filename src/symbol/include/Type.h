@@ -29,7 +29,6 @@
 #include "LinkedMap.h"
 #include "Protocol.h"
 
-// FIXME: ENABLE LINEAR TYPES!!!
 // FIXME: CAN NOW HAVE UNDEFINED TYPES!!!! NEED TO TEST (AND PROBABLY REMOVE NULLPTR)!
 
 /*******************************************
@@ -1309,8 +1308,6 @@ public:
             {
                 max = t;
             }
-
-            // std::cout << e->toString() << " size: " << t << std::endl; //FIXME: Verify that strings (and such) are done with pointers (which I think they are) so that they don't go out of bounds
         }
 
         // FIXME: DO BETTER

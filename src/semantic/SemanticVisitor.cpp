@@ -10,7 +10,6 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
 
     for (auto e : ctx->defs)
     {
-        // FIXME: DO WE NEED TO HANDLE FUNCTIONS????
         if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
         {
             std::string id = fnCtx->defineProc()->name->getText();
@@ -26,20 +25,18 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
             const Type *ty = any2Type(fnCtx->defineProc()->ty->accept(this));
 
             // FIXME: NEED TO DEAL WITH CHANNEL TYPE BETTER!
-            // const Protocol *channelType = any2Protocol(fnCtx->defineProc()->ty->accept(this));
+
             if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
             {
                 const TypeProgram *funcType = new TypeProgram(channel, false);
                 Symbol *funcSymbol = new Symbol(id, funcType, true, true);
                 // FIXME: test name collisions with externs
                 stmgr->addSymbol(funcSymbol);
-                // bindings->bind(fnCtx->defineProc(), funcSymbol);
             }
             else
             {
                 errorHandler.addSemanticError(ctx->getStart(), "Process expected channel but got " + ty->toString());
             }
-            // errorHandler.addSemanticCritWarning(ctx->getStart(), "Currently, only FUNC, PROC, EXTERN, and variable declarations allowed at top-level. Not: " + e->getText());
         }
         else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))
         {
@@ -107,10 +104,8 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
     for (auto e : ctx->extens)
     {
         std::optional<ExternNode *> extOpt = this->visitCtx(e);
-        std::cout << "66" << std::endl;
         if (!extOpt)
             return {}; // FIXME: DO BETTER
-        std::cout << "68" << std::endl;
         externs.push_back(extOpt.value());
     }
 
@@ -123,10 +118,8 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
         if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
         {
             std::optional<ProgramDefNode *> progOpt = visitInvokeable(fnCtx->defineProc()); // e->accept(this);
-            std::cout << "81" << std::endl;
             if (!progOpt)
                 return {}; // FIXME: DO BETTER
-            std::cout << "83" << std::endl;
             defs.push_back(progOpt.value());
         }
         else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))

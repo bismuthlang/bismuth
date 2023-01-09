@@ -269,7 +269,7 @@ int main(int argc, const char *argv[])
      * If we have yet to recieve any errors for the file, then
      * generate code for it.
      *******************************************************************/
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", flags);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", flags);
     cv->visitCompilationUnit(cu);
     if (cv->hasErrors(0)) // Want to see all errors
     {

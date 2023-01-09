@@ -32,7 +32,7 @@ TEST_CASE("Development Codegen Tests", "[codegen]")
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
@@ -59,7 +59,7 @@ TEST_CASE("programs/test1 - General Overview", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -87,7 +87,7 @@ TEST_CASE("programs/test1a", "[codegen]")
 
     REQUIRE(sv->hasErrors(0));
 
-    // CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll");
+    // CodegenVisitor *cv = new CodegenVisitor("WPLC.ll");
     // cv->visitCompilationUnit(cuOpt.value());
 
     // REQUIRE_FALSE(cv->hasErrors(0));
@@ -115,7 +115,7 @@ TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)"
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -143,7 +143,7 @@ TEST_CASE("programs/test3 - If w/o else", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -171,7 +171,7 @@ TEST_CASE("programs/test4a - Use and redeclaration of parameters", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -199,7 +199,7 @@ TEST_CASE("programs/test5 - Nested ifs and if equality", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -227,7 +227,7 @@ TEST_CASE("programs/test6 - Basic Select with Return", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -255,7 +255,7 @@ TEST_CASE("programs/testSelectBlock1 - Basic Select with Blocks that Return", "[
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -284,7 +284,7 @@ TEST_CASE("programs/test6a (CAFE!) - Basic Nested Selects, LEQ, GEQ", "[codegen]
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -312,7 +312,7 @@ TEST_CASE("programs/testSelectBlock2 - Select with blocks that don't return", "[
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -341,7 +341,7 @@ TEST_CASE("programs/test7 - Test String equality + Nested Loops", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -369,7 +369,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -397,7 +397,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -425,7 +425,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -453,7 +453,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -481,7 +481,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -509,7 +509,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -537,7 +537,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -565,7 +565,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -593,7 +593,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -621,7 +621,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -649,7 +649,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -677,7 +677,7 @@ TEST_CASE("programs/test11 - Expressions in decl (let*) ", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -705,7 +705,7 @@ TEST_CASE("programs/test12 - Scopes & Prime Finder Example! ", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -733,7 +733,7 @@ TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -762,7 +762,7 @@ TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -790,7 +790,7 @@ TEST_CASE("programs/test-shortcircuit - Basic Short Circuit (and)", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -818,7 +818,7 @@ TEST_CASE("programs/test-shortcircuit-rt - Basic Short Circuit (and + or) w/ Run
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -848,7 +848,7 @@ TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editin
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -876,7 +876,7 @@ TEST_CASE("programs/externProc - Declaring an external proc", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -905,7 +905,7 @@ TEST_CASE("programs/test14a - Test nested/more complex shorting", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -933,7 +933,7 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -961,7 +961,7 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -989,7 +989,7 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1017,7 +1017,7 @@ TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[
 
     REQUIRE(sv->hasErrors(0));
 
-    // CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    // CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     // cv->visitCompilationUnit(cuOpt.value());
 
     // REQUIRE(cv->hasErrors(0));
@@ -1045,7 +1045,7 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
 
     REQUIRE(sv->hasErrors(0));
 
-    // CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    // CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     // cv->visitCompilationUnit(cuOpt.value());
 
     // REQUIRE(cv->hasErrors(0));
@@ -1071,7 +1071,7 @@ TEST_CASE("programs/Lambda1 - Basic lambda Test", "[codegen][lambda]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1099,7 +1099,7 @@ TEST_CASE("programs/Lambda2 - Basic lambda Test w/ return", "[codegen][lambda]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1127,7 +1127,7 @@ TEST_CASE("programs/Lambda3 - Basic lambda Test w/ return and same name", "[code
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1155,7 +1155,7 @@ TEST_CASE("programs/externLambda", "[codegen][lambda]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1183,7 +1183,7 @@ TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1211,7 +1211,7 @@ TEST_CASE("programs/enum2 - Basic Enum 2", "[codegen][enum]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1239,7 +1239,7 @@ TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignmens outside of d
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1267,7 +1267,7 @@ TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[co
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1295,7 +1295,7 @@ TEST_CASE("programs/enum3", "[codegen][enum]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1323,7 +1323,7 @@ TEST_CASE("programs/StructTest2", "[codegen][struct]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1351,7 +1351,7 @@ TEST_CASE("programs/StructTest3", "[codegen][struct]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1379,7 +1379,7 @@ TEST_CASE("programs/StructTest3a - nested fields", "[codegen][struct]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1407,7 +1407,7 @@ TEST_CASE("programs/StructTest3b - nested fields", "[codegen][struct]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1435,7 +1435,7 @@ TEST_CASE("programs/StructTest4", "[codegen][struct]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1463,7 +1463,7 @@ TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1491,7 +1491,7 @@ TEST_CASE("programs/dangerLambda - lambdas with dupl function names", "[codegen]
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1520,7 +1520,7 @@ TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[code
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1548,7 +1548,7 @@ TEST_CASE("programs/adv/enumPassing-fn - passing non-enum as enum argument", "[c
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1576,7 +1576,7 @@ TEST_CASE("programs/Lambda2a - More nested lambdas", "[codegen][lambda]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1604,7 +1604,7 @@ TEST_CASE("programs/adv/enumPassingInf - Enum passing with Type Inference", "[co
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1632,7 +1632,7 @@ TEST_CASE("programs/adv/enumPassingInf-fn - Enum passing with Type Inference", "
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1660,7 +1660,7 @@ TEST_CASE("programs/Lambda2b - More nested lambdas", "[codegen][struct]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1693,7 +1693,7 @@ TEST_CASE("Out of order function", "[codegen][program]")
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
     REQUIRE_FALSE(sv->hasErrors(ERROR));
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
@@ -1725,7 +1725,7 @@ TEST_CASE("programs/example", "[codegen][program]")
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
     REQUIRE_FALSE(sv->hasErrors(ERROR));
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
@@ -1755,7 +1755,7 @@ TEST_CASE("programs/example", "[codegen][program]")
 
 //     REQUIRE_FALSE(sv->hasErrors(0));
 
-//     CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
 //     cv->visitCompilationUnit(cuOpt.value());
 
 //     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1783,7 +1783,7 @@ TEST_CASE("C Level Positive Test #2", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1814,7 +1814,7 @@ TEST_CASE("B Level Positive Test #1", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1842,7 +1842,7 @@ TEST_CASE("B Level Positive Test #2", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1873,7 +1873,7 @@ TEST_CASE("A Level Positive Test #1", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));
@@ -1901,7 +1901,7 @@ TEST_CASE("A Level Positive Test #2", "[codegen]")
 
     REQUIRE_FALSE(sv->hasErrors(0));
 
-    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
     cv->visitCompilationUnit(cuOpt.value());
 
     REQUIRE_FALSE(cv->hasErrors(0));

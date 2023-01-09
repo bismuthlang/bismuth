@@ -13,7 +13,7 @@
 #include "WPLBaseVisitor.h"
 #include "CompilerFlags.h"
 
-#include "PropertyManager.h"
+// #include "PropertyManager.h"
 #include "WPLErrorHandler.h"
 #include "SemanticVisitor.h"
 #include "llvm/ADT/StringRef.h"
@@ -62,9 +62,8 @@ public:
      * @param moduleName LLVM Module name to use
      * @param f Compiler flags
      */
-    CodegenVisitor(PropertyManager *p, std::string moduleName, int f = 0)
+    CodegenVisitor(std::string moduleName, int f = 0)
     {
-        props = p;
         flags = f;
 
         // LLVM Stuff
@@ -131,8 +130,6 @@ public:
 
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
-
-    PropertyManager *getProperties() { return props; }
 
     Module *getModule() { return module; }
     void modPrint() { module->print(llvm::outs(), nullptr); }
@@ -315,7 +312,6 @@ public:
     }
 
 private:
-    PropertyManager *props;
     int flags;
 
     WPLErrorHandler errorHandler;

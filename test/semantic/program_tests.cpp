@@ -1040,9 +1040,8 @@ define program :: c : Channel<-int> = {
 }
 
 # proc foo() {
-define func foo (str a) : int {
+define func foo (str a) {
     printf("a = %s\n", a);
-    return 0; # FIXME: REMOVE NEED FOR RETURN HERE?
 }
     )"""");
   WPLLexer lexer(&input);
