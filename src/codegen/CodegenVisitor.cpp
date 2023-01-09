@@ -343,9 +343,9 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
 
         if (args.size() < n->paramType.size())
         {
-            std::cout << "346 " << argNodes.at(args.size())->getType()->toString() << std::endl; 
+            std::cout << "346 " << argNodes.at(args.size())->getType()->toString() << std::endl;
             // TODO: METHODIZE!
-            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->paramType.at(args.size())))//argNodes.at(args.size())->getType()))
+            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->paramType.at(args.size()))) // argNodes.at(args.size())->getType()))
             {
                 unsigned int index = sum->getIndex(module, val->getType());
 
@@ -485,18 +485,17 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     Symbol *sym = n->sym;
 
-
     Value *stoVal = valOpt.value(); // FIXMME: STILL NEEDS TO BE DONE
 
-std::cout << "490 " << n->lType->toString() << std::endl; 
+    std::cout << "490 " << n->lType->toString() << std::endl;
     // Same as return node's
-    if(const TypeSum * sum = dynamic_cast<const TypeSum*>(n->lType))
+    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->lType))
     {
         unsigned int index = sum->getIndex(module, stoVal->getType());
 
-        if(index != 0)
+        if (index != 0)
         {
-            llvm::Type * sumTy = sum->getLLVMType(module); 
+            llvm::Type *sumTy = sum->getLLVMType(module);
             llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
 
             Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
@@ -510,11 +509,6 @@ std::cout << "490 " << n->lType->toString() << std::endl;
         }
     }
 
-
-
-
-
-
     llvm::Function *mallocFn = module->getFunction("malloc"); // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
     Value *v = builder->CreateCall(mallocFn, {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
 
@@ -522,7 +516,6 @@ std::cout << "490 " << n->lType->toString() << std::endl;
     builder->CreateStore(stoVal, v);
 
     Value *corrected = builder->CreateBitCast(v, i8p);
-
 
     if (!sym->val)
     {
@@ -1049,60 +1042,6 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
     // std::optional<Value *> val = {};
 
     // for (unsigned int i = 1; i < ctx->fields.size(); i++)
-    for (unsigned int i = 0; i < n->accesses.size(); i++)
-    {
-        if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
-        {
-            if (!baseOpt)
-            {
-                errorHandler.addCodegenError(nullptr, "Failed to generate field access partial: " + n->accesses.at(i - 1).first); //+ ctx->fields.at(i - 1)->getText());
-                return {};
-            }
-
-            std::string field = n->accesses.at(i).first; // ctx->fields.at(i)->getText();
-            std::optional<unsigned int> indexOpt = s->getIndex(field);
-
-            if (!indexOpt)
-            {
-                errorHandler.addCodegenError(nullptr, "Could not lookup " + field);
-                return {};
-            }
-
-            unsigned int index = indexOpt.value();
-
-            Value *baseValue = baseOpt.value();
-            const Type *fieldType = n->accesses.at(i).second;
-            // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
-            // builder->CreateStore(baseValue, v);
-            // module->dump();
-            std::cout << "1017" << std::endl;
-            Value *valPtr = builder->CreateGEP(baseValue, {Int32Zero, ConstantInt::get(Int32Ty, index, false)});
-            std::cout << "1019" << std::endl;
-            llvm::Type *ansType = fieldType->getLLVMType(module);
-
-            ty = fieldType;
-            std::cout << "1025 " << (n->is_rvalue && i + 1 == n->accesses.size()) << std::endl;
-            if (i + 1 == n->accesses.size())
-            {
-                if (n->is_rvalue)
-                {
-                    baseOpt = builder->CreateLoad(ansType, valPtr);
-                    return baseOpt;
-                }
-                else
-                {
-                    return valPtr;
-                }
-            }
-            baseOpt = valPtr; 
-            // if(!n->is_rvalue )
-            // {
-            //     return valPtr;
-            // }
-
-            // return val;
-        }
-    }
 
     if (!baseOpt)
     {
@@ -1110,7 +1049,64 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
         return {};
     }
 
-    return baseOpt.value();
+    Value *baseValue = baseOpt.value();
+
+    if (n->accesses.size() == 0)
+    {
+
+        return baseValue;
+    }
+
+    std::vector<Value *> addresses = {Int32Zero};
+
+    for (unsigned int i = 0; i < n->accesses.size(); i++)
+    {
+        if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
+        {
+            // if (!baseOpt)
+            // {
+            //     errorHandler.addCodegenError(nullptr, "Failed to generate field access partial: " + n->accesses.at(i - 1).first); //+ ctx->fields.at(i - 1)->getText());
+            //     return {};
+            // }
+
+            std::string field = n->accesses.at(i).first; // ctx->fields.at(i)->getText();
+            std::optional<unsigned int> indexOpt = s->getIndex(field);
+
+            if (!indexOpt)
+            {
+                // std::cout << "1077 " << s->toString() << " " << field << std::endl; 
+                errorHandler.addCodegenError(nullptr, "Could not lookup " + field);
+                return {};
+            }
+
+            unsigned int index = indexOpt.value();
+            addresses.push_back(ConstantInt::get(Int32Ty, index, false));
+
+            const Type *fieldType = n->accesses.at(i).second;
+            ty = fieldType;
+        }
+        // FIXME: THROW ERROR?
+    }
+
+    // Value *baseValue = baseOpt.value();
+    // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
+    // builder->CreateStore(baseValue, v);
+    // module->dump();
+    std::cout << "1017" << std::endl;
+    Value *valPtr = builder->CreateGEP(baseValue, addresses);
+    std::cout << "1019" << std::endl;
+
+    // ty = fieldType;
+    if (n->is_rvalue)
+    {
+        const Type *fieldType = n->accesses.at(n->accesses.size() - 1).second;
+
+        llvm::Type *ansType = fieldType->getLLVMType(module);
+        baseOpt = builder->CreateLoad(ansType, valPtr);
+        return baseOpt;
+    }
+
+    return valPtr;
 }
 
 std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
@@ -1700,8 +1696,8 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
     {
         // Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module); ///"LAM", module);
         Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
-        type->setName(fn->getName().str()); //FIXME: NOT ALWAYS NEEDED
-        std::cout << "1703" << fn->getName().str() << std::endl; 
+        type->setName(fn->getName().str()); // FIXME: NOT ALWAYS NEEDED
+        std::cout << "1703" << fn->getName().str() << std::endl;
         std::vector<Symbol *> paramList = n->paramSymbols;
 
         // Create basic block

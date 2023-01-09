@@ -1328,7 +1328,7 @@ TEST_CASE("programs/StructTest2", "[codegen][struct]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "1af386edfe7c777ccfad6190b364c1c54338b67dff3eab74e30711c77529e372");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "b3612acb210334589484f41abc797d56de37ccdee1fefe53171cdd383aa77922");
 }
 
 TEST_CASE("programs/StructTest3", "[codegen][struct]")
@@ -1440,7 +1440,7 @@ TEST_CASE("programs/StructTest4", "[codegen][struct]")
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "61606db9ca917d2ca3c05ab5da42212f8b9eec17e5c6fa2339820c0464d88686");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "67d5742125f26bd61e747d6bdb91dfa50db755b606b8c4c0cd562c373fd47353");
 }
 
 TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
