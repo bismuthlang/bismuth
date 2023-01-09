@@ -30,7 +30,8 @@ define program :: c : Channel<-int> = {
         Integer::init(3)
     );
 
-    printf("Complex: %u, %u, %u\n", x.r.i, x.g.i, x.b.i); # Complex: 5, 4, 3
+    # var j := x.r.i;
+   printf("Complex: %u, %u, %u\n", x.r.i, x.g.i, x.b.i); # Complex: 5, 4, 3
 
     # return 0; 
     c.send(0)
