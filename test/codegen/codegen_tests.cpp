@@ -1501,6 +1501,7 @@ TEST_CASE("programs/dangerLambda - lambdas with dupl function names", "[codegen]
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")
 {
+    //FIXME: VERIFY STRUCT AND ENUM PASSING ARE DONE BY VALUE!!
     std::fstream *inStream = new std::fstream("/home/shared/programs/adv/enumPassing.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
