@@ -1,10 +1,11 @@
 # Runtime module for linking
-# The WPL runtime code will go in the ${RUNTIME_DIR}
+# The language's runtime code will go in the ${RUNTIME_DIR}
 
 set (RUNTIME_DIR ${CMAKE_SOURCE_DIR}/src/runtime)
 #################################################
-# I will supply the runtime library sources and
-# the appropriate CMake files.
+# 
+# Runtime Entry Points (and easily accessible fns)
+# 
 #################################################
 set (RUNTIME_SOURCES
   ${RUNTIME_DIR}/wpl_runtime.c
@@ -15,7 +16,7 @@ set (RUNTIME_SOURCES
 
 ###################################################
 #
-# PRISM Core Includes
+# PRISM Core Includes # FIXME: FIND A WAY TO PREVENT THSE FROM BEING ACCESSED BY USERS DIRECTLY!
 #
 ###################################################
 

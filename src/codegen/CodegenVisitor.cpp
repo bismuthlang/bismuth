@@ -292,7 +292,6 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
 
         if (BlockNode *blkStmtCtx = dynamic_cast<BlockNode *>(caseNode.second))
         {
-            // WPLParser::BlockContext *blkCtx = blkStmtCtx->block();
             if (!endsInReturn(blkStmtCtx))
             {
                 builder->CreateBr(mergeBlk);
@@ -865,7 +864,7 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
 /**
  * @brief Generates code for Logical Ands
  *
- * Tested in: test2.wpl
+ * Tested in: test2.prism
  *
  * @param ctx LogAndExprContext to generate this from
  * @return std::optional<Value *> The resulting value or {} if errors.
@@ -940,7 +939,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
 /**
  * @brief Generates code for Logical Ors.
  *
- * Tested in: test2.wpl
+ * Tested in: test2.prism
  *
  * @param ctx Context to generate code from
  * @return std::optional<Value *> The resulting value or {} if errors.

@@ -1,6 +1,6 @@
 /*
  * Alex Friedman (ahfriedman@wpi.edu)
- * Grammar file for WPI Programming Language (WPL).
+ * Grammar file for PRISM
  */
 grammar WPL;
 
@@ -278,7 +278,7 @@ fragment SAFE_STRING : ~["\\]    ;
 
 
 /*
-    WPL has two types of comments, inline comments and standard comments. 
+    Prism has two types of comments, inline comments and standard comments. 
     Inline comments start with a '#' character that is not in a string 
     literal, and continue to the end of the line (or end of file if this 
     is the last line of the program).

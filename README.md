@@ -1,6 +1,6 @@
 # README
 
-This Alex Friedman's implementation of the Worcester Polytechnic Instutite, WPI, Programming Language (WPL). 
+This programming language was created by Alex Friedman based on the process calculus theory that I created. ). 
 
 
 ## Prerequisites
@@ -32,7 +32,7 @@ If you made changes for your platform to any of the .cmake files or CMakeLists.t
 - `/antlr` - Contains the relevant ANTLR library.
 - `/build` - Automatically generated output files of the project.
 - `/cmake` - Contains the cmake files required to setup the project's depedencies. Each file corresponds to a separate part of the project.
-- `/programs` - Contains sample WPL programs used for testing the compiler. ***Many test cases rely on calculating the sha256 hash of these programs. Editing them may cause test cases to break!***
+- `/programs` - Contains sample programs used for testing the compiler. ***Many test cases rely on calculating the sha256 hash of these programs. Editing them may cause test cases to break!***
 - `/src` - Contains the main project files--including wplc.cpp which is the main entry point for the compiler
 - `/src/codegen` - Code generation phase of the compiler
 - `/src/generated` - Automatically generated ANTLR files based on the language's grammmar

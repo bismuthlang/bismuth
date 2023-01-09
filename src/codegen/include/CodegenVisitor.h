@@ -13,8 +13,6 @@
 #include "WPLBaseVisitor.h"
 #include "CompilerFlags.h"
 
-// #include "WPLTypedVisitor.h"
-
 #include "PropertyManager.h"
 #include "WPLErrorHandler.h"
 #include "SemanticVisitor.h"

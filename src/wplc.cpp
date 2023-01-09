@@ -6,10 +6,6 @@
  * @date 2022-09-07
  *
  * @copyright Copyright (c) 2022
- *
- * NOTE: You may want to allow multiple files and
- * loop through them so that you can compile multiple
- * files with one command line.
  */
 
 #include "wplc.h"
