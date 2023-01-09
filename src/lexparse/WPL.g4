@@ -18,7 +18,7 @@ defineType        : DEFINE 'enum' name=VARIABLE LSQB cases+=type (',' cases+=typ
                   | defineProc                                                           # DefineProgram
                   | defineFunc                                                           # DefineFunction
                   ; 
-
+//FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
 externStatement : EXTERN (ty=type FUNC | PROC) name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?)? | ELLIPSIS) RPAR ';';
 
 invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr) LPAR (args+=expression (',' args+=expression)* )? RPAR ;

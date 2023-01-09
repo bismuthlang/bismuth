@@ -1767,9 +1767,16 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
 {
     std::set<const Type *, TypeCompare> cases = {};
 
-    for (auto e : ctx->type())
+    for (auto e : ctx->type()) //FIXME: ADD TEST CASES LIKE THIS FOR STRUCT + ENUM!!
     {
         const Type *caseType = any2Type(e->accept(this));
+
+        if(dynamic_cast<const TypeChannel*>(caseType)) //FIXME: DO BETTER LINEAR CHECK!
+        {
+            errorHandler.addSemanticError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
+            return {};
+        }
+
         cases.insert(caseType);
     }
 
@@ -1799,6 +1806,13 @@ std::optional<DefineEnumNode *> SemanticVisitor::visitCtx(WPLParser::DefineEnumC
     for (auto e : ctx->cases)
     {
         const Type *caseType = any2Type(e->accept(this));
+
+        if(dynamic_cast<const TypeChannel*>(caseType)) //FIXME: DO BETTER LINEAR CHECK!
+        {
+            errorHandler.addSemanticError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
+            return {};
+        }
+
         cases.insert(caseType);
     }
 
@@ -1835,10 +1849,16 @@ std::optional<DefineStructNode *> SemanticVisitor::visitCtx(WPLParser::DefineStr
         std::string caseName = caseCtx->name->getText();
         if (el.lookup(caseName))
         {
-            errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + caseName);
+            errorHandler.addSemanticError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
             return {};
         }
         const Type *caseTy = any2Type(caseCtx->ty->accept(this));
+
+        if(dynamic_cast<const TypeChannel*>(caseTy)) //FIXME: DO BETTER LINEAR CHECK!
+        {
+            errorHandler.addSemanticError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString() + ", in non-linear container.");
+            return {};
+        }
 
         el.insert({caseName, caseTy});
     }
