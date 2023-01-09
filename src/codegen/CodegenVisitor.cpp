@@ -486,7 +486,6 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     Value *stoVal = valOpt.value(); // FIXMME: STILL NEEDS TO BE DONE
 
-    std::cout << "490 " << n->lType->toString() << std::endl;
     // Same as return node's
     if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->lType))
     {
@@ -574,7 +573,6 @@ std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
 {
-    std::cout << "596" << std::endl;
     // Very similar to regular loop
 
     Symbol *sym = n->sym;
@@ -622,7 +620,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-    std::cout << "652" << std::endl;
+
     return {};
 }
 
@@ -664,34 +662,33 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
                 {
                     llvm::Type *sumTy = sum->getLLVMType(module);
                     llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-                    // std::cout << "616" << std::endl;
+                    
                     Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
                     builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-                    // std::cout << "619" << std::endl;
+                    
                     Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-                    // std::cout << "621" << std::endl;
+                    
                     Value *corrected = builder->CreateBitCast(valuePtr, a->getType()->getPointerTo());
                     builder->CreateStore(a, corrected);
 
                     a = builder->CreateLoad(sumTy, alloc);
                 }
             }
-            // std::cout << "634" << std::endl;
+            
             Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
-            // std::cout << "636" << std::endl;
+            
             builder->CreateStore(a, ptr);
 
             i++;
         }
     }
-    // std::cout << "633" << std::endl;
+
     Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
     return loaded;
 }
 
 std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
 {
-    // std::cout << "649" << std::endl;
     std::optional<Value *> index = AcceptType(this, n->indexExpr);
 
     if (!index)
@@ -723,9 +720,9 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
     // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
     // module->dump();
     // builder->CreateStore(baseValue, v);
-    std::cout << "669" << std::endl;
+    
     auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
-    std::cout << "671" << std::endl;
+    
     if (n->is_rvalue)
         return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
     return ptr;
@@ -1058,18 +1055,12 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
     {
         if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
         {
-            // if (!baseOpt)
-            // {
-            //     errorHandler.addCodegenError(nullptr, "Failed to generate field access partial: " + n->accesses.at(i - 1).first); //+ ctx->fields.at(i - 1)->getText());
-            //     return {};
-            // }
 
             std::string field = n->accesses.at(i).first; // ctx->fields.at(i)->getText();
             std::optional<unsigned int> indexOpt = s->getIndex(field);
 
             if (!indexOpt)
             {
-                // std::cout << "1077 " << s->toString() << " " << field << std::endl; 
                 errorHandler.addCodegenError(nullptr, "Could not lookup " + field);
                 return {};
             }
@@ -1083,15 +1074,8 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
         // FIXME: THROW ERROR?
     }
 
-    // Value *baseValue = baseOpt.value();
-    // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
-    // builder->CreateStore(baseValue, v);
-    // module->dump();
-    std::cout << "1017" << std::endl;
     Value *valPtr = builder->CreateGEP(baseValue, addresses);
-    std::cout << "1019" << std::endl;
 
-    // ty = fieldType;
     if (n->is_rvalue)
     {
         const Type *fieldType = n->accesses.at(n->accesses.size() - 1).second;
