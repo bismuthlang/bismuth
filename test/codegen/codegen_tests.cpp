@@ -1586,7 +1586,7 @@ TEST_CASE("programs/Lambda2a - More nested lambdas", "[codegen][lambda]")
 
 TEST_CASE("programs/adv/enumPassingInf - Enum passing with Type Inference", "[codegen][enum][type-inf]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/enumPassingInf.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/enumPassingInf.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1609,7 +1609,35 @@ TEST_CASE("programs/adv/enumPassingInf - Enum passing with Type Inference", "[co
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "98b014e6ea9ae1f277bcd10f6e4a326fe5dd24cc966c9985d30e78507dc83c5d");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "0a0b25e17c9e12c5aef8c961fb332bb37fccf5e86975c3afeb54e7c02f206d0d");
+}
+
+TEST_CASE("programs/adv/enumPassingInf-fn - Enum passing with Type Inference", "[codegen][enum][type-inf]")
+{
+    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/enumPassingInf-fn.prism");
+    antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
+
+    WPLLexer lexer(input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    WPLParser parser(&tokens);
+    parser.removeErrorListeners();
+    WPLParser::CompilationUnitContext *tree = NULL;
+    REQUIRE_NOTHROW(tree = parser.compilationUnit());
+    REQUIRE(tree != NULL);
+    STManager *stm = new STManager();
+    PropertyManager *pm = new PropertyManager();
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
+    REQUIRE(cuOpt.has_value());
+
+    REQUIRE_FALSE(sv->hasErrors(0));
+
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    cv->visitCompilationUnit(cuOpt.value());
+
+    REQUIRE_FALSE(cv->hasErrors(0));
+
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "a95e82e0ad100fbaa5d1eec188d76e87b2a06b3a774a2ea7f992882eafdc57fb");
 }
 
 TEST_CASE("programs/Lambda2b - More nested lambdas", "[codegen][struct]")
