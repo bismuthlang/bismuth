@@ -29,7 +29,8 @@ define enum Color {
 
 # Helper struct to demonstrate storing functions
 define struct ColorHelper {
-    int, int, int -> Color getRGB; 
+    # int, int, int -> Color getRGB; 
+    Program<+int;+int;+int;-Color> getRGB; 
     int, int, int -> Color getHSV; 
     str -> Color getHex; 
 }
@@ -48,11 +49,13 @@ define program :: c : Channel<-int> = {
         c.send(RGBColor::init(red, green, blue))
     }
 
-    Color func getHSVColor(int h, int s, int v) {
+    # Color func getHSVColor(int h, int s, int v) {
+    define func getHSVColor(int h, int s, int v) : Color {
         return HSVColor::init(h, s, v);
     }
 
-    Color func getHexColor(str s) {
+    # Color func getHexColor(str s) {
+    define func getHexColor (str s) : Color {
         return HexColor::init(s);
     }
 
@@ -63,12 +66,18 @@ define program :: c : Channel<-int> = {
     );
 
     # Get an array of sample colors
-    var samples := getSampleColors(helper);
+    # var samples := getSampleColors(helper);
+    Channel<-ColorHelper;+Color[3]> sampleChannel := exec getSampleColors;
+    sampleChannel.send(helper)
+    Color[3] samples := sampleChannel.recv(); 
 
     # Print out each of the colors 
     int i := 0;
     while i < samples.length {
-        toString(samples[i]);
+        # toString(samples[i]);
+        Channel<-(Color + int + boolean + str)> io := exec toString; 
+        io.send(samples[i])
+
         i := i + 1; 
     }
 
@@ -78,12 +87,18 @@ define program :: c : Channel<-int> = {
 
 # Color[3] func getSampleColors(ColorHelper helper)
 define getSampleColors :: io : Channel<+ColorHelper;-Color[3]> = {
-{
     ColorHelper helper := io.recv(); 
 
     Color[3] ans; 
 
-    ans[0] := helper.getRGB(255, 255, 255);
+    # ans[0] := helper.getRGB(255, 255, 255);
+    Program<+int;+int;+int;-Color> FIXME := helper.getRGB; 
+    Channel<-int;-int;-int;+Color> rgbChan := exec FIXME; # FIXME: DO BETTER, CANNOT USE FIELD ACCESS HERE!
+    rgbChan.send(255)
+    rgbChan.send(255)
+    rgbChan.send(255)
+    ans[0] := rgbChan.recv();
+
     ans[1] := helper.getHSV(128, 128, 128);
     ans[2] := helper.getHex("FFFFFF");
 
@@ -98,8 +113,9 @@ define getSampleColors :: io : Channel<+ColorHelper;-Color[3]> = {
  * any function definitions prior to it in the local scope
  *)
 # Unit func printPrimitive((int + boolean + str) toPrint) {
-define printPrimitive :: io : Channel<+(int + boolean + str)> = {
-  (int + boolean + str) toPrint := io.recv(); # FIXME: FEELS REDUNDANT TO HAVE TO WRITE TYEPS
+# define printPrimitive :: io : Channel<+(int + boolean + str)> = {
+define func printPrimitive ((int + boolean + str) toPrint) : Unit {
+  # (int + boolean + str) toPrint := io.recv(); # FIXME: FEELS REDUNDANT TO HAVE TO WRITE TYEPS
 
   match toPrint {
     int i => printf("int: %u", i);
@@ -119,7 +135,7 @@ define printPrimitive :: io : Channel<+(int + boolean + str)> = {
     );
   }
 
-  # return Unit::init(); 
+  return Unit::init(); 
 }
 
 # Unit func toString((Color + int + boolean + str) obj) {

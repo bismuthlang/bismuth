@@ -1702,7 +1702,7 @@ TEST_CASE("Out of order function", "[codegen][program]")
 // FIXME: TRY REDECL OF ENUM IE. SETTING IT AGAIN
 TEST_CASE("programs/example", "[codegen][program]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/example.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/example.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1729,7 +1729,7 @@ TEST_CASE("programs/example", "[codegen][program]")
     cv->visitCompilationUnit(cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "468c29659808773d4cf880d99d88374e1d02640e6bc970c12215db998af32a8c");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "13b1f0965b19624ca500c7bba42780a3cf9a875d1dbfe8fb4def7ca185f88edf");
 }
 
 /************************************

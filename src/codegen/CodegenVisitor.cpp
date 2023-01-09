@@ -1700,6 +1700,8 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
     {
         // Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module); ///"LAM", module);
         Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
+        type->setName(fn->getName().str()); //FIXME: NOT ALWAYS NEEDED
+        std::cout << "1703" << fn->getName().str() << std::endl; 
         std::vector<Symbol *> paramList = n->paramSymbols;
 
         // Create basic block
