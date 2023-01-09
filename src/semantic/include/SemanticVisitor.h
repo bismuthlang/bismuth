@@ -376,7 +376,7 @@ std::cout << "374" << std::endl;
         // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
         // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
         // {
-        //     errorHandler.addSemanticError(ctx->getStart(), "Function must end in return statement"); //FIXME: we don't have returns anymore...
+        //     errorHandler.addSemanticError(ctx->getStart(), "Function must end in return statement"); 
         // }
 
         // Safe exit the scope.

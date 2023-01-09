@@ -12,6 +12,6 @@ define program :: c : Channel<-int> = {
 
 # proc foo(int a) {
 define foo :: c : Channel<+int> = {
-    int a := c.recv(); # FIXME: CLUNKY SYNTAX
+    int a := c.recv();
     printf("a=%u\n", a);
 }

@@ -133,8 +133,6 @@ define program :: io : Channel<-int> = {
     # Channel<+str> t3 = exec otherbranchtwo; 
     # Channel<+str> t4 = exec otherbranchthree;
 
-    # FIXME: TEST THIS WITH FUNCS
-
     printf("From test, got: %i\n", branchtest());
     printf("Other test, got %i\n", otherbranch());
     printf("Other other test, %s\n", otherbranchtwo());

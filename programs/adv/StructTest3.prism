@@ -189,8 +189,5 @@ define program :: c : Channel<-int> = {
 
     # lamePrint(col); 
 
-
-    # return 0; # FIXME: SHOULD THROW ERROR!!!
-
     c.send(0)
 }

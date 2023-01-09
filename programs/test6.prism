@@ -1,7 +1,7 @@
 extern int func printf(...);
 
 # str func selReturnOne(int a) {
-# FIXME: USE TRAITS TO ELIM IMPOSSIBLE CASE?
+# PLAN: USE TRAITS TO ELIM IMPOSSIBLE CASE?
 define selReturnOne :: c : Channel<+int;-str> = {
     int a := c.recv(); 
     select {

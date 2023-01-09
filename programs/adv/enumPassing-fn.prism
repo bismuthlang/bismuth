@@ -22,8 +22,6 @@ define func test ((int + boolean) sum) : int { #FIXME: PROC
 
 # int func program() 
 define program :: c : Channel<-int> = {
-    test(5); # FIXME: DOESN'T WORK!!!
-    # return 0;
-
+    test(5);
     c.send(0)
 }
