@@ -386,7 +386,7 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
     // }
 
     // llvm::Function *call = module->getFunction(ctx->VARIABLE()->getText());
-    std::optional<Value *> fnOpt = AcceptType(this, n->fn); // any2Value(ctx->field->accept(this));
+    std::optional<Value *> fnOpt = AcceptType(this, n->fn);
     if (!fnOpt)
     {
         errorHandler.addCodegenError(nullptr, "Could not locate function for invocation. Has it been defined in IR yet?");
@@ -628,13 +628,10 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
 {
-    std::cout << "578" << std::endl;
     std::vector<Value *> args;
 
     for (TypedNode *e : n->exprs)
     {
-        // std::optional<Value *> valOpt = any2Value(e->accept(this));
-        std::cout << "584" << std::endl;
         std::optional<Value *> valOpt = AcceptType(this, e);
         if (!valOpt)
         {
@@ -648,7 +645,6 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
 
         args.push_back(stoVal);
     }
-    std::cout << "598" << std::endl;
 
     const TypeStruct *product = n->product;
 
@@ -668,34 +664,34 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
                 {
                     llvm::Type *sumTy = sum->getLLVMType(module);
                     llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-                    std::cout << "616" << std::endl;
+                    // std::cout << "616" << std::endl;
                     Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
                     builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-                    std::cout << "619" << std::endl;
+                    // std::cout << "619" << std::endl;
                     Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-                    std::cout << "621" << std::endl;
+                    // std::cout << "621" << std::endl;
                     Value *corrected = builder->CreateBitCast(valuePtr, a->getType()->getPointerTo());
                     builder->CreateStore(a, corrected);
 
                     a = builder->CreateLoad(sumTy, alloc);
                 }
             }
-            std::cout << "634" << std::endl;
+            // std::cout << "634" << std::endl;
             Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
-            std::cout << "636" << std::endl;
+            // std::cout << "636" << std::endl;
             builder->CreateStore(a, ptr);
 
             i++;
         }
     }
-    std::cout << "633" << std::endl;
+    // std::cout << "633" << std::endl;
     Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
     return loaded;
 }
 
 std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
 {
-    std::cout << "649" << std::endl;
+    // std::cout << "649" << std::endl;
     std::optional<Value *> index = AcceptType(this, n->indexExpr);
 
     if (!index)
@@ -1178,7 +1174,7 @@ std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
 std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
 {
     // Visit the expression to get the value we will assign
-    std::optional<Value *> exprVal = AcceptType(this, n->val); // any2Value(ctx->a->accept(this));
+    std::optional<Value *> exprVal = AcceptType(this, n->val);
 
     // Check that the expression generated
     if (!exprVal)
@@ -1377,24 +1373,24 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 {
     // FIXME: WE NEED TO START LOOP IN HERE
-    std::cout << "1546" << std::endl;
+    
     // Very similar to conditionals
 
-    std::optional<Value *> check = this->visit(n->cond); // TvisitCondition(ctx->check); // any2Value(ctx->check->accept(this));
-    std::cout << "1550" << std::endl;
+    std::optional<Value *> check = this->visit(n->cond); 
+    
     if (!check)
     {
         errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1299"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
-    std::cout << "1556" << std::endl;
+    
     auto parent = builder->GetInsertBlock()->getParent();
-    std::cout << "1558" << std::endl;
+
     BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop", parent);
     BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
-    std::cout << "1561" << std::endl;
+    
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
-    std::cout << "1563" << std::endl;
+    
     // Need to add here otherwise we will overwrite it
     // parent->getBasicBlockList().push_back(loopBlk);
 
@@ -1402,31 +1398,30 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
      * In the loop block
      */
     builder->SetInsertPoint(loopBlk);
-    std::cout << "1571" << std::endl;
+    
     for (auto e : n->blk->exprs)
     {
-        // std::cout << "1574 " << e->getText() << std::endl;
         AcceptType(this, e);
     }
-    std::cout << "1575" << std::endl;
+    
     // Re-calculate the loop condition
-    check = this->visit(n->cond); // this->TvisitCondition(ctx->check);
+    check = this->visit(n->cond); 
     if (!check)
     {
         errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1328"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
-    std::cout << "1583" << std::endl;
+    
     // Check if we need to loop back again...
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
     loopBlk = builder->GetInsertBlock();
-    std::cout << "1587" << std::endl;
+    
     /*
      * Out of loop
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-    std::cout << "1592" << std::endl;
+    
     return {};
 }
 

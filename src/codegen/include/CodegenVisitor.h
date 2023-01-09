@@ -303,14 +303,6 @@ public:
         return v;
     }
 
-    std::optional<Value *> any2Value(std::any any)
-    {
-        return anyOpt2Val<Value *>(any);
-        // std::optional<std::optional<Value *>> temp = any2Opt<std::optional<Value *>>(any);
-        // if(temp) return temp.value();
-        // return {};
-    }
-
 private:
     int flags;
 
