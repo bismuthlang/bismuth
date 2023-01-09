@@ -67,7 +67,7 @@ expression          : LPAR ex=expression RPAR                       # ParenExpr
                     | lambdaConstExpr # LambdaExpr
                     ;
 
-lambdaConstExpr     : LPAR parameterList RPAR ':' ret=type block ;
+lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
 
 /* 
  * Keeping block as its own rule so that way we can re-use it as
@@ -95,7 +95,7 @@ protoAlternative    : check=protocol '=>' eval=statement ;
  *
  * Parameter defines a parameter: its just a type and name.
  */
-parameterList       : params+=parameter (',' params+=parameter)*? ;
+parameterList       : (params+=parameter (',' params+=parameter)*)?;
 parameter           : ty=type name=VARIABLE ;
 VariadicParam       : ',' [ \t]* '...'; //For some reason, need to match the whitespace so that way we can allow spaces between the two...
 
@@ -134,9 +134,9 @@ statement           : defineProc                                                
                     | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                   # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'   # VarDeclStatement
                     // | WHILE check=condition DO block                                    # LoopStatement 
-                    | IF check=condition IF_THEN? trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement // FIXME: HANDLE REST
-                    | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement      // FIXME: HANDLE REST
-                    | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement       // FIXME: HANDLE REST
+                    | IF check=condition IF_THEN? trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement
+                    | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement     
+                    | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement      
                     | call=invocation  ';'?     # CallStatement 
                     | RETURN expression? ';'    # ReturnStatement 
                     | EXIT                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
@@ -221,6 +221,7 @@ subProtocol     :   '+' ty=type                 # RecvType
 type            :    ty=type LBRC len=INTEGER RBRC                                          # ArrayType
                 |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR)                                   # BaseType
                 |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
+                |    '(' (paramTypes+=type (COMMA paramTypes+=type)*)? ')' MAPS_TO (returnType=type | '(' ')') # LambdaType //FIXME: DO BETTER?
                 |    LPAR type (PLUS type)+ RPAR                                            # SumType 
                 |    'Channel' LESS proto=protocol GREATER                                  # ChannelType
                 |    'Program' LESS proto=protocol GREATER                                  # ProgramType

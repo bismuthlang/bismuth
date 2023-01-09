@@ -1735,12 +1735,13 @@ TEST_CASE("Proc Returning", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    proc foo() {
+    # proc foo() {
+    define func foo () {
       return 1;
     }
 
     define program :: c : Channel<-int> = {
-      return 0; 
+      c.send(0)
     }
     )"""");
   WPLLexer lexer(&input);

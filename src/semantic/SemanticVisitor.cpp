@@ -68,7 +68,11 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
                 ps.push_back(param.type);
             }
 
-            const Type *retType = any2Type(fnCtx->defineFunc()->lam->ret->accept(this));
+            // const Type *retType = any2Type(fnCtx->defineFunc()->lam->ret->accept(this));
+
+            
+            const Type *retType = fnCtx->defineFunc()->lam->ret ? any2Type(fnCtx->defineFunc()->lam->ret->accept(this)) // this->visitCtx(ctx->ty)
+                                  : Types::UNDEFINED;
 
             Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true); // FIXME: DO BETTER
 
@@ -246,7 +250,7 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
         }
 
         std::vector<TypedNode *> args;
-        std::vector<const Type*> actualTypes; 
+        std::vector<const Type *> actualTypes;
         /*
          * Now that we have a valid number of parameters, we can make sure that
          * they have the correct types as per our arguments.
@@ -284,7 +288,7 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
             // if i > fnParams.size() as that would imply we are
             // checking a variadic
             const Type *expectedType = fnParams.at(
-                i < fnParams.size() ? i : (fnParams.size() - 1)); //FIXME: TURNARY NEVER FULLY EVALED DUE TO CONTINUE!
+                i < fnParams.size() ? i : (fnParams.size() - 1)); // FIXME: TURNARY NEVER FULLY EVALED DUE TO CONTINUE!
 
             actualTypes.push_back(expectedType);
 
@@ -332,18 +336,21 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
             ps.push_back(param.type);
         }
 
-        const Type *retType = any2Type(ctx->lam->ret->accept(this));
+        // const Type *retType = any2Type(ctx->lam->ret->accept(this));
+        const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this)) // this->visitCtx(ctx->ty)
+                                  : Types::UNDEFINED;
 
-        Symbol * sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
+        Symbol *sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
 
-        stmgr->addSymbol(sym); 
+        stmgr->addSymbol(sym);
 
         return sym;
     }();
-    
-    if(!funcSymOpt) return {};
 
-    Symbol * funcSym = funcSymOpt.value(); 
+    if (!funcSymOpt)
+        return {};
+
+    Symbol *funcSym = funcSymOpt.value();
 
     // stmgr->addSymbol(funcSym);
 
@@ -354,7 +361,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
 
     LambdaConstNode *lam = lamOpt.value();
 
-    lam->type = const_cast<TypeInvoke*>(dynamic_cast<const TypeInvoke * >(funcSym->type)); //FIXME: DO BETTER! NEEDED B/C OF NAME RES!
+    lam->type = const_cast<TypeInvoke *>(dynamic_cast<const TypeInvoke *>(funcSym->type)); // FIXME: DO BETTER! NEEDED B/C OF NAME RES!
 
     lam->name = funcSym->getIdentifier(); // Not really needed.
     std::cout << "314" << std::endl;
@@ -959,24 +966,28 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(WPLParser::ParameterL
 
     ParameterListNode paramList;
 
-    for (auto param : ctx->params)
-    {
-        std::string name = param->name->getText();
-
-        auto prevUse = map.find(name);
-        if (prevUse != map.end())
+    // if (ctx->params)
+    // {
+        std::cout << "965" << std::endl; 
+        for (auto param : ctx->params)
         {
-            errorHandler.addSemanticError(param->getStart(), "Re-use of previously defined parameter " + name + ".");
-        }
-        else
-        {
-            map.insert({name, param});
-        }
+            std::string name = param->name->getText();
 
-        ParameterNode pn = this->visitCtx(param); // FIXME: WHAT SHOULD BE POINTERS?
-        paramList.push_back(pn);
-    }
+            auto prevUse = map.find(name);
+            if (prevUse != map.end())
+            {
+                errorHandler.addSemanticError(param->getStart(), "Re-use of previously defined parameter " + name + ".");
+            }
+            else
+            {
+                map.insert({name, param});
+            }
 
+            ParameterNode pn = this->visitCtx(param); // FIXME: WHAT SHOULD BE POINTERS?
+            paramList.push_back(pn);
+        }
+        std::cout << "983" << std::endl; 
+    // }
     return paramList;
 }
 
@@ -1680,7 +1691,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
 
 std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaConstExprContext *ctx)
 {
-    // std::cout << "1664" << std::endl;
+    std::cout << "1664" << std::endl;
     // FIXME: VERIFY THIS IS ALWAYS SAFE!!!
     std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
 
@@ -1690,7 +1701,9 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
     ParameterListNode params = paramTypeOpt.value();
     std::vector<Symbol *> ps;
 
-    const Type *retType = any2Type(ctx->ret->accept(this));
+    // const Type *retType = any2Type(ctx->ret->accept(this));
+    const Type *retType = ctx->ret ? any2Type(ctx->ret->accept(this)) // this->visitCtx(ctx->ty)
+                                  : Types::UNDEFINED;
 
     // const TypeInvoke *funcType = new TypeInvoke(paramType->getParamTypes(), retType);
 
@@ -1728,7 +1741,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
     // bindings->bind(ctx, funcSymbol);
 
     // return funcType;
-
+std::cout << "1740" << std::endl;
     return new LambdaConstNode(ps, retType, blk);
 }
 
