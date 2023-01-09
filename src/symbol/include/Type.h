@@ -154,9 +154,11 @@ public:
         return steps.size() == 0;
     }
 
-    bool canSend(const Type *ty) const;
+    // bool canSend(const Type *ty) const;
+    optional<const Type *> canSend(const Type *ty) const;
 
-    bool send(const Type *ty) const;
+    // bool send(const Type *ty) const;
+    optional<const Type *> send(const Type *ty) const;
 
     bool canRecv() const;
 

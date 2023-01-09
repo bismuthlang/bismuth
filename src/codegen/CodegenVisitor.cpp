@@ -341,10 +341,11 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
 
         Value *val = valOpt.value();
 
-        if (args.size() < argNodes.size())
+        if (args.size() < n->paramType.size())
         {
+            std::cout << "346 " << argNodes.at(args.size())->getType()->toString() << std::endl; 
             // TODO: METHODIZE!
-            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(argNodes.at(args.size())))
+            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->paramType.at(args.size())))//argNodes.at(args.size())->getType()))
             {
                 unsigned int index = sum->getIndex(module, val->getType());
 
@@ -482,7 +483,37 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
         return {};
     }
 
+    Symbol *sym = n->sym;
+
+
     Value *stoVal = valOpt.value(); // FIXMME: STILL NEEDS TO BE DONE
+
+std::cout << "490 " << n->lType->toString() << std::endl; 
+    // Same as return node's
+    if(const TypeSum * sum = dynamic_cast<const TypeSum*>(n->lType))
+    {
+        unsigned int index = sum->getIndex(module, stoVal->getType());
+
+        if(index != 0)
+        {
+            llvm::Type * sumTy = sum->getLLVMType(module); 
+            llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+
+            Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+            builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+
+            Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+            Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
+            builder->CreateStore(stoVal, corrected);
+
+            stoVal = builder->CreateLoad(sumTy, alloc);
+        }
+    }
+
+
+
+
+
 
     llvm::Function *mallocFn = module->getFunction("malloc"); // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
     Value *v = builder->CreateCall(mallocFn, {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
@@ -492,7 +523,6 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     Value *corrected = builder->CreateBitCast(v, i8p);
 
-    Symbol *sym = n->sym;
 
     if (!sym->val)
     {

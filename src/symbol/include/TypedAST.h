@@ -393,11 +393,13 @@ class ProgramSendNode : public TypedNode
 public:
     Symbol *sym;
     TypedNode *expr;
+    const Type * lType;  // Tracks type send expects. Needed for sums
 
-    ProgramSendNode(Symbol *s, TypedNode *e)
+    ProgramSendNode(Symbol *s, TypedNode *e, const Type * l)
     {
         sym = s;
         expr = e;
+        lType = l; 
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
@@ -581,11 +583,14 @@ class InvocationNode : public TypedNode
 public:
     TypedNode *fn;
     vector<TypedNode *> args;
+    vector<const Type*> paramType;  // Used for sums
 
-    InvocationNode(TypedNode *f, vector<TypedNode *> a)
+    InvocationNode(TypedNode *f, vector<TypedNode *> a, vector<const Type*> p)
     {
         fn = f;
         args = a;
+
+        paramType = p; 
     }
 
     const Type *getType() override

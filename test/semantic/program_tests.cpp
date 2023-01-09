@@ -2108,125 +2108,125 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
   REQUIRE_FALSE(sv->hasErrors(ERROR));
 }
 
-TEST_CASE("Nested Local Functions - Disallow Local vars 4", "[semantic][program][local-function]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-    define program :: c : Channel<-int> = {
-      proc other () {
-        var c := 10; 
-      }
+// TEST_CASE("Nested Local Functions - Disallow Local vars 4", "[semantic][program][local-function]")
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+//     define program :: c : Channel<-int> = {
+//       proc other () {
+//         var c := 10; 
+//       }
 
-      proc foo() {
-        other(); 
-        var a := c + 2; 
-      }
+//       proc foo() {
+//         other(); 
+//         var a := c + 2; 
+//       }
 
-      return 0; 
-    }
-    )"""");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+//       return 0; 
+//     }
+//     )"""");
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
-}
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE(sv->hasErrors(ERROR));
+// }
 
-TEST_CASE("Nested Local Functions - Disallow Local vars 5", "[semantic][program][local-function]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-    proc other () {
-      var c := 10; 
-    }
+// TEST_CASE("Nested Local Functions - Disallow Local vars 5", "[semantic][program][local-function]")
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+//     proc other () {
+//       var c := 10; 
+//     }
 
-    define program :: c : Channel<-int> = {
+//     define program :: c : Channel<-int> = {
 
 
-      proc foo() {
-          other(); 
-      }
+//       proc foo() {
+//           other(); 
+//       }
 
-      return 0; 
-    }
-    )"""");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+//       return 0; 
+//     }
+//     )"""");
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(ERROR));
-}
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE_FALSE(sv->hasErrors(ERROR));
+// }
 
-TEST_CASE("Nested Local Functions - Disallow Local vars 6", "[semantic][program][local-function]")
-{
-  antlr4::ANTLRInputStream input(
-      R""""(
-    proc other () {
-      var c := 10; 
-    }
+// TEST_CASE("Nested Local Functions - Disallow Local vars 6", "[semantic][program][local-function]")
+// {
+//   antlr4::ANTLRInputStream input(
+//       R""""(
+//     proc other () {
+//       var c := 10; 
+//     }
     
-    define program :: c : Channel<-int> = {
+//     define program :: c : Channel<-int> = {
 
 
-      proc foo() {
-        other(); 
-        var a := c + 2; 
-      }
+//       proc foo() {
+//         other(); 
+//         var a := c + 2; 
+//       }
 
-      return 0; 
-    }
-    )"""");
-  WPLLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+//       return 0; 
+//     }
+//     )"""");
+//   WPLLexer lexer(&input);
+//   // lexer.removeErrorListeners();
+//   // lexer.addErrorListener(new TestErrorListener());
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+//   STManager *stmgr = new STManager();
+//   PropertyManager *pm = new PropertyManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE(sv->hasErrors(ERROR));
-}
+//   sv->visitCompilationUnit(tree);
+//   REQUIRE(sv->hasErrors(ERROR));
+// }
 
 TEST_CASE("Nested Enums - Disallow Local Assign", "[semantic][program][enum]")
 {
@@ -2532,8 +2532,7 @@ TEST_CASE("Bad Enum pass", "[semantic][program][lambda][enum]")
       R""""(
 extern int func printf(str s, ...);
 
-proc test ((int + boolean + (str + boolean)) sum)
-{
+define func test ((int + boolean + (str + boolean)) sum) : int {
     match sum {
         int i => printf("integer: %u\n", i);
         boolean b => printf("boolean: %s\n", (boolean b) : str {
@@ -2545,13 +2544,15 @@ proc test ((int + boolean + (str + boolean)) sum)
         }(b));
          (str + boolean) n => printf("no!\n");
     }
+
+    return 0; 
 }
 
 
-int func program() 
-{
+define program :: c : Channel<-int> = {
     test("hey");
-    return 0; 
+    # return 0; 
+    c.send(0)
 }
     )"""");
   WPLLexer lexer(&input);

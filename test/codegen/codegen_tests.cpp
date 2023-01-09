@@ -1501,7 +1501,7 @@ TEST_CASE("programs/dangerLambda - lambdas with dupl function names", "[codegen]
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/enumPassing.wpl");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/enumPassing.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     WPLLexer lexer(input);
@@ -1524,7 +1524,35 @@ TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[code
 
     REQUIRE_FALSE(cv->hasErrors(0));
 
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "3a8deea38620a5392962e96679b5c4e6f2e7564d369fa712eb211d5af150ae97");
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "4e42b4481de60407ae1ba52911afb2a9b49aba1247389e107ca3dc6c43576046");
+}
+
+TEST_CASE("programs/adv/enumPassing-fn - passing non-enum as enum argument", "[codegen][struct]")
+{
+    std::fstream *inStream = new std::fstream("/home/shared/programs/adv/enumPassing-fn.prism");
+    antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
+
+    WPLLexer lexer(input);
+    antlr4::CommonTokenStream tokens(&lexer);
+    WPLParser parser(&tokens);
+    parser.removeErrorListeners();
+    WPLParser::CompilationUnitContext *tree = NULL;
+    REQUIRE_NOTHROW(tree = parser.compilationUnit());
+    REQUIRE(tree != NULL);
+    STManager *stm = new STManager();
+    PropertyManager *pm = new PropertyManager();
+    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
+    REQUIRE(cuOpt.has_value());
+
+    REQUIRE_FALSE(sv->hasErrors(0));
+
+    CodegenVisitor *cv = new CodegenVisitor(pm, "WPLC.ll", 0);
+    cv->visitCompilationUnit(cuOpt.value());
+
+    REQUIRE_FALSE(cv->hasErrors(0));
+
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "1fdd1ac15549cecce7dc247d91edfad679437bb4a5264e1f56461a2463e57b4b");
 }
 
 TEST_CASE("programs/Lambda2a - More nested lambdas", "[codegen][lambda]")

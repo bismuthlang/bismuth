@@ -246,7 +246,7 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
         }
 
         std::vector<TypedNode *> args;
-
+        std::vector<const Type*> actualTypes; 
         /*
          * Now that we have a valid number of parameters, we can make sure that
          * they have the correct types as per our arguments.
@@ -284,7 +284,9 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
             // if i > fnParams.size() as that would imply we are
             // checking a variadic
             const Type *expectedType = fnParams.at(
-                i < fnParams.size() ? i : (fnParams.size() - 1));
+                i < fnParams.size() ? i : (fnParams.size() - 1)); //FIXME: TURNARY NEVER FULLY EVALED DUE TO CONTINUE!
+
+            actualTypes.push_back(expectedType);
 
             // If the types do not match, report an error.
             if (providedType->isNotSubtype(expectedType))
@@ -298,7 +300,7 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
 
         // Return the type of the invokable or BOT if it has none.
         // return invokeable->getReturnType(); //.has_value() ? invokeable->getReturnType().value() : Types::UNDEFINED;
-        return new InvocationNode(tn, args);
+        return new InvocationNode(tn, args, actualTypes);
     }
 
     // Symbol was not an invokeable type, so report an error & return UNDEFINED.
@@ -1952,12 +1954,14 @@ std::optional<ProgramSendNode *> SemanticVisitor::TvisitProgramSend(WPLParser::P
         TypedNode *tn = tnOpt.value();
         const Type *ty = tn->getType();
 
-        if (!channel->getProtocol()->send(ty))
+        std::optional<const Type *> canSend = channel->getProtocol()->send(ty);
+
+        if (!canSend)
         {
             errorHandler.addSemanticError(ctx->getStart(), "Failed to send " + ty->toString() + " over channel " + sym->toString());
             return {};
         }
-        return new ProgramSendNode(sym, tn);
+        return new ProgramSendNode(sym, tn, canSend.value());
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot send on non-channel: " + id);
