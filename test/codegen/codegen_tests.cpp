@@ -1732,6 +1732,39 @@ TEST_CASE("programs/example", "[codegen][program]")
     REQUIRE(llvmIrToSHA256(cv->getModule()) == "13b1f0965b19624ca500c7bba42780a3cf9a875d1dbfe8fb4def7ca185f88edf");
 }
 
+
+TEST_CASE("programs/SendChannel", "[codegen][linear-types]")
+{
+    std::fstream *inStream = new std::fstream("/home/shared/programs/SendChannel.prism");
+    antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
+
+    WPLLexer lexer(input);
+    // lexer.removeErrorListeners();
+    // lexer.addErrorListener(new TestErrorListener());
+    antlr4::CommonTokenStream tokens(&lexer);
+    WPLParser parser(&tokens);
+    parser.removeErrorListeners();
+    //   parser.addErrorListener(new TestErrorListener()); //FIXME: SHOULD WE TEST THESE HERE?
+
+    WPLParser::CompilationUnitContext *tree = NULL;
+    REQUIRE_NOTHROW(tree = parser.compilationUnit());
+    REQUIRE(tree != NULL);
+    REQUIRE(tree->getText() != "");
+
+    STManager *stmgr = new STManager();
+    PropertyManager *pm = new PropertyManager();
+    SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
+    REQUIRE(cuOpt.has_value());
+    REQUIRE_FALSE(sv->hasErrors(ERROR));
+    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
+    cv->visitCompilationUnit(cuOpt.value());
+    REQUIRE_FALSE(cv->hasErrors(0));
+
+    REQUIRE(llvmIrToSHA256(cv->getModule()) == "c0400b0725a19a1b62ee5e985c3c10b036c6b497e704d106cafa9568a309c22a");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/

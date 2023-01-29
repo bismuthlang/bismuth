@@ -64,6 +64,35 @@ bool Context::addSymbol(Symbol *symbol)
     return current->addSymbol(symbol);
 }
 
+bool Context::removeSymbol(Symbol *symbol) // FIXME: DO BETTER, VERIFY!
+{
+    std::optional<Scope *> opt = currentScope;
+
+    int depth = scopes.size() - 1;
+    int stop = this->getCurrentStop();
+    while (opt)
+    {
+        Scope *scope = opt.value();
+
+        if (depth >= stop || symbol->isDefinition || symbol->isGlobal) //FIXME: CONDITION SEEMS WRONG
+        {
+            // scope->er
+            return scope->removeSymbol(symbol);
+        }
+        else 
+        {
+        // return false; //FIXME: THROW ERROR? //FIXME: SEE HOW RHETORIC HANGED BETWEEN THIS AND OTHER SIMILAR FN?
+
+        }
+        // return sym;
+
+        depth--;
+        opt = scope->getParent();
+    }
+
+    return false;
+}
+
 std::optional<Symbol *> Context::lookup(std::string id)
 {
     std::optional<Scope *> opt = currentScope;
@@ -97,43 +126,43 @@ std::vector<Symbol *> Context::getAvaliableLinears()
 
     int depth = scopes.size() - 1;
     int stop = this->getCurrentStop();
-    while (depth >= stop )
+    while (depth >= stop)
     {
         Scope *scope = opt.value();
 
-        for(auto s : scope->getRemainingLinearTypes())
+        for (auto s : scope->getRemainingLinearTypes())
         {
-            ans.push_back(s); //FIXME: DO BETTER, USE INSERT!
+            ans.push_back(s); // FIXME: DO BETTER, USE INSERT!
         }
         depth--;
         opt = scope->getParent();
     }
 
-    return ans; 
+    return ans;
 }
 
 void Context::deleteAvaliableLinears()
-{ // FIXME: UNSAFE 
-//FIXME: SEARCH FOR FOXME AND OTHER MISSPELLINGS OF FIXME
-    // std::vector<const Symbol *> ans;
+{ // FIXME: UNSAFE
+    // FIXME: SEARCH FOR FOXME AND OTHER MISSPELLINGS OF FIXME
+    //  std::vector<const Symbol *> ans;
 
     std::optional<Scope *> opt = currentScope;
 
     int depth = scopes.size() - 1;
     int stop = this->getCurrentStop();
-    while (depth >= stop )
+    while (depth >= stop)
     {
         Scope *scope = opt.value();
 
-        for(auto s : scope->getRemainingLinearTypes())
+        for (auto s : scope->getRemainingLinearTypes())
         {
-            scope->removeSymbol(s); 
+            scope->removeSymbol(s);
         }
         depth--;
         opt = scope->getParent();
     }
 
-    // return ans; 
+    // return ans;
 }
 
 std::optional<Symbol *> Context::lookupInCurrentScope(std::string id)

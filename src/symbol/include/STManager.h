@@ -69,6 +69,10 @@ class STManager {
         return linearContext.addSymbol(symbol); 
       return dangerContext.addSymbol(symbol);
     }
+
+    bool removeSymbol(Symbol * symbol) {
+      return linearContext.removeSymbol(symbol); //FIXME: DO BETTER?
+    }
     
     /**
      * @brief Lookup a symbol across all scopes returning the first definition found

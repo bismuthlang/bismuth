@@ -67,9 +67,8 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
 
             // const Type *retType = any2Type(fnCtx->defineFunc()->lam->ret->accept(this));
 
-            
             const Type *retType = fnCtx->defineFunc()->lam->ret ? any2Type(fnCtx->defineFunc()->lam->ret->accept(this)) // this->visitCtx(ctx->ty)
-                                  : Types::UNDEFINED;
+                                                                : Types::UNDEFINED;
 
             Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true); // FIXME: DO BETTER
 
@@ -256,7 +255,7 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
 
             if (!providedOpt)
                 return {}; // FIXME: DO BETTER
-            
+
             TypedNode *provided = providedOpt.value();
             args.push_back(provided);
 
@@ -327,7 +326,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
 
         // const Type *retType = any2Type(ctx->lam->ret->accept(this));
         const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this)) // this->visitCtx(ctx->ty)
-                                  : Types::UNDEFINED;
+                                            : Types::UNDEFINED;
 
         Symbol *sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
 
@@ -391,12 +390,12 @@ std::optional<InitProductNode *> SemanticVisitor::visitCtx(WPLParser::InitProduc
             for (auto eleItr : elements)
             {
                 std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(ctx->exprs.at(i)->accept(this));
-                
+
                 if (!opt)
                     return {}; // FIXME: DO BETTER
 
                 TypedNode *tn = opt.value();
-                
+
                 n.push_back(tn);
                 const Type *providedType = tn->getType();
 
@@ -803,6 +802,21 @@ std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAcces
     }
     Symbol *sym = opt.value().second;
 
+    if (opt.value().first == LINEAR_SCOPE) //FIXME: WILL NEED TO IMPL THIS BETTER!
+    {
+        
+        if (!is_rvalue)
+        {
+            errorHandler.addSemanticError(ctx->getStart(), "Cannot redefine linear variable!");
+        }
+        
+        if(!stmgr->removeSymbol(sym)) {
+            errorHandler.addSemanticError(ctx->getStart(), "Failed to unbind local var!");
+        }
+
+
+    }
+
     std::vector<std::pair<std::string, const Type *>> a;
     // bindings->bind(ctx->VARIABLE().at(0), sym);
 
@@ -945,23 +959,23 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(WPLParser::ParameterL
 
     // if (ctx->params)
     // {
-        for (auto param : ctx->params)
+    for (auto param : ctx->params)
+    {
+        std::string name = param->name->getText();
+
+        auto prevUse = map.find(name);
+        if (prevUse != map.end())
         {
-            std::string name = param->name->getText();
-
-            auto prevUse = map.find(name);
-            if (prevUse != map.end())
-            {
-                errorHandler.addSemanticError(param->getStart(), "Re-use of previously defined parameter " + name + ".");
-            }
-            else
-            {
-                map.insert({name, param});
-            }
-
-            ParameterNode pn = this->visitCtx(param); // FIXME: WHAT SHOULD BE POINTERS?
-            paramList.push_back(pn);
+            errorHandler.addSemanticError(param->getStart(), "Re-use of previously defined parameter " + name + ".");
         }
+        else
+        {
+            map.insert({name, param});
+        }
+
+        ParameterNode pn = this->visitCtx(param); // FIXME: WHAT SHOULD BE POINTERS?
+        paramList.push_back(pn);
+    }
     // }
     return paramList;
 }
@@ -1059,11 +1073,11 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
         // Needs to happen in case we have vars
         const Type *assignType = this->visitCtx(ctx->typeOrVar());
         // auto exprType = (e->a) ? any2Type(e->a->accept(this)) : assignType;
-        
+
         std::optional<TypedNode *> exprOpt = (e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)) : std::nullopt;
-        
+
         const Type *exprType = exprOpt ? exprOpt.value()->getType() : assignType;
-        
+
         if (e->a && stmgr->isGlobalScope())
         {
             if (!(dynamic_cast<WPLParser::BConstExprContext *>(e->a) ||
@@ -1101,7 +1115,7 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
             {
                 // Needed to ensure vars get their own inf type
                 const Type *newAssignType = this->visitCtx(ctx->typeOrVar());
-                
+
                 // FIXME: BAD OPT ACCESS
                 // const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)).value()->getType() : newAssignType;
                 std::optional<const Type *> newExprTypeOpt = [this, e, newAssignType]() -> std::optional<const Type *>
@@ -1674,7 +1688,7 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
 
     // const Type *retType = any2Type(ctx->ret->accept(this));
     const Type *retType = ctx->ret ? any2Type(ctx->ret->accept(this)) // this->visitCtx(ctx->ty)
-                                  : Types::UNDEFINED;
+                                   : Types::UNDEFINED;
 
     // const TypeInvoke *funcType = new TypeInvoke(paramType->getParamTypes(), retType);
 
@@ -1736,11 +1750,11 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
 {
     std::set<const Type *, TypeCompare> cases = {};
 
-    for (auto e : ctx->type()) //FIXME: ADD TEST CASES LIKE THIS FOR STRUCT + ENUM!!
+    for (auto e : ctx->type()) // FIXME: ADD TEST CASES LIKE THIS FOR STRUCT + ENUM!!
     {
         const Type *caseType = any2Type(e->accept(this));
 
-        if(dynamic_cast<const TypeChannel*>(caseType)) //FIXME: DO BETTER LINEAR CHECK!
+        if (dynamic_cast<const TypeChannel *>(caseType)) // FIXME: DO BETTER LINEAR CHECK!
         {
             errorHandler.addSemanticError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
             return {};
@@ -1776,7 +1790,7 @@ std::optional<DefineEnumNode *> SemanticVisitor::visitCtx(WPLParser::DefineEnumC
     {
         const Type *caseType = any2Type(e->accept(this));
 
-        if(dynamic_cast<const TypeChannel*>(caseType)) //FIXME: DO BETTER LINEAR CHECK!
+        if (dynamic_cast<const TypeChannel *>(caseType)) // FIXME: DO BETTER LINEAR CHECK!
         {
             errorHandler.addSemanticError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
             return {};
@@ -1823,7 +1837,7 @@ std::optional<DefineStructNode *> SemanticVisitor::visitCtx(WPLParser::DefineStr
         }
         const Type *caseTy = any2Type(caseCtx->ty->accept(this));
 
-        if(dynamic_cast<const TypeChannel*>(caseTy)) //FIXME: DO BETTER LINEAR CHECK!
+        if (dynamic_cast<const TypeChannel *>(caseTy)) // FIXME: DO BETTER LINEAR CHECK!
         {
             errorHandler.addSemanticError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString() + ", in non-linear container.");
             return {};
