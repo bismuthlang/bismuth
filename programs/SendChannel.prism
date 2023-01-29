@@ -1,0 +1,22 @@
+define program :: c : Channel<-int> = {
+    Channel<-Channel<+int>;+int> foo2 := exec Foo2; # FIXME: have the invert type stuff here!
+    Channel<+int> foo1 := exec Foo1; 
+
+    foo2.send(foo1)
+
+    int temp := foo2.recv(); 
+
+    c.send(temp)
+}
+
+define Foo1 :: c : Channel<-int> = {
+    c.send(5)
+}
+
+define Foo2 :: c : Channel<+Channel<+int>;-int> = {
+    Channel<+int> c2 := c.recv(); 
+
+    int temp := c2.recv(); 
+    c.send(temp)
+    # c.send(c2.recv()) # FIXME: MAKE THIS SYNTAX POSSIBLE
+}

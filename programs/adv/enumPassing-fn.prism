@@ -1,0 +1,27 @@
+extern int func printf(str s, ...);
+
+# proc test ((int + boolean) sum)
+# define test :: c : Channel<+(int + boolean)> = {
+define func test ((int + boolean) sum) : int { #FIXME: PROC
+# {
+
+    match sum {
+        int i => printf("integer: %u\n", i);
+        boolean b => printf("boolean: %s\n", (boolean b) : str {
+            if b {
+                return "true";
+            }
+
+            return "false"; 
+        }(b));
+    }
+
+    return -1; 
+}
+
+
+# int func program() 
+define program :: c : Channel<-int> = {
+    test(5);
+    c.send(0)
+}

@@ -13,9 +13,7 @@
 #include "WPLBaseVisitor.h"
 #include "CompilerFlags.h"
 
-// #include "WPLTypedVisitor.h"
-
-#include "PropertyManager.h"
+// #include "PropertyManager.h"
 #include "WPLErrorHandler.h"
 #include "SemanticVisitor.h"
 #include "llvm/ADT/StringRef.h"
@@ -32,6 +30,8 @@
 #include <regex>
 
 #include <variant>
+
+#include "TypedAST.h"
 
 // using namespace llvm;
 using llvm::ArrayRef;
@@ -51,7 +51,7 @@ using llvm::PHINode;
 using llvm::StringRef;
 using llvm::Value;
 
-class CodegenVisitor : WPLBaseVisitor
+class CodegenVisitor : TypedASTVisitor
 {
 
 public:
@@ -62,9 +62,8 @@ public:
      * @param moduleName LLVM Module name to use
      * @param f Compiler flags
      */
-    CodegenVisitor(PropertyManager *p, std::string moduleName, int f = 0)
+    CodegenVisitor(std::string moduleName, int f = 0)
     {
-        props = p;
         flags = f;
 
         // LLVM Stuff
@@ -85,131 +84,52 @@ public:
         Int8PtrPtrTy = i8p->getPointerTo();
     }
 
-    /***************************************
-     * Typed wrappers for the basic visitor
-     ***************************************/
-
-    std::optional<Value *> TvisitCompilationUnit(WPLParser::CompilationUnitContext *ctx);
-    std::optional<Value *> TvisitInvocation(WPLParser::InvocationContext *ctx);
-    std::optional<Value *> TvisitArrayAccess(WPLParser::ArrayAccessContext *ctx);
-    std::optional<Value *> TvisitArrayOrVar(WPLParser::ArrayOrVarContext *ctx);
-
-    std::optional<Value *> TvisitIConstExpr(WPLParser::IConstExprContext *ctx);
-    std::optional<Value *> TvisitArrayAccessExpr(WPLParser::ArrayAccessExprContext *ctx);
-    std::optional<Value *> TvisitSConstExpr(WPLParser::SConstExprContext *ctx);
-    std::optional<Value *> TvisitUnaryExpr(WPLParser::UnaryExprContext *ctx);
-    std::optional<Value *> TvisitBinaryArithExpr(WPLParser::BinaryArithExprContext *ctx);
-    std::optional<Value *> TvisitEqExpr(WPLParser::EqExprContext *ctx);
-    std::optional<Value *> TvisitLogAndExpr(WPLParser::LogAndExprContext *ctx);
-    std::optional<Value *> TvisitLogOrExpr(WPLParser::LogOrExprContext *ctx);
-    std::optional<Value *> TvisitCallExpr(WPLParser::CallExprContext *ctx);
-    // std::optional<Value *> TvisitVariableExpr(WPLParser::VariableExprContext *ctx);
-    std::optional<Value *> TvisitFieldAccessExpr(WPLParser::FieldAccessExprContext *ctx);
-    std::optional<Value *> TvisitParenExpr(WPLParser::ParenExprContext *ctx);
-    std::optional<Value *> TvisitBinaryRelExpr(WPLParser::BinaryRelExprContext *ctx);
-    std::optional<Value *> TvisitBConstExpr(WPLParser::BConstExprContext *ctx);
-    std::optional<Value *> TvisitBlock(WPLParser::BlockContext *ctx);
-    std::optional<Value *> TvisitCondition(WPLParser::ConditionContext *ctx);
-    std::optional<Value *> TvisitSelectAlternative(WPLParser::SelectAlternativeContext *ctx);
-    std::optional<Value *> TvisitParameterList(WPLParser::ParameterListContext *ctx);
-    std::optional<Value *> TvisitParameter(WPLParser::ParameterContext *ctx);
-    std::optional<Value *> TvisitAssignment(WPLParser::AssignmentContext *ctx);
-    std::optional<Value *> TvisitExternStatement(WPLParser::ExternStatementContext *ctx);
-    std::optional<Value *> TvisitFuncDef(WPLParser::ProgDefContext *ctx);
-    std::optional<Value *> TvisitAssignStatement(WPLParser::AssignStatementContext *ctx);
-    std::optional<Value *> TvisitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx);
-    std::optional<Value *> TvisitProgramLoop(WPLParser::ProgramLoopContext *ctx);
-    std::optional<Value *> TvisitConditionalStatement(WPLParser::ConditionalStatementContext *ctx);
-    std::optional<Value *> TvisitSelectStatement(WPLParser::SelectStatementContext *ctx);
-    std::optional<Value *> TvisitCallStatement(WPLParser::CallStatementContext *ctx);
-    std::optional<Value *> TvisitReturnStatement(WPLParser::ReturnStatementContext *ctx);
-    std::optional<Value *> TvisitBlockStatement(WPLParser::BlockStatementContext *ctx);
-    std::optional<Value *> TvisitTypeOrVar(WPLParser::TypeOrVarContext *ctx);
-    std::optional<Value *> TvisitType(WPLParser::TypeContext *ctx);
-    std::optional<Value *> TvisitBooleanConst(WPLParser::BooleanConstContext *ctx);
-
-    std::optional<Value *> TvisitLambdaConstExpr(WPLParser::LambdaConstExprContext *ctx);
-    // std::optional<Value *> TvisitDefineEnum(WPLParser::DefineEnumContext *ctx);
-    std::optional<Value *> TvisitMatchStatement(WPLParser::MatchStatementContext *ctx);
-    std::optional<Value *> TvisitInitProduct(WPLParser::InitProductContext *ctx);
-
-    // std::optional<Value *> TvisitDefineProgram(WPLParser::DefineProgramContext * ctx);
-
     /******************************************************************
      * Standard visitor methods all defined to use the typed versions
      ******************************************************************/
-
-    std::any visitCompilationUnit(WPLParser::CompilationUnitContext *ctx) override { return TvisitCompilationUnit(ctx); };
-    std::any visitInvocation(WPLParser::InvocationContext *ctx) override { return TvisitInvocation(ctx); };
-    std::any visitArrayAccess(WPLParser::ArrayAccessContext *ctx) override { return TvisitArrayAccess(ctx); };
-    std::any visitArrayOrVar(WPLParser::ArrayOrVarContext *ctx) override { return TvisitArrayOrVar(ctx); };
-
-    std::any visitIConstExpr(WPLParser::IConstExprContext *ctx) override { return TvisitIConstExpr(ctx); };
-    std::any visitArrayAccessExpr(WPLParser::ArrayAccessExprContext *ctx) override { return TvisitArrayAccessExpr(ctx); };
-    std::any visitSConstExpr(WPLParser::SConstExprContext *ctx) override { return TvisitSConstExpr(ctx); };
-    std::any visitUnaryExpr(WPLParser::UnaryExprContext *ctx) override { return TvisitUnaryExpr(ctx); };
-    std::any visitBinaryArithExpr(WPLParser::BinaryArithExprContext *ctx) override { return TvisitBinaryArithExpr(ctx); };
-    std::any visitEqExpr(WPLParser::EqExprContext *ctx) override { return TvisitEqExpr(ctx); };
-    std::any visitLogAndExpr(WPLParser::LogAndExprContext *ctx) override { return TvisitLogAndExpr(ctx); };
-    std::any visitLogOrExpr(WPLParser::LogOrExprContext *ctx) override { return TvisitLogOrExpr(ctx); };
-    std::any visitCallExpr(WPLParser::CallExprContext *ctx) override { return TvisitCallExpr(ctx); };
-    // std::any visitVariableExpr(WPLParser::VariableExprContext *ctx) override { return TvisitVariableExpr(ctx); };
-    std::any visitFieldAccessExpr(WPLParser::FieldAccessExprContext *ctx) override { return TvisitFieldAccessExpr(ctx); };
-    std::any visitParenExpr(WPLParser::ParenExprContext *ctx) override { return TvisitParenExpr(ctx); };
-    std::any visitBinaryRelExpr(WPLParser::BinaryRelExprContext *ctx) override { return TvisitBinaryRelExpr(ctx); };
-    std::any visitBConstExpr(WPLParser::BConstExprContext *ctx) override { return TvisitBConstExpr(ctx); };
-    std::any visitBlock(WPLParser::BlockContext *ctx) override { return TvisitBlock(ctx); };
-    std::any visitCondition(WPLParser::ConditionContext *ctx) override { return TvisitCondition(ctx); };
-    std::any visitSelectAlternative(WPLParser::SelectAlternativeContext *ctx) override { return TvisitSelectAlternative(ctx); };
-    std::any visitParameterList(WPLParser::ParameterListContext *ctx) override { return TvisitParameterList(ctx); };
-    std::any visitParameter(WPLParser::ParameterContext *ctx) override { return TvisitParameter(ctx); };
-    std::any visitAssignment(WPLParser::AssignmentContext *ctx) override { return TvisitAssignment(ctx); };
-    std::any visitExternStatement(WPLParser::ExternStatementContext *ctx) override { return TvisitExternStatement(ctx); };
-    std::any visitProgDef(WPLParser::ProgDefContext *ctx) override { return TvisitFuncDef(ctx); };
-    std::any visitAssignStatement(WPLParser::AssignStatementContext *ctx) override { return TvisitAssignStatement(ctx); };
-    std::any visitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx) override { return TvisitVarDeclStatement(ctx); };
-    std::any visitProgramLoop(WPLParser::ProgramLoopContext *ctx) override { return TvisitProgramLoop(ctx); };
-    std::any visitConditionalStatement(WPLParser::ConditionalStatementContext *ctx) override { return TvisitConditionalStatement(ctx); };
-    std::any visitSelectStatement(WPLParser::SelectStatementContext *ctx) override { return TvisitSelectStatement(ctx); };
-    std::any visitCallStatement(WPLParser::CallStatementContext *ctx) override { return TvisitCallStatement(ctx); };
-    std::any visitReturnStatement(WPLParser::ReturnStatementContext *ctx) override { return TvisitReturnStatement(ctx); };
-    std::any visitBlockStatement(WPLParser::BlockStatementContext *ctx) override { return TvisitBlockStatement(ctx); };
-    std::any visitTypeOrVar(WPLParser::TypeOrVarContext *ctx) override { return TvisitTypeOrVar(ctx); };
-    // std::any visitType(WPLParser::TypeContext *ctx) override { return TvisitType(ctx); };
-    std::any visitBooleanConst(WPLParser::BooleanConstContext *ctx) override { return TvisitBooleanConst(ctx); };
-
-    std::any visitLambdaConstExpr(WPLParser::LambdaConstExprContext *ctx) override { return TvisitLambdaConstExpr(ctx); }
-    // std::any visitDefineEnum(WPLParser::DefineEnumContext *ctx) override { return TvisitDefineEnum(ctx); }
-    std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return TvisitMatchStatement(ctx); }
-    std::any visitInitProduct(WPLParser::InitProductContext *ctx) override { return TvisitInitProduct(ctx); }
-
-    std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return visitInvokeable(ctx->defineProc()); } // FIXME: DO BETTER!!!
-
-    std::optional<Value *> TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx);
-    std::any visitAssignableRecv(WPLParser::AssignableRecvContext *ctx) override { return TvisitAssignableRecv(ctx); }
-    
-    std::any visitProgramSend(WPLParser::ProgramSendContext *ctx) override { return TvisitProgramSend(ctx); }
-    std::optional<Value *> TvisitProgramSend(WPLParser::ProgramSendContext *ctx);
+    // std::optional<Value *> visit(SelectAlternativeNode *n) override;
+    std::optional<Value *> visit(SelectStatementNode *n) override;
+    std::optional<Value *> visit(ConditionNode *n) override;
+    std::optional<Value *> visit(BlockNode *n) override;
+    std::optional<Value *> visit(LambdaConstNode *n) override;
+    std::optional<Value *> visit(ProgramDefNode *n) override { return visitInvokeable(n); };
+    std::optional<Value *> visit(ConditionalStatementNode *n) override;
+    std::optional<Value *> visit(ReturnNode *n) override;
+    std::optional<Value *> visit(ProgramSendNode *n) override;
+    std::optional<Value *> visit(ProgramRecvNode *n) override;
+    std::optional<Value *> visit(ProgramContractNode *n) override;
+    std::optional<Value *> visit(ProgramWeakenNode *n) override;
+    std::optional<Value *> visit(ProgramExecNode *n) override;
+    std::optional<Value *> visit(ProgramAcceptNode *n) override;
+    // std::optional<Value *> visit(DefineEnumNode *n) override;
+    // std::optional<Value *> visit(DefineStructNode *n) override;
+    std::optional<Value *> visit(InitProductNode *n) override;
+    std::optional<Value *> visit(WhileLoopNode *n) override;
+    std::optional<Value *> visit(ExternNode *n) override;
+    std::optional<Value *> visit(InvocationNode *n) override;
+    std::optional<Value *> visit(FieldAccessNode *n) override;
+    std::optional<Value *> visit(VariableIDNode *n) override { return visitVariable(n->symbol, n->is_rvalue); };
+    std::optional<Value *> visit(ArrayAccessNode *n) override;
+    std::optional<Value *> visit(AssignNode *n) override;
+    std::optional<Value *> visit(BinaryRelNode *n) override;
+    std::optional<Value *> visit(BinaryArithNode *n) override;
+    std::optional<Value *> visit(EqExprNode *n) override;
+    std::optional<Value *> visit(UnaryExprNode *n) override;
+    std::optional<Value *> visit(LogAndExprNode *n) override;
+    std::optional<Value *> visit(LogOrExprNode *n) override;
+    std::optional<Value *> visit(StringConstNode *n) override;
+    std::optional<Value *> visit(BooleanConstNode *n) override;
+    std::optional<Value *> visit(IConstExprNode *n) override;
+    std::optional<Value *> visit(CompilationUnitNode *n) override;
+    std::optional<Value *> visit(VarDeclNode *n) override;
+    std::optional<Value *> visit(MatchStatementNode *n) override;
+    std::optional<Value *> visit(ExitNode *n) override;
 
 
-    std::any visitAssignableExec(WPLParser::AssignableExecContext *ctx) override { return TvisitAssignableExec(ctx); }
-    std::optional<Value *> TvisitAssignableExec(WPLParser::AssignableExecContext *ctx);
-
-
-    std::any visitProgramContract(WPLParser::ProgramContractContext *ctx) override { return TvisitProgramContract(ctx); }
-    std::optional<Value *> TvisitProgramContract(WPLParser::ProgramContractContext *ctx);
-
-    std::any visitProgramWeaken(WPLParser::ProgramWeakenContext *ctx) override { return TvisitProgramWeaken(ctx); }
-    std::optional<Value *> TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx);
-
-
-    std::any visitProgramAccept(WPLParser::ProgramAcceptContext *ctx) override { return TvisitProgramAccept(ctx); }
-    std::optional<Value *> TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx);
+    std::optional<Value *> visitCompilationUnit(CompilationUnitNode *n) { return visit(n); }
 
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
-
-    PropertyManager *getProperties() { return props; }
 
     Module *getModule() { return module; }
     void modPrint() { module->print(llvm::outs(), nullptr); }
@@ -220,142 +140,104 @@ public:
      * @param sum The FuncDefContext to build the function from
      * @return std::optional<Value *> Empty as this shouldn't be seen as a value
      */
-    std::optional<Value *> visitInvokeable(WPLParser::DefineProcContext *ctx)
+    std::optional<Value *> visitInvokeable(ProgramDefNode *n)
     {
         BasicBlock *ins = builder->GetInsertBlock();
 
-        // Lookup the symbol from the context
-        std::optional<Symbol *> symOpt = props->getBinding(ctx);
-
         // Get the function name. Done separatley from sym in case the symbol isn't found
-        std::string funcId = ctx->name->getText();
+        std::string funcId = n->name;
 
-        // If we couldn't find the function, throw an error.
-        if (!symOpt)
+        const TypeProgram *inv = n->getType();
+
+        llvm::Type *genericType = inv->getLLVMType(module)->getPointerElementType();
+
+        if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Unbound function: " + funcId);
-            return {};
-        }
+            Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);
+            ; // Lookup the function first
+            inv->setName(fn->getName().str());
 
-        Symbol *sym = symOpt.value();
-        if (!sym->type)
-        {
-            errorHandler.addCodegenError(ctx->getStart(), "Symbol in invocation missing type. Probably compiler error.");
-            return {};
-        }
+            // Get the parameter list context for the invokable
+            // WPLParser::ParameterListContext *paramList = ctx->paramList;
+            // Create basic block
+            BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
+            builder->SetInsertPoint(bBlk);
 
-        const Type *type = sym->type;
+            // Bind all of the arguments
+            llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
+            // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1)); // FIXME: DO BETTER
 
-        if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(type))
-        {
+            //FIXME: DO WE NEED TO CHECK THAT WE HAVENT PREVIOUSLY SET VAL?
+            n->channelSymbol->val = v; // FIXME: BECAUSE THIS IS ON THE DEFINITION, DO WE HAVE ISSUES WITH ALLOCATION REUSE?
 
-            llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
+            builder->CreateStore((fn->args()).begin(), v);
 
-            if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
+            /*
+            for (auto &arg : fn->args())
             {
-                Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);
-                ; // Lookup the function first
-                inv->setName(fn->getName().str());
+                // Get the argumengt number (just seems easier than making my own counter)
+                int argNumber = arg.getArgNo();
 
-                // Get the parameter list context for the invokable
-                // WPLParser::ParameterListContext *paramList = ctx->paramList;
-                // Create basic block
-                BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
-                builder->SetInsertPoint(bBlk);
+                // Get the argument's type
+                llvm::Type *type = fnType->params()[argNumber];
 
-                // Bind all of the arguments
-                llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, ctx->channelName->getText());
-                std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1)); // FIXME: DO BETTER
+                // Get the argument name (This even works for arrays!)
+                std::string argName = paramList->params.at(argNumber)->getText();
+
+                // Create an allocation for the argumentr
+                llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
+
+                // Try to find the parameter's bnding to determine what value to bind to it.
+                std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber));
+
                 if (!symOpt)
                 {
-                    errorHandler.addCodegenError(ctx->getStart(), "Unable to generate channel id");
+                    errorHandler.addCodegenError(nullptr, "Unable to generate parameter for function: " + argName);
                 }
                 else
                 {
                     symOpt.value()->val = v;
 
-                    builder->CreateStore((fn->args()).begin(), v);
-                }
-
-                /*
-                for (auto &arg : fn->args())
-                {
-                    // Get the argumengt number (just seems easier than making my own counter)
-                    int argNumber = arg.getArgNo();
-
-                    // Get the argument's type
-                    llvm::Type *type = fnType->params()[argNumber];
-
-                    // Get the argument name (This even works for arrays!)
-                    std::string argName = paramList->params.at(argNumber)->getText();
-
-                    // Create an allocation for the argumentr
-                    llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
-
-                    // Try to find the parameter's bnding to determine what value to bind to it.
-                    std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber));
-
-                    if (!symOpt)
-                    {
-                        errorHandler.addCodegenError(ctx->getStart(), "Unable to generate parameter for function: " + argName);
-                    }
-                    else
-                    {
-                        symOpt.value()->val = v;
-
-                        builder->CreateStore(&arg, v);
-                    }
-                }
-                */
-
-                // Get the codeblock for the PROC/FUNC
-                WPLParser::BlockContext *block = ctx->block();
-
-                // Generate code for the block
-                for (auto e : block->stmts)
-                {
-                    e->accept(this);
-                }
-
-                // If we are a PROC, make sure to add a return type (if we don't already have one)
-                // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
-                if (!CodegenVisitor::blockEndsInReturn(block)) // FIXME: THIS SHOULD BECOME ALWAYS TRUE
-                {
-                    builder->CreateRetVoid();
+                    builder->CreateStore(&arg, v);
                 }
             }
-            else
+            */
+
+            // Get the codeblock for the PROC/FUNC
+            // WPLParser::BlockContext *block = ctx->block();
+
+            // Generate code for the block
+            for (auto e : n->block->exprs)
             {
-                errorHandler.addCodegenError(ctx->getStart(), "Invocation type could not be cast to function!");
+                // e->accept(this);
+                this->accept(e);
+            }
+
+            // If we are a PROC, make sure to add a return type (if we don't already have one)
+            // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
+            if (!endsInReturn(n->block)) // FIXME: THIS SHOULD BECOME ALWAYS TRUE
+            {
+                builder->CreateRetVoid();
             }
         }
         else
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Could not generate a function call for type of: " + type->toString());
+            errorHandler.addCodegenError(nullptr, "Invocation type could not be cast to function!");
         }
 
         builder->SetInsertPoint(ins);
         return {};
     }
 
-    std::optional<Value *> visitVariable(std::string id, std::optional<Symbol *> symOpt, antlr4::ParserRuleContext *ctx)
+    std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {
-        //  = props->getBinding(ctx);
-
-        // If the symbol could not be found, raise an error
-        if (!symOpt)
-        {
-            errorHandler.addCodegenError(ctx->getStart(), "Undefined variable access: " + id);
-            return {};
-        }
-
-        Symbol *sym = symOpt.value();
-
+        std::cout << "visitVariable " << sym->toString() << " " << is_rvalue << std::endl; 
+        // module->dump();
         // Try getting the type for the symbol, raising an error if it could not be determined
         llvm::Type *type = sym->type->getLLVMType(module);
         if (!type)
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Unable to find type for variable: " + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
             return {};
         }
 
@@ -363,11 +245,11 @@ public:
         if (!sym->val)
         {
             // If the symbol is a global var
-            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type)) //FIXME: Potentially lots of places that say TypeInvoke when they mean TypeProgram 
+            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type)) // FIXME: Potentially lots of places that say TypeInvoke when they mean TypeProgram
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(ctx->getStart(), "Could not locate IR name for function " + sym->toString());
+                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for program: " + sym->toString());
                     return {};
                 }
 
@@ -375,11 +257,11 @@ public:
 
                 return fn;
             }
-            else if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type)) //FIXME: This is annoying that we have to have duplicate code despite both APIs being the same
+            else if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type)) // FIXME: This is annoying that we have to have duplicate code despite both APIs being the same
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(ctx->getStart(), "Could not locate IR name for function " + sym->toString());
+                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for function: " + sym->toString());
                     return {};
                 }
 
@@ -395,7 +277,7 @@ public:
                 // Check that we found the variable. If not, throw an error.
                 if (!glob)
                 {
-                    errorHandler.addCodegenError(ctx->getStart(), "Unable to find global variable: " + id);
+                    errorHandler.addCodegenError(nullptr, "Unable to find global variable: " + sym->getIdentifier());
                     return {};
                 }
 
@@ -404,38 +286,24 @@ public:
                 return val;
             }
 
-            errorHandler.addCodegenError(ctx->getStart(), "Unable to find allocation for variable: " + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Unable to find allocation for variable: " + sym->getIdentifier());
             return {};
         }
 
-        // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
-        Value *v = builder->CreateLoad(type, sym->val.value(), id);
+        std::cout << "297 rv" << is_rvalue << std::endl; 
+        if(!is_rvalue) return sym->val.value(); 
+        // return sym->val.value();
+        // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
+        Value *v = builder->CreateLoad(type, sym->val.value(), sym->getIdentifier());
+
+        // //FIXME: DO BETTER
+        // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
+        // builder->CreateStore(v, alloc);
+        // return alloc; 
         return v;
     }
 
-    std::optional<Value *> any2Value(std::any any)
-    {
-        return anyOpt2Val<Value *>(any);
-        // std::optional<std::optional<Value *>> temp = any2Opt<std::optional<Value *>>(any);
-        // if(temp) return temp.value();
-        // return {};
-    }
-
-protected:
-    /**
-     * @brief Helper function to determine if a Block ends in a return or not
-     *
-     * @param ctx The BlockContext to check
-     * @return true If it ends in a return
-     * @return false If it does not end in a return
-     */
-    static bool blockEndsInReturn(WPLParser::BlockContext *ctx)
-    {
-        return ctx->stmts.size() > 0 && dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->stmts.at(ctx->stmts.size() - 1));
-    }
-
 private:
-    PropertyManager *props;
     int flags;
 
     WPLErrorHandler errorHandler;

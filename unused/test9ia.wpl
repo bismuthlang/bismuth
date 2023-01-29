@@ -1,0 +1,16 @@
+# Unused: Global Scope
+
+extern int func printf(...);
+
+int [1] a; 
+
+
+int func program () {
+    a[0] := 10;
+
+    printf("A is %d\n", a);
+    a[0] := 11; 
+
+    printf("A is %d\n", a);
+    return -1; 
+}

@@ -1,0 +1,4 @@
+define program :: c : Channel<-int> = {
+  int i := 1, b := true;
+  c.send(b)
+}

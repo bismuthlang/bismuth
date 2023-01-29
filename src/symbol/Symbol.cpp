@@ -83,7 +83,7 @@ const Protocol *ProtocolSequence::getInverse() const
     return new ProtocolSequence(invs);
 }
 
-const Protocol *ProtocolSequence::getCopy() const
+const ProtocolSequence *ProtocolSequence::getCopy() const
 {
     vector<const Protocol *> invs;
 

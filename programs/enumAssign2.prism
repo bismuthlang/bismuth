@@ -1,0 +1,102 @@
+extern int func printf(str s, ...);
+
+define enum lambdaOp {
+    str, int -> str,
+    str -> str
+}
+
+
+define enum a {
+    int, 
+    boolean,
+    str,
+    #(str, int -> str + str -> str) 
+    lambdaOp
+}
+
+# str, int -> str func getPrintLambda() {
+define getPrintLambda :: c : Channel<-str,int -> str> = {
+    str, int -> str fn := (str msg, int times) : str {
+        while times > 0 {
+            printf("msg=%s\n", msg);
+            times := times -1; 
+        }
+        return msg; 
+    };
+
+    # return fn;
+    c.send(fn)
+}
+
+define struct Unit {}
+
+# a func aFromLambdaOp(lambdaOp op) {
+define aFromLambdaOp :: c : Channel<+lambdaOp;-a> = {
+    lambdaOp op := c.recv();
+    a obscured := op; 
+
+    # return obscured; 
+    c.send(obscured)
+}
+
+# Unit -> int func getMain() {
+define getMain :: c : Channel<-Program<-int>> = {
+    # int func main(Unit u) {
+    define main :: c : Channel<-int> = {
+        var t2; 
+
+        Channel<+str,int->str> chan := exec getPrintLambda;
+        t2 := chan.recv();
+        # t2 := getPrintLambda(); 
+
+        lambdaOp op; # FIXME: I FI CHANGE t2, WILL fn CHANGE?
+        Channel<+str,int->str> chan2 := exec getPrintLambda;
+        # op := getPrintLambda(); 
+        op := chan2.recv();
+        
+        match op {
+            str, int -> str fn => fn("Hello", 2);
+            str -> str fn => fn("Goodbye");
+        }
+
+
+        a obscured;
+        Channel<-lambdaOp;+a> chan3 := exec aFromLambdaOp;
+        chan3.send(op)
+        # obscured := aFromLambdaOp(op); 
+        obscured := chan3.recv();
+
+        match obscured {
+            int i => printf("Integer: %u\n", i);
+            boolean b => if b { printf("Boolean: true\n"); } else { printf("Boolean: false\n"); }
+            str s => printf("String: %s\n", s);
+            lambdaOp s => {
+                match s {
+                    str, int -> str fn => fn("Repeat 2 times!", 2);
+                    str -> str fn => fn("Plain old print!");
+                }
+            }
+        }
+        # return 0; 
+        c.send(0)
+    }
+
+    # return main; 
+    c.send(main)
+}
+
+define program :: c : Channel<-int> = {
+
+    # Unit u := Unit::init(); 
+
+    # define getMain :: c : Channel<-Program<-int>>
+    Channel<+Program<-int>> io := exec getMain; 
+    Program<-int> mainProg := io.recv();
+    Channel<+int> io2 := exec mainProg; 
+    int i := io2.recv();
+
+    c.send(i)
+    # Unit -> int main := getMain(); 
+
+    # return main(u);
+}

@@ -1,0 +1,27 @@
+extern int func printf(str s, ...);
+
+# FIXME: ADD THIS AS A TEST CASE!!
+
+define program :: c : Channel<-int> = {
+
+    printf("Prior to decl\n");
+    
+    # proc inner() {
+    #     printf("Hey friends!\n");
+    # }
+
+    # inner(); 
+
+    define inner :: c : Channel<+str> = {
+        str s := c.recv(); 
+        printf(s);
+    }
+
+    Channel<-str> io := exec inner; 
+
+    io.send("Hey there!\n")
+
+    c.send(-1)
+
+    # return -1; 
+}

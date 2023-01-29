@@ -45,6 +45,13 @@ class Context {
      * @return false if unsuccessful (ie, name already bound to another symbol)
      */
     bool addSymbol(Symbol* symbol);
+
+    /**
+     * @brief Removes a symbol from the scope
+     * 
+     * @param symbol 
+     */
+    bool removeSymbol(Symbol* symbol);
     
     /**
      * @brief Lookup a symbol across all scopes returning the first definition found

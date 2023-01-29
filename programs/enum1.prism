@@ -1,0 +1,38 @@
+extern int func printf(str s, ...);
+
+
+define enum a {
+    int, 
+    boolean,
+    str
+}
+
+define enum b {
+    boolean, 
+    int
+}
+
+
+define program :: c : Channel<-int> = {
+    #a idk0, idk1, idk2 := 1;
+    a idk1 := 1; 
+    a idk2 := false;
+    #a idk2 := 1; 
+
+    a idkStr := "hello there!";
+
+    b oth1 := 1 = 4; 
+
+    match oth1 { # Boolean!
+        int a => printf("Integer\n");
+        boolean b => printf("Boolean!\n");
+    }
+
+    match idkStr { # hello there!!!
+        int a => printf("Integer\n");
+        boolean b => printf("Boolean!\n");
+        str s => printf("%s!!\n", s); 
+    }
+    # return 0; 
+    c.send(0)
+}

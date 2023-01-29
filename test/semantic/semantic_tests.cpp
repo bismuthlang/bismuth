@@ -7,69 +7,69 @@
 
 #include "test_error_handlers.h"
 
-TEST_CASE("Development Semantic tests", "[semantic]")
-{
-  antlr4::ANTLRInputStream input("42;");
-  WPLLexer lexer(&input);
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  SemanticVisitor *sv = new SemanticVisitor(new STManager(), new PropertyManager());
-  sv->visitCompilationUnit(tree);                                                    
-  // if (sv->hasErrors(ERROR)) {
-  //   CHECK("foo" == sv->getErrors());
-  // }
-  CHECK_FALSE(sv->hasErrors(ERROR));
-}
+// TEST_CASE("Development Semantic tests", "[semantic]")
+// {
+//   antlr4::ANTLRInputStream input("42;");
+//   WPLLexer lexer(&input);
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   SemanticVisitor *sv = new SemanticVisitor(new STManager(), new PropertyManager());
+//   sv->visitCompilationUnit(tree);                                                    
+//   // if (sv->hasErrors(ERROR)) {
+//   //   CHECK("foo" == sv->getErrors());
+//   // }
+//   CHECK_FALSE(sv->hasErrors(ERROR));
+// }
 
 
-TEST_CASE("Invalid Array Semantics", "[semantic]")
-{
-  antlr4::ANTLRInputStream input("int [0] a;");
-  WPLLexer lexer(&input);
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  SemanticVisitor *sv = new SemanticVisitor(new STManager(), new PropertyManager());
-  sv->visitCompilationUnit(tree);                                                    
-  REQUIRE(sv->hasErrors(ERROR));
-}
-TEST_CASE("Bool Const Tests", "[semantic]")
-{
-  antlr4::ANTLRInputStream input("false; true;");
-  WPLLexer lexer(&input);
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+// TEST_CASE("Invalid Array Semantics", "[semantic]")
+// {
+//   antlr4::ANTLRInputStream input("int [0] a;");
+//   WPLLexer lexer(&input);
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
+//   SemanticVisitor *sv = new SemanticVisitor(new STManager(), new PropertyManager());
+//   sv->visitCompilationUnit(tree);                                                    
+//   REQUIRE(sv->hasErrors(ERROR));
+// }
+// TEST_CASE("Bool Const Tests", "[semantic]")
+// {
+//   antlr4::ANTLRInputStream input("false; true;");
+//   WPLLexer lexer(&input);
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   WPLParser::CompilationUnitContext *tree = NULL;
 
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
+//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//   REQUIRE(tree != NULL);
 
-  SemanticVisitor *sv = new SemanticVisitor(new STManager(), new PropertyManager());
-  sv->visitCompilationUnit(tree);
+//   SemanticVisitor *sv = new SemanticVisitor(new STManager(), new PropertyManager());
+//   sv->visitCompilationUnit(tree);
 
-  CHECK_FALSE(sv->hasErrors(ERROR));
-}
+//   CHECK_FALSE(sv->hasErrors(ERROR));
+// }
 
-TEST_CASE("Type from compilationUnit", "[semantic]")
-{
-  antlr4::ANTLRInputStream input("int"); // We should get filtered out here
-  WPLLexer lexer(&input);
-  antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
-  parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
-  WPLParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_THROWS(tree = parser.compilationUnit());
-  REQUIRE(tree == NULL);
-}
+// TEST_CASE("Type from compilationUnit", "[semantic]")
+// {
+//   antlr4::ANTLRInputStream input("int"); // We should get filtered out here
+//   WPLLexer lexer(&input);
+//   antlr4::CommonTokenStream tokens(&lexer);
+//   WPLParser parser(&tokens);
+//   parser.removeErrorListeners();
+//   parser.addErrorListener(new TestErrorListener());
+//   WPLParser::CompilationUnitContext *tree = NULL;
+//   REQUIRE_THROWS(tree = parser.compilationUnit());
+//   REQUIRE(tree == NULL);
+// }
 
 //FIXME: FIND A WAY TO RE-ENABLE!
 // TEST_CASE("Visit Type - INT", "[semantic]")

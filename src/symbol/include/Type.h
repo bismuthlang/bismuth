@@ -29,7 +29,6 @@
 #include "LinkedMap.h"
 #include "Protocol.h"
 
-// FIXME: ENABLE LINEAR TYPES!!!
 // FIXME: CAN NOW HAVE UNDEFINED TYPES!!!! NEED TO TEST (AND PROBABLY REMOVE NULLPTR)!
 
 /*******************************************
@@ -147,16 +146,18 @@ public:
 
     const Protocol *getInverse() const override;
 
-    const Protocol *getCopy() const override;
+    const ProtocolSequence *getCopy() const override;
 
     bool isComplete() const
     {
         return steps.size() == 0;
     }
 
-    bool canSend(const Type *ty) const;
+    // bool canSend(const Type *ty) const;
+    optional<const Type *> canSend(const Type *ty) const;
 
-    bool send(const Type *ty) const;
+    // bool send(const Type *ty) const;
+    optional<const Type *> send(const Type *ty) const;
 
     bool canRecv() const;
 
@@ -479,10 +480,10 @@ struct TypeCompare
 
 namespace Types
 {
-    inline const Type *INT = new TypeInt();
-    inline const Type *BOOL = new TypeBool();
-    inline const Type *STR = new TypeStr();
-    inline const Type *UNDEFINED = new TypeBot();
+    inline const TypeInt *INT = new TypeInt();
+    inline const TypeBool *BOOL = new TypeBool();
+    inline const TypeStr *STR = new TypeStr();
+    inline const TypeBot *UNDEFINED = new TypeBot();
 };
 
 /*******************************************
@@ -709,7 +710,7 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeProgram(const TypeChannel *c, bool d)
+    TypeProgram(const TypeChannel *c, bool d) //FIXME: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
     {
         channel = c;
 
@@ -804,6 +805,10 @@ protected:
         //     // Makes sure that the return type of this function is a subtype of the other
         //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
         // }
+        if(const TypeProgram *p = dynamic_cast<const TypeProgram*>(other))
+        {
+            return channel->isSubtype(p->channel); //FIXME: DO BETTER/VERIFY!
+        }
         return false;
     }
 };
@@ -1303,8 +1308,6 @@ public:
             {
                 max = t;
             }
-
-            // std::cout << e->toString() << " size: " << t << std::endl; //FIXME: Verify that strings (and such) are done with pointers (which I think they are) so that they don't go out of bounds
         }
 
         // FIXME: DO BETTER

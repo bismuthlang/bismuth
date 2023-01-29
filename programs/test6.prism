@@ -1,0 +1,31 @@
+extern int func printf(...);
+
+# str func selReturnOne(int a) {
+# PLAN: USE TRAITS TO ELIM IMPOSSIBLE CASE?
+define selReturnOne :: c : Channel<+int;-str> = {
+    int a := c.recv(); 
+    select {
+        a > 10: {c.send("CASE 1 (10)") exit}
+        a > 0 : {c.send("CASE 2 (5)") exit}
+        a = 0 : {c.send("CASE 3 (0)") exit}
+        a < 0 : {c.send("CASE 4 (a)") exit}
+    }
+    c.send("CASE IMPOSSIBLE (-1)")
+}
+
+define program :: c : Channel<-int> = {
+
+    var i := -10; 
+    while i <= 15 {
+        Channel<-int;+str> tmp := exec selReturnOne; 
+        tmp.send(i)
+        str s := tmp.recv(); 
+
+
+        printf("f(%d) = %s\n", i, s);
+        i := i + 1;
+    }
+    
+    # return -1; 
+    c.send(-1)
+}

@@ -19,7 +19,7 @@ extern "C" void waitForAllToFinish()
 {
     std::unique_lock<std::mutex> lock{running_mutex};
     running_cond.wait(lock, [&]
-              { return running == 0; });
+                      { return running == 0; });
 }
 
 // Actual state stuff
@@ -28,13 +28,12 @@ std::map<unsigned int, IPCBuffer<Message> *> State;
 
 std::map<unsigned int, unsigned int> LookupOther; // FIXME: NAME BETTER
 
-// extern "C" void helper(void (*func)(unsigned int), unsigned int i)
-// {
-//     func(i);
-// }
+std::mutex exec_mutex;  //FIXME: DO BETTER W/ MUTEX
 
 extern "C" unsigned int Execute(void (*func)(unsigned int))
 {
+    exec_mutex.lock(); 
+
     IPCBuffer<Message> *aIn = new IPCBuffer<Message>();
     IPCBuffer<Message> *aOut = new IPCBuffer<Message>();
 
@@ -47,11 +46,17 @@ extern "C" unsigned int Execute(void (*func)(unsigned int))
     LookupOther.insert({idOut, idIn});
     LookupOther.insert({idIn, idOut});
 
+    // std::cout << idIn << "<>" << idOut << std::endl;
+    // std::cout << (State.find(idIn) != State.end()) << " " << (LookupOther.find(idIn) != LookupOther.end()) << " " << (State.find(idOut) != State.end()) << " " << (LookupOther.find(idOut) != LookupOther.end()) << std::endl; 
+
     std::lock_guard<std::mutex> lock(running_mutex);
-    running++; 
+    running++;
     running_cond.notify_one();
 
-    std::thread t ([func, idIn](){
+    try
+    {
+        std::thread t([func, idIn]()
+                      {
         func(idIn);
 
         std::unique_lock<std::mutex> lock(running_mutex);
@@ -60,29 +65,43 @@ extern "C" unsigned int Execute(void (*func)(unsigned int))
             running_cond.wait(lock); 
         }
         running--; 
-        running_cond.notify_one();
-    });
-    t.detach();
+        running_cond.notify_one(); });
+        t.detach();
+    }
+    catch (...)
+    {
+        std::cout << "E70" << std::endl;
+    }
+
+    exec_mutex.unlock(); 
     return idOut;
 }
 
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value)
 {
+    exec_mutex.lock(); 
     auto i_oAId = LookupOther.find(aId);
 
     if (i_oAId == LookupOther.end())
     {
-        std::cout << "E53" << std::endl;
+        std::cout << "E53 " << aId << std::endl;
         return; // FIXME: DO BETTER
     }
 
     unsigned int oAId = i_oAId->second;
 
     auto i_buffer = State.find(oAId);
+    exec_mutex.unlock();
 
     if (i_buffer == State.end())
     {
-        std::cout << "E65" << std::endl;
+        std::cout << "E65 " << aId << "->" << oAId << std::endl;
+
+        for(auto e : State)
+        {
+            std::cout << e.first << std::endl; 
+        }
+
         return; // FIXME: DO BETTER
     }
 
@@ -95,11 +114,17 @@ extern "C" void WriteChannel(unsigned int aId, uint8_t *value)
 
 extern "C" uint8_t *ReadChannel(unsigned int aId)
 {
+    exec_mutex.lock();
     auto i_buffer = State.find(aId);
+    exec_mutex.unlock();
 
     if (i_buffer == State.end())
     {
-        std::cout << "79" << std::endl;
+        std::cout << "E79 " << aId << std::endl;
+        for(auto e : State)
+        {
+            std::cout << e.first << std::endl; 
+        }
         return nullptr; // FIXME: DO BETTER
     }
     // return nullptr; // FIXME: DO BETTER
@@ -110,43 +135,50 @@ extern "C" uint8_t *ReadChannel(unsigned int aId)
 
 extern "C" bool ShouldLoop(unsigned int aId)
 {
+    exec_mutex.lock();
     auto i_buffer = State.find(aId);
+    exec_mutex.unlock();
 
     if (i_buffer == State.end())
     {
-        std::cout << "79" << std::endl;
+        std::cout << "79 " << aId << std::endl;
         return false; // FIXME: DO BETTER
     }
 
     Message m = i_buffer->second->dequeue();
 
-    if(std::holds_alternative<START_LOOP>(m)) return true; 
-    if(std::holds_alternative<END_LOOP>(m)) return false; 
+    if (std::holds_alternative<START_LOOP>(m))
+        return true;
+    if (std::holds_alternative<END_LOOP>(m))
+        return false;
 
-    std::cout << "E126" << std::endl; //FIXME: DO BETTER
-    std::cout << "SL: " << std::holds_alternative<START_LOOP>(m) << " EL: " << std::holds_alternative<END_LOOP>(m) << " VAL: " << std::holds_alternative<Value>(m) << " SEL: " << std::holds_alternative<SEL>(m) << std::endl; 
+    std::cout << "E126" << std::endl; // FIXME: DO BETTER
+    std::cout << "SL: " << std::holds_alternative<START_LOOP>(m) << " EL: " << std::holds_alternative<END_LOOP>(m) << " VAL: " << std::holds_alternative<Value>(m) << " SEL: " << std::holds_alternative<SEL>(m) << std::endl;
 
-    return false; 
+    return false;
 }
-
 
 extern "C" void ContractChannel(unsigned int aId)
 {
+    exec_mutex.lock();
     auto i_oAId = LookupOther.find(aId);
+    exec_mutex.unlock();
 
     if (i_oAId == LookupOther.end())
     {
-        std::cout << "E138" << std::endl;
+        std::cout << "E138 " << aId <<  std::endl;
         return; // FIXME: DO BETTER
     }
 
     unsigned int oAId = i_oAId->second;
 
+    exec_mutex.lock();
     auto i_buffer = State.find(oAId);
+    exec_mutex.unlock();
 
     if (i_buffer == State.end())
     {
-        std::cout << "E148" << std::endl;
+        std::cout << "E148 " << aId << "->" << oAId << std::endl;
         return; // FIXME: DO BETTER
     }
 
@@ -159,11 +191,12 @@ extern "C" void ContractChannel(unsigned int aId)
 
 extern "C" void WeakenChannel(unsigned int aId)
 {
+    exec_mutex.lock();
     auto i_oAId = LookupOther.find(aId);
 
     if (i_oAId == LookupOther.end())
     {
-        std::cout << "E165" << std::endl;
+        std::cout << "E165 " << aId << std::endl;
         return; // FIXME: DO BETTER
     }
 
@@ -171,9 +204,11 @@ extern "C" void WeakenChannel(unsigned int aId)
 
     auto i_buffer = State.find(oAId);
 
+    exec_mutex.unlock();
+
     if (i_buffer == State.end())
     {
-        std::cout << "E175" << std::endl;
+        std::cout << "E175 " << aId << "->" << oAId << std::endl;
         return; // FIXME: DO BETTER
     }
 

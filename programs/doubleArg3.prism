@@ -1,0 +1,17 @@
+extern int func printf(...);
+
+# proc foo(int a, str a, int b) {
+define func foo (int a, str a, int b) : int {
+    a := 10;
+    a := "10";  
+
+    var c := a; 
+
+    return 0; # FIXME: MAKE IT SO THAT WAY WE CAN HAVE RETURN NOTHING?
+}
+
+define program :: c : Channel<-int> = {
+ var current := 1;        
+ c.send(current)
+#  return -1;
+}

@@ -1,0 +1,86 @@
+extern int func printf(...);
+
+# int func mutArgsOne(int i) {
+define mutArgsOne :: io : Channel<+int;-int> = {
+    int i := io.recv(); 
+
+    if ~(5 < 10) {
+        i := 20;
+    } else {
+        i := 50; 
+    }
+    printf("GOT: %d\n", i);
+
+    # return i; 
+    io.send(i)
+}
+
+
+define mutArgsTwo :: io : Channel<+int;-int> = {
+    int i := io.recv(); 
+
+    if (5 < 10) {
+        i := 20;
+    } else {
+        i := 50; 
+    }
+    printf("GOT: %d\n", i);
+
+    # return i; 
+    io.send(i)
+}
+
+# proc PROCmutArgsOne(int i) {
+define PROCmutArgsOne :: io : Channel<+int> = {
+    int i := io.recv();
+
+    if ~(5 < 10) {
+        i := 20;
+    } else {
+        i := 50; 
+    }
+    printf("GOT: %d\n", i);
+
+    # return; 
+}
+
+
+# proc PROCmutArgsTwo(int i) {
+define PROCmutArgsTwo :: io : Channel<+int> = {
+    int i := io.recv();
+
+    if (5 < 10) {
+        i := 20;
+    } else {
+        i := 50; 
+    }
+    printf("GOT: %d\n", i);
+
+    # return; 
+}
+
+define program :: c : Channel<-int> = {
+
+    Channel<-int;+int> t1 := exec mutArgsOne; 
+    Channel<-int;+int> t2 := exec mutArgsTwo;
+    Channel<-int> t3 := exec PROCmutArgsOne;
+    Channel<-int> t4 := exec PROCmutArgsTwo; 
+
+    t1.send(0)
+    t2.send(0)
+    t3.send(0)
+    t4.send(0)
+
+    int t5 := t1.recv(), t6 := t2.recv(); 
+
+    printf("ANS: %d\n", t5); # FIXME: TEST THIS BETTER, HARD TO UNDERSTAND ORDER!
+    printf("ANS: %d\n", t6);
+
+    # printf("ANS: %d\n", mutArgsOne(0));
+    # printf("ANS: %d\n", mutArgsTwo(0));
+    # PROCmutArgsOne(0);
+    # PROCmutArgsTwo(0);
+
+    # return -1; 
+    c.send(-1)
+}

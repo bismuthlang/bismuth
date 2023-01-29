@@ -1,0 +1,18 @@
+extern int func printf(str a,         ...);
+
+
+define program :: c : Channel<-int> = {
+  var a := -1; 
+  var b := 20; 
+
+  var test := a > 0 & b = 2;
+  if (test) {
+    printf("true\n");
+  }
+  else 
+  {
+    printf("false\n");
+  }
+  # return -1; 
+  c.send(0)
+}

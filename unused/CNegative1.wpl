@@ -1,0 +1,6 @@
+# Unused: this is basically a syntax test....
+
+func program() {
+  int i;
+  i := 1;
+}

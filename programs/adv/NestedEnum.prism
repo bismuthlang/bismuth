@@ -1,0 +1,29 @@
+extern int func printf(str s, ...);
+
+define enum Inner {
+    int, 
+    boolean 
+}
+
+define enum Outer {
+    Inner, 
+    str
+}
+
+define program :: c : Channel<-int> = {
+    Inner i := 5; 
+    Outer o := i; 
+
+    match o {
+        Inner in => {
+            match in {
+                int i => printf("int: %u\n", i);
+                boolean b => printf("boolean: %s\n", (boolean b) : str { if b { return "true"; } return "false"; }(b));
+            }
+        }
+        str s => printf("str: %s\n", s);
+    }
+
+    # return 0; 
+    c.send(0)
+}

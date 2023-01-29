@@ -1,0 +1,30 @@
+extern int func printf(...);
+
+# define program :: c : Channel<-int> = {
+define program :: io : Channel<-int> = {
+    # var a, b, c, d, e, f, K;
+    var a; 
+    var b; 
+    var c; 
+    var d; 
+    var e;
+    var f; 
+    var K; 
+
+    K := 1;
+
+    e := f; 
+    c := d; 
+
+    f := a; 
+    d := b; 
+
+
+    f := 1; 
+
+
+
+
+    # return -1;
+    io.send(-1)
+}

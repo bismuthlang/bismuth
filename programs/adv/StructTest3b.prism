@@ -1,0 +1,102 @@
+extern int func printf(str s, ...);
+
+define struct Unit {}
+
+define struct RGBData {
+    int[3] rgb; 
+}
+
+define struct HSVData {
+    int[3] hsv; 
+}
+
+define struct RGBColor {
+    RGBData rgb; 
+    RGBData -> int getRed; 
+    RGBData -> int getGreen; 
+    RGBData -> int getBlue; 
+}
+
+define struct HSVColor {
+    HSVData hsv; 
+    HSVData -> int getHue; 
+    HSVData -> int getSat; # FIXME: DO A TEST W/ STORES PROCESSES IF WE DONT ALREADY
+    HSVData -> int getVal;
+}
+
+define enum ColorType {
+    RGBColor, 
+    HSVColor
+}
+
+define struct Color {
+    ColorType colorType; 
+    ColorType -> str toString; 
+}
+
+#FIXME: REASON FIELD ACCESS MAY HAVE ISSUE ON LINEARS IS THAT DESTROYING PARENT WOULD DESTROY ACCESS TO THE LINEAR INNER TYPES...
+
+# Color func getRGBColor(int r, int g, int b) 
+define getRGBColor :: c : Channel<+int;+int;+int;-Color> = {
+    int[3] data; 
+    data[0] := c.recv(); # r; 
+    data[1] := c.recv(); # g; 
+    data[2] := c.recv(); # b; 
+
+    RGBData rgbDat := RGBData::init(data);
+
+    c.send(Color::init(
+        RGBColor::init(
+            rgbDat, 
+            (RGBData d) : int { return d.rgb[0]; },
+            (RGBData d) : int { return d.rgb[1]; },
+            (RGBData d) : int { return d.rgb[2]; }
+        ),
+        (ColorType c) : str { return "rgb"; }
+    ))
+}
+
+
+# FIXME: TRY MORE NESTED STRUCTS SO WE HAVE 3+ ACCESSES AT ONCE!!
+
+
+# proc fancyPrint(Color c) {
+define func fancyPrint (Color c) : Unit { #FIXME: DO BETTER PROC!
+    str s := c.toString(c.colorType);
+    
+    printf("Color[type=%s, ", c.toString(c.colorType));
+
+    match c.colorType {
+         RGBColor rgbcolor => {
+             printf("r=%u, g=%u, b=%u]\n", rgbcolor.getRed(rgbcolor.rgb), rgbcolor.getBlue(rgbcolor.rgb), rgbcolor.getGreen(rgbcolor.rgb));
+         }
+         HSVColor hsv => printf("r=%u, g=%u, b=%u]\n", hsv.getHue(hsv.hsv), hsv.getSat(hsv.hsv), hsv.getVal(hsv.hsv));
+    }
+
+    return Unit::init(); 
+}
+
+
+define program :: c : Channel<-int> = {
+
+    HSVColor hsv; 
+    RGBColor rgb; 
+
+    #Color z := getColor(58, 166, 63);
+
+    #printf("Color: %u, %u, %u\n", z.red, z.green, z.blue);
+
+    # Color col := getRGBColor(58, 166, 63);
+    Channel<-int;-int;-int;+Color> t := exec getRGBColor;
+    t.send(58)
+    t.send(166)
+    t.send(63)
+
+    Color col := t.recv();
+
+    fancyPrint(col); 
+
+
+    # return 0; 
+    c.send(0)
+}

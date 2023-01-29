@@ -10,7 +10,7 @@ unzip $1 -d ./tmp # Unzip the folder in a ./tmp
 
 cd ./tmp # Change to inner directory
 
-sudo docker run -it -v $PWD/ahfriedman-wpl:/home/shared ahfriedman/cs544-cs4533-docker
+sudo docker run -it -v $PWD/ahfriedman-prism:/home/shared ahfriedman/cs544-cs4533-docker
 
 # User then does stuff
 

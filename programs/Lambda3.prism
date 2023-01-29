@@ -1,0 +1,25 @@
+extern int func printf(...);
+
+define program :: c : Channel<-int> = {
+
+
+    var ref := (int x) : int {
+        printf("LAM: %u:\n", x);
+        return x; 
+    }; 
+
+    ref(10); 
+    printf("ref(1) = %u\n", ref(1));
+
+    ref := (int z) : int {
+        printf("LAM2: %u\n", z);
+        return z; 
+    };
+
+    ref(10);
+
+    printf("ref(1) = %u\n", ref(1));
+
+    # return 0;
+    c.send(0)
+}

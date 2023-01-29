@@ -1,6 +1,6 @@
 #include "CodegenVisitor.h"
 
-std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::CompilationUnitContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
 {
     /***********************************
      *
@@ -99,69 +99,76 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
      *
      *
      ***********************************/
-    for (auto e : ctx->defs)
+    for (auto e : n->defs)
     {
-        if (WPLParser::DefineProgramContext *octx = dynamic_cast<WPLParser::DefineProgramContext *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
+        if (std::holds_alternative<ProgramDefNode *>(e)) // ProgramDefNode *octx = dynamic_cast<ProgramDefNode *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
         {
-            WPLParser::DefineProcContext *fnCtx = octx->defineProc();
-            std::optional<Symbol *> optSym = props->getBinding(fnCtx);
+            
+            ProgramDefNode *octx = std::get<ProgramDefNode *>(e);
 
-            if (!optSym)
+            const TypeProgram *type = octx->getType();
+
+            llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
+
+            if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
             {
-                errorHandler.addCodegenError(fnCtx->getStart(), "Incorrectly bound symbol in function definition. Probably a compiler error.");
-                return {};
-            }
-
-            Symbol *symbol = optSym.value();
-
-            if (!symbol->type)
-            {
-                errorHandler.addCodegenError(fnCtx->getStart(), "Type for function not correctly bound! Probably a compiler errror.");
-                return {};
-            }
-
-            const Type *generalType = symbol->type;
-
-            if (const TypeProgram *type = dynamic_cast<const TypeProgram *>(generalType))
-            {
-                llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
-
-                if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
-                {
-                    Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, fnCtx->name->getText(), module);
-                    type->setName(fn->getName().str());
-                }
-                else
-                {
-                    errorHandler.addCodegenError(fnCtx->getStart(), "Could not treat function type as function.");
-                    return {};
-                }
+                Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, octx->name, module);
+                type->setName(fn->getName().str());
             }
             else
             {
-                errorHandler.addCodegenError(fnCtx->getStart(), "Function bound to: " + generalType->toString() + ". Requires Invokable!");
+                errorHandler.addCodegenError(nullptr, "Could not treat function type as function.");
+                return {};
             }
         }
-        else
+        else if (std::holds_alternative<LambdaConstNode *>(e)) // ProgramDefNode *octx = dynamic_cast<ProgramDefNode *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
         {
-            e->accept(this); // TODO: remove this?
+            LambdaConstNode *octx = std::get<LambdaConstNode *>(e);
+
+            const TypeInvoke *type = octx->getType();
+
+            llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
+
+            if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
+            {
+                Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, octx->name, module);
+                type->setName(fn->getName().str());
+            }
+            else
+            {
+                errorHandler.addCodegenError(nullptr, "Could not treat function type as function.");
+                return {};
+            }
         }
+        // else if (std::holds_alternative<DefineEnumNode *>(e)) // FIXME: DO BETTER
+        // {
+        //     DefineEnumNode *a = std::get<DefineEnumNode *>(e);
+        //     AcceptType(this, a); // TODO: remove this?
+        // }
+        // else
+        // {
+        //     DefineStructNode *a = std::get<DefineStructNode *>(e);
+        //     AcceptType(this, a); // TODO: remove this?
+        // }
     }
 
-    for (auto e : ctx->extens)
+    for (auto e : n->externs)
     {
-        e->accept(this);
+        AcceptType(this, e);
     }
 
-    for (auto e : ctx->defs)
+    for (auto e : n->defs)
     {
         // Generate code for statement
-        if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
+        if (std::holds_alternative<ProgramDefNode *>(e))
         {
-            std::cout << "64 " << fnCtx->defineProc()->name->getText() << std::endl;
-            // this->visitInvokeable(fnCtx);
-            e->accept(this);
-            std::cout << "-----" << std::endl;
+            ProgramDefNode *a = std::get<ProgramDefNode *>(e);
+            AcceptType(this, a);
+        }
+        else if (std::holds_alternative<LambdaConstNode *>(e))
+        {
+            LambdaConstNode *a = std::get<LambdaConstNode *>(e);
+            AcceptType(this, a);
         }
     }
 
@@ -192,297 +199,191 @@ std::optional<Value *> CodegenVisitor::TvisitCompilationUnit(WPLParser::Compilat
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitMatchStatement(WPLParser::MatchStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
 {
-    std::optional<Symbol *> symOpt = props->getBinding(ctx->check);
-    if (!symOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not locate symbol for case");
-        return {};
-    }
-
-    if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(symOpt.value()->type))
-    {
-        auto origParent = builder->GetInsertBlock()->getParent();
-        BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
-
-        std::any anyCheck = ctx->check->accept(this);
-
-        // Attempt to cast the check; if this fails, then codegen for the check failed
-        if (std::optional<Value *> optVal = any2Value(anyCheck))
-        {
-            // Check that the optional, in fact, has a value. Otherwise, something went wrong.
-            if (!optVal)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->check->getText());
-                return {};
-            }
-
-            Value *sumVal = optVal.value();
-            llvm::AllocaInst *SumPtr = builder->CreateAlloca(sumVal->getType());
-            builder->CreateStore(sumVal, SumPtr);
-
-            Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
-
-            Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
-
-            llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
-
-            for (WPLParser::MatchAlternativeContext *altCtx : ctx->cases)
-            {
-                std::optional<Symbol *> localSymOpt = props->getBinding(altCtx->VARIABLE());
-
-                if (!localSymOpt)
-                {
-                    errorHandler.addCodegenError(altCtx->getStart(), "Failed to lookup type for case");
-                    return {};
-                }
-
-                llvm::Type *toFind = localSymOpt.value()->type->getLLVMType(module);
-
-                unsigned int index = sumType->getIndex(module, toFind);
-
-                if (index == 0)
-                {
-                    errorHandler.addCodegenError(ctx->getStart(), "Unable to find key for type " + localSymOpt.value()->type->toString() + " in sum");
-                    return {};
-                }
-
-                BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(index));
-
-                builder->SetInsertPoint(matchBlk);
-
-                switchInst->addCase(ConstantInt::get(Int32Ty, index, true), matchBlk);
-                origParent->getBasicBlockList().push_back(matchBlk);
-
-                std::optional<Symbol *> varSymbolOpt = props->getBinding(altCtx->VARIABLE());
-
-                if (!varSymbolOpt)
-                {
-                    errorHandler.addCodegenError(altCtx->getStart(), "Failed to find symbol in match");
-                    return {};
-                }
-
-                Symbol *varSymbol = varSymbolOpt.value();
-
-                //  Get the type of the symbol
-                llvm::Type *ty = varSymbol->type->getLLVMType(module);
-
-                // Can skip global stuff
-                llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, altCtx->VARIABLE()->getText());
-                varSymbol->val = v;
-                // varSymbol->val = v;
-
-                // Now to store the var
-                Value *valuePtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32One});
-
-                Value *corrected = builder->CreateBitCast(valuePtr, ty->getPointerTo());
-
-                Value *val = builder->CreateLoad(ty, corrected);
-
-                builder->CreateStore(val, v);
-
-                altCtx->eval->accept(this);
-
-                if (WPLParser::BlockStatementContext *blkStmtCtx = dynamic_cast<WPLParser::BlockStatementContext *>(altCtx->eval))
-                {
-                    WPLParser::BlockContext *blkCtx = blkStmtCtx->block();
-                    if (!CodegenVisitor::blockEndsInReturn(blkCtx))
-                    {
-                        builder->CreateBr(mergeBlk);
-                    }
-                    // if it ends in a return, we're good!
-                }
-                else if (WPLParser::ReturnStatementContext *retCtx = dynamic_cast<WPLParser::ReturnStatementContext *>(altCtx->eval))
-                {
-                    // Similarly, we don't need to generate the branch
-                }
-                else
-                {
-                    builder->CreateBr(mergeBlk);
-                }
-            }
-        }
-
-        origParent->getBasicBlockList().push_back(mergeBlk);
-        builder->SetInsertPoint(mergeBlk);
-
-        return {};
-    }
-
-    errorHandler.addCodegenError(ctx->getStart(), "Failed to lookup type for case");
-
-    return {};
-}
-
-std::optional<Value *> CodegenVisitor::TvisitInvocation(WPLParser::InvocationContext *ctx)
-{
-    std::optional<Symbol *> symOpt = props->getBinding((ctx->lam ? (antlr4::tree::ParseTree *)ctx->lam : (antlr4::tree::ParseTree *)ctx));
-    if (!symOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to lookup binding: " + ctx->getText());
-        return {};
-    }
-
-    if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(symOpt.value()->type))
-    {
-        std::vector<const Type *> paramTypes = inv->getParamTypes();
-
-        // Create the argument vector
-        std::vector<llvm::Value *> args;
-
-        // Populate the argument vector, breaking out of compilation if any argument fails to generate.
-        for (auto e : ctx->args)
-        {
-            std::optional<Value *> valOpt = any2Value(e->accept(this));
-            if (!valOpt)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code");
-                return {};
-            }
-
-            Value *val = valOpt.value();
-
-            if (args.size() < paramTypes.size())
-            {
-                // TODO: METHODIZE!
-                if (const TypeSum *sum = dynamic_cast<const TypeSum *>(paramTypes.at(args.size())))
-                {
-                    unsigned int index = sum->getIndex(module, val->getType());
-
-                    if (index != 0)
-                    {
-                        llvm::Type *sumTy = sum->getLLVMType(module);
-                        llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
-                        Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-                        builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-                        Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-                        Value *corrected = builder->CreateBitCast(valuePtr, val->getType()->getPointerTo());
-                        builder->CreateStore(val, corrected);
-
-                        val = builder->CreateLoad(sumTy, alloc);
-                    }
-                }
-            }
-
-            args.push_back(val);
-        }
-
-        // Convert to an array ref, then find and execute the call.
-        ArrayRef<Value *> ref = ArrayRef(args);
-        if (ctx->lam)
-        {
-            std::optional<Value *> callOpt = TvisitLambdaConstExpr(ctx->lam);
-            if (!callOpt)
-            {
-                errorHandler.addCodegenError(ctx->lam->getStart(), "Could not generate code for lambda");
-                return {};
-            }
-            llvm::Function *call = (llvm::Function *)callOpt.value();
-            Value *val = builder->CreateCall(call, ref); // Needs to be separate line because, C++
-            return val;
-        }
-
-        // llvm::Function *call = module->getFunction(ctx->VARIABLE()->getText());
-        std::optional<Value *> fnOpt = any2Value(ctx->field->accept(this));
-        if (!fnOpt)
-        {
-            errorHandler.addCodegenError(ctx->getStart(), "Could not locate function for invocation: " + ctx->field->getText() + ". Has it been defined in IR yet?");
-            return {};
-        }
-
-        Value *fnVal = fnOpt.value();
-
-        llvm::Type *ty = fnVal->getType();
-
-        if (llvm::isa<llvm::Function>(fnVal))
-        {
-            llvm::Function *call = static_cast<llvm::Function *>(fnVal);
-            Value *val = builder->CreateCall(call, ref); // Needs to be separate line because, C++
-            return val;
-        }
-
-        llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(ty->getPointerElementType());
-
-        Value *val = builder->CreateCall(fnType, fnVal, ref);
-        return val;
-    }
-
-    errorHandler.addCodegenError(ctx->getStart(), "Invocation got non-invokable type!");
-    return {};
-}
-
-std::optional<Value *> CodegenVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx)
-{
-    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
-    if (!symOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
-        return {};
-    }
-
-    Symbol *sym = symOpt.value();
-
-    if (!sym->val)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
-        return {};
-    }
-
-    Value *chanVal = sym->val.value();
-
-    std::optional<Symbol *> tySymOpt = props->getBinding(ctx); // For the type of the expr
-    if (!tySymOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel recv type"); // FIXME: DO BETTER
-        return {};
-    }
-
-    llvm::Type *recvType = tySymOpt.value()->type->getLLVMType(module);
-
-    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
-    llvm::Function *progFn = module->getFunction("ReadChannel"); // FIXME: BAD OPTIONAL ACCESS
-
-    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
-    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());             // Cast the void* to the correct type ptr
-    // return builder->CreateStore(corrected, )
-
-    // FIXME: Methodize things so that way we don't have to do this as its just a redundant alloca given we have to have another for the var its self...
-    // llvm::AllocaInst *v = builder->CreateAlloca(recvType, 0, "");
-    // builder->CreateStore(casted, v);
-    return builder->CreateLoad(recvType, casted);
-    // return v;
-
-    // return casted;
-}
-
-std::optional<Value *> CodegenVisitor::TvisitAssignableExec(WPLParser::AssignableExecContext *ctx)
-{
-    // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
+    // std::optional<Symbol *> symOpt = props->getBinding(ctx->check);
     // if (!symOpt)
     // {
-    //     errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
+    //     errorHandler.addCodegenError(nullptr, "Could not locate symbol for case");
     //     return {};
     // }
 
-    // std::cout << "398" << std::endl;
+    const TypeSum *sumType = n->matchType;
 
-    // std::optional<Value *> fnOpt = any2Value(ctx->VARIABLE()->accept(this));
-    std::cout << !!(props->getBinding(ctx->VARIABLE())) << std::endl;
-    std::optional<Value *> fnOpt = visitVariable(
-        ctx->VARIABLE()->getText(),
-        props->getBinding(ctx->VARIABLE()),
-        ctx);
+    auto origParent = builder->GetInsertBlock()->getParent();
+    BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
 
-    // std::cout << "402" << std::endl;
-    if (!fnOpt)
+    // std::any anyCheck = ctx->check->accept(this);
+
+    // Attempt to cast the check; if this fails, then codegen for the check failed
+    std::optional<Value *> optVal = AcceptType(this, n->checkExpr);
+
+    // Check that the optional, in fact, has a value. Otherwise, something went wrong.
+    if (!optVal)
     {
-        // std::cout << "405" << std::endl;
-        errorHandler.addCodegenError(ctx->getStart(), "Could not locate function for invocation: " + ctx->VARIABLE()->getText() + ". Has it been defined in IR yet?");
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 202"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
-    // std::cout << "408" << std::endl;
+
+    Value *sumVal = optVal.value();
+    llvm::AllocaInst *SumPtr = builder->CreateAlloca(sumVal->getType());
+    builder->CreateStore(sumVal, SumPtr);
+
+    Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
+    
+    Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
+
+    llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size()); // sumType->getCases().size());
+
+    for (std::pair<Symbol *, TypedNode *> caseNode : n->cases)
+    {
+        // std::optional<Symbol *> localSymOpt = props->getBinding(altCtx->VARIABLE());
+
+        // if (!localSymOpt)
+        // {
+        //     errorHandler.addCodegenError(nullptr, "Failed to lookup type for case");
+        //     return {};
+        // }
+
+        Symbol *localSym = caseNode.first;
+
+        llvm::Type *toFind = localSym->type->getLLVMType(module);
+
+        unsigned int index = sumType->getIndex(module, toFind);
+
+        if (index == 0)
+        {
+            errorHandler.addCodegenError(nullptr, "Unable to find key for type " + localSym->type->toString() + " in sum");
+            return {};
+        }
+
+        BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(index));
+
+        builder->SetInsertPoint(matchBlk);
+
+        switchInst->addCase(ConstantInt::get(Int32Ty, index, true), matchBlk);
+        origParent->getBasicBlockList().push_back(matchBlk);
+
+        //  Get the type of the symbol
+        llvm::Type *ty = localSym->type->getLLVMType(module);
+
+        // Can skip global stuff
+        llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, localSym->getIdentifier());
+        localSym->val = v;
+        // varSymbol->val = v;
+
+        // Now to store the var
+        Value *valuePtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32One});
+        Value *corrected = builder->CreateBitCast(valuePtr, ty->getPointerTo());
+
+        Value *val = builder->CreateLoad(ty, corrected);
+
+        builder->CreateStore(val, v);
+
+        // altCtx->eval->accept(this);
+        AcceptType(this, caseNode.second);
+
+        if (BlockNode *blkStmtCtx = dynamic_cast<BlockNode *>(caseNode.second))
+        {
+            if (!endsInReturn(blkStmtCtx))
+            {
+                builder->CreateBr(mergeBlk);
+            }
+            // if it ends in a return, we're good!
+        }
+        else if (ReturnNode *retCtx = dynamic_cast<ReturnNode *>(caseNode.second))
+        {
+            // Similarly, we don't need to generate the branch
+        }
+        else
+        {
+            builder->CreateBr(mergeBlk);
+        }
+    }
+
+    origParent->getBasicBlockList().push_back(mergeBlk);
+    builder->SetInsertPoint(mergeBlk);
+
+    for (TypedNode *s : n->post)
+    {
+        AcceptType(this, s);
+    }
+
+    return {};
+}
+
+std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
+{
+    // if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(symOpt.value()->type))
+    // {
+    vector<TypedNode *> argNodes = n->args; // inv->getParamTypes();
+
+    // Create the argument vector
+    std::vector<llvm::Value *> args;
+
+    // Populate the argument vector, breaking out of compilation if any argument fails to generate.
+    for (TypedNode *e : argNodes)
+    {
+        std::optional<Value *> valOpt = AcceptType(this, e);
+        if (!valOpt)
+        {
+            errorHandler.addCodegenError(nullptr, "Failed to generate code");
+            return {};
+        }
+
+        Value *val = valOpt.value();
+
+        if (args.size() < n->paramType.size())
+        {
+            // TODO: METHODIZE!
+            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->paramType.at(args.size()))) // argNodes.at(args.size())->getType()))
+            {
+                unsigned int index = sum->getIndex(module, val->getType());
+
+                if (index != 0)
+                {
+                    llvm::Type *sumTy = sum->getLLVMType(module);
+                    llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+                    
+                    Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+                    
+                    builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+                    
+                    Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+                    
+                    Value *corrected = builder->CreateBitCast(valuePtr, val->getType()->getPointerTo());
+                    builder->CreateStore(val, corrected);
+
+                    val = builder->CreateLoad(sumTy, alloc);
+                }
+            }
+        }
+
+        args.push_back(val);
+    }
+
+    // Convert to an array ref, then find and execute the call.
+    ArrayRef<Value *> ref = ArrayRef(args);
+    // if (ctx->lam)
+    // {
+    //     std::optional<Value *> callOpt = TvisitLambdaConstExpr(ctx->lam);
+    //     if (!callOpt)
+    //     {
+    //         errorHandler.addCodegenError(ctx->lam->getStart(), "Could not generate code for lambda");
+    //         return {};
+    //     }
+    //     llvm::Function *call = (llvm::Function *)callOpt.value();
+    //     Value *val = builder->CreateCall(call, ref); // Needs to be separate line because, C++
+    //     return val;
+    // }
+
+    // llvm::Function *call = module->getFunction(ctx->VARIABLE()->getText());
+    std::optional<Value *> fnOpt = AcceptType(this, n->fn);
+    if (!fnOpt)
+    {
+        errorHandler.addCodegenError(nullptr, "Could not locate function for invocation. Has it been defined in IR yet?");
+        return {};
+    }
 
     Value *fnVal = fnOpt.value();
 
@@ -490,32 +391,111 @@ std::optional<Value *> CodegenVisitor::TvisitAssignableExec(WPLParser::Assignabl
 
     if (llvm::isa<llvm::Function>(fnVal))
     {
-        // std::cout << "412" << std::endl;
-        llvm::Function *lambdaThread = static_cast<llvm::Function *>(fnVal);
-        // std::cout << "436" << std::endl;
-        // module->dump();
-        llvm::Function *progFn = module->getFunction("Execute");
-        // std::cout << "438" << std::endl; // :)
-        Value *val = builder->CreateCall(progFn, {lambdaThread});
-        // std::cout << "442" << std::endl;
-        // module->dump();
+        llvm::Function *call = static_cast<llvm::Function *>(fnVal);
+        Value *val = builder->CreateCall(call, ref); // Needs to be separate line because, C++
         return val;
     }
-    // std::cout << "416" << std::endl; //FIXME: REPORT ERROR?
 
-    return {};
+    llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(ty->getPointerElementType());
+
+    Value *val = builder->CreateCall(fnType, fnVal, ref);
+    return val;
+    // }
+
+    // errorHandler.addCodegenError(nullptr, "Invocation got non-invokable type!");
+    // return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 {
-    std::optional<Value *> valOpt = any2Value(ctx->expr->accept(this));
-    if (!valOpt)
+    Symbol *sym = n->sym;
+
+    if (!sym->val)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code");
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
-    Value *stoVal = valOpt.value();
+    Value *chanVal = sym->val.value();
+
+    llvm::Type *recvType = n->ty->getLLVMType(module);
+
+    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
+    llvm::Function *progFn = module->getFunction("ReadChannel"); // FIXME: BAD OPTIONAL ACCESS
+
+    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
+    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());             // Cast the void* to the correct type ptr
+    // return builder->Create Store(corrected, )
+
+    // FIXME: Methodize things so that way we don't have to do this as its just a redundant alloca given we have to have another for the var its self...
+    // llvm::AllocaInst *v = builder->CreateAlloca(recvType, 0, "");
+    // builder->Create Store(casted, v);
+    return builder->CreateLoad(recvType, casted);
+}
+
+std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
+{
+    std::optional<Value *> fnOpt = visitVariable(n->sym, true); // FIXME: DO BETTER?
+
+    if (!fnOpt)
+    {
+        errorHandler.addCodegenError(nullptr, "Could not locate value for invocation: " + n->sym->getIdentifier() + ". Has it been defined in IR yet?");
+        return {};
+    }
+
+    Value *fnVal = fnOpt.value();
+
+    llvm::Type *ty = fnVal->getType();
+
+    if (llvm::isa<llvm::Function>(fnVal))
+    {
+        llvm::Function *lambdaThread = static_cast<llvm::Function *>(fnVal);
+        llvm::Function *progFn = module->getFunction("Execute");
+
+        Value *val = builder->CreateCall(progFn, {lambdaThread});
+        return val;
+    }
+    // FIXME: REFACTOR, BOTH WITH THIS METHOD AND INVOCATION!
+
+    // llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(ty->getPointerElementType());
+    llvm::Function *progFn = module->getFunction("Execute");
+    Value *val = builder->CreateCall(progFn, {fnVal});
+    return val;
+}
+
+std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
+{
+    std::optional<Value *> valOpt = AcceptType(this, n->expr); //(ctx->expr->accept(this));
+    if (!valOpt)
+    {
+        errorHandler.addCodegenError(nullptr, "Failed to generate code");
+        return {};
+    }
+
+    Symbol *sym = n->sym;
+
+    Value *stoVal = valOpt.value(); // FIXMME: STILL NEEDS TO BE DONE
+
+    // Same as return node's
+    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->lType))
+    {
+        unsigned int index = sum->getIndex(module, stoVal->getType());
+
+        if (index != 0)
+        {
+            llvm::Type *sumTy = sum->getLLVMType(module);
+            llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+
+            Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+            builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+
+            Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+            Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
+            builder->CreateStore(stoVal, corrected);
+
+            stoVal = builder->CreateLoad(sumTy, alloc);
+        }
+    }
 
     llvm::Function *mallocFn = module->getFunction("malloc"); // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
     Value *v = builder->CreateCall(mallocFn, {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
@@ -525,43 +505,27 @@ std::optional<Value *> CodegenVisitor::TvisitProgramSend(WPLParser::ProgramSendC
 
     Value *corrected = builder->CreateBitCast(v, i8p);
 
-    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
-    if (!symOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
-        return {};
-    }
-
-    Symbol *sym = symOpt.value();
-
     if (!sym->val)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
     Value *chanVal = sym->val.value();
 
-    llvm::Function *progFn = module->getFunction("WriteChannel");                                             // FIXME: BAD OPTIONAL ACCESS
-    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
+    llvm::Function *progFn = module->getFunction("WriteChannel"); // FIXME: BAD OPTIONAL ACCESS
+    // Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
+    builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitProgramContract(WPLParser::ProgramContractContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
 {
-
-    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
-    if (!symOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
-        return {};
-    }
-
-    Symbol *sym = symOpt.value();
+    Symbol *sym = n->sym;
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
@@ -570,25 +534,19 @@ std::optional<Value *> CodegenVisitor::TvisitProgramContract(WPLParser::ProgramC
     // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
     llvm::Function *progFn = module->getFunction("ContractChannel"); // FIXME: BAD OPTIONAL ACCESS
 
-    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    // Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
 
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
 {
-    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
-    if (!symOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
-        return {};
-    }
-
-    Symbol *sym = symOpt.value();
+    Symbol *sym = n->sym;
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
@@ -596,31 +554,22 @@ std::optional<Value *> CodegenVisitor::TvisitProgramWeaken(WPLParser::ProgramWea
 
     // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
     llvm::Function *progFn = module->getFunction("WeakenChannel"); // FIXME: BAD OPTIONAL ACCESS
-    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    // Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
 
     // FIXME: MAKE SURE TO FREE ON RECV!
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
 {
-    std::cout << "596" << std::endl;
     // Very similar to regular loop
 
-    // std::optional<Value *> check = this->TvisitCondition(ctx->check); // any2Value(ctx->check->accept(this));
-
-    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE()); // For channel
-    if (!symOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find channel"); // FIXME: DO BETTER
-        return {};
-    }
-
-    Symbol *sym = symOpt.value();
+    Symbol *sym = n->sym;
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Could not find value for channel: " + ctx->VARIABLE()->getText()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
@@ -643,9 +592,10 @@ std::optional<Value *> CodegenVisitor::TvisitProgramAccept(WPLParser::ProgramAcc
      * In the loop block
      */
     builder->SetInsertPoint(loopBlk);
-    for (auto e : ctx->block()->stmts)
+    for (auto e : n->blk->exprs)
     {
-        e->accept(this);
+        // e->accept(this);
+        AcceptType(this, e);
     }
 
     // Re-calculate the loop condition
@@ -660,20 +610,20 @@ std::optional<Value *> CodegenVisitor::TvisitProgramAccept(WPLParser::ProgramAcc
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-    std::cout << "652" << std::endl;
+
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitInitProduct(WPLParser::InitProductContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
 {
     std::vector<Value *> args;
 
-    for (auto e : ctx->exprs)
+    for (TypedNode *e : n->exprs)
     {
-        std::optional<Value *> valOpt = any2Value(e->accept(this));
+        std::optional<Value *> valOpt = AcceptType(this, e);
         if (!valOpt)
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code");
+            errorHandler.addCodegenError(nullptr, "Failed to generate code");
             return {};
         }
 
@@ -684,141 +634,99 @@ std::optional<Value *> CodegenVisitor::TvisitInitProduct(WPLParser::InitProductC
         args.push_back(stoVal);
     }
 
-    std::optional<Symbol *> varSymOpt = props->getBinding(ctx);
-    if (!varSymOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Incorrectly processed variable in assignment: " + ctx->getText());
-        return {};
-    }
+    const TypeStruct *product = n->product;
 
-    Symbol *varSym = varSymOpt.value();
-
-    if (const TypeStruct *product = dynamic_cast<const TypeStruct *>(varSym->type))
+    llvm::Type *ty = product->getLLVMType(module);
+    llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, "");
     {
-        llvm::Type *ty = varSym->type->getLLVMType(module);
-        llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, "");
+        unsigned i = 0;
+        std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
+
+        for (Value *a : args)
         {
-            unsigned i = 0;
-            std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
-
-            for (Value *a : args)
+            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(elements.at(i).second))
             {
-                if (const TypeSum *sum = dynamic_cast<const TypeSum *>(elements.at(i).second))
+                unsigned int index = sum->getIndex(module, a->getType());
+
+                if (index != 0)
                 {
-                    unsigned int index = sum->getIndex(module, a->getType());
+                    llvm::Type *sumTy = sum->getLLVMType(module);
+                    llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+                    
+                    Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+                    builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+                    
+                    Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+                    
+                    Value *corrected = builder->CreateBitCast(valuePtr, a->getType()->getPointerTo());
+                    builder->CreateStore(a, corrected);
 
-                    if (index != 0)
-                    {
-                        llvm::Type *sumTy = sum->getLLVMType(module);
-                        llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
-                        Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-                        builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-                        Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-                        Value *corrected = builder->CreateBitCast(valuePtr, a->getType()->getPointerTo());
-                        builder->CreateStore(a, corrected);
-
-                        a = builder->CreateLoad(sumTy, alloc);
-                    }
+                    a = builder->CreateLoad(sumTy, alloc);
                 }
-
-                Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
-                builder->CreateStore(a, ptr);
-
-                i++;
             }
-        }
+            
+            Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
+            
+            builder->CreateStore(a, ptr);
 
-        Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
-        return loaded;
+            i++;
+        }
     }
 
-    errorHandler.addCodegenError(ctx->getStart(), "Failed to gen init");
-    return {};
+    Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
+    return loaded;
 }
 
-std::optional<Value *> CodegenVisitor::TvisitArrayAccess(WPLParser::ArrayAccessContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
 {
-    // Attempt to get the index Value
-    std::optional<Value *> index = any2Value(ctx->index->accept(this));
+    std::optional<Value *> index = AcceptType(this, n->indexExpr);
 
     if (!index)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code in TvisitArrayAccess for index!");
+        errorHandler.addCodegenError(nullptr, "Failed to generate code in TvisitArrayAccess for index!");
         return {};
     }
 
-    std::optional<Value *> arrayPtr = any2Value(ctx->field->accept(this));
+    std::optional<Value *> arrayPtr = AcceptType(this, n->field);
     if (!arrayPtr)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to locate array in access");
+        errorHandler.addCodegenError(nullptr, "Failed to locate array in access");
         return {};
     }
 
+    /*
     Value *baseValue = arrayPtr.value();
-
     llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
     builder->CreateStore(baseValue, v);
 
     auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
-    Value *val = builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
-    return val;
+    if (n->is_rvalue)
+    return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+    return ptr;
+    */
+
+    Value *v = arrayPtr.value();
+
+    // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
+    // module->dump();
+    // builder->CreateStore(baseValue, v);
+    
+    auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
+    
+    if (n->is_rvalue)
+        return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+    return ptr;
 }
 
-std::optional<Value *> CodegenVisitor::TvisitIConstExpr(WPLParser::IConstExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(IConstExprNode *n)
 {
-    int i = std::stoi(ctx->i->getText());
-    Value *v = builder->getInt32(i);
-    return v;
+    return builder->getInt32(n->value);
 }
 
-std::optional<Value *> CodegenVisitor::TvisitArrayAccessExpr(WPLParser::ArrayAccessExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(StringConstNode *n)
 {
-    return this->TvisitArrayAccess(ctx->arrayAccess());
-}
-
-std::optional<Value *> CodegenVisitor::TvisitSConstExpr(WPLParser::SConstExprContext *ctx)
-{
-    // TODO: do this better, ensure that we can only escape these chars...
-    std::string full(ctx->s->getText());
-    std::string actual = full.substr(1, full.length() - 2);
-
-    std::vector<std::pair<std::regex, std::string>> replacements;
-
-    // Reference of all escape characters: https://en.cppreference.com/w/cpp/language/escape
-    std::regex SQ("\\\\'");
-    std::regex DQ("\\\\\"");
-    std::regex QM("\\\\\\?");
-    std::regex SL("\\\\\\\\");
-    std::regex AB("\\\\a");
-    std::regex BS("\\\\b");
-    std::regex FF("\\\\f");
-    std::regex NL("\\\\n");
-    std::regex CR("\\\\r");
-    std::regex HT("\\\\t");
-    std::regex VT("\\\\v");
-
-    replacements.push_back({SQ, "\'"});
-    replacements.push_back({DQ, "\""});
-    replacements.push_back({QM, "\?"});
-    replacements.push_back({AB, "\a"});
-    replacements.push_back({BS, "\b"});
-    replacements.push_back({FF, "\f"});
-    replacements.push_back({NL, "\n"});
-    replacements.push_back({CR, "\r"});
-    replacements.push_back({HT, "\t"});
-    replacements.push_back({VT, "\v"});
-    replacements.push_back({SL, "\\"});
-
-    std::string out = actual;
-
-    for (auto e : replacements)
-    {
-        out = regex_replace(out, e.first, e.second);
-    }
-
     // Create a constant to represent our string (now with the escape characters corrected)
-    llvm::Constant *dat = llvm::ConstantDataArray::getString(module->getContext(), out);
+    llvm::Constant *dat = llvm::ConstantDataArray::getString(module->getContext(), n->value);
 
     // Allocate a global variable for the constant, and set flags to make it match what the CreateGlobalStringPtr function would have done
     llvm::GlobalVariable *glob = new llvm::GlobalVariable(
@@ -844,17 +752,17 @@ std::optional<Value *> CodegenVisitor::TvisitSConstExpr(WPLParser::SConstExprCon
     return val;
 }
 
-std::optional<Value *> CodegenVisitor::TvisitUnaryExpr(WPLParser::UnaryExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
 {
-    switch (ctx->op->getType())
+    switch (n->op)
     {
-    case WPLParser::MINUS:
+    case UNARY_MINUS:
     {
-        std::optional<Value *> innerVal = any2Value(ctx->ex->accept(this));
+        std::optional<Value *> innerVal = AcceptType(this, n->value);
 
         if (!innerVal)
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: unary minus");
             return {};
         }
 
@@ -862,73 +770,69 @@ std::optional<Value *> CodegenVisitor::TvisitUnaryExpr(WPLParser::UnaryExprConte
         return v;
     }
 
-    case WPLParser::NOT:
+    case UNARY_NOT:
     {
-        std::optional<Value *> v = any2Value(ctx->ex->accept(this));
+        std::optional<Value *> innerVal = AcceptType(this, n->value);
 
-        if (!v)
+        if (!innerVal)
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: unary not");
             return {};
         }
 
-        v = builder->CreateNot(v.value());
+        Value *v = builder->CreateNot(innerVal.value()); // FIXME: VERIFY!
         return v;
     }
     }
-
-    errorHandler.addCodegenError(ctx->getStart(), "Unknown unary operator: " + ctx->op->getText());
-    return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitBinaryArithExpr(WPLParser::BinaryArithExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(BinaryArithNode *n)
 {
-    std::optional<Value *> lhs = any2Value(ctx->left->accept(this));
-    std::optional<Value *> rhs = any2Value(ctx->right->accept(this));
+    std::optional<Value *> lhs = AcceptType(this, n->lhs);
+    std::optional<Value *> rhs = AcceptType(this, n->rhs);
 
     if (!lhs || !rhs)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: binary arith");
         return {};
     }
 
-    switch (ctx->op->getType())
+    switch (n->op)
     {
-    case WPLParser::PLUS:
+    case BINARY_ARITH_PLUS:
         return builder->CreateNSWAdd(lhs.value(), rhs.value());
-    case WPLParser::MINUS:
+    case BINARY_ARITH_MINUS:
         return builder->CreateNSWSub(lhs.value(), rhs.value());
-    case WPLParser::MULTIPLY:
+    case BINARY_ARITH_MULT:
         return builder->CreateNSWMul(lhs.value(), rhs.value());
-    case WPLParser::DIVIDE:
+    case BINARY_ARITH_DIV:
         return builder->CreateSDiv(lhs.value(), rhs.value());
     }
-
-    errorHandler.addCodegenError(ctx->getStart(), "Unknown arith op: " + ctx->op->getText());
-    return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitEqExpr(WPLParser::EqExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
 {
-    std::optional<Value *> lhs = any2Value(ctx->left->accept(this));
-    std::optional<Value *> rhs = any2Value(ctx->right->accept(this));
+    std::optional<Value *> lhs = AcceptType(this, n->lhs);
+    std::optional<Value *> rhs = AcceptType(this, n->rhs);
+
+    // FIXME: CAN WE REMOVE ANY2VALUE ONCE WERE DONE USING AST?
 
     if (!lhs || !rhs)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: eq expr");
         return {};
     }
 
-    switch (ctx->op->getType())
+    switch (n->op) // FIXME: STILL NEED THIS!!
     {
-    case WPLParser::EQUAL:
+    case EQUAL_OP:
     {
         Value *v1 = builder->CreateICmpEQ(lhs.value(), rhs.value());
         Value *v = builder->CreateZExtOrTrunc(v1, Int1Ty);
         return v;
     }
 
-    case WPLParser::NOT_EQUAL:
+    case NOT_EQUAL_OP:
     {
         Value *v1 = builder->CreateICmpNE(lhs.value(), rhs.value());
         Value *v = builder->CreateZExtOrTrunc(v1, Int1Ty);
@@ -936,39 +840,20 @@ std::optional<Value *> CodegenVisitor::TvisitEqExpr(WPLParser::EqExprContext *ct
     }
     }
 
-    errorHandler.addCodegenError(ctx->getStart(), "Unknown equality operator: " + ctx->op->getText());
+    // errorHandler.addCodegenError(nullptr, "Unknown equality operator: " + ctx->op->getText());
     return {};
 }
 
 /**
  * @brief Generates code for Logical Ands
  *
- * Tested in: test2.wpl
+ * Tested in: test2.prism
  *
  * @param ctx LogAndExprContext to generate this from
  * @return std::optional<Value *> The resulting value or {} if errors.
  */
-std::optional<Value *> CodegenVisitor::TvisitLogAndExpr(WPLParser::LogAndExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
 {
-    // TODO: DO BETTER W/ AST
-    std::vector<WPLParser::ExpressionContext *> toVisit = ctx->exprs;
-    std::vector<WPLParser::ExpressionContext *> toGen;
-
-    while (toVisit.size() > 0)
-    {
-        WPLParser::ExpressionContext *curr = toVisit.at(0);
-        toVisit.erase(toVisit.begin());
-
-        if (WPLParser::LogAndExprContext *orCtx = dynamic_cast<WPLParser::LogAndExprContext *>(curr))
-        {
-            toVisit.insert(toVisit.end(), orCtx->exprs.begin(), orCtx->exprs.end());
-        }
-        else
-        {
-            toGen.push_back(curr);
-        }
-    }
-
     // Create the basic block for our conditions
     BasicBlock *current = builder->GetInsertBlock();
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "mergeBlkAnd");
@@ -977,15 +862,15 @@ std::optional<Value *> CodegenVisitor::TvisitLogAndExpr(WPLParser::LogAndExprCon
      * PHI node to merge both sides back together
      */
     builder->SetInsertPoint(mergeBlk);
-    PHINode *phi = builder->CreatePHI(Int1Ty, toGen.size(), "logAnd");
+    PHINode *phi = builder->CreatePHI(Int1Ty, n->exprs.size(), "logAnd");
 
     builder->SetInsertPoint(current);
 
-    std::optional<Value *> first = any2Value(toGen.at(0)->accept(this));
+    std::optional<Value *> first = AcceptType(this, n->exprs.at(0));
 
     if (!first)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + toGen.at(0)->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: first log and");
         return {};
     }
 
@@ -997,7 +882,7 @@ std::optional<Value *> CodegenVisitor::TvisitLogAndExpr(WPLParser::LogAndExprCon
     BasicBlock *falseBlk;
 
     // Branch on the lhs value
-    for (unsigned int i = 1; i < toGen.size(); i++)
+    for (unsigned int i = 1; i < n->exprs.size(); i++)
     {
         falseBlk = BasicBlock::Create(module->getContext(), "prevTrueAnd", parent);
         builder->CreateCondBr(lastValue, falseBlk, mergeBlk);
@@ -1007,11 +892,11 @@ std::optional<Value *> CodegenVisitor::TvisitLogAndExpr(WPLParser::LogAndExprCon
          */
         builder->SetInsertPoint(falseBlk);
 
-        std::optional<Value *> rhs = any2Value(toGen.at(i)->accept(this));
+        std::optional<Value *> rhs = AcceptType(this, n->exprs.at(i));
 
         if (!rhs)
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + toGen.at(i)->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 842"); // FIXME: DO BETTER + toGen.at(i)->getText());
             return {};
         }
         lastValue = rhs.value();
@@ -1021,7 +906,7 @@ std::optional<Value *> CodegenVisitor::TvisitLogAndExpr(WPLParser::LogAndExprCon
         phi->addIncoming(lastValue, falseBlk);
     }
 
-    builder->CreateBr(mergeBlk);
+    builder->CreateBr(mergeBlk); // FIXME: METHODIZE THIS WITH OR?
     // falseBlk = builder->GetInsertBlock();
 
     /*
@@ -1037,32 +922,13 @@ std::optional<Value *> CodegenVisitor::TvisitLogAndExpr(WPLParser::LogAndExprCon
 /**
  * @brief Generates code for Logical Ors.
  *
- * Tested in: test2.wpl
+ * Tested in: test2.prism
  *
  * @param ctx Context to generate code from
  * @return std::optional<Value *> The resulting value or {} if errors.
  */
-std::optional<Value *> CodegenVisitor::TvisitLogOrExpr(WPLParser::LogOrExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
 {
-    // TODO: DO BETTER W/ AST
-    std::vector<WPLParser::ExpressionContext *> toVisit = ctx->exprs;
-    std::vector<WPLParser::ExpressionContext *> toGen;
-
-    while (toVisit.size() > 0)
-    {
-        WPLParser::ExpressionContext *curr = toVisit.at(0);
-        toVisit.erase(toVisit.begin());
-
-        if (WPLParser::LogOrExprContext *orCtx = dynamic_cast<WPLParser::LogOrExprContext *>(curr))
-        {
-            toVisit.insert(toVisit.end(), orCtx->exprs.begin(), orCtx->exprs.end());
-        }
-        else
-        {
-            toGen.push_back(curr);
-        }
-    }
-
     // Create the basic block for our conditions
     BasicBlock *current = builder->GetInsertBlock();
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "mergeBlkOr");
@@ -1071,15 +937,15 @@ std::optional<Value *> CodegenVisitor::TvisitLogOrExpr(WPLParser::LogOrExprConte
      * PHI node to merge both sides back together
      */
     builder->SetInsertPoint(mergeBlk);
-    PHINode *phi = builder->CreatePHI(Int1Ty, toGen.size(), "logOr");
+    PHINode *phi = builder->CreatePHI(Int1Ty, n->exprs.size(), "logOr");
 
     builder->SetInsertPoint(current);
 
-    std::optional<Value *> first = any2Value(toGen.at(0)->accept(this));
+    std::optional<Value *> first = AcceptType(this, n->exprs.at(0));
 
     if (!first)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + toGen.at(0)->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 891"); // FIXME: DO BETTER + toGen.at(0)->getText());
         return {};
     }
 
@@ -1091,7 +957,7 @@ std::optional<Value *> CodegenVisitor::TvisitLogOrExpr(WPLParser::LogOrExprConte
     BasicBlock *falseBlk;
 
     // Branch on the lhs value
-    for (unsigned int i = 1; i < toGen.size(); i++)
+    for (unsigned int i = 1; i < n->exprs.size(); i++)
     {
         falseBlk = BasicBlock::Create(module->getContext(), "prevFalseOr", parent);
         builder->CreateCondBr(lastValue, mergeBlk, falseBlk);
@@ -1101,11 +967,11 @@ std::optional<Value *> CodegenVisitor::TvisitLogOrExpr(WPLParser::LogOrExprConte
          */
         builder->SetInsertPoint(falseBlk);
 
-        std::optional<Value *> rhs = any2Value(toGen.at(i)->accept(this));
+        std::optional<Value *> rhs = AcceptType(this, n->exprs.at(i));
 
         if (!rhs)
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + toGen.at(i)->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 917"); // FIXME: DO BETTER + toGen.at(i)->getText());
             return {};
         }
         lastValue = rhs.value();
@@ -1127,235 +993,181 @@ std::optional<Value *> CodegenVisitor::TvisitLogOrExpr(WPLParser::LogOrExprConte
     return phi;
 }
 
-// Passthrough to TvisitInvocation
-std::optional<Value *> CodegenVisitor::TvisitCallExpr(WPLParser::CallExprContext *ctx) { return this->TvisitInvocation(ctx->call); }
-
-std::optional<Value *> CodegenVisitor::TvisitFieldAccessExpr(WPLParser::FieldAccessExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 {
-    // This is ONLY array length for now...
-
-    // Make sure we cna find the symbol, and that it has a val and type defined
-    std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(0));
-
-    if (!symOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Unbound symbol in field access: " + ctx->getText());
-        return {};
-    }
-
-    Symbol *sym = symOpt.value();
+    Symbol *sym = n->symbol;
 
     if (!sym->type)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Improperly initialized symbol in field access: " + ctx->getText());
+        errorHandler.addCodegenError(nullptr, "Improperly initialized symbol in field access: " + n->symbol->getIdentifier());
         return {};
     }
 
-    if (ctx->fields.size() > 1 && ctx->fields.at(ctx->fields.size() - 1)->getText() == "length")
+    if (n->accesses.size() > 0 && n->accesses.at(n->accesses.size() - 1).first == "length")
     {
-        std::optional<Symbol *> modOpt = props->getBinding(ctx->VARIABLE().at(ctx->VARIABLE().size() - 2));
-
-        if (modOpt)
+        const Type *modOpt = (n->accesses.size() > 1) ? n->accesses.at(n->accesses.size() - 2).second : sym->type;
+        if (const TypeArray *ar = dynamic_cast<const TypeArray *>(modOpt))
         {
-            if (const TypeArray *ar = dynamic_cast<const TypeArray *>(modOpt.value()->type))
-            {
-                // FIXME: VERIFY THIS STILL WORKS WHEN NESTED!
-                // If it is, correctly, an array type, then we can get the array's length (this is the only operation currently, so we can just do thus)
-                Value *v = builder->getInt32(ar->getLength());
+            // FIXME: VERIFY THIS STILL WORKS WHEN NESTED!
+            // If it is, correctly, an array type, then we can get the array's length (this is the only operation currently, so we can just do thus)
+            Value *v = builder->getInt32(ar->getLength());
 
-                return v;
-            }
+            return v;
         }
+
+        // FIXME: THROW ERROR? OH WAIT NO BC WE CAN HAVE LENGTH AS A FIELD
     }
 
     const Type *ty = sym->type;
-    std::optional<Value *> baseOpt = visitVariable(ctx->VARIABLE().at(0)->getText(), props->getBinding(ctx->VARIABLE().at(0)), ctx);
-    // std::optional<Value *> val = {};
+    // std::optional<Value *> baseOpt = visitVariable(ctx->VARIABLE().at(0)->getText(), props->getBinding(ctx->VARIABLE().at(0)), ctx); // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
+    std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0 ? n->is_rvalue : false); // n->is_rvalue); // n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
 
-    for (unsigned int i = 1; i < ctx->fields.size(); i++)
+    if (!baseOpt)
+    {
+        errorHandler.addCodegenError(nullptr, "Failed to generate field access: "); // FIXME: DO BETTER + ctx->getText());
+        return {};
+    }
+
+    Value *baseValue = baseOpt.value();
+
+    if (n->accesses.size() == 0)
+    {
+
+        return baseValue;
+    }
+
+    std::vector<Value *> addresses = {Int32Zero};
+
+    for (unsigned int i = 0; i < n->accesses.size(); i++)
     {
         if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
         {
-            if (!baseOpt)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Failed to generate field access partial: " + ctx->fields.at(i - 1)->getText());
-                return {};
-            }
-
-            std::string field = ctx->fields.at(i)->getText();
+            std::string field = n->accesses.at(i).first; 
             std::optional<unsigned int> indexOpt = s->getIndex(field);
 
             if (!indexOpt)
             {
-                errorHandler.addCodegenError(ctx->getStart(), "Could not lookup " + field);
+                errorHandler.addCodegenError(nullptr, "Could not lookup " + field);
                 return {};
             }
 
             unsigned int index = indexOpt.value();
+            addresses.push_back(ConstantInt::get(Int32Ty, index, false));
 
-            std::optional<Symbol *> fieldOpt = props->getBinding(ctx->VARIABLE().at(i));
-
-            if (!fieldOpt)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Could not get binding for " + field);
-                return {};
-            }
-
-            Value *baseValue = baseOpt.value();
-
-            Symbol *fieldSym = fieldOpt.value();
-            llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
-            builder->CreateStore(baseValue, v);
-            Value *valPtr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, index, true)});
-
-            llvm::Type *ansType = fieldSym->type->getLLVMType(module);
-
-            ty = fieldSym->type;
-            baseOpt = builder->CreateLoad(ansType, valPtr);
-            // return val;
+            const Type *fieldType = n->accesses.at(i).second;
+            ty = fieldType;
         }
+        // FIXME: THROW ERROR?
     }
 
-    if (!baseOpt)
+    Value *valPtr = builder->CreateGEP(baseValue, addresses);
+
+    if (n->is_rvalue)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate field access: " + ctx->getText());
-        return {};
+        const Type *fieldType = n->accesses.at(n->accesses.size() - 1).second;
+
+        llvm::Type *ansType = fieldType->getLLVMType(module);
+        baseOpt = builder->CreateLoad(ansType, valPtr);
+        return baseOpt;
     }
 
-    return baseOpt.value();
+    return valPtr;
 }
 
-std::optional<Value *> CodegenVisitor::TvisitParenExpr(WPLParser::ParenExprContext *ctx)
-{
-    return any2Value(ctx->ex->accept(this));
-}
-
-std::optional<Value *> CodegenVisitor::TvisitBinaryRelExpr(WPLParser::BinaryRelExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
 {
     // Generate code for LHS and RHS
-    std::optional<Value *> lhs = any2Value(ctx->left->accept(this));
-    std::optional<Value *> rhs = any2Value(ctx->right->accept(this));
+    std::optional<Value *> lhs = AcceptType(this, n->lhs);
+    std::optional<Value *> rhs = AcceptType(this, n->rhs);
 
     // Ensure we successfully generated LHS and RHS
     if (!lhs || !rhs)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1032"); // FIXME: DO BETTER
         return {};
     }
 
     Value *v1;
 
-    switch (ctx->op->getType())
+    switch (n->op)
     {
-    case WPLParser::LESS:
+    case BINARY_Rel_LESS:
         v1 = builder->CreateICmpSLT(lhs.value(), rhs.value());
         break;
-    case WPLParser::LESS_EQ:
+    case BINARY_Rel_LESS_EQ:
         v1 = builder->CreateICmpSLE(lhs.value(), rhs.value());
         break;
-    case WPLParser::GREATER:
+    case BINARY_Rel_GREATER:
         v1 = builder->CreateICmpSGT(lhs.value(), rhs.value());
         break;
-    case WPLParser::GREATER_EQ:
+    case BINARY_Rel_GREATER_EQ:
         v1 = builder->CreateICmpSGE(lhs.value(), rhs.value());
         break;
-
-    default:
-        errorHandler.addCodegenError(ctx->getStart(), "Unknown rel operator: " + ctx->op->getText());
-        return {};
     }
 
     Value *v = builder->CreateZExtOrTrunc(v1, Int1Ty);
     return v;
 }
 
-// Passthrough to TvisitBooleanConst
-std::optional<Value *> CodegenVisitor::TvisitBConstExpr(WPLParser::BConstExprContext *ctx) { return this->TvisitBooleanConst(ctx->booleanConst()); }
-
-std::optional<Value *> CodegenVisitor::TvisitCondition(WPLParser::ConditionContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ConditionNode *n)
 {
     // Passthrough to visiting the conditon
-    return any2Value(ctx->ex->accept(this));
+    return AcceptType(this, n->condition);
 }
 
-std::optional<Value *> CodegenVisitor::TvisitExternStatement(WPLParser::ExternStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
 {
-    std::optional<Symbol *> optSym = props->getBinding(ctx);
-
-    if (!optSym)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Incorrectly bound symbol in extern statement. Probably a compiler error.");
-        return {};
-    }
-
-    Symbol *symbol = optSym.value();
+    Symbol *symbol = n->getSymbol(); // FIXME: WHY ARE SOME PRIVATE AND OTHERS PUBLIC?
 
     if (!symbol->type)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Type for extern statement not correctly bound! Probably a compiler errror.");
+        errorHandler.addCodegenError(nullptr, "Type for extern statement not correctly bound! Probably a compiler errror.");
         return {};
     }
 
-    const Type *generalType = symbol->type;
+    const TypeInvoke *type = n->getType();
+    llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
 
-    if (const TypeInvoke *type = dynamic_cast<const TypeInvoke *>(generalType))
+    if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
     {
-        llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
-
-        if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
-        {
-            Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, ctx->name->getText(), module);
-            type->setName(fn->getName().str());
-        }
-        else
-        {
-            errorHandler.addCodegenError(ctx->getStart(), "Could not treat extern type as function.");
-            return {};
-        }
+        Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, symbol->getIdentifier(), module);
+        type->setName(fn->getName().str());
     }
     else
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Extern statement bound to: " + generalType->toString() + ". Requires Invokable!");
+        errorHandler.addCodegenError(nullptr, "Could not treat extern type as function.");
+        return {};
     }
-
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitFuncDef(WPLParser::ProgDefContext *ctx) // FIXME: RENAME?
-{
-    std::cout << "976" << std::endl; // FIXME: IS THIS EVER CALLED????
-    return this->visitInvokeable(ctx->defineProc());
-}
-
-// std::optional<Value *> CodegenVisitor::TvisitDefineProgram(WPLParser::DefineProgramContext * ctx) {
-//     return TvisitFuncDef(ctx->defineProc());
-// }
-
-std::optional<Value *> CodegenVisitor::TvisitAssignStatement(WPLParser::AssignStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
 {
     // Visit the expression to get the value we will assign
-    std::optional<Value *> exprVal = any2Value(ctx->a->accept(this));
+    std::optional<Value *> exprVal = AcceptType(this, n->val);
 
     // Check that the expression generated
     if (!exprVal)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->a->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1098"); // FIXME: DO BETTER + ctx->a->getText());
         return {};
     }
 
     // Lookup the binding for the variable we are assigning to and and ensure that we find it
-    std::optional<Symbol *> varSymOpt = props->getBinding(ctx->to);
-    if (!varSymOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Incorrectly processed variable in assignment: " + ctx->to->getText());
-        return {};
-    }
+    // std::optional<Symbol *> varSymOpt = props->getBinding(ctx->to);
+    // if (!varSymOpt)
+    // {
+    //     errorHandler.addCodegenError(nullptr, "Incorrectly processed variable in assignment: " + ctx->to->getText());
+    //     return {};
+    // }
 
+    /*
     Symbol *varSym = varSymOpt.value();
-
+    */
     // Get the allocation instruction for the symbol
-    std::optional<Value *> val = varSym->val;
+    std::optional<Value *> val = AcceptType(this, n->var); // varSym->val;
 
+    /*
     // If the symbol is global
     if (varSym->isGlobal)
     {
@@ -1365,21 +1177,22 @@ std::optional<Value *> CodegenVisitor::TvisitAssignStatement(WPLParser::AssignSt
         // If we can't find it, then throw an error.
         if (!glob)
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Unable to find global variable: " + varSym->identifier);
+            errorHandler.addCodegenError(nullptr, "Unable to find global variable: " + varSym->identifier);
             return {};
         }
 
         // Load a pointer to the global variable
         val = builder->CreateLoad(glob)->getPointerOperand();
     }
-
+    */
     // Sanity check to ensure that we now have a value for the variable
     if (!val)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Improperly initialized variable in assignment: " + ctx->to->getText() + "@" + varSym->identifier);
+        errorHandler.addCodegenError(nullptr, "Improperly initialized variable in assignment: "); // FIXME: DO BETTER + ctx->to->getText() + "@" + varSym->identifier);
         return {};
     }
 
+    /*
     // Checks to see if we are dealing with an array
     if (!ctx->to->var)
     {
@@ -1389,7 +1202,7 @@ std::optional<Value *> CodegenVisitor::TvisitAssignStatement(WPLParser::AssignSt
         // Ensure we built an index
         if (!index)
         {
-            errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->to->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: " + ctx->to->getText());
             return {};
         }
 
@@ -1397,27 +1210,29 @@ std::optional<Value *> CodegenVisitor::TvisitAssignStatement(WPLParser::AssignSt
         Value *built = builder->CreateGEP(val.value(), {Int32Zero, index.value()});
         val = built;
     }
+    */
 
     // Store the expression's value
     // TODO: METHODIZE?
     Value *v = val.value();
     Value *stoVal = exprVal.value();
-    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSym->type))
+    const Type *varSymType = n->var->getType();
+    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymType)) // FIXME: WILL THIS WORK IF USING TYPE INF?
     {
         unsigned int index = sum->getIndex(module, stoVal->getType());
 
         if (index == 0)
         {
-            Value *corrected = builder->CreateBitCast(stoVal, varSym->type->getLLVMType(module));
+            Value *corrected = builder->CreateBitCast(stoVal, varSymType->getLLVMType(module));
             builder->CreateStore(corrected, v);
             return {};
         }
-
+        
         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
-
+        
         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
         Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
-
+        
         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
         builder->CreateStore(stoVal, corrected);
     }
@@ -1426,55 +1241,27 @@ std::optional<Value *> CodegenVisitor::TvisitAssignStatement(WPLParser::AssignSt
         builder->CreateStore(stoVal, v);
     }
 
-    std::cout << "1217" << std::endl;
-
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 {
     /*
      * Visit each of the assignments in the context (variables paired with an expression)
      */
-    for (auto e : ctx->assignments)
+    for (auto e : n->assignments)
     {
-        std::optional<Value *> exVal = std::nullopt;
+        std::optional<Value *> exVal = (e->val) ? AcceptType(this, e->val.value()) : std::nullopt;
 
-        // If the declaration has a value, attempt to generate that value
-        if (e->a)
+        if ((e->val) && !exVal)
         {
-            std::any anyVal = e->a->accept(this);
-
-            if (std::optional<Value *> opt = any2Value(anyVal))
-            {
-                exVal = opt;
-            }
-            else
-            {
-                errorHandler.addCodegenError(e->a->getStart(), "Could not generate code for: " + e->a->getText());
-                return {};
-            }
-        }
-
-        if ((e->a) && !exVal)
-        {
-            errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + e->a->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1206"); // FIXME: DO BETTER + e->a->getText());
             return {};
         }
 
         // For each of the variabes being assigned to that value
-        for (auto var : e->VARIABLE())
+        for (Symbol *varSymbol : e->syms)
         {
-            // Get the Symbol for the var based on its binding
-            std::optional<Symbol *> varSymbolOpt = props->getBinding(var);
-
-            if (!varSymbolOpt)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Issue creating variable: " + var->getText());
-                return {};
-            }
-            Symbol *varSymbol = varSymbolOpt.value();
-
             //  Get the type of the symbol
             llvm::Type *ty = varSymbol->type->getLLVMType(module);
             ty = varSymbol->type->getLLVMType(module);
@@ -1484,13 +1271,13 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
                 // If it is global, then we need to insert a new gobal variable of this type.
                 // A lot of these options are done to make it match what a C program would
                 // generate for global vars
-                module->getOrInsertGlobal(var->getText(), ty);
-                llvm::GlobalVariable *glob = module->getNamedGlobal(var->getText());
+                module->getOrInsertGlobal(varSymbol->getIdentifier(), ty);
+                llvm::GlobalVariable *glob = module->getNamedGlobal(varSymbol->getIdentifier());
                 glob->setLinkage(GlobalValue::ExternalLinkage);
                 glob->setDSOLocal(true);
 
                 // If we had an expression to set the var equal to
-                if (e->a)
+                if (e->val)
                 {
                     // Ensure that the value is a constant, then, if so, initialize it.
                     if (llvm::Constant *constant = static_cast<llvm::Constant *>(exVal.value()))
@@ -1500,7 +1287,7 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
                     else
                     {
                         // Should already be checked in semantic, and I don't think we could get here anyways, but still might as well have it.
-                        errorHandler.addCodegenError(ctx->getStart(), "Global variable can only be initalized to a constant!");
+                        errorHandler.addCodegenError(nullptr, "Global variable can only be initalized to a constant!");
                         return {};
                     }
                 }
@@ -1514,14 +1301,14 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
             else
             {
                 //  As this is a local var we can just create an allocation for it
-                llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, var->getText());
+                llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, varSymbol->getIdentifier());
                 varSymbol->val = v;
 
                 // Similarly, if we have an expression for the local var, we can store it. Otherwise, we can leave it undefined.
-                if (e->a)
+                if (e->val)
                 {
                     Value *stoVal = exVal.value();
-                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type))
+                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type)) // FIXME: WILL THIS WORK IF USING TYPE INF?
                     {
                         unsigned int index = sum->getIndex(module, stoVal->getType());
 
@@ -1531,12 +1318,12 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
                             builder->CreateStore(corrected, v);
                             return {};
                         }
-
+                        
                         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
-
+                        
                         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
                         Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
-
+                        
                         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
                         builder->CreateStore(stoVal, corrected);
                     }
@@ -1551,27 +1338,27 @@ std::optional<Value *> CodegenVisitor::TvisitVarDeclStatement(WPLParser::VarDecl
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitProgramLoop(WPLParser::ProgramLoopContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 {
-    //FIXME: WE NEED TO START LOOP IN HERE :\
-    std::cout << "1546" << std::endl;
+    // FIXME: WE NEED TO START LOOP IN HERE
+    
     // Very similar to conditionals
 
-    std::optional<Value *> check = this->TvisitCondition(ctx->check); // any2Value(ctx->check->accept(this));
-    std::cout << "1550" << std::endl;
+    std::optional<Value *> check = this->visit(n->cond); 
+    
     if (!check)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1299"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
-    std::cout << "1556" << std::endl;
+    
     auto parent = builder->GetInsertBlock()->getParent();
-    std::cout << "1558" << std::endl;
+
     BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop", parent);
     BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
-    std::cout << "1561" << std::endl;
+    
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
-    std::cout << "1563" << std::endl;
+    
     // Need to add here otherwise we will overwrite it
     // parent->getBasicBlockList().push_back(loopBlk);
 
@@ -1579,42 +1366,41 @@ std::optional<Value *> CodegenVisitor::TvisitProgramLoop(WPLParser::ProgramLoopC
      * In the loop block
      */
     builder->SetInsertPoint(loopBlk);
-    std::cout << "1571" << std::endl;
-    for (auto e : ctx->block()->stmts)
+    
+    for (auto e : n->blk->exprs)
     {
-        std::cout << "1574 " << e->getText() << std::endl;
-        e->accept(this);
+        AcceptType(this, e);
     }
-    std::cout << "1575" << std::endl;
+    
     // Re-calculate the loop condition
-    check = this->TvisitCondition(ctx->check);
+    check = this->visit(n->cond); 
     if (!check)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1328"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
-    std::cout << "1583" << std::endl;
+    
     // Check if we need to loop back again...
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
     loopBlk = builder->GetInsertBlock();
-    std::cout << "1587" << std::endl;
+    
     /*
      * Out of loop
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-    std::cout << "1592" << std::endl;
+    
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitConditionalStatement(WPLParser::ConditionalStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
 {
     // Get the condition that the if statement is for
-    std::optional<Value *> cond = this->TvisitCondition(ctx->check);
+    std::optional<Value *> cond = this->visit(n->cond);
 
     if (!cond)
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1352"); // FIXME:  + ctx->check->getText());
         return {};
     }
 
@@ -1627,8 +1413,8 @@ std::optional<Value *> CodegenVisitor::TvisitConditionalStatement(WPLParser::Con
     BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "then", parentFn);
     BasicBlock *elseBlk = BasicBlock::Create(module->getContext(), "else");
 
-    BasicBlock *restBlk = ctx->falseBlk ? BasicBlock::Create(module->getContext(), "ifcont")
-                                        : elseBlk;
+    BasicBlock *restBlk = n->falseOpt ? BasicBlock::Create(module->getContext(), "ifcont")
+                                      : elseBlk;
 
     builder->CreateCondBr(cond.value(), thenBlk, elseBlk);
 
@@ -1636,13 +1422,14 @@ std::optional<Value *> CodegenVisitor::TvisitConditionalStatement(WPLParser::Con
      * Then block
      */
     builder->SetInsertPoint(thenBlk);
-    for (auto e : ctx->trueBlk->stmts)
+    for (auto e : n->trueBlk->exprs)
     {
-        e->accept(this);
+        // e->accept(this);
+        AcceptType(this, e);
     }
 
     // If the block ends in a return, then we can't make the branch; things would break
-    if (!CodegenVisitor::blockEndsInReturn(ctx->trueBlk))
+    if (!endsInReturn(n->trueBlk))
     {
         builder->CreateBr(restBlk);
     }
@@ -1655,15 +1442,16 @@ std::optional<Value *> CodegenVisitor::TvisitConditionalStatement(WPLParser::Con
     parentFn->getBasicBlockList().push_back(elseBlk);
     builder->SetInsertPoint(elseBlk);
 
-    if (ctx->falseBlk) // If we have an else branch
+    if (n->falseOpt) // If we have an else branch
     {
         // Generate the code for the else block; follows the same logic as the then block.
-        for (auto e : ctx->falseBlk->stmts)
+        for (auto e : n->falseOpt.value()->exprs)
         {
-            e->accept(this);
+            // e->accept(this);
+            AcceptType(this, e);
         }
 
-        if (!CodegenVisitor::blockEndsInReturn(ctx->falseBlk))
+        if (!endsInReturn(n->falseOpt.value()))
         {
             builder->CreateBr(restBlk);
         }
@@ -1675,10 +1463,15 @@ std::optional<Value *> CodegenVisitor::TvisitConditionalStatement(WPLParser::Con
         builder->SetInsertPoint(restBlk);
     }
 
+    for (auto s : n->post)
+    {
+        AcceptType(this, s);
+    }
+
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitSelectStatement(WPLParser::SelectStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
 {
     /*
      * Set up the merge block that all cases go to after the select statement
@@ -1687,84 +1480,81 @@ std::optional<Value *> CodegenVisitor::TvisitSelectStatement(WPLParser::SelectSt
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "ifcont");
 
     // Iterate through each of the cases
-    for (unsigned long i = 0; i < ctx->cases.size(); i++)
+    for (unsigned long i = 0; i < n->nodes.size(); i++)
     {
-        WPLParser::SelectAlternativeContext *evalCase = ctx->cases.at(i);
+        SelectAlternativeNode *evalCase = n->nodes.at(i);
 
         // Visit the check code
-        std::any anyCheck = evalCase->check->accept(this);
+        std::optional<Value *> optVal = AcceptType(this, evalCase->check);
 
-        // Attempt to cast the check; if this fails, then codegen for the check failed
-        if (std::optional<Value *> optVal = any2Value(anyCheck))
+        // Check that the optional, in fact, has a value. Otherwise, something went wrong.
+        if (!optVal)
         {
-            // Check that the optional, in fact, has a value. Otherwise, something went wrong.
-            if (!optVal)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + evalCase->getText());
-                return {};
-            }
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1442"); // + evalCase->getText());
+            return {};
+        }
 
-            // Knowing that we have a value, get what the value is.
-            Value *val = optVal.value();
+        // Knowing that we have a value, get what the value is.
+        Value *val = optVal.value();
 
-            // Helpful check for later on
-            bool isLast = i == ctx->cases.size() - 1;
+        // Helpful check for later on
+        bool isLast = i == n->nodes.size() - 1;
 
-            // Create the then and else blocks as if this were an if statement
-            auto parent = builder->GetInsertBlock()->getParent();
-            BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "then", parent);
-            BasicBlock *elseBlk = isLast ? mergeBlk : BasicBlock::Create(module->getContext(), "else");
+        // Create the then and else blocks as if this were an if statement
+        auto parent = builder->GetInsertBlock()->getParent();
+        BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "then", parent);
+        BasicBlock *elseBlk = isLast ? mergeBlk : BasicBlock::Create(module->getContext(), "else");
 
-            // Branch based on the value
-            builder->CreateCondBr(val, thenBlk, elseBlk);
+        // Branch based on the value
+        builder->CreateCondBr(val, thenBlk, elseBlk);
 
-            /*
-             *
-             * THEN BLOCK
-             *
-             */
-            builder->SetInsertPoint(thenBlk);
+        /*
+         *
+         * THEN BLOCK
+         *
+         */
+        builder->SetInsertPoint(thenBlk);
 
-            // Visit the evaluation code for the case
-            evalCase->eval->accept(this);
+        // Visit the evaluation code for the case
+        // evalCase->eval->accept(this);
+        AcceptType(this, evalCase->eval);
 
-            /*
-             * As codegen worked, we now need to determine if
-             * the code we generated was for a block ending in
-             * a return or if it is a return statement. This
-             * Must be done as it determines if we create
-             * a merge into the merge block or not.
-             */
-            if (WPLParser::BlockStatementContext *blkStmtCtx = dynamic_cast<WPLParser::BlockStatementContext *>(evalCase->eval))
-            {
-                WPLParser::BlockContext *blkCtx = blkStmtCtx->block();
-                if (!CodegenVisitor::blockEndsInReturn(blkCtx))
-                {
-                    builder->CreateBr(mergeBlk);
-                }
-                // if it ends in a return, we're good!
-            }
-            else if (WPLParser::ReturnStatementContext *retCtx = dynamic_cast<WPLParser::ReturnStatementContext *>(evalCase->eval))
-            {
-                // Similarly, we don't need to generate the branch
-            }
-            else
+        /*
+         * As codegen worked, we now need to determine if
+         * the code we generated was for a block ending in
+         * a return or if it is a return statement. This
+         * Must be done as it determines if we create
+         * a merge into the merge block or not.
+         */
+        if (BlockNode *blk = dynamic_cast<BlockNode *>(evalCase->eval))
+        {
+            // if (!CodegenVisitor::blockEndsInReturn(blk))
+            if (!endsInReturn(blk))
             {
                 builder->CreateBr(mergeBlk);
             }
+            // if it ends in a return, we're good!
+        }
+        else if (ReturnNode *retCtx = dynamic_cast<ReturnNode *>(evalCase->eval))
+        {
+            // Similarly, we don't need to generate the branch
+        }
+        else
+        {
+            builder->CreateBr(mergeBlk);
+        }
 
-            thenBlk = builder->GetInsertBlock();
+        thenBlk = builder->GetInsertBlock();
 
-            /*
-             *
-             * Else Block
-             *
-             */
-            if (!isLast)
-            {
-                parent->getBasicBlockList().push_back(elseBlk);
-                builder->SetInsertPoint(elseBlk);
-            }
+        /*
+         *
+         * Else Block
+         *
+         */
+        if (!isLast)
+        {
+            parent->getBasicBlockList().push_back(elseBlk);
+            builder->SetInsertPoint(elseBlk);
         }
     }
 
@@ -1772,71 +1562,58 @@ std::optional<Value *> CodegenVisitor::TvisitSelectStatement(WPLParser::SelectSt
     origParent->getBasicBlockList().push_back(mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
-    std::optional<Value *> ans = {};
-    return ans;
+    for (TypedNode *s : n->post)
+    {
+        AcceptType(this, s);
+    }
+
+    // std::optional<Value *> ans = {};
+    return std::nullopt;
 }
 
-// Passthrough function
-std::optional<Value *> CodegenVisitor::TvisitCallStatement(WPLParser::CallStatementContext *ctx) { return this->TvisitInvocation(ctx->call); }
-
-std::optional<Value *> CodegenVisitor::TvisitReturnStatement(WPLParser::ReturnStatementContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
 {
     // Check if we are returning an expression or not
-    if (ctx->expression())
+    if (n->expr)
     {
-        // If we are, then visit that expression
-        std::any anyInner = ctx->expression()->accept(this);
-
+        std::pair<const Type *, TypedNode *> expr = n->expr.value();
         // Perform some checks to make sure that code was generated
-        if (std::optional<Value *> innerOpt = any2Value(anyInner))
+        std::optional<Value *> innerOpt = AcceptType(this, expr.second);
+
+        if (!innerOpt)
         {
-            if (!innerOpt)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->getText());
-                return {};
-            }
-
-            Value *inner = innerOpt.value();
-
-            std::optional<Symbol *> symOpt = props->getBinding(ctx);
-            if (!symOpt)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Unable to find binding for return");
-                return {};
-            }
-
-            Symbol *varSym = symOpt.value();
-
-            // TODO: METHODIZE
-            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSym->type))
-            {
-                unsigned int index = sum->getIndex(module, inner->getType());
-
-                if (index != 0)
-                {
-                    llvm::Type *sumTy = sum->getLLVMType(module);
-                    llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
-                    Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-                    builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-                    Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-                    Value *corrected = builder->CreateBitCast(valuePtr, inner->getType()->getPointerTo());
-                    builder->CreateStore(inner, corrected);
-
-                    inner = builder->CreateLoad(sumTy, alloc);
-                }
-            }
-
-            // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.
-            Value *v = builder->CreateRet(inner);
-
-            return v;
-        }
-        else
-        {
-            errorHandler.addCodegenError(ctx->getStart(), "Failed to generate code for: " + ctx->getText());
+            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1528"); // FIXME: DO BETTER + ctx->getText());
             return {};
         }
+
+        Value *inner = innerOpt.value();
+
+        // TODO: METHODIZE
+        if (const TypeSum *sum = dynamic_cast<const TypeSum *>(expr.first))
+        {
+            unsigned int index = sum->getIndex(module, inner->getType());
+
+            if (index != 0)
+            {
+                llvm::Type *sumTy = sum->getLLVMType(module);
+                llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+                
+                Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+                builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+                
+                Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+                
+                Value *corrected = builder->CreateBitCast(valuePtr, inner->getType()->getPointerTo());
+                builder->CreateStore(inner, corrected);
+
+                inner = builder->CreateLoad(sumTy, alloc);
+            }
+        }
+
+        // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.
+        Value *v = builder->CreateRet(inner);
+
+        return v;
     }
 
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
@@ -1844,55 +1621,46 @@ std::optional<Value *> CodegenVisitor::TvisitReturnStatement(WPLParser::ReturnSt
     return v;
 }
 
-std::optional<Value *> CodegenVisitor::TvisitBooleanConst(WPLParser::BooleanConstContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(ExitNode *n) // FIXME: VERIFY/DO BETTER
 {
-    Value *val = ctx->TRUE() ? builder->getTrue() : builder->getFalse();
+    // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
+    Value *v = builder->CreateRetVoid();
+    return v;
+}
+
+std::optional<Value *> CodegenVisitor::visit(BooleanConstNode *n)
+{
+    Value *val = n->value ? builder->getTrue() : builder->getFalse();
     return val;
 }
 
-// Passthrough function
-std::optional<Value *> CodegenVisitor::TvisitBlockStatement(WPLParser::BlockStatementContext *ctx) { return this->TvisitBlock(ctx->block()); }
-
-std::optional<Value *> CodegenVisitor::TvisitBlock(WPLParser::BlockContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(BlockNode *n)
 {
-    for (auto e : ctx->stmts)
+    for (auto e : n->exprs)
     {
-        e->accept(this);
+        // e->accept(this);
+        AcceptType(this, e);
     }
 
     return {};
 }
 
-std::optional<Value *> CodegenVisitor::TvisitLambdaConstExpr(WPLParser::LambdaConstExprContext *ctx)
+std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 {
     // Get the current insertion point
     BasicBlock *ins = builder->GetInsertBlock();
 
-    // Lookup the binding
-    std::optional<Symbol *> symOpt = props->getBinding(ctx);
-
-    if (!symOpt)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Unbound lambda: " + ctx->getText());
-        return {};
-    }
-
-    Symbol *sym = symOpt.value();
-
-    if (!sym->type)
-    {
-        errorHandler.addCodegenError(ctx->getStart(), "Symbol in lambda missing type. Probably compiler error.");
-        return {};
-    }
-
-    const Type *type = sym->type;
+    const TypeInvoke *type = n->getType();
 
     llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
 
-    if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
+    if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType)) // FIXME: MAKE THIS THE RETURN TYPE OF TypeInvoke's getLLVMTYPE
     {
-        Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, "LAM", module);
-        WPLParser::ParameterListContext *paramList = ctx->parameterList();
+        // Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module); ///"LAM", module);
+        Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
+        type->setName(fn->getName().str()); // FIXME: NOT ALWAYS NEEDED
+        
+        std::vector<Symbol *> paramList = n->paramSymbols;
 
         // Create basic block
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
@@ -1908,30 +1676,25 @@ std::optional<Value *> CodegenVisitor::TvisitLambdaConstExpr(WPLParser::LambdaCo
             llvm::Type *type = fnType->params()[argNumber];
 
             // Get the argument name (This even works for arrays!)
-            std::string argName = paramList->params.at(argNumber)->getText();
+            Symbol *param = paramList.at(argNumber);
+
+            std::string argName = param->getIdentifier();
 
             // Create an allocation for the argumentr
             llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
 
             // Try to find the parameter's bnding to determine what value to bind to it.
-            std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber));
+            // std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber)); // FIXME: STILL NEED TO DO THIS
 
-            if (!symOpt)
-            {
-                errorHandler.addCodegenError(ctx->getStart(), "Unable to generate parameter for lambda: " + argName);
-            }
-            else
-            {
-                symOpt.value()->val = v;
+            param->val = v; // FIXME: DO WE NEED TO CHECK IF ALREADY SET?
 
-                builder->CreateStore(&arg, v);
-            }
+            builder->CreateStore(&arg, v);
         }
 
         // Generate code for the block
-        for (auto e : ctx->block()->stmts)
+        for (auto e : n->block->exprs)
         {
-            e->accept(this);
+            AcceptType(this, e);
         }
 
         // NOTE HOW WE DONT NEED TO CREATE RET VOID EVER BC NO FN!
@@ -1943,7 +1706,7 @@ std::optional<Value *> CodegenVisitor::TvisitLambdaConstExpr(WPLParser::LambdaCo
     }
     else
     {
-        errorHandler.addCodegenError(ctx->getStart(), "Invocation type could not be cast to function!");
+        errorHandler.addCodegenError(nullptr, "Invocation type could not be cast to function!");
     }
 
     // Return to original insert point
@@ -1960,44 +1723,3 @@ std::optional<Value *> CodegenVisitor::TvisitLambdaConstExpr(WPLParser::LambdaCo
  * These are visitors which should NEVER be seen during the compilation process.
  *
  */
-std::optional<Value *> CodegenVisitor::TvisitTypeOrVar(WPLParser::TypeOrVarContext *ctx)
-{
-    errorHandler.addCodegenError(ctx->getStart(), "TypeOrVar fragment should never be visited directly by codegen!");
-    return {};
-}
-
-std::optional<Value *> CodegenVisitor::TvisitAssignment(WPLParser::AssignmentContext *ctx)
-{
-    errorHandler.addCodegenError(ctx->getStart(), "Assignment fragment should never be visited directly during codegen!");
-    return {};
-}
-
-std::optional<Value *> CodegenVisitor::TvisitParameterList(WPLParser::ParameterListContext *ctx)
-{
-    errorHandler.addCodegenError(ctx->getStart(), "Unknown error: Codegen should not have to visits parameter list!");
-    return {};
-}
-
-std::optional<Value *> CodegenVisitor::TvisitParameter(WPLParser::ParameterContext *ctx)
-{
-    errorHandler.addCodegenError(ctx->getStart(), "Unknown error: Codegen should not have to visit parameter!");
-    return {};
-}
-
-std::optional<Value *> CodegenVisitor::TvisitType(WPLParser::TypeContext *ctx)
-{
-    errorHandler.addCodegenError(ctx->getStart(), "Unknown error: Codegen should never directly visit types looking for values!");
-    return {};
-}
-
-std::optional<Value *> CodegenVisitor::TvisitArrayOrVar(WPLParser::ArrayOrVarContext *ctx)
-{
-    errorHandler.addCodegenError(ctx->getStart(), "Unknown Error: Codegen should never directly visit ArrayOrVar!");
-    return {};
-}
-
-std::optional<Value *> CodegenVisitor::TvisitSelectAlternative(WPLParser::SelectAlternativeContext *ctx)
-{
-    errorHandler.addCodegenError(ctx->getStart(), "Unknown Error: Codegen should never directly visit SelectAlternative!");
-    return {};
-}

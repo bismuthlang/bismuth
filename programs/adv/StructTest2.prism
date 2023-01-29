@@ -1,0 +1,38 @@
+extern int func printf(str s, ...);
+
+define struct Integer {
+    int i; 
+}
+
+define struct Complex {
+    Integer r; 
+    Integer g; 
+    Integer b; 
+}
+
+define struct Color {
+    int red; 
+    int green; 
+    int blue; 
+}
+
+
+define program :: c : Channel<-int> = {
+
+
+    Color z := Color::init(25, 24, 23);
+
+    printf("Color: %u, %u, %u\n", z.red, z.green, z.blue); # Color: 25, 24, 23
+
+    Complex x := Complex::init(
+        Integer::init(5),
+        Integer::init(4),
+        Integer::init(3)
+    );
+
+    # var j := x.r.i;
+   printf("Complex: %u, %u, %u\n", x.r.i, x.g.i, x.b.i); # Complex: 5, 4, 3
+
+    # return 0; 
+    c.send(0)
+}

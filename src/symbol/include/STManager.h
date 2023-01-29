@@ -64,9 +64,14 @@ class STManager {
      * @return false if unsuccessful (ie, name already bound to another symbol)
      */
     bool addSymbol(Symbol* symbol) {
+      std::cout << "ADD " << symbol->toString() << std::endl; 
       if(dynamic_cast<const TypeChannel*>(symbol->type)) //FIXME: DO BETTER LINEAR CHECK!
         return linearContext.addSymbol(symbol); 
       return dangerContext.addSymbol(symbol);
+    }
+
+    bool removeSymbol(Symbol * symbol) {
+      return linearContext.removeSymbol(symbol); //FIXME: DO BETTER?
     }
     
     /**

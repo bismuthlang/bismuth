@@ -1,0 +1,22 @@
+extern int func printf(...);
+
+define program :: c : Channel<-int> = {
+    var a, b, c; 
+
+    a := c; 
+    a := b; 
+   
+
+    b := "hi";
+    
+    a := 1; 
+    
+    
+    
+
+    c := 1; # "hi";
+    
+
+    # return -1;
+    io.send(-1)
+}

@@ -7,57 +7,59 @@
 
 #include "test_error_handlers.h"
 
-TEST_CASE("visitbasicProc", "[semantic][proc]")
-{
-  SECTION("No arguments & empty")
-  {
-    antlr4::ANTLRInputStream input("proc program () {}");
-    WPLLexer lexer(&input);
-    // lexer.removeErrorListeners();
-    // lexer.addErrorListener(new TestErrorListener());
-    antlr4::CommonTokenStream tokens(&lexer);
-    WPLParser parser(&tokens);
-    parser.removeErrorListeners();
-    parser.addErrorListener(new TestErrorListener());
+//FIXME: REENABLE?
 
-    WPLParser::CompilationUnitContext *tree = NULL;
-    REQUIRE_NOTHROW(tree = parser.compilationUnit());
-    REQUIRE(tree != NULL);
+// TEST_CASE("visitbasicProc", "[semantic][proc]")
+// {
+//   SECTION("No arguments & empty")
+//   {
+//     antlr4::ANTLRInputStream input("proc program () {}");
+//     WPLLexer lexer(&input);
+//     // lexer.removeErrorListeners();
+//     // lexer.addErrorListener(new TestErrorListener());
+//     antlr4::CommonTokenStream tokens(&lexer);
+//     WPLParser parser(&tokens);
+//     parser.removeErrorListeners();
+//     parser.addErrorListener(new TestErrorListener());
 
-    // Any errors should be syntax errors.
-    REQUIRE(tree->getText() != "");
+//     WPLParser::CompilationUnitContext *tree = NULL;
+//     REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//     REQUIRE(tree != NULL);
 
-    STManager *stmgr = new STManager();
-    SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+//     // Any errors should be syntax errors.
+//     REQUIRE(tree->getText() != "");
 
-    sv->visitCompilationUnit(tree);
+//     STManager *stmgr = new STManager();
+//     SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
 
-    CHECK_FALSE(sv->hasErrors(ERROR));
-  }
+//     sv->visitCompilationUnit(tree);
 
-  SECTION("1 arg & empty")
-  {
-    antlr4::ANTLRInputStream input("proc program (int a) {}");
-    WPLLexer lexer(&input);
-    antlr4::CommonTokenStream tokens(&lexer);
-    WPLParser parser(&tokens);
-    parser.removeErrorListeners();
+//     CHECK_FALSE(sv->hasErrors(ERROR));
+//   }
 
-    WPLParser::CompilationUnitContext *tree = NULL;
-    REQUIRE_NOTHROW(tree = parser.compilationUnit());
-    REQUIRE(tree != NULL);
+//   SECTION("1 arg & empty")
+//   {
+//     antlr4::ANTLRInputStream input("proc program (int a) {}");
+//     WPLLexer lexer(&input);
+//     antlr4::CommonTokenStream tokens(&lexer);
+//     WPLParser parser(&tokens);
+//     parser.removeErrorListeners();
 
-    // Any errors should be syntax errors.
-    REQUIRE(tree->getText() != "");
+//     WPLParser::CompilationUnitContext *tree = NULL;
+//     REQUIRE_NOTHROW(tree = parser.compilationUnit());
+//     REQUIRE(tree != NULL);
 
-    STManager *stmgr = new STManager();
-    SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+//     // Any errors should be syntax errors.
+//     REQUIRE(tree->getText() != "");
 
-    sv->visitCompilationUnit(tree);
+//     STManager *stmgr = new STManager();
+//     SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
 
-    // std::cout << stmgr->toString() << std::endl;
-    // std::cout << tree->getText() << std::endl;
+//     sv->visitCompilationUnit(tree);
 
-    CHECK_FALSE(sv->hasErrors(ERROR));
-  }
-}
+//     // std::cout << stmgr->toString() << std::endl;
+//     // std::cout << tree->getText() << std::endl;
+
+//     CHECK_FALSE(sv->hasErrors(ERROR));
+//   }
+// }

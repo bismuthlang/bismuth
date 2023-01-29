@@ -1,0 +1,10 @@
+extern int func printf(...);
+
+# int func program () {
+define program :: io : Channel<-int> = {
+    var a := 10, b := 2 * a, c :=  b / a; 
+    
+    printf("a=%d, b=%d, c=%d\n", a, b, c); # a=10, b=20, c=2
+    # return -1; 
+    io.send(-1)
+}

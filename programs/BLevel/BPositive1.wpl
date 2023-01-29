@@ -1,6 +1,0 @@
-extern int func getArgCount();
-int func program() {
-  int i;
-  i := getArgCount();
-  return i;
-}

@@ -1,4 +1,0 @@
-int func program() {
-  int i := 1, b := true;
-  return b;
-}

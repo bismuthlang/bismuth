@@ -1,0 +1,33 @@
+extern int func printf(...);
+
+# int func foo(int x) {
+define foo :: c : Channel<+int;-int> = {
+    int x := c.recv();
+    printf("FOO: %u\n", x);
+    # return x; 
+    c.send(x)
+}
+
+
+define program :: c : Channel<-int> = {
+    var ref := foo; 
+
+    # ref(10); 
+    Channel<-int;+int> t1 := exec ref; 
+    t1.send(10)
+    # foo(11); 
+    Channel<-int;+int> t2 := exec foo;
+    t2.send(11)
+
+
+    int j := t1.recv(), k := t2.recv();
+
+    Channel<-int;+int> t3 := exec ref; 
+    t3.send(1)
+    int i := t3.recv();
+    # printf("ref (:= foo(1)) = %u\n", ref(1));
+    printf("ref (:= foo(1)) = %u\n", i);
+
+    # return 0;
+    c.send(0)
+}

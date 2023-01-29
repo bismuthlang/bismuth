@@ -1,0 +1,55 @@
+extern int func printf(...);
+
+# proc nested(int a) {
+define nested :: io : Channel<+int> = {
+    int a := io.recv(); 
+
+    if a <= 0 & (a < -5 | a < 0 | a = 0) {
+        if a < -5 {
+            printf("Less than -5\n");
+        }
+
+        if ~(a < -5) & a < -5 {
+            printf("Less than -5 - BROKEN\n"); # Helps to test we don't fall through. Can't actually check that conditions are the same
+        }
+
+        if ~(a < -5) & a < 0 {
+            printf("Less than 0; Greater than -5\n"); 
+        }
+
+        if ~(a < -5) & ~(a < 0) & (a = 0) {
+            printf("ZERO!\n");
+        }
+    }
+
+    if ~(a <= 0) & a = 0 {
+        printf("Wrong zero!\n");
+    }
+
+    if ~(a <= 0) & (a >= 5 | a < 5) {
+        if a >= 5 {
+            printf("Greater than 5\n");
+        }
+        if a < 5 {
+            printf("Less than 5\n");
+        }
+    }
+    
+}
+
+define program :: c : Channel<-int> = {
+
+    var i := -10; 
+    while i <= 15 {
+        printf("For %d:\n\t", i);
+        # nested(i);
+        Channel<-int> io := exec nested; 
+        io.send(i)
+
+
+        i := i + 1;
+    }
+    
+    # return -1; 
+    c.send(-1)
+}

@@ -6,11 +6,11 @@
  *)
 
 int func pow(int number, int power) {
-    if power = 0 then {
+    if power = 0 {
         return 1; 
     }
 
-    if power < 0 then {
+    if power < 0 {
         return 0; 
     }
 

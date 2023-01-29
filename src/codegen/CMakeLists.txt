@@ -6,6 +6,8 @@ include(Utility)
 include(Codegen)
 include(LLVM)
 
+# TODO: IS PROPERTYMANAGER IN HERE SOMEWHERE? IF SO, SHOULD WE REMOVE IT? 
+
 ####################################################################
 # See: https://cmake.org/cmake/help/latest/command/find_package.html
 ####################################################################

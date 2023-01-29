@@ -50,33 +50,45 @@ bool TypeBot::isSupertypeFor(const Type *other) const
  *
  *************************************/
 
-bool ProtocolSequence::canSend(const Type *ty) const
+// bool ProtocolSequence::canSend(const Type *ty) const
+optional<const Type*> ProtocolSequence::canSend(const Type *ty) const
 {
     if (isComplete())
-        return false;
+        return {}; 
+        // return false;
 
     const Protocol *proto = steps.front();
 
     if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(proto))
     {
-        return ty->isSubtype(send->getSendType());
+        std::cout << ty->toString() << " isSubtype " << send->getSendType()->toString() << "?" << std::endl;
+
+        // return ty->isSubtype(send->getSendType());
+        if(ty->isSubtype(send->getSendType()))
+            return send->getSendType(); 
+        return {};
     }
 
-    return false;
+    // return false;
+    return {};
 }
 
-bool ProtocolSequence::send(const Type *ty) const
+// bool ProtocolSequence::send(const Type *ty) const
+optional<const Type*> ProtocolSequence::send(const Type *ty) const
 {
     // FIXME: BETTER ERROR HANDLING
-
-    if (canSend(ty))
+    optional<const Type *> ans = canSend(ty); 
+    if (ans)
     {
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
+        // const Type * ans = steps.front(); 
         mthis->steps.erase(steps.begin());
-        return true;
+        // return true;
+        return ans; 
     }
 
-    return false;
+    // return false;
+    return {};
 }
 
 bool ProtocolSequence::canRecv() const

@@ -1,0 +1,34 @@
+extern int func printf(...);
+
+# FIXME: MAY BE REDUNDANT TO OTHER TEST SELECT BLOCK NOW!!!
+# str func selReturnOne(int a) {
+define selReturnOne :: c : Channel<+int;-str> = {
+    int a := c.recv(); 
+    
+    select {
+        a > 10: {c.send("CASE 1 (10)") exit}
+        a > 0 : {c.send("CASE 2 (5)") exit}
+        a = 0 : {c.send("CASE 3 (0)") exit}
+        a < 0 : {c.send("CASE 4 (a)") exit}
+    }
+    c.send("CASE IMPOSSIBLE (-1)")
+}
+
+define program :: c : Channel<-int> = {
+
+    var i := -10; 
+    while i <= 15 {
+        Channel<-int;+str> io := exec selReturnOne; 
+        io.send(i)
+
+        # FIXME: NEED TO REDO FN TESTS WITH PASS BY REFERENCE!
+
+        str s := io.recv(); 
+
+        printf("f(%d) = %s\n", i, s);
+        i := i + 1;
+    }
+    
+    # return -1; 
+    c.send(-1)
+}

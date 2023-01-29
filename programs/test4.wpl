@@ -1,7 +1,7 @@
 extern int func printf(...);
 
 int func mutArgsOne(int i) {
-    if ~(5 < 10) then {
+    if ~(5 < 10) {
         i := 20;
     } else {
         i := 50; 
@@ -13,7 +13,7 @@ int func mutArgsOne(int i) {
 
 
 int func mutArgsTwo(int i) {
-    if (5 < 10) then {
+    if (5 < 10) {
         i := 20;
     } else {
         i := 50; 
@@ -24,7 +24,7 @@ int func mutArgsTwo(int i) {
 }
 
 proc PROCmutArgsOne(int i) {
-    if ~(5 < 10) then {
+    if ~(5 < 10) {
         i := 20;
     } else {
         i := 50; 
@@ -36,7 +36,7 @@ proc PROCmutArgsOne(int i) {
 
 
 proc PROCmutArgsTwo(int i) {
-    if (5 < 10) then {
+    if (5 < 10) {
         i := 20;
     } else {
         i := 50; 
@@ -46,7 +46,7 @@ proc PROCmutArgsTwo(int i) {
     return; 
 }
 
-int func program() {
+define program :: c : Channel<-int> = {
 
     printf("ANS: %d\n", mutArgsOne(0));
     printf("ANS: %d\n", mutArgsTwo(0));

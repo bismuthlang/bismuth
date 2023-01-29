@@ -1,0 +1,10 @@
+extern int func printf(str s, ...);
+
+define program :: c : Channel<-int> = {
+    var a := printf; 
+
+    a("Hello \n");
+
+    # return 0;
+    c.send(0)
+}

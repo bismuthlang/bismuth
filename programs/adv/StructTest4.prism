@@ -1,0 +1,66 @@
+extern int func printf(str s, ...);
+
+define struct RGBData {
+    int r; 
+}
+
+define struct HSVData {
+    int h; 
+}
+
+define struct RGBColor {
+    RGBData rgb; 
+}
+
+define struct HSVColor {
+    HSVData hsv; 
+}
+
+define enum ColorType {
+    RGBColor, 
+    HSVColor
+}
+
+define struct Color {
+    ColorType colorType; 
+}
+
+# Color func getRGBColor(int r) 
+define getRGBColor :: io : Channel<+int;-Color> = {
+    int r := io.recv();
+
+    RGBData rgbDat := RGBData::init(r);
+
+    ColorType ct := RGBColor::init(rgbDat); 
+    var c := Color::init(
+        RGBColor::init(
+            rgbDat
+        )
+    );
+    
+    match c.colorType {
+        RGBColor rgb => {
+            printf("DEBUG=%u\n", 0);
+            printf("r=%u]\n", rgb.rgb.r);
+        }
+        HSVColor hsv => { # TODO: THESE BLOCKS CAN BE EMPTY?
+            printf("hsv\n");
+        }
+    }
+
+    # return c;
+    io.send(c)
+}
+
+
+define program :: c : Channel<-int> = {
+    # getRGBColor(128);
+    Channel<-int;+Color> chan := exec getRGBColor;
+
+    chan.send(128)
+
+    Color t := chan.recv();
+
+    # return 0; 
+    c.send(0)
+}

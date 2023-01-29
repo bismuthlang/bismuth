@@ -1,6 +1,6 @@
 /*
  * Alex Friedman (ahfriedman@wpi.edu)
- * Grammar file for WPI Programming Language (WPL).
+ * Grammar file for PRISM
  */
 grammar WPL;
 
@@ -11,11 +11,14 @@ structCase        :  (ty=type name=VARIABLE) ';' ;
 
 defineProc        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '=' block  ;
 
+defineFunc        : DEFINE 'func' name=VARIABLE lam=lambdaConstExpr ;
+
 defineType        : DEFINE 'enum' name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB # DefineEnum
                   | DEFINE 'struct' name=VARIABLE LSQB (cases+=structCase)*  RSQB        # DefineStruct
                   | defineProc                                                           # DefineProgram
+                  | defineFunc                                                           # DefineFunction
                   ; 
-
+//FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
 externStatement : EXTERN (ty=type FUNC | PROC) name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?)? | ELLIPSIS) RPAR ';';
 
 invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr) LPAR (args+=expression (',' args+=expression)* )? RPAR ;
@@ -64,14 +67,14 @@ expression          : LPAR ex=expression RPAR                       # ParenExpr
                     | lambdaConstExpr # LambdaExpr
                     ;
 
-lambdaConstExpr     : LPAR parameterList RPAR ':' ret=type block ;
+lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
 
 /* 
  * Keeping block as its own rule so that way we can re-use it as
  * its own statement as well as as parts of functions, procedures, 
  * conditions, loops, etc. 
  */
-block      : LSQB (stmts+=statement)* '}' ;
+block      : LSQB (stmts+=statement)* RSQB ;
 
 
 // Parenthesis are optional around a condition
@@ -92,15 +95,15 @@ protoAlternative    : check=protocol '=>' eval=statement ;
  *
  * Parameter defines a parameter: its just a type and name.
  */
-parameterList          : params+=parameter (',' params+=parameter)*? ;
-parameter           :  ty=type name=VARIABLE ;
-VariadicParam : ',' [ \t]* '...'; //For some reason, need to match the whitespace so that way we can allow spaces between the two...
+parameterList       : (params+=parameter (',' params+=parameter)*)?;
+parameter           : ty=type name=VARIABLE ;
+VariadicParam       : ',' [ \t]* '...'; //For some reason, need to match the whitespace so that way we can allow spaces between the two...
 
 /*
  * Assignment fragment: this contains the information about variables
  * that we wish to declare as well as a potential expression to serve as their 
  * value. This is used by the VarDeclStatement to help separate multiple 
- * assigments. Ie those of the form:   var a <- 1, b <- 2, ... 
+ * assigments. Ie those of the form:   var a := 1, b := 2, ... 
  */
 assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=assignable)? ;
 
@@ -117,8 +120,8 @@ assignable : ex=expression                          # AssignableExpr
  * 1. Definition of external functions/procedures. 
  * 2. Definition of functions
  * 3. Definition of procedures
- * 4. Assignments (updates to existing variables) such as: a <- 2; 
- * 5. Variable definitions such as: var a; int [5] b; var a, b; var a, b <- 1; var a, b <- 1, c, d, e <- 2; etc.
+ * 4. Assignments (updates to existing variables) such as: a := 2; 
+ * 5. Variable definitions such as: var a; int [5] b; var a, b; var a, b := 1; var a, b := 1, c, d, e := 2; etc.
  * 6. Looping statements (while loops)
  * 7. Conditional statements (if with optional else)
  * 8. Select statements (which require at least one select alternative)
@@ -127,14 +130,16 @@ assignable : ex=expression                          # AssignableExpr
  * 11. Block statements. 
  */
 statement           : defineProc                                                            # ProgDef 
-                    | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                  # AssignStatement 
+                    | defineFunc                                                            # FuncDef
+                    | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                   # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'   # VarDeclStatement
                     // | WHILE check=condition DO block                                    # LoopStatement 
-                    | IF check=condition IF_THEN? trueBlk=block (ELSE falseBlk=block)?  # ConditionalStatement
-                    | SELECT LSQB (cases+=selectAlternative)* '}'                        # SelectStatement  
-                    | MATCH check=condition LSQB (cases+=matchAlternative)* '}'          # MatchStatement
+                    | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement
+                    | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement     
+                    | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement      
                     | call=invocation  ';'?     # CallStatement 
                     | RETURN expression? ';'    # ReturnStatement 
+                    | EXIT                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
                     | block                     # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')'   # ProgramSend
                     | WHILE check=condition block                                                       # ProgramLoop
@@ -179,17 +184,17 @@ MAPS_TO     :       '->'    ;
 
 
 //Separators
-LPAR      :     '('     ;
-RPAR      :     ')'     ;
-LBRC      :     '['     ;
-RBRC      :     ']'     ;
-LSQB      :     '{'     ;
-RSQB      :     '}'     ;
-SEMICOLON :     ';'     ;
-COLON     :     ':'     ;
-QUOTE     :     '"'     ;
-COMMA     :     ','     ;
-ELLIPSIS  :     '...'   ;
+LPAR        :     '('     ;
+RPAR        :     ')'     ;
+LBRC        :     '['     ;
+RBRC        :     ']'     ;
+LSQB        :     '{'     ;
+RSQB        :     '}'     ;
+SEMICOLON   :     ';'     ;
+COLON       :     ':'     ;
+QUOTE       :     '"'     ;
+COMMA       :     ','     ;
+ELLIPSIS    :     '...'   ;
 
 /* 
  * Types
@@ -207,18 +212,20 @@ subProtocol     :   '+' ty=type                 # RecvType
                 |   '-' ty=type                 # SendType
                 |   '?' proto=protocol          # WnProto
                 |   '!' proto=protocol          # OcProto
-                |   'ExternalChoice' '<' protoOpts+=protocol (',' protoOpts+=protocol)+ '>'     # ExtChoiceProto
-                |   'InternalChoice' '<' protoOpts+=protocol (',' protoOpts+=protocol)+ '>'     # IntChoiceProto
+                |   'ExternalChoice' LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # ExtChoiceProto
+                |   'InternalChoice' LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # IntChoiceProto
                 ;
 
 
 //Allows us to have a type of ints, bools, or strings with the option for them to become 1d arrays. 
-type            :    ty=type LBRC len=INTEGER RBRC                                  # ArrayType
-                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR)                           # BaseType
-                |    paramTypes+=type (',' paramTypes+=type)* '->' returnType=type  # LambdaType
-                |    LPAR type ('+' type)+ RPAR                                     # SumType 
-                |    'Channel' '<' proto=protocol '>'                               # ChannelType
-                |    VARIABLE                                                       # CustomType
+type            :    ty=type LBRC len=INTEGER RBRC                                          # ArrayType
+                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR)                                   # BaseType
+                |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
+                |    '(' (paramTypes+=type (COMMA paramTypes+=type)*)? ')' MAPS_TO (returnType=type | '(' ')') # LambdaType //FIXME: DO BETTER?
+                |    LPAR type (PLUS type)+ RPAR                                            # SumType 
+                |    'Channel' LESS proto=protocol GREATER                                  # ChannelType
+                |    'Program' LESS proto=protocol GREATER                                  # ProgramType
+                |    VARIABLE                                                               # CustomType
                 ;
 
 TYPE_INT        :   'int' ; 
@@ -229,24 +236,23 @@ TYPE_STR        :   'str' ;
 FUNC            :   'func'  ;
 PROC            :   'proc'  ;
 IF              :   'if'    ;
-IF_THEN         :   'then'  ;
 ELSE            :   'else'  ;
 WHILE           :   'while' ;
 RETURN          :   'return';
 SELECT          :   'select';
-DO              :   'do'    ;
 EXTERN          :   'extern';
 MATCH           :   'match' ;
 DEFINE          :   'define';
+EXIT            :   'exit'  ;
 
 
 //Booleans
 booleanConst        :   TRUE | FALSE ; 
-FALSE       :   'false' ; 
-TRUE        :   'true'  ; 
+FALSE               :   'false' ; 
+TRUE                :   'true'  ; 
 
 //Integer 
-INTEGER     :   '0' | [1-9][0-9]* ; //Negative numbers handled by unary minus 
+INTEGER             :   '0' | [1-9][0-9]* ; //Negative numbers handled by unary minus 
 
 /*
  * Strings
@@ -260,7 +266,7 @@ INTEGER     :   '0' | [1-9][0-9]* ; //Negative numbers handled by unary minus
 STRING      :   QUOTE (ESCAPE_STRING | SAFE_STRING)* QUOTE;
 
 //Variables 
-VARIABLE  :     [a-zA-Z][a-zA-Z0-9_]*  ;
+VARIABLE    :     [a-zA-Z][a-zA-Z0-9_]*  ;
 
 //String escapes are a \ that must be followed by any character
 fragment ESCAPE_STRING  : '\\'. ; 
@@ -270,7 +276,7 @@ fragment SAFE_STRING : ~["\\]    ;
 
 
 /*
-    WPL has two types of comments, inline comments and standard comments. 
+    Prism has two types of comments, inline comments and standard comments. 
     Inline comments start with a '#' character that is not in a string 
     literal, and continue to the end of the line (or end of file if this 
     is the last line of the program).

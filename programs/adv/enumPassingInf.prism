@@ -1,0 +1,25 @@
+extern int func printf(str s, ...);
+
+define test :: c : Channel<+(int + boolean)> = {
+    (int + boolean) sum := c.recv(); 
+    match sum {
+        int i => printf("integer: %u\n", i);
+        boolean b => printf("boolean: %s\n", (boolean b) : str {
+            if b {
+                return "true";
+            }
+
+            return "false"; 
+        }(b));
+    }
+}
+
+
+define program :: c : Channel<-int> = {
+    var msg := false; 
+    # msg := 5;  # FIXME: THIS SHOULDNT THROW AN ERROR 
+    Channel<-(int + boolean)> t := exec test; 
+    t.send(msg)
+
+    c.send(0)
+}

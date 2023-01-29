@@ -1,6 +1,0 @@
-extern proc foo (int a, int b);
-
-int func program() {
- var current := 1;        
- return -1;
-}
