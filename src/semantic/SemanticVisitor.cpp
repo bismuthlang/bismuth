@@ -1158,7 +1158,6 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
 
 std::optional<MatchStatementNode *> SemanticVisitor::visitCtx(WPLParser::MatchStatementContext *ctx)
 {
-    // const Type *condType = any2Type(ctx->check->ex->accept(this));
     std::optional<TypedNode *> condOpt = anyOpt2Val<TypedNode *>(ctx->check->ex->accept(this));
 
     if (!condOpt)

@@ -201,13 +201,6 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
 {
-    // std::optional<Symbol *> symOpt = props->getBinding(ctx->check);
-    // if (!symOpt)
-    // {
-    //     errorHandler.addCodegenError(nullptr, "Could not locate symbol for case");
-    //     return {};
-    // }
-
     const TypeSum *sumType = n->matchType;
 
     auto origParent = builder->GetInsertBlock()->getParent();
@@ -237,14 +230,6 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
 
     for (std::pair<Symbol *, TypedNode *> caseNode : n->cases)
     {
-        // std::optional<Symbol *> localSymOpt = props->getBinding(altCtx->VARIABLE());
-
-        // if (!localSymOpt)
-        // {
-        //     errorHandler.addCodegenError(nullptr, "Failed to lookup type for case");
-        //     return {};
-        // }
-
         Symbol *localSym = caseNode.first;
 
         llvm::Type *toFind = localSym->type->getLLVMType(module);
