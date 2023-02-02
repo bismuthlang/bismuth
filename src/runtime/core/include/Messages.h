@@ -18,6 +18,8 @@ struct Value {
 
 struct START_LOOP {}; 
 struct END_LOOP {}; 
-struct SEL  {}; //FIXME: WILL NEED WORK 
+struct SEL {
+    unsigned int i; //FIXME: Will have to be handled better
+};
 
 typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message; 
