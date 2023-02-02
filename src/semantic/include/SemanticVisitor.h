@@ -248,8 +248,8 @@ public:
     std::any visitProgramCase(WPLParser::ProgramCaseContext *ctx) override { return TvisitProgramCase(ctx); }
     const Type *TvisitProgramCase(WPLParser::ProgramCaseContext *ctx);
 
+    std::optional<ProgramSendNode*> TvisitProgramProject(WPLParser::ProgramProjectContext *ctx);
     std::any visitProgramProject(WPLParser::ProgramProjectContext *ctx) override { return TvisitProgramProject(ctx); }
-    const Type *TvisitProgramProject(WPLParser::ProgramProjectContext *ctx);
 
     /**
      * @brief Used to safely enter a block. This is used to ensure there aren't FUNC/PROC definitions / code following returns in it.

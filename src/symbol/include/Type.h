@@ -179,7 +179,7 @@ public:
 
     bool isIntChoice() const;
 
-    bool project(const ProtocolSequence *ps) const;
+    unsigned int project(const ProtocolSequence *ps) const;
 
     bool isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const;
 

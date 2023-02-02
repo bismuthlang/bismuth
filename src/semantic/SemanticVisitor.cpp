@@ -2081,7 +2081,7 @@ const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ct
     errorHandler.addSemanticError(ctx->getStart(), "Cannot case on non-channel: " + id);
     return Types::UNDEFINED;
 }
-const Type *SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectContext *ctx)
+std::optional<ProgramSendNode*> SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2089,7 +2089,7 @@ const Type *SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectConte
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Could not find channel: " + id);
-        return Types::UNDEFINED;
+        return {}; 
     }
 
     Symbol *sym = opt.value().second;
@@ -2097,18 +2097,21 @@ const Type *SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectConte
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
         const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
-        if (!channel->getProtocol()->project(ps))
+        unsigned int projectIndex = channel->getProtocol()->project(ps); 
+
+        if (!projectIndex)
         {
             errorHandler.addSemanticError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString());
-            return Types::UNDEFINED;
+            return {};
         }
 
+        return new ProgramSendNode(sym, new IConstExprNode(projectIndex), Types::UNDEFINED); //FIXME: DO BETTER TYPE!
         // return ty.value();
-        return Types::UNDEFINED;
+        // return Types::UNDEFINED;
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot project on non-channel: " + id);
-    return Types::UNDEFINED;
+    return {};
 }
 std::optional<ProgramContractNode *> SemanticVisitor::TvisitProgramContract(WPLParser::ProgramContractContext *ctx)
 {
