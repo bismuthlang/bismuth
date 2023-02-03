@@ -6,9 +6,7 @@
 using namespace std;
 using llvm::Value;
 
-
-//FIXME: HAVE COMPILER ADD COMMENTS TO DOCUMENT COMPLEX TYPES?
-
+// FIXME: HAVE COMPILER ADD COMMENTS TO DOCUMENT COMPLEX TYPES?
 
 class TypedASTVisitor;
 
@@ -60,8 +58,10 @@ class IConstExprNode;
 class CompilationUnitNode;
 
 class VarDeclNode;
-class MatchStatementNode; 
-class ExitNode; 
+class MatchStatementNode;
+class ExitNode;
+
+class ChannelCaseStatementNode;
 
 class TypedASTVisitor
 {
@@ -106,6 +106,9 @@ public:
     virtual std::optional<Value *> visit(VarDeclNode *n) = 0;
     virtual std::optional<Value *> visit(MatchStatementNode *n) = 0;
     virtual std::optional<Value *> visit(ExitNode *n) = 0;
+    virtual std::optional<Value *> visit(ChannelCaseStatementNode *n) = 0;
+
+    // virtual std::optional<Value
 
     // private: //FIXME: DO SOMETHING FOR THE ONES WE DONT NEED/USE
     std::any any_visit(SelectAlternativeNode *n) { return this->visit(n); }
@@ -144,8 +147,9 @@ public:
     std::any any_visit(IConstExprNode *n) { return this->visit(n); }
     std::any any_visit(CompilationUnitNode *n) { return this->visit(n); }
     std::any any_visit(VarDeclNode *n) { return this->visit(n); }
-    std::any any_visit(MatchStatementNode * n) {return this->visit(n); }
+    std::any any_visit(MatchStatementNode *n) { return this->visit(n); }
     std::any any_visit(ExitNode *n) { return this->visit(n); }
+    std::any any_visit(ChannelCaseStatementNode *n) { return this->visit(n); }
 
     std::any visit(std::any n) { return "FIXME"; }
     std::any accept(TypedNode *n)
@@ -182,12 +186,12 @@ class SelectStatementNode : public TypedNode
 {
 public:
     vector<SelectAlternativeNode *> nodes;
-    vector<TypedNode*> post;
+    vector<TypedNode *> post;
 
-    SelectStatementNode(vector<SelectAlternativeNode *> n, vector<TypedNode*> p)
+    SelectStatementNode(vector<SelectAlternativeNode *> n, vector<TypedNode *> p)
     {
         nodes = n;
-        post = p; 
+        post = p;
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; }
@@ -242,24 +246,23 @@ typedef vector<ParameterNode> ParameterListNode; // FIXME: NOT EXACTLY A NODE
 
 class LambdaConstNode : public TypedNode
 {
-// private:
-    
+    // private:
 
 public:
-    string name; 
+    string name;
     vector<Symbol *> paramSymbols;
     const Type *retType;
     BlockNode *block;
     TypeInvoke *type;
 
-    LambdaConstNode(vector<Symbol *> p, const Type *r, BlockNode *b, string n="LAM")
+    LambdaConstNode(vector<Symbol *> p, const Type *r, BlockNode *b, string n = "LAM")
     {
         // paramList = p;
         paramSymbols = p;
         retType = r;
         block = b;
 
-        name = n; 
+        name = n;
 
         vector<const Type *> paramTypes;
 
@@ -313,8 +316,8 @@ public:
     const TypeInvoke *ty; // FIXME: ISNT REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
     BlockNode *block;
 
-    //FIXME: WHY DO WE REQUIRE PARAM LIST NODE AND SUCH WEHEN WE HAVE TO CREATE THAT MANUALLY AS PART OF TYPECHECK ANYWAYS?
-    FunctionDefNode(std::string id, ParameterListNode p, const Type *r, BlockNode * b)//string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
+    // FIXME: WHY DO WE REQUIRE PARAM LIST NODE AND SUCH WEHEN WE HAVE TO CREATE THAT MANUALLY AS PART OF TYPECHECK ANYWAYS?
+    FunctionDefNode(std::string id, ParameterListNode p, const Type *r, BlockNode *b) // string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
     {
         vector<const Type *> paramTypes;
 
@@ -343,9 +346,9 @@ public:
     BlockNode *trueBlk;
     std::optional<BlockNode *> falseOpt;
 
-    std::vector<TypedNode*> post;
+    std::vector<TypedNode *> post;
 
-    ConditionalStatementNode(ConditionNode *c, BlockNode *t, std::vector<TypedNode*> p, std::optional<BlockNode *> f = {})
+    ConditionalStatementNode(ConditionNode *c, BlockNode *t, std::vector<TypedNode *> p, std::optional<BlockNode *> f = {})
     {
         cond = c;
         trueBlk = t;
@@ -379,7 +382,6 @@ public:
 class ExitNode : public TypedNode
 {
 public:
-
     ExitNode()
     {
     }
@@ -393,13 +395,13 @@ class ProgramSendNode : public TypedNode
 public:
     Symbol *sym;
     TypedNode *expr;
-    const Type * lType;  // Tracks type send expects. Needed for sums
+    const Type *lType; // Tracks type send expects. Needed for sums
 
-    ProgramSendNode(Symbol *s, TypedNode *e, const Type * l)
+    ProgramSendNode(Symbol *s, TypedNode *e, const Type *l)
     {
         sym = s;
         expr = e;
-        lType = l; 
+        lType = l;
     }
 
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
@@ -583,14 +585,14 @@ class InvocationNode : public TypedNode
 public:
     TypedNode *fn;
     vector<TypedNode *> args;
-    vector<const Type*> paramType;  // Used for sums
+    vector<const Type *> paramType; // Used for sums
 
-    InvocationNode(TypedNode *f, vector<TypedNode *> a, vector<const Type*> p)
+    InvocationNode(TypedNode *f, vector<TypedNode *> a, vector<const Type *> p)
     {
         fn = f;
         args = a;
 
-        paramType = p; 
+        paramType = p;
     }
 
     const Type *getType() override
@@ -879,7 +881,7 @@ public:
 
 /////////////////////
 
-typedef variant<DefineEnumNode *, DefineStructNode *, ProgramDefNode *, LambdaConstNode*> DefinitionNode;
+typedef variant<DefineEnumNode *, DefineStructNode *, ProgramDefNode *, LambdaConstNode *> DefinitionNode;
 
 class CompilationUnitNode
 {
@@ -929,18 +931,39 @@ public:
 class MatchStatementNode : public TypedNode
 {
 public:
-    const TypeSum * matchType; 
-    TypedNode * checkExpr; 
-    vector<pair<Symbol *, TypedNode *>> cases; 
+    const TypeSum *matchType;
+    TypedNode *checkExpr;
+    vector<pair<Symbol *, TypedNode *>> cases;
 
-    vector<TypedNode*> post;
+    vector<TypedNode *> post;
 
-    MatchStatementNode(const TypeSum * m, TypedNode * e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode*> p)
+    MatchStatementNode(const TypeSum *m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p)
     {
-        matchType = m; 
-        checkExpr = e; 
-        cases = c; 
-        
+        matchType = m;
+        checkExpr = e;
+        cases = c;
+
+        post = p;
+    }
+
+    std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    const TypeBot *getType() override
+    {
+        return Types::UNDEFINED; // FIXME: DO BETTER
+    }
+};
+
+class ChannelCaseStatementNode : public TypedNode
+{
+public:
+    TypedNode *checkExpr; 
+    vector<TypedNode *> cases; 
+    vector<TypedNode *> post;
+
+    ChannelCaseStatementNode(TypedNode* c, vector<TypedNode *> v, vector<TypedNode *> p) {
+        checkExpr = c; 
+        cases = v; 
         post = p; 
     }
 
@@ -952,50 +975,50 @@ public:
     }
 };
 
-
-
-
-
 /**************************************************
- * 
+ *
  * UTILITIES
- * 
+ *
  **************************************************/
-inline bool endsInReturn(TypedNode * n);
+inline bool
+endsInReturn(TypedNode *n);
 
 inline bool endsInReturn(vector<TypedNode *> n)
 {
-    if(n.size() == 0) return false; 
+    if (n.size() == 0)
+        return false;
     return endsInReturn(n.at(n.size() - 1));
 }
 
-inline bool endsInReturn(TypedNode * n)
+inline bool endsInReturn(TypedNode *n)
 {
-    if(dynamic_cast<ReturnNode *>(n)) return true; 
-    if(dynamic_cast<ExitNode *>(n)) return true; 
+    if (dynamic_cast<ReturnNode *>(n))
+        return true;
+    if (dynamic_cast<ExitNode *>(n))
+        return true;
 
-    if(BlockNode * bn = dynamic_cast<BlockNode*>(n))
+    if (BlockNode *bn = dynamic_cast<BlockNode *>(n))
     {
         return endsInReturn(bn->exprs);
-        // if(bn->exprs.size() == 0) return false; 
+        // if(bn->exprs.size() == 0) return false;
         // return endsInReturn((bn->exprs.at(bn->exprs.size() - 1)));
         // return bn->exprs.size() > 0 && dynamic_cast<ReturnNode *>(bn->exprs.at(bn->exprs.size() - 1));
     }
 
-    //FIXME: DO THESE BETTER!
-    if(ConditionalStatementNode * cn = dynamic_cast<ConditionalStatementNode *>(n))
+    // FIXME: DO THESE BETTER!
+    if (ConditionalStatementNode *cn = dynamic_cast<ConditionalStatementNode *>(n))
     {
         // if(cn->post.size())
         return endsInReturn(cn->post);
     }
 
-    if(MatchStatementNode * cn = dynamic_cast<MatchStatementNode *>(n))
+    if (MatchStatementNode *cn = dynamic_cast<MatchStatementNode *>(n))
     {
         // if(cn->post.size())
         return endsInReturn(cn->post);
     }
 
-    if(SelectStatementNode * cn = dynamic_cast<SelectStatementNode *>(n))
+    if (SelectStatementNode *cn = dynamic_cast<SelectStatementNode *>(n))
     {
         // if(cn->post.size())
         return endsInReturn(cn->post);
@@ -1007,5 +1030,5 @@ inline bool endsInReturn(TypedNode * n)
     //     return endsInReturn(cn->post);
     // }
 
-    return false; 
-}   
+    return false;
+}

@@ -90,6 +90,30 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
                 "WeakenChannel",
                 module);
         }
+
+        // FIXME: INCLUDE ONLY IF NEEDED
+        {
+            Function::Create(
+                llvm::FunctionType::get(
+                    VoidTy,
+                    {Int32Ty,
+                     Int32Ty},
+                    false),
+                GlobalValue::ExternalLinkage,
+                "WritePriojection",
+                module);
+        }
+
+        {
+            Function::Create(
+                llvm::FunctionType::get(
+                    Int32Ty,
+                    {Int32Ty},
+                    false),
+                GlobalValue::ExternalLinkage,
+                "ReadProjection",
+                module);
+        }
     }
 
     /***********************************
@@ -103,7 +127,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
     {
         if (std::holds_alternative<ProgramDefNode *>(e)) // ProgramDefNode *octx = dynamic_cast<ProgramDefNode *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
         {
-            
+
             ProgramDefNode *octx = std::get<ProgramDefNode *>(e);
 
             const TypeProgram *type = octx->getType();
@@ -206,7 +230,6 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     auto origParent = builder->GetInsertBlock()->getParent();
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
 
-    // std::any anyCheck = ctx->check->accept(this);
 
     // Attempt to cast the check; if this fails, then codegen for the check failed
     std::optional<Value *> optVal = AcceptType(this, n->checkExpr);
@@ -223,7 +246,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     builder->CreateStore(sumVal, SumPtr);
 
     Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
-    
+
     Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size()); // sumType->getCases().size());
@@ -297,6 +320,77 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     return {};
 }
 
+std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
+{
+    auto origParent = builder->GetInsertBlock()->getParent();
+    BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
+
+    // Attempt to cast the check; if this fails, then codegen for the check failed
+    std::optional<Value *> optVal = AcceptType(this, n->checkExpr);
+
+    // Check that the optional, in fact, has a value. Otherwise, something went wrong.
+    if (!optVal)
+    {
+        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 202"); // FIXME: DO BETTER + ctx->check->getText());
+        return {};
+    }
+
+    Value *sumVal = optVal.value();
+    llvm::AllocaInst *SumPtr = builder->CreateAlloca(sumVal->getType());
+    builder->CreateStore(sumVal, SumPtr);
+
+    Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
+
+    Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
+
+    llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size());
+
+    // for (std::pair<Symbol *, TypedNode *> caseNode : n->cases)
+    for(unsigned int i = 0; i < n->cases.size(); i++)
+    {
+        //FIXME: find a way to error handle cases where coreetc block DNE or something 
+        BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(i + 1));
+
+        builder->SetInsertPoint(matchBlk);
+
+        switchInst->addCase(ConstantInt::get(Int32Ty, i + 1, true), matchBlk);
+        origParent->getBasicBlockList().push_back(matchBlk);
+
+
+        // altCtx->eval->accept(this);
+        TypedNode * caseNode = n->cases.at(i); 
+
+        AcceptType(this, caseNode);
+
+        if (BlockNode *blkStmtCtx = dynamic_cast<BlockNode *>(caseNode))
+        {
+            if (!endsInReturn(blkStmtCtx))
+            {
+                builder->CreateBr(mergeBlk);
+            }
+            // if it ends in a return, we're good!
+        }
+        else if (ReturnNode *retCtx = dynamic_cast<ReturnNode *>(caseNode))
+        {
+            // Similarly, we don't need to generate the branch
+        }
+        else
+        {
+            builder->CreateBr(mergeBlk);
+        }
+    }
+
+    origParent->getBasicBlockList().push_back(mergeBlk);
+    builder->SetInsertPoint(mergeBlk);
+
+    for (TypedNode *s : n->post)
+    {
+        AcceptType(this, s);
+    }
+
+    return {};
+}
+
 std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
 {
     // if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(symOpt.value()->type))
@@ -329,13 +423,13 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
                 {
                     llvm::Type *sumTy = sum->getLLVMType(module);
                     llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-                    
+
                     Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-                    
+
                     builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-                    
+
                     Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-                    
+
                     Value *corrected = builder->CreateBitCast(valuePtr, val->getType()->getPointerTo());
                     builder->CreateStore(val, corrected);
 
@@ -637,21 +731,21 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
                 {
                     llvm::Type *sumTy = sum->getLLVMType(module);
                     llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-                    
+
                     Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
                     builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-                    
+
                     Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-                    
+
                     Value *corrected = builder->CreateBitCast(valuePtr, a->getType()->getPointerTo());
                     builder->CreateStore(a, corrected);
 
                     a = builder->CreateLoad(sumTy, alloc);
                 }
             }
-            
+
             Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
-            
+
             builder->CreateStore(a, ptr);
 
             i++;
@@ -695,9 +789,9 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
     // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
     // module->dump();
     // builder->CreateStore(baseValue, v);
-    
+
     auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
-    
+
     if (n->is_rvalue)
         return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
     return ptr;
@@ -1027,7 +1121,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
     {
         if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
         {
-            std::string field = n->accesses.at(i).first; 
+            std::string field = n->accesses.at(i).first;
             std::optional<unsigned int> indexOpt = s->getIndex(field);
 
             if (!indexOpt)
@@ -1212,12 +1306,12 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
             builder->CreateStore(corrected, v);
             return {};
         }
-        
+
         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
-        
+
         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
         Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
-        
+
         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
         builder->CreateStore(stoVal, corrected);
     }
@@ -1303,12 +1397,12 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
                             builder->CreateStore(corrected, v);
                             return {};
                         }
-                        
+
                         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
-                        
+
                         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
                         Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
-                        
+
                         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
                         builder->CreateStore(stoVal, corrected);
                     }
@@ -1326,24 +1420,24 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 {
     // FIXME: WE NEED TO START LOOP IN HERE
-    
+
     // Very similar to conditionals
 
-    std::optional<Value *> check = this->visit(n->cond); 
-    
+    std::optional<Value *> check = this->visit(n->cond);
+
     if (!check)
     {
         errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1299"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
-    
+
     auto parent = builder->GetInsertBlock()->getParent();
 
     BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop", parent);
     BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
-    
+
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
-    
+
     // Need to add here otherwise we will overwrite it
     // parent->getBasicBlockList().push_back(loopBlk);
 
@@ -1351,30 +1445,30 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
      * In the loop block
      */
     builder->SetInsertPoint(loopBlk);
-    
+
     for (auto e : n->blk->exprs)
     {
         AcceptType(this, e);
     }
-    
+
     // Re-calculate the loop condition
-    check = this->visit(n->cond); 
+    check = this->visit(n->cond);
     if (!check)
     {
         errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1328"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
-    
+
     // Check if we need to loop back again...
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
     loopBlk = builder->GetInsertBlock();
-    
+
     /*
      * Out of loop
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-    
+
     return {};
 }
 
@@ -1582,12 +1676,12 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
             {
                 llvm::Type *sumTy = sum->getLLVMType(module);
                 llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-                
+
                 Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
                 builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-                
+
                 Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-                
+
                 Value *corrected = builder->CreateBitCast(valuePtr, inner->getType()->getPointerTo());
                 builder->CreateStore(inner, corrected);
 
@@ -1644,7 +1738,7 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
         // Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module); ///"LAM", module);
         Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
         type->setName(fn->getName().str()); // FIXME: NOT ALWAYS NEEDED
-        
+
         std::vector<Symbol *> paramList = n->paramSymbols;
 
         // Create basic block
