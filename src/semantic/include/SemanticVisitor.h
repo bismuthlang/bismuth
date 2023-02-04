@@ -293,7 +293,7 @@ public:
         // If we entered a new scope, then we can now safely exit a scope
         if (newScope)
             this->safeExitScope(ctx);
-        
+
         return new BlockNode(nodes); //FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
 
@@ -368,11 +368,11 @@ public:
         // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
         // stmgr->addSymbol(new Symbol("@RETURN", funcType->getReturnType(), false, false));
         stmgr->addSymbol(new Symbol("@EXIT", Types::UNDEFINED, false, false)); //FIXME: DO BETTER 
-std::cout << "370" << std::endl; 
+
         // Safe visit the program block without creating a new scope (as we are managing the scope)
         std::optional<BlockNode*> blkOpt = this->safeVisitBlock(ctx->block(), false);
         if(!blkOpt) return {}; 
-std::cout << "374" << std::endl; 
+
         // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
         // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
         // {
