@@ -136,9 +136,11 @@ public:
     std::string toString() const override
     {
         std::ostringstream description;
-        for (auto p : steps)
+        // for (auto p : steps)
+        for(unsigned int i = 0; i < steps.size(); i++)
         {
-            description << p->toString() << ";"; // FIXME: DONT PRINT LAST
+            if(i != 0) description << ";";
+            description << steps.at(i)->toString();
         }
 
         return description.str();
@@ -347,9 +349,13 @@ public:
     std::string toString() const override
     {
         std::ostringstream description;
+
+        unsigned int i = 0;
         for (auto p : opts)
         {
-            description << p->toString() << "&"; // FIXME: DONT PRINT LAST
+            if(i != 0) description << "&";
+            description << p->toString(); 
+            i++; 
         }
 
         return description.str();
@@ -380,9 +386,12 @@ public:
     std::string toString() const override
     {
         std::ostringstream description;
+        unsigned int i = 0;
         for (auto p : opts)
         {
-            description << p->toString() << "&"; // FIXME: DONT PRINT LAST
+            if(i != 0) description << "\u2295";
+            description << p->toString(); 
+            i++; 
         }
 
         return description.str();
@@ -394,7 +403,6 @@ public:
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
 };
 
-// FIXME: IMPLEMENT OTHER PROTOS!
 
 /*******************************************
  *
