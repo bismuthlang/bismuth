@@ -115,8 +115,6 @@ define getSampleColors :: io : Channel<+ColorHelper;-Color[3]> = {
 # Unit func printPrimitive((int + boolean + str) toPrint) {
 # define printPrimitive :: io : Channel<+(int + boolean + str)> = {
 define func printPrimitive ((int + boolean + str) toPrint) : Unit {
-  # (int + boolean + str) toPrint := io.recv(); # FIXME: FEELS REDUNDANT TO HAVE TO WRITE TYEPS
-
   match toPrint {
     int i => printf("int: %u", i);
     str s => {

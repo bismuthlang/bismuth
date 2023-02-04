@@ -3,7 +3,10 @@
  * @author gpollice & ahfriedman
  * @brief Basic tests for code generation
  * @version 0.1
- * @date 2022-08-05
+ * @date 2023-02-04
+ * 
+ * @copyright Copyright (c) 2023
+ * 
  */
 #include <catch2/catch_test_macros.hpp>
 #include "antlr4-runtime.h"

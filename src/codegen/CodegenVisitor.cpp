@@ -380,9 +380,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramProjectNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
 {
-    // if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(symOpt.value()->type))
-    // {
-    vector<TypedNode *> argNodes = n->args; // inv->getParamTypes();
+    vector<TypedNode *> argNodes = n->args; 
 
     // Create the argument vector
     std::vector<llvm::Value *> args;
@@ -486,16 +484,10 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
     llvm::Type *recvType = n->ty->getLLVMType(module);
 
-    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
-    llvm::Function *progFn = module->getFunction("ReadChannel"); // FIXME: BAD OPTIONAL ACCESS
 
-    Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
+    Value *valPtr = builder->CreateCall(module->getFunction("ReadChannel"), {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
     Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());             // Cast the void* to the correct type ptr
-    // return builder->Create Store(corrected, )
 
-    // FIXME: Methodize things so that way we don't have to do this as its just a redundant alloca given we have to have another for the var its self...
-    // llvm::AllocaInst *v = builder->CreateAlloca(recvType, 0, "");
-    // builder->Create Store(casted, v);
     return builder->CreateLoad(recvType, casted);
 }
 
@@ -579,8 +571,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     Value *chanVal = sym->val.value();
 
-    llvm::Function *progFn = module->getFunction("WriteChannel"); // FIXME: BAD OPTIONAL ACCESS
-    builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
+    builder->CreateCall(module->getFunction("WriteChannel"), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return {};
 }
 
@@ -596,11 +587,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
 
     Value *chanVal = sym->val.value();
 
-    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
-    llvm::Function *progFn = module->getFunction("ContractChannel"); // FIXME: BAD OPTIONAL ACCESS
-
-    // Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
-    builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(module->getFunction("ContractChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
 
     return {};
 }
@@ -879,8 +866,6 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
 {
     std::optional<Value *> lhs = AcceptType(this, n->lhs);
     std::optional<Value *> rhs = AcceptType(this, n->rhs);
-
-    // FIXME: CAN WE REMOVE ANY2VALUE ONCE WERE DONE USING AST?
 
     if (!lhs || !rhs)
     {

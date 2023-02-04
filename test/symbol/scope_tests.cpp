@@ -1,9 +1,12 @@
 /**
  * @file scope_tests.cpp
- * @author gpollice
- * @brief Scope unit tests
+ * @author Alex Friedman (ahfriedman.com)
+ * @brief 
  * @version 0.1
- * @date 2022-07-17
+ * @date 2023-02-04
+ * 
+ * @copyright Copyright (c) 2023
+ * 
  */
 #include <catch2/catch_test_macros.hpp>
 #include "Scope.h"

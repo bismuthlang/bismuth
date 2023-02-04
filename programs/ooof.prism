@@ -2,22 +2,6 @@
 
 extern int func printf(...);
 
-(*
-str a := "hello";
-
-define program :: c : Channel<-int> = {
-    foo(); 
-    return 0;
-}
-
-proc foo() {
-    printf("a = %s\n", a);
-}
-*)
-
-#FIXME: ENABLE PREV?
-
-
 define program :: c : Channel<-int> = {
     Channel<-str> c2 := exec foo; 
 
@@ -29,8 +13,7 @@ define program :: c : Channel<-int> = {
 define foo :: c : Channel<+str> = {
     # printf("c.recv() = %s\n", c.recv()); # FIXME: THIS DOESNT WORK!!
 
-    var t := c.recv(); # FIXME: CAUSES BAD OPT ACCESS!!
-    # str t := c.recv();
+    var t := c.recv(); 
 
     printf("t = %s\n", t);
 }

@@ -588,12 +588,11 @@ TEST_CASE("Infer In return", "[semantic][program]")
 
 //   // TODO: WHEN USING OPTIONALS FOR getLLVMTYPE?
 
-
 // TEST_CASE("Uninferred", "[semantic][program]") //FIXME: IMPL WHEN WE HAVE VAR TYPES DECL?
 // {
 //   antlr4::ANTLRInputStream input(
 //       R""""(
-//     var a; 
+//     var a;
 //     define program :: c : Channel<-int> = {
 //         return 0;
 //     }
@@ -617,7 +616,6 @@ TEST_CASE("Infer In return", "[semantic][program]")
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
-
 
 // }
 
@@ -806,7 +804,7 @@ TEST_CASE("Redeclaration of program 1", "[semantic][program]")
 //       return;
 //     }
 //     define program :: c : Channel<-int> = {
-//       return 0; 
+//       return 0;
 //     }
 //     )"""");
 //   WPLLexer lexer(&input);
@@ -944,7 +942,6 @@ TEST_CASE("Redeclaration of function 4", "[semantic][program]")
   // REQUIRE(cv->hasErrors(0));
 }
 
-
 TEST_CASE("Redeclaration of program 4", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
@@ -987,7 +984,6 @@ TEST_CASE("Redeclaration of program 4", "[semantic][program]")
   // REQUIRE(cv->hasErrors(0));
 }
 
-
 TEST_CASE("Redeclaration in extern", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
@@ -1027,7 +1023,6 @@ TEST_CASE("Out of order function w/ forward declaration", "[semantic][program]")
       R""""(
 extern int func printf(...);
 
-# extern proc foo();  # FIXME: DELETE PROC?
 extern int func foo(str a); # FIXME CHANGE SYNTAX OF THIS/FUNC TO MATCH?
 
 # str a := "hello";
@@ -1072,12 +1067,10 @@ define func foo (str a) {
 //       R""""(
 // extern int func printf(...);
 
-// extern proc foo(); 
-
-
+// extern proc foo();
 
 // define program :: c : Channel<-int> = {
-//     foo(); 
+//     foo();
 //     return 0;
 // }
 
@@ -1155,7 +1148,7 @@ define foo :: c : Channel<+int> = {
   REQUIRE(sv->hasErrors(ERROR));
 }
 
-//FIXME: TEST EXTERN PROGRAMS?
+// FIXME: TEST EXTERN PROGRAMS?
 
 TEST_CASE("Forward Decl with wrong num args", "[semantic][program][function][forward-decl]")
 {
@@ -1213,10 +1206,8 @@ define func foo (str a, int b) : int {
 
 // extern proc foo(int a);
 
-
-
 // define program :: c : Channel<-int> = {
-//     foo(); 
+//     foo();
 //     return 0;
 // }
 
@@ -1248,19 +1239,17 @@ define func foo (str a, int b) : int {
 //   REQUIRE(sv->hasErrors(ERROR));
 // }
 
-//UNUSED: SEEMS REDUNDANT
-// TEST_CASE("Forward Decl with wrong arg type", "[semantic][program][function][forward-decl]")
-// {
-//   antlr4::ANTLRInputStream input(
-//       R""""(
-// extern int func printf(...);
+// UNUSED: SEEMS REDUNDANT
+//  TEST_CASE("Forward Decl with wrong arg type", "[semantic][program][function][forward-decl]")
+//  {
+//    antlr4::ANTLRInputStream input(
+//        R""""(
+//  extern int func printf(...);
 
 // extern proc foo(int a);
 
-
-
 // define program :: c : Channel<-int> = {
-//     foo(); 
+//     foo();
 //     return 0;
 // }
 
@@ -1799,7 +1788,7 @@ TEST_CASE("Function return nothing", "[semantic][program]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
 }
-//FIXME: DUPLICATE ALL TESTS WITH FUNCS AND PROCS!
+// FIXME: DUPLICATE ALL TESTS WITH FUNCS AND PROCS!
 TEST_CASE("Function return wrong type", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
@@ -1908,14 +1897,14 @@ TEST_CASE("Nested Local Program - Disallow Local vars 1", "[semantic][program][l
 //   antlr4::ANTLRInputStream input(
 //       R""""(
 //     define program :: c : Channel<-int> = {
-//       var a := 0; 
+//       var a := 0;
 
 //       proc foo() {
 //         var a;
-//         a := 2; 
+//         a := 2;
 //       }
 
-//       return 0; 
+//       return 0;
 //     }
 //     )"""");
 //   WPLLexer lexer(&input);
@@ -2021,7 +2010,6 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2p", "[semantic][pr
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][program][local-function]")
 {
-  //FIXME: WE FAIL TO GEN TYPED AST ON THIS!!!
   antlr4::ANTLRInputStream input(
       R""""(
     define program :: c : Channel<-int> = {
@@ -2057,8 +2045,11 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][pr
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  sv->visitCompilationUnit(tree);
+  // sv->visitCompilationUnit(tree);
+  // REQUIRE_FALSE(sv->hasErrors(ERROR));
+  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
+  REQUIRE(TypedOpt);
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][program][local-function]")
@@ -2104,8 +2095,10 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  sv->visitCompilationUnit(tree);
+  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  // sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
+  REQUIRE(TypedOpt);
 }
 
 // TEST_CASE("Nested Local Functions - Disallow Local vars 4", "[semantic][program][local-function]")
@@ -2114,15 +2107,15 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
 //       R""""(
 //     define program :: c : Channel<-int> = {
 //       proc other () {
-//         var c := 10; 
+//         var c := 10;
 //       }
 
 //       proc foo() {
-//         other(); 
-//         var a := c + 2; 
+//         other();
+//         var a := c + 2;
 //       }
 
-//       return 0; 
+//       return 0;
 //     }
 //     )"""");
 //   WPLLexer lexer(&input);
@@ -2152,17 +2145,16 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
 //   antlr4::ANTLRInputStream input(
 //       R""""(
 //     proc other () {
-//       var c := 10; 
+//       var c := 10;
 //     }
 
 //     define program :: c : Channel<-int> = {
 
-
 //       proc foo() {
-//           other(); 
+//           other();
 //       }
 
-//       return 0; 
+//       return 0;
 //     }
 //     )"""");
 //   WPLLexer lexer(&input);
@@ -2192,18 +2184,17 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
 //   antlr4::ANTLRInputStream input(
 //       R""""(
 //     proc other () {
-//       var c := 10; 
+//       var c := 10;
 //     }
-    
+
 //     define program :: c : Channel<-int> = {
 
-
 //       proc foo() {
-//         other(); 
-//         var a := c + 2; 
+//         other();
+//         var a := c + 2;
 //       }
 
-//       return 0; 
+//       return 0;
 //     }
 //     )"""");
 //   WPLLexer lexer(&input);
@@ -2439,7 +2430,7 @@ define struct Inner {
 //   antlr4::ANTLRInputStream input(
 //       R""""(
 // define struct Inner {
-//     int a; 
+//     int a;
 //     boolean b;
 //     int c;
 // }
@@ -2472,7 +2463,7 @@ define struct Inner {
 // {
 //   antlr4::ANTLRInputStream input(
 //       R""""(
-// (int + boolean) b := false; 
+// (int + boolean) b := false;
 //     )"""");
 //   WPLLexer lexer(&input);
 //   // lexer.removeErrorListeners();
@@ -2501,7 +2492,7 @@ define struct Inner {
 //   antlr4::ANTLRInputStream input(
 //       R""""(
 // var lam := (int a, int b) : int {
-//     return a * b; 
+//     return a * b;
 // };
 //     )"""");
 //   WPLLexer lexer(&input);
