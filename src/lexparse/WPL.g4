@@ -143,8 +143,8 @@ statement           : defineProc                                                
                     | block                     # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')'   # ProgramSend
                     | WHILE check=condition block                                                       # ProgramLoop
-                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*   # ProgramCase //FIXME: THIS WONT WORK IF CHANS ARE DIFF ORDER!!! (should really make this pattern-match like)
-                    | channel=VARIABLE LBRC sel=protocol RBRC                              # ProgramProject //FIXME: SAME ISSUE AS ABOVE W/ ORDER 
+                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*   # ProgramCase   
+                    | channel=VARIABLE LBRC sel=protocol RBRC                                                                # ProgramProject
                     | 'more' '(' channel=VARIABLE ')'                   # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')'                 # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                 # ProgramAccept
@@ -152,19 +152,7 @@ statement           : defineProc                                                
                     
 
 //FIXME: RESERVE TERMS? 
-/*/
-program             : programs+=program (';' programs+=program)+        # ProgramSequence
-                    | channel=VARIABLE 'send' '(' expr=expression ')'   # ProgramSend
-                    | var=VARIABLE ASSIGN 'recv' '(' expr=expression ')'              # ProgramRecv
-                    | WHILE check=condition '{' blk=program '}'                       # ProgramLoop
-                    | channel=VARIABLE '.case' '(' opts+=program (',' opts+=program) ')'    # ProgramCase //FIXME: THIS WONT WORK IF CHANS ARE DIFF ORDER!!! (should really make this pattern-match like)
-                    | channel=VARIABLE LBRC ex=expression RBRC                              # ProgramProject //FIXME: SAME ISSUE AS ABOVE W/ ORDER 
-                    | 'more' '(' channel=VARIABLE ')'                   # ProgramContract 
-                    | 'weaken' '(' channel=VARIABLE ')'                 # ProgramWeaken
-                    | 'accept' '(' channel=VARIABLE ')' '{' blk=program '}'                 # ProgramAccept
-                    | var=VARIABLE ASSIGN 'exec' prog=program                               # ProgramExec //FIXME: HOW DO WE DEFINE PROGRAMS? 
-                    ; 
-*/
+
 //Operators
 ASSIGN      :       ':='    ; 
 MINUS       :       '-'     ;

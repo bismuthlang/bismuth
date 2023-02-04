@@ -570,7 +570,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
     }
 
     Value *chanVal = sym->val.value();
-
+    
     builder->CreateCall(module->getFunction("WriteChannel"), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return {};
 }
@@ -587,7 +587,11 @@ std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
 
     Value *chanVal = sym->val.value();
 
-    builder->CreateCall(module->getFunction("ContractChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
+    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
+    llvm::Function *progFn = module->getFunction("ContractChannel"); // FIXME: BAD OPTIONAL ACCESS
+
+    // Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
 
     return {};
 }
