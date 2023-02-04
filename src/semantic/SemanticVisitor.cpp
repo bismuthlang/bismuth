@@ -1102,7 +1102,7 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
             else
             {
                 std::optional<TypedNode *> exprOpt = (e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)) : std::nullopt;
-                const Type *newAssignType = this->visitCtx(ctx->typeOrVar());
+                const Type *newAssignType = this->visitCtx(ctx->typeOrVar()); // Needed to ensure vars get their own inf type
 
                 const Type *exprType = exprOpt ? exprOpt.value()->getType() : newAssignType;
 
@@ -1111,9 +1111,7 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
                 {
                     errorHandler.addSemanticError(e->getStart(), "Expression of type " + exprType->toString() + " cannot be assigned to " + newAssignType->toString());
                 }
-                // Needed to ensure vars get their own inf type
-                // const Type *newAssignType = this->visitCtx(ctx->typeOrVar());
-
+                
                 std::optional<const Type *> newExprTypeOpt = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType; 
                 
                 if (!newExprTypeOpt)
