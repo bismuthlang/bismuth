@@ -11,6 +11,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
      ***********************************/
 
     {
+        //TODO: MAKE GET METHODS FOR THESE LIKE WE HAVE getWriteProjection
         {
             llvm::FunctionType *writeChanFnTy = llvm::FunctionType::get(
                 VoidTy,
@@ -90,30 +91,6 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
                 "WeakenChannel",
                 module);
         }
-
-        // FIXME: INCLUDE ONLY IF NEEDED
-        // {
-        //     Function::Create(
-        //         llvm::FunctionType::get(
-        //             VoidTy,
-        //             {Int32Ty,
-        //              Int32Ty},
-        //             false),
-        //         GlobalValue::ExternalLinkage,
-        //         "WriteProjection",
-        //         module);
-        // }
-
-        // {
-        //     Function::Create(
-        //         llvm::FunctionType::get(
-        //             Int32Ty,
-        //             {Int32Ty},
-        //             false),
-        //         GlobalValue::ExternalLinkage,
-        //         "ReadProjection",
-        //         module);
-        // }
     }
 
     /***********************************
