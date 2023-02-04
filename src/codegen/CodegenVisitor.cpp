@@ -230,7 +230,6 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     auto origParent = builder->GetInsertBlock()->getParent();
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
 
-
     // Attempt to cast the check; if this fails, then codegen for the check failed
     std::optional<Value *> optVal = AcceptType(this, n->checkExpr);
 
@@ -326,29 +325,24 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
 
     // Attempt to cast the check; if this fails, then codegen for the check failed
-    std::optional<Value *> optVal = AcceptType(this, n->checkExpr);
+    Symbol *sym = n->sym;
 
-    // Check that the optional, in fact, has a value. Otherwise, something went wrong.
-    if (!optVal)
+    if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 202"); // FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel in case: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
-    Value *sumVal = optVal.value();
-    llvm::AllocaInst *SumPtr = builder->CreateAlloca(sumVal->getType());
-    builder->CreateStore(sumVal, SumPtr);
-
-    Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
-
-    Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
+    Value *chanVal = sym->val.value();
+    // ReadProjection
+    Value *tag = builder->CreateCall(module->getFunction("ReadProjection"), {builder->CreateLoad(Int32Ty, chanVal)});
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size());
 
     // for (std::pair<Symbol *, TypedNode *> caseNode : n->cases)
-    for(unsigned int i = 0; i < n->cases.size(); i++)
+    for (unsigned int i = 0; i < n->cases.size(); i++)
     {
-        //FIXME: find a way to error handle cases where coreetc block DNE or something 
+        // FIXME: find a way to error handle cases where coreetc block DNE or something
         BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(i + 1));
 
         builder->SetInsertPoint(matchBlk);
@@ -356,9 +350,8 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
         switchInst->addCase(ConstantInt::get(Int32Ty, i + 1, true), matchBlk);
         origParent->getBasicBlockList().push_back(matchBlk);
 
-
         // altCtx->eval->accept(this);
-        TypedNode * caseNode = n->cases.at(i); 
+        TypedNode *caseNode = n->cases.at(i);
 
         AcceptType(this, caseNode);
 
@@ -491,7 +484,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel in recv: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
@@ -586,7 +579,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel in send: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
@@ -604,7 +597,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel in contract: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
@@ -625,7 +618,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel in weaken: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 
@@ -648,7 +641,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel in accept: " + n->sym->getIdentifier()); // FIXME: DO BETTER
         return {};
     }
 

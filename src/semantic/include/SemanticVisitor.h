@@ -245,11 +245,11 @@ public:
     std::any visitAssignment(WPLParser::AssignmentContext *ctx) override { return visitCtx(ctx); }
     
 
-    std::any visitProgramCase(WPLParser::ProgramCaseContext *ctx) override { return TvisitProgramCase(ctx); }
-    const Type *TvisitProgramCase(WPLParser::ProgramCaseContext *ctx);
+    std::optional<ChannelCaseStatementNode *> TvisitProgramCase(WPLParser::ProgramCaseContext *ctx);
+    std::any visitProgramCase(WPLParser::ProgramCaseContext *ctx) override { return (std::optional<TypedNode*>) TvisitProgramCase(ctx); }
 
     std::optional<ProgramSendNode*> TvisitProgramProject(WPLParser::ProgramProjectContext *ctx);
-    std::any visitProgramProject(WPLParser::ProgramProjectContext *ctx) override { return TvisitProgramProject(ctx); }
+    std::any visitProgramProject(WPLParser::ProgramProjectContext *ctx) override { return (std::optional<TypedNode*>) TvisitProgramProject(ctx); }
 
     /**
      * @brief Used to safely enter a block. This is used to ensure there aren't FUNC/PROC definitions / code following returns in it.

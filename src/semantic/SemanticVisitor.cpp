@@ -811,7 +811,7 @@ std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAcces
         }
         
         if(!stmgr->removeSymbol(sym)) {
-            errorHandler.addSemanticError(ctx->getStart(), "Failed to unbind local var!");
+            errorHandler.addSemanticError(ctx->getStart(), "Failed to unbind local var: " + sym->toString());
         }
 
 
@@ -2015,7 +2015,7 @@ std::optional<ProgramRecvNode *> SemanticVisitor::TvisitAssignableRecv(WPLParser
     return {};
 }
 
-const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ctx)
+std::optional<ChannelCaseStatementNode *> SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2023,7 +2023,7 @@ const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ct
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Could not find channel: " + id);
-        return Types::UNDEFINED;
+        return {}; 
     }
 
     Symbol *sym = opt.value().second;
@@ -2041,8 +2041,12 @@ const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ct
         if (!channel->getProtocol()->isExtChoice(opts))
         {
             errorHandler.addSemanticError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
-            return Types::UNDEFINED;
+            return {};
         }
+
+        std::vector<TypedNode *> cases; 
+        std::vector<TypedNode *> restVec; 
+        bool restVecFilled = false; 
 
         std::vector<Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
         stmgr->deleteAvaliableLinears();                           // FIXME: UNSAFE
@@ -2064,22 +2068,35 @@ const Type *SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ct
                 }
             }
 
-            alt->eval->accept(this);
+            std::optional<TypedNode *> optEval = anyOpt2Val<TypedNode *>(alt->eval->accept(this));
+
+            if(!optEval) return {}; //FIXME: DO BETTER
+
+            cases.push_back(optEval.value());
 
             for (auto s : ctx->rest)
             {
-                s->accept(this);
+                std::optional<TypedNode *> rOpt = anyOpt2Val<TypedNode *>(s->accept(this));
+
+                if(!restVecFilled)
+                {
+                    if(!rOpt) return {}; //FIXME: DO BETTER: 
+                    restVec.push_back(rOpt.value());
+                }
             }
+
+            restVecFilled = true; 
 
             safeExitScope(ctx);
         }
 
-        return Types::UNDEFINED;
+        // return Types::UNDEFINED;
         // return ty.value();
+        return new ChannelCaseStatementNode(sym, cases, restVec);
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot case on non-channel: " + id);
-    return Types::UNDEFINED;
+    return {};
 }
 std::optional<ProgramSendNode*> SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectContext *ctx)
 {

@@ -428,7 +428,7 @@ public:
 class ProgramContractNode : public TypedNode
 {
 public:
-    Symbol *sym;
+Symbol *sym;
 
     ProgramContractNode(Symbol *s)
     {
@@ -957,12 +957,13 @@ public:
 class ChannelCaseStatementNode : public TypedNode
 {
 public:
-    TypedNode *checkExpr; 
+    // TypedNode *checkExpr; 
+    Symbol * sym; 
     vector<TypedNode *> cases; 
     vector<TypedNode *> post;
 
-    ChannelCaseStatementNode(TypedNode* c, vector<TypedNode *> v, vector<TypedNode *> p) {
-        checkExpr = c; 
+    ChannelCaseStatementNode(Symbol* c, vector<TypedNode *> v, vector<TypedNode *> p) {
+        sym = c; 
         cases = v; 
         post = p; 
     }

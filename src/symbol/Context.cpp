@@ -77,7 +77,9 @@ bool Context::removeSymbol(Symbol *symbol) // FIXME: DO BETTER, VERIFY!
         if (depth >= stop || symbol->isDefinition || symbol->isGlobal) //FIXME: CONDITION SEEMS WRONG
         {
             // scope->er
-            return scope->removeSymbol(symbol);
+            if( scope->removeSymbol(symbol))
+                return true; 
+            // return scope->removeSymbol(symbol);
         }
         else 
         {
