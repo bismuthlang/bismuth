@@ -1,6 +1,6 @@
 /**
  * @file scanner_tests.cpp
- * @author gpollice
+ * @author gpollice //FIXME: REMOVE
  * @brief basic scanner tests
  * @version 0.1
  * @date 2022-07-04
