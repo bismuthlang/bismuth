@@ -1,6 +1,6 @@
 extern int func printf(...);
 
-# FIXME: THE ISSIE W/ CHANNEL NAMES IS THAT OF SECONDARY NOTATION!
+# Note: The issue w/ lack of channel names is that of secondary notation
 
 # proc printInt5Array(str name, int [5] array) {
 define printInt5Array :: c : Channel<+str; +int[5]> = {

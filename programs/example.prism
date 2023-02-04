@@ -39,7 +39,7 @@ define program :: c : Channel<-int> = {
     # Define three helper functions which we then use to create a ColorHelper
     # Color func getRGBColor(int red, int green, int blue) {
     define getRGBColor :: c : Channel<+int;+int;+int;-Color> = { # SEEMS WASTEFUL TO HAVE TO SEND EACH SEPARATLEY
-        int red := c.recv(), green := c.recv(), blue := c.recv(); # FIXME, ALSO, CHANNELS ERASE NAMES OF WHAT EACH VAR MEANS...
+        int red := c.recv(), green := c.recv(), blue := c.recv(); # Note: Channels erase names of what each var means... 
         # return RGBColor::init(red, green, blue); 
         c.send(RGBColor::init(red, green, blue))
     }

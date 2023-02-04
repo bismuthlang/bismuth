@@ -42,7 +42,7 @@ define struct Color {
 }
 
 # Color func getRGBColor(int r, int g, int b) 
-define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # FIXME: Meaning of params gets lost...
+define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of params gets lost...
 {
     int[3] data; 
     data[0] := io.recv();# r; 

@@ -580,7 +580,6 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
     Value *chanVal = sym->val.value();
 
     llvm::Function *progFn = module->getFunction("WriteChannel"); // FIXME: BAD OPTIONAL ACCESS
-    // Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return {};
 }
