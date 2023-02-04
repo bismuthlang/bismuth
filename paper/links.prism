@@ -66,12 +66,9 @@ define program :: c : Channel<-int> = {
     Channel<ExternalChoice<+int, +boolean>> l1 := exec bar1; 
     Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
 
-    # ↿-↿+BOOL;&+INT;&;↾;-↿-BOOL;&-INT;&;↾;↾ cannot be assigned to 
-    # ↿-↿-BOOL;&-INT;&;↾;-↿+BOOL;&+INT;&;↾;↾
     Channel<-Channel<ExternalChoice<+int, +boolean>>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
     linker.send(l1)
     linker.send(l2)
-
 
     c.send(0)
 }
