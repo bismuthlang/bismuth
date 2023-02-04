@@ -1,0 +1,77 @@
+extern int func printf(str s, ...);
+
+define func linkRecvInt (Channel<+int> a, Channel<-int> b) { 
+    int FIXME := a.recv(); 
+    b.send(FIXME)
+    return;
+}
+
+define func linkRecvBool (Channel<+boolean> a, Channel<-boolean> b) {
+    boolean FIXME := a.recv(); 
+    b.send(FIXME)
+    return; 
+}
+
+define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>>;+Channel<InternalChoice<-int, -boolean>>> = {
+    Channel<ExternalChoice<+int, + boolean>> a := c.recv(); 
+    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
+
+    # FIXME: DOESNT WORK:
+    # a.case(
+    #     +int => {
+    #         # FILLER 
+    #         b[-int]
+
+    #         linkRecvInt(a, b)
+    #     }
+    #     +boolean => {
+    #         b[-boolean]
+
+    #         linkRecvBool(a, b)
+    #     }
+    # )
+
+    a.case(
+        +int => {
+            int i := a.recv(); 
+            printf("54\n");
+        }
+        +boolean => {
+            boolean b := a.recv(); 
+            printf("57\n");
+        }
+    )
+
+    b[-int]
+    b.send(0)
+}
+
+define bar1 :: c : Channel<InternalChoice<-int, -boolean>> = {
+    c[-boolean]
+    c.send(false)
+}
+
+define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+    c.case(
+        +boolean => {
+            boolean b := c.recv(); 
+        }
+        +int => {
+            int i := c.recv(); 
+        }
+    )
+}
+
+define program :: c : Channel<-int> = {
+    Channel<ExternalChoice<+int, +boolean>> l1 := exec bar1; 
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+
+    # ↿-↿+BOOL;&+INT;&;↾;-↿-BOOL;&-INT;&;↾;↾ cannot be assigned to 
+    # ↿-↿-BOOL;&-INT;&;↾;-↿+BOOL;&+INT;&;↾;↾
+    Channel<-Channel<ExternalChoice<+int, +boolean>>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    linker.send(l1)
+    linker.send(l2)
+
+
+    c.send(0)
+}

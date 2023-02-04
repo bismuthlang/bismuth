@@ -613,6 +613,13 @@ TEST_CASE("programs/SendChannel", "[codegen][linear-types]")
         "c0400b0725a19a1b62ee5e985c3c10b036c6b497e704d106cafa9568a309c22a");
 }
 
+TEST_CASE("paper/links", "[codegen][linear-types]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links.prism"))),
+        "af194957130ef848cb9cc0ba716021a597e877edda6c431aff7397661308c580");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/
