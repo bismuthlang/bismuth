@@ -46,9 +46,6 @@ extern "C" unsigned int Execute(void (*func)(unsigned int))
     LookupOther.insert({idOut, idIn});
     LookupOther.insert({idIn, idOut});
 
-    // std::cout << idIn << "<>" << idOut << std::endl;
-    // std::cout << (State.find(idIn) != State.end()) << " " << (LookupOther.find(idIn) != LookupOther.end()) << " " << (State.find(idOut) != State.end()) << " " << (LookupOther.find(idOut) != LookupOther.end()) << std::endl;
-
     std::lock_guard<std::mutex> lock(running_mutex);
     running++;
     running_cond.notify_one();
@@ -104,10 +101,6 @@ exec_mutex.lock();
         return; // FIXME: DO BETTER
     }
 
-    // Value v;
-    // v.v = value;
-
-    // std::cout << "Write " << (*(int *) value) << "@" << i_buffer->first << std::endl;
     i_buffer->second->enqueue(m);
 }
 
@@ -142,7 +135,7 @@ extern "C" uint8_t *ReadChannel(unsigned int aId)
     }
     // return nullptr; // FIXME: DO BETTER
     uint8_t *v = std::get<Value>(i_buffer->second->dequeue()).v;
-    // std::cout << "Read " << (*(int *) v) << "@" << i_buffer->first << std::endl;
+    
     return v; // FIXME: RENAME TO BE MESSAGE VALUE OR SOMETHING
 }
 
@@ -191,7 +184,6 @@ extern "C" bool ShouldLoop(unsigned int aId)
         return false;
 
     std::cout << "E126" << std::endl; // FIXME: DO BETTER
-    std::cout << "SL: " << std::holds_alternative<START_LOOP>(m) << " EL: " << std::holds_alternative<END_LOOP>(m) << " VAL: " << std::holds_alternative<Value>(m) << " SEL: " << std::holds_alternative<SEL>(m) << std::endl;
 
     return false;
 }
@@ -221,9 +213,7 @@ extern "C" void ContractChannel(unsigned int aId)
     }
 
     START_LOOP v;
-    // v.v = value;
-
-    // std::cout << "Write " << (*(int *) value) << "@" << i_buffer->first << std::endl;
+    
     i_buffer->second->enqueue(v);
 }
 
@@ -251,8 +241,6 @@ extern "C" void WeakenChannel(unsigned int aId)
     }
 
     END_LOOP v;
-    // v.v = value;
-
-    // std::cout << "Write " << (*(int *) value) << "@" << i_buffer->first << std::endl;
+    
     i_buffer->second->enqueue(v);
 }

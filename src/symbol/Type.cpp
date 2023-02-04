@@ -61,9 +61,6 @@ optional<const Type*> ProtocolSequence::canSend(const Type *ty) const
 
     if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(proto))
     {
-        std::cout << ty->toString() << " isSubtype " << send->getSendType()->toString() << "?" << std::endl;
-
-        // return ty->isSubtype(send->getSendType());
         if(ty->isSubtype(send->getSendType()))
             return send->getSendType(); 
         return {};

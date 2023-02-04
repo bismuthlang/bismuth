@@ -233,7 +233,7 @@ public:
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {
         std::cout << "visitVariable " << sym->toString() << " " << is_rvalue << std::endl;
-        // module->dump();
+        
         // Try getting the type for the symbol, raising an error if it could not be determined
         llvm::Type *type = sym->type->getLLVMType(module);
         if (!type)
@@ -291,14 +291,13 @@ public:
             return {};
         }
 
-        std::cout << "297 rv" << is_rvalue << std::endl;
+        
         if (!is_rvalue)
             return sym->val.value();
-        // return sym->val.value();
+        
         // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
         Value *v = builder->CreateLoad(type, sym->val.value(), sym->getIdentifier());
-
-        // //FIXME: DO BETTER
+    
         // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
         // builder->CreateStore(v, alloc);
         // return alloc;
