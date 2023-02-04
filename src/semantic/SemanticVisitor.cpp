@@ -1071,11 +1071,6 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
     {
         // Needs to happen in case we have vars
         const Type *assignType = this->visitCtx(ctx->typeOrVar());
-        // auto exprType = (e->a) ? any2Type(e->a->accept(this)) : assignType;
-
-        std::optional<TypedNode *> exprOpt = (e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)) : std::nullopt;
-
-        const Type *exprType = exprOpt ? exprOpt.value()->getType() : assignType;
 
         if (e->a && stmgr->isGlobalScope())
         {
@@ -1092,13 +1087,7 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
             }
         }
 
-        // Note: This automatically performs checks to prevent issues with setting VAR = VAR
-        if (e->a && exprType->isNotSubtype(assignType))
-        {
-            errorHandler.addSemanticError(e->getStart(), "Expression of type " + exprType->toString() + " cannot be assigned to " + assignType->toString());
-        }
-
-        std::vector<Symbol *> s;
+        // std::vector<Symbol *> s;
 
         for (auto var : e->VARIABLE())
         {
@@ -1112,29 +1101,21 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
             }
             else
             {
-                // Needed to ensure vars get their own inf type
+                std::optional<TypedNode *> exprOpt = (e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)) : std::nullopt;
                 const Type *newAssignType = this->visitCtx(ctx->typeOrVar());
 
-                // FIXME: BAD OPT ACCESS
-                // const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? anyOpt2Val<TypedNode *>(e->a->accept(this)).value()->getType() : newAssignType;
-                std::optional<const Type *> newExprTypeOpt = [this, e, newAssignType]() -> std::optional<const Type *>
+                const Type *exprType = exprOpt ? exprOpt.value()->getType() : newAssignType;
+
+                // Note: This automatically performs checks to prevent issues with setting VAR = VAR
+                if (e->a && exprType->isNotSubtype(newAssignType))
                 {
-                    // const Type *newExprType = newAssignType;
-                    if (dynamic_cast<const TypeInfer *>(newAssignType) && e->a)
-                    {
-                        std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(e->a->accept(this));
+                    errorHandler.addSemanticError(e->getStart(), "Expression of type " + exprType->toString() + " cannot be assigned to " + newAssignType->toString());
+                }
+                // Needed to ensure vars get their own inf type
+                // const Type *newAssignType = this->visitCtx(ctx->typeOrVar());
 
-                        if (!opt)
-                            return std::nullopt; // FIXME: DO BETTER
-
-                        TypedNode *tn = opt.value();
-
-                        return tn->getType();
-                    }
-
-                    return newAssignType;
-                }();
-
+                std::optional<const Type *> newExprTypeOpt = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType; 
+                
                 if (!newExprTypeOpt)
                     return {}; // FIXME: DO BETTER
 
@@ -1144,10 +1125,11 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
                 stmgr->addSymbol(symbol);
 
                 // bindings->bind(var, symbol);
-                s.push_back(symbol);
+                // s.push_back(symbol);
+                a.push_back(new AssignmentNode({symbol}, exprOpt)); //FIXME: Inefficient but needed for linears
             }
         }
-        a.push_back(new AssignmentNode(s, exprOpt));
+        // a.push_back(new AssignmentNode(s, exprOpt));
     }
     // FIXME: SHOULDNT RETURN IF ERRORS!!
     //  Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
@@ -2059,13 +2041,13 @@ std::optional<ChannelCaseStatementNode *> SemanticVisitor::TvisitProgramCase(WPL
             }
         }
 
-        for (auto alt : ctx->protoAlternative()) //FIXME: DO WE CHECK ANYWHERE THAT THESE ARE THE VALID CASES AND ALL OF THEM?
+        for (auto alt : ctx->protoAlternative()) // FIXME: DO WE CHECK ANYWHERE THAT THESE ARE THE VALID CASES AND ALL OF THEM?
         {
             const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
             stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
 
             proto->append(channel->getProtocolCopy());
-            channel->setProtocol(proto); 
+            channel->setProtocol(proto);
             // stmgr->addSymbol(new Symbol(id, new TypeChannel(proto), false, false));
             for (auto pair : to_fix)
             {
@@ -2129,7 +2111,7 @@ std::optional<ProgramProjectNode *> SemanticVisitor::TvisitProgramProject(WPLPar
             return {};
         }
 
-        return new ProgramProjectNode(sym, projectIndex); //new IConstExprNode(projectIndex), Types::UNDEFINED); // FIXME: DO BETTER TYPE!
+        return new ProgramProjectNode(sym, projectIndex); // new IConstExprNode(projectIndex), Types::UNDEFINED); // FIXME: DO BETTER TYPE!
         // return ty.value();
         // return Types::UNDEFINED;
     }
