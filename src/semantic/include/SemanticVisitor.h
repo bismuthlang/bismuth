@@ -248,7 +248,7 @@ public:
     std::optional<ChannelCaseStatementNode *> TvisitProgramCase(WPLParser::ProgramCaseContext *ctx);
     std::any visitProgramCase(WPLParser::ProgramCaseContext *ctx) override { return (std::optional<TypedNode*>) TvisitProgramCase(ctx); }
 
-    std::optional<ProgramSendNode*> TvisitProgramProject(WPLParser::ProgramProjectContext *ctx);
+    std::optional<ProgramProjectNode*> TvisitProgramProject(WPLParser::ProgramProjectContext *ctx);
     std::any visitProgramProject(WPLParser::ProgramProjectContext *ctx) override { return (std::optional<TypedNode*>) TvisitProgramProject(ctx); }
 
     /**

@@ -92,28 +92,28 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
         }
 
         // FIXME: INCLUDE ONLY IF NEEDED
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    VoidTy,
-                    {Int32Ty,
-                     Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "WritePriojection",
-                module);
-        }
+        // {
+        //     Function::Create(
+        //         llvm::FunctionType::get(
+        //             VoidTy,
+        //             {Int32Ty,
+        //              Int32Ty},
+        //             false),
+        //         GlobalValue::ExternalLinkage,
+        //         "WriteProjection",
+        //         module);
+        // }
 
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    Int32Ty,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "ReadProjection",
-                module);
-        }
+        // {
+        //     Function::Create(
+        //         llvm::FunctionType::get(
+        //             Int32Ty,
+        //             {Int32Ty},
+        //             false),
+        //         GlobalValue::ExternalLinkage,
+        //         "ReadProjection",
+        //         module);
+        // }
     }
 
     /***********************************
@@ -335,7 +335,7 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
 
     Value *chanVal = sym->val.value();
     // ReadProjection
-    Value *tag = builder->CreateCall(module->getFunction("ReadProjection"), {builder->CreateLoad(Int32Ty, chanVal)});
+    Value *tag = builder->CreateCall(getReadProjection(), {builder->CreateLoad(Int32Ty, chanVal)});
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size());
 
@@ -381,6 +381,23 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
         AcceptType(this, s);
     }
 
+    return {};
+}
+
+std::optional<Value *> CodegenVisitor::visit(ProgramProjectNode *n)
+{
+    Symbol *sym = n->sym;
+
+    if (!sym->val)
+    {
+        errorHandler.addCodegenError(nullptr, "Could not find value for channel in case: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        return {};
+    }
+
+    Value *chanVal = sym->val.value();
+
+    builder->CreateCall(getWriteProjection(), {builder->CreateLoad(Int32Ty, chanVal),
+                                                                 ConstantInt::get(Int32Ty, n->projectIndex, false)}); 
     return {};
 }
 

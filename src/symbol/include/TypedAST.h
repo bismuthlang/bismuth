@@ -62,6 +62,7 @@ class MatchStatementNode;
 class ExitNode;
 
 class ChannelCaseStatementNode;
+class ProgramProjectNode; 
 
 class TypedASTVisitor
 {
@@ -107,6 +108,7 @@ public:
     virtual std::optional<Value *> visit(MatchStatementNode *n) = 0;
     virtual std::optional<Value *> visit(ExitNode *n) = 0;
     virtual std::optional<Value *> visit(ChannelCaseStatementNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramProjectNode *n) = 0; 
 
     // virtual std::optional<Value
 
@@ -150,6 +152,7 @@ public:
     std::any any_visit(MatchStatementNode *n) { return this->visit(n); }
     std::any any_visit(ExitNode *n) { return this->visit(n); }
     std::any any_visit(ChannelCaseStatementNode *n) { return this->visit(n); }
+    std::any any_visit(ProgramProjectNode *n) { return this->visit(n); }
 
     std::any visit(std::any n) { return "FIXME"; }
     std::any accept(TypedNode *n)
@@ -974,6 +977,22 @@ public:
     {
         return Types::UNDEFINED; // FIXME: DO BETTER
     }
+};
+
+class ProgramProjectNode : public TypedNode //FIXME: DO BETTER, VERY SIMILAR TO SEND
+{
+public:
+    Symbol *sym;
+    unsigned int projectIndex; 
+
+    ProgramProjectNode(Symbol *s, unsigned int p)
+    {
+        sym = s;
+        projectIndex = p; 
+    }
+
+    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
 /**************************************************

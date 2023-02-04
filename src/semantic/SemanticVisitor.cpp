@@ -802,19 +802,18 @@ std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAcces
     }
     Symbol *sym = opt.value().second;
 
-    if (opt.value().first == LINEAR_SCOPE) //FIXME: WILL NEED TO IMPL THIS BETTER!
+    if (opt.value().first == LINEAR_SCOPE) // FIXME: WILL NEED TO IMPL THIS BETTER!
     {
-        
+
         if (!is_rvalue)
         {
             errorHandler.addSemanticError(ctx->getStart(), "Cannot redefine linear variable!");
         }
-        
-        if(!stmgr->removeSymbol(sym)) {
+
+        if (!stmgr->removeSymbol(sym))
+        {
             errorHandler.addSemanticError(ctx->getStart(), "Failed to unbind local var: " + sym->toString());
         }
-
-
     }
 
     std::vector<std::pair<std::string, const Type *>> a;
@@ -2023,7 +2022,7 @@ std::optional<ChannelCaseStatementNode *> SemanticVisitor::TvisitProgramCase(WPL
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Could not find channel: " + id);
-        return {}; 
+        return {};
     }
 
     Symbol *sym = opt.value().second;
@@ -2044,33 +2043,40 @@ std::optional<ChannelCaseStatementNode *> SemanticVisitor::TvisitProgramCase(WPL
             return {};
         }
 
-        std::vector<TypedNode *> cases; 
-        std::vector<TypedNode *> restVec; 
-        bool restVecFilled = false; 
+        std::vector<TypedNode *> cases;
+        std::vector<TypedNode *> restVec;
+        bool restVecFilled = false;
 
         std::vector<Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
-        stmgr->deleteAvaliableLinears();                           // FIXME: UNSAFE
+        // stmgr->deleteAvaliableLinears();                           // FIXME: UNSAFE
+        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
+        for (Symbol *orig : syms)
+        {
+            // FIXME: DO BETTER, WONT WORK WITH VALUES!
+            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+            {
+                to_fix.push_back({channel, channel->getProtocolCopy()});
+            }
+        }
 
-        for (auto alt : ctx->protoAlternative())
+        for (auto alt : ctx->protoAlternative()) //FIXME: DO WE CHECK ANYWHERE THAT THESE ARE THE VALID CASES AND ALL OF THEM?
         {
             const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
             stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
 
             proto->append(channel->getProtocolCopy());
-            stmgr->addSymbol(new Symbol(id, new TypeChannel(proto), false, false));
-
-            for (const Symbol *orig : syms)
+            channel->setProtocol(proto); 
+            // stmgr->addSymbol(new Symbol(id, new TypeChannel(proto), false, false));
+            for (auto pair : to_fix)
             {
-                // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
-                if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-                {
-                    stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
-                }
+                // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
+                pair.first->setProtocol(pair.second->getCopy());
             }
 
             std::optional<TypedNode *> optEval = anyOpt2Val<TypedNode *>(alt->eval->accept(this));
 
-            if(!optEval) return {}; //FIXME: DO BETTER
+            if (!optEval)
+                return {}; // FIXME: DO BETTER
 
             cases.push_back(optEval.value());
 
@@ -2078,14 +2084,15 @@ std::optional<ChannelCaseStatementNode *> SemanticVisitor::TvisitProgramCase(WPL
             {
                 std::optional<TypedNode *> rOpt = anyOpt2Val<TypedNode *>(s->accept(this));
 
-                if(!restVecFilled)
+                if (!restVecFilled)
                 {
-                    if(!rOpt) return {}; //FIXME: DO BETTER: 
+                    if (!rOpt)
+                        return {}; // FIXME: DO BETTER:
                     restVec.push_back(rOpt.value());
                 }
             }
 
-            restVecFilled = true; 
+            restVecFilled = true;
 
             safeExitScope(ctx);
         }
@@ -2098,7 +2105,7 @@ std::optional<ChannelCaseStatementNode *> SemanticVisitor::TvisitProgramCase(WPL
     errorHandler.addSemanticError(ctx->getStart(), "Cannot case on non-channel: " + id);
     return {};
 }
-std::optional<ProgramSendNode*> SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectContext *ctx)
+std::optional<ProgramProjectNode *> SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2106,7 +2113,7 @@ std::optional<ProgramSendNode*> SemanticVisitor::TvisitProgramProject(WPLParser:
     if (!opt)
     {
         errorHandler.addSemanticError(ctx->getStart(), "Could not find channel: " + id);
-        return {}; 
+        return {};
     }
 
     Symbol *sym = opt.value().second;
@@ -2114,7 +2121,7 @@ std::optional<ProgramSendNode*> SemanticVisitor::TvisitProgramProject(WPLParser:
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
         const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
-        unsigned int projectIndex = channel->getProtocol()->project(ps); 
+        unsigned int projectIndex = channel->getProtocol()->project(ps);
 
         if (!projectIndex)
         {
@@ -2122,7 +2129,7 @@ std::optional<ProgramSendNode*> SemanticVisitor::TvisitProgramProject(WPLParser:
             return {};
         }
 
-        return new ProgramSendNode(sym, new IConstExprNode(projectIndex), Types::UNDEFINED); //FIXME: DO BETTER TYPE!
+        return new ProgramProjectNode(sym, projectIndex); //new IConstExprNode(projectIndex), Types::UNDEFINED); // FIXME: DO BETTER TYPE!
         // return ty.value();
         // return Types::UNDEFINED;
     }

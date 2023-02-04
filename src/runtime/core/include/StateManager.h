@@ -162,7 +162,7 @@ extern "C" unsigned int ReadProjection(unsigned int aId) //FIXME: SHOULD METHODI
 
     if (std::holds_alternative<SEL>(m))
     {
-        unsigned int i = std::get<SEL>(i_buffer->second->dequeue()).i;
+        unsigned int i = std::get<SEL>(m).i;
         return i; 
     }
 
