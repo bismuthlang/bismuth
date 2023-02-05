@@ -2,7 +2,7 @@
  * Alex Friedman (ahfriedman@wpi.edu)
  * Grammar file for PRISM
  */
-grammar WPL;
+grammar WPL; //FIXME: IF WE UPDATE THE SYNTAX, THEN OUR PROGRAM TESTS WILL INCORRECTLY FAIL/PASS DUE TO SYNTAX ERROR
 
 // Parser rules
 compilationUnit   :  (extens+=externStatement | defs+=defineType)* EOF ; 
