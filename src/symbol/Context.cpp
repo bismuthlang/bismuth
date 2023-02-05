@@ -143,30 +143,6 @@ std::vector<Symbol *> Context::getAvaliableLinears()
     return ans;
 }
 
-void Context::deleteAvaliableLinears()
-{ // FIXME: UNSAFE
-    // FIXME: SEARCH FOR FOXME AND OTHER MISSPELLINGS OF FIXME
-    //  std::vector<const Symbol *> ans;
-
-    std::optional<Scope *> opt = currentScope;
-
-    int depth = scopes.size() - 1;
-    int stop = this->getCurrentStop();
-    while (depth >= stop)
-    {
-        Scope *scope = opt.value();
-
-        for (auto s : scope->getRemainingLinearTypes())
-        {
-            scope->removeSymbol(s);
-        }
-        depth--;
-        opt = scope->getParent();
-    }
-
-    // return ans;
-}
-
 std::optional<Symbol *> Context::lookupInCurrentScope(std::string id)
 {
     std::optional<Scope *> opt = currentScope;

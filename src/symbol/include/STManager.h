@@ -117,11 +117,6 @@ class STManager {
 
     std::vector<Symbol *> getAvaliableLinears() { return linearContext.getAvaliableLinears(); }
 
-    //FIXME: MAY BE UNSAFE!!!
-    void deleteAvaliableLinears() {
-      linearContext.deleteAvaliableLinears();
-    }
-
     /**
      * @brief Gets the number of scopes
      * 

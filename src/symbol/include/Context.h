@@ -62,7 +62,6 @@ class Context {
     std::optional<Symbol*> lookup(std::string id);
 
     std::vector<Symbol *> getAvaliableLinears();  //FIXME: SHOULD WE TRY TO SET THIS STUFF BACK TO CONST? 
-    void deleteAvaliableLinears(); 
 
     /**
      * @brief Lookup a symbol only in the current scope. 
