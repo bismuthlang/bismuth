@@ -1220,30 +1220,25 @@ std::optional<WhileLoopNode *> SemanticVisitor::visitCtx(WPLParser::ProgramLoopC
 
     std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
 
-    stmgr->enterScope(StopType::NONE); // TODO: DO BETTER
-
-    std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
+    std::vector<const TypeChannel *> to_fix;
 
     for (Symbol *orig : syms)
     {
         if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
         {
             channel->getProtocol()->guard(); 
-            to_fix.push_back({channel, channel->getProtocol()});
+            to_fix.push_back(channel);
         }
     }
 
-    // FIXME: CANT DO THIS ANYMORE B/C NEED BLOCKS AS PART OF AST!!!
-    std::optional<BlockNode *> blkOpt = this->visitCtx(ctx->block()); // Visiting block to make sure everything type checks there as well
-
-    safeExitScope(ctx);
+    std::optional<BlockNode *> blkOpt = safeVisitBlock(ctx->block(), true);
 
     if (!blkOpt)
         return {}; // FIXME: DO BETTER, ALSO THERE ARE A LOT OF THESE BEFORE SAFE EXIT. WILL SUCH THINGS CAUSE PROBLEMS?
 
-    for (auto pair : to_fix) //FIXME: verify this won't break anything...
+    for (auto c : to_fix) //FIXME: verify this won't break anything...
     {
-        pair.first->getProtocol()->unguard(); 
+        c->getProtocol()->unguard(); 
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
@@ -1270,8 +1265,6 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
         if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
         {
             to_fix.push_back({channel, channel->getProtocolCopy()});
-            // channel->setProtocol(protoOpt.value());
-            // stmgr->addSymbol(orig);
         }
     }
 
@@ -1283,14 +1276,6 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
         pair.first->setProtocol(pair.second->getCopy());
     }
 
-    // for (const Symbol *orig : syms)    // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
-    // {
-    //     // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
-    //     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-    //     {
-    //         stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
-    //     }
-    // }
     std::optional<BlockNode *> trueOpt = this->visitCtx(ctx->trueBlk);
     if (!trueOpt)
         return {}; // FIXME: DO BETTER
@@ -2127,16 +2112,14 @@ std::optional<ProgramAcceptNode *> SemanticVisitor::TvisitProgramAccept(WPLParse
         std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
         // FIXME: DO BETTER B/C HERE WE TRY TO ASSIGN TO THE VAR WE MANUALLY NEED TO ASSIGN? NO BC IT FAILS CHECK!
 
-        stmgr->enterScope(StopType::NONE); // TODO: DO BETTER
-
-        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
+        std::vector<const TypeChannel *> to_fix;
 
         for (Symbol *orig : syms)
         {
             if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
             {
                     channel->getProtocol()->guard(); 
-                    to_fix.push_back({channel, channel->getProtocol()});
+                    to_fix.push_back(channel);
             }
         }
         const ProtocolSequence * restProto = channel->getProtocol(); 
@@ -2144,13 +2127,12 @@ std::optional<ProgramAcceptNode *> SemanticVisitor::TvisitProgramAccept(WPLParse
         channel->setProtocol(acceptOpt.value());
         stmgr->addSymbol(sym);
 
-        std::optional<BlockNode *> blkOpt = this->visitCtx(ctx->block());
+        std::optional<BlockNode *> blkOpt = safeVisitBlock(ctx->block(), true); 
 
-        safeExitScope(ctx);
         channel->setProtocol(restProto);
-        for (auto pair : to_fix)
+        for (auto c : to_fix)
         {
-            pair.first->getProtocol()->unguard(); 
+            c->getProtocol()->unguard(); 
         }
 
         if (!blkOpt)
