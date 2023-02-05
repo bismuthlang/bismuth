@@ -11,15 +11,14 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
      ***********************************/
 
     {
-        //TODO: MAKE GET METHODS FOR THESE LIKE WE HAVE getWriteProjection
+        // TODO: MAKE GET METHODS FOR THESE LIKE WE HAVE getWriteProjection
         {
-            llvm::FunctionType *writeChanFnTy = llvm::FunctionType::get(
-                VoidTy,
-                {Int32Ty,
-                 i8p},
-                false);
-
-            Function *fn = Function::Create(writeChanFnTy, GlobalValue::ExternalLinkage, "WriteChannel", module);
+            Function::Create(llvm::FunctionType::get(
+                                 VoidTy,
+                                 {Int32Ty,
+                                  i8p},
+                                 false),
+                             GlobalValue::ExternalLinkage, "WriteChannel", module);
         }
 
         {
@@ -193,8 +192,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", mainFunc);
         builder->SetInsertPoint(bBlk);
 
-        llvm::Function *progFn = module->getFunction("program");
-        builder->CreateRet(builder->CreateCall(progFn, {}));
+        builder->CreateRet(builder->CreateCall(module->getFunction("program"), {}));
     }
 
     return {};
@@ -374,13 +372,13 @@ std::optional<Value *> CodegenVisitor::visit(ProgramProjectNode *n)
     Value *chanVal = sym->val.value();
 
     builder->CreateCall(getWriteProjection(), {builder->CreateLoad(Int32Ty, chanVal),
-                                                                 ConstantInt::get(Int32Ty, n->projectIndex, false)}); 
+                                               ConstantInt::get(Int32Ty, n->projectIndex, false)});
     return {};
 }
 
 std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
 {
-    vector<TypedNode *> argNodes = n->args; 
+    vector<TypedNode *> argNodes = n->args;
 
     // Create the argument vector
     std::vector<llvm::Value *> args;
@@ -428,20 +426,7 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
 
     // Convert to an array ref, then find and execute the call.
     ArrayRef<Value *> ref = ArrayRef(args);
-    // if (ctx->lam)
-    // {
-    //     std::optional<Value *> callOpt = TvisitLambdaConstExpr(ctx->lam);
-    //     if (!callOpt)
-    //     {
-    //         errorHandler.addCodegenError(ctx->lam->getStart(), "Could not generate code for lambda");
-    //         return {};
-    //     }
-    //     llvm::Function *call = (llvm::Function *)callOpt.value();
-    //     Value *val = builder->CreateCall(call, ref); // Needs to be separate line because, C++
-    //     return val;
-    // }
 
-    // llvm::Function *call = module->getFunction(ctx->VARIABLE()->getText());
     std::optional<Value *> fnOpt = AcceptType(this, n->fn);
     if (!fnOpt)
     {
@@ -484,9 +469,8 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
     llvm::Type *recvType = n->ty->getLLVMType(module);
 
-
     Value *valPtr = builder->CreateCall(module->getFunction("ReadChannel"), {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
-    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());             // Cast the void* to the correct type ptr
+    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                                         // Cast the void* to the correct type ptr
 
     return builder->CreateLoad(recvType, casted);
 }
@@ -503,21 +487,16 @@ std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
 
     Value *fnVal = fnOpt.value();
 
-    llvm::Type *ty = fnVal->getType();
-
     if (llvm::isa<llvm::Function>(fnVal))
     {
         llvm::Function *lambdaThread = static_cast<llvm::Function *>(fnVal);
-        llvm::Function *progFn = module->getFunction("Execute");
 
-        Value *val = builder->CreateCall(progFn, {lambdaThread});
+        Value *val = builder->CreateCall(module->getFunction("Execute"), {lambdaThread});
         return val;
     }
     // FIXME: REFACTOR, BOTH WITH THIS METHOD AND INVOCATION!
 
-    // llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(ty->getPointerElementType());
-    llvm::Function *progFn = module->getFunction("Execute");
-    Value *val = builder->CreateCall(progFn, {fnVal});
+    Value *val = builder->CreateCall(module->getFunction("Execute"), {fnVal});
     return val;
 }
 
@@ -557,8 +536,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     llvm::Function *mallocFn = module->getFunction("malloc"); // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
     Value *v = builder->CreateCall(mallocFn, {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
-
-    // llvm::AllocaInst *v = builder->CreateAlloca(stoVal->getType(), 0, "");
+    
     builder->CreateStore(stoVal, v);
 
     Value *corrected = builder->CreateBitCast(v, i8p);
@@ -570,7 +548,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
     }
 
     Value *chanVal = sym->val.value();
-    
+
     builder->CreateCall(module->getFunction("WriteChannel"), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return {};
 }
@@ -587,11 +565,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
 
     Value *chanVal = sym->val.value();
 
-    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
-    llvm::Function *progFn = module->getFunction("ContractChannel"); // FIXME: BAD OPTIONAL ACCESS
-
-    // Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
-    builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(module->getFunction("ContractChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
 
     return {};
 }
@@ -608,10 +582,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
 
     Value *chanVal = sym->val.value();
 
-    // FIXME: DO BETTER NEED TO CONVERT TYPES AND LOAD.... but how?
-    llvm::Function *progFn = module->getFunction("WeakenChannel"); // FIXME: BAD OPTIONAL ACCESS
-    // Value *valPtr = builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
-    builder->CreateCall(progFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(module->getFunction("WeakenChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
 
     // FIXME: MAKE SURE TO FREE ON RECV!
     return {};
