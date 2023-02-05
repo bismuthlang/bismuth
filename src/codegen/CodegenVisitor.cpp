@@ -449,10 +449,6 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
 
     Value *val = builder->CreateCall(fnType, fnVal, ref);
     return val;
-    // }
-
-    // errorHandler.addCodegenError(nullptr, "Invocation got non-invokable type!");
-    // return {};
 }
 
 std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
@@ -536,7 +532,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     llvm::Function *mallocFn = module->getFunction("malloc"); // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
     Value *v = builder->CreateCall(mallocFn, {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
-    
+
     builder->CreateStore(stoVal, v);
 
     Value *corrected = builder->CreateBitCast(v, i8p);
@@ -611,9 +607,6 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
     BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
 
     builder->CreateCondBr(check, loopBlk, restBlk);
-
-    // Need to add here otherwise we will overwrite it
-    // parent->getBasicBlockList().push_back(loopBlk);
 
     /*
      * In the loop block
@@ -1040,11 +1033,10 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
             return v;
         }
 
-        // FIXME: THROW ERROR? OH WAIT NO BC WE CAN HAVE LENGTH AS A FIELD
+        // Can't throw error b/c length could be field of struct
     }
 
     const Type *ty = sym->type;
-    // std::optional<Value *> baseOpt = visitVariable(ctx->VARIABLE().at(0)->getText(), props->getBinding(ctx->VARIABLE().at(0)), ctx); // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
     std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0 ? n->is_rvalue : false); // n->is_rvalue); // n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
 
     if (!baseOpt)
@@ -1057,7 +1049,6 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
     if (n->accesses.size() == 0)
     {
-
         return baseValue;
     }
 
