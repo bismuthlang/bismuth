@@ -13,12 +13,15 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
     {
         // TODO: MAKE GET METHODS FOR THESE LIKE WE HAVE getWriteProjection
         {
-            Function::Create(llvm::FunctionType::get(
-                                 VoidTy,
-                                 {Int32Ty,
-                                  i8p},
-                                 false),
-                             GlobalValue::ExternalLinkage, "WriteChannel", module);
+            Function::Create(
+                llvm::FunctionType::get(
+                    VoidTy,
+                    {Int32Ty,
+                     i8p},
+                    false),
+                GlobalValue::ExternalLinkage,
+                "WriteChannel",
+                module);
         }
 
         {
