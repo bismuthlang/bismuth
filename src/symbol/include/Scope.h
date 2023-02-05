@@ -124,7 +124,8 @@ public:
         {
             if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
             {
-                if (!inf->getProtocol()->isComplete())
+                std::cout << inf->toString() << " " << inf->getProtocol()->isComplete() << " " << inf->getProtocol()->isGuarded() << std::endl; 
+                if (!inf->getProtocol()->isComplete() && !inf->getProtocol()->isGuarded())
                     ans.push_back(item.second);
             }
         }

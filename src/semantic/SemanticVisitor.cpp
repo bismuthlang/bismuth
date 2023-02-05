@@ -1252,7 +1252,7 @@ std::optional<WhileLoopNode *> SemanticVisitor::visitCtx(WPLParser::ProgramLoopC
 
     std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
 
-    stmgr->enterScope(StopType::LINEAR); // TODO: DO BETTER
+    stmgr->enterScope(StopType::NONE); // TODO: DO BETTER
 
     std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
 
@@ -1260,14 +1260,8 @@ std::optional<WhileLoopNode *> SemanticVisitor::visitCtx(WPLParser::ProgramLoopC
     {
         if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
         {
-            std::optional<const ProtocolSequence *> protoOpt = channel->getProtocol()->shearLoop();
-            if (protoOpt)
-            {
-                // stmgr->addSymbol(new Symbol(orig->getIdentifier(), new TypeChannel(protoOpt.value()), false, false));
-                to_fix.push_back({channel, channel->getProtocol()});
-                channel->setProtocol(protoOpt.value());
-                stmgr->addSymbol(orig);
-            }
+            channel->getProtocol()->guard(); 
+            to_fix.push_back({channel, channel->getProtocol()});
         }
     }
 
@@ -1279,9 +1273,9 @@ std::optional<WhileLoopNode *> SemanticVisitor::visitCtx(WPLParser::ProgramLoopC
     if (!blkOpt)
         return {}; // FIXME: DO BETTER, ALSO THERE ARE A LOT OF THESE BEFORE SAFE EXIT. WILL SUCH THINGS CAUSE PROBLEMS?
 
-    for (auto pair : to_fix)
+    for (auto pair : to_fix) //FIXME: verify this won't break anything...
     {
-        pair.first->setProtocol(pair.second);
+        pair.first->getProtocol()->unguard(); 
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
@@ -2112,6 +2106,22 @@ std::optional<ProgramContractNode *> SemanticVisitor::TvisitProgramContract(WPLP
             errorHandler.addSemanticError(ctx->getStart(), "Failed to contract: " + id);
             return {};
         }
+        stmgr->addSymbol(sym); //Makes sure we enforce weakening rules... 
+
+        /*
+        c : |?-int|
+        while true {
+            {
+                int c = ... 
+                more(c) ... will this break? I guess not...
+
+            }
+
+        }
+        
+        
+        
+        */
         return new ProgramContractNode(sym);
     }
 
@@ -2170,7 +2180,7 @@ std::optional<ProgramAcceptNode *> SemanticVisitor::TvisitProgramAccept(WPLParse
         std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
         // FIXME: DO BETTER B/C HERE WE TRY TO ASSIGN TO THE VAR WE MANUALLY NEED TO ASSIGN? NO BC IT FAILS CHECK!
 
-        stmgr->enterScope(StopType::LINEAR); // TODO: DO BETTER
+        stmgr->enterScope(StopType::NONE); // TODO: DO BETTER
 
         std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
 
@@ -2178,20 +2188,13 @@ std::optional<ProgramAcceptNode *> SemanticVisitor::TvisitProgramAccept(WPLParse
         {
             if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
             {
-                std::optional<const ProtocolSequence *> protoOpt = channel->getProtocol()->shearLoop();
-                if (protoOpt)
-                {
-                    // Symbol * tempSym = new Symbol(orig->getIdentifier(), new TypeChannel(protoOpt.value()), false, false);
-                    // tempSym->val = orig->val;
-                    // stmgr->addSymbol(tempSym);
-
+                    channel->getProtocol()->guard(); 
                     to_fix.push_back({channel, channel->getProtocol()});
-                    channel->setProtocol(protoOpt.value());
-                    stmgr->addSymbol(orig);
-                }
             }
         }
-        to_fix.push_back({channel, channel->getProtocol()});
+        const ProtocolSequence * restProto = channel->getProtocol(); 
+
+        // to_fix.push_back({channel, channel->getProtocol()});
         channel->setProtocol(acceptOpt.value());
         stmgr->addSymbol(sym);
         // stmgr->addSymbol(new Symbol(id, new TypeChannel(acceptOpt.value()), false, false));
@@ -2199,10 +2202,10 @@ std::optional<ProgramAcceptNode *> SemanticVisitor::TvisitProgramAccept(WPLParse
         std::optional<BlockNode *> blkOpt = this->visitCtx(ctx->block());
 
         safeExitScope(ctx);
-
+        channel->setProtocol(restProto);
         for (auto pair : to_fix)
         {
-            pair.first->setProtocol(pair.second);
+            pair.first->getProtocol()->unguard(); 
         }
 
         if (!blkOpt)

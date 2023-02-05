@@ -2630,6 +2630,45 @@ define foo :: c : Channel<+int> = {
   REQUIRE_FALSE(sv->hasErrors(ERROR));
 }
 
+TEST_CASE("No Weaken in loop", "[semantic]")
+{
+  antlr4::ANTLRInputStream input(
+      R""""(
+define bar :: c : Channel<?(?-int);+int> = {
+
+    int i := 0;
+
+    while i < 5 {
+        weaken(c)
+        i := i + 1; 
+    }
+
+    weaken(c)
+    int a := c.recv();
+}
+    )"""");
+  WPLLexer lexer(&input);
+  // lexer.removeErrorListeners();
+  // lexer.addErrorListener(new TestErrorListener());
+  antlr4::CommonTokenStream tokens(&lexer);
+  WPLParser parser(&tokens);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new TestErrorListener());
+
+  WPLParser::CompilationUnitContext *tree = NULL;
+  REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  REQUIRE(tree != NULL);
+  REQUIRE(tree->getText() != "");
+
+  STManager *stmgr = new STManager();
+  PropertyManager *pm = new PropertyManager();
+
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+  sv->visitCompilationUnit(tree);
+  REQUIRE(sv->hasErrors(ERROR));
+}
+
 /*********************************
  * C-Level Example tests
  *********************************/

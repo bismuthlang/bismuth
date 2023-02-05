@@ -620,6 +620,12 @@ TEST_CASE("paper/links", "[codegen][linear-types]")
         "af194957130ef848cb9cc0ba716021a597e877edda6c431aff7397661308c580");
 }
 
+TEST_CASE("programs/doubleArg1c2 - weakening and loops", "[codegen][linear-types]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/doubleArg1c2.prism"))),
+        "87798310e70dae9e24b38ca08c61e4f84aa8ae1501394597f1d032f4af39e1fb");
+}
 /************************************
  * Example C-Level Tests
  ************************************/
