@@ -1,12 +1,11 @@
 /**
  * @file wpl_runtime.c
- * @author gpollice
- * @brief Runtime library for WPL. Link this object 
- *  file with WPL programs.
+ * @author Alex Friedman (ahfriedman.com)
+ * @brief 
  * @version 0.1
- * @date 2022-10-06
+ * @date 2023-02-04
  * 
- * @copyright Copyright (c) 2022
+ * @copyright Copyright (c) 2023
  * 
  */
 #include <stdio.h>

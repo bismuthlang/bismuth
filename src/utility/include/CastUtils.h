@@ -5,8 +5,6 @@ std::optional<T> anyOpt2Val(const std::any &a) // https://stackoverflow.com/ques
 {
     if (const std::optional<T> *v = std::any_cast<std::optional<T>>(&a))
         return *v;
-    // else
-    std::cout << "10" << std::endl;
     return {};
 }
 

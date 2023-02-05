@@ -61,9 +61,6 @@ optional<const Type*> ProtocolSequence::canSend(const Type *ty) const
 
     if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(proto))
     {
-        std::cout << ty->toString() << " isSubtype " << send->getSendType()->toString() << "?" << std::endl;
-
-        // return ty->isSubtype(send->getSendType());
         if(ty->isSubtype(send->getSendType()))
             return send->getSendType(); 
         return {};
@@ -235,10 +232,11 @@ bool ProtocolSequence::isIntChoice() const
     return false;
 }
 
-bool ProtocolSequence::project(const ProtocolSequence *ps) const
+unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 {
     if (isIntChoice())
     {
+        unsigned int ans = 1; 
         const Protocol *proto = steps.front();
         const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(proto);
 
@@ -251,14 +249,15 @@ bool ProtocolSequence::project(const ProtocolSequence *ps) const
                 vector<const Protocol *> other = p->steps;
                 mthis->steps.insert(steps.begin(), other.begin(), other.end());
 
-                return true;
+                return ans;
             }
+            ans++; 
         }
 
-        return false;
+        return 0;
     }
 
-    return false;
+    return 0;
 }
 
 bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const

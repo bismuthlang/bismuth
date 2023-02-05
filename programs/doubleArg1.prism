@@ -10,14 +10,12 @@ define program :: c : Channel<-int> = {
  # return -1;
 }
 
-# FIXME: Multiassign is most probably broken. It'll be invoked for each term.....
-
 
 define bar :: c : Channel<?(?-int);+int> = {
     more(c) # Why is it more(c) vs c.more() ? 
     weaken(c)
     weaken(c)
-    int a := c.recv(); # FIXME: CANNOT USE VAR! 
+    int a := c.recv();
     # c.send(5)
 }
 

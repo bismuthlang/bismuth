@@ -1,12 +1,14 @@
-#pragma once
 /**
  * @file test_error_handlers.h
- * @author gpollice
- * @brief Error handlers to be used in tests. They just throw an exception
+ * @author Alex Friedman (ahfriedman.com)
+ * @brief 
  * @version 0.1
- * @date 2022-07-06
+ * @date 2023-02-04
+ * 
+ * @copyright Copyright (c) 2023
+ * 
  */
-
+#pragma once
 class TestErrorListener: public antlr4::BaseErrorListener {
   virtual void syntaxError(
       antlr4::Recognizer *recognizer,

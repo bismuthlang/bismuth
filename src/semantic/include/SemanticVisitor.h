@@ -211,7 +211,7 @@ public:
     const Type *visitCtx(WPLParser::TypeOrVarContext *ctx);
     std::any visitTypeOrVar(WPLParser::TypeOrVarContext *ctx) override { return visitCtx(ctx); }
 
-    const Type *visitCtx(WPLParser::SumTypeContext *ctx); // FIXME: NEED TO DO THIS & OTHERS!
+    const Type *visitCtx(WPLParser::SumTypeContext *ctx);
     std::any visitSumType(WPLParser::SumTypeContext *ctx) override { return visitCtx(ctx); }
     
 
@@ -245,11 +245,11 @@ public:
     std::any visitAssignment(WPLParser::AssignmentContext *ctx) override { return visitCtx(ctx); }
     
 
-    std::any visitProgramCase(WPLParser::ProgramCaseContext *ctx) override { return TvisitProgramCase(ctx); }
-    const Type *TvisitProgramCase(WPLParser::ProgramCaseContext *ctx);
+    std::optional<ChannelCaseStatementNode *> TvisitProgramCase(WPLParser::ProgramCaseContext *ctx);
+    std::any visitProgramCase(WPLParser::ProgramCaseContext *ctx) override { return (std::optional<TypedNode*>) TvisitProgramCase(ctx); }
 
-    std::any visitProgramProject(WPLParser::ProgramProjectContext *ctx) override { return TvisitProgramProject(ctx); }
-    const Type *TvisitProgramProject(WPLParser::ProgramProjectContext *ctx);
+    std::optional<ProgramProjectNode*> TvisitProgramProject(WPLParser::ProgramProjectContext *ctx);
+    std::any visitProgramProject(WPLParser::ProgramProjectContext *ctx) override { return (std::optional<TypedNode*>) TvisitProgramProject(ctx); }
 
     /**
      * @brief Used to safely enter a block. This is used to ensure there aren't FUNC/PROC definitions / code following returns in it.
@@ -273,9 +273,9 @@ public:
         {
             // Visit all the statements in the block
             std::optional<TypedNode*> tnOpt = anyOpt2Val<TypedNode*>(e->accept(this));
-std::cout << "274 " << e->getText() << std::endl;
+
             if(!tnOpt) return {}; //FIXME: DO BETTER
-std::cout << "276" << std::endl;
+
             nodes.push_back(tnOpt.value());
 
             // If we found a return, then this is dead code, and we can break out of the loop.
@@ -293,7 +293,7 @@ std::cout << "276" << std::endl;
         // If we entered a new scope, then we can now safely exit a scope
         if (newScope)
             this->safeExitScope(ctx);
-    std::cout << "295" << std::endl; 
+
         return new BlockNode(nodes); //FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
 
@@ -368,11 +368,11 @@ std::cout << "276" << std::endl;
         // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
         // stmgr->addSymbol(new Symbol("@RETURN", funcType->getReturnType(), false, false));
         stmgr->addSymbol(new Symbol("@EXIT", Types::UNDEFINED, false, false)); //FIXME: DO BETTER 
-std::cout << "370" << std::endl; 
+
         // Safe visit the program block without creating a new scope (as we are managing the scope)
         std::optional<BlockNode*> blkOpt = this->safeVisitBlock(ctx->block(), false);
         if(!blkOpt) return {}; 
-std::cout << "374" << std::endl; 
+
         // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
         // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
         // {

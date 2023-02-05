@@ -14,7 +14,6 @@ printf("why3\n");
     int y := c2.recv(); 
 printf("wh52\n");
     printf("Got: %u\n", y);
-    # while true {} # FIXME: SHOULD THESE BE ABLE TO JUST LOOP FOR FOREVER?
 }
 
 define simple :: c : Channel<-int> = {

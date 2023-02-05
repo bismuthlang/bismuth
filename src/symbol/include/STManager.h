@@ -64,7 +64,6 @@ class STManager {
      * @return false if unsuccessful (ie, name already bound to another symbol)
      */
     bool addSymbol(Symbol* symbol) {
-      std::cout << "ADD " << symbol->toString() << std::endl; 
       if(dynamic_cast<const TypeChannel*>(symbol->type)) //FIXME: DO BETTER LINEAR CHECK!
         return linearContext.addSymbol(symbol); 
       return dangerContext.addSymbol(symbol);
@@ -117,11 +116,6 @@ class STManager {
     }
 
     std::vector<Symbol *> getAvaliableLinears() { return linearContext.getAvaliableLinears(); }
-
-    //FIXME: MAY BE UNSAFE!!!
-    void deleteAvaliableLinears() {
-      linearContext.deleteAvaliableLinears();
-    }
 
     /**
      * @brief Gets the number of scopes

@@ -124,7 +124,8 @@ public:
     std::optional<Value *> visit(VarDeclNode *n) override;
     std::optional<Value *> visit(MatchStatementNode *n) override;
     std::optional<Value *> visit(ExitNode *n) override;
-
+    std::optional<Value *> visit(ChannelCaseStatementNode *n) override;
+    std::optional<Value *> visit(ProgramProjectNode *n) override;
 
     std::optional<Value *> visitCompilationUnit(CompilationUnitNode *n) { return visit(n); }
 
@@ -167,7 +168,7 @@ public:
             llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
             // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1)); // FIXME: DO BETTER
 
-            //FIXME: DO WE NEED TO CHECK THAT WE HAVENT PREVIOUSLY SET VAL?
+            // FIXME: DO WE NEED TO CHECK THAT WE HAVENT PREVIOUSLY SET VAL?
             n->channelSymbol->val = v; // FIXME: BECAUSE THIS IS ON THE DEFINITION, DO WE HAVE ISSUES WITH ALLOCATION REUSE?
 
             builder->CreateStore((fn->args()).begin(), v);
@@ -231,8 +232,8 @@ public:
 
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {
-        std::cout << "visitVariable " << sym->toString() << " " << is_rvalue << std::endl; 
-        // module->dump();
+        std::cout << "visitVariable " << sym->toString() << " " << is_rvalue << std::endl;
+        
         // Try getting the type for the symbol, raising an error if it could not be determined
         llvm::Type *type = sym->type->getLLVMType(module);
         if (!type)
@@ -290,17 +291,37 @@ public:
             return {};
         }
 
-        std::cout << "297 rv" << is_rvalue << std::endl; 
-        if(!is_rvalue) return sym->val.value(); 
-        // return sym->val.value();
+        
+        if (!is_rvalue)
+            return sym->val.value();
+        
         // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
         Value *v = builder->CreateLoad(type, sym->val.value(), sym->getIdentifier());
-
-        // //FIXME: DO BETTER
+    
         // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
         // builder->CreateStore(v, alloc);
-        // return alloc; 
+        // return alloc;
         return v;
+    }
+
+    // These should automatically have GlobalValue::ExternalLinkage per inspecting source code...
+    llvm::FunctionCallee getWriteProjection()
+    {
+        return module->getOrInsertFunction("WriteProjection",
+                                           llvm::FunctionType::get(
+                                               VoidTy,
+                                               {Int32Ty,
+                                                Int32Ty},
+                                               false));
+    }
+
+    llvm::FunctionCallee getReadProjection()
+    {
+        return module->getOrInsertFunction("ReadProjection",
+                                           llvm::FunctionType::get(
+                                               Int32Ty,
+                                               {Int32Ty},
+                                               false));
     }
 
 private:

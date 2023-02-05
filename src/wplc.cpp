@@ -65,7 +65,7 @@ static llvm::cl::opt<CompileType>
                 llvm::cl::desc("If set, will compile to an executable with the specified compiler."),
                 llvm::cl::values(
                     clEnumVal(none, "Will not generate an executable"),
-                    clEnumVal(clang, "Will generate an executable using clang++"), // FIXME: UPDATE ENUM?
+                    clEnumVal(clang, "Will generate an executable using clang++"), 
                     clEnumVal(gcc, "Will generate an executable using g++")),
                 llvm::cl::init(none),
                 llvm::cl::cat(WPLCOptions));

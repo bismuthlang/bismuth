@@ -7,7 +7,7 @@ define func foo (int a, str a, int b) : int {
 
     var c := a; 
 
-    return 0; # FIXME: MAKE IT SO THAT WAY WE CAN HAVE RETURN NOTHING?
+    return 0;
 }
 
 define program :: c : Channel<-int> = {

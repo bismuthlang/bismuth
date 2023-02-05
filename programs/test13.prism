@@ -16,7 +16,6 @@ define fib :: c : Channel<+int;-int> = {
   f2.send(n - 2)
 
   int v1 := f1.recv(), v2 := f2.recv(); # FIXME: SHOULD THIS BE PARALLEL? I guess not...
-  # FIXME: HOW WOULD DYNAMIC PROGRAMMING WORK WITH THIS? It WOULDNT REALLY...
 
 
   c.send(v1 + v1)

@@ -1,5 +1,5 @@
 define program :: c : Channel<-int> = {
-    Channel<-Channel<+int>;+int> foo2 := exec Foo2; # FIXME: have the invert type stuff here!
+    Channel<-Channel<+int>;+int> foo2 := exec Foo2; 
     Channel<+int> foo1 := exec Foo1; 
 
     foo2.send(foo1)
