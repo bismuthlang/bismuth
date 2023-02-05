@@ -1,5 +1,0 @@
-define struct program {}
-
-# define func program () {
-#         return; # FIXME: DO THESE HAVE TO END IN RETURN?
-# }

@@ -60,14 +60,12 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
             ParameterListNode params = paramTypeOpt.value(); // FIXME: WHY NO POINTER?
             std::vector<const Type *> ps;
 
-            for (ParameterNode param : params) //(unsigned int i = 0; i < ctx->parameterList()->params.size(); i++)
+            for (ParameterNode param : params)
             {
                 ps.push_back(param.type);
             }
 
-            // const Type *retType = any2Type(fnCtx->defineFunc()->lam->ret->accept(this));
-
-            const Type *retType = fnCtx->defineFunc()->lam->ret ? any2Type(fnCtx->defineFunc()->lam->ret->accept(this)) // this->visitCtx(ctx->ty)
+            const Type *retType = fnCtx->defineFunc()->lam->ret ? any2Type(fnCtx->defineFunc()->lam->ret->accept(this))
                                                                 : Types::UNDEFINED;
 
             Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true); // FIXME: DO BETTER
@@ -291,8 +289,6 @@ std::optional<InvocationNode *> SemanticVisitor::visitCtx(WPLParser::InvocationC
             }
         }
 
-        // Return the type of the invokable or BOT if it has none.
-        // return invokeable->getReturnType(); //.has_value() ? invokeable->getReturnType().value() : Types::UNDEFINED;
         return new InvocationNode(tn, args, actualTypes);
     }
 
@@ -338,8 +334,6 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
         return {};
 
     Symbol *funcSym = funcSymOpt.value();
-
-    // stmgr->addSymbol(funcSym);
 
     std::optional<LambdaConstNode *> lamOpt = visitCtx(ctx->lam);
 
@@ -427,7 +421,7 @@ std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAcces
         return {}; // FIXME: DO BETTER
     TypedNode *expr = exprOpt.value();
 
-    const Type *exprType = expr->getType(); // any2Type(ctx->index->accept(this));
+    const Type *exprType = expr->getType();
     if (exprType->isNotSubtype(Types::INT))
     {
         errorHandler.addSemanticError(ctx->getStart(), "Array access index expected type INT but got " + exprType->toString());
@@ -437,8 +431,6 @@ std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAcces
      * Look up the symbol and check that it is defined.
      */
 
-    // const Type *type = any2Type(ctx->field->accept(this));
-    // std::optional<Symbol *> opt = bindings->getBinding(ctx->field->VARIABLE().at(ctx->field->VARIABLE().size() - 1));
     std::optional<FieldAccessNode *> opt = visitCtx(ctx->field, false); // Always have to load the array field
     if (!opt)
     {
@@ -488,28 +480,12 @@ std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContex
         // Otherwise, get the symbol's value
         Symbol *symbol = opt.value().second;
 
-        // Bind the larger context to the symbol, and return the symbol's type.
-        // bindings->bind(ctx, symbol);
         return new VariableIDNode(symbol, false);
     }
 
     /*
      * As we are not a var, we must be an array access, so we must visit that context.
      */
-    // const Type *arrType = this->visitCtx(ctx->array);
-
-    // // Lookup the binding of the array
-    // std::optional<Symbol *> binding = bindings->getBinding(ctx->array);
-
-    // // If we didn't get a binding, report an error.
-    // if (!binding)
-    // {
-    //     errorHandler.addSemanticError(ctx->array->getStart(), "Could not correctly bind to array access!");
-    //     return Types::UNDEFINED;
-    // }
-
-    // // Otherwise, bind this context to the same binding as the array access, and return its type.
-    // bindings->bind(ctx, binding.value());
     return this->visitCtx(ctx->array, false);
 }
 
@@ -701,7 +677,6 @@ std::optional<LogAndExprNode *> SemanticVisitor::visitCtx(WPLParser::LogAndExprC
 
     for (WPLParser::ExpressionContext *e : toGen)
     {
-        // const Type *type = any2Type(e->accept(this));
         std::optional<TypedNode *> nodeOpt = anyOpt2Val<TypedNode *>(e->accept(this));
         if (!nodeOpt)
         {
@@ -835,7 +810,6 @@ std::optional<FieldAccessNode *> SemanticVisitor::visitCtx(WPLParser::FieldAcces
         else if (i + 1 == ctx->fields.size() && dynamic_cast<const TypeArray *>(ty) && ctx->fields.at(i)->getText() == "length")
         {
             bindings->bind(ctx->VARIABLE().at(i), new Symbol("", Types::INT, false, false)); // FIXME: DO BETTER
-            // return Types::INT;
 
             a.push_back({"length",
                          Types::INT});
@@ -994,15 +968,10 @@ std::optional<ExternNode *> SemanticVisitor::visitCtx(WPLParser::ExternStatement
     std::optional<ParameterListNode> tyOpt = (ctx->paramList) ? this->visitCtx(ctx->paramList)
                                                               : ParameterListNode();
 
-    const Type *retType = ctx->ty ? any2Type(ctx->ty->accept(this)) // this->visitCtx(ctx->ty)
+    const Type *retType = ctx->ty ? any2Type(ctx->ty->accept(this))
                                   : Types::UNDEFINED;
 
     ExternNode *node = new ExternNode(id, tyOpt.value(), retType, variadic); // FIXME: BAD OPT ACCESS!
-
-    // const TypeInvoke *funcType = (ctx->ty) ? new TypeInvoke(procType->getParamTypes(), retType, variadic, true)
-    //                                        : new TypeInvoke(procType->getParamTypes(), variadic, true);
-
-    // Symbol *funcSymbol = new Symbol(id, funcType, true, true);
 
     stmgr->addSymbol(node->getSymbol());
 
@@ -1106,8 +1075,7 @@ std::optional<VarDeclNode *> SemanticVisitor::visitCtx(WPLParser::VarDeclStateme
                 Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later inferencing purposes
                 stmgr->addSymbol(symbol);
 
-                // bindings->bind(var, symbol);
-                // s.push_back(symbol);
+
                 a.push_back(new AssignmentNode({symbol}, exprOpt)); //FIXME: Inefficient but needed for linears
             }
         }
@@ -1252,40 +1220,28 @@ std::optional<WhileLoopNode *> SemanticVisitor::visitCtx(WPLParser::ProgramLoopC
 
     std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
 
-    stmgr->enterScope(StopType::LINEAR); // TODO: DO BETTER
-
-    std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
+    std::vector<const TypeChannel *> to_fix;
 
     for (Symbol *orig : syms)
     {
         if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
         {
-            std::optional<const ProtocolSequence *> protoOpt = channel->getProtocol()->shearLoop();
-            if (protoOpt)
-            {
-                // stmgr->addSymbol(new Symbol(orig->getIdentifier(), new TypeChannel(protoOpt.value()), false, false));
-                to_fix.push_back({channel, channel->getProtocol()});
-                channel->setProtocol(protoOpt.value());
-                stmgr->addSymbol(orig);
-            }
+            channel->getProtocol()->guard(); 
+            to_fix.push_back(channel);
         }
     }
 
-    // FIXME: CANT DO THIS ANYMORE B/C NEED BLOCKS AS PART OF AST!!!
-    std::optional<BlockNode *> blkOpt = this->visitCtx(ctx->block()); // Visiting block to make sure everything type checks there as well
-
-    safeExitScope(ctx);
+    std::optional<BlockNode *> blkOpt = safeVisitBlock(ctx->block(), true);
 
     if (!blkOpt)
         return {}; // FIXME: DO BETTER, ALSO THERE ARE A LOT OF THESE BEFORE SAFE EXIT. WILL SUCH THINGS CAUSE PROBLEMS?
 
-    for (auto pair : to_fix)
+    for (auto c : to_fix) //FIXME: verify this won't break anything...
     {
-        pair.first->setProtocol(pair.second);
+        c->getProtocol()->unguard(); 
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    // return Types::UNDEFINED;
     return new WhileLoopNode(checkOpt.value(), blkOpt.value());
 }
 
@@ -1309,8 +1265,6 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
         if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
         {
             to_fix.push_back({channel, channel->getProtocolCopy()});
-            // channel->setProtocol(protoOpt.value());
-            // stmgr->addSymbol(orig);
         }
     }
 
@@ -1322,14 +1276,6 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
         pair.first->setProtocol(pair.second->getCopy());
     }
 
-    // for (const Symbol *orig : syms)    // FIXME: VERIFY GOOD ENOUGH; ELSEWHERE HAS OTHER CHECKS!
-    // {
-    //     // FIXME: DO BETTER!!!!! WONT WORK FOR NON-CHANNELS! AND ALSO WONT WORK FOR VALUES!!!
-    //     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-    //     {
-    //         stmgr->addSymbol(new Symbol(orig->getIdentifier(), channel->getCopy(), false, false));
-    //     }
-    // }
     std::optional<BlockNode *> trueOpt = this->visitCtx(ctx->trueBlk);
     if (!trueOpt)
         return {}; // FIXME: DO BETTER
@@ -1408,8 +1354,6 @@ std::optional<ConditionalStatementNode *> SemanticVisitor::visitCtx(WPLParser::C
     safeExitScope(ctx);
 
     return new ConditionalStatementNode(condOpt.value(), trueBlk, restVec);
-    // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    // return Types::UNDEFINED;
 }
 
 std::optional<SelectStatementNode *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
@@ -1443,7 +1387,6 @@ std::optional<SelectStatementNode *> SemanticVisitor::visitCtx(WPLParser::Select
     for (auto e : ctx->cases)
     {
         // Enter the scope (needed as we may define variables or do other stuff)
-        // stmgr->enterScope(StopType::LINEAR);
         // Accept the evaluation context
 
         // Safe exit the scope
@@ -1639,25 +1582,18 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
     ParameterListNode params = paramTypeOpt.value();
     std::vector<Symbol *> ps;
 
-    // const Type *retType = any2Type(ctx->ret->accept(this));
-    const Type *retType = ctx->ret ? any2Type(ctx->ret->accept(this)) // this->visitCtx(ctx->ty)
+    const Type *retType = ctx->ret ? any2Type(ctx->ret->accept(this))
                                    : Types::UNDEFINED;
-
-    // const TypeInvoke *funcType = new TypeInvoke(paramType->getParamTypes(), retType);
 
     stmgr->enterScope(StopType::GLOBAL);
     stmgr->addSymbol(new Symbol("@RETURN", retType, false, false));
 
-    for (ParameterNode param : params) //(unsigned int i = 0; i < ctx->parameterList()->params.size(); i++)
+    for (ParameterNode param : params)
     {
-        // const Type *ty = funcType->getParamTypes().at(i);
-        // auto param = ctx->parameterList()->params.at(i);
-
-        Symbol *paramSymbol = new Symbol(param.name, param.type, false, false); // new Symbol(param->name->getText(), ty, false, false);
+        Symbol *paramSymbol = new Symbol(param.name, param.type, false, false);
         stmgr->addSymbol(paramSymbol);
 
         ps.push_back(paramSymbol);
-        // bindings->bind(param, paramSymbol);
     }
 
     std::optional<BlockNode *> blkOpt = this->safeVisitBlock(ctx->block(), false);
@@ -1667,17 +1603,13 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::LambdaCons
     BlockNode *blk = blkOpt.value();
 
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
-    if (!endsInReturn(blk)) // ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1)))
+    if (!endsInReturn(blk))
     {
         // FIXME: DO THIS CHECK BETTER WITH BLOCK NODE?
         errorHandler.addSemanticError(ctx->getStart(), "Lambda must end in return statement");
     }
     safeExitScope(ctx);
 
-    // Symbol *funcSymbol = new Symbol("@LAMBDA", funcType, false, false);
-    // bindings->bind(ctx, funcSymbol);
-
-    // return funcType;
     return new LambdaConstNode(ps, retType, blk);
 }
 
@@ -1762,9 +1694,7 @@ std::optional<DefineEnumNode *> SemanticVisitor::visitCtx(WPLParser::DefineEnumC
     Symbol *enumSym = new Symbol(id, sum, true, true);
 
     stmgr->addSymbol(enumSym);
-    // bindings->bind(ctx, enumSym);
 
-    // return Types::UNDEFINED;
     return new DefineEnumNode(id, sum);
 }
 
@@ -1802,12 +1732,9 @@ std::optional<DefineStructNode *> SemanticVisitor::visitCtx(WPLParser::DefineStr
     TypeStruct *product = new TypeStruct(el, id); // FIXME: SHOULD THIS BE CONST?
     Symbol *prodSym = new Symbol(id, product, true, true);
     stmgr->addSymbol(prodSym);
-    // bindings->bind(ctx, prodSym);
-
-    // return Types::UNDEFINED;
-    return new DefineStructNode(id, product);
 
     // FIXME: TRY USING FUNC DEFS AS TYPES!
+    return new DefineStructNode(id, product);
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::CustomTypeContext *ctx)
@@ -2103,7 +2030,6 @@ std::optional<ProgramContractNode *> SemanticVisitor::TvisitProgramContract(WPLP
     }
 
     Symbol *sym = opt.value().second;
-    // bindings->bind(ctx->VARIABLE(), sym);
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -2112,6 +2038,22 @@ std::optional<ProgramContractNode *> SemanticVisitor::TvisitProgramContract(WPLP
             errorHandler.addSemanticError(ctx->getStart(), "Failed to contract: " + id);
             return {};
         }
+        stmgr->addSymbol(sym); //Makes sure we enforce weakening rules... 
+
+        /*
+        c : |?-int|
+        while true {
+            {
+                int c = ... 
+                more(c) ... will this break? I guess not...
+
+            }
+
+        }
+        
+        
+        
+        */
         return new ProgramContractNode(sym);
     }
 
@@ -2170,47 +2112,33 @@ std::optional<ProgramAcceptNode *> SemanticVisitor::TvisitProgramAccept(WPLParse
         std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
         // FIXME: DO BETTER B/C HERE WE TRY TO ASSIGN TO THE VAR WE MANUALLY NEED TO ASSIGN? NO BC IT FAILS CHECK!
 
-        stmgr->enterScope(StopType::LINEAR); // TODO: DO BETTER
-
-        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
+        std::vector<const TypeChannel *> to_fix;
 
         for (Symbol *orig : syms)
         {
             if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
             {
-                std::optional<const ProtocolSequence *> protoOpt = channel->getProtocol()->shearLoop();
-                if (protoOpt)
-                {
-                    // Symbol * tempSym = new Symbol(orig->getIdentifier(), new TypeChannel(protoOpt.value()), false, false);
-                    // tempSym->val = orig->val;
-                    // stmgr->addSymbol(tempSym);
-
-                    to_fix.push_back({channel, channel->getProtocol()});
-                    channel->setProtocol(protoOpt.value());
-                    stmgr->addSymbol(orig);
-                }
+                    channel->getProtocol()->guard(); 
+                    to_fix.push_back(channel);
             }
         }
-        to_fix.push_back({channel, channel->getProtocol()});
+        const ProtocolSequence * restProto = channel->getProtocol(); 
+
         channel->setProtocol(acceptOpt.value());
         stmgr->addSymbol(sym);
-        // stmgr->addSymbol(new Symbol(id, new TypeChannel(acceptOpt.value()), false, false));
 
-        std::optional<BlockNode *> blkOpt = this->visitCtx(ctx->block());
+        std::optional<BlockNode *> blkOpt = safeVisitBlock(ctx->block(), true); 
 
-        safeExitScope(ctx);
-
-        for (auto pair : to_fix)
+        channel->setProtocol(restProto);
+        for (auto c : to_fix)
         {
-            pair.first->setProtocol(pair.second);
+            c->getProtocol()->unguard(); 
         }
 
         if (!blkOpt)
             return {}; // FIXME: DO BETTER
 
         return new ProgramAcceptNode(sym, blkOpt.value());
-        // return Types::UNDEFINED;
-        // return new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse()));
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Cannot accept: " + sym->toString());
@@ -2227,7 +2155,6 @@ std::optional<ProgramExecNode *> SemanticVisitor::TvisitAssignableExec(WPLParser
     }
 
     Symbol *sym = opt.value().second;
-    // bindings->bind(ctx->VARIABLE(), sym);
 
     if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
     {

@@ -20,7 +20,6 @@
 
 enum StopType {
     NONE, 
-    LINEAR, 
     GLOBAL
 };
 
@@ -43,7 +42,7 @@ class STManager {
      */
     void enterScope(StopType stopType) {
 
-      linearContext.enterScope(stopType == LINEAR || stopType == GLOBAL);
+      linearContext.enterScope(stopType == GLOBAL);
       dangerContext.enterScope(stopType == GLOBAL);
     }
     

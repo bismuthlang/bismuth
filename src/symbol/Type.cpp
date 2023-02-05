@@ -59,6 +59,9 @@ optional<const Type*> ProtocolSequence::canSend(const Type *ty) const
 
     const Protocol *proto = steps.front();
 
+    if(proto->isGuarded() || this->isGuarded())
+        return {}; 
+
     if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(proto))
     {
         if(ty->isSubtype(send->getSendType()))
@@ -94,6 +97,9 @@ bool ProtocolSequence::canRecv() const
         return false;
 
     const Protocol *proto = steps.front();
+
+    if(proto->isGuarded() || this->isGuarded())
+        return false; 
 
     if (const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto))
     {
@@ -143,6 +149,7 @@ bool ProtocolSequence::contract() const
 
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = wn->getInnerProtocol()->steps;
+        std::cout << "CONT 152 " << wn->getInnerProtocol()->toString() << std::endl; 
         mthis->steps.insert(steps.begin(), other.begin(), other.end()); //FIXME: WE PROBABLY NEED TO DO BETTER FLATTENING!
         return true;
     }
@@ -152,8 +159,12 @@ bool ProtocolSequence::contract() const
 
 bool ProtocolSequence::weaken() const
 {
+    std::cout << "WEAK 162 " <<this->toString() << std::endl; 
     if (isWN())
     {
+        if(steps.front()->isGuarded() || this->isGuarded())
+            return false; 
+
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         mthis->steps.erase(steps.begin());
         return true;
@@ -162,37 +173,41 @@ bool ProtocolSequence::weaken() const
     return false;
 }
 
-bool ProtocolSequence::isWNWN() const
-{
-    if (isComplete())
-        return false;
-    const Protocol *proto = steps.front();
-    if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto))
-    {
-        return wn->getInnerProtocol()->isWN();
-    }
+// bool ProtocolSequence::isWNWN() const
+// {
+//     if (isComplete())
+//         return false;
+//     const Protocol *proto = steps.front();
+//     if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto))
+//     {
+//         return wn->getInnerProtocol()->isWN();
+//     }
 
-    return false;
-}
+//     return false;
+// }
 
-optional<const ProtocolSequence *> ProtocolSequence::shearLoop() const
-{
-    if (isWNWN())
-    {
-        const Protocol *proto = steps.front();
-        const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto);
+// optional<const ProtocolSequence *> ProtocolSequence::shearLoop() const
+// {
+//     if (isWNWN())
+//     {
+//         const Protocol *proto = steps.front();
+//         const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto);
 
-        return toSequence(wn->getInnerProtocol()->getCopy());
-    }
+//         return toSequence(wn->getInnerProtocol()->getCopy());
+//     }
 
-    return {};
-}
+//     return {};
+// }
 
 bool ProtocolSequence::isOC() const
 {
     if (isComplete())
         return false;
     const Protocol *proto = steps.front();
+
+    if(steps.front()->isGuarded() || this->isGuarded())
+            return false; 
+
     if (const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto))
     {
         return true;
@@ -224,6 +239,10 @@ bool ProtocolSequence::isIntChoice() const
     if (isComplete())
         return false;
     const Protocol *proto = steps.front();
+
+    if(steps.front()->isGuarded() || this->isGuarded())
+            return false; 
+
     if (const ProtocolIChoice *wn = dynamic_cast<const ProtocolIChoice *>(proto))
     {
         return true;
@@ -266,6 +285,10 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
         return false;
 
     const Protocol *proto = steps.front();
+
+    if(steps.front()->isGuarded() || this->isGuarded())
+            return false; 
+
     // FIXME: NEED TO CHANGE INT AND EXT CHOICE TO SETS TO PREVENT DUP!!!
     if (const ProtocolEChoice *eChoice = dynamic_cast<const ProtocolEChoice *>(proto))
     {

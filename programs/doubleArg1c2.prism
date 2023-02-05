@@ -41,11 +41,13 @@ define bar :: c : Channel<?(?-int);+int> = {
     int i := 0;
 
     while i < 5 {
-        
+        more(c) # FIXME: WHY ARE SOME OF THE TEST CASES NOT USED? LIKE THIS ONE WASNT TESTED...
         more(c)
         c.send(i)
 
         weaken(c)
+
+        i := i + 1; 
     }
 
     weaken(c)

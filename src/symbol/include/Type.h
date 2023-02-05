@@ -92,6 +92,10 @@ protected:
 
 class Protocol
 {
+protected:
+    unsigned int guardCount = 0;
+    virtual std::string as_str() const = 0;
+
 public:
     virtual ~Protocol() = default;
 
@@ -100,11 +104,40 @@ public:
      *
      * @return std::string The string name of the Protocol
      */
-    virtual std::string toString() const = 0;
+    std::string toString() const
+    {
+        std::ostringstream description;
+        for (unsigned int i = 0; i < guardCount; i++)
+        {
+            description << "*";
+        }
+
+        description << as_str();
+
+        return description.str();
+    }
 
     virtual const Protocol *getInverse() const = 0;
 
     virtual const Protocol *getCopy() const = 0; // FIXME: DO BETTER!
+
+    virtual bool isGuarded() const { return guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
+
+    virtual void guard() const // FIXME: DO BETTER
+    {
+        Protocol *mthis = const_cast<Protocol *>(this);
+        mthis->guardCount = mthis->guardCount + 1;
+    }
+
+    virtual bool unguard() const // FIXME: DO BETTER
+    {
+        if (guardCount == 0)
+            return false;
+        Protocol *mthis = const_cast<Protocol *>(this);
+
+        mthis->guardCount = mthis->guardCount - 1;
+        return true;
+    }
 };
 
 // FIXME: DO BETTER
@@ -133,13 +166,14 @@ public:
         steps = p;
     }
 
-    std::string toString() const override
+    std::string as_str() const override
     {
         std::ostringstream description;
         // for (auto p : steps)
-        for(unsigned int i = 0; i < steps.size(); i++)
+        for (unsigned int i = 0; i < steps.size(); i++)
         {
-            if(i != 0) description << ";";
+            if (i != 0)
+                description << ";";
             description << steps.at(i)->toString();
         }
 
@@ -171,9 +205,9 @@ public:
 
     bool weaken() const;
 
-    bool isWNWN() const;
+    // bool isWNWN() const;
 
-    optional<const ProtocolSequence *> shearLoop() const;
+    // optional<const ProtocolSequence *> shearLoop() const;
 
     bool isOC() const;
 
@@ -190,6 +224,43 @@ public:
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = proto->steps;
         mthis->steps.insert(steps.end(), other.begin(), other.end()); // FIXME: WE PROBABLY NEED TO DO BETTER FLATTENING!
+    }
+
+    bool isGuarded() const override //FIXME: DO BETTER
+    {
+        if (steps.size() == 0)
+        {
+            return guardCount > 0;
+        }
+        return steps.front()->isGuarded(); 
+    }
+
+    void guard() const override // FIXME: DO BETTER
+    {
+        if (steps.size() == 0)
+        {
+            ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
+            mthis->guardCount = mthis->guardCount + 1;
+        }
+        else
+        {
+            steps.front()->guard();
+        }
+    }
+
+    bool unguard() const override // FIXME: DO BETTER
+    {
+        if (steps.size() == 0)
+        {
+            if (guardCount == 0)
+                return false;
+            ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
+
+            mthis->guardCount = mthis->guardCount - 1;
+            return true;
+        }
+
+        return steps.front()->unguard();
     }
 
     // optional<vector<const Protocol *>> extChoice()
@@ -226,7 +297,7 @@ public:
         recvType = v;
     }
 
-    std::string toString() const override
+    std::string as_str() const override
     {
         std::ostringstream description;
         description << "+" << recvType->toString();
@@ -256,7 +327,7 @@ public:
         sendType = v;
     }
 
-    std::string toString() const override
+    std::string as_str() const override
     {
         std::ostringstream description;
         description << "-" << sendType->toString();
@@ -286,7 +357,7 @@ public:
         proto = p;
     }
 
-    std::string toString() const override
+    std::string as_str() const override
     {
         std::ostringstream description;
         description << "?(" << proto->toString() << ")"; // FIXME: NEED PARENS IN REAL DEF!
@@ -316,7 +387,7 @@ public:
         proto = p;
     }
 
-    std::string toString() const override
+    std::string as_str() const override
     {
         std::ostringstream description;
         description << "!(" << proto->toString() << ")"; // FIXME: NEED PARENS IN REAL DEF!
@@ -346,16 +417,17 @@ public:
         opts = o;
     }
 
-    std::string toString() const override
+    std::string as_str() const override
     {
         std::ostringstream description;
 
         unsigned int i = 0;
         for (auto p : opts)
         {
-            if(i != 0) description << "&";
-            description << p->toString(); 
-            i++; 
+            if (i != 0)
+                description << "&";
+            description << p->toString();
+            i++;
         }
 
         return description.str();
@@ -383,15 +455,16 @@ public:
         opts = o;
     }
 
-    std::string toString() const override
+    std::string as_str() const override
     {
         std::ostringstream description;
         unsigned int i = 0;
         for (auto p : opts)
         {
-            if(i != 0) description << "\u2295";
-            description << p->toString(); 
-            i++; 
+            if (i != 0)
+                description << "\u2295";
+            description << p->toString();
+            i++;
         }
 
         return description.str();
@@ -402,7 +475,6 @@ public:
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
 };
-
 
 /*******************************************
  *
@@ -631,7 +703,8 @@ public:
     // TODO: Build LLVM Type here instead of in codegen!
     llvm::Type *getLLVMType(llvm::Module *M) const override
     {
-        return llvm::Type::getInt32Ty(M->getContext());; // FIXME: DO BETTER
+        return llvm::Type::getInt32Ty(M->getContext());
+        ; // FIXME: DO BETTER
     }
 
     const ProtocolSequence *getProtocol() const
@@ -649,7 +722,7 @@ public:
         return new TypeChannel(getProtocolCopy());
     }
 
-    void setProtocol(const ProtocolSequence *p) const //FIXME: DO BETTER
+    void setProtocol(const ProtocolSequence *p) const // FIXME: DO BETTER
     {
         TypeChannel *mthis = const_cast<TypeChannel *>(this);
         mthis->protocol = p;
@@ -718,7 +791,7 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeProgram(const TypeChannel *c, bool d) //FIXME: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
+    TypeProgram(const TypeChannel *c, bool d) // FIXME: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
     {
         channel = c;
 
@@ -813,9 +886,9 @@ protected:
         //     // Makes sure that the return type of this function is a subtype of the other
         //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
         // }
-        if(const TypeProgram *p = dynamic_cast<const TypeProgram*>(other))
+        if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
         {
-            return channel->isSubtype(p->channel); //FIXME: DO BETTER/VERIFY!
+            return channel->isSubtype(p->channel); // FIXME: DO BETTER/VERIFY!
         }
         return false;
     }
