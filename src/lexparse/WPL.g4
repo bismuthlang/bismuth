@@ -143,8 +143,9 @@ statement           : defineProc                                                
                     | block                     # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')'   # ProgramSend
                     | WHILE check=condition block                                                       # ProgramLoop
-                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*   # ProgramCase   
-                    | channel=VARIABLE LBRC sel=protocol RBRC                                                                # ProgramProject
+                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*      # ProgramCase  
+                    | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                              # ProgramCase   
+                    | channel=VARIABLE LBRC sel=protocol RBRC                                                                   # ProgramProject
                     | 'more' '(' channel=VARIABLE ')'                   # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')'                 # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                 # ProgramAccept
