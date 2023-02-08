@@ -26,13 +26,13 @@ define bar1 :: c : Channel<?(?-int);+int> = {
         while true {
 
         }
-        weaken(c)
+        # weaken(c)
     }
     weaken(c) # NOTE: THIS DOESN'T DO WHAT YOU THINK IT DOES OF JUST SHIFTING THE LEVEL
 
     int x := c.recv(); 
 
-    # Channel<!!(+int);-int> y := exec bar; # FIXME: DOESNT WORK 
+    # Channel<!!(+int);-int> y := exec bar; 
     Channel<!(!(+int));-int> y := exec bar; 
 
     accept (y) {

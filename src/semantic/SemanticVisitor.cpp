@@ -457,31 +457,12 @@ std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAcces
 
 std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
 {
-    // FIXME: WHEN WE SWITCH VAR TO FIELD ACCESS, MAY BE ABLE TO DELETE VAR NODE!
+    // FIXME: Should be able to delete VariableIDNode now... 
 
     // Check if we are a var or an array
     if (ctx->var)
     {
         return visitCtx(ctx->var, false);
-        /*
-         * Based on starter; Same as VAR
-         *
-         * Get the variable name and look it up in the symbol table
-        //  */
-        // std::string id = ctx->var->getText();
-        // std::optional<SymbolContext> opt = stmgr->lookup(id);
-
-        // // If we can't find the variable, report an error as it is undefined.
-        // if (!opt)
-        // {
-        //     errorHandler.addSemanticError(ctx->getStart(), "Undefined variable in expression: " + id);
-        //     return {};
-        // }
-
-        // // Otherwise, get the symbol's value
-        // Symbol *symbol = opt.value().second;
-
-        // return new VariableIDNode(symbol, false);
     }
 
     /*

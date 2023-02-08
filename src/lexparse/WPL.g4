@@ -191,9 +191,9 @@ ELLIPSIS    :     '...'   ;
 //Used for when we can either provide a type or a variable (needed bc var arrays are not allowed).
 typeOrVar       : type | 'var'  ;
 
-protocol        : protos+=subProtocol
-                | protos+=subProtocol (';' protos+=subProtocol)*?
+protocol        : <assoc=right> protos+=subProtocol (';' protos+=subProtocol)*?
                 | '(' protos+=subProtocol (';' protos+=subProtocol)*? ')'
+                | protos+=subProtocol
                 ;
 
 subProtocol     :   '+' ty=type                 # RecvType

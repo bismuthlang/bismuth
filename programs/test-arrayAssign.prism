@@ -47,7 +47,7 @@ define addOneToInt5 :: c : Channel<+str; +int[5]> = {
   printf("Exiting add one!\n");
 }
 
-define func syncExec (Program<+str;+int[5]> prog, str s, int[5] a) : int # FIXME: PROC
+define func syncExec (Program<+str;+int[5]> prog, str s, int[5] a) : int
 {
   Channel<-str;-int[5]> chan := exec prog; 
   chan.send(s)
