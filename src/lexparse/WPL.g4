@@ -26,7 +26,7 @@ invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr) LPAR (args+
 fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  ;
 //Helps allow us to use VARIABLE or arrayAccess and not other expressions (such as for assignments)
 arrayAccess         : field=fieldAccessExpr '[' index=expression ']'; 
-arrayOrVar          : var=VARIABLE | array=arrayAccess  ; //FIXME: SHOULD BE FIELD ACCESS FOR VAR
+arrayOrVar          : var=fieldAccessExpr | array=arrayAccess  ; //FIXME: SHOULD BE FIELD ACCESS FOR VAR
 
 /*
  * Expressions return values. These can be: 
