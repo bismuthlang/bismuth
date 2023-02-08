@@ -704,7 +704,6 @@ public:
     llvm::Type *getLLVMType(llvm::Module *M) const override
     {
         return llvm::Type::getInt32Ty(M->getContext());
-        ; // FIXME: DO BETTER
     }
 
     const ProtocolSequence *getProtocol() const
@@ -1042,7 +1041,7 @@ public:
 
         llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
 
-        llvm::Type *ret = retType->getLLVMType(M); // FIXME: WHEN THIS WAS RETTYPE, TRY THAT CASE IN WPL
+        llvm::Type *ret = retType->getLLVMType(M);
 
         llvm::FunctionType *fnType = llvm::FunctionType::get(
             ret,
