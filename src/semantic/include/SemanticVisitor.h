@@ -305,7 +305,7 @@ public:
      * @param paramList The parameter list for the PROC/FUNC
      * @param ty The return type (Type::UNDEFINED for PROC)
      * @param block The PROC/FUNC block
-     * @return const Type* TypeInvoke if successful, TypeBot if error
+     * @return const Type* TypeInvoke if successful, empty if error
      */
     std::optional<ProgramDefNode *> visitInvokeable(WPLParser::DefineProcContext *ctx)
     {
@@ -367,7 +367,7 @@ public:
         stmgr->addSymbol(channelSymbol);
         // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
         // stmgr->addSymbol(new Symbol("@RETURN", funcType->getReturnType(), false, false));
-        stmgr->addSymbol(new Symbol("@EXIT", Types::UNDEFINED, false, false)); //FIXME: DO BETTER 
+        stmgr->addSymbol(new Symbol("@EXIT", Types::UNIT, false, false)); //FIXME: DO BETTER 
 
         // Safe visit the program block without creating a new scope (as we are managing the scope)
         std::optional<BlockNode*> blkOpt = this->safeVisitBlock(ctx->block(), false);
@@ -394,12 +394,8 @@ public:
     {
         // if(!any) return {};
         std::optional<const Type*> valOpt = any2Opt<const Type*>(any);
-        if(!valOpt) return Types::UNDEFINED; 
-        return valOpt.value(); 
-        // if (const Type *valOpt = std::any_cast<const Type *>(any))
-            // return valOpt;
-
-        // return Types::UNDEFINED; // TODO: DO BETTER
+        if(!valOpt) return Types::ABSURD; 
+        return valOpt.value(); //FIXME: USE VALUE OR THINGY!
     }
 
     const Protocol *any2Protocol(std::any any)
@@ -488,7 +484,7 @@ private:
             return {};
         }
 
-        // If we have a return type, then visit that contex to determine what it is. Otherwise, set it as Types::UNDEFINED.
+        // If we have a return type, then visit that contex to determine what it is. Otherwise, set it as Types::UNIT?.
         const Type *retType = any2Type(ctx->ty->accept(this));
 
         if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(retType))
