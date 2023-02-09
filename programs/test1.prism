@@ -125,9 +125,7 @@ define program :: io : Channel<-int> = {
 
     printf("C is: %i; a = [%i, %i, %i, %i, %i]\n", c, a[0], a[1], a[2], a[3], a[4]);
 
-    # int ANS := branchtest(); 
-
-    # # FIXME: CLUNKY SYNTAX
+    
     Channel<+int> t1 := exec branchtest; 
     Channel<+int> t2 := exec otherbranch;
     Channel<+str> t3 := exec otherbranchtwo; 

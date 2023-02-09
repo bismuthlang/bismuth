@@ -1011,9 +1011,6 @@ inline bool endsInReturn(TypedNode *n)
     if (BlockNode *bn = dynamic_cast<BlockNode *>(n))
     {
         return endsInReturn(bn->exprs);
-        // if(bn->exprs.size() == 0) return false;
-        // return endsInReturn((bn->exprs.at(bn->exprs.size() - 1)));
-        // return bn->exprs.size() > 0 && dynamic_cast<ReturnNode *>(bn->exprs.at(bn->exprs.size() - 1));
     }
 
     // FIXME: DO THESE BETTER!

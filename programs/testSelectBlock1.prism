@@ -21,8 +21,6 @@ define program :: c : Channel<-int> = {
         Channel<-int;+str> io := exec selReturnOne; 
         io.send(i)
 
-        # FIXME: NEED TO REDO FN TESTS WITH PASS BY REFERENCE!
-
         str s := io.recv(); 
 
         printf("f(%d) = %s\n", i, s);
