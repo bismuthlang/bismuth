@@ -201,7 +201,7 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ConditionNode : public TypedNode // FIXME: DO BETTER
+class ConditionNode : public TypedNode
 {
 public:
     TypedNode *condition;
@@ -373,11 +373,7 @@ public:
     {
         expr = e;
     }
-
-    // const Type *getType() override {
-    //     return (expr) ? expr.value()->getType() : Types::UNDEFINED;
-    //  } // FIXME: DO BETTER
-
+    
     const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -554,8 +550,8 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ExternNode : public TypedNode
-{ // FIXME: DO BETTER
+class ExternNode : public TypedNode 
+{
 private:
     Symbol *sym;
     const TypeInvoke *ty; // FIXME: ISNT REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
