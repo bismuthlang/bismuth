@@ -476,11 +476,10 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
 {
-    std::optional<Value *> fnOpt = visitVariable(n->sym, true); // FIXME: DO BETTER?
+    std::optional<Value *> fnOpt = AcceptType(this, n->prog); //visitVariable(n->sym, true); // FIXME: DO BETTER?
 
     if (!fnOpt)
     {
-        errorHandler.addCodegenError(nullptr, "Could not locate value for invocation: " + n->sym->getIdentifier() + ". Has it been defined in IR yet?");
         return {};
     }
 

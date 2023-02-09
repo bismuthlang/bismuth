@@ -119,7 +119,7 @@ public:
 
     virtual const Protocol *getInverse() const = 0;
 
-    virtual const Protocol *getCopy() const = 0; // FIXME: DO BETTER!
+    virtual const Protocol *getCopy() const = 0;
 
     virtual bool isGuarded() const { return guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
 
@@ -223,7 +223,7 @@ public:
     {
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = proto->steps;
-        mthis->steps.insert(steps.end(), other.begin(), other.end()); // FIXME: WE PROBABLY NEED TO DO BETTER FLATTENING!
+        mthis->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
     }
 
     bool isGuarded() const override //FIXME: DO BETTER
@@ -360,7 +360,7 @@ public:
     std::string as_str() const override
     {
         std::ostringstream description;
-        description << "?(" << proto->toString() << ")"; // FIXME: NEED PARENS IN REAL DEF!
+        description << "?(" << proto->toString() << ")";
 
         return description.str();
     }
@@ -390,7 +390,7 @@ public:
     std::string as_str() const override
     {
         std::ostringstream description;
-        description << "!(" << proto->toString() << ")"; // FIXME: NEED PARENS IN REAL DEF!
+        description << "!(" << proto->toString() << ")";
 
         return description.str();
     }
@@ -704,7 +704,6 @@ public:
     llvm::Type *getLLVMType(llvm::Module *M) const override
     {
         return llvm::Type::getInt32Ty(M->getContext());
-        ; // FIXME: DO BETTER
     }
 
     const ProtocolSequence *getProtocol() const
@@ -1042,7 +1041,7 @@ public:
 
         llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
 
-        llvm::Type *ret = retType->getLLVMType(M); // FIXME: WHEN THIS WAS RETTYPE, TRY THAT CASE IN WPL
+        llvm::Type *ret = retType->getLLVMType(M);
 
         llvm::FunctionType *fnType = llvm::FunctionType::get(
             ret,
@@ -1400,11 +1399,7 @@ public:
 
         llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
 
-        // Needed to prevent duplicating the type's definition
-        //  TypeSum *mthis = const_cast<TypeSum *>(this);
-        ty = llvm::StructType::create(M->getContext(), ref, toString());
-
-        return ty; // this->llvmType; //FIXME: WHAT SHOULD THE DEFAULT OF EMPTY ENUMS BE? OR I GUESS WE SHOULDNT ALLOW ANY EMPTYS -> but they are in global!!
+        return llvm::StructType::create(M->getContext(), ref, toString());
     }
 
 protected:

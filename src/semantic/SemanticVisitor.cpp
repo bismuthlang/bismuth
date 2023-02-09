@@ -457,30 +457,12 @@ std::optional<ArrayAccessNode *> SemanticVisitor::visitCtx(WPLParser::ArrayAcces
 
 std::optional<TypedNode *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
 {
-    // FIXME: WHEN WE SWITCH VAR TO FIELD ACCESS, MAY BE ABLE TO DELETE VAR NODE!
+    // FIXME: Should be able to delete VariableIDNode now... 
 
     // Check if we are a var or an array
     if (ctx->var)
     {
-        /*
-         * Based on starter; Same as VAR
-         *
-         * Get the variable name and look it up in the symbol table
-         */
-        std::string id = ctx->var->getText();
-        std::optional<SymbolContext> opt = stmgr->lookup(id);
-
-        // If we can't find the variable, report an error as it is undefined.
-        if (!opt)
-        {
-            errorHandler.addSemanticError(ctx->getStart(), "Undefined variable in expression: " + id);
-            return {};
-        }
-
-        // Otherwise, get the symbol's value
-        Symbol *symbol = opt.value().second;
-
-        return new VariableIDNode(symbol, false);
+        return visitCtx(ctx->var, false);
     }
 
     /*
@@ -2146,26 +2128,26 @@ std::optional<ProgramAcceptNode *> SemanticVisitor::TvisitProgramAccept(WPLParse
 }
 std::optional<ProgramExecNode *> SemanticVisitor::TvisitAssignableExec(WPLParser::AssignableExecContext *ctx)
 {
-    std::string id = ctx->VARIABLE()->getText();
-    std::optional<SymbolContext> opt = stmgr->lookup(id);
+    std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(ctx->prog->accept(this));
     if (!opt)
     {
-        errorHandler.addSemanticError(ctx->getStart(), "Unbound identifier: " + id);
+        // errorHandler.addSemanticError(ctx->getStart(), " " + id);
         return {};
     }
 
-    Symbol *sym = opt.value().second;
+    // Symbol *sym = opt.value().second;
+    TypedNode * prog = opt.value(); 
 
-    if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
+    
+
+    if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(prog->getType()))
     {
         return new ProgramExecNode(
-            sym,
+            prog,
             new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse())));
     }
 
-    // FIXME: DO BETTER
-    errorHandler.addSemanticError(ctx->getStart(), "Cannot exec: " + sym->toString());
-    // return Types::UNDEFINED;
+    errorHandler.addSemanticError(ctx->getStart(), "Cannot exec: " + prog->getType()->toString());
     return {};
 }
 

@@ -26,7 +26,7 @@ invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr) LPAR (args+
 fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  ;
 //Helps allow us to use VARIABLE or arrayAccess and not other expressions (such as for assignments)
 arrayAccess         : field=fieldAccessExpr '[' index=expression ']'; 
-arrayOrVar          : var=VARIABLE | array=arrayAccess  ; //FIXME: SHOULD BE FIELD ACCESS FOR VAR
+arrayOrVar          : var=fieldAccessExpr | array=arrayAccess  ; //FIXME: SHOULD BE FIELD ACCESS FOR VAR
 
 /*
  * Expressions return values. These can be: 
@@ -109,7 +109,7 @@ assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=assignable)? ;
 
 assignable : ex=expression                          # AssignableExpr
            | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv
-           | 'exec' prog=VARIABLE                   # AssignableExec
+           | 'exec' prog=expression                 # AssignableExec
            ;
            
 
@@ -133,7 +133,6 @@ statement           : defineProc                                                
                     | defineFunc                                                            # FuncDef
                     | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                   # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'   # VarDeclStatement
-                    // | WHILE check=condition DO block                                    # LoopStatement 
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement     
                     | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement      
@@ -143,8 +142,9 @@ statement           : defineProc                                                
                     | block                     # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')'   # ProgramSend
                     | WHILE check=condition block                                                       # ProgramLoop
-                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*   # ProgramCase   
-                    | channel=VARIABLE LBRC sel=protocol RBRC                                                                # ProgramProject
+                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*      # ProgramCase  
+                    | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                              # ProgramCase   
+                    | channel=VARIABLE LBRC sel=protocol RBRC                                                                   # ProgramProject
                     | 'more' '(' channel=VARIABLE ')'                   # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')'                 # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                 # ProgramAccept
@@ -191,9 +191,9 @@ ELLIPSIS    :     '...'   ;
 //Used for when we can either provide a type or a variable (needed bc var arrays are not allowed).
 typeOrVar       : type | 'var'  ;
 
-protocol        : protos+=subProtocol
-                | protos+=subProtocol (';' protos+=subProtocol)*?
+protocol        : <assoc=right> protos+=subProtocol (';' protos+=subProtocol)*?
                 | '(' protos+=subProtocol (';' protos+=subProtocol)*? ')'
+                | protos+=subProtocol
                 ;
 
 subProtocol     :   '+' ty=type                 # RecvType

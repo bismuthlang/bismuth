@@ -3,7 +3,6 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
-#include <iostream> //FIXME:REMOVE
 
 // A threadsafe-queue from https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
 template <class T>

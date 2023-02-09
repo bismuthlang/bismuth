@@ -52,7 +52,7 @@ class STManager {
      * @return std::optional<Scope*> Returns empty if no parent scope to enter; otherwise returns last scope. 
      */
     std::pair<std::optional<Scope*>, std::optional<Scope*>> exitScope() {
-      return {dangerContext.exitScope(), linearContext.exitScope()};  //FIXME: DO BETTER
+      return {dangerContext.exitScope(), linearContext.exitScope()};
     }
 
     /**
@@ -69,7 +69,7 @@ class STManager {
     }
 
     bool removeSymbol(Symbol * symbol) {
-      return linearContext.removeSymbol(symbol); //FIXME: DO BETTER?
+      return linearContext.removeSymbol(symbol);
     }
     
     /**

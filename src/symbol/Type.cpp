@@ -289,11 +289,9 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
     if(steps.front()->isGuarded() || this->isGuarded())
             return false; 
 
-    // FIXME: NEED TO CHANGE INT AND EXT CHOICE TO SETS TO PREVENT DUP!!!
     if (const ProtocolEChoice *eChoice = dynamic_cast<const ProtocolEChoice *>(proto))
     {
         std::set<const ProtocolSequence *, ProtocolCompare> foundCaseTypes = {};
-        // FIXME: THIS WILL BE BROKEN UNTIL WE CAN USE SETS!
 
         for (const ProtocolSequence *p : testOpts) // TODO: METHODIZE WITH MATCHSTATEMENT
         {
@@ -324,8 +322,6 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
         mthis->steps.erase(steps.begin());
 
         return true; 
-
-        // return ty->isSubtype(send->getSendType());
     }
 
     return false;
