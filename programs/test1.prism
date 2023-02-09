@@ -93,7 +93,7 @@ define otherbranchthree :: c : Channel<-str> = {
     str ca := "Well, we fel into the first case";
     str cb := "Second case this time!";
 
-    if(~(a < 5)) {
+    if(!(a < 5)) {
         printf("ERROR: THIS CODE SHOULDN'T BE RUN\n");
         b := ca; 
     } else {

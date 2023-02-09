@@ -157,7 +157,7 @@ TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don'
 
 TEST_CASE("programs/test15 - No array equalities", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test15.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test15.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   WPLLexer lexer(input);
@@ -1662,7 +1662,7 @@ TEST_CASE("Equals Different types", "[semantic][program]")
   antlr4::ANTLRInputStream input(
       R""""(
 define program :: c : Channel<-int> = {
-    var a := "hello" = 1; 
+    var a := "hello" == 1; 
     return 0;
 }
     )"""");

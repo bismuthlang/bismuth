@@ -8,7 +8,7 @@ define selReturnOne :: c : Channel<+int;-str> = {
     select {
         a > 10: {c.send("CASE 1 (10)") exit}
         a > 0 : {c.send("CASE 2 (5)") exit}
-        a = 0 : {c.send("CASE 3 (0)") exit}
+        a == 0 : {c.send("CASE 3 (0)") exit}
         a < 0 : {c.send("CASE 4 (a)") exit}
     }
     c.send("CASE IMPOSSIBLE (-1)")

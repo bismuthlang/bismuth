@@ -88,10 +88,10 @@ define QuickSort :: c : Channel<+CappedArray; -CappedArray> = {
 
     # TODO: Set it so that way select can have a default case?
 
-    if input.cap = 1 {
+    if input.cap == 1 {
         c.send(input)
     } else {
-        if input.cap = 2 {
+        if input.cap == 2 {
             if input.data[0] > input.data[1] {
                 int temp := input.data[0];
                 input.data[0] := input.data[1];

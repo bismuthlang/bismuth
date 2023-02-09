@@ -24,7 +24,7 @@ define program :: io : Channel<-int> = {
             str j := array[y]; 
 
             #printf("%s@%d equals %s@%d = %d\n", i, x, j, y, i = j);
-            printf("%d, %d, = %d\n", x, y, i = j);
+            printf("%d, %d, = %d\n", x, y, i == j);
             y := y + 1; 
         }
 

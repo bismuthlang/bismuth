@@ -21,7 +21,7 @@ define program :: c : Channel<-int> = {
 
     a idkStr := "hello there!";
 
-    b oth1 := 1 = 4; 
+    b oth1 := 1 == 4; 
     
     match oth1 { # Boolean!
         int a => printf("Integer\n");

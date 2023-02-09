@@ -18,7 +18,7 @@
 
 TEST_CASE("Scanner operator tests", "[front-end]")
 {
-  antlr4::ANTLRInputStream input(":= / = > < - * ~ + ~=");
+  antlr4::ANTLRInputStream input(":= / == > < - * ! + !=");
   WPLLexer lexer(&input);
   lexer.removeErrorListeners();
   lexer.addErrorListener(new TestErrorListener());

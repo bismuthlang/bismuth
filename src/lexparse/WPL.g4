@@ -31,11 +31,11 @@ arrayOrVar          : var=fieldAccessExpr | array=arrayAccess  ; //FIXME: SHOULD
 /*
  * Expressions return values. These can be: 
  *      1. Parenthetical expressions of the form: ( expr )
- *      2. Unary Expressions such as: -1 and ~false
+ *      2. Unary Expressions such as: -1 and !false
  *      3. Binary Arithmetic expressions such as: 1 * 2, 6 / 3, 2 + 3, 5 - 6
  *              Note: Separated into two lines for presedence of * and / over + and - 
  *      4. Binary Relational expressions such as: 1 < 2, 1 <= 2, 2 > 1, 2 >= 1
- *      5. Equality expressions such as : 1 = 2, true ~= false
+ *      5. Equality expressions such as : 1 = 2, true != false
  *      6. Logical AND such as: true & true
  *      7. Logical OR such as: true | false
  *      8. Invocations of functions (as they have return values)
@@ -156,7 +156,7 @@ statement           : defineProc                                                
 //Operators
 ASSIGN      :       ':='    ; 
 MINUS       :       '-'     ;
-NOT         :       '~'     ;
+NOT         :       '!'     ;
 MULTIPLY    :       '*'     ;
 DIVIDE      :       '/'     ;
 PLUS        :       '+'     ;
@@ -164,8 +164,8 @@ LESS        :       '<'     ;
 LESS_EQ     :       '<='    ;
 GREATER_EQ  :       '>='    ;
 GREATER     :       '>'     ;
-EQUAL       :       '='     ;
-NOT_EQUAL   :       '~='    ;
+EQUAL       :       '=='    ;
+NOT_EQUAL   :       '!='    ;
 AND         :       '&'     ;
 OR          :       '|'     ;
 MAPS_TO     :       '->'    ;
