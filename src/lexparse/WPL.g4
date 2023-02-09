@@ -109,7 +109,7 @@ assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=assignable)? ;
 
 assignable : ex=expression                          # AssignableExpr
            | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv
-           | 'exec' prog=VARIABLE                   # AssignableExec
+           | 'exec' prog=expression                 # AssignableExec
            ;
            
 
@@ -133,7 +133,6 @@ statement           : defineProc                                                
                     | defineFunc                                                            # FuncDef
                     | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                   # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'   # VarDeclStatement
-                    // | WHILE check=condition DO block                                    # LoopStatement 
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement     
                     | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement      

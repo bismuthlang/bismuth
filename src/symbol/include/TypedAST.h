@@ -459,12 +459,12 @@ public:
 class ProgramExecNode : public TypedNode // FIXME: DO BETTER
 {
 public:
-    Symbol *sym;
+    TypedNode *prog;
     TypeChannel *chanType;
 
-    ProgramExecNode(Symbol *s, TypeChannel *c)
+    ProgramExecNode(TypedNode *p, TypeChannel *c)
     {
-        sym = s;
+        prog = p;
         chanType = c;
     }
 

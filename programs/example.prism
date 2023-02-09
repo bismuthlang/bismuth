@@ -91,9 +91,8 @@ define getSampleColors :: io : Channel<+ColorHelper;-Color[3]> = {
 
     Color[3] ans; 
 
-    # ans[0] := helper.getRGB(255, 255, 255);
-    Program<+int;+int;+int;-Color> FIXME := helper.getRGB; 
-    Channel<-int;-int;-int;+Color> rgbChan := exec FIXME; # FIXME: DO BETTER, CANNOT USE FIELD ACCESS HERE!
+    # ans[0] := helper.getRGB(255, 255, 255)
+    Channel<-int;-int;-int;+Color> rgbChan := exec helper.getRGB; 
     rgbChan.send(255)
     rgbChan.send(255)
     rgbChan.send(255)
