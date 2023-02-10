@@ -343,27 +343,6 @@ public:
 
             // Lookup the function in the current scope and prevent redeclaratons
 
-            // FIXME: RE-ENABLE
-            //  std::optional<Symbol *> opt = stmgr->lookupInCurrentScope(funcId);
-            //  if (opt)
-            //  {
-            //      Symbol *defSym = opt.value();
-            //      if (defSym->type)
-            //      {
-            //          if (const TypeInvoke *other = dynamic_cast<const TypeInvoke *>(defSym->type))
-            //          {
-            //              if (other->isSubtype(funcType) && !(other->isDefined()))
-            //              {
-            //                  other->define();
-            //                  goto cont;
-            //              }
-            //          }
-            //      }
-            //      errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + funcId);
-            //      return {};
-            //  }
-
-            // cont:
             // Add the symbol to the stmgr and enter the scope.
             stmgr->addSymbol(sym);
             stmgr->enterScope(StopType::GLOBAL); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
@@ -372,8 +351,7 @@ public:
 
             stmgr->addSymbol(channelSymbol);
             // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
-            // stmgr->addSymbol(new Symbol("@RETURN", funcType->getReturnType(), false, false));
-            stmgr->addSymbol(new Symbol("@EXIT", Types::UNIT, false, false)); // FIXME: DO BETTER
+            stmgr->addSymbol(new Symbol("@EXIT", Types::UNIT, false, false)); 
 
             // Safe visit the program block without creating a new scope (as we are managing the scope)
             std::optional<BlockNode *> blkOpt = this->safeVisitBlock(ctx->block(), false);
