@@ -40,14 +40,13 @@ define program :: c : Channel<-int> = {
     # Color func getRGBColor(int red, int green, int blue) {
     define getRGBColor :: c : Channel<+int;+int;+int;-Color> = { # SEEMS WASTEFUL TO HAVE TO SEND EACH SEPARATLEY
         int red := c.recv(), green := c.recv(), blue := c.recv(); # Note: Channels erase names of what each var means... 
-        # return RGBColor::init(red, green, blue); 
         c.send(RGBColor::init(red, green, blue))
     }
 
-    define getRGBColor :: c : Channel<+int;+int;+int;-Color> = { 
-        int red := c.recv(), green := c.recv(), blue := c.recv(); 
-        c.send(RGBColor::init(red, green, blue))
-    }
+    # define getRGBColor :: c : Channel<+int;+int;+int;-Color> = { 
+    #     int red := c.recv(), green := c.recv(), blue := c.recv(); 
+    #     c.send(RGBColor::init(red, green, blue))
+    # }
 
     # Color func getHSVColor(int h, int s, int v) {
     define func getHSVColor(int h, int s, int v) : Color {

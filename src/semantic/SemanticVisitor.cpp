@@ -32,6 +32,7 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
                 Symbol *funcSymbol = new Symbol(id, funcType, true, true);
                 // FIXME: test name collisions with externs
                 stmgr->addSymbol(funcSymbol);
+                bindings->bind(fnCtx->defineProc(), funcSymbol);
             }
             else
             {
@@ -73,7 +74,7 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
             stmgr->addSymbol(funcSym);
             bindings->bind(fnCtx->defineFunc(), funcSym);
         }
-        else
+        else //FIXME: BIND THESE!!!
         {
             std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(e->accept(this));
             if (!opt)

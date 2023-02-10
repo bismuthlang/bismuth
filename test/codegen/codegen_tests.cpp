@@ -603,7 +603,7 @@ TEST_CASE("programs/example", "[codegen][program]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/example.prism"))),
-        "4da1572fa31897b387f893bf97d82072d27873f1aa53358e22107f723cc15370");
+        "df83075d797436362015b813afcff6c3c5b2a979789c1661718aa929adefe1f3");
 }
 
 TEST_CASE("programs/SendChannel", "[codegen][linear-types]")
