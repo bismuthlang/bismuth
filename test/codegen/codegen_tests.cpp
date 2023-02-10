@@ -565,7 +565,7 @@ TEST_CASE("Out of order function", "[codegen][program]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ooof.prism"))),
-        "64619d22222218e680ba738a540068053b6f865e7a1624f9826593fe81123069");
+        "2761d1954b0374b7563834c9be78f30d8467f0ed082e09c9a2638dd783b9186e");
 
 /*
     std::fstream *inStream = new std::fstream("/home/shared/programs/ooof.prism");
@@ -603,21 +603,21 @@ TEST_CASE("programs/example", "[codegen][program]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/example.prism"))),
-        "4da1572fa31897b387f893bf97d82072d27873f1aa53358e22107f723cc15370");
+        "df83075d797436362015b813afcff6c3c5b2a979789c1661718aa929adefe1f3");
 }
 
 TEST_CASE("programs/SendChannel", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/SendChannel.prism"))),
-        "c0400b0725a19a1b62ee5e985c3c10b036c6b497e704d106cafa9568a309c22a");
+        "8292e111c80d898c34bbb46c9240ecb6dafb613dae2740efa90f5b622e321fdc");
 }
 
 TEST_CASE("paper/links", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links.prism"))),
-        "af194957130ef848cb9cc0ba716021a597e877edda6c431aff7397661308c580");
+        "d7c117695a6367478693aaddd6acd07f0e40a1d3188ca6d563ff659d86a30b0c");
 }
 
 TEST_CASE("programs/doubleArg1c2 - weakening and loops", "[codegen][linear-types]")

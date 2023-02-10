@@ -65,6 +65,8 @@ expression          : LPAR ex=expression RPAR                       # ParenExpr
                     | i=INTEGER    # IConstExpr
                     | s=STRING     # SConstExpr 
                     | lambdaConstExpr # LambdaExpr
+                    | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv //FIXME: VERIFY THESE DO NOT CAUSE LINEARITY VIOLATIONS ANYWHERE!
+                    | 'exec' prog=expression                 # AssignableExec
                     ;
 
 lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
@@ -105,12 +107,13 @@ VariadicParam       : ',' [ \t]* '...'; //For some reason, need to match the whi
  * value. This is used by the VarDeclStatement to help separate multiple 
  * assigments. Ie those of the form:   var a := 1, b := 2, ... 
  */
-assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=assignable)? ;
+// assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=assignable)? ;
+assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
 
-assignable : ex=expression                          # AssignableExpr
-           | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv
-           | 'exec' prog=expression                 # AssignableExec
-           ;
+// assignable : ex=expression                          # AssignableExpr
+//            | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv
+//            | 'exec' prog=expression                 # AssignableExec
+//            ;
            
 
 
@@ -131,7 +134,7 @@ assignable : ex=expression                          # AssignableExpr
  */
 statement           : defineProc                                                            # ProgDef 
                     | defineFunc                                                            # FuncDef
-                    | <assoc=right> to=arrayOrVar ASSIGN a=assignable ';'                   # AssignStatement 
+                    | <assoc=right> to=arrayOrVar ASSIGN a=expression ';'                   # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'   # VarDeclStatement
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement     

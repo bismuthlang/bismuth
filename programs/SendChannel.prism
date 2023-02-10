@@ -16,7 +16,5 @@ define Foo1 :: c : Channel<-int> = {
 define Foo2 :: c : Channel<+Channel<+int>;-int> = {
     Channel<+int> c2 := c.recv(); 
 
-    int temp := c2.recv(); 
-    c.send(temp)
-    # c.send(c2.recv()) # FIXME: MAKE THIS SYNTAX POSSIBLE
+    c.send(c2.recv())
 }

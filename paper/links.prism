@@ -1,14 +1,12 @@
 extern int func printf(str s, ...);
 
 define func linkRecvInt (Channel<+int> a, Channel<-int> b) { 
-    int FIXME := a.recv(); 
-    b.send(FIXME)
+    b.send(a.recv())
     return;
 }
 
 define func linkRecvBool (Channel<+boolean> a, Channel<-boolean> b) {
-    boolean FIXME := a.recv(); 
-    b.send(FIXME)
+    b.send(a.recv())
     return; 
 }
 

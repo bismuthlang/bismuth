@@ -11,9 +11,5 @@ define program :: c : Channel<-int> = {
 }
 
 define foo :: c : Channel<+str> = {
-    # printf("c.recv() = %s\n", c.recv()); # FIXME: THIS DOESNT WORK!!
-
-    var t := c.recv(); 
-
-    printf("t = %s\n", t);
+    printf("c.recv() = %s\n", c.recv());
 }
