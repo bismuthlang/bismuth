@@ -2669,6 +2669,78 @@ define bar :: c : Channel<?(?-int);+int> = {
   REQUIRE(sv->hasErrors(ERROR));
 }
 
+TEST_CASE("double recv", "[semantic]")
+{
+  antlr4::ANTLRInputStream input(
+      R""""(
+define foo :: c : Channel<-int> = {
+    c.send(5)
+}
+
+define program :: c : Channel<-int> = {
+    var com := exec foo, a, b := com.recv(); 
+
+    c.send(a)
+}
+    )"""");
+  WPLLexer lexer(&input);
+  // lexer.removeErrorListeners();
+  // lexer.addErrorListener(new TestErrorListener());
+  antlr4::CommonTokenStream tokens(&lexer);
+  WPLParser parser(&tokens);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new TestErrorListener());
+
+  WPLParser::CompilationUnitContext *tree = NULL;
+  REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  REQUIRE(tree != NULL);
+  REQUIRE(tree->getText() != "");
+
+  STManager *stmgr = new STManager();
+  PropertyManager *pm = new PropertyManager();
+
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+  sv->visitCompilationUnit(tree);
+  REQUIRE(sv->hasErrors(ERROR));
+}
+
+TEST_CASE("double recv - correct", "[semantic]")
+{
+  antlr4::ANTLRInputStream input(
+      R""""(
+define foo :: c : Channel<-int> = {
+    c.send(5)
+}
+
+define program :: c : Channel<-int> = {
+    var com := exec foo, a := com.recv(); 
+
+    c.send(a)
+}
+    )"""");
+  WPLLexer lexer(&input);
+  // lexer.removeErrorListeners();
+  // lexer.addErrorListener(new TestErrorListener());
+  antlr4::CommonTokenStream tokens(&lexer);
+  WPLParser parser(&tokens);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new TestErrorListener());
+
+  WPLParser::CompilationUnitContext *tree = NULL;
+  REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  REQUIRE(tree != NULL);
+  REQUIRE(tree->getText() != "");
+
+  STManager *stmgr = new STManager();
+  PropertyManager *pm = new PropertyManager();
+
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+  sv->visitCompilationUnit(tree);
+  REQUIRE_FALSE(sv->hasErrors(ERROR));
+}
+
 /*********************************
  * C-Level Example tests
  *********************************/
