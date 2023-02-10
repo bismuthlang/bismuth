@@ -3,7 +3,7 @@ extern int func printf(...);
 # int func program () {
 define program :: io : Channel<-int> = {
     int a, b, c := 10;
-    printf("Int equality test I: %d, %d, %d\n", a = b, a ~= b, a = c); 
+    printf("Int equality test I: %d, %d, %d\n", a == b, a != b, a == c); 
     printf("a = %d, b = %d, c = %d\n", a, b, c);
 
     a := 95; 
@@ -21,17 +21,17 @@ define program :: io : Channel<-int> = {
     printf("c := %d/%d\n", a, b);
     printf("a = %d, b = %d, c = %d\n", a, b, c);
 
-    printf("Int equality test II: %d, %d, %d\n", a = b, a ~= b, a = c);
+    printf("Int equality test II: %d, %d, %d\n", a == b, a != b, a == c);
 
 
     {
         boolean a, b := true, c := false; 
 
         printf("a = %d, b = %d, c = %d\n", a, b, c);
-        printf("bool equality test I: %d, %d, %d\n", a = b, a ~= b, a = c);
+        printf("bool equality test I: %d, %d, %d\n", a == b, a != b, a == c);
 
-        a := ~(b | c);
-        printf("a := ~(b | c)\n");
+        a := !(b | c);
+        printf("a := !(b | c)\n");
 
         printf("a = %d, b = %d, c = %d\n", a, b, c);
 
@@ -40,25 +40,25 @@ define program :: io : Channel<-int> = {
 
         printf("a = %d, b = %d, c = %d\n", a, b, c);
 
-        c := ~a & ~b; 
-        printf("c := ~a & ~b\n");
+        c := !a & !b; 
+        printf("c := !a & !b\n");
 
         printf("a = %d, b = %d, c = %d\n", a, b, c);
 
-        printf("bool equality test II: %d, %d, %d\n", a = b, a ~= b, a = c);
+        printf("bool equality test II: %d, %d, %d\n", a == b, a != b, a == c);
     }
 
     {
         str a, b := "String One", c := "String Two"; 
 
         printf("a = %s, b = %s, c = %s\n", a, b, c);
-        printf("str equality test I: %d, %d, %d\n", a = b, a ~= b, a = c);
+        printf("str equality test I: %d, %d, %d\n", a == b, a != b, a == c);
 
         a := "String 3 now"; 
 
         printf("a = %s, b = %s, c = %s\n", a, b, c);
 
-        printf("str equality test II: %d, %d, %d\n", a = b, a ~= b, a = c);
+        printf("str equality test II: %d, %d, %d\n", a == b, a != b, a == c);
     }
 
     printf("Ints still are: a = %d, b = %d, c = %d\n", a, b, c);

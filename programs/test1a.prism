@@ -91,7 +91,7 @@ define otherbranchthree :: c : Channel<-str> = {
     str ca := "Well, we fel into the first case";
     str cb := "Second case this time!";
 
-    if(~(a < 5)) {
+    if(!(a < 5)) {
         b := ca; 
     } else {
         b := cb; 

@@ -39,7 +39,24 @@ bool TypeStr::isSupertypeFor(const Type *other) const
 /*
  * BOT
  */
-bool TypeBot::isSupertypeFor(const Type *other) const
+bool TypeBottom::isSupertypeFor(const Type *other) const
+{
+    return false;
+}
+
+/*
+ * Unit
+ */
+bool TypeUnit::isSupertypeFor(const Type *other) const
+{
+    // return dynamic_cast<const TypeUnit *>(other);
+    return false;
+}
+
+/*
+ * Absurd
+ */
+bool TypeAbsurd::isSupertypeFor(const Type *other) const
 {
     return false;
 }

@@ -4,7 +4,7 @@ extern int func printf(...);
 define fib :: c : Channel<+int;-int> = {
   int n := c.recv(); 
 
-  if(n = 0 | n = 1) {
+  if(n == 0 | n == 1) {
     # return n;
     c.send(n) exit
   }
@@ -15,7 +15,7 @@ define fib :: c : Channel<+int;-int> = {
   f1.send(n - 1)
   f2.send(n - 2)
 
-  int v1 := f1.recv(), v2 := f2.recv(); # FIXME: SHOULD THIS BE PARALLEL? I guess not...
+  int v1 := f1.recv(), v2 := f2.recv();
 
 
   c.send(v1 + v1)

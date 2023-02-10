@@ -4,7 +4,7 @@ extern int func printf(...);
 define mutArgsOne :: io : Channel<+int;-int> = {
     int i := io.recv(); 
 
-    if ~(5 < 10) {
+    if !(5 < 10) {
         i := 20;
     } else {
         i := 50; 
@@ -34,7 +34,7 @@ define mutArgsTwo :: io : Channel<+int;-int> = {
 define PROCmutArgsOne :: io : Channel<+int> = {
     int i := io.recv();
 
-    if ~(5 < 10) {
+    if !(5 < 10) {
         i := 20;
     } else {
         i := 50; 

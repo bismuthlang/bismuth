@@ -4,29 +4,29 @@ extern int func printf(...);
 define nested :: io : Channel<+int> = {
     int a := io.recv(); 
 
-    if a <= 0 & (a < -5 | a < 0 | a = 0) {
+    if a <= 0 & (a < -5 | a < 0 | a == 0) {
         if a < -5 {
             printf("Less than -5\n");
         }
 
-        if ~(a < -5) & a < -5 {
+        if !(a < -5) & a < -5 {
             printf("Less than -5 - BROKEN\n"); # Helps to test we don't fall through. Can't actually check that conditions are the same
         }
 
-        if ~(a < -5) & a < 0 {
+        if !(a < -5) & a < 0 {
             printf("Less than 0; Greater than -5\n"); 
         }
 
-        if ~(a < -5) & ~(a < 0) & (a = 0) {
+        if !(a < -5) & !(a < 0) & (a == 0) {
             printf("ZERO!\n");
         }
     }
 
-    if ~(a <= 0) & a = 0 {
+    if !(a <= 0) & a == 0 {
         printf("Wrong zero!\n");
     }
 
-    if ~(a <= 0) & (a >= 5 | a < 5) {
+    if !(a <= 0) & (a >= 5 | a < 5) {
         if a >= 5 {
             printf("Greater than 5\n");
         }

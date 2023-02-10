@@ -531,18 +531,48 @@ protected:
 
 /*******************************************
  *
- * Bottom/Unit Type
+ * Bottom Type 
  *
  *******************************************/
 
-class TypeBot : public Type
+class TypeBottom : public Type
 {
 public:
-    std::string toString() const override { return "BOT"; }
+    std::string toString() const override { return "\u22A5"; }
 
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
+
+
+/*******************************************
+ *
+ * Unit Type 
+ *
+ *******************************************/
+class TypeUnit : public Type
+{
+public:
+    std::string toString() const override { return "1"; }
+
+protected:
+    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+};
+
+/*******************************************
+ *
+ * Absurd Type 
+ *
+ *******************************************/
+class TypeAbsurd : public Type
+{
+public:
+    std::string toString() const override { return "0"; }
+
+protected:
+    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+};
+
 
 /*******************************************
  *
@@ -563,7 +593,8 @@ namespace Types
     inline const TypeInt *INT = new TypeInt();
     inline const TypeBool *BOOL = new TypeBool();
     inline const TypeStr *STR = new TypeStr();
-    inline const TypeBot *UNDEFINED = new TypeBot();
+    inline const TypeUnit *UNIT = new TypeUnit(); 
+    inline const TypeAbsurd *ABSURD = new TypeAbsurd(); 
 };
 
 /*******************************************
@@ -939,7 +970,7 @@ public:
      */
     TypeInvoke()
     {
-        retType = Types::UNDEFINED;
+        retType = Types::UNIT;
     }
 
     /**
@@ -950,7 +981,7 @@ public:
     TypeInvoke(std::vector<const Type *> p)
     {
         paramTypes = p;
-        retType = Types::UNDEFINED;
+        retType = Types::UNIT;
     }
 
     /**
@@ -963,7 +994,7 @@ public:
     TypeInvoke(std::vector<const Type *> p, bool v, bool d)
     {
         paramTypes = p;
-        retType = Types::UNDEFINED;
+        retType = Types::UNIT;
 
         variadic = v;
         defined = d;
@@ -1005,7 +1036,7 @@ public:
      */
     std::string toString() const override
     {
-        bool isProc = dynamic_cast<const TypeBot *>(retType);
+        bool isProc = dynamic_cast<const TypeUnit *>(retType);
 
         std::ostringstream description;
         description << (isProc ? "PROC " : "FUNC ");
@@ -1123,7 +1154,7 @@ protected:
                     return false;
             }
             // Makes sure that the return type of this function is a subtype of the other
-            return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
+            return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeUnit *>(this->retType) && dynamic_cast<const TypeUnit *>(p->retType));
         }
         return false;
     }

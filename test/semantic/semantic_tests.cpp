@@ -101,7 +101,9 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
   Type *INT = new TypeInt();
   Type *BOOL = new TypeBool();
   Type *STR = new TypeStr();
-  Type *BOT = new TypeBot();
+  Type *BOT = new TypeBottom();
+  Type* UNIT = new TypeUnit(); 
+  Type* ABSD = new TypeAbsurd(); 
 
   SECTION("Top Type tests")
   {
@@ -116,6 +118,9 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
     REQUIRE(TOP->isNotSubtype(STR));
 
     REQUIRE(TOP->isNotSubtype(BOT));
+
+    REQUIRE(TOP->isNotSubtype(UNIT));
+    REQUIRE(TOP->isNotSubtype(ABSD));
   }
 
   SECTION("Int Type tests")
@@ -131,6 +136,9 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
     REQUIRE(INT->isNotSubtype(STR));
 
     REQUIRE(INT->isNotSubtype(BOT));
+
+    REQUIRE(INT->isNotSubtype(UNIT));
+    REQUIRE(INT->isNotSubtype(ABSD));
   }
 
   SECTION("Bool Type Tests")
@@ -140,6 +148,8 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
     REQUIRE(BOOL->isNotSubtype(STR));
     REQUIRE(BOOL->isSubtype(BOOL));
     REQUIRE(BOOL->isNotSubtype(BOT));
+    REQUIRE(BOOL->isNotSubtype(UNIT));
+    REQUIRE(BOOL->isNotSubtype(ABSD));
   }
 
   SECTION("Str Type Tests")
@@ -149,15 +159,41 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
     REQUIRE(STR->isSubtype(STR));
     REQUIRE(STR->isNotSubtype(BOOL));
     REQUIRE(STR->isNotSubtype(BOT));
+    REQUIRE(STR->isNotSubtype(UNIT));
+    REQUIRE(STR->isNotSubtype(ABSD));
   }
 
   SECTION("Bot Type Tests")
   {
     REQUIRE(BOT->isSubtype(TOP));
-    REQUIRE_FALSE(BOT->isSubtype(INT));
+    REQUIRE_FALSE(BOT->isSubtype(INT)); //FIXME: THESE SEEM WRONG.... MAYBE?
     REQUIRE_FALSE(BOT->isSubtype(STR));
     REQUIRE_FALSE(BOT->isSubtype(BOOL));
     REQUIRE_FALSE(BOT->isSubtype(BOT));
+    REQUIRE_FALSE(BOT->isSubtype(UNIT));
+    REQUIRE_FALSE(BOT->isSubtype(ABSD));
+  }
+
+  SECTION("Unit Type Tests")
+  {
+    REQUIRE(UNIT->isSubtype(TOP));
+    REQUIRE_FALSE(UNIT->isSubtype(INT));
+    REQUIRE_FALSE(UNIT->isSubtype(STR));
+    REQUIRE_FALSE(UNIT->isSubtype(BOOL));
+    REQUIRE_FALSE(UNIT->isSubtype(BOT));
+    REQUIRE_FALSE(UNIT->isSubtype(UNIT));
+    REQUIRE_FALSE(UNIT->isSubtype(ABSD));
+  }
+
+  SECTION("Absurd Type Tests")
+  {
+    REQUIRE(ABSD->isSubtype(TOP));
+    REQUIRE_FALSE(ABSD->isSubtype(INT));
+    REQUIRE_FALSE(ABSD->isSubtype(STR));
+    REQUIRE_FALSE(ABSD->isSubtype(BOOL));
+    REQUIRE_FALSE(ABSD->isSubtype(BOT));
+    REQUIRE_FALSE(ABSD->isSubtype(UNIT));
+    REQUIRE_FALSE(ABSD->isSubtype(ABSD));
   }
   // Why is PL easier to read in mono fonts?
 }
@@ -168,7 +204,9 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
   Type *INT = new TypeInt();
   Type *BOOL = new TypeBool();
   Type *STR = new TypeStr();
-  Type *BOT = new TypeBot();
+  Type *BOT = new TypeBottom();
+  Type* UNIT = new TypeUnit(); 
+  Type* ABSD = new TypeAbsurd(); 
 
   SECTION("Top Type tests")
   {
@@ -184,6 +222,9 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
     REQUIRE(TOP->isSupertype(STR));
 
     REQUIRE(TOP->isSupertype(BOT));
+
+    REQUIRE(TOP->isSupertype(UNIT));
+    REQUIRE(TOP->isSupertype(ABSD));
   }
 
   SECTION("Int Type tests")
@@ -199,6 +240,9 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
     REQUIRE(INT->isNotSupertype(STR));
 
     REQUIRE(INT->isNotSupertype(BOT));
+
+    REQUIRE(INT->isNotSupertype(UNIT));
+    REQUIRE(INT->isNotSupertype(ABSD));
   }
 
   SECTION("Bool Type Tests")
@@ -208,6 +252,8 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
     REQUIRE(BOOL->isNotSupertype(STR));
     REQUIRE(BOOL->isSupertype(BOOL));
     REQUIRE(BOOL->isNotSupertype(BOT));
+    REQUIRE(BOOL->isNotSupertype(UNIT));
+    REQUIRE(BOOL->isNotSupertype(ABSD));
   }
 
   SECTION("Str Type Tests")
@@ -217,6 +263,8 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
     REQUIRE(STR->isSupertype(STR));
     REQUIRE(STR->isNotSupertype(BOOL));
     REQUIRE(STR->isNotSupertype(BOT));
+    REQUIRE(STR->isNotSupertype(UNIT));
+    REQUIRE(STR->isNotSupertype(ABSD));
   }
 
   SECTION("Bot Type Tests")
@@ -226,6 +274,30 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
     REQUIRE(BOT->isNotSupertype(STR));
     REQUIRE(BOT->isNotSupertype(BOOL));
     REQUIRE(BOT->isNotSupertype(BOT));
+    REQUIRE(BOT->isNotSupertype(UNIT));
+    REQUIRE(BOT->isNotSupertype(ABSD));
+  }
+
+  SECTION("Unit Type Tests")
+  {
+    REQUIRE(UNIT->isNotSupertype(TOP));
+    REQUIRE(UNIT->isNotSupertype(INT));
+    REQUIRE(UNIT->isNotSupertype(STR));
+    REQUIRE(UNIT->isNotSupertype(BOOL));
+    REQUIRE(UNIT->isNotSupertype(BOT));
+    REQUIRE(UNIT->isNotSupertype(UNIT));
+    REQUIRE(UNIT->isNotSupertype(ABSD));
+  }
+
+  SECTION("Absurd Type Tests")
+  {
+    REQUIRE(ABSD->isNotSupertype(TOP));
+    REQUIRE(ABSD->isNotSupertype(INT));
+    REQUIRE(ABSD->isNotSupertype(STR));
+    REQUIRE(ABSD->isNotSupertype(BOOL));
+    REQUIRE(ABSD->isNotSupertype(BOT));
+    REQUIRE(ABSD->isNotSupertype(UNIT));
+    REQUIRE(ABSD->isNotSupertype(ABSD));
   }
   // Why is PL easier to read in mono fonts?
 }

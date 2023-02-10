@@ -133,10 +133,10 @@ extern "C" uint8_t *ReadChannel(unsigned int aId)
         }
         return nullptr; // FIXME: DO BETTER
     }
-    // return nullptr; // FIXME: DO BETTER
+
     uint8_t *v = std::get<Value>(i_buffer->second->dequeue()).v;
     
-    return v; // FIXME: RENAME TO BE MESSAGE VALUE OR SOMETHING
+    return v;
 }
 
 extern "C" unsigned int ReadProjection(unsigned int aId) //FIXME: SHOULD METHODIZE ALL THESE

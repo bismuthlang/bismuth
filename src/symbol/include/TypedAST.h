@@ -180,7 +180,7 @@ public:
         eval = e;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; }
+    const TypeUnit *getType() override { return Types::UNIT; } //FIXME: MAYBE ABSURD? bc syntax but no
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -197,7 +197,7 @@ public:
         post = p;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; }
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -211,7 +211,7 @@ public:
         condition = c;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -228,7 +228,7 @@ public:
 
     vector<TypedNode *> getExprs() { return exprs; }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -359,7 +359,7 @@ public:
         post = p;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -374,7 +374,7 @@ public:
         expr = e;
     }
     
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -385,7 +385,7 @@ public:
     {
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -403,7 +403,7 @@ public:
         lType = l;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -434,7 +434,7 @@ Symbol *sym;
         sym = s;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -448,7 +448,7 @@ public:
         sym = s;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -480,7 +480,7 @@ public:
         blk = b;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -497,7 +497,7 @@ public:
         sum = s;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -514,7 +514,7 @@ public:
         product = p;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -546,7 +546,7 @@ public:
         blk = t;
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -690,10 +690,8 @@ public:
         val = v;
     }
 
-    const TypeBot *getType() override
-    {
-        return Types::UNDEFINED; // FIXME: DO BETTER
-    }
+    const TypeUnit *getType() override { return Types::UNIT; }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -919,10 +917,7 @@ public:
         assignments = a;
     }
 
-    const TypeBot *getType() override
-    {
-        return Types::UNDEFINED; // FIXME: DO BETTER
-    }
+    const TypeUnit *getType() override { return Types::UNIT; }
 
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -947,9 +942,9 @@ public:
 
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 
-    const TypeBot *getType() override
+    const TypeUnit *getType() override
     {
-        return Types::UNDEFINED; // FIXME: DO BETTER
+        return Types::UNIT; // FIXME: DO BETTER
     }
 };
 
@@ -969,9 +964,9 @@ public:
 
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 
-    const TypeBot *getType() override
+    const TypeUnit *getType() override
     {
-        return Types::UNDEFINED; // FIXME: DO BETTER
+        return Types::UNIT; // FIXME: DO BETTER
     }
 };
 
@@ -987,7 +982,7 @@ public:
         projectIndex = p; 
     }
 
-    const TypeBot *getType() override { return Types::UNDEFINED; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -1016,9 +1011,6 @@ inline bool endsInReturn(TypedNode *n)
     if (BlockNode *bn = dynamic_cast<BlockNode *>(n))
     {
         return endsInReturn(bn->exprs);
-        // if(bn->exprs.size() == 0) return false;
-        // return endsInReturn((bn->exprs.at(bn->exprs.size() - 1)));
-        // return bn->exprs.size() > 0 && dynamic_cast<ReturnNode *>(bn->exprs.at(bn->exprs.size() - 1));
     }
 
     // FIXME: DO THESE BETTER!

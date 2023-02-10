@@ -18,7 +18,7 @@ define nestedIf :: c : Channel<+int;-str> = {
     }
     else 
     {
-        if( a = 0 )
+        if( a == 0 )
         {
             # return "CASE 3 (0)";  # NOTE: DIV BY ZERO CAUSES EXCEPION?
             c.send("CASE 3 (0)")

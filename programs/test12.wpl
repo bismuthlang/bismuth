@@ -6,7 +6,7 @@ define isPrime :: c : Channel<+int;-boolean> = {
   int n := c.recv(); # FIXME: TEST WITH RECV VARS--ESP CHANNELS! THIS HASNT WORKED IN THE PAST
   var i := 3;
   while (i < n) { 
-    if (n / i * i = n) { c.send(false) } 
+    if (n / i * i == n) { c.send(false) } 
     i := i + 2;
     {
       int i := 0;
