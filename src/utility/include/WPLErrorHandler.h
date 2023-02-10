@@ -43,11 +43,11 @@ enum ErrSev
  */
 struct WPLError
 {
-  ErrType type;           // The Type of the error
-  antlr4::Token *token;   // Where the error occurred
-  std::string message;    // Error Message text
+  ErrType type;         // The Type of the error
+  antlr4::Token *token; // Where the error occurred
+  std::string message;  // Error Message text
 
-  ErrSev severity;        // Error Severity level
+  ErrSev severity; // Error Severity level
 
   WPLError(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
   {
@@ -60,13 +60,13 @@ struct WPLError
 
   std::string toString()
   {
-    if(!token) return message; //FIXME: DO BETTER
+    if (!token)
+      return message; // FIXME: DO BETTER
     std::ostringstream e;
     e << getStringForSeverity(severity) << ": " << getStringForErrorType(type) << ": [" << token->getLine() << ',' << token->getCharPositionInLine()
       << "]: " << message;
     return e.str();
   }
-
 
   static std::string getStringForErrorType(ErrType e)
   {
@@ -97,33 +97,64 @@ struct WPLError
   }
 };
 
+struct ErrorChain
+{
+  std::vector<WPLError* > chain;
+
+  ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
+  {
+    WPLError* primaryError = new WPLError(tok, msg, et, es);
+    chain.push_back(primaryError);
+  }
+
+  std::string toString()
+  {
+    std::ostringstream e;
+
+    for (WPLError* error : chain)
+    {
+      e << error->toString() << std::endl;
+    }
+    
+    return e.str();
+  }
+
+  ErrSev getSeverity() { return chain.at(0)->severity; } //TODO: could theoretically error but not in practice. Also TODO: change this to be the MAX error?
+};
+
 class WPLErrorHandler
 {
 public:
-  void addSemanticError(antlr4::Token *t, std::string msg)
+  ErrorChain* addSemanticError(antlr4::Token *t, std::string msg)
   {
-    WPLError *e = new WPLError(t, msg, SEMANTIC, ERROR);
+    ErrorChain *e = new ErrorChain(t, msg, SEMANTIC, ERROR);
     errors.push_back(e);
+
+    return e;
   }
 
-  void addSemanticCritWarning(antlr4::Token *t, std::string msg)
+  ErrorChain* addSemanticCritWarning(antlr4::Token *t, std::string msg)
   {
-    WPLError *e = new WPLError(t, msg, SEMANTIC, CRITICAL_WARNING);
+    ErrorChain *e = new ErrorChain(t, msg, SEMANTIC, CRITICAL_WARNING);
     errors.push_back(e);
+
+    return e; 
   }
 
-  void addCodegenError(antlr4::Token *t, std::string msg)
+  ErrorChain* addCodegenError(antlr4::Token *t, std::string msg)
   {
-    WPLError *e = new WPLError(t, msg, CODEGEN, ERROR);
+    ErrorChain *e = new ErrorChain(t, msg, CODEGEN, ERROR);
     errors.push_back(e);
+
+    return e; 
   }
 
-  std::vector<WPLError *> &getErrors() { return errors; }
+  std::vector<ErrorChain *> &getErrors() { return errors; }
 
   std::string errorList()
   {
     std::ostringstream errList;
-    for (WPLError *e : errors)
+    for (ErrorChain *e : errors)
     {
       errList << e->toString() << std::endl;
     }
@@ -132,10 +163,10 @@ public:
 
   /**
    * @brief Determines if the compiler has errors of a specific severity
-   * 
-   * @param errorFlags INT representation of ErrSev to determine which errors to check. Ie. 0 for all, 1 for ERROR, 2 for CRITICAL_WARNING, 3 = ERROR | CRITICAL_WARNING, etc. 
-   * @return true 
-   * @return false 
+   *
+   * @param errorFlags INT representation of ErrSev to determine which errors to check. Ie. 0 for all, 1 for ERROR, 2 for CRITICAL_WARNING, 3 = ERROR | CRITICAL_WARNING, etc.
+   * @return true
+   * @return false
    */
   bool hasErrors(int errorFlags)
   {
@@ -143,10 +174,10 @@ public:
     if (!errorFlags)
       return !errors.empty();
 
-    for (WPLError *err : errors)
+    for (ErrorChain *err : errors)
     {
-      std::cerr << err->severity << " & " << errorFlags << std::endl;
-      if (err->severity & errorFlags)
+      std::cerr << err->getSeverity() << " & " << errorFlags << std::endl;
+      if (err->getSeverity() & errorFlags)
         return true;
     }
 
@@ -154,12 +185,12 @@ public:
   }
 
 protected:
-  std::vector<WPLError *> errors;
+  std::vector<ErrorChain *> errors;
 };
 
 /**
  * @brief Wapper around WPLErrorHandler and antlr4::BaseErrorListener so we can report syntax errors just like the other error types
- * 
+ *
  */
 class WPLSyntaxErrorListener : public antlr4::BaseErrorListener, public WPLErrorHandler
 {
@@ -171,7 +202,7 @@ class WPLSyntaxErrorListener : public antlr4::BaseErrorListener, public WPLError
       const std::string &msg,
       std::exception_ptr ex) override
   {
-    WPLError *e = new WPLError(offendingSymbol, msg, SYNTAX, ERROR);
+    ErrorChain *e = new ErrorChain(offendingSymbol, msg, SYNTAX, ERROR);
     errors.push_back(e);
     // throw std::invalid_argument("test error thrown: " + msg);
   }
