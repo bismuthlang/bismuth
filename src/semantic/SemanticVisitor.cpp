@@ -74,7 +74,7 @@ std::optional<CompilationUnitNode *> SemanticVisitor::visitCtx(WPLParser::Compil
             stmgr->addSymbol(funcSym);
             bindings->bind(fnCtx->defineFunc(), funcSym);
         }
-        else //FIXME: BIND THESE!!!
+        else // FIXME: BIND THESE!!!
         {
             std::optional<TypedNode *> opt = anyOpt2Val<TypedNode *>(e->accept(this));
             if (!opt)
@@ -307,6 +307,12 @@ std::optional<LambdaConstNode *> SemanticVisitor::visitCtx(WPLParser::DefineFunc
         std::optional<Symbol *> opt = bindings->getBinding(ctx);
         if (opt)
             return opt.value();
+
+        if (stmgr->lookupInCurrentScope(ctx->name->getText()))
+        {
+            errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+            return {};
+        }
 
         std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
 
