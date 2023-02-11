@@ -201,7 +201,7 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ConditionNode : public TypedNode
+class ConditionNode : public TypedNode //FIXME: PROBABLY ISNT NEEDED
 {
 public:
     TypedNode *condition;
@@ -403,7 +403,7 @@ public:
         lType = l;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -434,7 +434,7 @@ Symbol *sym;
         sym = s;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -609,7 +609,7 @@ private:
     const Type *type;
 
 public:
-    Symbol *symbol; // FIXME: SHOULD THESE BE SYMBOLS OR SYMBOL CONTEXTS?
+    Symbol *symbol;
     vector<pair<string, const Type *>> accesses;
     bool is_rvalue;
 

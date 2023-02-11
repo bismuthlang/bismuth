@@ -476,7 +476,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
 {
-    std::optional<Value *> fnOpt = AcceptType(this, n->prog); //visitVariable(n->sym, true); // FIXME: DO BETTER?
+    std::optional<Value *> fnOpt = AcceptType(this, n->prog);
 
     if (!fnOpt)
     {

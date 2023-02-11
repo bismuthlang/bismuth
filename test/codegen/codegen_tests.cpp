@@ -520,7 +520,6 @@ TEST_CASE("programs/dangerLambda - lambdas with dupl function names", "[codegen]
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")
 {
-    // FIXME: VERIFY STRUCT AND ENUM PASSING ARE DONE BY VALUE!!
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing.prism"))),
         "4e42b4481de60407ae1ba52911afb2a9b49aba1247389e107ca3dc6c43576046");
@@ -598,7 +597,7 @@ TEST_CASE("Out of order function", "[codegen][program]")
     REQUIRE(llvmIrToSHA256(cv->getModule()) == "64619d22222218e680ba738a540068053b6f865e7a1624f9826593fe81123069");
     */
 }
-// FIXME: TRY REDECL OF ENUM IE. SETTING IT AGAIN
+
 TEST_CASE("programs/example", "[codegen][program]")
 {
     EnsureCompilesTo(
