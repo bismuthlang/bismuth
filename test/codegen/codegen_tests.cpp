@@ -30,11 +30,11 @@ void EnsureCompilesTo(antlr4::ANTLRInputStream *input, string hash)
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
-    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
-    REQUIRE(cuOpt.has_value());
+    auto cuOpt = sv->visitCtx(tree);
+    REQUIRE(std::holds_alternative<CompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
 
     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
-    cv->visitCompilationUnit(cuOpt.value());
+    cv->visitCompilationUnit(std::get<CompilationUnitNode*>(cuOpt));//cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
     REQUIRE(llvmIrToSHA256(cv->getModule()) == hash);
@@ -52,7 +52,7 @@ void EnsureErrors(antlr4::ANTLRInputStream *input)
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
-    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
+    auto cuOpt = sv->visitCtx(tree);
     // REQUIRE(cuOpt.has_value());
 
     REQUIRE(sv->hasErrors(0));
@@ -395,7 +395,7 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
-    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
+    auto cuOpt = sv->visitCtx(tree);
     // REQUIRE(cuOpt.has_value()); //FIXME: DO BETTER
 
     REQUIRE(sv->hasErrors(0));

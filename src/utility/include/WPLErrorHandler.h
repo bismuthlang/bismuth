@@ -99,33 +99,66 @@ struct WPLError
 
 struct ErrorChain
 {
-  std::vector<WPLError* > chain;
+  std::vector<WPLError *> chain;
+
+  ErrorChain() { //FIXME: DO BETTER
+
+  }
 
   ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
   {
-    WPLError* primaryError = new WPLError(tok, msg, et, es);
+    WPLError *primaryError = new WPLError(tok, msg, et, es);
     chain.push_back(primaryError);
+  }
+
+  void addSemanticError(antlr4::Token *t, std::string msg)
+  {
+    WPLError *e = new WPLError(t, msg, SEMANTIC, ERROR);
+    chain.push_back(e);
+  }
+
+  void addSemanticCritWarning(antlr4::Token *t, std::string msg)
+  {
+    WPLError *e = new WPLError(t, msg, SEMANTIC, CRITICAL_WARNING);
+    chain.push_back(e);
+  }
+
+  void addCodegenError(antlr4::Token *t, std::string msg)
+  {
+    WPLError *e = new WPLError(t, msg, CODEGEN, ERROR);
+    chain.push_back(e);
   }
 
   std::string toString()
   {
     std::ostringstream e;
 
-    for (WPLError* error : chain)
+    if(chain.size() == 0) {
+      e << "UNKNOWN ERROR" << std::endl; //FIXME: DO BETTER
+    } 
+
+    for (WPLError *error : chain)
     {
       e << error->toString() << std::endl;
     }
-    
+
     return e.str();
   }
 
-  ErrSev getSeverity() { return chain.at(0)->severity; } //TODO: could theoretically error but not in practice. Also TODO: change this to be the MAX error?
+  ErrSev getSeverity() { return (chain.size() == 0) ?  ERROR : chain.at(0)->severity; } //TODO: change this to be the MAX error?
 };
 
 class WPLErrorHandler
 {
 public:
-  ErrorChain* addSemanticError(antlr4::Token *t, std::string msg)
+  ErrorChain*  newErrorChain() {
+    ErrorChain *e = new ErrorChain(); 
+    errors.push_back(e); 
+
+    return e; //FIXME: DO BETTER!!
+  }
+
+  ErrorChain *addSemanticError(antlr4::Token *t, std::string msg)
   {
     ErrorChain *e = new ErrorChain(t, msg, SEMANTIC, ERROR);
     errors.push_back(e);
@@ -133,20 +166,20 @@ public:
     return e;
   }
 
-  ErrorChain* addSemanticCritWarning(antlr4::Token *t, std::string msg)
+  ErrorChain *addSemanticCritWarning(antlr4::Token *t, std::string msg)
   {
     ErrorChain *e = new ErrorChain(t, msg, SEMANTIC, CRITICAL_WARNING);
     errors.push_back(e);
 
-    return e; 
+    return e;
   }
 
-  ErrorChain* addCodegenError(antlr4::Token *t, std::string msg)
+  ErrorChain *addCodegenError(antlr4::Token *t, std::string msg)
   {
     ErrorChain *e = new ErrorChain(t, msg, CODEGEN, ERROR);
     errors.push_back(e);
 
-    return e; 
+    return e;
   }
 
   std::vector<ErrorChain *> &getErrors() { return errors; }

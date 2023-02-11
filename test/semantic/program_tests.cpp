@@ -2047,9 +2047,9 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][pr
 
   // sv->visitCompilationUnit(tree);
   // REQUIRE_FALSE(sv->hasErrors(ERROR));
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  REQUIRE(TypedOpt);
+  REQUIRE(std::holds_alternative<CompilationUnitNode*>(TypedOpt));
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][program][local-function]")
@@ -2089,10 +2089,10 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  REQUIRE(TypedOpt);
+  REQUIRE(std::holds_alternative<CompilationUnitNode*>(TypedOpt));
 }
 
 TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")
@@ -2137,7 +2137,7 @@ TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
   // REQUIRE(TypedOpt);
@@ -2184,7 +2184,7 @@ TEST_CASE("Redeclaration - p2f", "[semantic][program][local-function]")
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
   // REQUIRE(TypedOpt);
@@ -2232,7 +2232,7 @@ TEST_CASE("Redeclaration - f2p", "[semantic][program][local-function]")
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
   // REQUIRE(TypedOpt);
@@ -2279,7 +2279,7 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
   // REQUIRE(TypedOpt);

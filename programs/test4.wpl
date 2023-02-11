@@ -1,7 +1,7 @@
 extern int func printf(...);
 
 int func mutArgsOne(int i) {
-    if ~(5 < 10) {
+    if !(5 < 10) {
         i := 20;
     } else {
         i := 50; 
@@ -24,7 +24,7 @@ int func mutArgsTwo(int i) {
 }
 
 proc PROCmutArgsOne(int i) {
-    if ~(5 < 10) {
+    if !(5 < 10) {
         i := 20;
     } else {
         i := 50; 

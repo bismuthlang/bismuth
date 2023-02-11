@@ -13,6 +13,9 @@
 #include "LinkedMap.h"
 
 #include <regex>
+#include <variant>
+// typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message;
+// typedef
 
 class SemanticVisitor : WPLBaseVisitor
 {
@@ -38,147 +41,156 @@ public:
     PropertyManager *getBindings() { return bindings; }
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
 
-    std::optional<IConstExprNode *> visitCtx(WPLParser::IConstExprContext *ctx);
-    // std::optional<TypedNode *> visitCtx(WPLParser::IConstExprContext *ctx) { return  }
-    std::any visitIConstExpr(WPLParser::IConstExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    // From C++ Documentation for visitors
+    template <class... Ts>
+    struct overloaded : Ts...
+    {
+        using Ts::operator()...;
+    };
+    template <class... Ts>
+    overloaded(Ts...) -> overloaded<Ts...>;
 
-    std::optional<BooleanConstNode *> visitCtx(WPLParser::BConstExprContext *ctx) { return visitCtx(ctx->booleanConst()); }
-    std::any visitBConstExpr(WPLParser::BConstExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<IConstExprNode *, ErrorChain *> visitCtx(WPLParser::IConstExprContext *ctx);
+    // std::variant<TypedNode*, ErrorChain*> visitCtx(WPLParser::IConstExprContext *ctx) { return  }
+    std::any visitIConstExpr(WPLParser::IConstExprContext *ctx) override { return TNVariantCast<IConstExprNode>(visitCtx(ctx)); }
 
-    std::optional<BooleanConstNode *> visitCtx(WPLParser::BooleanConstContext *ctx);
-    std::any visitBooleanConst(WPLParser::BooleanConstContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<BooleanConstNode *, ErrorChain *> visitCtx(WPLParser::BConstExprContext *ctx) { return visitCtx(ctx->booleanConst()); }
+    std::any visitBConstExpr(WPLParser::BConstExprContext *ctx) override { return TNVariantCast<BooleanConstNode>(visitCtx(ctx)); }
 
-    std::optional<StringConstNode *> visitCtx(WPLParser::SConstExprContext *ctx);
-    std::any visitSConstExpr(WPLParser::SConstExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<BooleanConstNode *, ErrorChain *> visitCtx(WPLParser::BooleanConstContext *ctx);
+    std::any visitBooleanConst(WPLParser::BooleanConstContext *ctx) override { return TNVariantCast<BooleanConstNode>(visitCtx(ctx)); }
 
-    std::optional<LogAndExprNode *> visitCtx(WPLParser::LogAndExprContext *ctx);
-    std::any visitLogAndExpr(WPLParser::LogAndExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<StringConstNode *, ErrorChain *> visitCtx(WPLParser::SConstExprContext *ctx);
+    std::any visitSConstExpr(WPLParser::SConstExprContext *ctx) override { return TNVariantCast<StringConstNode>(visitCtx(ctx)); }
 
-    std::optional<LogOrExprNode *> visitCtx(WPLParser::LogOrExprContext *ctx);
-    std::any visitLogOrExpr(WPLParser::LogOrExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<LogAndExprNode *, ErrorChain *> visitCtx(WPLParser::LogAndExprContext *ctx);
+    std::any visitLogAndExpr(WPLParser::LogAndExprContext *ctx) override { return TNVariantCast<LogAndExprNode>(visitCtx(ctx)); }
 
-    std::optional<EqExprNode *> visitCtx(WPLParser::EqExprContext *ctx);
-    std::any visitEqExpr(WPLParser::EqExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<LogOrExprNode *, ErrorChain *> visitCtx(WPLParser::LogOrExprContext *ctx);
+    std::any visitLogOrExpr(WPLParser::LogOrExprContext *ctx) override { return TNVariantCast<LogOrExprNode>(visitCtx(ctx)); }
 
-    std::optional<UnaryExprNode *> visitCtx(WPLParser::UnaryExprContext *ctx);
-    std::any visitUnaryExpr(WPLParser::UnaryExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<EqExprNode *, ErrorChain *> visitCtx(WPLParser::EqExprContext *ctx);
+    std::any visitEqExpr(WPLParser::EqExprContext *ctx) override { return TNVariantCast<EqExprNode>(visitCtx(ctx)); }
 
-    std::optional<BinaryArithNode *> visitCtx(WPLParser::BinaryArithExprContext *ctx);
-    std::any visitBinaryArithExpr(WPLParser::BinaryArithExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<UnaryExprNode *, ErrorChain *> visitCtx(WPLParser::UnaryExprContext *ctx);
+    std::any visitUnaryExpr(WPLParser::UnaryExprContext *ctx) override { return TNVariantCast<UnaryExprNode>(visitCtx(ctx)); }
 
-    std::optional<TypedNode *> visitCtx(WPLParser::ParenExprContext *ctx);
-    std::any visitParenExpr(WPLParser::ParenExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<BinaryArithNode *, ErrorChain *> visitCtx(WPLParser::BinaryArithExprContext *ctx);
+    std::any visitBinaryArithExpr(WPLParser::BinaryArithExprContext *ctx) override { return TNVariantCast<BinaryArithNode>(visitCtx(ctx)); }
 
-    std::optional<FieldAccessNode *> visitCtx(WPLParser::FieldAccessExprContext *ctx, bool is_rvalue);
-    std::any visitFieldAccessExpr(WPLParser::FieldAccessExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx, true); }
+    std::variant<TypedNode *, ErrorChain *> visitCtx(WPLParser::ParenExprContext *ctx);
+    std::any visitParenExpr(WPLParser::ParenExprContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }
+
+    std::variant<FieldAccessNode *, ErrorChain *> visitCtx(WPLParser::FieldAccessExprContext *ctx, bool is_rvalue);
+    std::any visitFieldAccessExpr(WPLParser::FieldAccessExprContext *ctx) override { return TNVariantCast<FieldAccessNode>(visitCtx(ctx, true)); }
 
     // std::optional<ArrayAccessNode*> visitCtx(WPLParser::ArrayAccessContext *ctx);
-    std::optional<ArrayAccessNode *> visitCtx(WPLParser::ArrayAccessContext *ctx, bool is_rvalue);
-    std::any visitArrayAccess(WPLParser::ArrayAccessContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx, true); }
+    std::variant<ArrayAccessNode *, ErrorChain *> visitCtx(WPLParser::ArrayAccessContext *ctx, bool is_rvalue);
+    std::any visitArrayAccess(WPLParser::ArrayAccessContext *ctx) override { return TNVariantCast<ArrayAccessNode>(visitCtx(ctx, true)); }
 
-    std::optional<ArrayAccessNode *> visitCtx(WPLParser::ArrayAccessExprContext *ctx) { return this->visitCtx(ctx->arrayAccess(), true); }
-    std::any visitArrayAccessExpr(WPLParser::ArrayAccessExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<ArrayAccessNode *, ErrorChain *> visitCtx(WPLParser::ArrayAccessExprContext *ctx) { return this->visitCtx(ctx->arrayAccess(), true); }
+    std::any visitArrayAccessExpr(WPLParser::ArrayAccessExprContext *ctx) override { return TNVariantCast<ArrayAccessNode>(visitCtx(ctx)); }
 
-    std::optional<TypedNode *> visitCtx(WPLParser::ArrayOrVarContext *ctx);
-    std::any visitArrayOrVar(WPLParser::ArrayOrVarContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<TypedNode *, ErrorChain *> visitCtx(WPLParser::ArrayOrVarContext *ctx);
+    std::any visitArrayOrVar(WPLParser::ArrayOrVarContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }
 
-    std::optional<AssignNode *> visitCtx(WPLParser::AssignStatementContext *ctx);
-    std::any visitAssignStatement(WPLParser::AssignStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<AssignNode *, ErrorChain *> visitCtx(WPLParser::AssignStatementContext *ctx);
+    std::any visitAssignStatement(WPLParser::AssignStatementContext *ctx) override { return TNVariantCast<AssignNode>(visitCtx(ctx)); }
 
     std::optional<ParameterListNode> visitCtx(WPLParser::ParameterListContext *ctx);
     std::any visitParameterList(WPLParser::ParameterListContext *ctx) override { return visitCtx(ctx); }
 
-    std::optional<LambdaConstNode *> visitCtx(WPLParser::LambdaConstExprContext *ctx);
-    std::any visitLambdaConstExpr(WPLParser::LambdaConstExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<LambdaConstNode *, ErrorChain *> visitCtx(WPLParser::LambdaConstExprContext *ctx);
+    std::any visitLambdaConstExpr(WPLParser::LambdaConstExprContext *ctx) override { return TNVariantCast<LambdaConstNode>(visitCtx(ctx)); }
 
-    std::optional<BlockNode *> visitCtx(WPLParser::BlockStatementContext *ctx) { return this->visitCtx(ctx->block()); }
-    std::any visitBlockStatement(WPLParser::BlockStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<BlockNode *, ErrorChain *> visitCtx(WPLParser::BlockStatementContext *ctx) { return this->visitCtx(ctx->block()); }
+    std::any visitBlockStatement(WPLParser::BlockStatementContext *ctx) override { return TNVariantCast<BlockNode>(visitCtx(ctx)); }
 
-    std::optional<BlockNode *> visitCtx(WPLParser::BlockContext *ctx) { return this->safeVisitBlock(ctx, true); }
-    std::any visitBlock(WPLParser::BlockContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<BlockNode *, ErrorChain *> visitCtx(WPLParser::BlockContext *ctx) { return this->safeVisitBlock(ctx, true); }
+    std::any visitBlock(WPLParser::BlockContext *ctx) override { return TNVariantCast<BlockNode>(visitCtx(ctx)); }
 
-    std::optional<ExternNode *> visitCtx(WPLParser::ExternStatementContext *ctx);
-    std::any visitExternStatement(WPLParser::ExternStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<ExternNode *, ErrorChain *> visitCtx(WPLParser::ExternStatementContext *ctx);
+    std::any visitExternStatement(WPLParser::ExternStatementContext *ctx) override { return TNVariantCast<ExternNode>(visitCtx(ctx)); }
 
     ParameterNode visitCtx(WPLParser::ParameterContext *ctx);
     std::any visitParameter(WPLParser::ParameterContext *ctx) override { return visitCtx(ctx); }
 
-    std::optional<InvocationNode *> visitCtx(WPLParser::InvocationContext *ctx);
-    std::any visitInvocation(WPLParser::InvocationContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::InvocationContext *ctx);
+    std::any visitInvocation(WPLParser::InvocationContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
 
-    std::optional<InvocationNode *> visitCtx(WPLParser::CallStatementContext *ctx) { return this->visitCtx(ctx->call); }
-    std::any visitCallStatement(WPLParser::CallStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::CallStatementContext *ctx) { return this->visitCtx(ctx->call); }
+    std::any visitCallStatement(WPLParser::CallStatementContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
 
-    std::optional<InvocationNode *> visitCtx(WPLParser::CallExprContext *ctx) { return this->visitCtx(ctx->call); }
-    std::any visitCallExpr(WPLParser::CallExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::CallExprContext *ctx) { return this->visitCtx(ctx->call); }
+    std::any visitCallExpr(WPLParser::CallExprContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
 
-    std::optional<ConditionNode *> visitCtx(WPLParser::ConditionContext *ctx);
-    std::any visitCondition(WPLParser::ConditionContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<ConditionNode *, ErrorChain *> visitCtx(WPLParser::ConditionContext *ctx);
+    std::any visitCondition(WPLParser::ConditionContext *ctx) override { return TNVariantCast<ConditionNode>(visitCtx(ctx)); }
 
-    std::optional<BinaryRelNode *> visitCtx(WPLParser::BinaryRelExprContext *ctx);
-    std::any visitBinaryRelExpr(WPLParser::BinaryRelExprContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<BinaryRelNode *, ErrorChain *> visitCtx(WPLParser::BinaryRelExprContext *ctx);
+    std::any visitBinaryRelExpr(WPLParser::BinaryRelExprContext *ctx) override { return TNVariantCast<BinaryRelNode>(visitCtx(ctx)); }
 
-    std::optional<SelectAlternativeNode *> visitCtx(WPLParser::SelectAlternativeContext *ctx);
-    std::any visitSelectAlternative(WPLParser::SelectAlternativeContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<SelectAlternativeNode *, ErrorChain *> visitCtx(WPLParser::SelectAlternativeContext *ctx);
+    std::any visitSelectAlternative(WPLParser::SelectAlternativeContext *ctx) override { return TNVariantCast<SelectAlternativeNode>(visitCtx(ctx)); }
 
-    std::any visitProgDef(WPLParser::ProgDefContext *ctx) override { return (std::optional<TypedNode *>)this->visitInvokeable(ctx->defineProc()); }
-    std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return (std::optional<TypedNode *>)visitInvokeable(ctx->defineProc()); } // FIXME: DO BETTER!!!
+    std::any visitProgDef(WPLParser::ProgDefContext *ctx) override { return TNVariantCast<ProgramDefNode>(this->visitInvokeable(ctx->defineProc())); }
+    std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return TNVariantCast<ProgramDefNode>(visitInvokeable(ctx->defineProc())); } // FIXME: DO BETTER!!!
 
-    std::optional<LambdaConstNode *> visitCtx(WPLParser::DefineFuncContext *ctx);
-    std::any visitDefineFunc(WPLParser::DefineFuncContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
-    std::any visitFuncDef(WPLParser::FuncDefContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx->defineFunc()); }
-    std::any visitDefineFunction(WPLParser::DefineFunctionContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx->defineFunc()); }
+    std::variant<LambdaConstNode *, ErrorChain *> visitCtx(WPLParser::DefineFuncContext *ctx);
+    std::any visitDefineFunc(WPLParser::DefineFuncContext *ctx) override { return TNVariantCast<LambdaConstNode>(visitCtx(ctx)); }
+    std::any visitFuncDef(WPLParser::FuncDefContext *ctx) override { return TNVariantCast<LambdaConstNode>(visitCtx(ctx->defineFunc())); }
+    std::any visitDefineFunction(WPLParser::DefineFunctionContext *ctx) override { return TNVariantCast<LambdaConstNode>(visitCtx(ctx->defineFunc())); }
 
-    std::optional<SelectStatementNode *> visitCtx(WPLParser::SelectStatementContext *ctx);
-    std::any visitSelectStatement(WPLParser::SelectStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<SelectStatementNode *, ErrorChain *> visitCtx(WPLParser::SelectStatementContext *ctx);
+    std::any visitSelectStatement(WPLParser::SelectStatementContext *ctx) override { return TNVariantCast<SelectStatementNode>(visitCtx(ctx)); }
 
-    std::optional<ConditionalStatementNode *> visitCtx(WPLParser::ConditionalStatementContext *ctx);
-    std::any visitConditionalStatement(WPLParser::ConditionalStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<ConditionalStatementNode *, ErrorChain *> visitCtx(WPLParser::ConditionalStatementContext *ctx);
+    std::any visitConditionalStatement(WPLParser::ConditionalStatementContext *ctx) override { return TNVariantCast<ConditionalStatementNode>(visitCtx(ctx)); }
 
-    std::optional<WhileLoopNode *> visitCtx(WPLParser::ProgramLoopContext *ctx);
-    std::any visitProgramLoop(WPLParser::ProgramLoopContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<WhileLoopNode *, ErrorChain *> visitCtx(WPLParser::ProgramLoopContext *ctx);
+    std::any visitProgramLoop(WPLParser::ProgramLoopContext *ctx) override { return TNVariantCast<WhileLoopNode>(visitCtx(ctx)); }
 
-    std::optional<ReturnNode *> visitCtx(WPLParser::ReturnStatementContext *ctx);
-    std::any visitReturnStatement(WPLParser::ReturnStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<ReturnNode *, ErrorChain *> visitCtx(WPLParser::ReturnStatementContext *ctx);
+    std::any visitReturnStatement(WPLParser::ReturnStatementContext *ctx) override { return TNVariantCast<ReturnNode>(visitCtx(ctx)); }
 
-    std::optional<DefineEnumNode *> visitCtx(WPLParser::DefineEnumContext *ctx);
-    std::any visitDefineEnum(WPLParser::DefineEnumContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<DefineEnumNode *, ErrorChain *> visitCtx(WPLParser::DefineEnumContext *ctx);
+    std::any visitDefineEnum(WPLParser::DefineEnumContext *ctx) override { return TNVariantCast<DefineEnumNode>(visitCtx(ctx)); }
 
-    std::optional<DefineStructNode *> visitCtx(WPLParser::DefineStructContext *ctx);
-    std::any visitDefineStruct(WPLParser::DefineStructContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<DefineStructNode *, ErrorChain *> visitCtx(WPLParser::DefineStructContext *ctx);
+    std::any visitDefineStruct(WPLParser::DefineStructContext *ctx) override { return TNVariantCast<DefineStructNode>(visitCtx(ctx)); }
 
-    std::optional<InitProductNode *> visitCtx(WPLParser::InitProductContext *ctx);
-    std::any visitInitProduct(WPLParser::InitProductContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<InitProductNode *, ErrorChain *> visitCtx(WPLParser::InitProductContext *ctx);
+    std::any visitInitProduct(WPLParser::InitProductContext *ctx) override { return TNVariantCast<InitProductNode>(visitCtx(ctx)); }
 
-    std::optional<ProgramSendNode *> TvisitProgramSend(WPLParser::ProgramSendContext *ctx);
-    std::any visitProgramSend(WPLParser::ProgramSendContext *ctx) override { return (std::optional<TypedNode *>)TvisitProgramSend(ctx); }
+    std::variant<ProgramSendNode *, ErrorChain *> TvisitProgramSend(WPLParser::ProgramSendContext *ctx);
+    std::any visitProgramSend(WPLParser::ProgramSendContext *ctx) override { return TNVariantCast<ProgramSendNode>(TvisitProgramSend(ctx)); }
 
-    std::optional<ProgramRecvNode *> TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx);
-    std::any visitAssignableRecv(WPLParser::AssignableRecvContext *ctx) override { return (std::optional<TypedNode *>)TvisitAssignableRecv(ctx); }
+    std::variant<ProgramRecvNode *, ErrorChain *> TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx);
+    std::any visitAssignableRecv(WPLParser::AssignableRecvContext *ctx) override { return TNVariantCast<ProgramRecvNode>(TvisitAssignableRecv(ctx)); }
 
-    std::optional<ProgramContractNode *> TvisitProgramContract(WPLParser::ProgramContractContext *ctx);
-    std::any visitProgramContract(WPLParser::ProgramContractContext *ctx) override { return (std::optional<TypedNode *>)TvisitProgramContract(ctx); }
+    std::variant<ProgramContractNode *, ErrorChain *> TvisitProgramContract(WPLParser::ProgramContractContext *ctx);
+    std::any visitProgramContract(WPLParser::ProgramContractContext *ctx) override { return TNVariantCast<ProgramContractNode>(TvisitProgramContract(ctx)); }
 
-    std::optional<ProgramWeakenNode *> TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx);
-    std::any visitProgramWeaken(WPLParser::ProgramWeakenContext *ctx) override { return (std::optional<TypedNode *>)TvisitProgramWeaken(ctx); }
+    std::variant<ProgramWeakenNode *, ErrorChain *> TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx);
+    std::any visitProgramWeaken(WPLParser::ProgramWeakenContext *ctx) override { return TNVariantCast<ProgramWeakenNode>(TvisitProgramWeaken(ctx)); }
 
-    std::optional<ProgramExecNode *> TvisitAssignableExec(WPLParser::AssignableExecContext *ctx);
-    std::any visitAssignableExec(WPLParser::AssignableExecContext *ctx) override { return (std::optional<TypedNode *>)TvisitAssignableExec(ctx); }
+    std::variant<ProgramExecNode *, ErrorChain *> TvisitAssignableExec(WPLParser::AssignableExecContext *ctx);
+    std::any visitAssignableExec(WPLParser::AssignableExecContext *ctx) override { return TNVariantCast<ProgramExecNode>(TvisitAssignableExec(ctx)); }
 
-    std::optional<ProgramAcceptNode *> TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx);
-    std::any visitProgramAccept(WPLParser::ProgramAcceptContext *ctx) override { return (std::optional<TypedNode *>)TvisitProgramAccept(ctx); }
+    std::variant<ProgramAcceptNode *, ErrorChain *> TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx);
+    std::any visitProgramAccept(WPLParser::ProgramAcceptContext *ctx) override { return TNVariantCast<ProgramAcceptNode>(TvisitProgramAccept(ctx)); }
 
-    std::optional<CompilationUnitNode *> visitCtx(WPLParser::CompilationUnitContext *ctx);
+    std::variant<CompilationUnitNode *, ErrorChain *> visitCtx(WPLParser::CompilationUnitContext *ctx);
     std::any visitCompilationUnit(WPLParser::CompilationUnitContext *ctx) override { return visitCtx(ctx); }
 
-    std::optional<VarDeclNode *> visitCtx(WPLParser::VarDeclStatementContext *ctx);
-    std::any visitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<VarDeclNode *, ErrorChain *> visitCtx(WPLParser::VarDeclStatementContext *ctx);
+    std::any visitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
 
-    std::optional<MatchStatementNode *> visitCtx(WPLParser::MatchStatementContext *ctx);
-    std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); } // FIXME: CASTS NEEDED B/C OF HOW C++ HANDLES ANYS BY MANGLED NAME!
+    std::variant<MatchStatementNode *, ErrorChain *> visitCtx(WPLParser::MatchStatementContext *ctx);
+    std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // FIXME: CASTS NEEDED B/C OF HOW C++ HANDLES ANYS BY MANGLED NAME!
 
-    std::optional<ExitNode *> visitCtx(WPLParser::ExitStatementContext *ctx);
-    std::any visitExitStatement(WPLParser::ExitStatementContext *ctx) override { return (std::optional<TypedNode *>)visitCtx(ctx); }
+    std::variant<ExitNode *, ErrorChain *> visitCtx(WPLParser::ExitStatementContext *ctx);
+    std::any visitExitStatement(WPLParser::ExitStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
 
     // const Type *visitCtx(WPLParser::VariableExprContext *ctx);
     const Type *visitCtx(WPLParser::AssignmentContext *ctx);
@@ -235,11 +247,11 @@ public:
     // std::any visitVariableExpr(WPLParser::VariableExprContext *ctx) override { return visitCtx(ctx); }
     std::any visitAssignment(WPLParser::AssignmentContext *ctx) override { return visitCtx(ctx); }
 
-    std::optional<ChannelCaseStatementNode *> TvisitProgramCase(WPLParser::ProgramCaseContext *ctx);
-    std::any visitProgramCase(WPLParser::ProgramCaseContext *ctx) override { return (std::optional<TypedNode *>)TvisitProgramCase(ctx); }
+    std::variant<ChannelCaseStatementNode *, ErrorChain *> TvisitProgramCase(WPLParser::ProgramCaseContext *ctx);
+    std::any visitProgramCase(WPLParser::ProgramCaseContext *ctx) override { return TNVariantCast<ChannelCaseStatementNode>(TvisitProgramCase(ctx)); }
 
-    std::optional<ProgramProjectNode *> TvisitProgramProject(WPLParser::ProgramProjectContext *ctx);
-    std::any visitProgramProject(WPLParser::ProgramProjectContext *ctx) override { return (std::optional<TypedNode *>)TvisitProgramProject(ctx); }
+    std::variant<ProgramProjectNode *, ErrorChain *> TvisitProgramProject(WPLParser::ProgramProjectContext *ctx);
+    std::any visitProgramProject(WPLParser::ProgramProjectContext *ctx) override { return TNVariantCast<ProgramProjectNode>(TvisitProgramProject(ctx)); }
 
     /**
      * @brief Used to safely enter a block. This is used to ensure there aren't FUNC/PROC definitions / code following returns in it.
@@ -248,7 +260,7 @@ public:
      * @param newScope  true if we should enter a new scope, false otherwise
      * @return const Type* Types::UNDEFINED as this is a statement and not a value
      */
-    std::optional<BlockNode *> safeVisitBlock(WPLParser::BlockContext *ctx, bool newScope)
+    std::variant<BlockNode *, ErrorChain *> safeVisitBlock(WPLParser::BlockContext *ctx, bool newScope)
     {
         // Enter a new scope if desired
         if (newScope)
@@ -261,12 +273,16 @@ public:
         for (auto e : ctx->stmts)
         {
             // Visit all the statements in the block
-            std::optional<TypedNode *> tnOpt = anyOpt2Val<TypedNode *>(e->accept(this));
+            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
 
-            if (!tnOpt)
-                return {}; // FIXME: DO BETTER
+            std::cout << e->getText() << std::endl; 
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
+            {
+                (*e)->addSemanticError(ctx->getStart(), "h280");
+                return *e;
+            }
 
-            nodes.push_back(tnOpt.value());
+            nodes.push_back(std::get<TypedNode*>(tnOpt));
 
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
@@ -297,14 +313,13 @@ public:
      * @param block The PROC/FUNC block
      * @return const Type* TypeInvoke if successful, empty if error
      */
-    std::optional<ProgramDefNode *> visitInvokeable(WPLParser::DefineProcContext *ctx)
+    std::variant<ProgramDefNode *, ErrorChain *> visitInvokeable(WPLParser::DefineProcContext *ctx)
     {
         std::optional<Symbol *> symOpt = bindings->getBinding(ctx);
 
         if (!symOpt && stmgr->lookupInCurrentScope(ctx->name->getText()))
         {
-            errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
-            return {};
+            return errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
         }
 
         Symbol *sym = symOpt.value_or(
@@ -351,12 +366,15 @@ public:
 
             stmgr->addSymbol(channelSymbol);
             // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
-            stmgr->addSymbol(new Symbol("@EXIT", Types::UNIT, false, false)); 
+            stmgr->addSymbol(new Symbol("@EXIT", Types::UNIT, false, false));
 
             // Safe visit the program block without creating a new scope (as we are managing the scope)
-            std::optional<BlockNode *> blkOpt = this->safeVisitBlock(ctx->block(), false);
-            if (!blkOpt)
-                return {};
+            std::variant<BlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
+            {
+                (*e)->addSemanticError(ctx->getStart(), "h374");
+                return *e;
+            }
 
             // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
             // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
@@ -366,19 +384,17 @@ public:
 
             // Safe exit the scope.
             safeExitScope(ctx);
-            
-            return new ProgramDefNode(funcId, channelSymbol, blkOpt.value(), funcType);
+
+            return new ProgramDefNode(funcId, channelSymbol, std::get<BlockNode *>(blkOpt), funcType);
         }
         else
         {
-            errorHandler.addSemanticError(ctx->getStart(), "Cannot invoke " + sym->toString());
-            return {};
+            return errorHandler.addSemanticError(ctx->getStart(), "Cannot invoke " + sym->toString());
         }
     }
 
     const Type *any2Type(std::any any)
     {
-        // if(!any) return {};
         std::optional<const Type *> valOpt = any2Opt<const Type *>(any);
         if (!valOpt)
             return Types::ABSURD;
@@ -387,8 +403,6 @@ public:
 
     const Protocol *any2Protocol(std::any any)
     {
-        // if(!any) return {};
-
         if (const Protocol *valOpt = std::any_cast<const Protocol *>(any))
             return valOpt;
 
