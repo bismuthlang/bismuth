@@ -788,8 +788,7 @@ std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
             return {};
         }
 
-        Value *v = builder->CreateNSWSub(builder->getInt32(0), innerVal.value());
-        return v;
+        return builder->CreateNSWSub(builder->getInt32(0), innerVal.value());
     }
 
     case UNARY_NOT:
@@ -802,8 +801,7 @@ std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
             return {};
         }
 
-        Value *v = builder->CreateNot(innerVal.value()); // FIXME: VERIFY!
-        return v;
+        return builder->CreateNot(innerVal.value());
     }
     }
 }
@@ -843,7 +841,7 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
         return {};
     }
 
-    switch (n->op) // FIXME: STILL NEED THIS!!
+    switch (n->op) 
     {
     case EQUAL_OP:
     {
@@ -859,9 +857,6 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
         return v;
     }
     }
-
-    // errorHandler.addCodegenError(n->getStart(), "Unknown equality operator: " + ctx->op->getText());
-    return {};
 }
 
 /**

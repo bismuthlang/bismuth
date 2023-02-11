@@ -3,7 +3,7 @@
 #include "Symbol.h" //Should give us symbols and yyues...
 #include <variant>
 
-#include "antlr4-runtime.h" //For token 
+#include "antlr4-runtime.h" //For token
 
 using namespace std;
 using llvm::Value;
@@ -15,7 +15,7 @@ class TypedASTVisitor;
 class TypedNode
 {
 public:
-    antlr4::Token *token;       // Location of node
+    antlr4::Token *token; // Location of node
     TypedNode(antlr4::Token *tok) : token(tok) {}
 
     virtual ~TypedNode() = default;
@@ -24,8 +24,16 @@ public:
 
     virtual std::any accept(TypedASTVisitor *a) = 0;
 
-    antlr4::Token * getStart() { return token; }
+    antlr4::Token *getStart() { return token; }
 };
+// From C++ Documentation for visitors
+template <class... Ts>
+struct overloaded : Ts...
+{
+    using Ts::operator()...;
+};
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
 
 class SelectAlternativeNode;
 class SelectStatementNode;
@@ -69,7 +77,7 @@ class MatchStatementNode;
 class ExitNode;
 
 class ChannelCaseStatementNode;
-class ProgramProjectNode; 
+class ProgramProjectNode;
 
 class TypedASTVisitor
 {
@@ -115,7 +123,7 @@ public:
     virtual std::optional<Value *> visit(MatchStatementNode *n) = 0;
     virtual std::optional<Value *> visit(ExitNode *n) = 0;
     virtual std::optional<Value *> visit(ChannelCaseStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramProjectNode *n) = 0; 
+    virtual std::optional<Value *> visit(ProgramProjectNode *n) = 0;
 
     // virtual std::optional<Value
 
@@ -187,7 +195,7 @@ public:
         eval = e;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } //FIXME: MAYBE ABSURD? bc syntax but no
+    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: MAYBE ABSURD? bc syntax but no
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -208,7 +216,7 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ConditionNode : public TypedNode //FIXME: PROBABLY ISNT NEEDED
+class ConditionNode : public TypedNode // FIXME: PROBABLY ISNT NEEDED
 {
 public:
     TypedNode *condition;
@@ -302,7 +310,7 @@ public:
     // TypeChannel * channelType;
     BlockNode *block;
 
-    ProgramDefNode(string n, Symbol *cn, BlockNode *b, const TypeProgram *ty , antlr4::Token *tok) : TypedNode(tok)
+    ProgramDefNode(string n, Symbol *cn, BlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         channelSymbol = cn;
@@ -380,7 +388,7 @@ public:
     {
         expr = e;
     }
-    
+
     const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -434,7 +442,7 @@ public:
 class ProgramContractNode : public TypedNode
 {
 public:
-Symbol *sym;
+    Symbol *sym;
 
     ProgramContractNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
     {
@@ -557,7 +565,7 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ExternNode : public TypedNode 
+class ExternNode : public TypedNode
 {
 private:
     Symbol *sym;
@@ -958,15 +966,16 @@ public:
 class ChannelCaseStatementNode : public TypedNode
 {
 public:
-    // TypedNode *checkExpr; 
-    Symbol * sym; 
-    vector<TypedNode *> cases; 
+    // TypedNode *checkExpr;
+    Symbol *sym;
+    vector<TypedNode *> cases;
     vector<TypedNode *> post;
 
-    ChannelCaseStatementNode(Symbol* c, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok) {
-        sym = c; 
-        cases = v; 
-        post = p; 
+    ChannelCaseStatementNode(Symbol *c, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
+    {
+        sym = c;
+        cases = v;
+        post = p;
     }
 
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
@@ -977,16 +986,16 @@ public:
     }
 };
 
-class ProgramProjectNode : public TypedNode //FIXME: DO BETTER, VERY SIMILAR TO SEND
+class ProgramProjectNode : public TypedNode // FIXME: DO BETTER, VERY SIMILAR TO SEND
 {
 public:
     Symbol *sym;
-    unsigned int projectIndex; 
+    unsigned int projectIndex;
 
     ProgramProjectNode(Symbol *s, unsigned int p, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
-        projectIndex = p; 
+        projectIndex = p;
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
