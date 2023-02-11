@@ -104,7 +104,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
      ***********************************/
     for (auto e : n->defs)
     {
-        if (std::holds_alternative<ProgramDefNode *>(e)) // ProgramDefNode *octx = dynamic_cast<ProgramDefNode *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
+        if (std::holds_alternative<ProgramDefNode *>(e))
         {
 
             ProgramDefNode *octx = std::get<ProgramDefNode *>(e);
@@ -124,7 +124,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
                 return {};
             }
         }
-        else if (std::holds_alternative<LambdaConstNode *>(e)) // ProgramDefNode *octx = dynamic_cast<ProgramDefNode *>(e)) // FIXME: MAY USE WRONG TYPE HERE IN SEMANTIC ANALYSIS!
+        else if (std::holds_alternative<LambdaConstNode *>(e))
         {
             LambdaConstNode *octx = std::get<LambdaConstNode *>(e);
 
@@ -143,16 +143,6 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
                 return {};
             }
         }
-        // else if (std::holds_alternative<DefineEnumNode *>(e)) // FIXME: DO BETTER
-        // {
-        //     DefineEnumNode *a = std::get<DefineEnumNode *>(e);
-        //     AcceptType(this, a); // TODO: remove this?
-        // }
-        // else
-        // {
-        //     DefineStructNode *a = std::get<DefineStructNode *>(e);
-        //     AcceptType(this, a); // TODO: remove this?
-        // }
     }
 
     for (auto e : n->externs)
@@ -1353,8 +1343,6 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 {
-    // FIXME: WE NEED TO START LOOP IN HERE
-
     // Very similar to conditionals
 
     std::optional<Value *> check = this->visit(n->cond);
@@ -1371,9 +1359,6 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
     BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
 
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
-
-    // Need to add here otherwise we will overwrite it
-    // parent->getBasicBlockList().push_back(loopBlk);
 
     /*
      * In the loop block
@@ -1634,7 +1619,7 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
     return v;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ExitNode *n) // FIXME: VERIFY/DO BETTER
+std::optional<Value *> CodegenVisitor::visit(ExitNode *n)
 {
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
     Value *v = builder->CreateRetVoid();
@@ -1697,7 +1682,7 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
             llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
 
             // Try to find the parameter's bnding to determine what value to bind to it.
-            // std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber)); // FIXME: STILL NEED TO DO THIS
+            // std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber)); // FIXME: STILL NEED TO DO THIS (what for? enums?)
 
             param->val = v; // FIXME: DO WE NEED TO CHECK IF ALREADY SET?
 

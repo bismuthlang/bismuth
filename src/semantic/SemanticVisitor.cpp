@@ -1404,7 +1404,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
             std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                (*e)->addSemanticError(ctx->getStart(), "1394");
+                (*e)->addSemanticError(ctx->trueBlk->getStart(), "Error in visiting code after flowing through then block of if statement.");
                 valid = false;
                 // return *e;
             }
@@ -1447,7 +1447,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
 
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
                 {
-                    (*e)->addSemanticError(ctx->getStart(), "1437");
+                    (*e)->addSemanticError(ctx->falseBlk->getStart(), "Error in visiting code after flowing through else block of if statement.");
                     valid = false;
                     // return *e;
                 }
@@ -1461,7 +1461,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
         safeExitScope(ctx);
 
         if (!valid)
-            return errorHandler.addSemanticError(ctx->getStart(), "1149");
+            return errorHandler.addSemanticError(ctx->getStart(), "Failed to generate one or more cases in if statement.");
 
         return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), trueBlk, restVec, falseBlk);
     }
