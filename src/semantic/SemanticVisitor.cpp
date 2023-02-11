@@ -637,7 +637,7 @@ std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
                                           : ctx->PLUS()     ? BINARY_ARITH_PLUS
                                                             : BINARY_ARITH_MINUS,
         left,
-        right, 
+        right,
         ctx->getStart());
 }
 
@@ -910,7 +910,7 @@ std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
                                     : ctx->GREATER()   ? BINARY_Rel_GREATER
                                                        : BINARY_Rel_GREATER_EQ,
         left,
-        right, 
+        right,
         ctx->getStart());
 }
 
@@ -1097,7 +1097,7 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
             {
                 // if (!(e->a))
                 //     return errorHandler.addCodegenError(ctx->getStart(), "FALSE!");
-                std::optional<TypedNode*> exprOpt = std::nullopt;
+                std::optional<TypedNode *> exprOpt = std::nullopt;
 
                 if (e->a)
                 {
@@ -1406,14 +1406,9 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
             {
                 (*e)->addSemanticError(ctx->trueBlk->getStart(), "Error in visiting code after flowing through then block of if statement.");
                 valid = false;
-                // return *e;
             }
             else
                 restVec.push_back(std::get<TypedNode *>(tnOpt));
-            // if (!tnOpt)
-            //     valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
-            // else
-            //     restVec.push_back(tnOpt.value());
         }
     }
     safeExitScope(ctx);
@@ -1449,10 +1444,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
                 {
                     (*e)->addSemanticError(ctx->falseBlk->getStart(), "Error in visiting code after flowing through else block of if statement.");
                     valid = false;
-                    // return *e;
                 }
-                // if (!tnOpt)
-                //     valid = false;       // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
                 else if (!restGenerated) // FIXME: DO OPTIMIZATIONS IF THIS ISNT NEEDED!
                     restVec.push_back(std::get<TypedNode *>(tnOpt));
             }
@@ -2290,7 +2282,7 @@ std::variant<ProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableE
     {
         return new ProgramExecNode(
             prog,
-            new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse())), 
+            new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse())),
             ctx->getStart());
     }
 

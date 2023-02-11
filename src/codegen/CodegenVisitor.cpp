@@ -547,7 +547,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(n->getStart(), "Could not find value for channel in contract: " + n->sym->getIdentifier()); 
+        errorHandler.addCodegenError(n->getStart(), "Could not find value for channel in contract: " + n->sym->getIdentifier());
         return {};
     }
 
@@ -571,8 +571,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
     Value *chanVal = sym->val.value();
 
     builder->CreateCall(module->getFunction("WeakenChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
-
-    // FIXME: MAKE SURE TO FREE ON RECV!
+    
     return {};
 }
 
@@ -831,7 +830,7 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
         return {};
     }
 
-    switch (n->op) 
+    switch (n->op)
     {
     case EQUAL_OP:
     {
@@ -919,8 +918,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
      */
     parent->getBasicBlockList().push_back(mergeBlk);
     builder->SetInsertPoint(mergeBlk);
-
-    // phi->addIncoming(rhs.value(), falseBlk);
+    
     return phi;
 }
 
@@ -994,7 +992,6 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
     parent->getBasicBlockList().push_back(mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
-    // phi->addIncoming(rhs.value(), falseBlk);
     return phi;
 }
 
@@ -1526,7 +1523,6 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
          */
         if (BlockNode *blk = dynamic_cast<BlockNode *>(evalCase->eval))
         {
-            // if (!CodegenVisitor::blockEndsInReturn(blk))
             if (!endsInReturn(blk))
             {
                 builder->CreateBr(mergeBlk);
@@ -1565,7 +1561,6 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
         AcceptType(this, s);
     }
 
-    // std::optional<Value *> ans = {};
     return std::nullopt;
 }
 
@@ -1609,34 +1604,28 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
         }
 
         // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.
-        Value *v = builder->CreateRet(inner);
-
-        return v;
+        return builder->CreateRet(inner);
     }
 
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
-    Value *v = builder->CreateRetVoid();
-    return v;
+    return  builder->CreateRetVoid();
 }
 
 std::optional<Value *> CodegenVisitor::visit(ExitNode *n)
 {
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
-    Value *v = builder->CreateRetVoid();
-    return v;
+    return builder->CreateRetVoid();
 }
 
 std::optional<Value *> CodegenVisitor::visit(BooleanConstNode *n)
 {
-    Value *val = n->value ? builder->getTrue() : builder->getFalse();
-    return val;
+    return n->value ? builder->getTrue() : builder->getFalse();
 }
 
 std::optional<Value *> CodegenVisitor::visit(BlockNode *n)
 {
     for (auto e : n->exprs)
     {
-        // e->accept(this);
         AcceptType(this, e);
     }
 
@@ -1654,9 +1643,8 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 
     if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType)) // FIXME: MAKE THIS THE RETURN TYPE OF TypeInvoke's getLLVMTYPE
     {
-        // Function *fn = Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module); ///"LAM", module);
         Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
-        type->setName(fn->getName().str()); // FIXME: NOT ALWAYS NEEDED
+        type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED
 
         std::vector<Symbol *> paramList = n->paramSymbols;
 
@@ -1712,12 +1700,3 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 
     return {};
 }
-
-/*
- *
- * UNUSED VISITORS
- * ===============
- *
- * These are visitors which should NEVER be seen during the compilation process.
- *
- */
