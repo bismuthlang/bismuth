@@ -1,6 +1,6 @@
 extern int func printf(...);
 
-int func mutArgsOne(int i) {
+define func mutArgsOne(int i) : int {
     if !(5 < 10) {
         i := 20;
     } else {
@@ -12,7 +12,7 @@ int func mutArgsOne(int i) {
 }
 
 
-int func mutArgsTwo(int i) {
+define func mutArgsTwo(int i) : int {
     if (5 < 10) {
         i := 20;
     } else {
@@ -23,7 +23,7 @@ int func mutArgsTwo(int i) {
     return i; 
 }
 
-proc PROCmutArgsOne(int i) {
+define func PROCmutArgsOne(int i) {
     if !(5 < 10) {
         i := 20;
     } else {
@@ -35,7 +35,7 @@ proc PROCmutArgsOne(int i) {
 }
 
 
-proc PROCmutArgsTwo(int i) {
+define func PROCmutArgsTwo(int i) {
     if (5 < 10) {
         i := 20;
     } else {
