@@ -3,6 +3,8 @@
 #include "Symbol.h" //Should give us symbols and yyues...
 #include <variant>
 
+#include "antlr4-runtime.h" //For token 
+
 using namespace std;
 using llvm::Value;
 
@@ -13,11 +15,16 @@ class TypedASTVisitor;
 class TypedNode
 {
 public:
+    antlr4::Token *token;       // Location of node
+    TypedNode(antlr4::Token *tok) : token(tok) {}
+
     virtual ~TypedNode() = default;
 
     virtual const Type *getType() = 0;
 
     virtual std::any accept(TypedASTVisitor *a) = 0;
+
+    antlr4::Token * getStart() { return token; }
 };
 
 class SelectAlternativeNode;
@@ -174,7 +181,7 @@ public:
     TypedNode *check;
     TypedNode *eval;
 
-    SelectAlternativeNode(TypedNode *c, TypedNode *e)
+    SelectAlternativeNode(TypedNode *c, TypedNode *e, antlr4::Token *tok) : TypedNode(tok)
     {
         check = c;
         eval = e;
@@ -191,7 +198,7 @@ public:
     vector<SelectAlternativeNode *> nodes;
     vector<TypedNode *> post;
 
-    SelectStatementNode(vector<SelectAlternativeNode *> n, vector<TypedNode *> p)
+    SelectStatementNode(antlr4::Token *tok, vector<SelectAlternativeNode *> n, vector<TypedNode *> p) : TypedNode(tok)
     {
         nodes = n;
         post = p;
@@ -206,7 +213,7 @@ class ConditionNode : public TypedNode //FIXME: PROBABLY ISNT NEEDED
 public:
     TypedNode *condition;
 
-    ConditionNode(TypedNode *c)
+    ConditionNode(TypedNode *c, antlr4::Token *tok) : TypedNode(tok)
     {
         condition = c;
     }
@@ -221,7 +228,7 @@ class BlockNode : public TypedNode
 public:
     vector<TypedNode *> exprs;
 
-    BlockNode(vector<TypedNode *> e)
+    BlockNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         exprs = e;
     }
@@ -258,7 +265,7 @@ public:
     BlockNode *block;
     TypeInvoke *type;
 
-    LambdaConstNode(vector<Symbol *> p, const Type *r, BlockNode *b, string n = "LAM")
+    LambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, BlockNode *b, string n = "LAM") : TypedNode(tok)
     {
         // paramList = p;
         paramSymbols = p;
@@ -295,7 +302,7 @@ public:
     // TypeChannel * channelType;
     BlockNode *block;
 
-    ProgramDefNode(string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
+    ProgramDefNode(string n, Symbol *cn, BlockNode *b, const TypeProgram *ty , antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         channelSymbol = cn;
@@ -320,7 +327,7 @@ public:
     BlockNode *block;
 
     // FIXME: WHY DO WE REQUIRE PARAM LIST NODE AND SUCH WEHEN WE HAVE TO CREATE THAT MANUALLY AS PART OF TYPECHECK ANYWAYS?
-    FunctionDefNode(std::string id, ParameterListNode p, const Type *r, BlockNode *b) // string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
+    FunctionDefNode(std::string id, ParameterListNode p, const Type *r, BlockNode *b, antlr4::Token *tok) : TypedNode(tok) // string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
     {
         vector<const Type *> paramTypes;
 
@@ -351,7 +358,7 @@ public:
 
     std::vector<TypedNode *> post;
 
-    ConditionalStatementNode(ConditionNode *c, BlockNode *t, std::vector<TypedNode *> p, std::optional<BlockNode *> f = {})
+    ConditionalStatementNode(antlr4::Token *tok, ConditionNode *c, BlockNode *t, std::vector<TypedNode *> p, std::optional<BlockNode *> f = {}) : TypedNode(tok)
     {
         cond = c;
         trueBlk = t;
@@ -369,7 +376,7 @@ public:
     // First is the actual type
     optional<pair<const Type *, TypedNode *>> expr;
 
-    ReturnNode(optional<pair<const Type *, TypedNode *>> e = {})
+    ReturnNode(antlr4::Token *tok, optional<pair<const Type *, TypedNode *>> e = {}) : TypedNode(tok)
     {
         expr = e;
     }
@@ -381,7 +388,7 @@ public:
 class ExitNode : public TypedNode
 {
 public:
-    ExitNode()
+    ExitNode(antlr4::Token *tok) : TypedNode(tok)
     {
     }
 
@@ -396,7 +403,7 @@ public:
     TypedNode *expr;
     const Type *lType; // Tracks type send expects. Needed for sums
 
-    ProgramSendNode(Symbol *s, TypedNode *e, const Type *l)
+    ProgramSendNode(Symbol *s, TypedNode *e, const Type *l, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         expr = e;
@@ -413,7 +420,7 @@ public:
     Symbol *sym;
     const Type *ty;
 
-    ProgramRecvNode(Symbol *s, const Type *t)
+    ProgramRecvNode(Symbol *s, const Type *t, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         // expr = e;
@@ -429,7 +436,7 @@ class ProgramContractNode : public TypedNode
 public:
 Symbol *sym;
 
-    ProgramContractNode(Symbol *s)
+    ProgramContractNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
     }
@@ -443,7 +450,7 @@ class ProgramWeakenNode : public TypedNode // FIXME: COMBINE THIS WITH PREV AND 
 public:
     Symbol *sym;
 
-    ProgramWeakenNode(Symbol *s)
+    ProgramWeakenNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
     }
@@ -458,7 +465,7 @@ public:
     TypedNode *prog;
     TypeChannel *chanType;
 
-    ProgramExecNode(TypedNode *p, TypeChannel *c)
+    ProgramExecNode(TypedNode *p, TypeChannel *c, antlr4::Token *tok) : TypedNode(tok)
     {
         prog = p;
         chanType = c;
@@ -474,7 +481,7 @@ public:
     Symbol *sym;
     BlockNode *blk;
 
-    ProgramAcceptNode(Symbol *s, BlockNode *b)
+    ProgramAcceptNode(Symbol *s, BlockNode *b, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         blk = b;
@@ -490,7 +497,7 @@ public:
     string name;
     TypeSum *sum;
 
-    DefineEnumNode(string n, TypeSum *s)
+    DefineEnumNode(string n, TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;
@@ -507,7 +514,7 @@ public:
     string name;
     TypeStruct *product;
 
-    DefineStructNode(string n, TypeStruct *p)
+    DefineStructNode(string n, TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;
@@ -524,7 +531,7 @@ public:
     const TypeStruct *product;
     vector<TypedNode *> exprs;
 
-    InitProductNode(const TypeStruct *p, vector<TypedNode *> e)
+    InitProductNode(const TypeStruct *p, vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         product = p;
         exprs = e;
@@ -540,7 +547,7 @@ public:
     ConditionNode *cond;
     BlockNode *blk;
 
-    WhileLoopNode(ConditionNode *c, BlockNode *t)
+    WhileLoopNode(ConditionNode *c, BlockNode *t, antlr4::Token *tok) : TypedNode(tok)
     {
         cond = c;
         blk = t;
@@ -557,7 +564,7 @@ private:
     const TypeInvoke *ty; // FIXME: ISNT REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
-    ExternNode(std::string id, ParameterListNode p, const Type *r, bool v)
+    ExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
     {
         vector<const Type *> paramTypes;
 
@@ -586,7 +593,7 @@ public:
     vector<TypedNode *> args;
     vector<const Type *> paramType; // Used for sums
 
-    InvocationNode(TypedNode *f, vector<TypedNode *> a, vector<const Type *> p)
+    InvocationNode(TypedNode *f, vector<TypedNode *> a, vector<const Type *> p, antlr4::Token *tok) : TypedNode(tok)
     {
         fn = f;
         args = a;
@@ -613,7 +620,7 @@ public:
     vector<pair<string, const Type *>> accesses;
     bool is_rvalue;
 
-    FieldAccessNode(Symbol *f, bool rv, vector<pair<string, const Type *>> r = {})
+    FieldAccessNode(antlr4::Token *tok, Symbol *f, bool rv, vector<pair<string, const Type *>> r = {}) : TypedNode(tok)
     {
         symbol = f;
         is_rvalue = rv;
@@ -643,7 +650,7 @@ public:
     Symbol *symbol;
     bool is_rvalue;
 
-    VariableIDNode(Symbol *f, bool r)
+    VariableIDNode(Symbol *f, bool r, antlr4::Token *tok) : TypedNode(tok)
     {
         symbol = f;
         is_rvalue = r;
@@ -664,7 +671,7 @@ public:
     TypedNode *indexExpr;
     bool is_rvalue;
 
-    ArrayAccessNode(FieldAccessNode *f, TypedNode *i, bool r)
+    ArrayAccessNode(FieldAccessNode *f, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
     {
         field = f;
         indexExpr = i;
@@ -684,7 +691,7 @@ public:
     TypedNode *var; // FIXME: DO THESE FIELDS BETTER (THEIR TYPES AND SUCH)
     TypedNode *val;
 
-    AssignNode(TypedNode *sym, TypedNode *v)
+    AssignNode(TypedNode *sym, TypedNode *v, antlr4::Token *tok) : TypedNode(tok)
     {
         var = sym;
         val = v;
@@ -710,7 +717,7 @@ public:
     TypedNode *lhs;
     TypedNode *rhs;
 
-    BinaryRelNode(BinaryRelOperator o, TypedNode *l, TypedNode *r)
+    BinaryRelNode(BinaryRelOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         lhs = l;
@@ -736,7 +743,7 @@ public:
     TypedNode *lhs;
     TypedNode *rhs;
 
-    BinaryArithNode(BinaryArithOperator o, TypedNode *l, TypedNode *r)
+    BinaryArithNode(BinaryArithOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         lhs = l;
@@ -760,7 +767,7 @@ public:
     TypedNode *lhs;
     TypedNode *rhs;
 
-    EqExprNode(EqExprOperator o, TypedNode *l, TypedNode *r)
+    EqExprNode(EqExprOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         lhs = l;
@@ -783,7 +790,7 @@ public:
     UnaryOperator op;
     TypedNode *value;
 
-    UnaryExprNode(UnaryOperator o, TypedNode *v)
+    UnaryExprNode(UnaryOperator o, TypedNode *v, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         value = v;
@@ -807,7 +814,7 @@ class LogAndExprNode : public TypedNode
 public:
     vector<TypedNode *> exprs;
 
-    LogAndExprNode(vector<TypedNode *> e)
+    LogAndExprNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         exprs = e;
     }
@@ -823,7 +830,7 @@ class LogOrExprNode : public TypedNode
 public:
     vector<TypedNode *> exprs;
 
-    LogOrExprNode(vector<TypedNode *> e)
+    LogOrExprNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         exprs = e;
     }
@@ -839,7 +846,7 @@ class StringConstNode : public TypedNode
 public:
     string value;
 
-    StringConstNode(string s)
+    StringConstNode(string s, antlr4::Token *tok) : TypedNode(tok)
     {
         value = s;
     }
@@ -853,7 +860,7 @@ class BooleanConstNode : public TypedNode
 public:
     bool value;
 
-    BooleanConstNode(bool b)
+    BooleanConstNode(bool b, antlr4::Token *tok) : TypedNode(tok)
     {
         value = b;
     }
@@ -867,7 +874,7 @@ class IConstExprNode : public TypedNode
 public:
     int value;
 
-    IConstExprNode(int v)
+    IConstExprNode(int v, antlr4::Token *tok) : TypedNode(tok)
     {
         value = v;
     }
@@ -912,7 +919,7 @@ class VarDeclNode : public TypedNode
 {
 public:
     vector<AssignmentNode *> assignments;
-    VarDeclNode(vector<AssignmentNode *> a)
+    VarDeclNode(vector<AssignmentNode *> a, antlr4::Token *tok) : TypedNode(tok)
     {
         assignments = a;
     }
@@ -931,7 +938,7 @@ public:
 
     vector<TypedNode *> post;
 
-    MatchStatementNode(const TypeSum *m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p)
+    MatchStatementNode(const TypeSum *m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
     {
         matchType = m;
         checkExpr = e;
@@ -956,7 +963,7 @@ public:
     vector<TypedNode *> cases; 
     vector<TypedNode *> post;
 
-    ChannelCaseStatementNode(Symbol* c, vector<TypedNode *> v, vector<TypedNode *> p) {
+    ChannelCaseStatementNode(Symbol* c, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok) {
         sym = c; 
         cases = v; 
         post = p; 
@@ -976,7 +983,7 @@ public:
     Symbol *sym;
     unsigned int projectIndex; 
 
-    ProgramProjectNode(Symbol *s, unsigned int p)
+    ProgramProjectNode(Symbol *s, unsigned int p, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         projectIndex = p; 

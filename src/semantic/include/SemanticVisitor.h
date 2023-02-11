@@ -300,7 +300,7 @@ public:
         if (newScope)
             this->safeExitScope(ctx);
 
-        return new BlockNode(nodes); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
+        return new BlockNode(nodes, ctx->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
 
     /**
@@ -385,7 +385,7 @@ public:
             // Safe exit the scope.
             safeExitScope(ctx);
 
-            return new ProgramDefNode(funcId, channelSymbol, std::get<BlockNode *>(blkOpt), funcType);
+            return new ProgramDefNode(funcId, channelSymbol, std::get<BlockNode *>(blkOpt), funcType, ctx->getStart());
         }
         else
         {

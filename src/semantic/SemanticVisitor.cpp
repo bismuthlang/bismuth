@@ -310,7 +310,7 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
             }
         }
 
-        return new InvocationNode(tn, args, actualTypes);
+        return new InvocationNode(tn, args, actualTypes, ctx->getStart());
     }
 
     // Symbol was not an invokeable type, so report an error & return UNDEFINED.
@@ -437,7 +437,7 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
             }
         }
 
-        return new InitProductNode(product, n); // FIXME: SHOULD NOT RETURN THIS IF THE ARGS FAIL!!
+        return new InitProductNode(product, n, ctx->getStart()); // FIXME: SHOULD NOT RETURN THIS IF THE ARGS FAIL!!
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString());
@@ -484,7 +484,7 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
 
     if (const TypeArray *arr = dynamic_cast<const TypeArray *>(field->getType())) // FIXME: Verify that the symbol type matches the return type ?
     {
-        return new ArrayAccessNode(field, expr, is_rvalue); // FIXME: THIS SHOULD NOT HAPPEN IF INDEX CHECK FAILS!
+        return new ArrayAccessNode(field, expr, is_rvalue, ctx->getStart()); // FIXME: THIS SHOULD NOT HAPPEN IF INDEX CHECK FAILS!
     }
 
     // Report error
@@ -509,7 +509,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Arr
 
 std::variant<IConstExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::IConstExprContext *ctx)
 {
-    return new IConstExprNode(std::stoi(ctx->i->getText()));
+    return new IConstExprNode(std::stoi(ctx->i->getText()), ctx->getStart());
 }
 
 std::variant<StringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SConstExprContext *ctx)
@@ -552,7 +552,7 @@ std::variant<StringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
         out = regex_replace(out, e.first, e.second);
     }
 
-    return new StringConstNode(out);
+    return new StringConstNode(out, ctx->getStart());
 }
 
 /**
@@ -584,13 +584,13 @@ std::variant<UnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
         {
             return errorHandler.addSemanticError(ctx->getStart(), "INT expected in unary minus, but got " + innerType->toString());
         }
-        return new UnaryExprNode(UNARY_MINUS, innerNode);
+        return new UnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
     case WPLParser::NOT:
         if (innerType->isNotSubtype(Types::BOOL))
         {
             return errorHandler.addSemanticError(ctx->getStart(), "BOOL expected in unary not, but got " + innerType->toString());
         }
-        return new UnaryExprNode(UNARY_NOT, innerNode);
+        return new UnaryExprNode(UNARY_NOT, innerNode, ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "605");
@@ -637,7 +637,8 @@ std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
                                           : ctx->PLUS()     ? BINARY_ARITH_PLUS
                                                             : BINARY_ARITH_MINUS,
         left,
-        right);
+        right, 
+        ctx->getStart());
 }
 
 std::variant<EqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::EqExprContext *ctx)
@@ -675,7 +676,7 @@ std::variant<EqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Eq
 
     return new EqExprNode(
         ctx->EQUAL() ? EQUAL_OP : NOT_EQUAL_OP,
-        lhs, rhs);
+        lhs, rhs, ctx->getStart());
 }
 
 /**
@@ -728,7 +729,7 @@ std::variant<LogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
             nodes.push_back(node);
         }
     }
-    return new LogAndExprNode(nodes);
+    return new LogAndExprNode(nodes, ctx->getStart());
 }
 
 /**
@@ -782,7 +783,7 @@ std::variant<LogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
             nodes.push_back(node);
         }
     }
-    return new LogOrExprNode(nodes);
+    return new LogOrExprNode(nodes, ctx->getStart());
 }
 
 /**
@@ -851,7 +852,7 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
         }
     }
 
-    return new FieldAccessNode(sym, is_rvalue, a);
+    return new FieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
 }
 
 // Passthrough to expression
@@ -909,7 +910,8 @@ std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
                                     : ctx->GREATER()   ? BINARY_Rel_GREATER
                                                        : BINARY_Rel_GREATER_EQ,
         left,
-        right);
+        right, 
+        ctx->getStart());
 }
 
 /**
@@ -937,7 +939,7 @@ std::variant<ConditionNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
         return errorHandler.addSemanticError(ctx->getStart(), "Condition expected BOOL, but was given " + conditionType->toString());
     }
 
-    return new ConditionNode(cond); // FIXME: THIS SEEMS KIND OF POINTLESS...
+    return new ConditionNode(cond, ctx->getStart()); // FIXME: THIS SEEMS KIND OF POINTLESS...
 }
 
 std::variant<SelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
@@ -1009,7 +1011,7 @@ std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Ex
     const Type *retType = ctx->ty ? any2Type(ctx->ty->accept(this))
                                   : Types::UNIT;
 
-    ExternNode *node = new ExternNode(id, tyOpt.value(), retType, variadic); // FIXME: BAD OPT ACCESS!
+    ExternNode *node = new ExternNode(id, tyOpt.value(), retType, variadic, ctx->getStart()); // FIXME: BAD OPT ACCESS!
 
     stmgr->addSymbol(node->getSymbol());
 
@@ -1052,7 +1054,7 @@ std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::As
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return new AssignNode(var, expr);
+    return new AssignNode(var, expr, ctx->getStart());
 }
 
 std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::VarDeclStatementContext *ctx)
@@ -1173,7 +1175,7 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
         // a.push_back(new AssignmentNode(s, exprOpt));
     }
     // FIXME: SHOULDNT RETURN IF ERRORS!!
-    return new VarDeclNode(a);
+    return new VarDeclNode(a, ctx->getStart());
 }
 
 std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::MatchStatementContext *ctx)
@@ -1299,7 +1301,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
 
         // FIXME: DO WE NEED A SAFE EXIT HERE?
 
-        return new MatchStatementNode(sumType, cond, cases, restVec);
+        return new MatchStatementNode(sumType, cond, cases, restVec, ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString());
@@ -1348,7 +1350,7 @@ std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return new WhileLoopNode(std::get<ConditionNode *>(checkOpt), std::get<BlockNode *>(blkOpt));
+    return new WhileLoopNode(std::get<ConditionNode *>(checkOpt), std::get<BlockNode *>(blkOpt), ctx->getStart());
 }
 
 std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ConditionalStatementContext *ctx)
@@ -1461,7 +1463,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
         if (!valid)
             return errorHandler.addSemanticError(ctx->getStart(), "1149");
 
-        return new ConditionalStatementNode(std::get<ConditionNode *>(condOpt), trueBlk, restVec, falseBlk);
+        return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), trueBlk, restVec, falseBlk);
     }
 
     // Type check the then/true block
@@ -1492,7 +1494,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
     restGenerated = true;
     safeExitScope(ctx);
 
-    return new ConditionalStatementNode(std::get<ConditionNode *>(condOpt), trueBlk, restVec);
+    return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), trueBlk, restVec);
 }
 
 std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
@@ -1587,7 +1589,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
         // if (!altOpt)
         //     return {}; // FIXME: DO BETTER?
 
-        alts.push_back(new SelectAlternativeNode(check, eval));
+        alts.push_back(new SelectAlternativeNode(check, eval, ctx->getStart()));
     }
 
     /*
@@ -1628,7 +1630,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
     // return Types::UNDEFINED;
-    return new SelectStatementNode(alts, restVec);
+    return new SelectStatementNode(ctx->getStart(), alts, restVec);
 }
 
 std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
@@ -1677,13 +1679,13 @@ std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Re
 
         std::pair<const Type *, TypedNode *> ans = {sym->type, val};
         // Valid return statement; return UNDEFINED as its a statement.
-        return new ReturnNode(ans); // FIXME: VERIFY CORRETC TYPE
+        return new ReturnNode(ctx->getStart(), ans); // FIXME: VERIFY CORRETC TYPE
     }
 
     // We do not have an expression to return, so make sure that the return type is also a BOT.
     if (dynamic_cast<const TypeUnit *>(sym->type))
     {
-        return new ReturnNode();
+        return new ReturnNode(ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but recieved nothing.");
@@ -1701,7 +1703,7 @@ std::variant<ExitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Exit
         return errorHandler.addSemanticError(ctx->getStart(), "Cannot use exit outside of program");
     }
 
-    return new ExitNode();
+    return new ExitNode(ctx->getStart());
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
@@ -1768,7 +1770,7 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     }
     safeExitScope(ctx);
 
-    return new LambdaConstNode(ps, retType, blk);
+    return new LambdaConstNode(ctx->getStart(), ps, retType, blk);
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::LambdaTypeContext *ctx)
@@ -1850,7 +1852,7 @@ std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
 
     stmgr->addSymbol(enumSym);
 
-    return new DefineEnumNode(id, sum);
+    return new DefineEnumNode(id, sum, ctx->getStart());
 }
 
 std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineStructContext *ctx)
@@ -1886,7 +1888,7 @@ std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPars
     stmgr->addSymbol(prodSym);
 
     // FIXME: TRY USING FUNC DEFS AS TYPES!
-    return new DefineStructNode(id, product);
+    return new DefineStructNode(id, product, ctx->getStart());
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::CustomTypeContext *ctx)
@@ -1949,7 +1951,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BaseTypeContext *ctx)
 
 std::variant<BooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::BooleanConstContext *ctx)
 {
-    return new BooleanConstNode(ctx->TRUE() ? true : false);
+    return new BooleanConstNode(ctx->TRUE() ? true : false, ctx->getStart());
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::ChannelTypeContext *ctx)
@@ -1997,7 +1999,7 @@ std::variant<ProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend
         {
             return errorHandler.addSemanticError(ctx->getStart(), "Failed to send " + ty->toString() + " over channel " + sym->toString());
         }
-        return new ProgramSendNode(sym, tn, canSend.value());
+        return new ProgramSendNode(sym, tn, canSend.value(), ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot send on non-channel: " + id);
@@ -2026,7 +2028,7 @@ std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableR
 
         // bindings->bind(ctx->VARIABLE(), sym);                          // For Channel
         // bindings->bind(ctx, new Symbol("", ty.value(), false, false)); // FIXME: DO BETTER, DONE SO WE CAN DO CORRECT BITCAST
-        return new ProgramRecvNode(sym, ty.value());
+        return new ProgramRecvNode(sym, ty.value(), ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot recv on non-channel: " + id);
@@ -2121,7 +2123,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         // return Types::UNDEFINED;
         // return ty.value();
-        return new ChannelCaseStatementNode(sym, cases, restVec);
+        return new ChannelCaseStatementNode(sym, cases, restVec, ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot case on non-channel: " + id);
@@ -2148,7 +2150,7 @@ std::variant<ProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramP
             return errorHandler.addSemanticError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString());
         }
 
-        return new ProgramProjectNode(sym, projectIndex); // new IConstExprNode(projectIndex), Types::UNDEFINED); // FIXME: DO BETTER TYPE!
+        return new ProgramProjectNode(sym, projectIndex, ctx->getStart()); // new IConstExprNode(projectIndex), Types::UNDEFINED); // FIXME: DO BETTER TYPE!
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot project on non-channel: " + id);
@@ -2187,7 +2189,7 @@ std::variant<ProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
 
         */
-        return new ProgramContractNode(sym);
+        return new ProgramContractNode(sym, ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot contract on non-channel: " + id);
@@ -2211,7 +2213,7 @@ std::variant<ProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWe
         {
             return errorHandler.addSemanticError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString());
         }
-        return new ProgramWeakenNode(sym);
+        return new ProgramWeakenNode(sym, ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot weaken on non-channel: " + id);
@@ -2268,7 +2270,7 @@ std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAc
             return *e;
         }
 
-        return new ProgramAcceptNode(sym, std::get<BlockNode *>(blkOpt));
+        return new ProgramAcceptNode(sym, std::get<BlockNode *>(blkOpt), ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot accept: " + sym->toString());
@@ -2288,7 +2290,8 @@ std::variant<ProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableE
     {
         return new ProgramExecNode(
             prog,
-            new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse())));
+            new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse())), 
+            ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot exec: " + prog->getType()->toString());

@@ -120,7 +120,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
             }
             else
             {
-                errorHandler.addCodegenError(nullptr, "Could not treat function type as function.");
+                errorHandler.addCodegenError(octx->getStart(), "Could not treat function type as function.");
                 return {};
             }
         }
@@ -139,7 +139,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
             }
             else
             {
-                errorHandler.addCodegenError(nullptr, "Could not treat function type as function.");
+                errorHandler.addCodegenError(octx->getStart(), "Could not treat function type as function.");
                 return {};
             }
         }
@@ -214,7 +214,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     // Check that the optional, in fact, has a value. Otherwise, something went wrong.
     if (!optVal)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 202"); // FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 202"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
 
@@ -238,7 +238,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
 
         if (index == 0)
         {
-            errorHandler.addCodegenError(nullptr, "Unable to find key for type " + localSym->type->toString() + " in sum");
+            errorHandler.addCodegenError(n->getStart(), "Unable to find key for type " + localSym->type->toString() + " in sum");
             return {};
         }
 
@@ -307,7 +307,7 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel in case: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(n->getStart(), "Could not find value for channel in case: " + n->sym->getIdentifier());
         return {};
     }
 
@@ -368,7 +368,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramProjectNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel in case: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(n->getStart(), "Could not find value for channel in case: " + n->sym->getIdentifier());
         return {};
     }
 
@@ -392,7 +392,7 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
         std::optional<Value *> valOpt = AcceptType(this, e);
         if (!valOpt)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code");
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code");
             return {};
         }
 
@@ -433,7 +433,7 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
     std::optional<Value *> fnOpt = AcceptType(this, n->fn);
     if (!fnOpt)
     {
-        errorHandler.addCodegenError(nullptr, "Could not locate function for invocation. Has it been defined in IR yet?");
+        errorHandler.addCodegenError(n->getStart(), "Could not locate function for invocation. Has it been defined in IR yet?");
         return {};
     }
 
@@ -460,7 +460,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel in recv: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(n->getStart(), "Could not find value for channel in recv: " + n->sym->getIdentifier());
         return {};
     }
 
@@ -500,10 +500,10 @@ std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 {
-    std::optional<Value *> valOpt = AcceptType(this, n->expr); //(ctx->expr->accept(this));
+    std::optional<Value *> valOpt = AcceptType(this, n->expr);
     if (!valOpt)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code");
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code");
         return {};
     }
 
@@ -541,7 +541,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel in send: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(n->getStart(), "Could not find value for channel in send: " + n->sym->getIdentifier());
         return {};
     }
 
@@ -557,7 +557,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel in contract: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(n->getStart(), "Could not find value for channel in contract: " + n->sym->getIdentifier()); 
         return {};
     }
 
@@ -574,7 +574,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel in weaken: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(n->getStart(), "Could not find value for channel in weaken: " + n->sym->getIdentifier());
         return {};
     }
 
@@ -594,7 +594,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
 
     if (!sym->val)
     {
-        errorHandler.addCodegenError(nullptr, "Could not find value for channel in accept: " + n->sym->getIdentifier()); // FIXME: DO BETTER
+        errorHandler.addCodegenError(n->getStart(), "Could not find value for channel in accept: " + n->sym->getIdentifier());
         return {};
     }
 
@@ -645,7 +645,7 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
         std::optional<Value *> valOpt = AcceptType(this, e);
         if (!valOpt)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code");
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code");
             return {};
         }
 
@@ -705,14 +705,14 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
 
     if (!index)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code in TvisitArrayAccess for index!");
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code in TvisitArrayAccess for index!");
         return {};
     }
 
     std::optional<Value *> arrayPtr = AcceptType(this, n->field);
     if (!arrayPtr)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to locate array in access");
+        errorHandler.addCodegenError(n->getStart(), "Failed to locate array in access");
         return {};
     }
 
@@ -784,7 +784,7 @@ std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
 
         if (!innerVal)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: unary minus");
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: unary minus");
             return {};
         }
 
@@ -798,7 +798,7 @@ std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
 
         if (!innerVal)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: unary not");
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: unary not");
             return {};
         }
 
@@ -815,7 +815,7 @@ std::optional<Value *> CodegenVisitor::visit(BinaryArithNode *n)
 
     if (!lhs || !rhs)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: binary arith");
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: binary arith");
         return {};
     }
 
@@ -839,7 +839,7 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
 
     if (!lhs || !rhs)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: eq expr");
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: eq expr");
         return {};
     }
 
@@ -860,7 +860,7 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
     }
     }
 
-    // errorHandler.addCodegenError(nullptr, "Unknown equality operator: " + ctx->op->getText());
+    // errorHandler.addCodegenError(n->getStart(), "Unknown equality operator: " + ctx->op->getText());
     return {};
 }
 
@@ -890,7 +890,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
 
     if (!first)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: first log and");
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: first log and");
         return {};
     }
 
@@ -916,7 +916,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
 
         if (!rhs)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 842"); // FIXME: DO BETTER + toGen.at(i)->getText());
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 842"); // FIXME: DO BETTER + toGen.at(i)->getText());
             return {};
         }
         lastValue = rhs.value();
@@ -965,7 +965,7 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
 
     if (!first)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 891"); // FIXME: DO BETTER + toGen.at(0)->getText());
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 891"); // FIXME: DO BETTER + toGen.at(0)->getText());
         return {};
     }
 
@@ -991,7 +991,7 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
 
         if (!rhs)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 917"); // FIXME: DO BETTER + toGen.at(i)->getText());
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 917"); // FIXME: DO BETTER + toGen.at(i)->getText());
             return {};
         }
         lastValue = rhs.value();
@@ -1019,7 +1019,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
     if (!sym->type)
     {
-        errorHandler.addCodegenError(nullptr, "Improperly initialized symbol in field access: " + n->symbol->getIdentifier());
+        errorHandler.addCodegenError(n->getStart(), "Improperly initialized symbol in field access: " + n->symbol->getIdentifier());
         return {};
     }
 
@@ -1043,7 +1043,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
     if (!baseOpt)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate field access: "); // FIXME: DO BETTER + ctx->getText());
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate field access: "); // FIXME: DO BETTER + ctx->getText());
         return {};
     }
 
@@ -1065,7 +1065,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
             if (!indexOpt)
             {
-                errorHandler.addCodegenError(nullptr, "Could not lookup " + field);
+                errorHandler.addCodegenError(n->getStart(), "Could not lookup " + field);
                 return {};
             }
 
@@ -1101,7 +1101,7 @@ std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
     // Ensure we successfully generated LHS and RHS
     if (!lhs || !rhs)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1032"); // FIXME: DO BETTER
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1032"); // FIXME: DO BETTER
         return {};
     }
 
@@ -1139,7 +1139,7 @@ std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
 
     if (!symbol->type)
     {
-        errorHandler.addCodegenError(nullptr, "Type for extern statement not correctly bound! Probably a compiler errror.");
+        errorHandler.addCodegenError(n->getStart(), "Type for extern statement not correctly bound! Probably a compiler errror.");
         return {};
     }
 
@@ -1153,7 +1153,7 @@ std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
     }
     else
     {
-        errorHandler.addCodegenError(nullptr, "Could not treat extern type as function.");
+        errorHandler.addCodegenError(n->getStart(), "Could not treat extern type as function.");
         return {};
     }
     return {};
@@ -1167,7 +1167,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     // Check that the expression generated
     if (!exprVal)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1098"); // FIXME: DO BETTER + ctx->a->getText());
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1098"); // FIXME: DO BETTER + ctx->a->getText());
         return {};
     }
 
@@ -1175,7 +1175,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     // std::optional<Symbol *> varSymOpt = props->getBinding(ctx->to);
     // if (!varSymOpt)
     // {
-    //     errorHandler.addCodegenError(nullptr, "Incorrectly processed variable in assignment: " + ctx->to->getText());
+    //     errorHandler.addCodegenError(n->getStart(), "Incorrectly processed variable in assignment: " + ctx->to->getText());
     //     return {};
     // }
 
@@ -1195,7 +1195,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
         // If we can't find it, then throw an error.
         if (!glob)
         {
-            errorHandler.addCodegenError(nullptr, "Unable to find global variable: " + varSym->identifier);
+            errorHandler.addCodegenError(n->getStart(), "Unable to find global variable: " + varSym->identifier);
             return {};
         }
 
@@ -1206,7 +1206,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     // Sanity check to ensure that we now have a value for the variable
     if (!val)
     {
-        errorHandler.addCodegenError(nullptr, "Improperly initialized variable in assignment: "); // FIXME: DO BETTER + ctx->to->getText() + "@" + varSym->identifier);
+        errorHandler.addCodegenError(n->getStart(), "Improperly initialized variable in assignment: "); // FIXME: DO BETTER + ctx->to->getText() + "@" + varSym->identifier);
         return {};
     }
 
@@ -1220,7 +1220,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
         // Ensure we built an index
         if (!index)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: " + ctx->to->getText());
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: " + ctx->to->getText());
             return {};
         }
 
@@ -1273,7 +1273,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
         if ((e->val) && !exVal)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1206"); // FIXME: DO BETTER + e->a->getText());
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1206"); // FIXME: DO BETTER + e->a->getText());
             return {};
         }
 
@@ -1305,7 +1305,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
                     else
                     {
                         // Should already be checked in semantic, and I don't think we could get here anyways, but still might as well have it.
-                        errorHandler.addCodegenError(nullptr, "Global variable can only be initalized to a constant!");
+                        errorHandler.addCodegenError(n->getStart(), "Global variable can only be initalized to a constant!");
                         return {};
                     }
                 }
@@ -1366,7 +1366,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 
     if (!check)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1299"); // FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1299"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
 
@@ -1394,7 +1394,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
     check = this->visit(n->cond);
     if (!check)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1328"); // FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1328"); // FIXME: DO BETTER + ctx->check->getText());
         return {};
     }
 
@@ -1418,7 +1418,7 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
 
     if (!cond)
     {
-        errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1352"); // FIXME:  + ctx->check->getText());
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1352"); // FIXME:  + ctx->check->getText());
         return {};
     }
 
@@ -1508,7 +1508,7 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
         // Check that the optional, in fact, has a value. Otherwise, something went wrong.
         if (!optVal)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1442"); // + evalCase->getText());
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1442"); // + evalCase->getText());
             return {};
         }
 
@@ -1600,7 +1600,7 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
 
         if (!innerOpt)
         {
-            errorHandler.addCodegenError(nullptr, "Failed to generate code for: 1528"); // FIXME: DO BETTER + ctx->getText());
+            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1528"); // FIXME: DO BETTER + ctx->getText());
             return {};
         }
 
@@ -1724,7 +1724,7 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
     }
     else
     {
-        errorHandler.addCodegenError(nullptr, "Invocation type could not be cast to function!");
+        errorHandler.addCodegenError(n->getStart(), "Invocation type could not be cast to function!");
     }
 
     // Return to original insert point
