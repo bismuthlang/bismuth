@@ -21,10 +21,17 @@ std::optional<T> any2Opt(const std::any &a) // https://stackoverflow.com/questio
 template <typename T>
 std::variant<T *, ErrorChain*> anyOpt2VarError(WPLErrorHandler errorHandler, const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available
 {
-    // std::cout << a.type().name() << std::endl;
+    std::cout << a.type().name() << std::endl;
+    std::cout <<"CU.h 25" << std::endl; 
     std::optional<std::variant<T *, ErrorChain*>> opt = any2Opt<std::variant<T *, ErrorChain*>>(a);
-    if(opt) return opt.value(); 
-
+    std::cout <<"CU.h 27" << std::endl; 
+    if(opt) {
+        std::cout <<"CU.h 27aa" << std::endl; 
+        std::variant<T *, ErrorChain*> val = opt.value(); 
+        std::cout <<"CU.h 27bb" << std::endl; 
+     return val;    
+    }
+std::cout <<"CU.h 29" << std::endl; 
     // if (T **v = std::any_cast<T*>(&a))
     //     return *v;  
     return errorHandler.newErrorChain();

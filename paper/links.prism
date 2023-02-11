@@ -14,21 +14,6 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>>;+Channel<Inte
     Channel<ExternalChoice<+int, + boolean>> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
 
-    # FIXME: DOESNT WORK:
-    # a.case(
-    #     +int => {
-    #         # FILLER 
-    #         b[-int]
-
-    #         linkRecvInt(a, b)
-    #     }
-    #     +boolean => {
-    #         b[-boolean]
-
-    #         linkRecvBool(a, b)
-    #     }
-    # )
-
     a.case(
         +int => {
             int i := a.recv(); 

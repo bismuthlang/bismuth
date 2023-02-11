@@ -268,7 +268,7 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
             // const Type *providedType = any2Type(ctx->args.at(i)->accept(this));
             std::variant<TypedNode *, ErrorChain *> providedOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->args.at(i)->accept(this));
 
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&providedOpt))
             {
                 (*e)->addSemanticError(ctx->args.at(i)->getStart(), "Unable to generate argument.");
                 return *e;
@@ -794,10 +794,12 @@ std::variant<LogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
  */
 std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx, bool is_rvalue)
 {
+    std::cout << "797" << std::endl;
     // Determine the type of the expression we are visiting
     std::optional<SymbolContext> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
     if (!opt)
     {
+        std::cout << "802" << std::endl; 
         return errorHandler.addSemanticError(ctx->getStart(), "Undefined variable reference: " + ctx->VARIABLE().at(0)->getText());
     }
     Symbol *sym = opt.value().second;
@@ -834,6 +836,7 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
             }
             else
             {
+                std::cout << "838" << std::endl; 
                 return errorHandler.addSemanticError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
             }
         }
@@ -848,10 +851,11 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
         }
         else
         {
+            std::cout << "852" << std::endl; 
             return errorHandler.addSemanticError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
         }
     }
-
+    std::cout << "855" << std::endl; 
     return new FieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
 }
 
@@ -2070,9 +2074,10 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         for (auto alt : ctx->protoAlternative()) // FIXME: DO WE CHECK ANYWHERE THAT THESE ARE THE VALID CASES AND ALL OF THEM?
         {
+            std::cout << "2073" << std::endl;
             const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
             stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
-
+std::cout << "2076" << std::endl;
             proto->append(channel->getProtocolCopy());
             channel->setProtocol(proto);
             // stmgr->addSymbol(new Symbol(id, new TypeChannel(proto), false, false));
@@ -2081,40 +2086,45 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
                 // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
                 pair.first->setProtocol(pair.second->getCopy());
             }
-
+            std::cout << "2085 " << alt->eval->getText() << std::endl;
             std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
-
+            std::cout << "2086" << std::endl;
             if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
             {
                 (*e)->addSemanticError(ctx->getStart(), "2083");
                 return *e;
             }
-
+            std::cout << "2092" << std::endl;
             cases.push_back(std::get<TypedNode *>(optEval));
-
+            std::cout << "2094" << std::endl;
+            std::cout << "2095 " << ctx->rest.size() << std::endl;
             for (auto s : ctx->rest)
             {
+                std::cout << "2097 " << s->getText() << std::endl;
                 std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
+                std::cout << "2098" << std::endl;
                 if (!restVecFilled)
                 {
+                    std::cout << "2101" << std::endl;
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                     {
                         (*e)->addSemanticError(ctx->getStart(), "2097");
                         return *e;
                     }
-
+                    std::cout << "2107" << std::endl;
                     restVec.push_back(std::get<TypedNode *>(rOpt));
                 }
             }
 
             restVecFilled = true;
-
+            std::cout << "2115" << std::endl;
             safeExitScope(ctx);
+            std::cout << "2117" << std::endl;
         }
 
         // return Types::UNDEFINED;
         // return ty.value();
+        std::cout << "2118" << std::endl;
         return new ChannelCaseStatementNode(sym, cases, restVec, ctx->getStart());
     }
 
