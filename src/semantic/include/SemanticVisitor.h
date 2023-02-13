@@ -262,7 +262,6 @@ public:
      */
     std::variant<BlockNode *, ErrorChain *> safeVisitBlock(WPLParser::BlockContext *ctx, bool newScope)
     {
-        std::cout << "h265" << std::endl; 
         // Enter a new scope if desired
         if (newScope)
             stmgr->enterScope(StopType::NONE); // FIXME: DO BETTER?
@@ -274,29 +273,23 @@ public:
         for (auto e : ctx->stmts)
         {
             // Visit all the statements in the block
-            std::cout << "h277" << std::endl;
             std::any FIXME = e->accept(this);
-            std::cout << "h279" << std::endl;
+
             std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, FIXME);
 
-std::cout << "280" << std::endl;
-            std::cout << "283 " << e->getText() << std::endl; 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
                 (*e)->addSemanticError(ctx->getStart(), "h280");
                 return *e;
             }
-            std::cout << "284" << std::endl;
 
             nodes.push_back(std::get<TypedNode*>(tnOpt));
-std::cout << "287" << std::endl;
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
             {
                 errorHandler.addSemanticError(ctx->getStart(), "Dead code.");
                 break;
             }
-            std::cout << "294" << std::endl;
 
             // If the current statement is a return, set foundReturn = true
             if (dynamic_cast<WPLParser::ReturnStatementContext *>(e))

@@ -48,7 +48,7 @@ public:
     dangerContext.enterScope(stopType == GLOBAL);
   }
 
-  void enterBranch(void(*typeCheck)())
+  void enterBranch(std::function<void()>typeCheck)//void(*typeCheck)())
   {
     std::vector<Symbol *> syms = getAvaliableLinears();
     linearContext.enterScope(true);
@@ -59,8 +59,8 @@ public:
     {
       if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
       {
-        to_fix.push_back({channel, channel->getProtocol()});
-        // channel->setProtocol(protoOpt.value());
+        to_fix.push_back({channel, channel->getProtocol()});// FIXME: DO BETTER, WONT WORK WITH VALUES!
+        channel->setProtocol(channel->getProtocol()->getCopy());
         addSymbol(orig);
       }
     }
