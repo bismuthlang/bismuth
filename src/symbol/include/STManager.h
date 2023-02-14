@@ -50,27 +50,27 @@ public:
 
   void enterBranch(std::function<void()>typeCheck)//void(*typeCheck)())
   {
-    std::vector<Symbol *> syms = getAvaliableLinears();
+    // std::vector<Symbol *> syms = getAvaliableLinears();
     linearContext.enterScope(true);
     dangerContext.enterScope(false);
 
-    std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
-    for (Symbol *orig : syms)
-    {
-      if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-      {
-        to_fix.push_back({channel, channel->getProtocol()});// FIXME: DO BETTER, WONT WORK WITH VALUES!
-        channel->setProtocol(channel->getProtocol()->getCopy());
-        addSymbol(orig);
-      }
-    }
+    // std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix;
+    // for (Symbol *orig : syms)
+    // {
+    //   if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+    //   {
+    //     to_fix.push_back({channel, channel->getProtocol()});// FIXME: DO BETTER, WONT WORK WITH VALUES!
+    //     channel->setProtocol(channel->getProtocol()->getCopy());
+    //     addSymbol(orig);
+    //   }
+    // }
 
-    typeCheck(); // FIXME: REQUIRES THAT WE DO THE SAFE EXIT IN TYPE CHECKER!
+    // typeCheck(); // FIXME: REQUIRES THAT WE DO THE SAFE EXIT IN TYPE CHECKER!
 
-    for (auto pair : to_fix)
-    {
-      pair.first->setProtocol(pair.second);
-    }
+    // for (auto pair : to_fix)
+    // {
+    //   pair.first->setProtocol(pair.second);
+    // }
   }
 
   /**
