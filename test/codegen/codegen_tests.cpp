@@ -619,6 +619,27 @@ TEST_CASE("paper/links", "[codegen][linear-types]")
         "d7c117695a6367478693aaddd6acd07f0e40a1d3188ca6d563ff659d86a30b0c");
 }
 
+TEST_CASE("paper/links2", "[codegen][linear-types]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links2.prism"))),
+        "ff1f300a0bea0f2b2b3f0fdf912e39ceaec535574ff6e997be2e9bd09355e044");
+}
+
+TEST_CASE("paper/links3", "[codegen][linear-types]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links3.prism"))),
+        "43a9acb2c30a817108884a7c910a0767e563dd0fc39e69bece477761af027913");
+}
+
+TEST_CASE("paper/links4", "[codegen][linear-types]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links4.prism"))),
+        "816087a6313c800ff6491188e191ca4fb8fad3677f1475fa5c31dc51792034a0");
+}
+
 TEST_CASE("programs/doubleArg1c2 - weakening and loops", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
