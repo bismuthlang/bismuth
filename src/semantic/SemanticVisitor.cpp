@@ -24,8 +24,6 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
             const Type *ty = any2Type(fnCtx->defineProc()->ty->accept(this));
 
-            // FIXME: NEED TO DEAL WITH CHANNEL TYPE BETTER!
-
             if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
             {
                 const TypeProgram *funcType = new TypeProgram(channel, false);
