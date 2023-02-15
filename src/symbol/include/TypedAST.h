@@ -22,6 +22,8 @@ public:
 
     virtual const Type *getType() = 0;
 
+    virtual std::string toString() const = 0;  
+
     virtual std::any accept(TypedASTVisitor *a) = 0;
 
     antlr4::Token *getStart() { return token; }
@@ -198,6 +200,10 @@ public:
     const TypeUnit *getType() override { return Types::UNIT; } // FIXME: MAYBE ABSURD? bc syntax but no
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "SEL ALT";
+    }
 };
 
 class SelectStatementNode : public TypedNode
@@ -214,6 +220,10 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "SEL STMT NODE";
+    }
 };
 
 class ConditionNode : public TypedNode // FIXME: PROBABLY ISNT NEEDED
@@ -228,6 +238,10 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "COND NODE";
+    }
 };
 
 // FIXME: SHOULD THERE BE A EXPRESSION VS STATEMENT DIFFERENCE IN THESE? MAYBE NOT I GUESS B/C TECHNICALLY CALLS COULD HAVE BEEN SORT OF EITHER? BUT NOT ANYMORE? IDK EVERYTHING KIND OF BECOMES EXPR WHEN FUNCTIONAL
@@ -245,6 +259,10 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "BLK NODE";
+    }
 };
 
 class ParameterNode
@@ -294,8 +312,14 @@ public:
 
     const TypeInvoke *getType() override
     {
+        std::cout << "297" << std::endl; 
         return type;
     }
+
+    std::string toString() const override {
+        return "LAMBDA CONST";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -324,6 +348,11 @@ public:
     {
         return type;
     }
+
+    std::string toString() const override {
+        return "PROG DEF";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -354,6 +383,11 @@ public:
     {
         return ty;
     }
+
+    std::string toString() const override {
+        return "FUNC DEF";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -375,6 +409,10 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+
+    std::string toString() const override {
+        return "COND STATMENT NODE";
+    }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -390,6 +428,11 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "RETURN NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -401,6 +444,11 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+
+    std::string toString() const override {
+        return "EXIT NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -419,6 +467,11 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "SEND NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -436,6 +489,11 @@ public:
     }
 
     const Type *getType() override { return ty; }
+
+    std::string toString() const override {
+        return "RECV NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -450,6 +508,11 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "CONTRACT NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -464,6 +527,11 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "WEAKEN NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -480,6 +548,11 @@ public:
     }
 
     const TypeChannel *getType() override { return chanType; }
+
+    std::string toString() const override {
+        return "EXEC NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -496,6 +569,11 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "ACCEPT NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -510,6 +588,11 @@ public:
         name = n;
         // cases = c;
         sum = s;
+    }
+
+
+    std::string toString() const override {
+        return "DEF ENUM NODE";
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
@@ -530,6 +613,12 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "DEF STRUCT";
+    }
+
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -546,6 +635,11 @@ public:
     }
 
     const TypeStruct *getType() override { return product; }
+
+    std::string toString() const override {
+        return "INIT PRODUCT";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -562,6 +656,11 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "WHILE LOOP";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -590,6 +689,10 @@ public:
         return ty;
     }
 
+    std::string toString() const override {
+        return "EXTERN NODE";
+    }
+
     Symbol *getSymbol() { return sym; } // FIXME: WHY ARENT THINGS LIKE THIS CONST?
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -612,9 +715,14 @@ public:
     const Type *getType() override
     {
         // FIXME: DO BETTER?
-
+        std::cout << "615 " << dynamic_cast<const TypeInvoke *>(fn->getType())->getReturnType()->toString() << std::endl; 
         return dynamic_cast<const TypeInvoke *>(fn->getType())->getReturnType();
     }
+
+    std::string toString() const override {
+        return "INVOKE NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -648,6 +756,11 @@ public:
     {
         return type;
     }
+
+    std::string toString() const override {
+        return "FIELD ACCESS NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -669,6 +782,9 @@ public:
         return symbol->type;
     }
 
+std::string toString() const override {
+        return "FIXME REMOVE";
+    }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -690,6 +806,11 @@ public:
     {
         return dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
     }
+
+    std::string toString() const override {
+        return "Array Access Node";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -706,6 +827,10 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "ASSIGN NODE";
+    }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -733,6 +858,11 @@ public:
     }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "BINARY REL ";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -756,6 +886,10 @@ public:
         op = o;
         lhs = l;
         rhs = r;
+    }
+
+    std::string toString() const override {
+        return "BINARY ARITH";
     }
 
     const TypeInt *getType() override { return Types::INT; }
@@ -783,6 +917,11 @@ public:
     }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "EQEXPR";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -814,6 +953,11 @@ public:
             return Types::BOOL;
         }
     }
+
+    std::string toString() const override {
+        return "UNARY";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -830,6 +974,11 @@ public:
     vector<TypedNode *> getExprs() { return exprs; }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "LOG AND";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -846,6 +995,11 @@ public:
     vector<TypedNode *> getExprs() { return exprs; }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "LOG OR";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -860,6 +1014,11 @@ public:
     }
 
     const TypeStr *getType() override { return Types::STR; }
+
+    std::string toString() const override {
+        return "StrConst";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -874,6 +1033,11 @@ public:
     }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "BOOL CONST";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -888,6 +1052,11 @@ public:
     }
 
     const TypeInt *getType() override { return Types::INT; }
+
+    std::string toString() const override {
+        return "I CONST";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -934,6 +1103,12 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; }
 
+
+    std::string toString() const override {
+        return "VAR DECL NODE";
+    }
+
+
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -961,6 +1136,10 @@ public:
     {
         return Types::UNIT; // FIXME: DO BETTER
     }
+
+    std::string toString() const override {
+        return "MATCH STMT NODE";
+    }
 };
 
 class ChannelCaseStatementNode : public TypedNode
@@ -984,6 +1163,11 @@ public:
     {
         return Types::UNIT; // FIXME: DO BETTER
     }
+
+    std::string toString() const override {
+        return "CASE CHANNEL NODE";
+    }
+
 };
 
 class ProgramProjectNode : public TypedNode // FIXME: DO BETTER, VERY SIMILAR TO SEND
@@ -1000,6 +1184,10 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "PROJECT NODE";
+    }
 };
 
 /**************************************************

@@ -511,10 +511,10 @@ TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
         "9b61cbf31790496ddd1da29db6d7f412ac8e8890ad822ef7230bf32740899407");
 }
 
-TEST_CASE("programs/dangerLambda - lambdas with dupl function names", "[codegen][struct]")
+TEST_CASE("programs/dangerLambda-Program - lambdas with dupl function names", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda.prism"))),
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Program.prism"))),
         "c1d7ec0503975ede149360b32780003757deccf84c78862ad7bbc0d54e5e2f65");
 }
 

@@ -718,11 +718,6 @@ public:
         protocol = p;
     }
 
-    /**
-     * @brief Returns a string representation of the type in format: <PROC | FUNC> (param_0, param_1, ...) -> return_type.
-     *
-     * @return std::string
-     */
     std::string toString() const override
     {
         std::ostringstream description;
@@ -827,12 +822,7 @@ public:
 
         defined = d;
     }
-
-    /**
-     * @brief Returns a string representation of the type in format: <PROC | FUNC> (param_0, param_1, ...) -> return_type.
-     *
-     * @return std::string
-     */
+    
     std::string toString() const override
     {
 
@@ -1036,10 +1026,13 @@ public:
      */
     std::string toString() const override
     {
-        bool isProc = dynamic_cast<const TypeUnit *>(retType);
+        // bool isProc = dynamic_cast<const TypeUnit *>(retType);
 
         std::ostringstream description;
-        description << (isProc ? "PROC " : "FUNC ");
+        // description << (isProc ? "Unit" : "");
+        if(paramTypes.size() == 0)
+            description << "1";
+        
         for (unsigned int i = 0; i < paramTypes.size(); i++)
         {
             description << paramTypes.at(i)->toString();
@@ -1139,6 +1132,7 @@ protected:
         // Checks that the other type is also invokable
         if (const TypeInvoke *p = dynamic_cast<const TypeInvoke *>(other))
         {
+            std::cout << "1135" << std::endl; 
             // Makes sure that both functions have the same number of parameters
             if (p->paramTypes.size() != this->paramTypes.size())
                 return false;
@@ -1151,8 +1145,12 @@ protected:
             for (unsigned int i = 0; i < this->paramTypes.size(); i++)
             {
                 if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
+                {
+                    std::cout << "PARAM FAIL" << std::endl; 
                     return false;
+                }
             }
+            std::cout << "1153" << std::endl; 
             // Makes sure that the return type of this function is a subtype of the other
             return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeUnit *>(this->retType) && dynamic_cast<const TypeUnit *>(p->retType));
         }

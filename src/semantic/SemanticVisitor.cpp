@@ -212,9 +212,9 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     return new CompilationUnitNode(externs, defs);
 }
 
-std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
+std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(antlr4::ParserRuleContext *ctx, WPLParser::ExpressionContext *inv, std::vector<WPLParser::ExpressionContext *> ctxArgs)//WPLParser::InvocationContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) ? TNVariantCast<LambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<FieldAccessNode>(visitCtx(ctx->field, true)); // FIXME: DO BETTER, PRESERVE TYPE, MAYBE VARIADIC
+    std::variant<TypedNode *, ErrorChain *> typeOpt = anyOpt2VarError<TypedNode>(errorHandler, inv->accept(this));//TNVariantCast<TypedNode>(visitCtx(inv));//(ctx->lam) ? TNVariantCast<LambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<FieldAccessNode>(visitCtx(ctx->field, true)); // FIXME: DO BETTER, PRESERVE TYPE, MAYBE VARIADIC
     if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
     {
         (*e)->addSemanticError(ctx->getStart(), "Unable to generate expression to invoke.");
@@ -225,7 +225,7 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
 
     const Type *type = tn->getType();
 
-    std::string name = (ctx->lam) ? "lambda " : ctx->field->getText();
+    // std::string name = (ctx->lam) ? "lambda " : ctx->field->getText();
 
     if (const TypeInvoke *invokeable = dynamic_cast<const TypeInvoke *>(type))
     {
@@ -244,10 +244,11 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
          * to allow for this invocation.
          */
         if (
-            (!invokeable->isVariadic() && fnParams.size() != ctx->args.size()) || (invokeable->isVariadic() && fnParams.size() > ctx->args.size()))
+            (!invokeable->isVariadic() && fnParams.size() != ctxArgs.size()) || (invokeable->isVariadic() && fnParams.size() > ctxArgs.size()))
         {
             std::ostringstream errorMsg;
-            errorMsg << "Invocation of " << name << " expected " << fnParams.size() << " argument(s), but got " << ctx->args.size();
+            // errorMsg << "Invocation of " << name << " expected " << fnParams.size() << " argument(s), but got " << ctx->args.size();
+            errorMsg << "Invocation expected " << fnParams.size() << " argument(s), but got " << ctxArgs.size();
             return errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
         }
 
@@ -260,15 +261,15 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
          * To do this, we first loop through the number of parameters that WE provide
          * as this should be AT LEAST the same number as in the definition.
          */
-        for (unsigned int i = 0; i < ctx->args.size(); i++)
+        for (unsigned int i = 0; i < ctxArgs.size(); i++)
         {
             // Get the type of the current argument
             // const Type *providedType = any2Type(ctx->args.at(i)->accept(this));
-            std::variant<TypedNode *, ErrorChain *> providedOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->args.at(i)->accept(this));
+            std::variant<TypedNode *, ErrorChain *> providedOpt = anyOpt2VarError<TypedNode>(errorHandler, ctxArgs.at(i)->accept(this));
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&providedOpt))
             {
-                (*e)->addSemanticError(ctx->args.at(i)->getStart(), "Unable to generate argument.");
+                (*e)->addSemanticError(args.at(i)->getStart(), "Unable to generate argument.");
                 return *e;
             }
 
@@ -302,7 +303,7 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
             if (providedType->isNotSubtype(expectedType))
             {
                 std::ostringstream errorMsg;
-                errorMsg << "Argument " << i << " provided to " << name << " expected " << expectedType->toString() << " but got " << providedType->toString();
+                errorMsg << "Argument " << i << " expected " << expectedType->toString() << " but got " << providedType->toString();
 
                 errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
             }
@@ -312,7 +313,7 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
     }
 
     // Symbol was not an invokeable type, so report an error & return UNDEFINED.
-    return errorHandler.addSemanticError(ctx->getStart(), "Can only invoke PROC and FUNC, not " + name + " : " + type->toString());
+    return errorHandler.addSemanticError(ctx->getStart(), "Can only invoke func, not " + type->toString());
 }
 
 std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineFuncContext *ctx)
@@ -627,6 +628,8 @@ std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
 
     if (right->getType()->isNotSubtype(Types::INT))
     {
+        std::cout << "631 is being DUMB!" << std::endl; 
+        std::cout << "LOL WHAT A DUMB IDIOT! " << right->getType()->toString() << " IM DUMB " << typeid(right).name() << " "  << right->toString() <<  std::endl; 
         return errorHandler.addSemanticError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
     }
 
