@@ -445,7 +445,7 @@ TEST_CASE("programs/enum2 - Basic Enum 2", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum2.prism"))),
-        "81bf96b4ed3ebfba61974be24713eb5db1490ffa2f7b3f0d173fa2cd591fe6fd");
+        "1629ab26d49e6ab30e266062de6363bedcb6f4b739dd61ebd7910ce2896366a7");
 }
 
 TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignmens outside of decl", "[codegen][enum]")
@@ -516,6 +516,13 @@ TEST_CASE("programs/dangerLambda-Program - lambdas with dupl function names", "[
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Program.prism"))),
         "c1d7ec0503975ede149360b32780003757deccf84c78862ad7bbc0d54e5e2f65");
+}
+
+TEST_CASE("programs/dangerLambda-Lambda - lambdas with dupl function names", "[codegen][struct]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Lambda.prism"))),
+        "622876939afba31057d8130a3a2f00360097e7ec019b44ae52fbb89ac9aa53b7");
 }
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")

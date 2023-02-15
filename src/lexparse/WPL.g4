@@ -21,7 +21,8 @@ defineType        : DEFINE 'enum' name=VARIABLE LSQB cases+=type (',' cases+=typ
 //FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
 externStatement : EXTERN (ty=type FUNC | PROC) name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?)? | ELLIPSIS) RPAR ';';
 
-// invocation          : expression LPAR (args+=expression (',' args+=expression)* )? RPAR ;
+inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
+invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr)  inv_args+;
 
 fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  ;
 //Helps allow us to use VARIABLE or arrayAccess and not other expressions (such as for assignments)
@@ -58,7 +59,7 @@ expression          : LPAR ex=expression RPAR                       # ParenExpr
                     | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression # EqExpr
                     | exprs+=expression (AND exprs+=expression)+     # LogAndExpr 
                     | exprs+=expression (OR  exprs+=expression)+     # LogOrExpr
-                    | inv=expression LPAR (args+=expression (',' args+=expression)* )? RPAR        # CallExpr
+                    | call=invocation                               # CallExpr
                     | v=VARIABLE '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')' # InitProduct
                     | arrayAccess  # ArrayAccessExpr
                     | booleanConst # BConstExpr 
@@ -139,7 +140,7 @@ statement           : defineProc                                                
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement     
                     | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement      
-                    | inv=expression LPAR (args+=expression (',' args+=expression)* )? RPAR';'?                # CallStatement 
+                    | call=invocation  ';'?     # CallStatement 
                     | RETURN expression? ';'    # ReturnStatement 
                     | EXIT                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
                     | block                     # BlockStatement

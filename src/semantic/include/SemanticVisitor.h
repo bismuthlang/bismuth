@@ -115,17 +115,14 @@ public:
     ParameterNode visitCtx(WPLParser::ParameterContext *ctx);
     std::any visitParameter(WPLParser::ParameterContext *ctx) override { return visitCtx(ctx); }
 
-    // std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::InvocationContext *ctx);
-    std::variant<InvocationNode *, ErrorChain *> visitCtx(antlr4::ParserRuleContext *ctx, WPLParser::ExpressionContext *inv, std::vector<WPLParser::ExpressionContext *> args);//WPLParser::InvocationContext *ctx)
-    std::any visitCallExpr(WPLParser::CallExprContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx, ctx->inv, ctx->args)); }
-    std::any visitCallStatement(WPLParser::CallStatementContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx, ctx->inv, ctx->args)); }
-    // std::any visitInvocation(WPLParser::InvocationContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
+    std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::InvocationContext *ctx);
+    std::any visitInvocation(WPLParser::InvocationContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
 
-    // std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::CallStatementContext *ctx) { return this->visitCtx(ctx->call); }
-    // std::any visitCallStatement(WPLParser::CallStatementContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
+    std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::CallStatementContext *ctx) { return this->visitCtx(ctx->call); }
+    std::any visitCallStatement(WPLParser::CallStatementContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
 
-    // std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::CallExprContext *ctx) { return this->visitCtx(ctx->call); }
-    // std::any visitCallExpr(WPLParser::CallExprContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
+    std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::CallExprContext *ctx) { return this->visitCtx(ctx->call); }
+    std::any visitCallExpr(WPLParser::CallExprContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
 
     std::variant<ConditionNode *, ErrorChain *> visitCtx(WPLParser::ConditionContext *ctx);
     std::any visitCondition(WPLParser::ConditionContext *ctx) override { return TNVariantCast<ConditionNode>(visitCtx(ctx)); }

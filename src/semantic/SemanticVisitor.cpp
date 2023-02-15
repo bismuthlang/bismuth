@@ -212,9 +212,9 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     return new CompilationUnitNode(externs, defs);
 }
 
-std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(antlr4::ParserRuleContext *ctx, WPLParser::ExpressionContext *inv, std::vector<WPLParser::ExpressionContext *> ctxArgs)//WPLParser::InvocationContext *ctx)
+std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> typeOpt = anyOpt2VarError<TypedNode>(errorHandler, inv->accept(this));//TNVariantCast<TypedNode>(visitCtx(inv));//(ctx->lam) ? TNVariantCast<LambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<FieldAccessNode>(visitCtx(ctx->field, true)); // FIXME: DO BETTER, PRESERVE TYPE, MAYBE VARIADIC
+    std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) ? TNVariantCast<LambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<FieldAccessNode>(visitCtx(ctx->field, true)); // FIXME: DO BETTER, PRESERVE TYPE, MAYBE VARIADIC
     if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
     {
         (*e)->addSemanticError(ctx->getStart(), "Unable to generate expression to invoke.");
@@ -223,97 +223,104 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(antlr4::P
 
     TypedNode *tn = std::get<TypedNode *>(typeOpt);
 
-    const Type *type = tn->getType();
-
-    // std::string name = (ctx->lam) ? "lambda " : ctx->field->getText();
-
-    if (const TypeInvoke *invokeable = dynamic_cast<const TypeInvoke *>(type))
+    // const Type *type = tn->getType();
+    for (auto iArgs : ctx->inv_args())
     {
-        /*
-         * The symbol is something we can invoke, so check that we provide it with valid parameters
-         */
-        std::vector<const Type *> fnParams = invokeable->getParamTypes();
 
-        /*
-         *  If the symbol is NOT a variadic and the number of arguments we provide
-         *      are not the same as the number in the invokable's definition
-         *  OR the symbol IS a variadic and the number of arguments in the
-         *      invokable's definition is greater than the number we provide,
-         *
-         * THEN we have an error as we do not provide a valid number of arguments
-         * to allow for this invocation.
-         */
-        if (
-            (!invokeable->isVariadic() && fnParams.size() != ctxArgs.size()) || (invokeable->isVariadic() && fnParams.size() > ctxArgs.size()))
+        std::string name = (ctx->lam) ? "lambda " : ctx->field->getText();
+
+        if (const TypeInvoke *invokeable = dynamic_cast<const TypeInvoke *>(tn->getType()))
         {
-            std::ostringstream errorMsg;
-            // errorMsg << "Invocation of " << name << " expected " << fnParams.size() << " argument(s), but got " << ctx->args.size();
-            errorMsg << "Invocation expected " << fnParams.size() << " argument(s), but got " << ctxArgs.size();
-            return errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
-        }
+            /*
+             * The symbol is something we can invoke, so check that we provide it with valid parameters
+             */
+            std::vector<const Type *> fnParams = invokeable->getParamTypes();
 
-        std::vector<TypedNode *> args;
-        std::vector<const Type *> actualTypes;
-        /*
-         * Now that we have a valid number of parameters, we can make sure that
-         * they have the correct types as per our arguments.
-         *
-         * To do this, we first loop through the number of parameters that WE provide
-         * as this should be AT LEAST the same number as in the definition.
-         */
-        for (unsigned int i = 0; i < ctxArgs.size(); i++)
-        {
-            // Get the type of the current argument
-            // const Type *providedType = any2Type(ctx->args.at(i)->accept(this));
-            std::variant<TypedNode *, ErrorChain *> providedOpt = anyOpt2VarError<TypedNode>(errorHandler, ctxArgs.at(i)->accept(this));
-
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&providedOpt))
-            {
-                (*e)->addSemanticError(args.at(i)->getStart(), "Unable to generate argument.");
-                return *e;
-            }
-
-            TypedNode *provided = std::get<TypedNode *>(providedOpt);
-
-            args.push_back(provided);
-
-            const Type *providedType = provided->getType();
-
-            // If the invokable is variadic and has no specified type parameters, then we can
-            // skip over subsequent checks--we just needed to run type checking on each parameter.
-            if (invokeable->isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
-            {
-                if (dynamic_cast<const TypeBottom *>(providedType) || dynamic_cast<const TypeAbsurd *>(providedType) || dynamic_cast<const TypeUnit *>(providedType))
-                {
-                    errorHandler.addSemanticError(ctx->getStart(), "Cannot provide " + providedType->toString() + " to a function.");
-                }
-                continue;
-            }
-
-            // Loop up the expected type. This is either the type at the
-            // ith index OR the last type specified by the function
-            // if i > fnParams.size() as that would imply we are
-            // checking a variadic
-            const Type *expectedType = fnParams.at(
-                i < fnParams.size() ? i : (fnParams.size() - 1)); // FIXME: TURNARY NEVER FULLY EVALED DUE TO CONTINUE!
-
-            actualTypes.push_back(expectedType);
-
-            // If the types do not match, report an error.
-            if (providedType->isNotSubtype(expectedType))
+            /*
+             *  If the symbol is NOT a variadic and the number of arguments we provide
+             *      are not the same as the number in the invokable's definition
+             *  OR the symbol IS a variadic and the number of arguments in the
+             *      invokable's definition is greater than the number we provide,
+             *
+             * THEN we have an error as we do not provide a valid number of arguments
+             * to allow for this invocation.
+             */
+            if (
+                (!invokeable->isVariadic() && fnParams.size() != iArgs->args.size()) || (invokeable->isVariadic() && fnParams.size() > iArgs->args.size()))
             {
                 std::ostringstream errorMsg;
-                errorMsg << "Argument " << i << " expected " << expectedType->toString() << " but got " << providedType->toString();
-
-                errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
+                errorMsg << "Invocation of " << name << " expected " << fnParams.size() << " argument(s), but got " << iArgs->args.size();
+                return errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
             }
+
+            std::vector<TypedNode *> args;
+            std::vector<const Type *> actualTypes;
+            /*
+             * Now that we have a valid number of parameters, we can make sure that
+             * they have the correct types as per our arguments.
+             *
+             * To do this, we first loop through the number of parameters that WE provide
+             * as this should be AT LEAST the same number as in the definition.
+             */
+            for (unsigned int i = 0; i < iArgs->args.size(); i++)
+            {
+                // Get the type of the current argument
+                // const Type *providedType = any2Type(iArgs->args.at(i)->accept(this));
+                std::variant<TypedNode *, ErrorChain *> providedOpt = anyOpt2VarError<TypedNode>(errorHandler, iArgs->args.at(i)->accept(this));
+
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&providedOpt))
+                {
+                    (*e)->addSemanticError(iArgs->args.at(i)->getStart(), "Unable to generate argument.");
+                    return *e;
+                }
+
+                TypedNode *provided = std::get<TypedNode *>(providedOpt);
+
+                args.push_back(provided);
+
+                const Type *providedType = provided->getType();
+
+                // If the invokable is variadic and has no specified type parameters, then we can
+                // skip over subsequent checks--we just needed to run type checking on each parameter.
+                if (invokeable->isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
+                {
+                    if (dynamic_cast<const TypeBottom *>(providedType) || dynamic_cast<const TypeAbsurd *>(providedType) || dynamic_cast<const TypeUnit *>(providedType))
+                    {
+                        errorHandler.addSemanticError(ctx->getStart(), "Cannot provide " + providedType->toString() + " to a function.");
+                    }
+                    continue;
+                }
+
+                // Loop up the expected type. This is either the type at the
+                // ith index OR the last type specified by the function
+                // if i > fnParams.size() as that would imply we are
+                // checking a variadic
+                const Type *expectedType = fnParams.at(
+                    i < fnParams.size() ? i : (fnParams.size() - 1)); // FIXME: TURNARY NEVER FULLY EVALED DUE TO CONTINUE!
+
+                actualTypes.push_back(expectedType);
+
+                // If the types do not match, report an error.
+                if (providedType->isNotSubtype(expectedType))
+                {
+                    std::ostringstream errorMsg;
+                    errorMsg << "Argument " << i << " provided to " << name << " expected " << expectedType->toString() << " but got " << providedType->toString();
+
+                    errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
+                }
+            }
+
+            tn = new InvocationNode(tn, args, actualTypes, ctx->getStart());
+            // return new InvocationNode(tn, args, actualTypes, ctx->getStart());
         }
-
-        return new InvocationNode(tn, args, actualTypes, ctx->getStart());
+        else
+        {
+            // Symbol was not an invokeable type, so report an error & return UNDEFINED.
+            return errorHandler.addSemanticError(ctx->getStart(), "Can only invoke PROC and FUNC, not " + name + " : " + tn->getType()->toString());
+        }
     }
-
-    // Symbol was not an invokeable type, so report an error & return UNDEFINED.
-    return errorHandler.addSemanticError(ctx->getStart(), "Can only invoke func, not " + type->toString());
+    // return new InvocationNode(tn, args, actualTypes, ctx->getStart());
+    return (InvocationNode*) tn; 
 }
 
 std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineFuncContext *ctx)
@@ -628,8 +635,6 @@ std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
 
     if (right->getType()->isNotSubtype(Types::INT))
     {
-        std::cout << "631 is being DUMB!" << std::endl; 
-        std::cout << "LOL WHAT A DUMB IDIOT! " << right->getType()->toString() << " IM DUMB " << typeid(right).name() << " "  << right->toString() <<  std::endl; 
         return errorHandler.addSemanticError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
     }
 
@@ -2028,7 +2033,7 @@ std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableR
 
 std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ctx)
 {
-    //FIXME: THIS SAME PATTERN NEEDS TO BE APPLIED TO EVERY BRANCHING SYSTEM!!!!
+    // FIXME: THIS SAME PATTERN NEEDS TO BE APPLIED TO EVERY BRANCHING SYSTEM!!!!
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
 
@@ -2083,10 +2088,9 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
                 pair.first->setProtocol(pair.second->getCopy());
             }
 
-            
             proto->append(savedRest->getCopy());
             channel->setProtocol(proto);
-            
+
             stmgr->addSymbol(sym);
 
             stmgr->enterScope(StopType::NONE);
