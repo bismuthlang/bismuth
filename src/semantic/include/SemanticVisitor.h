@@ -405,11 +405,10 @@ public:
 
     template <typename T>
     inline std::variant<ConditionalData, ErrorChain *> checkBranch(
-        antlr4::ParserRuleContext* ctx, 
-        std::vector<T*> ctxCases, 
-        std::vector<WPLParser::StatementContext*> ctxRest, 
-        std::function<std::variant<TypedNode*, ErrorChain *>(T*)>typeCheck
-    )
+        antlr4::ParserRuleContext *ctx,
+        std::vector<T *> ctxCases,
+        std::vector<WPLParser::StatementContext *> ctxRest,
+        std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
         // FIXME: THIS SAME PATTERN NEEDS TO BE APPLIED TO EVERY BRANCHING SYSTEM!!!!
         std::vector<TypedNode *> cases;
@@ -447,11 +446,9 @@ public:
 
             // stmgr->addSymbol(sym);
 
-
-
             stmgr->enterScope(StopType::NONE);
             std::variant<TypedNode *, ErrorChain *> optEval = typeCheck(alt);
-            
+
             // anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
@@ -460,28 +457,32 @@ public:
                 return *e;
             }
 
-            cases.push_back(std::get<TypedNode *>(optEval));
+            TypedNode *caseNode = std::get<TypedNode *>(optEval);
+            cases.push_back(caseNode);
 
             // safeExitScope(ctx);
 
-            for (auto s : ctxRest)
+            if (!endsInReturn(caseNode))
             {
-                std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                if (!restVecFilled)
+                for (auto s : ctxRest)
                 {
+                    std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
+                    if (!restVecFilled)
                     {
-                        (*e)->addSemanticError(ctx->getStart(), "2097");
-                        return *e;
+
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
+                        {
+                            (*e)->addSemanticError(ctx->getStart(), "2097");
+                            return *e;
+                        }
+
+                        restVec.push_back(std::get<TypedNode *>(rOpt));
                     }
-
-                    restVec.push_back(std::get<TypedNode *>(rOpt));
                 }
-            }
 
-            restVecFilled = true;
+                restVecFilled = true;
+            }
 
             safeExitScope(ctx);
 
