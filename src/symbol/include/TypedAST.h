@@ -60,7 +60,6 @@ class WhileLoopNode;
 class ExternNode;
 class InvocationNode;
 class FieldAccessNode;
-class VariableIDNode;
 class ArrayAccessNode;
 class AssignNode;
 class BinaryRelNode;
@@ -108,7 +107,6 @@ public:
     virtual std::optional<Value *> visit(ExternNode *n) = 0;
     virtual std::optional<Value *> visit(InvocationNode *n) = 0;
     virtual std::optional<Value *> visit(FieldAccessNode *n) = 0;
-    virtual std::optional<Value *> visit(VariableIDNode *n) = 0;
     virtual std::optional<Value *> visit(ArrayAccessNode *n) = 0;
     virtual std::optional<Value *> visit(AssignNode *n) = 0;
     virtual std::optional<Value *> visit(BinaryRelNode *n) = 0;
@@ -152,7 +150,6 @@ public:
     std::any any_visit(ExternNode *n) { return this->visit(n); }
     std::any any_visit(InvocationNode *n) { return this->visit(n); }
     std::any any_visit(FieldAccessNode *n) { return this->visit(n); }
-    std::any any_visit(VariableIDNode *n) { return this->visit(n); }
     std::any any_visit(ArrayAccessNode *n) { return this->visit(n); }
     std::any any_visit(AssignNode *n) { return this->visit(n); }
     std::any any_visit(BinaryRelNode *n) { return this->visit(n); }
@@ -761,30 +758,6 @@ public:
         return "FIELD ACCESS NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-};
-
-class VariableIDNode : public TypedNode // FIXME: DO BETTER
-{
-
-public:
-    Symbol *symbol;
-    bool is_rvalue;
-
-    VariableIDNode(Symbol *f, bool r, antlr4::Token *tok) : TypedNode(tok)
-    {
-        symbol = f;
-        is_rvalue = r;
-    }
-
-    const Type *getType() override
-    {
-        return symbol->type;
-    }
-
-std::string toString() const override {
-        return "FIXME REMOVE";
-    }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 

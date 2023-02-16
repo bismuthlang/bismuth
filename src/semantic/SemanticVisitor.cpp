@@ -499,8 +499,6 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
 
 std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
 {
-    // FIXME: Should be able to delete VariableIDNode now...
-
     // Check if we are a var or an array
     if (ctx->var)
     {

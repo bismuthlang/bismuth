@@ -108,7 +108,6 @@ public:
     std::optional<Value *> visit(ExternNode *n) override;
     std::optional<Value *> visit(InvocationNode *n) override;
     std::optional<Value *> visit(FieldAccessNode *n) override;
-    std::optional<Value *> visit(VariableIDNode *n) override { return visitVariable(n->symbol, n->is_rvalue); };
     std::optional<Value *> visit(ArrayAccessNode *n) override;
     std::optional<Value *> visit(AssignNode *n) override;
     std::optional<Value *> visit(BinaryRelNode *n) override;
