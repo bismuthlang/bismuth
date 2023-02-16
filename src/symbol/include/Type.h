@@ -281,6 +281,15 @@ inline const ProtocolSequence *toSequence(const Protocol *proto)
     return new ProtocolSequence(a);
 }
 
+//FIXME: DO BETTER LINEAR CHECK; CURRENTLY THIS IS UNUSED, LACK OF NEED
+// inline bool isLinear(const Type * ty)
+// {
+//     if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
+//         return true; 
+
+//     return false; 
+// }
+
 /*******************************************
  *
  * RecvType Protocol

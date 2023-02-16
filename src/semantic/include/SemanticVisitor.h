@@ -283,7 +283,7 @@ public:
                 return *e;
             }
 
-            nodes.push_back(std::get<TypedNode*>(tnOpt));
+            nodes.push_back(std::get<TypedNode *>(tnOpt));
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
             {
@@ -391,6 +391,120 @@ public:
         {
             return errorHandler.addSemanticError(ctx->getStart(), "Cannot invoke " + sym->toString());
         }
+    }
+
+    struct ConditionalData
+    {
+        vector<TypedNode *> cases;
+        vector<TypedNode *> post;
+
+        ConditionalData(vector<TypedNode *> cases, vector<TypedNode *> post) : cases(cases), post(post)
+        {
+        }
+    };
+
+    template <typename T>
+    inline std::variant<ConditionalData, ErrorChain *> checkBranch(
+        antlr4::ParserRuleContext* ctx, 
+        std::vector<T*> ctxCases, 
+        std::vector<WPLParser::StatementContext*> ctxRest, 
+        std::function<std::variant<ConditionalData, ErrorChain *>(T*)>typeCheck
+    )
+    {
+        // FIXME: THIS SAME PATTERN NEEDS TO BE APPLIED TO EVERY BRANCHING SYSTEM!!!!
+        std::vector<TypedNode *> cases;
+        std::vector<TypedNode *> restVec;
+        bool restVecFilled = false;
+
+        std::vector<Symbol *> syms = stmgr->getAvaliableLinears();                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
+        for (Symbol *orig : syms)
+        {
+            // FIXME: DO BETTER, WONT WORK WITH VALUES!
+            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+            {
+                to_fix.push_back({channel, channel->getProtocolCopy()});
+            }
+        }
+
+        // const ProtocolSequence *savedRest = channel->getProtocolCopy();
+
+        for (auto alt : ctxCases)
+        {
+            // const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
+
+            for (Symbol *s : syms)
+            {
+                stmgr->addSymbol(s);
+            }
+            for (auto pair : to_fix)
+            {
+                pair.first->setProtocol(pair.second->getCopy());
+            }
+
+            // proto->append(savedRest->getCopy());
+            // channel->setProtocol(proto);
+
+            // stmgr->addSymbol(sym);
+
+
+
+            stmgr->enterScope(StopType::NONE);
+            std::variant<TypedNode *, ErrorChain *> optEval = typeCheck(alt);
+            
+            // anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
+            {
+                (*e)->addSemanticError(ctx->getStart(), "2083");
+                return *e;
+            }
+
+            cases.push_back(std::get<TypedNode *>(optEval));
+
+            // safeExitScope(ctx);
+
+            for (auto s : ctxRest)
+            {
+                std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+
+                if (!restVecFilled)
+                {
+
+                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
+                    {
+                        (*e)->addSemanticError(ctx->getStart(), "2097");
+                        return *e;
+                    }
+
+                    restVec.push_back(std::get<TypedNode *>(rOpt));
+                }
+            }
+
+            restVecFilled = true;
+
+            safeExitScope(ctx);
+
+            std::vector<Symbol *> lins = stmgr->getAvaliableLinears();
+
+            // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+            // due to the var leaving the scope
+            if (lins.size() > 0)
+            {
+                std::ostringstream details;
+
+                for (auto e : lins)
+                {
+                    details << e->toString() << "; ";
+                }
+
+                errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
+            }
+        }
+
+        // return Types::UNDEFINED;
+        // return ty.value();
+        return ConditionalData(cases, restVec);
     }
 
     const Type *any2Type(std::any any)
