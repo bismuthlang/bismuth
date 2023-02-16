@@ -2058,6 +2058,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
+        //FIXME: NEEDS TO HANDLE EXITS/RETURNS STILL!!
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::ProtoAlternativeContext>(
             ctx,
             ctx->protoAlternative(),
