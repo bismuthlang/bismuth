@@ -74,14 +74,15 @@ extern "C" unsigned int Execute(void (*func)(unsigned int))
     return idOut;
 }
 
+// FIXME: do better error handling for WriteHelper instead of just logging and returns!
 void WriteHelper(unsigned int aId, Message m) { //uint8_t * (*func)(unsigned int)) {
-exec_mutex.lock();
+    exec_mutex.lock();
     auto i_oAId = LookupOther.find(aId);
 
     if (i_oAId == LookupOther.end())
     {
         std::cout << "E53 " << aId << std::endl;
-        return; // FIXME: DO BETTER
+        return; 
     }
 
     unsigned int oAId = i_oAId->second;
@@ -98,7 +99,7 @@ exec_mutex.lock();
             std::cout << e.first << std::endl;
         }
 
-        return; // FIXME: DO BETTER
+        return;
     }
 
     i_buffer->second->enqueue(m);
@@ -139,6 +140,7 @@ extern "C" uint8_t *ReadChannel(unsigned int aId)
     return v;
 }
 
+// FIXME: do better error handling for ReadProjection instead of just logging and returns! Also why do we mix bools and ints?
 extern "C" unsigned int ReadProjection(unsigned int aId) //FIXME: SHOULD METHODIZE ALL THESE
 {
     exec_mutex.lock();
@@ -148,7 +150,7 @@ extern "C" unsigned int ReadProjection(unsigned int aId) //FIXME: SHOULD METHODI
     if (i_buffer == State.end())
     {
         std::cout << "79 " << aId << std::endl;
-        return false; // FIXME: DO BETTER
+        return false;
     }
 
     Message m = i_buffer->second->dequeue();
@@ -159,11 +161,12 @@ extern "C" unsigned int ReadProjection(unsigned int aId) //FIXME: SHOULD METHODI
         return i; 
     }
 
-    std::cout << "E168" << std::endl; // FIXME: DO BETTER
+    std::cout << "E168" << std::endl;
     
     return 0; 
 }
 
+// FIXME: do better error handling for ShouldLoop instead of just logging and returns!
 extern "C" bool ShouldLoop(unsigned int aId)
 {
     exec_mutex.lock();
@@ -173,7 +176,7 @@ extern "C" bool ShouldLoop(unsigned int aId)
     if (i_buffer == State.end())
     {
         std::cout << "79 " << aId << std::endl;
-        return false; // FIXME: DO BETTER
+        return false;
     }
 
     Message m = i_buffer->second->dequeue();
@@ -183,11 +186,12 @@ extern "C" bool ShouldLoop(unsigned int aId)
     if (std::holds_alternative<END_LOOP>(m))
         return false;
 
-    std::cout << "E126" << std::endl; // FIXME: DO BETTER
+    std::cout << "E126" << std::endl;
 
     return false;
 }
 
+// FIXME: do better error handling for ContractChannel instead of just logging and returns!
 extern "C" void ContractChannel(unsigned int aId)
 {
     exec_mutex.lock();
@@ -197,7 +201,7 @@ extern "C" void ContractChannel(unsigned int aId)
     if (i_oAId == LookupOther.end())
     {
         std::cout << "E138 " << aId << std::endl;
-        return; // FIXME: DO BETTER
+        return;
     }
 
     unsigned int oAId = i_oAId->second;
@@ -209,7 +213,7 @@ extern "C" void ContractChannel(unsigned int aId)
     if (i_buffer == State.end())
     {
         std::cout << "E148 " << aId << "->" << oAId << std::endl;
-        return; // FIXME: DO BETTER
+        return;
     }
 
     START_LOOP v;
@@ -217,6 +221,7 @@ extern "C" void ContractChannel(unsigned int aId)
     i_buffer->second->enqueue(v);
 }
 
+// FIXME: do better error handling for WeakenChannel instead of just logging and returns!
 extern "C" void WeakenChannel(unsigned int aId)
 {
     exec_mutex.lock();
@@ -225,7 +230,7 @@ extern "C" void WeakenChannel(unsigned int aId)
     if (i_oAId == LookupOther.end())
     {
         std::cout << "E165 " << aId << std::endl;
-        return; // FIXME: DO BETTER
+        return;
     }
 
     unsigned int oAId = i_oAId->second;
@@ -237,7 +242,7 @@ extern "C" void WeakenChannel(unsigned int aId)
     if (i_buffer == State.end())
     {
         std::cout << "E175 " << aId << "->" << oAId << std::endl;
-        return; // FIXME: DO BETTER
+        return;
     }
 
     END_LOOP v;

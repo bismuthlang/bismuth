@@ -56,7 +56,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
             if (!paramTypeOpt)
                 return errorHandler.addSemanticError(ctx->getStart(), "59");
 
-            ParameterListNode params = paramTypeOpt.value(); // FIXME: WHY NO POINTER?
+            ParameterListNode params = paramTypeOpt.value();
             std::vector<const Type *> ps;
 
             for (ParameterNode param : params)
@@ -214,7 +214,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
 std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) ? TNVariantCast<LambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<FieldAccessNode>(visitCtx(ctx->field, true)); // FIXME: DO BETTER, PRESERVE TYPE, MAYBE VARIADIC
+    std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) ? TNVariantCast<LambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<FieldAccessNode>(visitCtx(ctx->field, true));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
     {
         (*e)->addSemanticError(ctx->getStart(), "Unable to generate expression to invoke.");
@@ -347,7 +347,7 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
             return {};
         }
 
-        ParameterListNode params = paramTypeOpt.value(); // FIXME: WHY NO POINTER?
+        ParameterListNode params = paramTypeOpt.value();
         std::vector<const Type *> ps;
 
         for (ParameterNode param : params)
