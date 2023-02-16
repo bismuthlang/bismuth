@@ -28,8 +28,6 @@ define getPrintLambda :: c : Channel<-str,int -> str> = {
     c.send(fn)
 }
 
-define struct Unit {}
-
 # a func aFromLambdaOp(lambdaOp op) {
 define aFromLambdaOp :: c : Channel<+lambdaOp;-a> = {
     lambdaOp op := c.recv();

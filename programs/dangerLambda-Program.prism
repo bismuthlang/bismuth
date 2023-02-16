@@ -1,7 +1,5 @@
 extern int func printf(str s, ...);
 
-define struct Unit {}
-
 # Unit -> int func getMain1() {
 define getMain1 :: c : Channel<-Program<-int>> = {
     # int func main(Unit u) {

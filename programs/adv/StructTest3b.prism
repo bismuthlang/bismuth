@@ -1,7 +1,5 @@
 extern int func printf(str s, ...);
 
-define struct Unit {}
-
 define struct RGBData {
     int[3] rgb; 
 }
@@ -61,7 +59,7 @@ define getRGBColor :: c : Channel<+int;+int;+int;-Color> = {
 
 
 # proc fancyPrint(Color c) {
-define func fancyPrint (Color c) : Unit { #FIXME: DO BETTER PROC!
+define func fancyPrint (Color c) { #FIXME: DO BETTER PROC!
     str s := c.toString(c.colorType);
     
     printf("Color[type=%s, ", c.toString(c.colorType));
@@ -73,7 +71,7 @@ define func fancyPrint (Color c) : Unit { #FIXME: DO BETTER PROC!
          HSVColor hsv => printf("r=%u, g=%u, b=%u]\n", hsv.getHue(hsv.hsv), hsv.getSat(hsv.hsv), hsv.getVal(hsv.hsv));
     }
 
-    return Unit::init(); 
+    return; 
 }
 
 

@@ -501,7 +501,7 @@ TEST_CASE("programs/StructTest3b - nested fields", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest3b.prism"))),
-        "07052a2346e10c458cfb5668eccd7e3434911acdeb96bf7dff1366e808a4128d");
+        "19deb1c1540c705f8748c61c22e2a9267d059bb326bd49ab3b0d3a15ef9a7094");
 }
 
 TEST_CASE("programs/StructTest4", "[codegen][struct]")
@@ -529,7 +529,7 @@ TEST_CASE("programs/dangerLambda-Lambda - lambdas with dupl function names", "[c
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Lambda.prism"))),
-        "622876939afba31057d8130a3a2f00360097e7ec019b44ae52fbb89ac9aa53b7");
+        "53caff517419607af4bbcad5cfaac2fc3a8e607c385b7a8730cf17b8733f4df4");
 }
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")
@@ -616,7 +616,7 @@ TEST_CASE("programs/example", "[codegen][program]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/example.prism"))),
-        "df83075d797436362015b813afcff6c3c5b2a979789c1661718aa929adefe1f3");
+        "5e287d1e8709e85d3a17eeccd83be6f454c1ef4db4740d899502c94c584a005d");
 }
 
 TEST_CASE("programs/SendChannel", "[codegen][linear-types]")

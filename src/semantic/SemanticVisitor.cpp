@@ -1817,6 +1817,10 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BaseTypeContext *ctx)
     {
         return Types::STR;
     }
+    else if(ctx->TYPE_UNIT())
+    {
+        return Types::UNIT; 
+    }
 
     errorHandler.addSemanticError(ctx->getStart(), "Unknown type: " + ctx->getText());
     return Types::ABSURD;

@@ -1040,7 +1040,7 @@ public:
         std::ostringstream description;
         // description << (isProc ? "Unit" : "");
         if(paramTypes.size() == 0)
-            description << "1";
+            description << "()"; //TODO: change whole thing to touple to make it easier to deal with
         
         for (unsigned int i = 0; i < paramTypes.size(); i++)
         {

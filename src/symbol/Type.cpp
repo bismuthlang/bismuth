@@ -50,7 +50,8 @@ bool TypeBottom::isSupertypeFor(const Type *other) const
 bool TypeUnit::isSupertypeFor(const Type *other) const
 {
     // return dynamic_cast<const TypeUnit *>(other);
-    return false;
+    // return false;
+    return dynamic_cast<const TypeUnit *>(other);
 }
 
 /*

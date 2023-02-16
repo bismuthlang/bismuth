@@ -1,10 +1,8 @@
 extern int func printf(str s, ...);
 
-define struct Unit {}
-
 # Unit -> int func getMain1() { // TODO: this syntax kind of seems better for documentation
-define func getMain1 () : Unit -> int { # // FIXME: ENABLE UNIT TYPE!
-    define func main (Unit u) : int {
+define func getMain1 () : () -> int {
+    define func main () : int {
         printf("Main 1!\n");
         return 1; 
     }
@@ -13,8 +11,8 @@ define func getMain1 () : Unit -> int { # // FIXME: ENABLE UNIT TYPE!
 }
 
 # Unit -> int func getMain2() {
-define func getMain2 () : Unit -> int {
-    define func main (Unit u) : int {
+define func getMain2 () : () -> int {
+    define func main () : int {
         printf("Main 2!\n");
         return 2; 
     }
@@ -23,7 +21,7 @@ define func getMain2 () : Unit -> int {
 }
 
 define program :: c : Channel<-int> = {
-    Unit u := Unit::init();
+    # Unit u := Unit::init();
 
-    c.send(getMain1()(u) + getMain2()(u))
+    c.send(getMain1()() + getMain2()())
 }

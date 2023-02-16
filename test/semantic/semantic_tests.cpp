@@ -181,7 +181,7 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
     REQUIRE_FALSE(UNIT->isSubtype(STR));
     REQUIRE_FALSE(UNIT->isSubtype(BOOL));
     REQUIRE_FALSE(UNIT->isSubtype(BOT));
-    REQUIRE_FALSE(UNIT->isSubtype(UNIT));
+    REQUIRE(UNIT->isSubtype(UNIT));
     REQUIRE_FALSE(UNIT->isSubtype(ABSD));
   }
 
@@ -285,7 +285,7 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
     REQUIRE(UNIT->isNotSupertype(STR));
     REQUIRE(UNIT->isNotSupertype(BOOL));
     REQUIRE(UNIT->isNotSupertype(BOT));
-    REQUIRE(UNIT->isNotSupertype(UNIT));
+    REQUIRE(UNIT->isSubtype(UNIT));
     REQUIRE(UNIT->isNotSupertype(ABSD));
   }
 

@@ -1,7 +1,5 @@
 extern int func printf(str s, ...);
 
-define struct Unit {}
-
 define struct RGBData {
     int[3] rgb; 
 }
