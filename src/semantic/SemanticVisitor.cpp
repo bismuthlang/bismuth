@@ -1829,7 +1829,7 @@ std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
     {
         const Type *caseType = any2Type(e->accept(this));
 
-        if (dynamic_cast<const TypeChannel *>(caseType)) // FIXME: DO BETTER LINEAR CHECK!
+        if (dynamic_cast<const TypeChannel *>(caseType)) // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure tehy are used?
         {
             return errorHandler.addSemanticError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
         }
@@ -2171,7 +2171,7 @@ std::variant<ProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramP
             return errorHandler.addSemanticError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString());
         }
 
-        return new ProgramProjectNode(sym, projectIndex, ctx->getStart()); // new IConstExprNode(projectIndex), Types::UNDEFINED); // FIXME: DO BETTER TYPE!
+        return new ProgramProjectNode(sym, projectIndex, ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot project on non-channel: " + id);
