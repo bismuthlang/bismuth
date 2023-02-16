@@ -127,6 +127,13 @@ TEST_CASE("programs/testSelectBlock1 - Basic Select with Blocks that Return", "[
         "41e1d6adb20f26fc561d6b0d36033edab33918e16cc8fd1c4361548240758563");
 }
 
+TEST_CASE("programs/testSelectBlock1-fn - Basic Select with Blocks that Return", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock1-fn.prism"))),
+        "3a483b055dd418315d77d499942c2afe27d27b8c2f55a99cffdd3dbf3a12a296");
+}
+
 TEST_CASE("programs/test6a (CAFE!) - Basic Nested Selects, LEQ, GEQ", "[codegen]")
 {
     EnsureCompilesTo(
