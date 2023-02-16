@@ -28,7 +28,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
             {
                 const TypeProgram *funcType = new TypeProgram(channel, false);
                 Symbol *funcSymbol = new Symbol(id, funcType, true, true);
-                // FIXME: test name collisions with externs
+                // FIXME: test name collisions with externs & across all defs
                 stmgr->addSymbol(funcSymbol);
                 bindings->bind(fnCtx->defineProc(), funcSymbol);
             }
@@ -67,12 +67,12 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
             const Type *retType = fnCtx->defineFunc()->lam->ret ? any2Type(fnCtx->defineFunc()->lam->ret->accept(this))
                                                                 : Types::UNIT;
 
-            Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true); // FIXME: DO BETTER
+            Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true);
 
             stmgr->addSymbol(funcSym);
             bindings->bind(fnCtx->defineFunc(), funcSym);
         }
-        else // FIXME: BIND THESE!!!
+        else
         {
             std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -81,7 +81,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
                 return *e;
             }
 
-            if (dynamic_cast<WPLParser::DefineStructContext *>(e)) // FIXME: DO BETTER
+            if (dynamic_cast<WPLParser::DefineStructContext *>(e))
             {
                 defs.push_back(dynamic_cast<DefineStructNode *>(std::get<TypedNode *>(opt)));
             }
