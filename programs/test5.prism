@@ -31,7 +31,7 @@ define nestedIf :: c : Channel<+int;-str> = {
     }
 
     # return "CASE IMPOSSIBLE (-1)"; 
-    # c.send("CASE IMPOSSIBLE (-1)") # FIXME: THIS CORRECTLY CAUSES ERROR, BUT IT HAPPENS MULTIPLE TIMES AND WE NEED TO ADD A TEST CASE THAT CONFIRMS THIS ERROR WAS THROWN!!!
+    # c.send("CASE IMPOSSIBLE (-1)") # ADD A TEST CASE THAT CONFIRMS THIS ERROR WAS THROWN!!!
 }
 
 define program :: c : Channel<-int> = {

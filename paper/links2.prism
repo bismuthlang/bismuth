@@ -13,20 +13,23 @@ define func linkRecvBool (Channel<+boolean> a, Channel<-boolean> b) {
 define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>>;+Channel<InternalChoice<-int, -boolean>>> = {
     Channel<ExternalChoice<+int, + boolean>> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
+    
+    offer a 
+        | +int => {
+                b[-int]
+                linkRecvInt(a, b)
+            }
+        | +boolean => {
+                b[-boolean]
+                linkRecvBool(a, b)
+            }
 
-    a.case(
-        +int => {
-            int i := a.recv(); 
-            printf("54\n");
-        }
-        +boolean => {
-            boolean b := a.recv(); 
-            printf("57\n");
-        }
-    )
+    # offer a 
+    #     | +int => {var F := a.recv();}
+    #     | +boolean => {var F := a.recv();}
 
-    b[-int]
-    b.send(0)
+    # b[-int]
+    # b.send(5)
 }
 
 define bar1 :: c : Channel<InternalChoice<-int, -boolean>> = {

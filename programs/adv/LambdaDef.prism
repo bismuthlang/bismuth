@@ -1,7 +1,5 @@
 extern int func printf(str s, ...);
 
-# FIXME: ADD THIS AS A TEST CASE!!
-
 define program :: c : Channel<-int> = {
 
     printf("Prior to decl\n");

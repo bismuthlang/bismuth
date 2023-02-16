@@ -239,7 +239,7 @@ int main(int argc, const char *argv[])
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, flags);
-    std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree); // FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
+    auto TypedOpt = sv->visitCtx(tree); // FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
 
     if (sv->hasErrors(0)) // Want to see all errors
     {
@@ -249,14 +249,15 @@ int main(int argc, const char *argv[])
       continue;
     }
 
-    if (!TypedOpt)
+    if (std::holds_alternative<ErrorChain*>(TypedOpt))//!TypedOpt)
     {
       std::cerr << "Failed to generate Typed AST" << std::endl;
+      std::cerr << std::get<ErrorChain*>(TypedOpt)->toString() << std::endl;  //FIXME: CAN SOMEHOW TRIP?
       isValid = false;
       continue;
     }
 
-    CompilationUnitNode *cu = TypedOpt.value();
+    CompilationUnitNode *cu = std::get<CompilationUnitNode*>(TypedOpt);// TypedOpt.value();
 
     if (isVerbose)
     {

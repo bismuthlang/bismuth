@@ -19,7 +19,7 @@ struct Value {
 struct START_LOOP {}; 
 struct END_LOOP {}; 
 struct SEL {
-    unsigned int i; //FIXME: Will have to be handled better
+    unsigned int i; //TODO: Will have to be handled better
 };
 
 typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message; 

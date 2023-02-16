@@ -1,6 +1,6 @@
 extern int func printf(str s, ...);
 
-define func test ((int + boolean) sum) : int { #FIXME: PROC
+define func test ((int + boolean) sum) : int {
     match sum {
         int i => printf("integer: %u\n", i);
         boolean b => printf("boolean: %s\n", (boolean b) : str {
@@ -18,7 +18,7 @@ define func test ((int + boolean) sum) : int { #FIXME: PROC
 
 define program :: c : Channel<-int> = {
     var msg := false; 
-    # msg := 5;  # FIXME: THIS SHOULDNT THROW AN ERROR 
+    # msg := 5;  # TODO: THIS SHOULDNT THROW AN ERROR, MAKE INF USE SUM TYPES?
     test(msg);
     c.send(0)
 }

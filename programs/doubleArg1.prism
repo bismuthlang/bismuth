@@ -45,7 +45,7 @@ define bar1 :: c : Channel<?(?-int);+int> = {
 }
 
 define bar2 :: c : Channel<InternalChoice<-int;+boolean, ?-int>;+str> = {
-    c[?(-int)] # FIXME: USE BETTER SYNTAX!!!
+    c[?(-int)] # TODO: USE BETTER SYNTAX!!!
     weaken(c)
 
     str s := c.recv();

@@ -30,11 +30,11 @@ void EnsureCompilesTo(antlr4::ANTLRInputStream *input, string hash)
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
-    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
-    REQUIRE(cuOpt.has_value());
+    auto cuOpt = sv->visitCtx(tree);
+    REQUIRE(std::holds_alternative<CompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
 
     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
-    cv->visitCompilationUnit(cuOpt.value());
+    cv->visitCompilationUnit(std::get<CompilationUnitNode*>(cuOpt));//cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
     REQUIRE(llvmIrToSHA256(cv->getModule()) == hash);
@@ -52,7 +52,7 @@ void EnsureErrors(antlr4::ANTLRInputStream *input)
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
-    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
+    auto cuOpt = sv->visitCtx(tree);
     // REQUIRE(cuOpt.has_value());
 
     REQUIRE(sv->hasErrors(0));
@@ -236,8 +236,8 @@ TEST_CASE("programs/test11 - Expressions in decl (let*) ", "[codegen]")
 TEST_CASE("programs/test12 - Scopes & Prime Finder Example! ", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test12.wpl"))),
-        "209c1960ddf81cfa4490c2d8a0501577b799bdacc5d829ce2530f094559ed915");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test12.prism"))),
+        "ca821e45b05cd191197ce38cec02f62135d62155c597ab7a4ea18dc5854511ed");
 }
 
 TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
@@ -245,6 +245,13 @@ TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test13.prism"))),
         "5810f4c05288eb8c89bb4e1d6c76fa9b427281d14c395dc7d10bfe742d0c1861");
+}
+
+TEST_CASE("programs/LambdaDef", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/LambdaDef.prism"))),
+        "a2ef4ba41d2d39d14500e3f077559361201ba9e251411cc29d9c7958038500d3");
 }
 
 // TEST_CASE("programs/test-runtime - Basic runtime tests", "[codegen]")
@@ -395,7 +402,7 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
     STManager *stm = new STManager();
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
-    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
+    auto cuOpt = sv->visitCtx(tree);
     // REQUIRE(cuOpt.has_value()); //FIXME: DO BETTER
 
     REQUIRE(sv->hasErrors(0));
@@ -445,7 +452,7 @@ TEST_CASE("programs/enum2 - Basic Enum 2", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum2.prism"))),
-        "81bf96b4ed3ebfba61974be24713eb5db1490ffa2f7b3f0d173fa2cd591fe6fd");
+        "1629ab26d49e6ab30e266062de6363bedcb6f4b739dd61ebd7910ce2896366a7");
 }
 
 TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignmens outside of decl", "[codegen][enum]")
@@ -511,16 +518,22 @@ TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
         "9b61cbf31790496ddd1da29db6d7f412ac8e8890ad822ef7230bf32740899407");
 }
 
-TEST_CASE("programs/dangerLambda - lambdas with dupl function names", "[codegen][struct]")
+TEST_CASE("programs/dangerLambda-Program - lambdas with dupl function names", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda.prism"))),
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Program.prism"))),
         "c1d7ec0503975ede149360b32780003757deccf84c78862ad7bbc0d54e5e2f65");
+}
+
+TEST_CASE("programs/dangerLambda-Lambda - lambdas with dupl function names", "[codegen][struct]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Lambda.prism"))),
+        "622876939afba31057d8130a3a2f00360097e7ec019b44ae52fbb89ac9aa53b7");
 }
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")
 {
-    // FIXME: VERIFY STRUCT AND ENUM PASSING ARE DONE BY VALUE!!
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing.prism"))),
         "4e42b4481de60407ae1ba52911afb2a9b49aba1247389e107ca3dc6c43576046");
@@ -598,7 +611,7 @@ TEST_CASE("Out of order function", "[codegen][program]")
     REQUIRE(llvmIrToSHA256(cv->getModule()) == "64619d22222218e680ba738a540068053b6f865e7a1624f9826593fe81123069");
     */
 }
-// FIXME: TRY REDECL OF ENUM IE. SETTING IT AGAIN
+
 TEST_CASE("programs/example", "[codegen][program]")
 {
     EnsureCompilesTo(
@@ -618,6 +631,27 @@ TEST_CASE("paper/links", "[codegen][linear-types]")
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links.prism"))),
         "d7c117695a6367478693aaddd6acd07f0e40a1d3188ca6d563ff659d86a30b0c");
+}
+
+TEST_CASE("paper/links2", "[codegen][linear-types]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links2.prism"))),
+        "ff1f300a0bea0f2b2b3f0fdf912e39ceaec535574ff6e997be2e9bd09355e044");
+}
+
+TEST_CASE("paper/links3", "[codegen][linear-types]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links3.prism"))),
+        "43a9acb2c30a817108884a7c910a0767e563dd0fc39e69bece477761af027913");
+}
+
+TEST_CASE("paper/links4", "[codegen][linear-types]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links4.prism"))),
+        "816087a6313c800ff6491188e191ca4fb8fad3677f1475fa5c31dc51792034a0");
 }
 
 TEST_CASE("programs/doubleArg1c2 - weakening and loops", "[codegen][linear-types]")

@@ -2047,9 +2047,9 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][pr
 
   // sv->visitCompilationUnit(tree);
   // REQUIRE_FALSE(sv->hasErrors(ERROR));
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  REQUIRE(TypedOpt);
+  REQUIRE(std::holds_alternative<CompilationUnitNode*>(TypedOpt));
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][program][local-function]")
@@ -2089,10 +2089,10 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  REQUIRE(TypedOpt);
+  REQUIRE(std::holds_alternative<CompilationUnitNode*>(TypedOpt));
 }
 
 TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")
@@ -2137,7 +2137,7 @@ TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
   // REQUIRE(TypedOpt);
@@ -2184,7 +2184,7 @@ TEST_CASE("Redeclaration - p2f", "[semantic][program][local-function]")
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
   // REQUIRE(TypedOpt);
@@ -2232,7 +2232,7 @@ TEST_CASE("Redeclaration - f2p", "[semantic][program][local-function]")
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
   // REQUIRE(TypedOpt);
@@ -2279,7 +2279,7 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
 
   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
 
-  std::optional<CompilationUnitNode *> TypedOpt = sv->visitCtx(tree);
+  auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
   // REQUIRE(TypedOpt);
@@ -2923,6 +2923,365 @@ define program :: c : Channel<-int> = {
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
+}
+
+TEST_CASE("Links3 - 1", "[semantic]")
+{
+  antlr4::ANTLRInputStream input(
+      R""""(
+define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
+    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
+    
+    offer a 
+        | +int => {
+                b[-int]
+                b.send(a.recv())
+                a.send("5")
+            }
+        | +boolean => {
+                b[-boolean]
+                b.send(a.recv())
+                a.send("5")
+            }
+
+    a.send("5")
+}
+
+define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+    c[-boolean]
+    c.send(false)
+    var xyz := c.recv(); 
+}
+
+define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+    c.case(
+        +boolean => {
+            boolean b := c.recv(); 
+        }
+        +int => {
+            int i := c.recv(); 
+        }
+    )
+}
+
+define program :: c : Channel<-int> = {
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    linker.send(l1)
+    linker.send(l2)
+
+    c.send(0)
+}
+    )"""");
+  WPLLexer lexer(&input);
+  // lexer.removeErrorListeners();
+  // lexer.addErrorListener(new TestErrorListener());
+  antlr4::CommonTokenStream tokens(&lexer);
+  WPLParser parser(&tokens);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new TestErrorListener());
+
+  WPLParser::CompilationUnitContext *tree = NULL;
+  REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  REQUIRE(tree != NULL);
+  REQUIRE(tree->getText() != "");
+
+  STManager *stmgr = new STManager();
+  PropertyManager *pm = new PropertyManager();
+
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+  sv->visitCompilationUnit(tree);
+  REQUIRE(sv->hasErrors(ERROR));
+}
+
+TEST_CASE("Links3 - 2", "[semantic]")
+{
+  antlr4::ANTLRInputStream input(
+      R""""(
+define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
+    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
+    
+    offer a 
+        | +int => {
+                b[-int]
+                b.send(a.recv())
+            }
+        | +boolean => {
+                b[-boolean]
+                b.send(a.recv())
+                a.send("5")
+            }
+
+    a.send("5")
+}
+
+define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+    c[-boolean]
+    c.send(false)
+    var xyz := c.recv(); 
+}
+
+define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+    c.case(
+        +boolean => {
+            boolean b := c.recv(); 
+        }
+        +int => {
+            int i := c.recv(); 
+        }
+    )
+}
+
+define program :: c : Channel<-int> = {
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    linker.send(l1)
+    linker.send(l2)
+
+    c.send(0)
+}
+    )"""");
+  WPLLexer lexer(&input);
+  // lexer.removeErrorListeners();
+  // lexer.addErrorListener(new TestErrorListener());
+  antlr4::CommonTokenStream tokens(&lexer);
+  WPLParser parser(&tokens);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new TestErrorListener());
+
+  WPLParser::CompilationUnitContext *tree = NULL;
+  REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  REQUIRE(tree != NULL);
+  REQUIRE(tree->getText() != "");
+
+  STManager *stmgr = new STManager();
+  PropertyManager *pm = new PropertyManager();
+
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+  sv->visitCompilationUnit(tree);
+  REQUIRE(sv->hasErrors(ERROR));
+}
+
+TEST_CASE("Links3 - 3", "[semantic]")
+{
+  antlr4::ANTLRInputStream input(
+      R""""(
+define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
+    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
+    
+    offer a 
+        | +int => {
+                b[-int]
+                b.send(a.recv())
+                a.send("5")
+            }
+        | +boolean => {
+                b[-boolean]
+                b.send(a.recv())
+            }
+
+    a.send("5")
+}
+
+define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+    c[-boolean]
+    c.send(false)
+    var xyz := c.recv(); 
+}
+
+define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+    c.case(
+        +boolean => {
+            boolean b := c.recv(); 
+        }
+        +int => {
+            int i := c.recv(); 
+        }
+    )
+}
+
+define program :: c : Channel<-int> = {
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    linker.send(l1)
+    linker.send(l2)
+
+    c.send(0)
+}
+    )"""");
+  WPLLexer lexer(&input);
+  // lexer.removeErrorListeners();
+  // lexer.addErrorListener(new TestErrorListener());
+  antlr4::CommonTokenStream tokens(&lexer);
+  WPLParser parser(&tokens);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new TestErrorListener());
+
+  WPLParser::CompilationUnitContext *tree = NULL;
+  REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  REQUIRE(tree != NULL);
+  REQUIRE(tree->getText() != "");
+
+  STManager *stmgr = new STManager();
+  PropertyManager *pm = new PropertyManager();
+
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+  sv->visitCompilationUnit(tree);
+  REQUIRE(sv->hasErrors(ERROR));
+}
+
+TEST_CASE("Links3 - 4", "[semantic]")
+{
+  antlr4::ANTLRInputStream input(
+      R""""(
+define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
+    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
+    
+    offer a 
+        | +int => {
+                b[-int]
+                b.send(a.recv())
+            }
+        | +boolean => {
+                b[-boolean]
+                b.send(a.recv())
+                a.send("5")
+            }
+
+}
+
+define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+    c[-boolean]
+    c.send(false)
+    var xyz := c.recv(); 
+}
+
+define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+    c.case(
+        +boolean => {
+            boolean b := c.recv(); 
+        }
+        +int => {
+            int i := c.recv(); 
+        }
+    )
+}
+
+define program :: c : Channel<-int> = {
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    linker.send(l1)
+    linker.send(l2)
+
+    c.send(0)
+}
+    )"""");
+  WPLLexer lexer(&input);
+  // lexer.removeErrorListeners();
+  // lexer.addErrorListener(new TestErrorListener());
+  antlr4::CommonTokenStream tokens(&lexer);
+  WPLParser parser(&tokens);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new TestErrorListener());
+
+  WPLParser::CompilationUnitContext *tree = NULL;
+  REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  REQUIRE(tree != NULL);
+  REQUIRE(tree->getText() != "");
+
+  STManager *stmgr = new STManager();
+  PropertyManager *pm = new PropertyManager();
+
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+  sv->visitCompilationUnit(tree);
+  REQUIRE(sv->hasErrors(ERROR));
+}
+
+TEST_CASE("Links3 - 5", "[semantic]")
+{
+  antlr4::ANTLRInputStream input(
+      R""""(
+define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
+    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
+    
+    offer a 
+        | +int => {
+                b[-int]
+                b.send(a.recv())
+                a.send("5")
+            }
+        | +boolean => {
+                b[-boolean]
+                b.send(a.recv())
+            }
+
+}
+
+define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+    c[-boolean]
+    c.send(false)
+    var xyz := c.recv(); 
+}
+
+define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+    c.case(
+        +boolean => {
+            boolean b := c.recv(); 
+        }
+        +int => {
+            int i := c.recv(); 
+        }
+    )
+}
+
+define program :: c : Channel<-int> = {
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    linker.send(l1)
+    linker.send(l2)
+
+    c.send(0)
+}
+    )"""");
+  WPLLexer lexer(&input);
+  // lexer.removeErrorListeners();
+  // lexer.addErrorListener(new TestErrorListener());
+  antlr4::CommonTokenStream tokens(&lexer);
+  WPLParser parser(&tokens);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new TestErrorListener());
+
+  WPLParser::CompilationUnitContext *tree = NULL;
+  REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  REQUIRE(tree != NULL);
+  REQUIRE(tree->getText() != "");
+
+  STManager *stmgr = new STManager();
+  PropertyManager *pm = new PropertyManager();
+
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+
+  sv->visitCompilationUnit(tree);
+  REQUIRE(sv->hasErrors(ERROR));
 }
 
 /*********************************

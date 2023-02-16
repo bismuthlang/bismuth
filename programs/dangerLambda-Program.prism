@@ -30,13 +30,6 @@ define getMain2 :: c : Channel<-Program<-int>> = {
 }
 
 define program :: c : Channel<-int> = {
-
-    # Unit u := Unit::init(); 
-
-    # return getMain1()(u) + getMain2()(u); # FIXME: WHY DOESNT THIS WORK? 
-    # Unit -> int main1 := getMain1(); 
-    # Unit -> int main2 := getMain2(); 
-
     Channel<+Program<-int>> c1 := exec getMain1; 
     Channel<+Program<-int>> c2 := exec getMain2;
 

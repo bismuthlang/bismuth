@@ -1,8 +1,6 @@
 extern int func printf(...);
 
 define program :: c : Channel<-int> = {
-
-    # FIXME: THESE MAY BE WRONG NOW DUE TO PASS BY REF LAMBDAS?
     # int func foo(int x) {
     define foo :: c : Channel<+int;-int> = {
         # int func foo(int x) {

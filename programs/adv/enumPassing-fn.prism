@@ -2,7 +2,7 @@ extern int func printf(str s, ...);
 
 # proc test ((int + boolean) sum)
 # define test :: c : Channel<+(int + boolean)> = {
-define func test ((int + boolean) sum) : int { #FIXME: PROC
+define func test ((int + boolean) sum) : int {
 # {
 
     match sum {

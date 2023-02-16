@@ -3,6 +3,8 @@
 #include "Symbol.h" //Should give us symbols and yyues...
 #include <variant>
 
+#include "antlr4-runtime.h" //For token
+
 using namespace std;
 using llvm::Value;
 
@@ -13,12 +15,27 @@ class TypedASTVisitor;
 class TypedNode
 {
 public:
+    antlr4::Token *token; // Location of node
+    TypedNode(antlr4::Token *tok) : token(tok) {}
+
     virtual ~TypedNode() = default;
 
     virtual const Type *getType() = 0;
 
+    virtual std::string toString() const = 0;  
+
     virtual std::any accept(TypedASTVisitor *a) = 0;
+
+    antlr4::Token *getStart() { return token; }
 };
+// From C++ Documentation for visitors
+template <class... Ts>
+struct overloaded : Ts...
+{
+    using Ts::operator()...;
+};
+template <class... Ts>
+overloaded(Ts...) -> overloaded<Ts...>;
 
 class SelectAlternativeNode;
 class SelectStatementNode;
@@ -43,7 +60,6 @@ class WhileLoopNode;
 class ExternNode;
 class InvocationNode;
 class FieldAccessNode;
-class VariableIDNode;
 class ArrayAccessNode;
 class AssignNode;
 class BinaryRelNode;
@@ -62,7 +78,7 @@ class MatchStatementNode;
 class ExitNode;
 
 class ChannelCaseStatementNode;
-class ProgramProjectNode; 
+class ProgramProjectNode;
 
 class TypedASTVisitor
 {
@@ -91,7 +107,6 @@ public:
     virtual std::optional<Value *> visit(ExternNode *n) = 0;
     virtual std::optional<Value *> visit(InvocationNode *n) = 0;
     virtual std::optional<Value *> visit(FieldAccessNode *n) = 0;
-    virtual std::optional<Value *> visit(VariableIDNode *n) = 0;
     virtual std::optional<Value *> visit(ArrayAccessNode *n) = 0;
     virtual std::optional<Value *> visit(AssignNode *n) = 0;
     virtual std::optional<Value *> visit(BinaryRelNode *n) = 0;
@@ -108,7 +123,7 @@ public:
     virtual std::optional<Value *> visit(MatchStatementNode *n) = 0;
     virtual std::optional<Value *> visit(ExitNode *n) = 0;
     virtual std::optional<Value *> visit(ChannelCaseStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramProjectNode *n) = 0; 
+    virtual std::optional<Value *> visit(ProgramProjectNode *n) = 0;
 
     // virtual std::optional<Value
 
@@ -135,7 +150,6 @@ public:
     std::any any_visit(ExternNode *n) { return this->visit(n); }
     std::any any_visit(InvocationNode *n) { return this->visit(n); }
     std::any any_visit(FieldAccessNode *n) { return this->visit(n); }
-    std::any any_visit(VariableIDNode *n) { return this->visit(n); }
     std::any any_visit(ArrayAccessNode *n) { return this->visit(n); }
     std::any any_visit(AssignNode *n) { return this->visit(n); }
     std::any any_visit(BinaryRelNode *n) { return this->visit(n); }
@@ -168,21 +182,25 @@ inline std::optional<Value *> AcceptType(TypedASTVisitor *visitor, TypedNode *n)
     return any_cast<std::optional<Value *>>(n->accept(visitor));
 }
 
-class SelectAlternativeNode : public TypedNode // FIXME: DO BETTER!
+class SelectAlternativeNode : public TypedNode
 {
 public:
     TypedNode *check;
     TypedNode *eval;
 
-    SelectAlternativeNode(TypedNode *c, TypedNode *e)
+    SelectAlternativeNode(TypedNode *c, TypedNode *e, antlr4::Token *tok) : TypedNode(tok)
     {
         check = c;
         eval = e;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } //FIXME: MAYBE ABSURD? bc syntax but no
+    const TypeUnit *getType() override { return Types::UNIT; }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "SEL ALT";
+    }
 };
 
 class SelectStatementNode : public TypedNode
@@ -191,7 +209,7 @@ public:
     vector<SelectAlternativeNode *> nodes;
     vector<TypedNode *> post;
 
-    SelectStatementNode(vector<SelectAlternativeNode *> n, vector<TypedNode *> p)
+    SelectStatementNode(antlr4::Token *tok, vector<SelectAlternativeNode *> n, vector<TypedNode *> p) : TypedNode(tok)
     {
         nodes = n;
         post = p;
@@ -199,20 +217,28 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "SEL STMT NODE";
+    }
 };
 
-class ConditionNode : public TypedNode
+class ConditionNode : public TypedNode // FIXME: PROBABLY ISNT NEEDED
 {
 public:
     TypedNode *condition;
 
-    ConditionNode(TypedNode *c)
+    ConditionNode(TypedNode *c, antlr4::Token *tok) : TypedNode(tok)
     {
         condition = c;
     }
 
     const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "COND NODE";
+    }
 };
 
 // FIXME: SHOULD THERE BE A EXPRESSION VS STATEMENT DIFFERENCE IN THESE? MAYBE NOT I GUESS B/C TECHNICALLY CALLS COULD HAVE BEEN SORT OF EITHER? BUT NOT ANYMORE? IDK EVERYTHING KIND OF BECOMES EXPR WHEN FUNCTIONAL
@@ -221,7 +247,7 @@ class BlockNode : public TypedNode
 public:
     vector<TypedNode *> exprs;
 
-    BlockNode(vector<TypedNode *> e)
+    BlockNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         exprs = e;
     }
@@ -230,6 +256,10 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "BLK NODE";
+    }
 };
 
 class ParameterNode
@@ -245,7 +275,7 @@ public:
     }
 };
 
-typedef vector<ParameterNode> ParameterListNode; // FIXME: NOT EXACTLY A NODE
+typedef vector<ParameterNode> ParameterListNode;
 
 class LambdaConstNode : public TypedNode
 {
@@ -258,7 +288,7 @@ public:
     BlockNode *block;
     TypeInvoke *type;
 
-    LambdaConstNode(vector<Symbol *> p, const Type *r, BlockNode *b, string n = "LAM")
+    LambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, BlockNode *b, string n = "LAM") : TypedNode(tok)
     {
         // paramList = p;
         paramSymbols = p;
@@ -279,8 +309,14 @@ public:
 
     const TypeInvoke *getType() override
     {
+        std::cout << "297" << std::endl; 
         return type;
     }
+
+    std::string toString() const override {
+        return "LAMBDA CONST";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -295,7 +331,7 @@ public:
     // TypeChannel * channelType;
     BlockNode *block;
 
-    ProgramDefNode(string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
+    ProgramDefNode(string n, Symbol *cn, BlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         channelSymbol = cn;
@@ -309,6 +345,11 @@ public:
     {
         return type;
     }
+
+    std::string toString() const override {
+        return "PROG DEF";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -320,7 +361,7 @@ public:
     BlockNode *block;
 
     // FIXME: WHY DO WE REQUIRE PARAM LIST NODE AND SUCH WEHEN WE HAVE TO CREATE THAT MANUALLY AS PART OF TYPECHECK ANYWAYS?
-    FunctionDefNode(std::string id, ParameterListNode p, const Type *r, BlockNode *b) // string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
+    FunctionDefNode(std::string id, ParameterListNode p, const Type *r, BlockNode *b, antlr4::Token *tok) : TypedNode(tok) // string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
     {
         vector<const Type *> paramTypes;
 
@@ -339,6 +380,11 @@ public:
     {
         return ty;
     }
+
+    std::string toString() const override {
+        return "FUNC DEF";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -351,7 +397,7 @@ public:
 
     std::vector<TypedNode *> post;
 
-    ConditionalStatementNode(ConditionNode *c, BlockNode *t, std::vector<TypedNode *> p, std::optional<BlockNode *> f = {})
+    ConditionalStatementNode(antlr4::Token *tok, ConditionNode *c, BlockNode *t, std::vector<TypedNode *> p, std::optional<BlockNode *> f = {}) : TypedNode(tok)
     {
         cond = c;
         trueBlk = t;
@@ -360,6 +406,10 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+
+    std::string toString() const override {
+        return "COND STATMENT NODE";
+    }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -369,23 +419,33 @@ public:
     // First is the actual type
     optional<pair<const Type *, TypedNode *>> expr;
 
-    ReturnNode(optional<pair<const Type *, TypedNode *>> e = {})
+    ReturnNode(antlr4::Token *tok, optional<pair<const Type *, TypedNode *>> e = {}) : TypedNode(tok)
     {
         expr = e;
     }
-    
+
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "RETURN NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
 class ExitNode : public TypedNode
 {
 public:
-    ExitNode()
+    ExitNode(antlr4::Token *tok) : TypedNode(tok)
     {
     }
 
     const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+
+    std::string toString() const override {
+        return "EXIT NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -396,14 +456,19 @@ public:
     TypedNode *expr;
     const Type *lType; // Tracks type send expects. Needed for sums
 
-    ProgramSendNode(Symbol *s, TypedNode *e, const Type *l)
+    ProgramSendNode(Symbol *s, TypedNode *e, const Type *l, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         expr = e;
         lType = l;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "SEND NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -413,7 +478,7 @@ public:
     Symbol *sym;
     const Type *ty;
 
-    ProgramRecvNode(Symbol *s, const Type *t)
+    ProgramRecvNode(Symbol *s, const Type *t, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         // expr = e;
@@ -421,20 +486,30 @@ public:
     }
 
     const Type *getType() override { return ty; }
+
+    std::string toString() const override {
+        return "RECV NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
 class ProgramContractNode : public TypedNode
 {
 public:
-Symbol *sym;
+    Symbol *sym;
 
-    ProgramContractNode(Symbol *s)
+    ProgramContractNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "CONTRACT NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -443,44 +518,59 @@ class ProgramWeakenNode : public TypedNode // FIXME: COMBINE THIS WITH PREV AND 
 public:
     Symbol *sym;
 
-    ProgramWeakenNode(Symbol *s)
+    ProgramWeakenNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "WEAKEN NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramExecNode : public TypedNode // FIXME: DO BETTER
+class ProgramExecNode : public TypedNode
 {
 public:
     TypedNode *prog;
     TypeChannel *chanType;
 
-    ProgramExecNode(TypedNode *p, TypeChannel *c)
+    ProgramExecNode(TypedNode *p, TypeChannel *c, antlr4::Token *tok) : TypedNode(tok)
     {
         prog = p;
         chanType = c;
     }
 
     const TypeChannel *getType() override { return chanType; }
+
+    std::string toString() const override {
+        return "EXEC NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramAcceptNode : public TypedNode // FIXME: DO BETTER
+class ProgramAcceptNode : public TypedNode
 {
 public:
     Symbol *sym;
     BlockNode *blk;
 
-    ProgramAcceptNode(Symbol *s, BlockNode *b)
+    ProgramAcceptNode(Symbol *s, BlockNode *b, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         blk = b;
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "ACCEPT NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -490,11 +580,16 @@ public:
     string name;
     TypeSum *sum;
 
-    DefineEnumNode(string n, TypeSum *s)
+    DefineEnumNode(string n, TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;
         sum = s;
+    }
+
+
+    std::string toString() const override {
+        return "DEF ENUM NODE";
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
@@ -507,7 +602,7 @@ public:
     string name;
     TypeStruct *product;
 
-    DefineStructNode(string n, TypeStruct *p)
+    DefineStructNode(string n, TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;
@@ -515,6 +610,12 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "DEF STRUCT";
+    }
+
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -524,13 +625,18 @@ public:
     const TypeStruct *product;
     vector<TypedNode *> exprs;
 
-    InitProductNode(const TypeStruct *p, vector<TypedNode *> e)
+    InitProductNode(const TypeStruct *p, vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         product = p;
         exprs = e;
     }
 
     const TypeStruct *getType() override { return product; }
+
+    std::string toString() const override {
+        return "INIT PRODUCT";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -540,24 +646,29 @@ public:
     ConditionNode *cond;
     BlockNode *blk;
 
-    WhileLoopNode(ConditionNode *c, BlockNode *t)
+    WhileLoopNode(ConditionNode *c, BlockNode *t, antlr4::Token *tok) : TypedNode(tok)
     {
         cond = c;
         blk = t;
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "WHILE LOOP";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ExternNode : public TypedNode 
+class ExternNode : public TypedNode
 {
 private:
     Symbol *sym;
     const TypeInvoke *ty; // FIXME: ISNT REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
-    ExternNode(std::string id, ParameterListNode p, const Type *r, bool v)
+    ExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
     {
         vector<const Type *> paramTypes;
 
@@ -575,6 +686,10 @@ public:
         return ty;
     }
 
+    std::string toString() const override {
+        return "EXTERN NODE";
+    }
+
     Symbol *getSymbol() { return sym; } // FIXME: WHY ARENT THINGS LIKE THIS CONST?
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -586,7 +701,7 @@ public:
     vector<TypedNode *> args;
     vector<const Type *> paramType; // Used for sums
 
-    InvocationNode(TypedNode *f, vector<TypedNode *> a, vector<const Type *> p)
+    InvocationNode(TypedNode *f, vector<TypedNode *> a, vector<const Type *> p, antlr4::Token *tok) : TypedNode(tok)
     {
         fn = f;
         args = a;
@@ -596,10 +711,13 @@ public:
 
     const Type *getType() override
     {
-        // FIXME: DO BETTER?
-
         return dynamic_cast<const TypeInvoke *>(fn->getType())->getReturnType();
     }
+
+    std::string toString() const override {
+        return "INVOKE NODE";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -609,11 +727,11 @@ private:
     const Type *type;
 
 public:
-    Symbol *symbol; // FIXME: SHOULD THESE BE SYMBOLS OR SYMBOL CONTEXTS?
+    Symbol *symbol;
     vector<pair<string, const Type *>> accesses;
     bool is_rvalue;
 
-    FieldAccessNode(Symbol *f, bool rv, vector<pair<string, const Type *>> r = {})
+    FieldAccessNode(antlr4::Token *tok, Symbol *f, bool rv, vector<pair<string, const Type *>> r = {}) : TypedNode(tok)
     {
         symbol = f;
         is_rvalue = rv;
@@ -633,25 +751,9 @@ public:
     {
         return type;
     }
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-};
 
-class VariableIDNode : public TypedNode // FIXME: DO BETTER
-{
-
-public:
-    Symbol *symbol;
-    bool is_rvalue;
-
-    VariableIDNode(Symbol *f, bool r)
-    {
-        symbol = f;
-        is_rvalue = r;
-    }
-
-    const Type *getType() override
-    {
-        return symbol->type;
+    std::string toString() const override {
+        return "FIELD ACCESS NODE";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
@@ -664,7 +766,7 @@ public:
     TypedNode *indexExpr;
     bool is_rvalue;
 
-    ArrayAccessNode(FieldAccessNode *f, TypedNode *i, bool r)
+    ArrayAccessNode(FieldAccessNode *f, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
     {
         field = f;
         indexExpr = i;
@@ -675,6 +777,11 @@ public:
     {
         return dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
     }
+
+    std::string toString() const override {
+        return "Array Access Node";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -684,13 +791,17 @@ public:
     TypedNode *var; // FIXME: DO THESE FIELDS BETTER (THEIR TYPES AND SUCH)
     TypedNode *val;
 
-    AssignNode(TypedNode *sym, TypedNode *v)
+    AssignNode(TypedNode *sym, TypedNode *v, antlr4::Token *tok) : TypedNode(tok)
     {
         var = sym;
         val = v;
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "ASSIGN NODE";
+    }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -710,7 +821,7 @@ public:
     TypedNode *lhs;
     TypedNode *rhs;
 
-    BinaryRelNode(BinaryRelOperator o, TypedNode *l, TypedNode *r)
+    BinaryRelNode(BinaryRelOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         lhs = l;
@@ -718,6 +829,11 @@ public:
     }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "BINARY REL ";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -736,11 +852,15 @@ public:
     TypedNode *lhs;
     TypedNode *rhs;
 
-    BinaryArithNode(BinaryArithOperator o, TypedNode *l, TypedNode *r)
+    BinaryArithNode(BinaryArithOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         lhs = l;
         rhs = r;
+    }
+
+    std::string toString() const override {
+        return "BINARY ARITH";
     }
 
     const TypeInt *getType() override { return Types::INT; }
@@ -760,7 +880,7 @@ public:
     TypedNode *lhs;
     TypedNode *rhs;
 
-    EqExprNode(EqExprOperator o, TypedNode *l, TypedNode *r)
+    EqExprNode(EqExprOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         lhs = l;
@@ -768,6 +888,11 @@ public:
     }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "EQEXPR";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -783,7 +908,7 @@ public:
     UnaryOperator op;
     TypedNode *value;
 
-    UnaryExprNode(UnaryOperator o, TypedNode *v)
+    UnaryExprNode(UnaryOperator o, TypedNode *v, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         value = v;
@@ -799,6 +924,11 @@ public:
             return Types::BOOL;
         }
     }
+
+    std::string toString() const override {
+        return "UNARY";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -807,7 +937,7 @@ class LogAndExprNode : public TypedNode
 public:
     vector<TypedNode *> exprs;
 
-    LogAndExprNode(vector<TypedNode *> e)
+    LogAndExprNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         exprs = e;
     }
@@ -815,6 +945,11 @@ public:
     vector<TypedNode *> getExprs() { return exprs; }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "LOG AND";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -823,7 +958,7 @@ class LogOrExprNode : public TypedNode
 public:
     vector<TypedNode *> exprs;
 
-    LogOrExprNode(vector<TypedNode *> e)
+    LogOrExprNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         exprs = e;
     }
@@ -831,6 +966,11 @@ public:
     vector<TypedNode *> getExprs() { return exprs; }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "LOG OR";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -839,12 +979,17 @@ class StringConstNode : public TypedNode
 public:
     string value;
 
-    StringConstNode(string s)
+    StringConstNode(string s, antlr4::Token *tok) : TypedNode(tok)
     {
         value = s;
     }
 
     const TypeStr *getType() override { return Types::STR; }
+
+    std::string toString() const override {
+        return "StrConst";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -853,12 +998,17 @@ class BooleanConstNode : public TypedNode
 public:
     bool value;
 
-    BooleanConstNode(bool b)
+    BooleanConstNode(bool b, antlr4::Token *tok) : TypedNode(tok)
     {
         value = b;
     }
 
     const TypeBool *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "BOOL CONST";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -867,12 +1017,17 @@ class IConstExprNode : public TypedNode
 public:
     int value;
 
-    IConstExprNode(int v)
+    IConstExprNode(int v, antlr4::Token *tok) : TypedNode(tok)
     {
         value = v;
     }
 
     const TypeInt *getType() override { return Types::INT; }
+
+    std::string toString() const override {
+        return "I CONST";
+    }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -912,12 +1067,18 @@ class VarDeclNode : public TypedNode
 {
 public:
     vector<AssignmentNode *> assignments;
-    VarDeclNode(vector<AssignmentNode *> a)
+    VarDeclNode(vector<AssignmentNode *> a, antlr4::Token *tok) : TypedNode(tok)
     {
         assignments = a;
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+
+
+    std::string toString() const override {
+        return "VAR DECL NODE";
+    }
+
 
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -931,7 +1092,7 @@ public:
 
     vector<TypedNode *> post;
 
-    MatchStatementNode(const TypeSum *m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p)
+    MatchStatementNode(const TypeSum *m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
     {
         matchType = m;
         checkExpr = e;
@@ -946,44 +1107,58 @@ public:
     {
         return Types::UNIT; // FIXME: DO BETTER
     }
+
+    std::string toString() const override {
+        return "MATCH STMT NODE";
+    }
 };
 
 class ChannelCaseStatementNode : public TypedNode
 {
 public:
-    // TypedNode *checkExpr; 
-    Symbol * sym; 
-    vector<TypedNode *> cases; 
+    // TypedNode *checkExpr;
+    Symbol *sym;
+    vector<TypedNode *> cases;
     vector<TypedNode *> post;
 
-    ChannelCaseStatementNode(Symbol* c, vector<TypedNode *> v, vector<TypedNode *> p) {
-        sym = c; 
-        cases = v; 
-        post = p; 
+    ChannelCaseStatementNode(Symbol *c, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
+    {
+        sym = c;
+        cases = v;
+        post = p;
     }
 
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 
     const TypeUnit *getType() override
     {
-        return Types::UNIT; // FIXME: DO BETTER
+        return Types::UNIT;
     }
+
+    std::string toString() const override {
+        return "CASE CHANNEL NODE";
+    }
+
 };
 
-class ProgramProjectNode : public TypedNode //FIXME: DO BETTER, VERY SIMILAR TO SEND
+class ProgramProjectNode : public TypedNode // FIXME: DO BETTER, VERY SIMILAR TO SEND
 {
 public:
     Symbol *sym;
-    unsigned int projectIndex; 
+    unsigned int projectIndex;
 
-    ProgramProjectNode(Symbol *s, unsigned int p)
+    ProgramProjectNode(Symbol *s, unsigned int p, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
-        projectIndex = p; 
+        projectIndex = p;
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    std::string toString() const override {
+        return "PROJECT NODE";
+    }
 };
 
 /**************************************************
