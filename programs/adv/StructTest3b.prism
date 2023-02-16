@@ -18,7 +18,7 @@ define struct RGBColor {
 define struct HSVColor {
     HSVData hsv; 
     HSVData -> int getHue; 
-    HSVData -> int getSat; # FIXME: DO A TEST W/ STORES PROCESSES IF WE DONT ALREADY
+    HSVData -> int getSat;
     HSVData -> int getVal;
 }
 
@@ -54,12 +54,8 @@ define getRGBColor :: c : Channel<+int;+int;+int;-Color> = {
     ))
 }
 
-
-# FIXME: TRY MORE NESTED STRUCTS SO WE HAVE 3+ ACCESSES AT ONCE!!
-
-
 # proc fancyPrint(Color c) {
-define func fancyPrint (Color c) { #FIXME: DO BETTER PROC!
+define func fancyPrint (Color c) {
     str s := c.toString(c.colorType);
     
     printf("Color[type=%s, ", c.toString(c.colorType));

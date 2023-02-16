@@ -13,7 +13,7 @@ define struct RGBColor {
     RGBData -> int getRed; 
     RGBData -> int getGreen; 
     RGBData -> int getBlue; 
-    # Program<+RGBData;-int> getRed;   # FIXME: TEST THIS!
+    # Program<+RGBData;-int> getRed;  
     # Program<+RGBData;-int> getGreen; 
     # Program<+RGBData;-int> getBlue; 
     
@@ -29,7 +29,7 @@ define struct HSVColor {
     # Program<+HSVData;-int> getVal;
 }
 
-define enum ColorType { # FIXME: TEST THESE WITH ANON. ENUMS
+define enum ColorType {
     RGBColor, 
     HSVColor
 }
@@ -105,7 +105,7 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(0)
-                int ans := io.recv(); # FIXME: RETURN RECV?
+                int ans := io.recv(); # TODO: RETURN RECV?
                 return ans;
                 # return getChannel(d, 0); 
             },
