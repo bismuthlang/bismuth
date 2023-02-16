@@ -1212,99 +1212,75 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
             }
         }
 
-        for (WPLParser::MatchAlternativeContext *altCtx : ctx->cases)
-        {
-            // stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
-
-            const Type *caseType = any2Type(altCtx->type()->accept(this));
-
-            if (!sumType->contains(caseType))
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::MatchAlternativeContext>(
+            ctx,
+            ctx->cases,
+            ctx->rest,
+            [this, ctx, &cases, sumType, &foundCaseTypes](WPLParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode*, ErrorChain *>
             {
-                errorHandler.addSemanticError(altCtx->type()->getStart(), "Impossible case for " + sumType->toString() + " to act as " + caseType->toString());
-            }
+                // stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
 
-            if (foundCaseTypes.count(caseType))
-            {
-                errorHandler.addSemanticError(altCtx->type()->getStart(), "Duplicate case in match");
-            }
-            else
-            {
-                foundCaseTypes.insert(caseType); // FIXME: DO BETTER TRACKING OF SATISFYING RQMTS. Right now, can pass check for having all cases due to having invalid ones!!
-            }
+                const Type *caseType = any2Type(altCtx->type()->accept(this));
 
-            stmgr->enterScope(StopType::NONE); // Once for the case variable, and once to ensure all linears used //FIXME: VERIFY THIS CANT BE DONE ALL IN ONE!
+                if (!sumType->contains(caseType))
+                {
+                    errorHandler.addSemanticError(altCtx->type()->getStart(), "Impossible case for " + sumType->toString() + " to act as " + caseType->toString());
+                }
 
-            for (auto pair : to_fix)
-            {
-                // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL! IF NOT, WHY DO WE REBIND ABOVE?
-                pair.first->setProtocol(pair.second->getCopy());
-            }
+                if (foundCaseTypes.count(caseType))
+                {
+                    errorHandler.addSemanticError(altCtx->type()->getStart(), "Duplicate case in match");
+                }
+                else
+                {
+                    foundCaseTypes.insert(caseType); // FIXME: DO BETTER TRACKING OF SATISFYING RQMTS. Right now, can pass check for having all cases due to having invalid ones!!
+                }
 
-            stmgr->enterScope(StopType::NONE);
-            Symbol *local = new Symbol(altCtx->name->getText(), caseType, false, false); // FIXME: DO WE EVER CHECK THIS NAME IS UNIQUE? THIS MAY MATTER NOW W/ LINEARS? IDK MAYBE NOT
-            stmgr->addSymbol(local);
+                stmgr->enterScope(StopType::NONE);
+                Symbol *local = new Symbol(altCtx->name->getText(), caseType, false, false); // FIXME: DO WE EVER CHECK THIS NAME IS UNIQUE? THIS MAY MATTER NOW W/ LINEARS? IDK MAYBE NOT
+                stmgr->addSymbol(local);
 
-            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, altCtx->eval->accept(this));
-            this->safeExitScope(altCtx);
+                std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, altCtx->eval->accept(this));
+                this->safeExitScope(altCtx);
 
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-            {
-                (*e)->addSemanticError(ctx->getStart(), "1236");
-                return *e;
-            }
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
+                {
+                    (*e)->addSemanticError(ctx->getStart(), "1236");
+                    return *e;
+                }
 
-            if (dynamic_cast<WPLParser::ProgDefContext *>(altCtx->eval) ||
-                dynamic_cast<WPLParser::VarDeclStatementContext *>(altCtx->eval) ||
-                dynamic_cast<WPLParser::FuncDefContext *>(altCtx->eval))
-            {
-                errorHandler.addSemanticError(altCtx->getStart(), "Dead code: definition as select alternative.");
-            }
+                if (dynamic_cast<WPLParser::ProgDefContext *>(altCtx->eval) ||
+                    dynamic_cast<WPLParser::VarDeclStatementContext *>(altCtx->eval) ||
+                    dynamic_cast<WPLParser::FuncDefContext *>(altCtx->eval))
+                {
+                    return errorHandler.addSemanticError(altCtx->getStart(), "Dead code: definition as select alternative.");
+                }
 
-            cases.push_back({local, std::get<TypedNode *>(tnOpt)});
+                TypedNode * ans = std::get<TypedNode *>(tnOpt);
 
-            // For tracking linear stuff //FIXMEL TRACK RETURN/EXIT
-            for (auto s : ctx->rest)
-            {
-                s->accept(this); // FIXME: DO BETTER
-            }
-            safeExitScope(ctx);
-        }
+                cases.push_back({local, ans});
+
+                return ans;
+            });
+
+        // for (WPLParser::MatchAlternativeContext *altCtx : ctx->cases)
+        // {
+        // }
 
         if (foundCaseTypes.size() != sumType->getCases().size())
         {
-            errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
+            return errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
         }
 
-        std::vector<TypedNode *> restVec; // FIXME: DO BETTER
-        bool valid = true;
-
-        // Need to re-add symbols for fallthrough case. Really seems like this all could be done more efficiently, though...
-        for (auto pair : to_fix)
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
-            pair.first->setProtocol(pair.second->getCopy());
+            (*e)->addSemanticError(ctx->getStart(), "2081");
+            return *e;
         }
 
-        for (auto s : ctx->rest)
-        {
-            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+        ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-            {
-                (*e)->addSemanticError(ctx->getStart(), "1278");
-                valid = false;
-                // return *e;
-            }
-            else
-                restVec.push_back(std::get<TypedNode *>(tnOpt));
-        }
-
-        if (!valid)
-            return errorHandler.addSemanticError(ctx->getStart(), "1287");
-
-        // FIXME: DO WE NEED A SAFE EXIT HERE?
-
-        return new MatchStatementNode(sumType, cond, cases, restVec, ctx->getStart());
+        return new MatchStatementNode(sumType, cond, cases, dat.post, ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString());
@@ -1367,7 +1343,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
         return *e;
     }
 
-    std::vector<TypedNode *> restVec; // FIXME: DO BETTER
+    std::vector<TypedNode *> restVec; // FIXME: DO BETTER, NEED TO HAVE A WAY TO TEST IF NONE OF THE BRANCHES RUN IF WE USE THE checkBranch METHOD
     bool valid = true;
     bool restGenerated = false;
 
@@ -2058,7 +2034,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
-        //FIXME: NEEDS TO HANDLE EXITS/RETURNS STILL!!
+        // FIXME: NEEDS TO HANDLE EXITS/RETURNS STILL!!
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::ProtoAlternativeContext>(
             ctx,
             ctx->protoAlternative(),
@@ -2072,7 +2048,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
                 stmgr->addSymbol(sym);
 
-                stmgr->enterScope(StopType::NONE); //FIXME: IS THIS NEEDED?
+                stmgr->enterScope(StopType::NONE); // FIXME: IS THIS NEEDED?
                 std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
                 return optEval;
             });
@@ -2082,7 +2058,6 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
             (*e)->addSemanticError(ctx->getStart(), "2081");
             return *e;
         }
-
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
         // for (auto alt : ctx->protoAlternative())
