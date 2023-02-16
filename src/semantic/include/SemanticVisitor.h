@@ -408,7 +408,7 @@ public:
         antlr4::ParserRuleContext* ctx, 
         std::vector<T*> ctxCases, 
         std::vector<WPLParser::StatementContext*> ctxRest, 
-        std::function<std::variant<ConditionalData, ErrorChain *>(T*)>typeCheck
+        std::function<std::variant<TypedNode*, ErrorChain *>(T*)>typeCheck
     )
     {
         // FIXME: THIS SAME PATTERN NEEDS TO BE APPLIED TO EVERY BRANCHING SYSTEM!!!!

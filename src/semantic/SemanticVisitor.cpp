@@ -320,7 +320,7 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
         }
     }
     // return new InvocationNode(tn, args, actualTypes, ctx->getStart());
-    return (InvocationNode*) tn; 
+    return (InvocationNode *)tn;
 }
 
 std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineFuncContext *ctx)
@@ -2056,95 +2056,44 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
             return errorHandler.addSemanticError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
         }
 
-        std::vector<TypedNode *> cases;
-        std::vector<TypedNode *> restVec;
-        bool restVecFilled = false;
-
-        std::vector<Symbol *> syms = stmgr->getAvaliableLinears();                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
-        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
-        for (Symbol *orig : syms)
-        {
-            // FIXME: DO BETTER, WONT WORK WITH VALUES!
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                to_fix.push_back({channel, channel->getProtocolCopy()});
-            }
-        }
-
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
-        for (auto alt : ctx->protoAlternative()) // FIXME: DO WE CHECK ANYWHERE THAT THESE ARE THE VALID CASES AND ALL OF THEM?
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::ProtoAlternativeContext>(
+            ctx,
+            ctx->protoAlternative(),
+            ctx->rest,
+            [this, savedRest, channel, sym](WPLParser::ProtoAlternativeContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+            {
+                const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
+
+                proto->append(savedRest->getCopy());
+                channel->setProtocol(proto);
+
+                stmgr->addSymbol(sym);
+
+                stmgr->enterScope(StopType::NONE); //FIXME: IS THIS NEEDED?
+                std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
+                return optEval;
+            });
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
-
-            for (Symbol *s : syms)
-            {
-                stmgr->addSymbol(s);
-            }
-            for (auto pair : to_fix)
-            {
-                pair.first->setProtocol(pair.second->getCopy());
-            }
-
-            proto->append(savedRest->getCopy());
-            channel->setProtocol(proto);
-
-            stmgr->addSymbol(sym);
-
-            stmgr->enterScope(StopType::NONE);
-            std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
-
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
-            {
-                (*e)->addSemanticError(ctx->getStart(), "2083");
-                return *e;
-            }
-
-            cases.push_back(std::get<TypedNode *>(optEval));
-
-            // safeExitScope(ctx);
-
-            for (auto s : ctx->rest)
-            {
-                std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                if (!restVecFilled)
-                {
-
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                    {
-                        (*e)->addSemanticError(ctx->getStart(), "2097");
-                        return *e;
-                    }
-
-                    restVec.push_back(std::get<TypedNode *>(rOpt));
-                }
-            }
-
-            restVecFilled = true;
-
-            safeExitScope(ctx);
-
-            std::vector<Symbol *> lins = stmgr->getAvaliableLinears();
-
-            // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
-            // due to the var leaving the scope
-            if (lins.size() > 0)
-            {
-                std::ostringstream details;
-
-                for (auto e : lins)
-                {
-                    details << e->toString() << "; ";
-                }
-
-                errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
-            }
+            (*e)->addSemanticError(ctx->getStart(), "2081");
+            return *e;
         }
+
+
+        ConditionalData dat = std::get<ConditionalData>(branchOpt);
+        // for (auto alt : ctx->protoAlternative())
+
+        // FIXME: DO WE CHECK ANYWHERE THAT THESE ARE THE VALID CASES AND ALL OF THEM?
+
+        // {
+        // }
 
         // return Types::UNDEFINED;
         // return ty.value();
-        return new ChannelCaseStatementNode(sym, cases, restVec, ctx->getStart());
+        return new ChannelCaseStatementNode(sym, dat.cases, dat.post, ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot case on non-channel: " + id);
