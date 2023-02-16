@@ -182,7 +182,7 @@ inline std::optional<Value *> AcceptType(TypedASTVisitor *visitor, TypedNode *n)
     return any_cast<std::optional<Value *>>(n->accept(visitor));
 }
 
-class SelectAlternativeNode : public TypedNode // FIXME: DO BETTER!
+class SelectAlternativeNode : public TypedNode
 {
 public:
     TypedNode *check;
@@ -194,7 +194,7 @@ public:
         eval = e;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: MAYBE ABSURD? bc syntax but no
+    const TypeUnit *getType() override { return Types::UNIT; }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 
@@ -275,7 +275,7 @@ public:
     }
 };
 
-typedef vector<ParameterNode> ParameterListNode; // FIXME: NOT EXACTLY A NODE
+typedef vector<ParameterNode> ParameterListNode;
 
 class LambdaConstNode : public TypedNode
 {
@@ -532,7 +532,7 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramExecNode : public TypedNode // FIXME: DO BETTER
+class ProgramExecNode : public TypedNode
 {
 public:
     TypedNode *prog;
@@ -553,7 +553,7 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramAcceptNode : public TypedNode // FIXME: DO BETTER
+class ProgramAcceptNode : public TypedNode
 {
 public:
     Symbol *sym;
@@ -711,8 +711,6 @@ public:
 
     const Type *getType() override
     {
-        // FIXME: DO BETTER?
-        std::cout << "615 " << dynamic_cast<const TypeInvoke *>(fn->getType())->getReturnType()->toString() << std::endl; 
         return dynamic_cast<const TypeInvoke *>(fn->getType())->getReturnType();
     }
 
@@ -1134,7 +1132,7 @@ public:
 
     const TypeUnit *getType() override
     {
-        return Types::UNIT; // FIXME: DO BETTER
+        return Types::UNIT;
     }
 
     std::string toString() const override {

@@ -165,7 +165,7 @@ public:
 
             // Bind all of the arguments
             llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
-            // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1)); // FIXME: DO BETTER
+            // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1));
 
             // FIXME: DO WE NEED TO CHECK THAT WE HAVENT PREVIOUSLY SET VAL?
             n->channelSymbol->val = v; // FIXME: BECAUSE THIS IS ON THE DEFINITION, DO WE HAVE ISSUES WITH ALLOCATION REUSE?
@@ -215,7 +215,7 @@ public:
 
             // If we are a PROC, make sure to add a return type (if we don't already have one)
             // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
-            if (!endsInReturn(n->block)) // FIXME: THIS SHOULD BECOME ALWAYS TRUE
+            if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE
             {
                 builder->CreateRetVoid();
             }
@@ -245,7 +245,7 @@ public:
         if (!sym->val)
         {
             // If the symbol is a global var
-            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type)) // FIXME: Potentially lots of places that say TypeInvoke when they mean TypeProgram
+            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type)) 
             {
                 if (!inv->getLLVMName())
                 {

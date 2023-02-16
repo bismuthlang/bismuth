@@ -589,7 +589,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
 
     Value *chanVal = sym->val.value();
 
-    llvm::Function *checkFn = module->getFunction("ShouldLoop"); // FIXME: BAD OPTIONAL ACCESS
+    llvm::Function *checkFn = module->getFunction("ShouldLoop");
     Value *check = builder->CreateCall(checkFn, {builder->CreateLoad(Int32Ty, chanVal)});
 
     auto parent = builder->GetInsertBlock()->getParent();
@@ -911,8 +911,6 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
     }
 
     builder->CreateBr(mergeBlk); // FIXME: METHODIZE THIS WITH OR?
-    // falseBlk = builder->GetInsertBlock();
-
     /*
      * LHS True - Can skip checking RHS and return true
      */
