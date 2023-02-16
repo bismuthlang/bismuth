@@ -73,7 +73,7 @@ define program :: c : Channel<-int> = {
 
     int t5 := t1.recv(), t6 := t2.recv(); 
 
-    printf("ANS: %d\n", t5); # FIXME: TEST THIS BETTER, HARD TO UNDERSTAND ORDER!
+    printf("ANS: %d\n", t5); # TODO: TEST THIS BETTER, HARD TO UNDERSTAND ORDER!
     printf("ANS: %d\n", t6);
 
     # printf("ANS: %d\n", mutArgsOne(0));

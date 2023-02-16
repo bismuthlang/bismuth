@@ -236,8 +236,8 @@ TEST_CASE("programs/test11 - Expressions in decl (let*) ", "[codegen]")
 TEST_CASE("programs/test12 - Scopes & Prime Finder Example! ", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test12.wpl"))),
-        "209c1960ddf81cfa4490c2d8a0501577b799bdacc5d829ce2530f094559ed915");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test12.prism"))),
+        "ca821e45b05cd191197ce38cec02f62135d62155c597ab7a4ea18dc5854511ed");
 }
 
 TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
