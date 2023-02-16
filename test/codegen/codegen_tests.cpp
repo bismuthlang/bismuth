@@ -247,6 +247,13 @@ TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
         "5810f4c05288eb8c89bb4e1d6c76fa9b427281d14c395dc7d10bfe742d0c1861");
 }
 
+TEST_CASE("programs/LambdaDef", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/LambdaDef.prism"))),
+        "a2ef4ba41d2d39d14500e3f077559361201ba9e251411cc29d9c7958038500d3");
+}
+
 // TEST_CASE("programs/test-runtime - Basic runtime tests", "[codegen]")
 // {
 //     // NOTE: tested linking each runtime function locally
