@@ -53,12 +53,7 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
     define getChannel :: c : Channel<+RGBData;+int;-int> = {
         RGBData d := c.recv();
         int[3] channels := d.rgb; 
-        # int[3] channels := c.recv(); 
-        # c.send(channels[c.recv()]) # FIXME: THIS DOESNT WORK
-        int c_index := c.recv();
-
-        c.send(channels[c_index])
-        # return channels[c]; 
+        c.send(channels[c.recv()])
     }
 
     var c := Color::init(
@@ -68,25 +63,19 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(0)
-                int ans := io.recv(); # FIXME: RETURN RECV?
-                return ans;
-                # return getChannel(d, 0); 
+                return io.recv();
             },
             (RGBData d) : int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(1)
-                int ans := io.recv();
-                return ans;
-                # return getChannel(d, 1); 
+                return io.recv(); 
             },
             (RGBData d) : int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(2)
-                int ans := io.recv();
-                return ans;
-                # return getChannel(d, 2); # FIXME: WHY ARE ERRORS SO STRANGE WHEN USING THIS?
+                return io.recv();
             }
         ),
         (ColorType c) : str { return "rgb"; }
@@ -105,25 +94,21 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(0)
-                int ans := io.recv(); # TODO: RETURN RECV?
-                return ans;
+                return io.recv(); 
                 # return getChannel(d, 0); 
             },
             (RGBData d) : int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(1)
-                int ans := io.recv();
-                return ans;
+                return io.recv();
                 # return getChannel(d, 1); 
             },
             (RGBData d) : int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(2)
-                int ans := io.recv();
-                return ans;
-                # return getChannel(d, 2); # FIXME: WHY ARE ERRORS SO STRANGE WHEN USING THIS?
+                return io.recv(); 
             }
         ),
         (ColorType c) : str { return "rgb"; }

@@ -494,7 +494,7 @@ TEST_CASE("programs/StructTest3", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest3.prism"))),
-        "c777b29fd45774d88167d589bf36fa35903de8c0a93cf916e6177d0d6da9bd08");
+        "65a2b5d54d182022711ca240fcc874b13267532ec41015ac62772a8e6d344aaa");
 }
 
 TEST_CASE("programs/StructTest3a - nested fields", "[codegen][struct]")
