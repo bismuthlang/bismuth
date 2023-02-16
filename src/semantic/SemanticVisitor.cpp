@@ -1216,7 +1216,8 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
             ctx,
             ctx->cases,
             ctx->rest,
-            [this, ctx, &cases, sumType, &foundCaseTypes](WPLParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode*, ErrorChain *>
+            false,
+            [this, ctx, &cases, sumType, &foundCaseTypes](WPLParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
             {
                 // stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
 
@@ -1256,7 +1257,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
                     return errorHandler.addSemanticError(altCtx->getStart(), "Dead code: definition as select alternative.");
                 }
 
-                TypedNode * ans = std::get<TypedNode *>(tnOpt);
+                TypedNode *ans = std::get<TypedNode *>(tnOpt);
 
                 cases.push_back({local, ans});
 
@@ -1343,134 +1344,35 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
         return *e;
     }
 
-    std::vector<TypedNode *> restVec; // FIXME: DO BETTER, NEED TO HAVE A WAY TO TEST IF NONE OF THE BRANCHES RUN IF WE USE THE checkBranch METHOD
-    bool valid = true;
-    bool restGenerated = false;
-
-    std::vector<Symbol *> syms = stmgr->getAvaliableLinears();                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
-    std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
-    for (Symbol *orig : syms)
-    {
-        // FIXME: DO BETTER, WONT WORK WITH VALUES!
-        if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-        {
-            to_fix.push_back({channel, channel->getProtocolCopy()});
-        }
-    }
-
-    // Type check the then/true block
-    stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS) -> No???
-    for (auto pair : to_fix)
-    {
-        // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
-        pair.first->setProtocol(pair.second->getCopy());
-    }
-
-    std::variant<BlockNode *, ErrorChain *> trueOpt = this->visitCtx(ctx->trueBlk);
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&trueOpt))
-    {
-        (*e)->addSemanticError(ctx->getStart(), "1380");
-        return *e;
-    }
-
-    BlockNode *trueBlk = std::get<BlockNode *>(trueOpt);
-    if (!endsInReturn(trueBlk))
-    {
-        restGenerated = true;
-
-        for (auto s : ctx->rest)
-        {
-            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-            {
-                (*e)->addSemanticError(ctx->trueBlk->getStart(), "Error in visiting code after flowing through then block of if statement.");
-                valid = false;
-            }
-            else
-                restVec.push_back(std::get<TypedNode *>(tnOpt));
-        }
-    }
-    safeExitScope(ctx);
-
-    // If we have an else block, then type check it
+    std::vector<WPLParser::BlockContext *> blksCtx = {ctx->trueBlk};
     if (ctx->falseBlk)
-    {
-        // FIXME: VERIFY GOOD ENOUGH, METHODIZE
-        stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
-        for (auto pair : to_fix)
+        blksCtx.push_back(ctx->falseBlk);
+
+    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::BlockContext>(
+        ctx,
+        blksCtx,
+        ctx->rest,
+        blksCtx.size() == 1,
+        [this](WPLParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
         {
-            // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
-            pair.first->setProtocol(pair.second->getCopy());
-        }
+            return TNVariantCast<BlockNode>(this->visitCtx(blk));
+        });
 
-        std::variant<BlockNode *, ErrorChain *> falseOpt = this->visitCtx(ctx->falseBlk);
 
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&falseOpt))
-        {
-            (*e)->addSemanticError(ctx->getStart(), "1423");
-            return *e;
-        }
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
+        return errorHandler.addSemanticError(ctx->getStart(), "Failed to generate one or more cases in if statement.");
 
-        BlockNode *falseBlk = std::get<BlockNode *>(falseOpt);
-
-        if (!endsInReturn(falseBlk))
-        {
-            for (auto s : ctx->rest)
-            {
-                std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-                {
-                    (*e)->addSemanticError(ctx->falseBlk->getStart(), "Error in visiting code after flowing through else block of if statement.");
-                    valid = false;
-                }
-                else if (!restGenerated) // FIXME: DO OPTIMIZATIONS IF THIS ISNT NEEDED!
-                    restVec.push_back(std::get<TypedNode *>(tnOpt));
-            }
-            restGenerated = true;
-        }
-        safeExitScope(ctx);
-
-        if (!valid)
-            return errorHandler.addSemanticError(ctx->getStart(), "Failed to generate one or more cases in if statement.");
-
-        return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), trueBlk, restVec, falseBlk);
+    ConditionalData dat = std::get<ConditionalData>(branchOpt);
+    
+    if(ctx->falseBlk) {
+        return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode*) dat.cases.at(0), dat.post, (BlockNode*) dat.cases.at(1));
     }
 
-    // Type check the then/true block
-    stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
-    for (auto pair : to_fix)
-    {
-        // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
-        pair.first->setProtocol(pair.second->getCopy());
-    }
-
-    for (auto s : ctx->rest)
-    {
-        std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-        // if (!tnOpt)
-        //     valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
-        // else if (!restGenerated)
-        //     restVec.push_back(tnOpt.value());
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-        {
-            (*e)->addSemanticError(ctx->getStart(), "1474");
-            valid = false;
-            // return *e;
-        }
-        else if (!restGenerated)
-            restVec.push_back(std::get<TypedNode *>(tnOpt));
-    }
-    restGenerated = true;
-    safeExitScope(ctx);
-
-    return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), trueBlk, restVec);
+    return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode*) dat.cases.at(0), dat.post);
 }
 
 std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
 {
-
     if (ctx->cases.size() < 1)
     {
         return errorHandler.addSemanticError(ctx->getStart(), "Select statement expected at least one alternative, but was given 0!");
@@ -2033,11 +1935,12 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
         }
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
-        
+
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::ProtoAlternativeContext>(
             ctx,
             ctx->protoAlternative(),
             ctx->rest,
+            false,
             [this, savedRest, channel, sym](WPLParser::ProtoAlternativeContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
                 const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));

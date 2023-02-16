@@ -408,6 +408,7 @@ public:
         antlr4::ParserRuleContext *ctx,
         std::vector<T *> ctxCases,
         std::vector<WPLParser::StatementContext *> ctxRest,
+        bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
         // FIXME: THIS SAME PATTERN NEEDS TO BE APPLIED TO EVERY BRANCHING SYSTEM!!!!
@@ -483,6 +484,57 @@ public:
 
                 restVecFilled = true;
             }
+
+            safeExitScope(ctx);
+
+            std::vector<Symbol *> lins = stmgr->getAvaliableLinears();
+
+            // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+            // due to the var leaving the scope
+            if (lins.size() > 0)
+            {
+                std::ostringstream details;
+
+                for (auto e : lins)
+                {
+                    details << e->toString() << "; ";
+                }
+
+                errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
+            }
+        }
+
+        if (checkRestIndependently)
+        {
+            for (Symbol *s : syms)
+            {
+                stmgr->addSymbol(s);
+            }
+            for (auto pair : to_fix)
+            {
+                pair.first->setProtocol(pair.second->getCopy());
+            }
+
+            stmgr->enterScope(StopType::NONE);
+
+            for (auto s : ctxRest)
+            {
+                std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+
+                if (!restVecFilled)
+                {
+
+                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
+                    {
+                        (*e)->addSemanticError(ctx->getStart(), "2097");
+                        return *e;
+                    }
+
+                    restVec.push_back(std::get<TypedNode *>(rOpt));
+                }
+            }
+
+            restVecFilled = true;
 
             safeExitScope(ctx);
 
