@@ -1358,17 +1358,17 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
             return TNVariantCast<BlockNode>(this->visitCtx(blk));
         });
 
+
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         return errorHandler.addSemanticError(ctx->getStart(), "Failed to generate one or more cases in if statement.");
 
     ConditionalData dat = std::get<ConditionalData>(branchOpt);
-
-    if (ctx->falseBlk)
-    {
-        return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post, (BlockNode *)dat.cases.at(1));
+    
+    if(ctx->falseBlk) {
+        return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode*) dat.cases.at(0), dat.post, (BlockNode*) dat.cases.at(1));
     }
 
-    return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post);
+    return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode*) dat.cases.at(0), dat.post);
 }
 
 std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
@@ -1378,20 +1378,44 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
         return errorHandler.addSemanticError(ctx->getStart(), "Select statement expected at least one alternative, but was given 0!");
     }
 
+    std::vector<Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+
+    std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
+    for (Symbol *orig : syms)
+    {
+        // FIXME: DO BETTER, WONT WORK WITH VALUES!
+        if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+        {
+            to_fix.push_back({channel, channel->getProtocol()}); // NOTE HOW THIS ONE ISNT A COPY!
+        }
+    }
+
     /*
      *  Now to test the select cases.... which can be a bit complicated
      */
 
     std::vector<SelectAlternativeNode *> alts;
     // Here we just need to visit each of the individual cases; they each handle their own logic.
-    // for (auto e : ctx->cases)
-
-    std::variant<ConditionalData, ErrorChain *> branchOpt = nullptr; // FIXME: DO BETTER, THIS IS NULLPTR BUT WONT CAUSE PROBLEM...
-
-    for (unsigned int i = 0; i < ctx->cases.size(); i++)
+    for (auto e : ctx->cases)
     {
+        // Enter the scope (needed as we may define variables or do other stuff)
+        // Accept the evaluation context
+
+        // Safe exit the scope
+        // this->safeExitScope(e);
+
+        /*
+         *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
+         */
+        if (dynamic_cast<WPLParser::ProgDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
+            dynamic_cast<WPLParser::VarDeclStatementContext *>(e->eval) ||
+            dynamic_cast<WPLParser::FuncDefContext *>(e->eval))
+        {
+            errorHandler.addSemanticError(e->getStart(), "Dead code: definition as select alternative.");
+        }
+
         // Confirm that the check type is a boolean
-        std::variant<TypedNode *, ErrorChain *> checkOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->cases.at(i)->check->accept(this));
+        std::variant<TypedNode *, ErrorChain *> checkOpt = anyOpt2VarError<TypedNode>(errorHandler, e->check->accept(this));
         if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
         {
             (*e)->addSemanticError(ctx->getStart(), "1535");
@@ -1406,51 +1430,80 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
             return errorHandler.addSemanticError(ctx->getStart(), "Select alternative expected BOOL but got " + checkType->toString());
         }
 
-        branchOpt = checkBranch<WPLParser::SelectAlternativeContext>(
-            ctx,
-            {ctx->cases.at(i)},
-            ctx->rest,
-            i == 0,
-            [this, ctx, &alts, check](WPLParser::SelectAlternativeContext *e) -> std::variant<TypedNode *, ErrorChain *>
+        stmgr->enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
+
+        for (auto pair : to_fix)
+        {
+            // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL! IF NOT, WHY DO WE REBIND ABOVE?
+            pair.first->setProtocol(pair.second->getCopy());
+        }
+
+        std::variant<TypedNode *, ErrorChain *> evalOpt = anyOpt2VarError<TypedNode>(errorHandler, e->eval->accept(this)); // FIXME: So these are all wrong b/c like, we return optionals
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&evalOpt))
+        {
+            (*e)->addSemanticError(ctx->getStart(), "1559");
+            return *e;
+        }
+
+        // For tracking linear stuff //FIXMEL TRACK RETURN/EXIT
+        TypedNode *eval = std::get<TypedNode *>(evalOpt);
+
+        if (!endsInReturn(eval))
+        {
+            for (auto s : ctx->rest)
             {
-                // Enter the scope (needed as we may define variables or do other stuff)
-                // Accept the evaluation context
+                s->accept(this); // FIXME: DO BETTER
+            }
+        }
+        safeExitScope(ctx);
 
-                // Safe exit the scope
-                // this->safeExitScope(e);
+        // std::variant<SelectAlternativeNode  *, ErrorChain*> altOpt = this->visitCtx(e);
+        // if (!altOpt)
+        //     return {}; // FIXME: DO BETTER?
 
-                /*
-                 *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
-                 */
-                if (dynamic_cast<WPLParser::ProgDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
-                    dynamic_cast<WPLParser::VarDeclStatementContext *>(e->eval) ||
-                    dynamic_cast<WPLParser::FuncDefContext *>(e->eval))
-                {
-                    errorHandler.addSemanticError(e->getStart(), "Dead code: definition as select alternative.");
-                }
-
-                stmgr->enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
-
-                std::variant<TypedNode *, ErrorChain *> evalOpt = anyOpt2VarError<TypedNode>(errorHandler, e->eval->accept(this)); // FIXME: So these are all wrong b/c like, we return optionals
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&evalOpt))
-                {
-                    (*e)->addSemanticError(ctx->getStart(), "1559");
-                    return *e;
-                }
-
-                alts.push_back(new SelectAlternativeNode(check, std::get<TypedNode *>(evalOpt), ctx->getStart()));
-
-                return evalOpt; 
-            });
+        alts.push_back(new SelectAlternativeNode(check, eval, ctx->getStart()));
     }
 
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
+    /*
+     * Last, we test the rest block.... (bc theoretical use of linears in cond?) //FIXME: USE THEORY TO DETERMINE IF LINEARS CAN BE USED IN THINGS LIKE CONDITIONS AND THUS IF WE CAN SIMPLIFY SOME OF THE CHECKS!
+     */
+
+    std::vector<TypedNode *> restVec; // FIXME: DO BETTER
+    bool valid = true;
+
+    // Need to re-add symbols for fallthrough case. Really seems like this all could be done more efficiently, though...
+    for (auto pair : to_fix)
+    {
+        // FIXME: MAY NEED TO RE-BIND SYMBOL HERE AS WELL!
+        pair.first->setProtocol(pair.second->getCopy());
+    }
+
+    for (auto s : ctx->rest)
+    {
+        std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+        // if (!tnOpt)
+        //     valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
+        // else
+        //     restVec.push_back(tnOpt.value());
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
+        {
+            (*e)->addSemanticError(ctx->getStart(), "1605");
+            valid = false;
+            // return *e;
+        }
+        else
+            restVec.push_back(std::get<TypedNode *>(tnOpt));
+    }
+
+    if (!valid)
         return errorHandler.addSemanticError(ctx->getStart(), "1612");
 
-    ConditionalData dat = std::get<ConditionalData>(branchOpt);
+    // FIXME: DO WE NEED A SAFE EXIT HERE?
 
-    return new SelectStatementNode(ctx->getStart(), alts, dat.post); // FIXME: WONT WORK IF WE DONT FORCE GEN IT!
+    // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
+    // return Types::UNDEFINED;
+    return new SelectStatementNode(ctx->getStart(), alts, restVec);
 }
 
 std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
