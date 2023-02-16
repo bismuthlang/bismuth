@@ -976,7 +976,7 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(WPLParser::ParameterL
             map.insert({name, param});
         }
 
-        ParameterNode pn = this->visitCtx(param); // FIXME: WHAT SHOULD BE POINTERS?
+        ParameterNode pn = this->visitCtx(param);
         paramList.push_back(pn);
     }
 
