@@ -226,13 +226,13 @@ public:
         mthis->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
     }
 
-    bool isGuarded() const override //FIXME: DO BETTER
+    bool isGuarded() const override // FIXME: DO BETTER
     {
         if (steps.size() == 0)
         {
             return guardCount > 0;
         }
-        return steps.front()->isGuarded(); 
+        return steps.front()->isGuarded();
     }
 
     void guard() const override // FIXME: DO BETTER
@@ -281,13 +281,13 @@ inline const ProtocolSequence *toSequence(const Protocol *proto)
     return new ProtocolSequence(a);
 }
 
-//FIXME: DO BETTER LINEAR CHECK; CURRENTLY THIS IS UNUSED, LACK OF NEED
-// inline bool isLinear(const Type * ty)
-// {
-//     if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
-//         return true; 
+// FIXME: DO BETTER LINEAR CHECK; CURRENTLY THIS IS UNUSED, LACK OF NEED
+//  inline bool isLinear(const Type * ty)
+//  {
+//      if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
+//          return true;
 
-//     return false; 
+//     return false;
 // }
 
 /*******************************************
@@ -540,7 +540,7 @@ protected:
 
 /*******************************************
  *
- * Bottom Type 
+ * Bottom Type
  *
  *******************************************/
 
@@ -553,10 +553,9 @@ protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
 
-
 /*******************************************
  *
- * Unit Type 
+ * Unit Type
  *
  *******************************************/
 class TypeUnit : public Type
@@ -570,7 +569,7 @@ protected:
 
 /*******************************************
  *
- * Absurd Type 
+ * Absurd Type
  *
  *******************************************/
 class TypeAbsurd : public Type
@@ -581,7 +580,6 @@ public:
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
-
 
 /*******************************************
  *
@@ -602,8 +600,8 @@ namespace Types
     inline const TypeInt *INT = new TypeInt();
     inline const TypeBool *BOOL = new TypeBool();
     inline const TypeStr *STR = new TypeStr();
-    inline const TypeUnit *UNIT = new TypeUnit(); 
-    inline const TypeAbsurd *ABSURD = new TypeAbsurd(); 
+    inline const TypeUnit *UNIT = new TypeUnit();
+    inline const TypeAbsurd *ABSURD = new TypeAbsurd();
 };
 
 /*******************************************
@@ -831,7 +829,7 @@ public:
 
         defined = d;
     }
-    
+
     std::string toString() const override
     {
 
@@ -1039,9 +1037,9 @@ public:
 
         std::ostringstream description;
         // description << (isProc ? "Unit" : "");
-        if(paramTypes.size() == 0)
-            description << "()"; //TODO: change whole thing to touple to make it easier to deal with
-        
+        if (paramTypes.size() == 0)
+            description << "()"; // TODO: change whole thing to touple to make it easier to deal with
+
         for (unsigned int i = 0; i < paramTypes.size(); i++)
         {
             description << paramTypes.at(i)->toString();
@@ -1154,7 +1152,7 @@ protected:
             {
                 if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
                 {
-                    std::cout << "PARAM FAIL" << std::endl; 
+                    std::cout << "PARAM FAIL" << std::endl;
                     return false;
                 }
             }
@@ -1575,3 +1573,17 @@ protected:
         return this == other; // FIXME: DO BETTER
     }
 };
+
+/****************************************
+ * Utility Functions
+ ****************************************/
+
+inline bool isGuarded(const Type *ty)
+{
+    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
+    {
+        return channel->getProtocol()->isGuarded();
+    }
+
+    return false;
+}

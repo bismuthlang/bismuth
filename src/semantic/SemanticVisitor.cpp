@@ -1035,6 +1035,11 @@ std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::As
     TypedNode *expr = std::get<TypedNode *>(exprOpt);
     const Type *exprType = expr->getType();
 
+    if (isGuarded(exprType))
+    {
+        return errorHandler.addSemanticError(ctx->getStart(), "Cannot assign guarded resource to another identifier!");
+    }
+
     // Determine the expected type
     std::variant<TypedNode *, ErrorChain *> varOpt = this->visitCtx(ctx->to);
 
@@ -1117,6 +1122,11 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
                 const Type *newAssignType = this->visitCtx(ctx->typeOrVar()); // Needed to ensure vars get their own inf type
 
                 const Type *exprType = exprOpt ? exprOpt.value()->getType() : newAssignType;
+
+                if (isGuarded(exprType)) // TODO: Use syntactic sugar to separate out declarations from assignments. Also could use it to make select statements work better!
+                {
+                    return errorHandler.addSemanticError(ctx->getStart(), "Cannot assign guarded resource to another identifier!");
+                }
 
                 // Note: This automatically performs checks to prevent issues with setting VAR = VAR
                 if (e->a && exprType->isNotSubtype(newAssignType))
@@ -1356,17 +1366,17 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
             return TNVariantCast<BlockNode>(this->visitCtx(blk));
         });
 
-
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         return errorHandler.addSemanticError(ctx->getStart(), "Failed to generate one or more cases in if statement.");
 
     ConditionalData dat = std::get<ConditionalData>(branchOpt);
-    
-    if(ctx->falseBlk) {
-        return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode*) dat.cases.at(0), dat.post, (BlockNode*) dat.cases.at(1));
+
+    if (ctx->falseBlk)
+    {
+        return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post, (BlockNode *)dat.cases.at(1));
     }
 
-    return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode*) dat.cases.at(0), dat.post);
+    return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post);
 }
 
 std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
@@ -1807,9 +1817,9 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BaseTypeContext *ctx)
     {
         return Types::STR;
     }
-    else if(ctx->TYPE_UNIT())
+    else if (ctx->TYPE_UNIT())
     {
-        return Types::UNIT; 
+        return Types::UNIT;
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Unknown type: " + ctx->getText());
