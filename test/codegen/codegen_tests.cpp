@@ -89,7 +89,7 @@ TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)"
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test2.prism"))),
-        "371c38f7ba67c50ac1ed90ec21808dd7287076e2ec27967982453112effe2eab");
+        "27e41ced6f241460963e34a77902118a561e69ad0243f84139d5aee537186736");
 }
 
 TEST_CASE("programs/test3 - If w/o else", "[codegen]")
@@ -329,7 +329,7 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test18.prism"))),
-        "5b81e72524788ad415f3be54356a81cba2d97249b0e67a3f98ca06fdb0c5609d");
+        "99447dd9df12c120d03105746bd208debac16d1e40332bc6098e42973e29e785");
 }
 
 // TEST_CASE("programs/test19 - Editing Global String and Using Across Inv", "[codegen]")

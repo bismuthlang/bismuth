@@ -843,8 +843,6 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
         }
         else if (i + 1 == ctx->fields.size() && dynamic_cast<const TypeArray *>(ty) && ctx->fields.at(i)->getText() == "length")
         {
-            bindings->bind(ctx->VARIABLE().at(i), new Symbol("", Types::INT, false, false)); // FIXME: DO BETTER
-
             a.push_back({"length",
                          Types::INT});
 
@@ -1597,7 +1595,6 @@ const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
 
 std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LambdaConstExprContext *ctx)
 {
-    // FIXME: VERIFY THIS IS ALWAYS SAFE!!!
     std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
 
     if (!paramTypeOpt)
@@ -1642,7 +1639,6 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
         errorHandler.addSemanticError(ctx->getStart(), "Lambda must end in return statement");
     }
     safeExitScope(ctx);
-
     return new LambdaConstNode(ctx->getStart(), ps, retType, blk);
 }
 
