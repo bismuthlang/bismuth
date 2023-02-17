@@ -132,10 +132,9 @@ std::vector<Symbol *> Context::getAvaliableLinears()
     {
         Scope *scope = opt.value();
 
-        for (auto s : scope->getRemainingLinearTypes())
-        {
-            ans.push_back(s); // FIXME: DO BETTER, USE INSERT!
-        }
+        auto toAdd = scope->getRemainingLinearTypes();
+        ans.insert(ans.end(), toAdd.begin(), toAdd.end());
+        
         depth--;
         opt = scope->getParent();
     }
