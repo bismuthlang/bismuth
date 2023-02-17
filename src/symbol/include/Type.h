@@ -1141,7 +1141,6 @@ protected:
         // Checks that the other type is also invokable
         if (const TypeInvoke *p = dynamic_cast<const TypeInvoke *>(other))
         {
-            std::cout << "1135" << std::endl; 
             // Makes sure that both functions have the same number of parameters
             if (p->paramTypes.size() != this->paramTypes.size())
                 return false;
@@ -1159,7 +1158,6 @@ protected:
                     return false;
                 }
             }
-            std::cout << "1153" << std::endl; 
             // Makes sure that the return type of this function is a subtype of the other
             return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeUnit *>(this->retType) && dynamic_cast<const TypeUnit *>(p->retType));
         }

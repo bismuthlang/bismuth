@@ -309,7 +309,6 @@ public:
 
     const TypeInvoke *getType() override
     {
-        std::cout << "297" << std::endl; 
         return type;
     }
 

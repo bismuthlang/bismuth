@@ -1626,12 +1626,6 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     }
     BlockNode *blk = std::get<BlockNode *>(blkOpt);
 
-    std::visit(overloaded{[](BlockNode *b)
-                          { std::cout << "BLOCK NODE" << b << std::endl; },
-                          [](ErrorChain *e)
-                          { std::cout << "ERROR NODE" << std::endl; }},
-               blkOpt);
-
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
     if (!endsInReturn(blk))
     {

@@ -168,7 +168,7 @@ public:
             // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1));
 
             // FIXME: DO WE NEED TO CHECK THAT WE HAVENT PREVIOUSLY SET VAL?
-            n->channelSymbol->val = v; // FIXME: BECAUSE THIS IS ON THE DEFINITION, DO WE HAVE ISSUES WITH ALLOCATION REUSE?
+            n->channelSymbol->val = v;
 
             builder->CreateStore((fn->args()).begin(), v);
 
@@ -231,8 +231,6 @@ public:
 
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {
-        std::cout << "visitVariable " << sym->toString() << " " << is_rvalue << std::endl;
-        
         // Try getting the type for the symbol, raising an error if it could not be determined
         llvm::Type *type = sym->type->getLLVMType(module);
         if (!type)
