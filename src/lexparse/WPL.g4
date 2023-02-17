@@ -155,8 +155,6 @@ statement           : defineProc                                                
                     ; 
                     
 
-//FIXME: RESERVE TERMS? 
-
 //Operators
 ASSIGN      :       ':='    ; 
 MINUS       :       '-'     ;
