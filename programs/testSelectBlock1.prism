@@ -1,7 +1,5 @@
 extern int func printf(...);
 
-# FIXME: MAY BE REDUNDANT TO OTHER TEST SELECT BLOCK NOW!!!
-# str func selReturnOne(int a) {
 define selReturnOne :: c : Channel<+int;-str> = {
     int a := c.recv(); 
     

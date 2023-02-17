@@ -11,7 +11,7 @@ define enum a {
     boolean,
     str,
     lambdaOp,
-    (str, int -> str + str -> str) # FIXME: TEST LAMBDAS AS PROGRAMS AND VICE VERSA!
+    (str, int -> str + str -> str)
 }
 
 # TODO: LET FOR () AROUND FN PARAMS IN Grammar?

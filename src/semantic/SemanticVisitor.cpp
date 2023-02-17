@@ -28,7 +28,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
             {
                 const TypeProgram *funcType = new TypeProgram(channel, false);
                 Symbol *funcSymbol = new Symbol(id, funcType, true, true);
-                // FIXME: test name collisions with externs
+                // FIXME: test name collisions with externs & across all defs
                 stmgr->addSymbol(funcSymbol);
                 bindings->bind(fnCtx->defineProc(), funcSymbol);
             }
@@ -67,12 +67,12 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
             const Type *retType = fnCtx->defineFunc()->lam->ret ? any2Type(fnCtx->defineFunc()->lam->ret->accept(this))
                                                                 : Types::UNIT;
 
-            Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true); // FIXME: DO BETTER
+            Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true);
 
             stmgr->addSymbol(funcSym);
             bindings->bind(fnCtx->defineFunc(), funcSym);
         }
-        else // FIXME: BIND THESE!!!
+        else
         {
             std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -81,7 +81,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
                 return *e;
             }
 
-            if (dynamic_cast<WPLParser::DefineStructContext *>(e)) // FIXME: DO BETTER
+            if (dynamic_cast<WPLParser::DefineStructContext *>(e))
             {
                 defs.push_back(dynamic_cast<DefineStructNode *>(std::get<TypedNode *>(opt)));
             }
@@ -843,8 +843,6 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
         }
         else if (i + 1 == ctx->fields.size() && dynamic_cast<const TypeArray *>(ty) && ctx->fields.at(i)->getText() == "length")
         {
-            bindings->bind(ctx->VARIABLE().at(i), new Symbol("", Types::INT, false, false)); // FIXME: DO BETTER
-
             a.push_back({"length",
                          Types::INT});
 
@@ -923,7 +921,7 @@ std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
  * @param ctx The ConditionContext to visit
  * @return const Type* Always returns UNDEFINED as to prevent assignments
  */
-std::variant<ConditionNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ConditionContext *ctx)
+std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ConditionContext *ctx)
 {
     // auto conditionType = any2Type(ctx->ex->accept(this));
     std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this));
@@ -942,7 +940,7 @@ std::variant<ConditionNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
         return errorHandler.addSemanticError(ctx->getStart(), "Condition expected BOOL, but was given " + conditionType->toString());
     }
 
-    return new ConditionNode(cond, ctx->getStart()); // FIXME: THIS SEEMS KIND OF POINTLESS...
+    return cond; 
 }
 
 std::variant<SelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
@@ -976,7 +974,7 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(WPLParser::ParameterL
             map.insert({name, param});
         }
 
-        ParameterNode pn = this->visitCtx(param); // FIXME: WHAT SHOULD BE POINTERS?
+        ParameterNode pn = this->visitCtx(param);
         paramList.push_back(pn);
     }
 
@@ -1036,6 +1034,11 @@ std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::As
 
     TypedNode *expr = std::get<TypedNode *>(exprOpt);
     const Type *exprType = expr->getType();
+
+    if (isGuarded(exprType))
+    {
+        return errorHandler.addSemanticError(ctx->getStart(), "Cannot assign guarded resource to another identifier!");
+    }
 
     // Determine the expected type
     std::variant<TypedNode *, ErrorChain *> varOpt = this->visitCtx(ctx->to);
@@ -1119,6 +1122,11 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
                 const Type *newAssignType = this->visitCtx(ctx->typeOrVar()); // Needed to ensure vars get their own inf type
 
                 const Type *exprType = exprOpt ? exprOpt.value()->getType() : newAssignType;
+
+                if (isGuarded(exprType)) // TODO: Use syntactic sugar to separate out declarations from assignments. Also could use it to make select statements work better!
+                {
+                    return errorHandler.addSemanticError(ctx->getStart(), "Cannot assign guarded resource to another identifier!");
+                }
 
                 // Note: This automatically performs checks to prevent issues with setting VAR = VAR
                 if (e->a && exprType->isNotSubtype(newAssignType))
@@ -1295,7 +1303,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
  */
 std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
 {
-    std::variant<ConditionNode *, ErrorChain *> checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+    std::variant<TypedNode *, ErrorChain *> checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
     {
@@ -1330,13 +1338,13 @@ std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return new WhileLoopNode(std::get<ConditionNode *>(checkOpt), std::get<BlockNode *>(blkOpt), ctx->getStart());
+    return new WhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<BlockNode *>(blkOpt), ctx->getStart());
 }
 
 std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ConditionalStatementContext *ctx)
 {
     // Automatically handles checking that we have a valid condition
-    std::variant<ConditionNode *, ErrorChain *> condOpt = this->visitCtx(ctx->check);
+    std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCtx(ctx->check);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
     {
@@ -1358,17 +1366,17 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
             return TNVariantCast<BlockNode>(this->visitCtx(blk));
         });
 
-
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         return errorHandler.addSemanticError(ctx->getStart(), "Failed to generate one or more cases in if statement.");
 
     ConditionalData dat = std::get<ConditionalData>(branchOpt);
-    
-    if(ctx->falseBlk) {
-        return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode*) dat.cases.at(0), dat.post, (BlockNode*) dat.cases.at(1));
+
+    if (ctx->falseBlk)
+    {
+        return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post, (BlockNode *)dat.cases.at(1));
     }
 
-    return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode*) dat.cases.at(0), dat.post);
+    return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post);
 }
 
 std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
@@ -1597,7 +1605,6 @@ const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
 
 std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LambdaConstExprContext *ctx)
 {
-    // FIXME: VERIFY THIS IS ALWAYS SAFE!!!
     std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
 
     if (!paramTypeOpt)
@@ -1629,12 +1636,6 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     }
     BlockNode *blk = std::get<BlockNode *>(blkOpt);
 
-    std::visit(overloaded{[](BlockNode *b)
-                          { std::cout << "BLOCK NODE" << b << std::endl; },
-                          [](ErrorChain *e)
-                          { std::cout << "ERROR NODE" << std::endl; }},
-               blkOpt);
-
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
     if (!endsInReturn(blk))
     {
@@ -1642,7 +1643,6 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
         errorHandler.addSemanticError(ctx->getStart(), "Lambda must end in return statement");
     }
     safeExitScope(ctx);
-
     return new LambdaConstNode(ctx->getStart(), ps, retType, blk);
 }
 
@@ -1816,6 +1816,10 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BaseTypeContext *ctx)
     else if (ctx->TYPE_STR())
     {
         return Types::STR;
+    }
+    else if (ctx->TYPE_UNIT())
+    {
+        return Types::UNIT;
     }
 
     errorHandler.addSemanticError(ctx->getStart(), "Unknown type: " + ctx->getText());

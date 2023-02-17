@@ -39,7 +39,6 @@ overloaded(Ts...) -> overloaded<Ts...>;
 
 class SelectAlternativeNode;
 class SelectStatementNode;
-class ConditionNode;
 class BlockNode;
 
 class LambdaConstNode;
@@ -87,11 +86,10 @@ public:
 
     // virtual std::optional<Value *> visit(SelectAlternativeNode *n) = 0;
     virtual std::optional<Value *> visit(SelectStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(ConditionNode *n) = 0;
     virtual std::optional<Value *> visit(BlockNode *n) = 0;
     virtual std::optional<Value *> visit(LambdaConstNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramDefNode *n) = 0;
-    // virtual std::optional<Value *> visit(FunctionDefNode *n) = 0; //FIXME
+    // virtual std::optional<Value *> visit(FunctionDefNode *n) = 0;
     virtual std::optional<Value *> visit(ConditionalStatementNode *n) = 0;
     virtual std::optional<Value *> visit(ReturnNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramSendNode *n) = 0;
@@ -130,7 +128,6 @@ public:
     // private: //FIXME: DO SOMETHING FOR THE ONES WE DONT NEED/USE
     std::any any_visit(SelectAlternativeNode *n) { return this->visit(n); }
     std::any any_visit(SelectStatementNode *n) { return this->visit(n); }
-    std::any any_visit(ConditionNode *n) { return this->visit(n); }
     std::any any_visit(BlockNode *n) { return this->visit(n); }
     std::any any_visit(LambdaConstNode *n) { return this->visit(n); }
     std::any any_visit(ProgramDefNode *n) { return this->visit(n); }
@@ -223,24 +220,6 @@ public:
     }
 };
 
-class ConditionNode : public TypedNode // FIXME: PROBABLY ISNT NEEDED
-{
-public:
-    TypedNode *condition;
-
-    ConditionNode(TypedNode *c, antlr4::Token *tok) : TypedNode(tok)
-    {
-        condition = c;
-    }
-
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-
-    std::string toString() const override {
-        return "COND NODE";
-    }
-};
-
 // FIXME: SHOULD THERE BE A EXPRESSION VS STATEMENT DIFFERENCE IN THESE? MAYBE NOT I GUESS B/C TECHNICALLY CALLS COULD HAVE BEEN SORT OF EITHER? BUT NOT ANYMORE? IDK EVERYTHING KIND OF BECOMES EXPR WHEN FUNCTIONAL
 class BlockNode : public TypedNode
 {
@@ -309,7 +288,6 @@ public:
 
     const TypeInvoke *getType() override
     {
-        std::cout << "297" << std::endl; 
         return type;
     }
 
@@ -391,13 +369,13 @@ public:
 class ConditionalStatementNode : public TypedNode
 {
 public:
-    ConditionNode *cond;
+    TypedNode *cond;
     BlockNode *trueBlk;
     std::optional<BlockNode *> falseOpt;
 
     std::vector<TypedNode *> post;
 
-    ConditionalStatementNode(antlr4::Token *tok, ConditionNode *c, BlockNode *t, std::vector<TypedNode *> p, std::optional<BlockNode *> f = {}) : TypedNode(tok)
+    ConditionalStatementNode(antlr4::Token *tok, TypedNode *c, BlockNode *t, std::vector<TypedNode *> p, std::optional<BlockNode *> f = {}) : TypedNode(tok)
     {
         cond = c;
         trueBlk = t;
@@ -643,10 +621,10 @@ public:
 class WhileLoopNode : public TypedNode
 {
 public:
-    ConditionNode *cond;
+    TypedNode *cond;
     BlockNode *blk;
 
-    WhileLoopNode(ConditionNode *c, BlockNode *t, antlr4::Token *tok) : TypedNode(tok)
+    WhileLoopNode(TypedNode *c, BlockNode *t, antlr4::Token *tok) : TypedNode(tok)
     {
         cond = c;
         blk = t;

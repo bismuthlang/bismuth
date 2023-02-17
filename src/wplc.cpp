@@ -65,7 +65,7 @@ static llvm::cl::opt<CompileType>
                 llvm::cl::desc("If set, will compile to an executable with the specified compiler."),
                 llvm::cl::values(
                     clEnumVal(none, "Will not generate an executable"),
-                    clEnumVal(clang, "Will generate an executable using clang++"), 
+                    clEnumVal(clang, "Will generate an executable using clang++"),
                     clEnumVal(gcc, "Will generate an executable using g++")),
                 llvm::cl::init(none),
                 llvm::cl::cat(WPLCOptions));
@@ -79,8 +79,8 @@ int main(int argc, const char *argv[])
    * @see https://llvm.org/docs/CommandLine.html
    * ******************************************************************/
   llvm::cl::HideUnrelatedOptions(WPLCOptions);
-  //Note: Sub zero font
-  llvm::cl::SetVersionPrinter([](llvm::raw_ostream &o) 
+  // Note: Sub zero font
+  llvm::cl::SetVersionPrinter([](llvm::raw_ostream &o)
                               { o << R""""( 
       ______   ______     __     ______     __    __    
      /\  == \ /\  == \   /\ \   /\  ___\   /\ "-./  \   
@@ -249,15 +249,15 @@ int main(int argc, const char *argv[])
       continue;
     }
 
-    if (std::holds_alternative<ErrorChain*>(TypedOpt))//!TypedOpt)
+    if (std::holds_alternative<ErrorChain *>(TypedOpt)) //! TypedOpt)
     {
       std::cerr << "Failed to generate Typed AST" << std::endl;
-      std::cerr << std::get<ErrorChain*>(TypedOpt)->toString() << std::endl;  //FIXME: CAN SOMEHOW TRIP?
+      std::cerr << std::get<ErrorChain *>(TypedOpt)->toString() << std::endl; // FIXME: CAN SOMEHOW TRIP?
       isValid = false;
       continue;
     }
 
-    CompilationUnitNode *cu = std::get<CompilationUnitNode*>(TypedOpt);// TypedOpt.value();
+    CompilationUnitNode *cu = std::get<CompilationUnitNode *>(TypedOpt); // TypedOpt.value();
 
     if (isVerbose)
     {
@@ -293,10 +293,16 @@ int main(int argc, const char *argv[])
     if (!noCode)
     {
       std::string irFileName = input.second + ".ll";
-      std::error_code ec; // FIXME: REPORT ERROR?
+      std::error_code ec;
       llvm::raw_fd_ostream irFileStream(irFileName, ec);
       module->print(irFileStream, nullptr);
       irFileStream.flush();
+
+      if (ec)
+      {
+        std::cerr << ec.message() << std::endl;
+        return -1;
+      }
     }
 
     if (isVerbose)

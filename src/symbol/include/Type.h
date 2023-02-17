@@ -29,8 +29,6 @@
 #include "LinkedMap.h"
 #include "Protocol.h"
 
-// FIXME: CAN NOW HAVE UNDEFINED TYPES!!!! NEED TO TEST (AND PROBABLY REMOVE NULLPTR)!
-
 /*******************************************
  *
  * Top Type Definition
@@ -226,13 +224,13 @@ public:
         mthis->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
     }
 
-    bool isGuarded() const override //FIXME: DO BETTER
+    bool isGuarded() const override // FIXME: DO BETTER
     {
         if (steps.size() == 0)
         {
             return guardCount > 0;
         }
-        return steps.front()->isGuarded(); 
+        return steps.front()->isGuarded();
     }
 
     void guard() const override // FIXME: DO BETTER
@@ -281,14 +279,6 @@ inline const ProtocolSequence *toSequence(const Protocol *proto)
     return new ProtocolSequence(a);
 }
 
-//FIXME: DO BETTER LINEAR CHECK; CURRENTLY THIS IS UNUSED, LACK OF NEED
-// inline bool isLinear(const Type * ty)
-// {
-//     if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
-//         return true; 
-
-//     return false; 
-// }
 
 /*******************************************
  *
@@ -540,7 +530,7 @@ protected:
 
 /*******************************************
  *
- * Bottom Type 
+ * Bottom Type
  *
  *******************************************/
 
@@ -553,10 +543,9 @@ protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
 
-
 /*******************************************
  *
- * Unit Type 
+ * Unit Type
  *
  *******************************************/
 class TypeUnit : public Type
@@ -570,7 +559,7 @@ protected:
 
 /*******************************************
  *
- * Absurd Type 
+ * Absurd Type
  *
  *******************************************/
 class TypeAbsurd : public Type
@@ -581,7 +570,6 @@ public:
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
-
 
 /*******************************************
  *
@@ -602,8 +590,8 @@ namespace Types
     inline const TypeInt *INT = new TypeInt();
     inline const TypeBool *BOOL = new TypeBool();
     inline const TypeStr *STR = new TypeStr();
-    inline const TypeUnit *UNIT = new TypeUnit(); 
-    inline const TypeAbsurd *ABSURD = new TypeAbsurd(); 
+    inline const TypeUnit *UNIT = new TypeUnit();
+    inline const TypeAbsurd *ABSURD = new TypeAbsurd();
 };
 
 /*******************************************
@@ -825,13 +813,13 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeProgram(const TypeChannel *c, bool d) // FIXME: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
+    TypeProgram(const TypeChannel *c, bool d) // TODO: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
     {
         channel = c;
 
         defined = d;
     }
-    
+
     std::string toString() const override
     {
 
@@ -1039,9 +1027,9 @@ public:
 
         std::ostringstream description;
         // description << (isProc ? "Unit" : "");
-        if(paramTypes.size() == 0)
-            description << "1";
-        
+        if (paramTypes.size() == 0)
+            description << "()"; // TODO: change whole thing to touple to make it easier to deal with
+
         for (unsigned int i = 0; i < paramTypes.size(); i++)
         {
             description << paramTypes.at(i)->toString();
@@ -1141,7 +1129,6 @@ protected:
         // Checks that the other type is also invokable
         if (const TypeInvoke *p = dynamic_cast<const TypeInvoke *>(other))
         {
-            std::cout << "1135" << std::endl; 
             // Makes sure that both functions have the same number of parameters
             if (p->paramTypes.size() != this->paramTypes.size())
                 return false;
@@ -1155,11 +1142,10 @@ protected:
             {
                 if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
                 {
-                    std::cout << "PARAM FAIL" << std::endl; 
+                    std::cout << "PARAM FAIL" << std::endl;
                     return false;
                 }
             }
-            std::cout << "1153" << std::endl; 
             // Makes sure that the return type of this function is a subtype of the other
             return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeUnit *>(this->retType) && dynamic_cast<const TypeUnit *>(p->retType));
         }
@@ -1577,3 +1563,17 @@ protected:
         return this == other; // FIXME: DO BETTER
     }
 };
+
+/****************************************
+ * Utility Functions
+ ****************************************/
+
+inline bool isGuarded(const Type *ty)
+{
+    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
+    {
+        return channel->getProtocol()->isGuarded();
+    }
+
+    return false;
+}

@@ -1,7 +1,5 @@
 extern int func printf(str s, ...);
 
-define struct Unit {}
-
 define struct RGBData {
     int[3] rgb; 
 }
@@ -20,7 +18,7 @@ define struct RGBColor {
 define struct HSVColor {
     HSVData hsv; 
     HSVData -> int getHue; 
-    HSVData -> int getSat; # FIXME: DO A TEST W/ STORES PROCESSES IF WE DONT ALREADY
+    HSVData -> int getSat;
     HSVData -> int getVal;
 }
 
@@ -33,8 +31,6 @@ define struct Color {
     ColorType colorType; 
     ColorType -> str toString; 
 }
-
-#FIXME: REASON FIELD ACCESS MAY HAVE ISSUE ON LINEARS IS THAT DESTROYING PARENT WOULD DESTROY ACCESS TO THE LINEAR INNER TYPES...
 
 # Color func getRGBColor(int r, int g, int b) 
 define getRGBColor :: c : Channel<+int;+int;+int;-Color> = {
@@ -56,12 +52,8 @@ define getRGBColor :: c : Channel<+int;+int;+int;-Color> = {
     ))
 }
 
-
-# FIXME: TRY MORE NESTED STRUCTS SO WE HAVE 3+ ACCESSES AT ONCE!!
-
-
 # proc fancyPrint(Color c) {
-define func fancyPrint (Color c) : Unit { #FIXME: DO BETTER PROC!
+define func fancyPrint (Color c) {
     str s := c.toString(c.colorType);
     
     printf("Color[type=%s, ", c.toString(c.colorType));
@@ -73,7 +65,7 @@ define func fancyPrint (Color c) : Unit { #FIXME: DO BETTER PROC!
          HSVColor hsv => printf("r=%u, g=%u, b=%u]\n", hsv.getHue(hsv.hsv), hsv.getSat(hsv.hsv), hsv.getVal(hsv.hsv));
     }
 
-    return Unit::init(); 
+    return; 
 }
 
 

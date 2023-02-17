@@ -1,8 +1,5 @@
 extern int func printf(str s, ...);
 
-# Defines a unit type (A type with no value)
-define struct Unit {}
-
 # Define structs for various color representations
 define struct RGBColor {
   int red; 
@@ -112,7 +109,7 @@ define getSampleColors :: io : Channel<+ColorHelper;-Color[3]> = {
  *)
 # Unit func printPrimitive((int + boolean + str) toPrint) {
 # define printPrimitive :: io : Channel<+(int + boolean + str)> = {
-define func printPrimitive ((int + boolean + str) toPrint) : Unit {
+define func printPrimitive ((int + boolean + str) toPrint) {
   match toPrint {
     int i => printf("int: %u", i);
     str s => {
@@ -130,8 +127,8 @@ define func printPrimitive ((int + boolean + str) toPrint) : Unit {
       } (b) # Function invoked with parameter b
     );
   }
-
-  return Unit::init(); 
+  
+  return;
 }
 
 # Unit func toString((Color + int + boolean + str) obj) {

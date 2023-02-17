@@ -22,7 +22,6 @@ define bar :: c : Channel<?(?-int);+int> = {
 define bar1 :: c : Channel<?(?-int);+int> = {
     while true {
         # more(c)
-        # var b := c; # FIXME: THIS SHOULDNT BE ALLOWED!!!!
         while true {
 
         }

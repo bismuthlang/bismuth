@@ -50,7 +50,8 @@ bool TypeBottom::isSupertypeFor(const Type *other) const
 bool TypeUnit::isSupertypeFor(const Type *other) const
 {
     // return dynamic_cast<const TypeUnit *>(other);
-    return false;
+    // return false;
+    return dynamic_cast<const TypeUnit *>(other);
 }
 
 /*
@@ -166,7 +167,7 @@ bool ProtocolSequence::contract() const
 
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = wn->getInnerProtocol()->steps;
-        std::cout << "CONT 152 " << wn->getInnerProtocol()->toString() << std::endl; 
+        // std::cout << "CONT 152 " << wn->getInnerProtocol()->toString() << std::endl; 
         mthis->steps.insert(steps.begin(), other.begin(), other.end()); //FIXME: WE PROBABLY NEED TO DO BETTER FLATTENING!
         return true;
     }
@@ -176,7 +177,7 @@ bool ProtocolSequence::contract() const
 
 bool ProtocolSequence::weaken() const
 {
-    std::cout << "WEAK 162 " <<this->toString() << std::endl; 
+    // std::cout << "WEAK 162 " <<this->toString() << std::endl; 
     if (isWN())
     {
         if(steps.front()->isGuarded() || this->isGuarded())

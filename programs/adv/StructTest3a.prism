@@ -1,7 +1,5 @@
 extern int func printf(str s, ...);
 
-define struct Unit {}
-
 define struct RGBData {
     int[3] rgb; 
 }
@@ -129,7 +127,7 @@ define program :: c : Channel<-int> = {
     #printf("Color: %u, %u, %u\n", z.red, z.green, z.blue);
 
     # Color col := getRGBColor(58, 166, 63);
-    Channel<-int;-int;-int;+Color> t := exec getRGBColor; # FIXME: WILL HAVING TO WRITE OUT EACH VAR GET ANNOYING (JUST LIKE WE HAVE FOR LOOPS?)
+    Channel<-int;-int;-int;+Color> t := exec getRGBColor; # TODO: WILL HAVING TO WRITE OUT EACH VAR GET ANNOYING (JUST LIKE WE HAVE FOR LOOPS?)
     t.send(58)
     t.send(166)
     t.send(63)
