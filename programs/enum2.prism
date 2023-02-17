@@ -15,7 +15,6 @@ define enum a {
 }
 
 # TODO: LET FOR () AROUND FN PARAMS IN Grammar?
-# FIXME: CAN WE REDEFINE WITHIN THE SUM?
 
 define program :: c : Channel<-int> = {
     var fn := (str msg, int times) : str {

@@ -310,7 +310,7 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
     // for (std::pair<Symbol *, TypedNode *> caseNode : n->cases)
     for (unsigned int i = 0; i < n->cases.size(); i++)
     {
-        // FIXME: find a way to error handle cases where coreetc block DNE or something
+        // TODO: find a way to error handle cases where coreetc block DNE or something
         BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(i + 1));
 
         builder->SetInsertPoint(matchBlk);
@@ -640,8 +640,6 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
 
         Value *stoVal = valOpt.value();
 
-        // FIXME: TRY PASSING GLOBAL ARG INTO FN
-
         args.push_back(stoVal);
     }
 
@@ -910,7 +908,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
         phi->addIncoming(lastValue, falseBlk);
     }
 
-    builder->CreateBr(mergeBlk); // FIXME: METHODIZE THIS WITH OR?
+    builder->CreateBr(mergeBlk); //CONSIDER: Methodize with or?
     /*
      * LHS True - Can skip checking RHS and return true
      */
@@ -1008,7 +1006,6 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
         const Type *modOpt = (n->accesses.size() > 1) ? n->accesses.at(n->accesses.size() - 2).second : sym->type;
         if (const TypeArray *ar = dynamic_cast<const TypeArray *>(modOpt))
         {
-            // FIXME: VERIFY THIS STILL WORKS WHEN NESTED!
             // If it is, correctly, an array type, then we can get the array's length (this is the only operation currently, so we can just do thus)
             Value *v = builder->getInt32(ar->getLength());
 
@@ -1019,7 +1016,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
     }
 
     const Type *ty = sym->type;
-    std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0 ? n->is_rvalue : false); // n->is_rvalue); // n->accesses.size() == 0); // FIXME: VERIFY! // FIXME: STILL NEED THIS!!! AND WE REMOVED IT SOME PLACES!!!! THATS A PROBLEM!!
+    std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0 ? n->is_rvalue : false);
 
     if (!baseOpt)
     {
@@ -1055,7 +1052,11 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
             const Type *fieldType = n->accesses.at(i).second;
             ty = fieldType;
         }
-        // FIXME: THROW ERROR?
+        else 
+        {
+            errorHandler.addCodegenError(n->getStart(), "Could not perform field access. Got type: " + ty->toString());
+            return std::nullopt; 
+        }
     }
 
     Value *valPtr = builder->CreateGEP(baseValue, addresses);

@@ -1,0 +1,30 @@
+extern int func printf(str s, ...);
+
+define func PrintEnum ((int + str) e) {
+    match e {
+        int i => printf("%u\n", i);
+        str s => printf("%s\n", s);
+    }
+
+    return;
+}
+
+
+define program :: c : Channel<-int> = {
+    (int + str) a := "hello there";
+
+    PrintEnum(a);                               # hello there
+
+    match a {
+        int i => printf("Error\n");
+        str s => {
+            a := 10; 
+            PrintEnum(10);                      # 10
+            printf("%s\n", s);                  # hello there 
+        }
+    }
+
+    PrintEnum(a);                               # 10
+
+    c.send(0)
+}
