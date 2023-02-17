@@ -74,19 +74,16 @@ bool Context::removeSymbol(Symbol *symbol) // FIXME: DO BETTER, VERIFY!
     {
         Scope *scope = opt.value();
 
-        if (depth >= stop)// || symbol->isDefinition || symbol->isGlobal) //FIXME: CONDITION SEEMS WRONG
+        if (depth >= stop)
         {
-            // scope->er
             if( scope->removeSymbol(symbol))
                 return true; 
             // return scope->removeSymbol(symbol);
         }
         else 
         {
-        // return false; //FIXME: THROW ERROR? //FIXME: SEE HOW RHETORIC HANGED BETWEEN THIS AND OTHER SIMILAR FN?
-
+            return false;
         }
-        // return sym;
 
         depth--;
         opt = scope->getParent();
@@ -134,7 +131,7 @@ std::vector<Symbol *> Context::getAvaliableLinears()
 
         auto toAdd = scope->getRemainingLinearTypes();
         ans.insert(ans.end(), toAdd.begin(), toAdd.end());
-        
+
         depth--;
         opt = scope->getParent();
     }

@@ -28,7 +28,7 @@ std::map<unsigned int, IPCBuffer<Message> *> State;
 
 std::map<unsigned int, unsigned int> LookupOther; // FIXME: NAME BETTER
 
-std::mutex exec_mutex; // FIXME: DO BETTER W/ MUTEX
+std::mutex exec_mutex;
 
 extern "C" unsigned int Execute(void (*func)(unsigned int))
 {
