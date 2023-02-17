@@ -204,7 +204,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     // Check that the optional, in fact, has a value. Otherwise, something went wrong.
     if (!optVal)
     {
-        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 202"); // FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(n->getStart(), "207 - Failed to generate code for: " + n->checkExpr->toString());
         return {};
     }
 
@@ -1568,7 +1568,7 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
 
         if (!innerOpt)
         {
-            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1528"); // FIXME: DO BETTER + ctx->getText());
+            errorHandler.addCodegenError(n->getStart(), "1571 - Failed to generate code for: " + n->toString());
             return {};
         }
 
