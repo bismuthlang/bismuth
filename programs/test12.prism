@@ -20,7 +20,7 @@ define isPrime :: c : Channel<+int;-boolean> = {
 
 
 define isPrime :: c : Channel<+int;-boolean> = {
-  int n := c.recv(); # FIXME: TEST WITH RECV VARS--ESP CHANNELS! THIS HASNT WORKED IN THE PAST
+  int n := c.recv();
   var i := 3, done := false, ans := true;
 
   while (!done & i < n) { 

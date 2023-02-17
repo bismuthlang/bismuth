@@ -81,8 +81,7 @@ void WriteHelper(unsigned int aId, Message m) { //uint8_t * (*func)(unsigned int
 
     if (i_oAId == LookupOther.end())
     {
-        std::cout << "E53 " << aId << std::endl;
-        return; 
+        throw "Preservation Error: WriteHelper could not locate channel to write to!";
     }
 
     unsigned int oAId = i_oAId->second;
@@ -92,17 +91,31 @@ void WriteHelper(unsigned int aId, Message m) { //uint8_t * (*func)(unsigned int
 
     if (i_buffer == State.end())
     {
-        std::cout << "E65 " << aId << "->" << oAId << std::endl;
+        // std::cout << "E65 " << aId << "->" << oAId << std::endl;
 
-        for (auto e : State)
-        {
-            std::cout << e.first << std::endl;
-        }
+        // for (auto e : State)
+        // {
+        //     std::cout << e.first << std::endl;
+        // }
 
-        return;
+        throw "Preservation Error: WriteHelper could not locate buffer to write to!";
     }
 
     i_buffer->second->enqueue(m);
+}
+
+Message ReadHelper(unsigned int aId)
+{
+    exec_mutex.lock();
+    auto i_buffer = State.find(aId);
+    exec_mutex.unlock();
+
+    if (i_buffer == State.end())
+    {
+        throw "Preservation error: failed to reac channel!";
+    }
+
+    return i_buffer->second->dequeue();
 }
 
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value)
@@ -112,7 +125,7 @@ extern "C" void WriteChannel(unsigned int aId, uint8_t *value)
     WriteHelper(aId, v);
 }
 
-extern "C" void WriteProjection(unsigned int aId, unsigned int selVal) //FIXME: methodize with WriteChannel
+extern "C" void WriteProjection(unsigned int aId, unsigned int selVal)
 {
     SEL s; 
     s.i = selVal; 
@@ -121,39 +134,20 @@ extern "C" void WriteProjection(unsigned int aId, unsigned int selVal) //FIXME: 
 
 extern "C" uint8_t *ReadChannel(unsigned int aId)
 {
-    exec_mutex.lock();
-    auto i_buffer = State.find(aId);
-    exec_mutex.unlock();
+    Message m = ReadHelper(aId); 
 
-    if (i_buffer == State.end())
+    if (std::holds_alternative<Value>(m))
     {
-        std::cout << "E79 " << aId << std::endl;
-        for (auto e : State)
-        {
-            std::cout << e.first << std::endl;
-        }
-        return nullptr; // FIXME: DO BETTER
+        uint8_t *v = std::get<Value>(m).v;
+        return v; 
     }
 
-    uint8_t *v = std::get<Value>(i_buffer->second->dequeue()).v;
-    
-    return v;
+    throw "Preservation Error: ReadChannel got non-VALUE!";
 }
 
-// FIXME: do better error handling for ReadProjection instead of just logging and returns! Also why do we mix bools and ints?
-extern "C" unsigned int ReadProjection(unsigned int aId) //FIXME: SHOULD METHODIZE ALL THESE
+extern "C" unsigned int ReadProjection(unsigned int aId)
 {
-    exec_mutex.lock();
-    auto i_buffer = State.find(aId);
-    exec_mutex.unlock();
-
-    if (i_buffer == State.end())
-    {
-        std::cout << "79 " << aId << std::endl;
-        return false;
-    }
-
-    Message m = i_buffer->second->dequeue();
+    Message m = ReadHelper(aId); 
 
     if (std::holds_alternative<SEL>(m))
     {
@@ -161,91 +155,29 @@ extern "C" unsigned int ReadProjection(unsigned int aId) //FIXME: SHOULD METHODI
         return i; 
     }
 
-    std::cout << "E168" << std::endl;
-    
-    return 0; 
+    throw "Preservation Error: ReadProjection got non-SEL!";
 }
 
-// FIXME: do better error handling for ShouldLoop instead of just logging and returns!
 extern "C" bool ShouldLoop(unsigned int aId)
 {
-    exec_mutex.lock();
-    auto i_buffer = State.find(aId);
-    exec_mutex.unlock();
-
-    if (i_buffer == State.end())
-    {
-        std::cout << "79 " << aId << std::endl;
-        return false;
-    }
-
-    Message m = i_buffer->second->dequeue();
+    Message m = ReadHelper(aId); 
 
     if (std::holds_alternative<START_LOOP>(m))
         return true;
     if (std::holds_alternative<END_LOOP>(m))
         return false;
 
-    std::cout << "E126" << std::endl;
-
-    return false;
+    throw "Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!";
 }
 
-// FIXME: do better error handling for ContractChannel instead of just logging and returns!
 extern "C" void ContractChannel(unsigned int aId)
 {
-    exec_mutex.lock();
-    auto i_oAId = LookupOther.find(aId);
-    exec_mutex.unlock();
-
-    if (i_oAId == LookupOther.end())
-    {
-        std::cout << "E138 " << aId << std::endl;
-        return;
-    }
-
-    unsigned int oAId = i_oAId->second;
-
-    exec_mutex.lock();
-    auto i_buffer = State.find(oAId);
-    exec_mutex.unlock();
-
-    if (i_buffer == State.end())
-    {
-        std::cout << "E148 " << aId << "->" << oAId << std::endl;
-        return;
-    }
-
     START_LOOP v;
-    
-    i_buffer->second->enqueue(v);
+    WriteHelper(aId, v);
 }
 
-// FIXME: do better error handling for WeakenChannel instead of just logging and returns!
 extern "C" void WeakenChannel(unsigned int aId)
 {
-    exec_mutex.lock();
-    auto i_oAId = LookupOther.find(aId);
-
-    if (i_oAId == LookupOther.end())
-    {
-        std::cout << "E165 " << aId << std::endl;
-        return;
-    }
-
-    unsigned int oAId = i_oAId->second;
-
-    auto i_buffer = State.find(oAId);
-
-    exec_mutex.unlock();
-
-    if (i_buffer == State.end())
-    {
-        std::cout << "E175 " << aId << "->" << oAId << std::endl;
-        return;
-    }
-
     END_LOOP v;
-    
-    i_buffer->second->enqueue(v);
+    WriteHelper(aId, v);
 }

@@ -399,7 +399,6 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     Symbol *sym = opt.value().second;
 
     // TODO: METHODIZE WITH INVOKE?
-    bindings->bind(ctx, sym);
 
     if (const TypeStruct *product = dynamic_cast<const TypeStruct *>(sym->type))
     {
@@ -846,7 +845,7 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
             a.push_back({"length",
                          Types::INT});
 
-            break; // FIXME: SHOULDNT BE NEEDED, BUT PROBS IS BC OF LOOP WEIRDNESSES?
+            break; // Shouldn't be needed, but is here anyways
         }
         else
         {
@@ -1145,42 +1144,6 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
                 stmgr->addSymbol(symbol);
 
                 a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Inefficient but needed for linears
-
-                // if (!(e->a))
-                //     return errorHandler.addCodegenError(ctx->getStart(), "FALSE!");
-
-                // // std::variant<TypedNode *, ErrorChain *> exprOpt = (e->a) ? anyOpt2VarError<TypedNode>(e->a->accept(this)) : std::nullopt;
-                // std::variant<TypedNode *, ErrorChain *> exprOptO = anyOpt2VarError<TypedNode>(errorHandler, e->a->accept(this));
-
-                // if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOptO))
-                // {
-                //     (*e)->addSemanticError(ctx->getStart(), "1133");
-                //     return *e;
-                // }
-
-                // TypedNode *exprOpt = std::get<TypedNode *>(exprOptO);
-
-                // const Type *newAssignType = this->visitCtx(ctx->typeOrVar()); // Needed to ensure vars get their own inf type
-
-                // const Type *exprType = exprOpt->getType(); // exprOpt ? exprOpt.value()->getType() : newAssignType;
-
-                // // Note: This automatically performs checks to prevent issues with setting VAR = VAR
-                // if (e->a && exprType->isNotSubtype(newAssignType))
-                // {
-                //     errorHandler.addSemanticError(e->getStart(), "Expression of type " + exprType->toString() + " cannot be assigned to " + newAssignType->toString());
-                // }
-
-                // std::optional<const Type *> newExprTypeOpt = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType;
-
-                // if (!newExprTypeOpt)
-                //     return errorHandler.addSemanticError(ctx->getStart(), "1150");
-
-                // const Type *newExprType = newExprTypeOpt.value();
-
-                // Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later inferencing purposes
-                // stmgr->addSymbol(symbol);
-
-                // a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Inefficient but needed for linears
             }
         }
         // a.push_back(new AssignmentNode(s, exprOpt));
@@ -1490,15 +1453,11 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     for (auto s : ctx->rest)
     {
         std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-        // if (!tnOpt)
-        //     valid = false; // FIXME: THIS ISNT GOOD ENOUGH MAYBE BC COULD FAIL FAISE? IDK
-        // else
-        //     restVec.push_back(tnOpt.value());
+
         if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
         {
             (*e)->addSemanticError(ctx->getStart(), "1605");
             valid = false;
-            // return *e;
         }
         else
             restVec.push_back(std::get<TypedNode *>(tnOpt));
@@ -1506,11 +1465,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
     if (!valid)
         return errorHandler.addSemanticError(ctx->getStart(), "1612");
-
-    // FIXME: DO WE NEED A SAFE EXIT HERE?
-
-    // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    // return Types::UNDEFINED;
+    
     return new SelectStatementNode(ctx->getStart(), alts, restVec);
 }
 
@@ -1783,7 +1738,6 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CustomTypeContext *ctx)
         return Types::ABSURD;
     }
 
-    bindings->bind(ctx, sym); // FIXME: DO BETTER
     return sym->type;
 }
 
@@ -1856,7 +1810,6 @@ std::variant<ProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend
     }
 
     Symbol *sym = opt.value().second;
-    bindings->bind(ctx->VARIABLE(), sym); // For Channel
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1896,15 +1849,13 @@ std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableR
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
-
+        
         std::optional<const Type *> ty = channel->getProtocol()->recv();
         if (!ty)
         {
             return errorHandler.addSemanticError(ctx->getStart(), "Failed to recv over channel: " + sym->toString());
         }
 
-        // bindings->bind(ctx->VARIABLE(), sym);                          // For Channel
-        // bindings->bind(ctx, new Symbol("", ty.value(), false, false)); // FIXME: DO BETTER, DONE SO WE CAN DO CORRECT BITCAST
         return new ProgramRecvNode(sym, ty.value(), ctx->getStart());
     }
 
@@ -1933,7 +1884,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
             opts.insert(toSequence(any2Protocol(alt->check->accept(this))));
         }
 
-        if (!channel->getProtocol()->isExtChoice(opts))
+        if (!channel->getProtocol()->isExtChoice(opts)) //Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
         {
             return errorHandler.addSemanticError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
         }
@@ -1966,15 +1917,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
         }
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
-        // for (auto alt : ctx->protoAlternative())
 
-        // FIXME: DO WE CHECK ANYWHERE THAT THESE ARE THE VALID CASES AND ALL OF THEM?
-
-        // {
-        // }
-
-        // return Types::UNDEFINED;
-        // return ty.value();
         return new ChannelCaseStatementNode(sym, dat.cases, dat.post, ctx->getStart());
     }
 
@@ -2057,7 +2000,6 @@ std::variant<ProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWe
     }
 
     Symbol *sym = opt.value().second;
-    bindings->bind(ctx->VARIABLE(), sym);
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -2080,7 +2022,6 @@ std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAc
     }
 
     Symbol *sym = opt.value().second;
-    // bindings->bind(ctx->VARIABLE(), sym);
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
