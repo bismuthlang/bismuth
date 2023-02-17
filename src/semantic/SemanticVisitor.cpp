@@ -921,7 +921,7 @@ std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
  * @param ctx The ConditionContext to visit
  * @return const Type* Always returns UNDEFINED as to prevent assignments
  */
-std::variant<ConditionNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ConditionContext *ctx)
+std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ConditionContext *ctx)
 {
     // auto conditionType = any2Type(ctx->ex->accept(this));
     std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this));
@@ -940,7 +940,7 @@ std::variant<ConditionNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
         return errorHandler.addSemanticError(ctx->getStart(), "Condition expected BOOL, but was given " + conditionType->toString());
     }
 
-    return new ConditionNode(cond, ctx->getStart()); // FIXME: THIS SEEMS KIND OF POINTLESS...
+    return cond; 
 }
 
 std::variant<SelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
@@ -1303,7 +1303,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
  */
 std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
 {
-    std::variant<ConditionNode *, ErrorChain *> checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+    std::variant<TypedNode *, ErrorChain *> checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
     {
@@ -1338,13 +1338,13 @@ std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return new WhileLoopNode(std::get<ConditionNode *>(checkOpt), std::get<BlockNode *>(blkOpt), ctx->getStart());
+    return new WhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<BlockNode *>(blkOpt), ctx->getStart());
 }
 
 std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ConditionalStatementContext *ctx)
 {
     // Automatically handles checking that we have a valid condition
-    std::variant<ConditionNode *, ErrorChain *> condOpt = this->visitCtx(ctx->check);
+    std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCtx(ctx->check);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
     {
@@ -1373,10 +1373,10 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
 
     if (ctx->falseBlk)
     {
-        return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post, (BlockNode *)dat.cases.at(1));
+        return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post, (BlockNode *)dat.cases.at(1));
     }
 
-    return new ConditionalStatementNode(ctx->getStart(), std::get<ConditionNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post);
+    return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post);
 }
 
 std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)

@@ -1107,12 +1107,6 @@ std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
     return v;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ConditionNode *n)
-{
-    // Passthrough to visiting the conditon
-    return AcceptType(this, n->condition);
-}
-
 std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
 {
     Symbol *symbol = n->getSymbol(); // FIXME: WHY ARE SOME PRIVATE AND OTHERS PUBLIC?
@@ -1340,7 +1334,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 {
     // Very similar to conditionals
 
-    std::optional<Value *> check = this->visit(n->cond);
+    std::optional<Value *> check = AcceptType(this, n->cond);
 
     if (!check)
     {
@@ -1366,7 +1360,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
     }
 
     // Re-calculate the loop condition
-    check = this->visit(n->cond);
+    check = AcceptType(this, n->cond);
     if (!check)
     {
         errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1328"); // FIXME: DO BETTER + ctx->check->getText());
@@ -1389,7 +1383,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
 {
     // Get the condition that the if statement is for
-    std::optional<Value *> cond = this->visit(n->cond);
+    std::optional<Value *> cond = AcceptType(this, n->cond);
 
     if (!cond)
     {

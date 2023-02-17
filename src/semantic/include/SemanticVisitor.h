@@ -124,8 +124,8 @@ public:
     std::variant<InvocationNode *, ErrorChain *> visitCtx(WPLParser::CallExprContext *ctx) { return this->visitCtx(ctx->call); }
     std::any visitCallExpr(WPLParser::CallExprContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
 
-    std::variant<ConditionNode *, ErrorChain *> visitCtx(WPLParser::ConditionContext *ctx);
-    std::any visitCondition(WPLParser::ConditionContext *ctx) override { return TNVariantCast<ConditionNode>(visitCtx(ctx)); }
+    std::variant<TypedNode *, ErrorChain *> visitCtx(WPLParser::ConditionContext *ctx);
+    std::any visitCondition(WPLParser::ConditionContext *ctx) override { return visitCtx(ctx); }
 
     std::variant<BinaryRelNode *, ErrorChain *> visitCtx(WPLParser::BinaryRelExprContext *ctx);
     std::any visitBinaryRelExpr(WPLParser::BinaryRelExprContext *ctx) override { return TNVariantCast<BinaryRelNode>(visitCtx(ctx)); }

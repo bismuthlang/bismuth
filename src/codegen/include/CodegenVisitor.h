@@ -89,7 +89,6 @@ public:
      ******************************************************************/
     // std::optional<Value *> visit(SelectAlternativeNode *n) override;
     std::optional<Value *> visit(SelectStatementNode *n) override;
-    std::optional<Value *> visit(ConditionNode *n) override;
     std::optional<Value *> visit(BlockNode *n) override;
     std::optional<Value *> visit(LambdaConstNode *n) override;
     std::optional<Value *> visit(ProgramDefNode *n) override { return visitInvokeable(n); };
