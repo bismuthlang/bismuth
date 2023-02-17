@@ -898,7 +898,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
 
         if (!rhs)
         {
-            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 842"); // FIXME: DO BETTER + toGen.at(i)->getText());
+            errorHandler.addCodegenError(n->getStart(), "901 - Failed to generate code for: " + n->exprs.at(i)->toString());
             return {};
         }
         lastValue = rhs.value();
@@ -944,7 +944,7 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
 
     if (!first)
     {
-        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 891"); // FIXME: DO BETTER + toGen.at(0)->getText());
+        errorHandler.addCodegenError(n->getStart(), "947 - Failed to generate code for: " + n->exprs.at(0)->toString());
         return {};
     }
 
@@ -970,7 +970,7 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
 
         if (!rhs)
         {
-            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 917"); // FIXME: DO BETTER + toGen.at(i)->getText());
+            errorHandler.addCodegenError(n->getStart(), "973 - Failed to generate code for: " + n->exprs.at(i)->toString());
             return {};
         }
         lastValue = rhs.value();
@@ -1020,7 +1020,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
 
     if (!baseOpt)
     {
-        errorHandler.addCodegenError(n->getStart(), "Failed to generate field access: "); // FIXME: DO BETTER + ctx->getText());
+        errorHandler.addCodegenError(n->getStart(), "1023 - Failed to generate field access: " + n->toString());
         return {};
     }
 
@@ -1142,7 +1142,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     // Check that the expression generated
     if (!exprVal)
     {
-        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1098"); // FIXME: DO BETTER + ctx->a->getText());
+        errorHandler.addCodegenError(n->getStart(), "1145 - Failed to generate code for: " + n->val->toString());
         return {};
     }
 
@@ -1181,7 +1181,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     // Sanity check to ensure that we now have a value for the variable
     if (!val)
     {
-        errorHandler.addCodegenError(n->getStart(), "Improperly initialized variable in assignment: "); // FIXME: DO BETTER + ctx->to->getText() + "@" + varSym->identifier);
+        errorHandler.addCodegenError(n->getStart(), "1184 - Improperly initialized variable in assignment: " + n->var->toString());
         return {};
     }
 
@@ -1248,7 +1248,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
         if ((e->val) && !exVal)
         {
-            errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1206"); // FIXME: DO BETTER + e->a->getText());
+            errorHandler.addCodegenError(n->getStart(), "1206 - Failed to generate code for: " + e->val.value()->toString());
             return {};
         }
 
@@ -1339,7 +1339,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
 
     if (!check)
     {
-        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1299"); // FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(n->getStart(), "1342 - Failed to generate code for: " + n->cond->toString());
         return {};
     }
 
@@ -1364,7 +1364,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
     check = AcceptType(this, n->cond);
     if (!check)
     {
-        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1328"); // FIXME: DO BETTER + ctx->check->getText());
+        errorHandler.addCodegenError(n->getStart(), "1367 - Failed to generate code for: " + n->cond->toString());
         return {};
     }
 
@@ -1388,7 +1388,7 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
 
     if (!cond)
     {
-        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1352"); // FIXME:  + ctx->check->getText());
+        errorHandler.addCodegenError(n->getStart(), "1391 - Failed to generate code for: " + n->cond->toString());
         return {};
     }
 
@@ -1665,7 +1665,7 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
             // Try to find the parameter's bnding to determine what value to bind to it.
             // std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber)); // FIXME: STILL NEED TO DO THIS (what for? enums?)
 
-            param->val = v; // FIXME: DO WE NEED TO CHECK IF ALREADY SET?
+            param->val = v;
 
             builder->CreateStore(&arg, v);
         }
