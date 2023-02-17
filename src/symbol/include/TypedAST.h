@@ -91,7 +91,7 @@ public:
     virtual std::optional<Value *> visit(BlockNode *n) = 0;
     virtual std::optional<Value *> visit(LambdaConstNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramDefNode *n) = 0;
-    // virtual std::optional<Value *> visit(FunctionDefNode *n) = 0; //FIXME
+    // virtual std::optional<Value *> visit(FunctionDefNode *n) = 0;
     virtual std::optional<Value *> visit(ConditionalStatementNode *n) = 0;
     virtual std::optional<Value *> visit(ReturnNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramSendNode *n) = 0;

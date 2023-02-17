@@ -32,8 +32,6 @@ define struct Color {
     ColorType -> str toString; 
 }
 
-#FIXME: REASON FIELD ACCESS MAY HAVE ISSUE ON LINEARS IS THAT DESTROYING PARENT WOULD DESTROY ACCESS TO THE LINEAR INNER TYPES...
-
 # Color func getRGBColor(int r, int g, int b) 
 define getRGBColor :: c : Channel<+int;+int;+int;-Color> = {
     int[3] data; 

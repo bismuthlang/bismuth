@@ -29,8 +29,6 @@
 #include "LinkedMap.h"
 #include "Protocol.h"
 
-// FIXME: CAN NOW HAVE UNDEFINED TYPES!!!! NEED TO TEST (AND PROBABLY REMOVE NULLPTR)!
-
 /*******************************************
  *
  * Top Type Definition
@@ -281,14 +279,6 @@ inline const ProtocolSequence *toSequence(const Protocol *proto)
     return new ProtocolSequence(a);
 }
 
-// FIXME: DO BETTER LINEAR CHECK; CURRENTLY THIS IS UNUSED, LACK OF NEED
-//  inline bool isLinear(const Type * ty)
-//  {
-//      if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
-//          return true;
-
-//     return false;
-// }
 
 /*******************************************
  *
@@ -823,7 +813,7 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeProgram(const TypeChannel *c, bool d) // FIXME: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
+    TypeProgram(const TypeChannel *c, bool d) // TODO: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
     {
         channel = c;
 
