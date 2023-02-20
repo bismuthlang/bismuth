@@ -1175,7 +1175,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
 
         std::set<const Type *> foundCaseTypes = {};
         // TODO: Maybe make so these can return values?
-        
+
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::MatchAlternativeContext>(
             ctx,
             ctx->cases,
@@ -1183,8 +1183,6 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
             false,
             [this, ctx, &cases, sumType, &foundCaseTypes](WPLParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
             {
-                // stmgr->enterScope(StopType::NONE); // FIXME: THIS SORT OF THING HAS ISSUES WITH ALLOWING FOR REDCLS OF VARS IN VARIOIUS SCOPES!!! (THIS EFFECTIVLEY FLATTENS THINGS)
-
                 const Type *caseType = any2Type(altCtx->type()->accept(this));
 
                 if (!sumType->contains(caseType))
@@ -1410,21 +1408,17 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
             return *e;
         }
 
-        // For tracking linear stuff //FIXMEL TRACK RETURN/EXIT
+        // For tracking linear stuff
         TypedNode *eval = std::get<TypedNode *>(evalOpt);
 
         if (!endsInReturn(eval))
         {
             for (auto s : ctx->rest)
             {
-                s->accept(this); // FIXME: DO BETTER
+                s->accept(this);
             }
         }
         safeExitScope(ctx);
-
-        // std::variant<SelectAlternativeNode  *, ErrorChain*> altOpt = this->visitCtx(e);
-        // if (!altOpt)
-        //     return {}; // FIXME: DO BETTER?
 
         alts.push_back(new SelectAlternativeNode(check, eval, ctx->getStart()));
     }
@@ -1507,8 +1501,8 @@ std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Re
         }
 
         std::pair<const Type *, TypedNode *> ans = {sym->type, val};
-        // Valid return statement; return UNDEFINED as its a statement.
-        return new ReturnNode(ctx->getStart(), ans); // FIXME: VERIFY CORRETC TYPE
+        
+        return new ReturnNode(ctx->getStart(), ans);
     }
 
     // We do not have an expression to return, so make sure that the return type is also a BOT.
@@ -1616,7 +1610,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
 {
     std::set<const Type *, TypeCompare> cases = {};
 
-    for (auto e : ctx->type()) // FIXME: ADD TEST CASES LIKE THIS FOR STRUCT + ENUM!!
+    for (auto e : ctx->type()) // FIXME: ADD TEST CASES LIKE THIS FOR STRUCT + ENUM!! (LINEAR CHECK?)
     {
         const Type *caseType = any2Type(e->accept(this));
 
@@ -1668,7 +1662,7 @@ std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
         return errorHandler.addSemanticError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
     }
 
-    TypeSum *sum = new TypeSum(cases, id); // FIXME: SHOULD THIS BE CONST?
+    TypeSum *sum = new TypeSum(cases, id); // SHOULD THIS BE CONST?
     Symbol *enumSym = new Symbol(id, sum, true, true);
 
     stmgr->addSymbol(enumSym);
@@ -1708,7 +1702,7 @@ std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPars
     Symbol *prodSym = new Symbol(id, product, true, true);
     stmgr->addSymbol(prodSym);
 
-    // FIXME: TRY USING FUNC DEFS AS TYPES!
+    // FIXME: TRY USING FUNC DEFS AS TYPES! (FUNCS DONT SEEM TO WORK WITH PREDECL IN ENUMS!)
     return new DefineStructNode(id, product, ctx->getStart());
 }
 
@@ -1857,7 +1851,6 @@ std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableR
 
 std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ctx)
 {
-    // FIXME: THIS SAME PATTERN NEEDS TO BE APPLIED TO EVERY BRANCHING SYSTEM!!!!
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
 

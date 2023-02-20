@@ -134,7 +134,7 @@ public:
     std::any visitSelectAlternative(WPLParser::SelectAlternativeContext *ctx) override { return TNVariantCast<SelectAlternativeNode>(visitCtx(ctx)); }
 
     std::any visitProgDef(WPLParser::ProgDefContext *ctx) override { return TNVariantCast<ProgramDefNode>(this->visitInvokeable(ctx->defineProc())); }
-    std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return TNVariantCast<ProgramDefNode>(visitInvokeable(ctx->defineProc())); } // FIXME: DO BETTER!!!
+    std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return TNVariantCast<ProgramDefNode>(visitInvokeable(ctx->defineProc())); }
 
     std::variant<LambdaConstNode *, ErrorChain *> visitCtx(WPLParser::DefineFuncContext *ctx);
     std::any visitDefineFunc(WPLParser::DefineFuncContext *ctx) override { return TNVariantCast<LambdaConstNode>(visitCtx(ctx)); }
@@ -187,7 +187,7 @@ public:
     std::any visitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
 
     std::variant<MatchStatementNode *, ErrorChain *> visitCtx(WPLParser::MatchStatementContext *ctx);
-    std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // FIXME: CASTS NEEDED B/C OF HOW C++ HANDLES ANYS BY MANGLED NAME!
+    std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // NOTE: CASTS NEEDED B/C OF HOW C++ HANDLES ANYS BY MANGLED NAME!
 
     std::variant<ExitNode *, ErrorChain *> visitCtx(WPLParser::ExitStatementContext *ctx);
     std::any visitExitStatement(WPLParser::ExitStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
@@ -273,9 +273,7 @@ public:
         for (auto e : ctx->stmts)
         {
             // Visit all the statements in the block
-            std::any FIXME = e->accept(this);
-
-            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, FIXME);
+            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
