@@ -1008,10 +1008,15 @@ std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Ex
     std::optional<ParameterListNode> tyOpt = (ctx->paramList) ? this->visitCtx(ctx->paramList)
                                                               : ParameterListNode();
 
+
+    if(!tyOpt) {
+        return errorHandler.addSemanticError(ctx->getStart(), "Failed to genrate parameters for extern!");
+    }
+
     const Type *retType = ctx->ty ? any2Type(ctx->ty->accept(this))
                                   : Types::UNIT;
 
-    ExternNode *node = new ExternNode(id, tyOpt.value(), retType, variadic, ctx->getStart()); // FIXME: BAD OPT ACCESS!
+    ExternNode *node = new ExternNode(id, tyOpt.value(), retType, variadic, ctx->getStart());
 
     stmgr->addSymbol(node->getSymbol());
 
@@ -1170,19 +1175,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
 
         std::set<const Type *> foundCaseTypes = {};
         // TODO: Maybe make so these can return values?
-
-        std::vector<Symbol *> syms = stmgr->getAvaliableLinears(); // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
-
-        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
-        for (Symbol *orig : syms)
-        {
-            // FIXME: DO BETTER, WONT WORK WITH VALUES!
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                to_fix.push_back({channel, channel->getProtocolCopy()});
-            }
-        }
-
+        
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::MatchAlternativeContext>(
             ctx,
             ctx->cases,
