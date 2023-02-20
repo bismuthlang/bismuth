@@ -1080,9 +1080,15 @@ std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
     std::optional<Value *> rhs = AcceptType(this, n->rhs);
 
     // Ensure we successfully generated LHS and RHS
-    if (!lhs || !rhs)
+    if (!lhs)
     {
-        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for: 1032"); // FIXME: DO BETTER
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for lhs of BinaryRel: " + n->lhs->toString());
+        return {};
+    }
+
+    if (!rhs)
+    {
+        errorHandler.addCodegenError(n->getStart(), "Failed to generate code for rhs of BinaryRel: " + n->rhs->toString());
         return {};
     }
 
@@ -1110,7 +1116,7 @@ std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
 {
-    Symbol *symbol = n->getSymbol(); // FIXME: WHY ARE SOME PRIVATE AND OTHERS PUBLIC?
+    Symbol *symbol = n->getSymbol(); // WHY ARE SOME PRIVATE AND OTHERS PUBLIC?
 
     if (!symbol->type)
     {
@@ -1661,10 +1667,7 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 
             // Create an allocation for the argumentr
             llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
-
-            // Try to find the parameter's bnding to determine what value to bind to it.
-            // std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber)); // FIXME: STILL NEED TO DO THIS (what for? enums?)
-
+            
             param->val = v;
 
             builder->CreateStore(&arg, v);

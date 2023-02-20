@@ -437,7 +437,7 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
 
                     errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
                 }
-                // FIXME: WHAT HAPPENS IF VAR PASSED TO THIS?
+
                 i++;
             }
         }
@@ -466,7 +466,7 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     const Type *exprType = expr->getType();
     if (exprType->isNotSubtype(Types::INT))
     {
-        errorHandler.addSemanticError(ctx->getStart(), "Array access index expected type INT but got " + exprType->toString());
+        return errorHandler.addSemanticError(ctx->getStart(), "Array access index expected type INT but got " + exprType->toString());
     }
 
     /*
@@ -487,9 +487,9 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     // Symbol *sym = opt.value();
     FieldAccessNode *field = std::get<FieldAccessNode *>(opt);
 
-    if (const TypeArray *arr = dynamic_cast<const TypeArray *>(field->getType())) // FIXME: Verify that the symbol type matches the return type ?
+    if (const TypeArray *arr = dynamic_cast<const TypeArray *>(field->getType()))
     {
-        return new ArrayAccessNode(field, expr, is_rvalue, ctx->getStart()); // FIXME: THIS SHOULD NOT HAPPEN IF INDEX CHECK FAILS!
+        return new ArrayAccessNode(field, expr, is_rvalue, ctx->getStart());
     }
 
     // Report error

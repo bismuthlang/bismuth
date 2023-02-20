@@ -243,7 +243,7 @@ int main(int argc, const char *argv[])
 
     if (sv->hasErrors(0)) // Want to see all errors
     {
-      std::cout << "Semantic analysis completed for " << input.second << " with errors: " << std::endl;
+      std::cerr << "Semantic analysis completed for " << input.second << " with errors: " << std::endl;
       std::cerr << sv->getErrors() << std::endl;
       isValid = false;
       continue;

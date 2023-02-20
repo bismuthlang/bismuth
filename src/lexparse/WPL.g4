@@ -209,9 +209,9 @@ subProtocol     :   '+' ty=type                 # RecvType
 
 //Allows us to have a type of ints, bools, or strings with the option for them to become 1d arrays. 
 type            :    ty=type LBRC len=INTEGER RBRC                                          # ArrayType
-                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT)                                   # BaseType
+                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT)                       # BaseType
                 |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
-                |    '(' (paramTypes+=type (COMMA paramTypes+=type)*)? ')' MAPS_TO (returnType=type | '(' ')') # LambdaType //FIXME: DO BETTER?
+                |    '(' (paramTypes+=type (COMMA paramTypes+=type)*)? ')' MAPS_TO (returnType=type | '(' ')') # LambdaType
                 |    LPAR type (PLUS type)+ RPAR                                            # SumType 
                 |    'Channel' LESS proto=protocol GREATER                                  # ChannelType
                 |    'Program' LESS proto=protocol GREATER                                  # ProgramType
