@@ -1149,7 +1149,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
                 }
 
                 stmgr->enterScope(StopType::NONE);
-                Symbol *local = new Symbol(altCtx->name->getText(), caseType, false, false); // FIXME: DO WE EVER CHECK THIS NAME IS UNIQUE? THIS MAY MATTER NOW W/ LINEARS? IDK MAYBE NOT
+                Symbol *local = new Symbol(altCtx->name->getText(), caseType, false, false);
                 stmgr->addSymbol(local);
 
                 std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, altCtx->eval->accept(this));
@@ -1340,7 +1340,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
             stmgr->enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
 
-            std::variant<TypedNode *, ErrorChain *> evalOpt = anyOpt2VarError<TypedNode>(errorHandler, e->eval->accept(this)); // FIXME: So these are all wrong b/c like, we return optionals
+            std::variant<TypedNode *, ErrorChain *> evalOpt = anyOpt2VarError<TypedNode>(errorHandler, e->eval->accept(this));
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&evalOpt))
             {
@@ -1486,7 +1486,6 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
     if (!endsInReturn(blk))
     {
-        // FIXME: DO THIS CHECK BETTER WITH BLOCK NODE?
         errorHandler.addSemanticError(ctx->getStart(), "Lambda must end in return statement");
     }
     safeExitScope(ctx);
@@ -1692,7 +1691,6 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ProgramTypeContext *ctx)
 
 std::variant<ProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)
 {
-    // FIXME: HAVE TO POTENTIALLY DELETE FROM CONTEXT OTHER VAR
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
 

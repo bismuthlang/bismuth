@@ -264,7 +264,7 @@ public:
     {
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE); // FIXME: DO BETTER?
+            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -409,7 +409,6 @@ public:
         bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
-        // FIXME: THIS SAME PATTERN NEEDS TO BE APPLIED TO EVERY BRANCHING SYSTEM!!!!
         std::vector<TypedNode *> cases;
         std::vector<TypedNode *> restVec;
         bool restVecFilled = false;
@@ -561,9 +560,8 @@ public:
     const Type *any2Type(std::any any)
     {
         std::optional<const Type *> valOpt = any2Opt<const Type *>(any);
-        if (!valOpt)
-            return Types::ABSURD;
-        return valOpt.value(); // FIXME: USE VALUE OR THINGY!
+
+        return valOpt.value_or(Types::ABSURD);
     }
 
     const Protocol *any2Protocol(std::any any)
