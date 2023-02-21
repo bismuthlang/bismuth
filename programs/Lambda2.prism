@@ -1,7 +1,5 @@
 extern int func printf(...);
 
-# FIXME: Make it so that way we can't have naming conflicts with DEFs
-
 define program :: c : Channel<-int> = {
 
     define foo :: c : Channel<+int;-int> = {

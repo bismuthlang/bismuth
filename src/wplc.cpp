@@ -249,10 +249,11 @@ int main(int argc, const char *argv[])
       continue;
     }
 
-    if (std::holds_alternative<ErrorChain *>(TypedOpt)) //! TypedOpt)
+    if (std::holds_alternative<ErrorChain *>(TypedOpt)) 
     {
+      //SHouldn't be possible, but somehow it cah happen....?)
       std::cerr << "Failed to generate Typed AST" << std::endl;
-      std::cerr << std::get<ErrorChain *>(TypedOpt)->toString() << std::endl; // FIXME: CAN SOMEHOW TRIP?
+      std::cerr << std::get<ErrorChain *>(TypedOpt)->toString() << std::endl;
       isValid = false;
       continue;
     }

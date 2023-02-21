@@ -412,6 +412,7 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
 
         std::vector<TypedNode *> n;
 
+        bool isValid = true; 
         {
             unsigned int i = 0;
 
@@ -436,13 +437,18 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
                     errorMsg << "Product init. argument " << i << " provided to " << name << " expected " << eleItr.second->toString() << " but got " << providedType->toString();
 
                     errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
+                    isValid = false; 
                 }
 
                 i++;
             }
         }
+        
+        if(!isValid) {
+            return errorHandler.addSemanticError(ctx->getStart(), "Invalid parameters passed to product init.");
+        }
 
-        return new InitProductNode(product, n, ctx->getStart()); // FIXME: SHOULD NOT RETURN THIS IF THE ARGS FAIL!!
+        return new InitProductNode(product, n, ctx->getStart());
     }
 
     return errorHandler.addSemanticError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString());
@@ -1286,7 +1292,7 @@ std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
         return *e;
     }
 
-    for (auto c : to_fix) // FIXME: verify this won't break anything...
+    for (auto c : to_fix) // This shouldn't break anything...
     {
         c->getProtocol()->unguard();
     }
@@ -1516,8 +1522,6 @@ std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Re
 
 std::variant<ExitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ExitStatementContext *ctx)
 {
-    // FIXME: ADD TESTS FOR EXIT FOR EACH RETURN TEST!!!
-
     std::optional<SymbolContext> symOpt = stmgr->lookup("@EXIT");
 
     // If we don't have the symbol, we're not in a place that we can return from.
