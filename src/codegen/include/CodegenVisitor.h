@@ -164,9 +164,6 @@ public:
 
             // Bind all of the arguments
             llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
-            // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1));
-
-            // FIXME: DO WE NEED TO CHECK THAT WE HAVENT PREVIOUSLY SET VAL?
             n->channelSymbol->val = v;
 
             builder->CreateStore((fn->args()).begin(), v);

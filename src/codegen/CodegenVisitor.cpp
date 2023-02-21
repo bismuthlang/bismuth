@@ -482,7 +482,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
         Value *val = builder->CreateCall(module->getFunction("Execute"), {lambdaThread});
         return val;
     }
-    // FIXME: REFACTOR, BOTH WITH THIS METHOD AND INVOCATION!
+    // TODO: REFACTOR, BOTH WITH THIS METHOD AND INVOCATION!
 
     Value *val = builder->CreateCall(module->getFunction("Execute"), {fnVal});
     return val;

@@ -632,4 +632,40 @@ private:
     }
 
     // NOTE: IS THERE A WAY FOR ME TO PROVIDE ONE OF TWO TYPES TO A FN, AND THEN HAVE THAT BE RET TYPE? (BUT ONLY ONE OF TWO...)
+
+    std::variant<Symbol *, ErrorChain *> getFunctionSymbol(WPLParser::DefineFuncContext *ctx)
+    {
+        std::optional<Symbol *> opt = bindings->getBinding(ctx);
+        if (opt)
+            return opt.value();
+
+        if (stmgr->lookupInCurrentScope(ctx->name->getText()))
+        {
+            return errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+        }
+
+        std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
+
+        if (!paramTypeOpt)
+        {
+            return errorHandler.addSemanticError(ctx->getStart(), "340");
+        }
+
+        ParameterListNode params = paramTypeOpt.value();
+        std::vector<const Type *> ps;
+
+        for (ParameterNode param : params)
+        {
+            ps.push_back(param.type);
+        }
+
+        const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this))
+                                            : Types::UNIT;
+
+        Symbol *sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
+
+        stmgr->addSymbol(sym);
+
+        return sym;
+    }
 };

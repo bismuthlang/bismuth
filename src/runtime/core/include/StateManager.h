@@ -11,7 +11,7 @@
 #include <atomic> // Is this really needed? also how does this library work?
 // For tracking running threads
 
-std::mutex running_mutex; // FIXME: A PATTERN LIKE THIS MIGHT BE CHALLENGING IN MY LANG! (SEE THIS AND WAITFORALLTOFINISH)
+std::mutex running_mutex; // NOTE: A PATTERN LIKE THIS MIGHT BE CHALLENGING IN MY LANG! (SEE THIS AND WAITFORALLTOFINISH)
 std::condition_variable running_cond;
 std::atomic<int> running;
 

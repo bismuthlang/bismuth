@@ -39,37 +39,15 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
         }
         else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))
         {
-            std::string id = fnCtx->defineFunc()->name->getText();
+            std::variant<Symbol *, ErrorChain *> funcSymOpt = getFunctionSymbol(fnCtx->defineFunc());
 
-            std::optional<SymbolContext> opt = stmgr->lookup(id);
-
-            if (opt)
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&funcSymOpt))
             {
-                errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of program " + id);
-                // return Types::UNDEFINED;
+                return *e;
             }
 
-            // FIXME: DUPLICATED FROM visitCtx(WPLParser::DefineFuncContext *ctx)!!!!
-
-            std::optional<ParameterListNode> paramTypeOpt = visitCtx(fnCtx->defineFunc()->lam->parameterList());
-
-            if (!paramTypeOpt)
-                return errorHandler.addSemanticError(ctx->getStart(), "59");
-
-            ParameterListNode params = paramTypeOpt.value();
-            std::vector<const Type *> ps;
-
-            for (ParameterNode param : params)
-            {
-                ps.push_back(param.type);
-            }
-
-            const Type *retType = fnCtx->defineFunc()->lam->ret ? any2Type(fnCtx->defineFunc()->lam->ret->accept(this))
-                                                                : Types::UNIT;
-
-            Symbol *funcSym = new Symbol(id, new TypeInvoke(ps, retType), true, true);
-
-            stmgr->addSymbol(funcSym);
+            Symbol *funcSym = std::get<Symbol *>(funcSymOpt);
+            
             bindings->bind(fnCtx->defineFunc(), funcSym);
         }
         else
@@ -325,50 +303,14 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
 
 std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineFuncContext *ctx)
 {
-    // FIXME: HANDLE REDECLS HERE INSTEAD OF AT TOP LEVEL? -> need to do something to prevent dupl issues!!
+    std::variant<Symbol *, ErrorChain *> funcSymOpt = getFunctionSymbol(ctx);
 
-    std::optional<Symbol *> funcSymOpt = [this, ctx]() -> std::optional<Symbol *>
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&funcSymOpt))
     {
-        std::optional<Symbol *> opt = bindings->getBinding(ctx);
-        if (opt)
-            return opt.value();
+        return *e;
+    }
 
-        if (stmgr->lookupInCurrentScope(ctx->name->getText()))
-        {
-            errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
-            return {};
-        }
-
-        std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
-
-        if (!paramTypeOpt)
-        {
-            errorHandler.addSemanticError(ctx->getStart(), "340");
-            return {};
-        }
-
-        ParameterListNode params = paramTypeOpt.value();
-        std::vector<const Type *> ps;
-
-        for (ParameterNode param : params)
-        {
-            ps.push_back(param.type);
-        }
-
-        const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this))
-                                            : Types::UNIT;
-
-        Symbol *sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
-
-        stmgr->addSymbol(sym);
-
-        return sym;
-    }();
-
-    if (!funcSymOpt)
-        return errorHandler.addSemanticError(ctx->getStart(), "363");
-
-    Symbol *funcSym = funcSymOpt.value();
+    Symbol *funcSym = std::get<Symbol *>(funcSymOpt);
 
     std::variant<LambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam);
 
@@ -412,7 +354,7 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
 
         std::vector<TypedNode *> n;
 
-        bool isValid = true; 
+        bool isValid = true;
         {
             unsigned int i = 0;
 
@@ -437,14 +379,15 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
                     errorMsg << "Product init. argument " << i << " provided to " << name << " expected " << eleItr.second->toString() << " but got " << providedType->toString();
 
                     errorHandler.addSemanticError(ctx->getStart(), errorMsg.str());
-                    isValid = false; 
+                    isValid = false;
                 }
 
                 i++;
             }
         }
-        
-        if(!isValid) {
+
+        if (!isValid)
+        {
             return errorHandler.addSemanticError(ctx->getStart(), "Invalid parameters passed to product init.");
         }
 
@@ -945,7 +888,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Con
         return errorHandler.addSemanticError(ctx->getStart(), "Condition expected BOOL, but was given " + conditionType->toString());
     }
 
-    return cond; 
+    return cond;
 }
 
 std::variant<SelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
@@ -1014,8 +957,8 @@ std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Ex
     std::optional<ParameterListNode> tyOpt = (ctx->paramList) ? this->visitCtx(ctx->paramList)
                                                               : ParameterListNode();
 
-
-    if(!tyOpt) {
+    if (!tyOpt)
+    {
         return errorHandler.addSemanticError(ctx->getStart(), "Failed to genrate parameters for extern!");
     }
 
@@ -1341,6 +1284,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
 
 std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
 {
+    // Define a recursive fn which takes ctx->cases as arg, then processes first vs rest?
     if (ctx->cases.size() < 1)
     {
         return errorHandler.addSemanticError(ctx->getStart(), "Select statement expected at least one alternative, but was given 0!");
@@ -1458,7 +1402,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
     if (!valid)
         return errorHandler.addSemanticError(ctx->getStart(), "1612");
-    
+
     return new SelectStatementNode(ctx->getStart(), alts, restVec);
 }
 
@@ -1507,7 +1451,7 @@ std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Re
         }
 
         std::pair<const Type *, TypedNode *> ans = {sym->type, val};
-        
+
         return new ReturnNode(ctx->getStart(), ans);
     }
 
@@ -1840,7 +1784,7 @@ std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableR
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
-        
+
         std::optional<const Type *> ty = channel->getProtocol()->recv();
         if (!ty)
         {
@@ -1874,7 +1818,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
             opts.insert(toSequence(any2Protocol(alt->check->accept(this))));
         }
 
-        if (!channel->getProtocol()->isExtChoice(opts)) //Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
+        if (!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
         {
             return errorHandler.addSemanticError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
         }
