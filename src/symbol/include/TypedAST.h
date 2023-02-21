@@ -1184,6 +1184,11 @@ inline bool endsInReturn(TypedNode *n)
         return endsInReturn(cn->post);
     }
 
+    if(SelectAlternativeNode * cn = dynamic_cast<SelectAlternativeNode*>(n))
+    {
+        return endsInReturn(cn->eval);
+    }
+
     // if(MatchStatementNode * cn = dynamic_cast<MatchStatementNode *>(n))
     // {
     //     // if(cn->post.size())
