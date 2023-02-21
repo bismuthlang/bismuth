@@ -67,7 +67,7 @@ public:
    */
   bool addSymbol(Symbol *symbol)
   {
-    if (dynamic_cast<const TypeChannel *>(symbol->type)) // FIXME: DO BETTER LINEAR CHECK!
+    if (isLinear(symbol->type))
       return linearContext.addSymbol(symbol);
     return dangerContext.addSymbol(symbol);
   }

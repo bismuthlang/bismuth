@@ -1618,7 +1618,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
     {
         const Type *caseType = any2Type(e->accept(this));
 
-        if (dynamic_cast<const TypeChannel *>(caseType)) // FIXME: DO BETTER LINEAR CHECK!
+        if (isLinear(caseType))
         {
             errorHandler.addSemanticError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
             return Types::ABSURD;
@@ -1653,7 +1653,7 @@ std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
     {
         const Type *caseType = any2Type(e->accept(this));
 
-        if (dynamic_cast<const TypeChannel *>(caseType)) // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure tehy are used?
+        if (isLinear(caseType))
         {
             return errorHandler.addSemanticError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
         }
@@ -1694,7 +1694,7 @@ std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPars
         }
         const Type *caseTy = any2Type(caseCtx->ty->accept(this));
 
-        if (dynamic_cast<const TypeChannel *>(caseTy)) // FIXME: DO BETTER LINEAR CHECK!
+        if (isLinear(caseTy))
         {
             return errorHandler.addSemanticError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString() + ", in non-linear container.");
         }

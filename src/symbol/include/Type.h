@@ -1577,3 +1577,9 @@ inline bool isGuarded(const Type *ty)
 
     return false;
 }
+
+inline bool isLinear(const Type * ty)
+{
+    if(dynamic_cast<const TypeChannel *>(ty)) return true;  // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure tehy are used?
+    return false; 
+}
