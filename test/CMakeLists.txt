@@ -16,7 +16,6 @@ message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include(AddLLVM)
 include(HandleLLVMOptions)
 
-include(cmake/LexParseTests.cmake)
 include(cmake/SymbolTests.cmake)
 include(cmake/SemanticTests.cmake)
 include(cmake/CodegenTests.cmake)
