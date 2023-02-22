@@ -279,7 +279,6 @@ inline const ProtocolSequence *toSequence(const Protocol *proto)
     return new ProtocolSequence(a);
 }
 
-
 /*******************************************
  *
  * RecvType Protocol
@@ -829,8 +828,7 @@ public:
         return description.str();
     }
 
-    // TODO: Build LLVM Type here instead of in codegen!
-    llvm::Type *getLLVMType(llvm::Module *M) const override
+    llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const
     {
         // Cretae a vector for our argument types
         // std::vector<llvm::Type *> typeVec;
@@ -838,12 +836,16 @@ public:
 
         llvm::Type *ret = llvm::Type::getVoidTy(M->getContext());
 
-        llvm::FunctionType *fnType = llvm::FunctionType::get(
+        return llvm::FunctionType::get(
             ret,
             {llvm::Type::getInt32Ty(M->getContext())},
             false);
+    }
 
-        return fnType->getPointerTo();
+    // TODO: Build LLVM Type here instead of in codegen!
+    llvm::PointerType *getLLVMType(llvm::Module *M) const override
+    {
+        return getLLVMFunctionType(M)->getPointerTo();
     }
 
     std::optional<std::string> getLLVMName() const { return name; }
@@ -1049,8 +1051,7 @@ public:
         return description.str();
     }
 
-    // TODO: Build LLVM Type here instead of in codegen!
-    llvm::Type *getLLVMType(llvm::Module *M) const override
+    llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const
     {
         // Cretae a vector for our argument types
         std::vector<llvm::Type *> typeVec;
@@ -1064,12 +1065,15 @@ public:
 
         llvm::Type *ret = retType->getLLVMType(M);
 
-        llvm::FunctionType *fnType = llvm::FunctionType::get(
+        return llvm::FunctionType::get(
             ret,
             paramRef,
             variadic);
-
-        return fnType->getPointerTo();
+    }
+    // TODO: Build LLVM Type here instead of in codegen!
+    llvm::PointerType *getLLVMType(llvm::Module *M) const override
+    {
+        return getLLVMFunctionType(M)->getPointerTo();
     }
 
     std::optional<std::string> getLLVMName() const { return name; }
@@ -1578,8 +1582,9 @@ inline bool isGuarded(const Type *ty)
     return false;
 }
 
-inline bool isLinear(const Type * ty)
+inline bool isLinear(const Type *ty)
 {
-    if(dynamic_cast<const TypeChannel *>(ty)) return true;  // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure tehy are used?
-    return false; 
+    if (dynamic_cast<const TypeChannel *>(ty))
+        return true; // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure tehy are used?
+    return false;
 }

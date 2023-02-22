@@ -106,23 +106,12 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
     {
         if (std::holds_alternative<ProgramDefNode *>(e))
         {
-
             ProgramDefNode *octx = std::get<ProgramDefNode *>(e);
 
             const TypeProgram *type = octx->getType();
 
-            llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
-
-            if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
-            {
-                Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, octx->name, module);
-                type->setName(fn->getName().str());
-            }
-            else
-            {
-                errorHandler.addError(octx->getStart(), "Could not treat function type as function.");
-                return std::nullopt;
-            }
+            Function *fn = Function::Create(type->getFunctionType(), GlobalValue::ExternalLinkage, octx->name, module);
+            type->setName(fn->getName().str());
         }
         else if (std::holds_alternative<LambdaConstNode *>(e))
         {
@@ -130,18 +119,8 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
 
             const TypeInvoke *type = octx->getType();
 
-            llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
-
-            if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
-            {
-                Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, octx->name, module);
-                type->setName(fn->getName().str());
-            }
-            else
-            {
-                errorHandler.addError(octx->getStart(), "Could not treat function type as function.");
-                return std::nullopt;
-            }
+            Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->name, module);
+            type->setName(fn->getName().str());
         }
     }
 
@@ -538,7 +517,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
     Value *chanVal = sym->val.value();
 
     builder->CreateCall(module->getFunction("WeakenChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
-    
+
     return std::nullopt;
 }
 
@@ -859,13 +838,13 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
         phi->addIncoming(lastValue, falseBlk);
     }
 
-    builder->CreateBr(mergeBlk); //CONSIDER: Methodize with or?
+    builder->CreateBr(mergeBlk); // CONSIDER: Methodize with or?
     /*
      * LHS True - Can skip checking RHS and return true
      */
     parent->getBasicBlockList().push_back(mergeBlk);
     builder->SetInsertPoint(mergeBlk);
-    
+
     return phi;
 }
 
@@ -1003,10 +982,10 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
             const Type *fieldType = n->accesses.at(i).second;
             ty = fieldType;
         }
-        else 
+        else
         {
             errorHandler.addError(n->getStart(), "Could not perform field access. Got type: " + ty->toString());
-            return std::nullopt; 
+            return std::nullopt;
         }
     }
 
@@ -1076,18 +1055,10 @@ std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
     }
 
     const TypeInvoke *type = n->getType();
-    llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
 
-    if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
-    {
-        Function *fn = Function::Create(fnType, GlobalValue::ExternalLinkage, symbol->getIdentifier(), module);
-        type->setName(fn->getName().str());
-    }
-    else
-    {
-        errorHandler.addError(n->getStart(), "Could not treat extern type as function.");
-        return std::nullopt;
-    }
+    Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, symbol->getIdentifier(), module);
+    type->setName(fn->getName().str());
+
     return std::nullopt;
 }
 
@@ -1258,7 +1229,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
                 if (e->val)
                 {
                     Value *stoVal = exVal.value();
-                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type)) // FIXME: WILL THIS WORK IF USING TYPE INF? - ONLY WORKS BC TYPEINF CANT INFER A -> A + B. 
+                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type)) // FIXME: WILL THIS WORK IF USING TYPE INF? - ONLY WORKS BC TYPEINF CANT INFER A -> A + B.
                     {
                         unsigned int index = sum->getIndex(module, stoVal->getType());
 
@@ -1541,7 +1512,7 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
     }
 
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
-    return  builder->CreateRetVoid();
+    return builder->CreateRetVoid();
 }
 
 std::optional<Value *> CodegenVisitor::visit(ExitNode *n)
@@ -1572,61 +1543,49 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 
     const TypeInvoke *type = n->getType();
 
-    llvm::Type *genericType = type->getLLVMType(module)->getPointerElementType();
+    llvm::FunctionType *fnType = type->getLLVMFunctionType(module);
 
-    if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType)) // FIXME: MAKE THIS THE RETURN TYPE OF TypeInvoke's getLLVMTYPE
+    Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
+    type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED
+
+    std::vector<Symbol *> paramList = n->paramSymbols;
+
+    // Create basic block
+    BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
+    builder->SetInsertPoint(bBlk);
+
+    // Bind all of the arguments
+    for (auto &arg : fn->args())
     {
-        Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
-        type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED
+        // Get the argumengt number (just seems easier than making my own counter)
+        int argNumber = arg.getArgNo();
 
-        std::vector<Symbol *> paramList = n->paramSymbols;
+        // Get the argument's type
+        llvm::Type *type = fnType->params()[argNumber];
 
-        // Create basic block
-        BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
-        builder->SetInsertPoint(bBlk);
+        // Get the argument name (This even works for arrays!)
+        Symbol *param = paramList.at(argNumber);
 
-        // Bind all of the arguments
-        for (auto &arg : fn->args())
-        {
-            // Get the argumengt number (just seems easier than making my own counter)
-            int argNumber = arg.getArgNo();
+        std::string argName = param->getIdentifier();
 
-            // Get the argument's type
-            llvm::Type *type = fnType->params()[argNumber];
+        // Create an allocation for the argumentr
+        llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
 
-            // Get the argument name (This even works for arrays!)
-            Symbol *param = paramList.at(argNumber);
+        param->val = v;
 
-            std::string argName = param->getIdentifier();
-
-            // Create an allocation for the argumentr
-            llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
-            
-            param->val = v;
-
-            builder->CreateStore(&arg, v);
-        }
-
-        // Generate code for the block
-        for (auto e : n->block->exprs)
-        {
-            AcceptType(this, e);
-        }
-
-        // NOTE HOW WE DONT NEED TO CREATE RET VOID EVER BC NO FN!
-
-        // Return to original insert point
-        builder->SetInsertPoint(ins);
-
-        return fn;
+        builder->CreateStore(&arg, v);
     }
-    else
+
+    // Generate code for the block
+    for (auto e : n->block->exprs)
     {
-        errorHandler.addError(n->getStart(), "Invocation type could not be cast to function!");
+        AcceptType(this, e);
     }
+
+    // NOTE HOW WE DONT NEED TO CREATE RET VOID EVER BC NO FN!
 
     // Return to original insert point
     builder->SetInsertPoint(ins);
 
-    return std::nullopt;
+    return fn;
 }
