@@ -222,7 +222,7 @@ public:
         }
 
         builder->SetInsertPoint(ins);
-        return {};
+        return std::nullopt;
     }
 
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
@@ -232,7 +232,7 @@ public:
         if (!type)
         {
             errorHandler.addError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
-            return {};
+            return std::nullopt;
         }
 
         // Make sure the variable has an allocation (or that we can find it due to it being a global var)
@@ -244,7 +244,7 @@ public:
                 if (!inv->getLLVMName())
                 {
                     errorHandler.addError(nullptr, "Could not locate IR name for program: " + sym->toString());
-                    return {};
+                    return std::nullopt;
                 }
 
                 Function *fn = module->getFunction(inv->getLLVMName().value());
@@ -256,7 +256,7 @@ public:
                 if (!inv->getLLVMName())
                 {
                     errorHandler.addError(nullptr, "Could not locate IR name for function: " + sym->toString());
-                    return {};
+                    return std::nullopt;
                 }
 
                 Function *fn = module->getFunction(inv->getLLVMName().value());
@@ -272,7 +272,7 @@ public:
                 if (!glob)
                 {
                     errorHandler.addError(nullptr, "Unable to find global variable: " + sym->getIdentifier());
-                    return {};
+                    return std::nullopt;
                 }
 
                 // Create and return a load for the global var
@@ -281,7 +281,7 @@ public:
             }
 
             errorHandler.addError(nullptr, "Unable to find allocation for variable: " + sym->getIdentifier());
-            return {};
+            return std::nullopt;
         }
 
         

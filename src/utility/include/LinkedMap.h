@@ -26,7 +26,7 @@ public:
         auto ans = indexes.find(k);
 
         if (ans == indexes.end())
-            return {};
+            return std::nullopt;
 
         return ans->second;
     }
@@ -38,7 +38,7 @@ public:
         if (index)
             return values.at(index.value());
 
-        return {};
+        return std::nullopt;
         // return values.at(ans->second);
     }
 
@@ -59,7 +59,7 @@ public:
         indexes.insert({k, values.size()});
         values.push_back(v);
 
-        return {};
+        return std::nullopt;
     }
 
     optional<V> insert(pair<K, V> p)

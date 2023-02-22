@@ -5,7 +5,7 @@ std::optional<T> anyOpt2Val(const std::any &a) // https://stackoverflow.com/ques
 {
     if (const std::optional<T> *v = std::any_cast<std::optional<T>>(&a))
         return *v;
-    return {};
+    return std::nullopt;
 }
 
 template <typename T>
@@ -14,7 +14,7 @@ std::optional<T> any2Opt(const std::any &a) // https://stackoverflow.com/questio
     if (const T *v = std::any_cast<T>(&a))
         return *v;
     else
-        return {};
+        return std::nullopt;
 }
 
 

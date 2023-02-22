@@ -93,7 +93,7 @@ public:
     if (opt)
       return (SymbolContext){NON_LINEAR_SCOPE, opt.value()};
 
-    return {};
+    return std::nullopt;
   }
 
   /**
