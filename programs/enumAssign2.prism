@@ -47,7 +47,7 @@ define getMain :: c : Channel<-Program<-int>> = {
         t2 := chan.recv();
         # t2 := getPrintLambda(); 
 
-        lambdaOp op; # FIXME: I FI CHANGE t2, WILL fn CHANGE?
+        lambdaOp op;
         Channel<+str,int->str> chan2 := exec getPrintLambda;
         # op := getPrintLambda(); 
         op := chan2.recv();

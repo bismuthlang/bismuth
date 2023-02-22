@@ -66,7 +66,7 @@ expression          : LPAR ex=expression RPAR                       # ParenExpr
                     | i=INTEGER    # IConstExpr
                     | s=STRING     # SConstExpr 
                     | lambdaConstExpr # LambdaExpr
-                    | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv //FIXME: VERIFY THESE DO NOT CAUSE LINEARITY VIOLATIONS ANYWHERE!
+                    | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv
                     | 'exec' prog=expression                 # AssignableExec
                     ;
 
@@ -144,18 +144,16 @@ statement           : defineProc                                                
                     | RETURN expression? ';'    # ReturnStatement 
                     | EXIT                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
                     | block                     # BlockStatement
-                    | channel=VARIABLE '.send' '(' expr=expression ')'   # ProgramSend
+                    | channel=VARIABLE '.send' '(' expr=expression ')' ';'?  # ProgramSend
                     | WHILE check=condition block                                                       # ProgramLoop
                     | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*      # ProgramCase  
                     | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                              # ProgramCase   
                     | channel=VARIABLE LBRC sel=protocol RBRC                                                                   # ProgramProject
-                    | 'more' '(' channel=VARIABLE ')'                   # ProgramContract 
-                    | 'weaken' '(' channel=VARIABLE ')'                 # ProgramWeaken
+                    | 'more' '(' channel=VARIABLE ')'   ';'?                # ProgramContract 
+                    | 'weaken' '(' channel=VARIABLE ')' ';'?                # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                 # ProgramAccept
                     ; 
                     
-
-//FIXME: RESERVE TERMS? 
 
 //Operators
 ASSIGN      :       ':='    ; 
@@ -211,9 +209,9 @@ subProtocol     :   '+' ty=type                 # RecvType
 
 //Allows us to have a type of ints, bools, or strings with the option for them to become 1d arrays. 
 type            :    ty=type LBRC len=INTEGER RBRC                                          # ArrayType
-                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT)                                   # BaseType
+                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT)                       # BaseType
                 |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
-                |    '(' (paramTypes+=type (COMMA paramTypes+=type)*)? ')' MAPS_TO (returnType=type | '(' ')') # LambdaType //FIXME: DO BETTER?
+                |    '(' (paramTypes+=type (COMMA paramTypes+=type)*)? ')' MAPS_TO (returnType=type | '(' ')') # LambdaType
                 |    LPAR type (PLUS type)+ RPAR                                            # SumType 
                 |    'Channel' LESS proto=protocol GREATER                                  # ChannelType
                 |    'Program' LESS proto=protocol GREATER                                  # ProgramType

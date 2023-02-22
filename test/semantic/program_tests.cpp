@@ -520,7 +520,7 @@ TEST_CASE("Dead code in select", "[semantic][program][select]")
   antlr4::ANTLRInputStream input(
       R""""(
 # int func program () {
-define func program (int idk) : int { # FIXME: MAKE THROW ERROR B/C THIS MAKES MAIN PROG IMPOSSIBLE # FIXME: MAKE IT SO WE CAN HAVE ZERO ARGS?
+define func program (int idk) : int { # FIXME: MAKE THROW ERROR B/C THIS MAKES MAIN PROG IMPOSSIBLE
 
     select {
         true : {

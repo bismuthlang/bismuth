@@ -67,7 +67,7 @@ public:
    */
   bool addSymbol(Symbol *symbol)
   {
-    if (dynamic_cast<const TypeChannel *>(symbol->type)) // FIXME: DO BETTER LINEAR CHECK!
+    if (isLinear(symbol->type))
       return linearContext.addSymbol(symbol);
     return dangerContext.addSymbol(symbol);
   }
@@ -93,7 +93,7 @@ public:
     if (opt)
       return (SymbolContext){NON_LINEAR_SCOPE, opt.value()};
 
-    return {};
+    return std::nullopt;
   }
 
   /**

@@ -72,23 +72,23 @@ bool TypeAbsurd::isSupertypeFor(const Type *other) const
 optional<const Type*> ProtocolSequence::canSend(const Type *ty) const
 {
     if (isComplete())
-        return {}; 
+        return std::nullopt; 
         // return false;
 
     const Protocol *proto = steps.front();
 
     if(proto->isGuarded() || this->isGuarded())
-        return {}; 
+        return std::nullopt; 
 
     if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(proto))
     {
         if(ty->isSubtype(send->getSendType()))
             return send->getSendType(); 
-        return {};
+        return std::nullopt;
     }
 
     // return false;
-    return {};
+    return std::nullopt;
 }
 
 // bool ProtocolSequence::send(const Type *ty) const
@@ -106,7 +106,7 @@ optional<const Type*> ProtocolSequence::send(const Type *ty) const
     }
 
     // return false;
-    return {};
+    return std::nullopt;
 }
 
 bool ProtocolSequence::canRecv() const
@@ -142,7 +142,7 @@ optional<const Type *> ProtocolSequence::recv() const
         return recv->getRecvType();
     }
 
-    return {};
+    return std::nullopt;
 }
 
 bool ProtocolSequence::isWN() const
@@ -214,7 +214,7 @@ bool ProtocolSequence::weaken() const
 //         return toSequence(wn->getInnerProtocol()->getCopy());
 //     }
 
-//     return {};
+//     return std::nullopt;
 // }
 
 bool ProtocolSequence::isOC() const
@@ -248,7 +248,7 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
         return ans;
     }
 
-    return {};
+    return std::nullopt;
 }
 
 // FIXME: METHODIZE A LOT OF THESE

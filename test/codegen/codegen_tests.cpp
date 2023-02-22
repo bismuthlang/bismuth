@@ -667,6 +667,13 @@ TEST_CASE("programs/doubleArg1c2 - weakening and loops", "[codegen][linear-types
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/doubleArg1c2.prism"))),
         "87798310e70dae9e24b38ca08c61e4f84aa8ae1501394597f1d032f4af39e1fb");
 }
+
+TEST_CASE("programs/enumedit", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumedit.prism"))),
+        "95404edcfd7234f124d7db74f9278ed69f8dd189d758c81b8f2897030b6e4f33");
+}
 /************************************
  * Example C-Level Tests
  ************************************/

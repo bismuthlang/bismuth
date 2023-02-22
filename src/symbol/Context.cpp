@@ -27,7 +27,7 @@ std::optional<Scope *> Context::exitScope()
     // INFO: Potential memory leak
     if (!currentScope)
     {
-        return {};
+        return std::nullopt;
     }
 
     Scope *last = currentScope.value();
@@ -48,7 +48,7 @@ bool Context::addSymbol(Symbol *symbol)
 {
     if (!currentScope)
     {
-        return {};
+        return false;
     }
 
     Scope *current = currentScope.value();
@@ -58,13 +58,13 @@ bool Context::addSymbol(Symbol *symbol)
     if (current->lookup(id))
     {
         // Change if you want to throw an exception
-        // return {};
+        // return std::nullopt;
         return false;
     }
     return current->addSymbol(symbol);
 }
 
-bool Context::removeSymbol(Symbol *symbol) // FIXME: DO BETTER, VERIFY!
+bool Context::removeSymbol(Symbol *symbol)
 {
     std::optional<Scope *> opt = currentScope;
 
@@ -74,19 +74,16 @@ bool Context::removeSymbol(Symbol *symbol) // FIXME: DO BETTER, VERIFY!
     {
         Scope *scope = opt.value();
 
-        if (depth >= stop)// || symbol->isDefinition || symbol->isGlobal) //FIXME: CONDITION SEEMS WRONG
+        if (depth >= stop)
         {
-            // scope->er
             if( scope->removeSymbol(symbol))
                 return true; 
             // return scope->removeSymbol(symbol);
         }
         else 
         {
-        // return false; //FIXME: THROW ERROR? //FIXME: SEE HOW RHETORIC HANGED BETWEEN THIS AND OTHER SIMILAR FN?
-
+            return false;
         }
-        // return sym;
 
         depth--;
         opt = scope->getParent();
@@ -110,18 +107,18 @@ std::optional<Symbol *> Context::lookup(std::string id)
         {
             if (depth >= stop || sym.value()->isDefinition || sym.value()->isGlobal)
                 return sym;
-            return {};
+            return std::nullopt;
         }
 
         depth--;
         opt = scope->getParent();
     }
 
-    return {};
+    return std::nullopt;
 }
 
-std::vector<Symbol *> Context::getAvaliableLinears()
-{ // FOXME: DO BETTER
+std::vector<Symbol *> Context::getAvaliableLinears() //TODO: DO BETTER
+{
     std::vector<Symbol *> ans;
 
     std::optional<Scope *> opt = currentScope;
@@ -132,10 +129,9 @@ std::vector<Symbol *> Context::getAvaliableLinears()
     {
         Scope *scope = opt.value();
 
-        for (auto s : scope->getRemainingLinearTypes())
-        {
-            ans.push_back(s); // FIXME: DO BETTER, USE INSERT!
-        }
+        auto toAdd = scope->getRemainingLinearTypes();
+        ans.insert(ans.end(), toAdd.begin(), toAdd.end());
+
         depth--;
         opt = scope->getParent();
     }
@@ -164,13 +160,13 @@ std::optional<Symbol *> Context::lookupInCurrentScope(std::string id)
         //         // std::cout << sym.value()->toString() << " " << depth << " >= " << stop  << " || " << sym.value()->isDefinition << std::endl;
         //         if (sym.value()->isDefinition)
         //             return sym;
-        //         return {};
+        //         return std::nullopt;
         //     }
         //     opt = scope->getParent();
         // }
     }
 
-    return {};
+    return std::nullopt;
 }
 
 // Directly from sample

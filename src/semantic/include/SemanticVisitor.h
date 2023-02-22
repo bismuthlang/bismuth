@@ -134,7 +134,7 @@ public:
     std::any visitSelectAlternative(WPLParser::SelectAlternativeContext *ctx) override { return TNVariantCast<SelectAlternativeNode>(visitCtx(ctx)); }
 
     std::any visitProgDef(WPLParser::ProgDefContext *ctx) override { return TNVariantCast<ProgramDefNode>(this->visitInvokeable(ctx->defineProc())); }
-    std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return TNVariantCast<ProgramDefNode>(visitInvokeable(ctx->defineProc())); } // FIXME: DO BETTER!!!
+    std::any visitDefineProgram(WPLParser::DefineProgramContext *ctx) override { return TNVariantCast<ProgramDefNode>(visitInvokeable(ctx->defineProc())); }
 
     std::variant<LambdaConstNode *, ErrorChain *> visitCtx(WPLParser::DefineFuncContext *ctx);
     std::any visitDefineFunc(WPLParser::DefineFuncContext *ctx) override { return TNVariantCast<LambdaConstNode>(visitCtx(ctx)); }
@@ -187,7 +187,7 @@ public:
     std::any visitVarDeclStatement(WPLParser::VarDeclStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
 
     std::variant<MatchStatementNode *, ErrorChain *> visitCtx(WPLParser::MatchStatementContext *ctx);
-    std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // FIXME: CASTS NEEDED B/C OF HOW C++ HANDLES ANYS BY MANGLED NAME!
+    std::any visitMatchStatement(WPLParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // NOTE: CASTS NEEDED B/C OF HOW C++ HANDLES ANYS BY MANGLED NAME!
 
     std::variant<ExitNode *, ErrorChain *> visitCtx(WPLParser::ExitStatementContext *ctx);
     std::any visitExitStatement(WPLParser::ExitStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
@@ -264,7 +264,7 @@ public:
     {
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE); // FIXME: DO BETTER?
+            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -273,13 +273,11 @@ public:
         for (auto e : ctx->stmts)
         {
             // Visit all the statements in the block
-            std::any FIXME = e->accept(this);
-
-            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, FIXME);
+            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                (*e)->addSemanticError(ctx->getStart(), "h280");
+                (*e)->addError(ctx->getStart(), "h280");
                 return *e;
             }
 
@@ -287,7 +285,7 @@ public:
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
             {
-                errorHandler.addSemanticError(ctx->getStart(), "Dead code.");
+                errorHandler.addError(ctx->getStart(), "Dead code.");
                 break;
             }
 
@@ -319,7 +317,7 @@ public:
 
         if (!symOpt && stmgr->lookupInCurrentScope(ctx->name->getText()))
         {
-            return errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
         }
 
         Symbol *sym = symOpt.value_or(
@@ -372,14 +370,14 @@ public:
             std::variant<BlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
             if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
             {
-                (*e)->addSemanticError(ctx->getStart(), "h374");
+                (*e)->addError(ctx->getStart(), "h374");
                 return *e;
             }
 
             // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
             // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
             // {
-            //     errorHandler.addSemanticError(ctx->getStart(), "Function must end in return statement");
+            //     errorHandler.addError(ctx->getStart(), "Function must end in return statement");
             // }
 
             // Safe exit the scope.
@@ -389,7 +387,7 @@ public:
         }
         else
         {
-            return errorHandler.addSemanticError(ctx->getStart(), "Cannot invoke " + sym->toString());
+            return errorHandler.addError(ctx->getStart(), "Cannot invoke " + sym->toString());
         }
     }
 
@@ -411,7 +409,6 @@ public:
         bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
-        // FIXME: THIS SAME PATTERN NEEDS TO BE APPLIED TO EVERY BRANCHING SYSTEM!!!!
         std::vector<TypedNode *> cases;
         std::vector<TypedNode *> restVec;
         bool restVecFilled = false;
@@ -454,7 +451,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
             {
-                (*e)->addSemanticError(ctx->getStart(), "2083");
+                (*e)->addError(ctx->getStart(), "2083");
                 return *e;
             }
 
@@ -474,7 +471,7 @@ public:
 
                         if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                         {
-                            (*e)->addSemanticError(ctx->getStart(), "2097");
+                            (*e)->addError(ctx->getStart(), "2097");
                             return *e;
                         }
 
@@ -500,7 +497,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
             }
         }
 
@@ -526,7 +523,7 @@ public:
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                     {
-                        (*e)->addSemanticError(ctx->getStart(), "2097");
+                        (*e)->addError(ctx->getStart(), "2097");
                         return *e;
                     }
 
@@ -551,7 +548,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
             }
         }
 
@@ -563,9 +560,8 @@ public:
     const Type *any2Type(std::any any)
     {
         std::optional<const Type *> valOpt = any2Opt<const Type *>(any);
-        if (!valOpt)
-            return Types::ABSURD;
-        return valOpt.value(); // FIXME: USE VALUE OR THINGY!
+
+        return valOpt.value_or(Types::ABSURD);
     }
 
     const Protocol *any2Protocol(std::any any)
@@ -579,7 +575,7 @@ public:
 private:
     STManager *stmgr;
     PropertyManager *bindings;
-    WPLErrorHandler errorHandler;
+    WPLErrorHandler errorHandler = WPLErrorHandler(SEMANTIC);
 
     int flags; // Compiler flags
 
@@ -607,7 +603,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addSemanticError(ctx->getStart(), "Uninferred types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
             }
         }
 
@@ -627,11 +623,47 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
             }
         }
         // return res;
     }
 
     // NOTE: IS THERE A WAY FOR ME TO PROVIDE ONE OF TWO TYPES TO A FN, AND THEN HAVE THAT BE RET TYPE? (BUT ONLY ONE OF TWO...)
+
+    std::variant<Symbol *, ErrorChain *> getFunctionSymbol(WPLParser::DefineFuncContext *ctx)
+    {
+        std::optional<Symbol *> opt = bindings->getBinding(ctx);
+        if (opt)
+            return opt.value();
+
+        if (stmgr->lookupInCurrentScope(ctx->name->getText()))
+        {
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+        }
+
+        std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
+
+        if (!paramTypeOpt)
+        {
+            return errorHandler.addError(ctx->getStart(), "340");
+        }
+
+        ParameterListNode params = paramTypeOpt.value();
+        std::vector<const Type *> ps;
+
+        for (ParameterNode param : params)
+        {
+            ps.push_back(param.type);
+        }
+
+        const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this))
+                                            : Types::UNIT;
+
+        Symbol *sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
+
+        stmgr->addSymbol(sym);
+
+        return sym;
+    }
 };

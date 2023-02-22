@@ -1,6 +1,6 @@
 /**
- * @file st_manager_tests.cpp //FIXME: NO LONGER TESTING THIS!
- * @author gpollice
+ * @file st_manager_tests.cpp //FIXME: NO LONGER TESTING THIS! 
+ * @author gpollice //FIXME: REMOVE
  * @brief Tests for the Context
  * @version 0.1
  * @date 2022-07-18

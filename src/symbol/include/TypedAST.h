@@ -8,7 +8,7 @@
 using namespace std;
 using llvm::Value;
 
-// FIXME: HAVE COMPILER ADD COMMENTS TO DOCUMENT COMPLEX TYPES?
+// TODO: HAVE COMPILER ADD COMMENTS TO DOCUMENT COMPLEX TYPES?
 
 class TypedASTVisitor;
 
@@ -220,7 +220,6 @@ public:
     }
 };
 
-// FIXME: SHOULD THERE BE A EXPRESSION VS STATEMENT DIFFERENCE IN THESE? MAYBE NOT I GUESS B/C TECHNICALLY CALLS COULD HAVE BEEN SORT OF EITHER? BUT NOT ANYMORE? IDK EVERYTHING KIND OF BECOMES EXPR WHEN FUNCTIONAL
 class BlockNode : public TypedNode
 {
 public:
@@ -668,7 +667,7 @@ public:
         return "EXTERN NODE";
     }
 
-    Symbol *getSymbol() { return sym; } // FIXME: WHY ARENT THINGS LIKE THIS CONST?
+    Symbol *getSymbol() { return sym; } // WHY ARENT THINGS LIKE THIS CONST?
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -1183,6 +1182,11 @@ inline bool endsInReturn(TypedNode *n)
     {
         // if(cn->post.size())
         return endsInReturn(cn->post);
+    }
+
+    if(SelectAlternativeNode * cn = dynamic_cast<SelectAlternativeNode*>(n))
+    {
+        return endsInReturn(cn->eval);
     }
 
     // if(MatchStatementNode * cn = dynamic_cast<MatchStatementNode *>(n))

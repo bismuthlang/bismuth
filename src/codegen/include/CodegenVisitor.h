@@ -164,9 +164,6 @@ public:
 
             // Bind all of the arguments
             llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
-            // std::optional<Symbol *> symOpt = props->getBinding(ctx->VARIABLE().at(1));
-
-            // FIXME: DO WE NEED TO CHECK THAT WE HAVENT PREVIOUSLY SET VAL?
             n->channelSymbol->val = v;
 
             builder->CreateStore((fn->args()).begin(), v);
@@ -191,7 +188,7 @@ public:
 
                 if (!symOpt)
                 {
-                    errorHandler.addCodegenError(nullptr, "Unable to generate parameter for function: " + argName);
+                    errorHandler.addError(nullptr, "Unable to generate parameter for function: " + argName);
                 }
                 else
                 {
@@ -221,11 +218,11 @@ public:
         }
         else
         {
-            errorHandler.addCodegenError(nullptr, "Invocation type could not be cast to function!");
+            errorHandler.addError(nullptr, "Invocation type could not be cast to function!");
         }
 
         builder->SetInsertPoint(ins);
-        return {};
+        return std::nullopt;
     }
 
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
@@ -234,32 +231,32 @@ public:
         llvm::Type *type = sym->type->getLLVMType(module);
         if (!type)
         {
-            errorHandler.addCodegenError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
-            return {};
+            errorHandler.addError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
+            return std::nullopt;
         }
 
         // Make sure the variable has an allocation (or that we can find it due to it being a global var)
         if (!sym->val)
         {
             // If the symbol is a global var
-            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type)) 
+            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for program: " + sym->toString());
-                    return {};
+                    errorHandler.addError(nullptr, "Could not locate IR name for program: " + sym->toString());
+                    return std::nullopt;
                 }
 
                 Function *fn = module->getFunction(inv->getLLVMName().value());
 
                 return fn;
             }
-            else if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type)) // FIXME: This is annoying that we have to have duplicate code despite both APIs being the same
+            else if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type)) // This is annoying that we have to have duplicate code despite both APIs being the same
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for function: " + sym->toString());
-                    return {};
+                    errorHandler.addError(nullptr, "Could not locate IR name for function: " + sym->toString());
+                    return std::nullopt;
                 }
 
                 Function *fn = module->getFunction(inv->getLLVMName().value());
@@ -274,8 +271,8 @@ public:
                 // Check that we found the variable. If not, throw an error.
                 if (!glob)
                 {
-                    errorHandler.addCodegenError(nullptr, "Unable to find global variable: " + sym->getIdentifier());
-                    return {};
+                    errorHandler.addError(nullptr, "Unable to find global variable: " + sym->getIdentifier());
+                    return std::nullopt;
                 }
 
                 // Create and return a load for the global var
@@ -283,17 +280,16 @@ public:
                 return val;
             }
 
-            errorHandler.addCodegenError(nullptr, "Unable to find allocation for variable: " + sym->getIdentifier());
-            return {};
+            errorHandler.addError(nullptr, "Unable to find allocation for variable: " + sym->getIdentifier());
+            return std::nullopt;
         }
 
-        
         if (!is_rvalue)
             return sym->val.value();
-        
+
         // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
         Value *v = builder->CreateLoad(type, sym->val.value(), sym->getIdentifier());
-    
+
         // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
         // builder->CreateStore(v, alloc);
         // return alloc;
@@ -320,10 +316,34 @@ public:
                                                false));
     }
 
+    Value *correctSumAssignment(const TypeSum *sum, Value *original)
+    {
+        unsigned int index = sum->getIndex(module, original->getType());
+
+        if (index != 0)
+        {
+            llvm::Type *sumTy = sum->getLLVMType(module);
+            llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+
+            Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+
+            builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+
+            Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+
+            Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
+            builder->CreateStore(original, corrected);
+
+            return builder->CreateLoad(sumTy, alloc);
+        }
+
+        return original; //Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cass...
+    }
+
 private:
     int flags;
 
-    WPLErrorHandler errorHandler;
+    WPLErrorHandler errorHandler = WPLErrorHandler(CODEGEN);
 
     // LLVM
     LLVMContext *context;
