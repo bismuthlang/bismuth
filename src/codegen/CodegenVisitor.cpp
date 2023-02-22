@@ -110,7 +110,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
 
             const TypeProgram *type = octx->getType();
 
-            Function *fn = Function::Create(type->getFunctionType(), GlobalValue::ExternalLinkage, octx->name, module);
+            Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->name, module);
             type->setName(fn->getName().str());
         }
         else if (std::holds_alternative<LambdaConstNode *>(e))

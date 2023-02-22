@@ -148,77 +148,70 @@ public:
 
         const TypeProgram *inv = n->getType();
 
-        llvm::Type *genericType = inv->getLLVMType(module)->getPointerElementType();
+        llvm::FunctionType *fnType = inv->getLLVMFunctionType(module);
 
-        if (llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(genericType))
+        Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);
+        ; // Lookup the function first
+        inv->setName(fn->getName().str());
+
+        // Get the parameter list context for the invokable
+        // WPLParser::ParameterListContext *paramList = ctx->paramList;
+        // Create basic block
+        BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
+        builder->SetInsertPoint(bBlk);
+
+        // Bind all of the arguments
+        llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
+        n->channelSymbol->val = v;
+
+        builder->CreateStore((fn->args()).begin(), v);
+
+        /*
+        for (auto &arg : fn->args())
         {
-            Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);
-            ; // Lookup the function first
-            inv->setName(fn->getName().str());
+            // Get the argumengt number (just seems easier than making my own counter)
+            int argNumber = arg.getArgNo();
 
-            // Get the parameter list context for the invokable
-            // WPLParser::ParameterListContext *paramList = ctx->paramList;
-            // Create basic block
-            BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
-            builder->SetInsertPoint(bBlk);
+            // Get the argument's type
+            llvm::Type *type = fnType->params()[argNumber];
 
-            // Bind all of the arguments
-            llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
-            n->channelSymbol->val = v;
+            // Get the argument name (This even works for arrays!)
+            std::string argName = paramList->params.at(argNumber)->getText();
 
-            builder->CreateStore((fn->args()).begin(), v);
+            // Create an allocation for the argumentr
+            llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
 
-            /*
-            for (auto &arg : fn->args())
+            // Try to find the parameter's bnding to determine what value to bind to it.
+            std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber));
+
+            if (!symOpt)
             {
-                // Get the argumengt number (just seems easier than making my own counter)
-                int argNumber = arg.getArgNo();
-
-                // Get the argument's type
-                llvm::Type *type = fnType->params()[argNumber];
-
-                // Get the argument name (This even works for arrays!)
-                std::string argName = paramList->params.at(argNumber)->getText();
-
-                // Create an allocation for the argumentr
-                llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
-
-                // Try to find the parameter's bnding to determine what value to bind to it.
-                std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber));
-
-                if (!symOpt)
-                {
-                    errorHandler.addError(nullptr, "Unable to generate parameter for function: " + argName);
-                }
-                else
-                {
-                    symOpt.value()->val = v;
-
-                    builder->CreateStore(&arg, v);
-                }
+                errorHandler.addError(nullptr, "Unable to generate parameter for function: " + argName);
             }
-            */
-
-            // Get the codeblock for the PROC/FUNC
-            // WPLParser::BlockContext *block = ctx->block();
-
-            // Generate code for the block
-            for (auto e : n->block->exprs)
+            else
             {
-                // e->accept(this);
-                this->accept(e);
-            }
+                symOpt.value()->val = v;
 
-            // If we are a PROC, make sure to add a return type (if we don't already have one)
-            // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
-            if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE
-            {
-                builder->CreateRetVoid();
+                builder->CreateStore(&arg, v);
             }
         }
-        else
+        */
+
+        // Get the codeblock for the PROC/FUNC
+        // WPLParser::BlockContext *block = ctx->block();
+
+        // Generate code for the block
+        for (auto e : n->block->exprs)
         {
-            errorHandler.addError(nullptr, "Invocation type could not be cast to function!");
+            // e->accept(this);
+            this->accept(e);
+        }
+
+        // If we are a PROC, make sure to add a return type (if we don't already have one)
+        // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
+        if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE
+        {
+            builder->CreateRetVoid();
         }
 
         builder->SetInsertPoint(ins);
@@ -337,7 +330,7 @@ public:
             return builder->CreateLoad(sumTy, alloc);
         }
 
-        return original; //Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cass...
+        return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cass...
     }
 
 private:
