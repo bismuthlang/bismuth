@@ -103,8 +103,6 @@ struct ErrorChain
 
   std::vector<WPLError *> chain;
 
-  ErrorChain(ErrType ty) : errType(ty) {} //FIXME: DO BETTER
-
   ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
   {
     errType = et; 
@@ -129,7 +127,7 @@ struct ErrorChain
     std::ostringstream e;
 
     if(chain.size() == 0) {
-      e << "UNKNOWN ERROR" << std::endl; //FIXME: DO BETTER
+      e << "UNKNOWN ERROR" << std::endl; // Shouldn't be possible anymore
     } 
 
     for (WPLError *error : chain)
@@ -149,13 +147,6 @@ private:
   ErrType errType; 
 public:
   WPLErrorHandler(ErrType ty) : errType(ty) {}
-
-  ErrorChain*  newErrorChain() {
-    ErrorChain *e = new ErrorChain(errType); 
-    errors.push_back(e); 
-
-    return e; //FIXME: DO BETTER!!
-  }
 
   ErrorChain *addError(antlr4::Token *t, std::string msg)
   {

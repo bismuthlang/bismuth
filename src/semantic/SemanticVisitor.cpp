@@ -55,7 +55,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
             std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
-                (*e)->addError(ctx->getStart(), "82");
+                (*e)->addError(ctx->getStart(), "Failed to typecheck definition.");
                 return *e;
             }
 
@@ -559,7 +559,7 @@ std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
     {
-        (*e)->addError(ctx->getStart(), "616");
+        (*e)->addError(ctx->getStart(), "Unable to generate LHS of Binary Arithmetic Expression.");
         return *e;
     }
 
@@ -573,7 +573,7 @@ std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&rightOpt))
     {
-        (*e)->addError(ctx->getStart(), "633");
+        (*e)->addError(ctx->getStart(), "Unable to generate RHS of binary arithmetic expression.");
         return *e;
     }
 
@@ -663,10 +663,10 @@ std::variant<LogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
     {
         std::variant<TypedNode *, ErrorChain *> nodeOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
 
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&nodeOpt))
+        if (ErrorChain **er = std::get_if<ErrorChain *>(&nodeOpt))
         {
-            (*e)->addError(ctx->getStart(), "734");
-            return *e;
+            (*er)->addError(e->getStart(), "Unable to generate expression in logical and");
+            return *er;
         }
 
         TypedNode *node = std::get<TypedNode *>(nodeOpt);
@@ -843,7 +843,7 @@ std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&rightOpt))
     {
-        (*e)->addError(ctx->getStart(), "633");
+        (*e)->addError(ctx->getStart(), "Unable to typecheck RHS of binary relation expression.");
         return *e;
     }
 
@@ -876,7 +876,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Con
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
     {
-        (*e)->addError(ctx->getStart(), "957");
+        (*e)->addError(ctx->getStart(), "Unable to typecheck condition expression.");
         return *e;
     }
 
@@ -981,7 +981,7 @@ std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::As
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->getStart(), "1057");
+        (*e)->addError(ctx->getStart(), "Unable to typecheck assignment.");
         return *e;
     }
 
@@ -1064,7 +1064,7 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOptO))
                     {
-                        (*e)->addError(ctx->getStart(), "1133");
+                        (*e)->addError(ctx->getStart(), "Unable to typecheck assignment.");
                         return *e;
                     }
 
