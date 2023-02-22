@@ -484,7 +484,7 @@ class TypeInt : public Type
 {
 public:
     std::string toString() const override { return "INT"; }
-    llvm::Type *getLLVMType(llvm::Module *M) const override
+    llvm::IntegerType *getLLVMType(llvm::Module *M) const override
     {
         return llvm::Type::getInt32Ty(M->getContext());
     }
@@ -1385,7 +1385,7 @@ public:
      * @param C LLVM Context
      * @return llvm::Type*
      */
-    llvm::Type *getLLVMType(llvm::Module *M) const override
+    llvm::StructType *getLLVMType(llvm::Module *M) const override
     {
         llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
 
@@ -1534,7 +1534,7 @@ public:
      * @param C LLVM Context
      * @return llvm::Type*
      */
-    llvm::Type *getLLVMType(llvm::Module *M) const override
+    llvm::StructType *getLLVMType(llvm::Module *M) const override
     {
         llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
 
