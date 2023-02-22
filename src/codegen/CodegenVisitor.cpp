@@ -1307,7 +1307,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
                 if (e->val)
                 {
                     Value *stoVal = exVal.value();
-                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type)) // FIXME: WILL THIS WORK IF USING TYPE INF?
+                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type)) // FIXME: WILL THIS WORK IF USING TYPE INF? - ONLY WORKS BC TYPEINF CANT INFER A -> A + B. 
                     {
                         unsigned int index = sum->getIndex(module, stoVal->getType());
 

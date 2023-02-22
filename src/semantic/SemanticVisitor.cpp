@@ -1084,15 +1084,10 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
                 // Note: This automatically performs checks to prevent issues with setting VAR = VAR
                 if (e->a && exprType->isNotSubtype(newAssignType))
                 {
-                    errorHandler.addError(e->getStart(), "Expression of type " + exprType->toString() + " cannot be assigned to " + newAssignType->toString());
+                    return errorHandler.addError(e->getStart(), "Expression of type " + exprType->toString() + " cannot be assigned to " + newAssignType->toString());
                 }
 
-                std::optional<const Type *> newExprTypeOpt = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType;
-
-                if (!newExprTypeOpt)
-                    return errorHandler.addError(ctx->getStart(), "1150");
-
-                const Type *newExprType = newExprTypeOpt.value();
+                const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType;
 
                 Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later inferencing purposes
                 stmgr->addSymbol(symbol);
@@ -1102,7 +1097,6 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
         }
         // a.push_back(new AssignmentNode(s, exprOpt));
     }
-    // FIXME: SHOULDNT RETURN IF ERRORS!!
     return new VarDeclNode(a, ctx->getStart());
 }
 

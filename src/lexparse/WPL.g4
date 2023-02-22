@@ -144,13 +144,13 @@ statement           : defineProc                                                
                     | RETURN expression? ';'    # ReturnStatement 
                     | EXIT                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
                     | block                     # BlockStatement
-                    | channel=VARIABLE '.send' '(' expr=expression ')'   # ProgramSend
+                    | channel=VARIABLE '.send' '(' expr=expression ')' ';'?  # ProgramSend
                     | WHILE check=condition block                                                       # ProgramLoop
                     | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*      # ProgramCase  
                     | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                              # ProgramCase   
                     | channel=VARIABLE LBRC sel=protocol RBRC                                                                   # ProgramProject
-                    | 'more' '(' channel=VARIABLE ')'                   # ProgramContract 
-                    | 'weaken' '(' channel=VARIABLE ')'                 # ProgramWeaken
+                    | 'more' '(' channel=VARIABLE ')'   ';'?                # ProgramContract 
+                    | 'weaken' '(' channel=VARIABLE ')' ';'?                # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                 # ProgramAccept
                     ; 
                     
