@@ -277,7 +277,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                (*e)->addSemanticError(ctx->getStart(), "h280");
+                (*e)->addError(ctx->getStart(), "h280");
                 return *e;
             }
 
@@ -285,7 +285,7 @@ public:
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
             {
-                errorHandler.addSemanticError(ctx->getStart(), "Dead code.");
+                errorHandler.addError(ctx->getStart(), "Dead code.");
                 break;
             }
 
@@ -317,7 +317,7 @@ public:
 
         if (!symOpt && stmgr->lookupInCurrentScope(ctx->name->getText()))
         {
-            return errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
         }
 
         Symbol *sym = symOpt.value_or(
@@ -370,14 +370,14 @@ public:
             std::variant<BlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
             if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
             {
-                (*e)->addSemanticError(ctx->getStart(), "h374");
+                (*e)->addError(ctx->getStart(), "h374");
                 return *e;
             }
 
             // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
             // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<WPLParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
             // {
-            //     errorHandler.addSemanticError(ctx->getStart(), "Function must end in return statement");
+            //     errorHandler.addError(ctx->getStart(), "Function must end in return statement");
             // }
 
             // Safe exit the scope.
@@ -387,7 +387,7 @@ public:
         }
         else
         {
-            return errorHandler.addSemanticError(ctx->getStart(), "Cannot invoke " + sym->toString());
+            return errorHandler.addError(ctx->getStart(), "Cannot invoke " + sym->toString());
         }
     }
 
@@ -451,7 +451,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
             {
-                (*e)->addSemanticError(ctx->getStart(), "2083");
+                (*e)->addError(ctx->getStart(), "2083");
                 return *e;
             }
 
@@ -471,7 +471,7 @@ public:
 
                         if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                         {
-                            (*e)->addSemanticError(ctx->getStart(), "2097");
+                            (*e)->addError(ctx->getStart(), "2097");
                             return *e;
                         }
 
@@ -497,7 +497,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
             }
         }
 
@@ -523,7 +523,7 @@ public:
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                     {
-                        (*e)->addSemanticError(ctx->getStart(), "2097");
+                        (*e)->addError(ctx->getStart(), "2097");
                         return *e;
                     }
 
@@ -548,7 +548,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
             }
         }
 
@@ -575,7 +575,7 @@ public:
 private:
     STManager *stmgr;
     PropertyManager *bindings;
-    WPLErrorHandler errorHandler;
+    WPLErrorHandler errorHandler = WPLErrorHandler(SEMANTIC);
 
     int flags; // Compiler flags
 
@@ -603,7 +603,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addSemanticError(ctx->getStart(), "Uninferred types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
             }
         }
 
@@ -623,7 +623,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addSemanticError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
             }
         }
         // return res;
@@ -639,14 +639,14 @@ private:
 
         if (stmgr->lookupInCurrentScope(ctx->name->getText()))
         {
-            return errorHandler.addSemanticError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
         }
 
         std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
 
         if (!paramTypeOpt)
         {
-            return errorHandler.addSemanticError(ctx->getStart(), "340");
+            return errorHandler.addError(ctx->getStart(), "340");
         }
 
         ParameterListNode params = paramTypeOpt.value();

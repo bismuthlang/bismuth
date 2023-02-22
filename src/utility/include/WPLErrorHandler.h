@@ -99,33 +99,28 @@ struct WPLError
 
 struct ErrorChain
 {
+  ErrType errType; 
+
   std::vector<WPLError *> chain;
 
-  ErrorChain() { //FIXME: DO BETTER
-
-  }
+  ErrorChain(ErrType ty) : errType(ty) {} //FIXME: DO BETTER
 
   ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
   {
+    errType = et; 
     WPLError *primaryError = new WPLError(tok, msg, et, es);
     chain.push_back(primaryError);
   }
 
-  void addSemanticError(antlr4::Token *t, std::string msg)
+  void addError(antlr4::Token *t, std::string msg)
   {
-    WPLError *e = new WPLError(t, msg, SEMANTIC, ERROR);
+    WPLError *e = new WPLError(t, msg, errType, ERROR);
     chain.push_back(e);
   }
 
-  void addSemanticCritWarning(antlr4::Token *t, std::string msg)
+  void addCritWarning(antlr4::Token *t, std::string msg)
   {
-    WPLError *e = new WPLError(t, msg, SEMANTIC, CRITICAL_WARNING);
-    chain.push_back(e);
-  }
-
-  void addCodegenError(antlr4::Token *t, std::string msg)
-  {
-    WPLError *e = new WPLError(t, msg, CODEGEN, ERROR);
+    WPLError *e = new WPLError(t, msg, errType, CRITICAL_WARNING);
     chain.push_back(e);
   }
 
@@ -150,37 +145,34 @@ struct ErrorChain
 
 class WPLErrorHandler
 {
+private: 
+  ErrType errType; 
 public:
+  WPLErrorHandler(ErrType ty) : errType(ty) {}
+
   ErrorChain*  newErrorChain() {
-    ErrorChain *e = new ErrorChain(); 
+    ErrorChain *e = new ErrorChain(errType); 
     errors.push_back(e); 
 
     return e; //FIXME: DO BETTER!!
   }
 
-  ErrorChain *addSemanticError(antlr4::Token *t, std::string msg)
+  ErrorChain *addError(antlr4::Token *t, std::string msg)
   {
-    ErrorChain *e = new ErrorChain(t, msg, SEMANTIC, ERROR);
+    ErrorChain *e = new ErrorChain(t, msg, errType, ERROR);
     errors.push_back(e);
 
     return e;
   }
 
-  ErrorChain *addSemanticCritWarning(antlr4::Token *t, std::string msg)
+  ErrorChain *addCritWarning(antlr4::Token *t, std::string msg)
   {
-    ErrorChain *e = new ErrorChain(t, msg, SEMANTIC, CRITICAL_WARNING);
+    ErrorChain *e = new ErrorChain(t, msg, errType, CRITICAL_WARNING);
     errors.push_back(e);
 
     return e;
   }
 
-  ErrorChain *addCodegenError(antlr4::Token *t, std::string msg)
-  {
-    ErrorChain *e = new ErrorChain(t, msg, CODEGEN, ERROR);
-    errors.push_back(e);
-
-    return e;
-  }
 
   std::vector<ErrorChain *> &getErrors() { return errors; }
 
@@ -239,4 +231,7 @@ class WPLSyntaxErrorListener : public antlr4::BaseErrorListener, public WPLError
     errors.push_back(e);
     // throw std::invalid_argument("test error thrown: " + msg);
   }
+
+  public: 
+    WPLSyntaxErrorListener() : WPLErrorHandler(SYNTAX) {}
 };

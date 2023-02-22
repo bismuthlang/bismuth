@@ -188,7 +188,7 @@ public:
 
                 if (!symOpt)
                 {
-                    errorHandler.addCodegenError(nullptr, "Unable to generate parameter for function: " + argName);
+                    errorHandler.addError(nullptr, "Unable to generate parameter for function: " + argName);
                 }
                 else
                 {
@@ -218,7 +218,7 @@ public:
         }
         else
         {
-            errorHandler.addCodegenError(nullptr, "Invocation type could not be cast to function!");
+            errorHandler.addError(nullptr, "Invocation type could not be cast to function!");
         }
 
         builder->SetInsertPoint(ins);
@@ -231,7 +231,7 @@ public:
         llvm::Type *type = sym->type->getLLVMType(module);
         if (!type)
         {
-            errorHandler.addCodegenError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
+            errorHandler.addError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
             return {};
         }
 
@@ -243,7 +243,7 @@ public:
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for program: " + sym->toString());
+                    errorHandler.addError(nullptr, "Could not locate IR name for program: " + sym->toString());
                     return {};
                 }
 
@@ -255,7 +255,7 @@ public:
             {
                 if (!inv->getLLVMName())
                 {
-                    errorHandler.addCodegenError(nullptr, "Could not locate IR name for function: " + sym->toString());
+                    errorHandler.addError(nullptr, "Could not locate IR name for function: " + sym->toString());
                     return {};
                 }
 
@@ -271,7 +271,7 @@ public:
                 // Check that we found the variable. If not, throw an error.
                 if (!glob)
                 {
-                    errorHandler.addCodegenError(nullptr, "Unable to find global variable: " + sym->getIdentifier());
+                    errorHandler.addError(nullptr, "Unable to find global variable: " + sym->getIdentifier());
                     return {};
                 }
 
@@ -280,7 +280,7 @@ public:
                 return val;
             }
 
-            errorHandler.addCodegenError(nullptr, "Unable to find allocation for variable: " + sym->getIdentifier());
+            errorHandler.addError(nullptr, "Unable to find allocation for variable: " + sym->getIdentifier());
             return {};
         }
 
@@ -320,7 +320,7 @@ public:
 private:
     int flags;
 
-    WPLErrorHandler errorHandler;
+    WPLErrorHandler errorHandler = WPLErrorHandler(CODEGEN);
 
     // LLVM
     LLVMContext *context;
