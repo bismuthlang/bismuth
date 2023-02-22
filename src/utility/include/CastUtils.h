@@ -25,7 +25,7 @@ std::variant<T *, ErrorChain*> anyOpt2VarError(WPLErrorHandler errorHandler, con
 
     if(opt) {
         std::variant<T *, ErrorChain*> val = opt.value(); 
-     return val;    
+        return val;    
     }
     // if (T **v = std::any_cast<T*>(&a))
     //     return *v;  

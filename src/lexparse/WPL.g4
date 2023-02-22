@@ -66,7 +66,7 @@ expression          : LPAR ex=expression RPAR                       # ParenExpr
                     | i=INTEGER    # IConstExpr
                     | s=STRING     # SConstExpr 
                     | lambdaConstExpr # LambdaExpr
-                    | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv //FIXME: VERIFY THESE DO NOT CAUSE LINEARITY VIOLATIONS ANYWHERE!
+                    | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv
                     | 'exec' prog=expression                 # AssignableExec
                     ;
 
