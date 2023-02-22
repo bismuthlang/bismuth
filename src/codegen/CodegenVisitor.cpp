@@ -390,27 +390,9 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
 
         if (args.size() < n->paramType.size())
         {
-            // TODO: METHODIZE!
             if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->paramType.at(args.size()))) // argNodes.at(args.size())->getType()))
             {
-                unsigned int index = sum->getIndex(module, val->getType());
-
-                if (index != 0)
-                {
-                    llvm::Type *sumTy = sum->getLLVMType(module);
-                    llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
-                    Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-
-                    builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-
-                    Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-
-                    Value *corrected = builder->CreateBitCast(valuePtr, val->getType()->getPointerTo());
-                    builder->CreateStore(val, corrected);
-
-                    val = builder->CreateLoad(sumTy, alloc);
-                }
+                val = correctSumAssignment(sum, val);
             }
         }
 
@@ -504,22 +486,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
     // Same as return node's
     if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->lType))
     {
-        unsigned int index = sum->getIndex(module, stoVal->getType());
-
-        if (index != 0)
-        {
-            llvm::Type *sumTy = sum->getLLVMType(module);
-            llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
-            Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-            builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-
-            Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-            Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
-            builder->CreateStore(stoVal, corrected);
-
-            stoVal = builder->CreateLoad(sumTy, alloc);
-        }
+        stoVal = correctSumAssignment(sum, stoVal);
     }
 
     llvm::Function *mallocFn = module->getFunction("malloc"); // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
@@ -655,23 +622,7 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
         {
             if (const TypeSum *sum = dynamic_cast<const TypeSum *>(elements.at(i).second))
             {
-                unsigned int index = sum->getIndex(module, a->getType());
-
-                if (index != 0)
-                {
-                    llvm::Type *sumTy = sum->getLLVMType(module);
-                    llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
-                    Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-                    builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-
-                    Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-
-                    Value *corrected = builder->CreateBitCast(valuePtr, a->getType()->getPointerTo());
-                    builder->CreateStore(a, corrected);
-
-                    a = builder->CreateLoad(sumTy, alloc);
-                }
+                a = correctSumAssignment(sum, a);
             }
 
             Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
@@ -1580,26 +1531,9 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
 
         Value *inner = innerOpt.value();
 
-        // TODO: METHODIZE
         if (const TypeSum *sum = dynamic_cast<const TypeSum *>(expr.first))
         {
-            unsigned int index = sum->getIndex(module, inner->getType());
-
-            if (index != 0)
-            {
-                llvm::Type *sumTy = sum->getLLVMType(module);
-                llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
-
-                Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-                builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-
-                Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-
-                Value *corrected = builder->CreateBitCast(valuePtr, inner->getType()->getPointerTo());
-                builder->CreateStore(inner, corrected);
-
-                inner = builder->CreateLoad(sumTy, alloc);
-            }
+            inner = correctSumAssignment(sum, inner);
         }
 
         // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.

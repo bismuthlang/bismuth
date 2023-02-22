@@ -239,7 +239,7 @@ public:
         if (!sym->val)
         {
             // If the symbol is a global var
-            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type)) 
+            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
             {
                 if (!inv->getLLVMName())
                 {
@@ -284,13 +284,12 @@ public:
             return std::nullopt;
         }
 
-        
         if (!is_rvalue)
             return sym->val.value();
-        
+
         // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
         Value *v = builder->CreateLoad(type, sym->val.value(), sym->getIdentifier());
-    
+
         // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
         // builder->CreateStore(v, alloc);
         // return alloc;
@@ -315,6 +314,30 @@ public:
                                                Int32Ty,
                                                {Int32Ty},
                                                false));
+    }
+
+    Value *correctSumAssignment(const TypeSum *sum, Value *original)
+    {
+        unsigned int index = sum->getIndex(module, original->getType());
+
+        if (index != 0)
+        {
+            llvm::Type *sumTy = sum->getLLVMType(module);
+            llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+
+            Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+
+            builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+
+            Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+
+            Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
+            builder->CreateStore(original, corrected);
+
+            return builder->CreateLoad(sumTy, alloc);
+        }
+
+        return original; //Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cass...
     }
 
 private:
