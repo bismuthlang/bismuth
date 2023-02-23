@@ -672,7 +672,7 @@ TEST_CASE("programs/enumedit", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumedit.prism"))),
-        "95404edcfd7234f124d7db74f9278ed69f8dd189d758c81b8f2897030b6e4f33");
+        "541a4411ef6b2512c1b8c1fb3a40e0a7763dd07e6a14ef5be25178880822fc13");
 }
 /************************************
  * Example C-Level Tests
@@ -709,7 +709,7 @@ TEST_CASE("C Level Positive Test #2", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/CLevel/CPositive2.prism"))),
-        "48cb77e5507b649f1419b5103f57370503c760eaffc0af03d8cb2fc1a09a537c");
+        "1b9c6e0a8ba6266d9c86a3776783989755d83c916ec5acff0ff5a1387fccee40");
 }
 
 /************************************
@@ -719,14 +719,14 @@ TEST_CASE("B Level Positive Test #1", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BPositive1.prism"))),
-        "7922bda2b9a5f69ef4e0040d7fa5eac21c9c50a93a9e6fd45cd7a1bb1aa43aea");
+        "756ded7d5a44c064fed06e09230fc3e8a91b3723013e62f23471c0a1b99ba341");
 }
 
 TEST_CASE("B Level Positive Test #2", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BPositive2.prism"))),
-        "52024c89f56d4b8f79c1cbfc20a778f87c0ded0890dc40f9aeed25310a27a6ff");
+        "032537b178df70762c78ea6713d64cb0bb50d37eb8378cf900f818b04a1b98ff");
 }
 
 /************************************
@@ -736,7 +736,7 @@ TEST_CASE("A Level Positive Test #1", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive1.prism"))),
-        "2f0c3eee9fe38237070d46f6cad1c8c11511932b4e70b5f44dd1259168101bf8");
+        "1c3fbb4794e7c2a8fe830473140648eb96afb48165928a7581a18c3b4d2cefb0");
 }
 
 TEST_CASE("A Level Positive Test #2", "[codegen]")

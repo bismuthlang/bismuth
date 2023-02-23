@@ -11,12 +11,19 @@
 #include <atomic> // Is this really needed? also how does this library work?
 // For tracking running threads
 
+
+// #include "gc_cpp.h"
+
+
+// extern "C" void * My_malloc(size_t t) { return GC_MALLOC(t); }
+
 std::mutex running_mutex; // NOTE: A PATTERN LIKE THIS MIGHT BE CHALLENGING IN MY LANG! (SEE THIS AND WAITFORALLTOFINISH)
 std::condition_variable running_cond;
 std::atomic<int> running;
 
 extern "C" void waitForAllToFinish()
 {
+    // int **p = (int **) GC_malloc(sizeof(int *));
     std::unique_lock<std::mutex> lock{running_mutex};
     running_cond.wait(lock, [&]
                       { return running == 0; });

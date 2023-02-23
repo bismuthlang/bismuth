@@ -10,90 +10,6 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
      *
      ***********************************/
 
-    {
-        // TODO: MAKE GET METHODS FOR THESE LIKE WE HAVE getWriteProjection
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    VoidTy,
-                    {Int32Ty,
-                     i8p},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "WriteChannel",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    i8p,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "ReadChannel",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    Int32Ty,
-                    {llvm::FunctionType::get(
-                         VoidTy,
-                         {Int32Ty},
-                         false)
-                         ->getPointerTo()},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "Execute",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    i8p,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "malloc",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    Int1Ty,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "ShouldLoop",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    VoidTy,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "ContractChannel",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    VoidTy,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "WeakenChannel",
-                module);
-        }
-    }
 
     /***********************************
      *
@@ -419,10 +335,14 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
     llvm::Type *recvType = n->ty->getLLVMType(module);
 
-    Value *valPtr = builder->CreateCall(module->getFunction("ReadChannel"), {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
+    Value *valPtr = builder->CreateCall(getReadChannel(), {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
     Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                                         // Cast the void* to the correct type ptr
 
-    return builder->CreateLoad(recvType, casted);
+    Value * ans = builder->CreateLoad(recvType, casted);
+
+    builder->CreateCall(getFree(), {valPtr}); // Will be a void*
+
+    return ans;
 }
 
 std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
@@ -440,12 +360,12 @@ std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
     {
         llvm::Function *lambdaThread = static_cast<llvm::Function *>(fnVal);
 
-        Value *val = builder->CreateCall(module->getFunction("Execute"), {lambdaThread});
+        Value *val = builder->CreateCall(getExecute(), {lambdaThread});
         return val;
     }
     // TODO: REFACTOR, BOTH WITH THIS METHOD AND INVOCATION!
 
-    Value *val = builder->CreateCall(module->getFunction("Execute"), {fnVal});
+    Value *val = builder->CreateCall(getExecute(), {fnVal});
     return val;
 }
 
@@ -468,8 +388,8 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
         stoVal = correctSumAssignment(sum, stoVal);
     }
 
-    llvm::Function *mallocFn = module->getFunction("malloc"); // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
-    Value *v = builder->CreateCall(mallocFn, {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+    // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
+    Value *v = builder->CreateCall(getMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
 
     builder->CreateStore(stoVal, v);
 
@@ -483,7 +403,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     Value *chanVal = sym->val.value();
 
-    builder->CreateCall(module->getFunction("WriteChannel"), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
+    builder->CreateCall(getWriteChannel(), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return std::nullopt;
 }
 
@@ -499,7 +419,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
 
     Value *chanVal = sym->val.value();
 
-    builder->CreateCall(module->getFunction("ContractChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(getContractChannel(), {builder->CreateLoad(Int32Ty, chanVal)});
 
     return std::nullopt;
 }
@@ -516,7 +436,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
 
     Value *chanVal = sym->val.value();
 
-    builder->CreateCall(module->getFunction("WeakenChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(getWeakenChannel(), {builder->CreateLoad(Int32Ty, chanVal)});
 
     return std::nullopt;
 }
@@ -535,7 +455,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
 
     Value *chanVal = sym->val.value();
 
-    llvm::Function *checkFn = module->getFunction("ShouldLoop");
+    auto checkFn = getShouldLoop();
     Value *check = builder->CreateCall(checkFn, {builder->CreateLoad(Int32Ty, chanVal)});
 
     auto parent = builder->GetInsertBlock()->getParent();

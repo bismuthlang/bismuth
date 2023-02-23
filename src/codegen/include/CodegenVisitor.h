@@ -76,6 +76,7 @@ public:
         // LLVM Types
         VoidTy = llvm::Type::getVoidTy(module->getContext());
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
+        Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
         Int8Ty = llvm::Type::getInt8Ty(module->getContext());
         Int32Zero = ConstantInt::get(Int32Ty, 0, true);
@@ -309,6 +310,108 @@ public:
                                                false));
     }
 
+    llvm::FunctionCallee getMalloc()
+    {
+        return module->getOrInsertFunction(
+            "malloc",
+            llvm::FunctionType::get(
+                i8p,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getFree()
+    {
+        return module->getOrInsertFunction(
+            "free",
+            llvm::FunctionType::get(
+                VoidTy,
+                {i8p},
+                false));
+    }
+
+    llvm::FunctionCallee getGCMalloc()
+    {
+        // return module->getOrInsertFunction(
+        //     "malloc",
+        //     llvm::FunctionType::get(
+        //         i8p,
+        //         {Int32Ty},
+        //         false));
+
+        return module->getOrInsertFunction(
+            "GC_malloc",
+            llvm::FunctionType::get(
+                i8p,
+                {Int64Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getWeakenChannel()
+    {
+        return module->getOrInsertFunction(
+            "WeakenChannel",
+            llvm::FunctionType::get(
+                VoidTy,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getWriteChannel()
+    {
+        return module->getOrInsertFunction(
+            "WriteChannel",
+            llvm::FunctionType::get(
+                VoidTy,
+                {Int32Ty,
+                 i8p},
+                false));
+    }
+
+    llvm::FunctionCallee getReadChannel()
+    {
+        return module->getOrInsertFunction(
+            "ReadChannel",
+            llvm::FunctionType::get(
+                i8p,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getExecute()
+    {
+        return module->getOrInsertFunction(
+            "Execute",
+            llvm::FunctionType::get(
+                Int32Ty,
+                {llvm::FunctionType::get(
+                     VoidTy,
+                     {Int32Ty},
+                     false)
+                     ->getPointerTo()},
+                false));
+    }
+
+    llvm::FunctionCallee getShouldLoop()
+    {
+        return module->getOrInsertFunction(
+            "ShouldLoop",
+            llvm::FunctionType::get(
+                Int1Ty,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getContractChannel()
+    {
+        return module->getOrInsertFunction(
+            "ContractChannel",
+            llvm::FunctionType::get(
+                VoidTy,
+                {Int32Ty},
+                false));
+    }
+
     Value *correctSumAssignment(const TypeSum *sum, Value *original)
     {
         unsigned int index = sum->getIndex(module, original->getType());
@@ -348,6 +451,7 @@ private:
     llvm::Type *Int1Ty;
     llvm::IntegerType *Int8Ty;
     llvm::IntegerType *Int32Ty; // Things like 32 bit integers
+    llvm::IntegerType *Int64Ty;
     llvm::Type *i8p;
     llvm::Type *Int8PtrPtrTy;
     Constant *Int32Zero;

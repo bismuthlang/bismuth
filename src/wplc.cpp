@@ -371,7 +371,7 @@ int main(int argc, const char *argv[])
     }
 
     // cmd << "./runtime.o -no-pie ";
-    cmd << "./build/bin/runtime/libwpl_runtime_archive.a -no-pie ";
+    cmd << "./bdwgc/libgc.a ./bdwgc/libgccpp.a ./build/bin/runtime/libwpl_runtime_archive.a -no-pie";
 
     if (useOutputFileName)
     {
