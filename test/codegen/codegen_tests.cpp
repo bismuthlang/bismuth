@@ -31,6 +31,7 @@ void EnsureCompilesTo(antlr4::ANTLRInputStream *input, string hash)
     PropertyManager *pm = new PropertyManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
     auto cuOpt = sv->visitCtx(tree);
+    REQUIRE_FALSE(sv->hasErrors(0));
     REQUIRE(std::holds_alternative<CompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
 
     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
@@ -65,13 +66,6 @@ void EnsureErrors(antlr4::ANTLRInputStream *input)
     // REQUIRE(llvmIrToSHA256(cv->getModule()) == "e0f894f1b6dd6613bd18eee553f5d6c8896228b4e4a21400b5dd6f1433ab0670");
 }
 // FIXME: REMOVE NO RUNTIME
-TEST_CASE("Development Codegen Tests", "[codegen]")
-{
-    EnsureCompilesTo(
-        new antlr4::ANTLRInputStream("define program :: c : Channel<-int> = { c.send(-1) }"),
-        "cecbb03bb006f8ecf4e2c26f2002f3ca4e32da8bc74314405ef37da147ad2df2");
-}
-
 TEST_CASE("programs/test1 - General Overview", "[codegen]")
 {
     EnsureCompilesTo(
@@ -543,14 +537,14 @@ TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[code
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing.prism"))),
-        "62a55efa86670bf703a2b3b631324913e9889ab14c1093253339c39d542be692");
+        "7c266513c6bdf2f5febcd7e737a6b9e3ceaaf079130e3f003dabd72b51376f4c");
 }
 
 TEST_CASE("programs/adv/enumPassing-fn - passing non-enum as enum argument", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing-fn.prism"))),
-        "a292c164f0df04f937666448ee2f9656acc7a5ce88613f8a83e3867124d8cc6c");
+        "410103dff859297bb532348d1f8b2076bb9989e1d146cb815ca6c44d6e368fa0");
 }
 
 TEST_CASE("programs/Lambda2a - More nested lambdas", "[codegen][lambda]")
@@ -644,7 +638,7 @@ TEST_CASE("paper/links2", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links2.prism"))),
-        "ff1f300a0bea0f2b2b3f0fdf912e39ceaec535574ff6e997be2e9bd09355e044");
+        "8a86ed559d8ee2c56f512905337f9ea92a3e5bfef645d57474978d2c4f0618af");
 }
 
 TEST_CASE("paper/links3", "[codegen][linear-types]")

@@ -1147,7 +1147,8 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
                 stmgr->addSymbol(local);
 
                 std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, altCtx->eval->accept(this));
-                this->safeExitScope(altCtx);
+                // this->safeExitScope(altCtx);
+                stmgr->exitScope();
 
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
                 {
@@ -1263,6 +1264,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
             return TNVariantCast<BlockNode>(this->visitCtx(blk));
         });
 
+    
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         return errorHandler.addError(ctx->getStart(), "Failed to generate one or more cases in if statement.");
 
@@ -1757,6 +1759,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
     }
 
     Symbol *sym = opt.value().second;
+    // stmgr->removeSymbol(sym); 
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1773,7 +1776,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
         }
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
-
+        //FIXME: TEST PROTOCOLS THAT HAVE STUFF FOLLOWING CHOICE!
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::ProtoAlternativeContext>(
             ctx,
             ctx->protoAlternative(),
@@ -1786,9 +1789,6 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
                 proto->append(savedRest->getCopy());
                 channel->setProtocol(proto);
 
-                stmgr->addSymbol(sym);
-
-                stmgr->enterScope(StopType::NONE); // FIXME: IS THIS NEEDED?
                 std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
                 return optEval;
             });

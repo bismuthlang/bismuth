@@ -61,7 +61,7 @@ class Context {
      */
     std::optional<Symbol*> lookup(std::string id);
 
-    std::vector<Symbol *> getAvaliableLinears(); 
+    std::vector<Symbol *> getAvaliableLinears(bool include_complete=false); 
 
     /**
      * @brief Lookup a symbol only in the current scope. 

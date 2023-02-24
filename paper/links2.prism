@@ -21,6 +21,7 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>>;+Channel<Inte
             }
         | +boolean => {
                 b[-boolean]
+                # b.send(false)
                 linkRecvBool(a, b)
             }
 

@@ -409,11 +409,12 @@ public:
         bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
+        std::cout << stmgr->toString() << std::endl; 
         std::vector<TypedNode *> cases;
         std::vector<TypedNode *> restVec;
         bool restVecFilled = false;
 
-        std::vector<Symbol *> syms = stmgr->getAvaliableLinears();                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+        std::vector<Symbol *> syms = stmgr->getAvaliableLinears(true);                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
         std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
         for (Symbol *orig : syms)
         {
@@ -433,10 +434,12 @@ public:
             for (Symbol *s : syms)
             {
                 stmgr->addSymbol(s);
+                std::cout << "436 " << s->toString() << std::endl; 
             }
             for (auto pair : to_fix)
             {
                 pair.first->setProtocol(pair.second->getCopy());
+                std::cout << "441 " << pair.first->toString() << " " << pair.second->toString() << std::endl; 
             }
 
             // proto->append(savedRest->getCopy());
@@ -482,7 +485,7 @@ public:
                 restVecFilled = true;
             }
 
-            safeExitScope(ctx);
+            safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
 
             std::vector<Symbol *> lins = stmgr->getAvaliableLinears();
 
@@ -497,7 +500,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(alt->getStart(), "Unused linear types in context: " + details.str());
             }
         }
 
@@ -555,6 +558,16 @@ public:
         // return Types::UNDEFINED;
         // return ty.value();
         return ConditionalData(cases, restVec);
+    }
+
+    template <typename T>
+    std::vector<T> Append(std::vector<T> &a, const std::vector<T> &b)
+    {
+        std::vector<T> ans; 
+        ans.reserve(a.size() + b.size());
+        ans.insert(ans.end(), a.begin(), a.end());
+        ans.insert(ans.end(), b.begin(), b.end());
+        return ans; 
     }
 
     const Type *any2Type(std::any any)
