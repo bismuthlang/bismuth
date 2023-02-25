@@ -445,12 +445,12 @@ public:
             for (Symbol *s : syms)
             {
                 stmgr->addSymbol(s);
-                std::cout << "436 " << s->toString() << std::endl;
+                // std::cout << "436 " << s->toString() << std::endl;
             }
             for (auto pair : to_fix)
             {
                 pair.first->setProtocol(pair.second->getCopy());
-                std::cout << "441 " << pair.first->toString() << " " << pair.second->toString() << std::endl;
+                // std::cout << "441 " << pair.first->toString() << " " << pair.second->toString() << std::endl;
             }
 
             // proto->append(savedRest->getCopy());
@@ -473,11 +473,13 @@ public:
             cases.push_back(caseNode);
 
             // safeExitScope(ctx);
-            std::cout << "476 " << caseNode->toString() << std::endl; 
+            // std::cout << ctx->getText() << std::endl; 
+            std::cout << "476 " << caseNode->toString() <<"  " << !endsInReturn(caseNode) << " " << !endsInBranch(caseNode) << " " << !endsInReturn(caseNode) << " " << !endsInBranch(caseNode)  << std::endl; 
             if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
             {
                 for (auto s : ctxRest->ctxRest)
                 {
+                    std::cout << s->getText() << std::endl; 
                     std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
@@ -495,13 +497,14 @@ public:
                 // restVecFilled = true;
                 ctxRest->isGenerated = true; 
             }
-
-            if (deepRest && !endsInReturn(ctxRest->post))
+            std::cout << "500" << std::endl; 
+            if (deepRest && !endsInReturn(ctxRest->post) && !endsInBranch(ctxRest->post))
             {
                 for (auto r : *(deepRest.value()))
                 {
                     for (auto s : r->ctxRest)
                     {
+                        std::cout << s->getText() << std::endl; 
                         std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
                         if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
@@ -534,7 +537,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(alt->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(alt->getStart(), "537 Unused linear types in context: " + details.str());
             }
         }
 
@@ -605,7 +608,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "608 Unused linear types in context: " + details.str());
             }
         }
 
@@ -691,7 +694,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
             }
         }
         // return res;
@@ -735,8 +738,8 @@ private:
         return sym;
     }
 
-    /*
-    void bindRestData(antlr4::ParserRuleContext * ctx, std::deque<DeepRestData *> rd) { //DeepRestData * rd) {
+    
+    void bindRestData(antlr4::ParserRuleContext * ctx, std::deque<DeepRestData *>* rd) { //DeepRestData * rd) {
         if(WPLParser::BlockStatementContext* bs = dynamic_cast<WPLParser::BlockStatementContext*>(ctx)) {
             return bindRestData(bs->block(), rd);
         }
@@ -744,7 +747,7 @@ private:
         if(WPLParser::BlockContext* blk = dynamic_cast<WPLParser::BlockContext*>(ctx)) {
             if(blk->stmts.size() == 0) return; 
 
-            return bindRestData(blk->stmts.at(blk->stmts.size() - 1, rd)); 
+            return bindRestData(blk->stmts.at(blk->stmts.size() - 1), rd); 
         }
 
         if(WPLParser::ConditionalStatementContext* cs = dynamic_cast<WPLParser::ConditionalStatementContext*>(ctx)) {
@@ -780,5 +783,5 @@ private:
         }
 
     }
-    */
+    
 };

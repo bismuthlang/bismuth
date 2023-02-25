@@ -447,28 +447,28 @@ TEST_CASE("programs/enum2 - Basic Enum 2", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum2.prism"))),
-        "1629ab26d49e6ab30e266062de6363bedcb6f4b739dd61ebd7910ce2896366a7");
+        "57585471e0c206d25df999471586fe66161e97c6732cca186cc72f4f2ba6108c");
 }
 
 TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignmens outside of decl", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumAssign.prism"))),
-        "d28141fda4ffe2943a80619005d1b53a485b8edeb1b0a6a9d7b5e6efb6d9186d");
+        "943193f0f4e677cc8d3d7ecc7655a1894acb43cdaa7a319f9b9ce26d43d35309");
 }
 
 TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[codegen][enum][lambda]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumAssign2.prism"))),
-        "638573525dadddca5f5e924e4cafc22b1a16e6228aa39fce3a701db7e72abe87");
+        "d81611b92b8ab9538be19d66f268f3a97a15e799eb6662ec93079b095348eb21");
 }
 
 TEST_CASE("programs/enum3", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum3.prism"))),
-        "1cfe785dbe04efbe834cf809d64497a8da6b54f1851d41d0196eb6e03b3419b3");
+        "bbda06fb86157f94fd36261652034db1a9691277df1456d22b1e15c9e2f9ccb2");
 }
 
 TEST_CASE("programs/adv/StructTest2", "[codegen][struct]")
@@ -510,7 +510,7 @@ TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/NestedEnum.prism"))),
-        "9b61cbf31790496ddd1da29db6d7f412ac8e8890ad822ef7230bf32740899407");
+        "77ef48c0644a62b8aa86fbc976341f60b8814d294635cb7ef2bcd3c570d111bd");
 }
 
 TEST_CASE("programs/dangerLambda-Program - lambdas with dupl function names", "[codegen][struct]")

@@ -1121,24 +1121,18 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
 
         DeepRestData *restDat = new DeepRestData(ctx->rest);
         std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
-        rest->push_front(restDat); // FIXME: NOTE HOW REVERSED
+        rest->push_front(restDat);
 
         // bindRestData(ctx, restDat);
         for (auto b : ctx->cases)
         {
-            // for (auto c : b->eval)
-            // {
-                if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
-                {
-                    restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
-                }
-            // }
+            bindRestData(b->eval, rest);
         }
 
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::MatchAlternativeContext>(
             ctx,
             ctx->cases,
-            restDat,//ctx->rest,
+            restDat, // ctx->rest,
             false,
             [this, ctx, &cases, sumType, &foundCaseTypes](WPLParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
             {
@@ -1280,8 +1274,8 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
         {
             if (dynamic_cast<WPLParser::ConditionalStatementContext *>(c) || dynamic_cast<WPLParser::SelectStatementContext *>(c) || dynamic_cast<WPLParser::MatchStatementContext *>(c) || dynamic_cast<WPLParser::ProgramCaseContext *>(c))
             {
-
-                restBindings->bind(c, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
+                bindRestData(c, rest);
+                // restBindings->bind(c, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
             }
         }
     }
@@ -1326,10 +1320,11 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     {
         // for (auto c : b->eval)
         // {
-            if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
-            {
-                restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
-            }
+        if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
+        {
+            bindRestData(b->eval, rest);
+            // restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
+        }
         // }
     }
 
@@ -1340,7 +1335,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::SelectAlternativeContext>(
         ctx,
         ctx->cases,
-        restDat,// ctx->rest,
+        restDat, // ctx->rest,
         true,
         [this, ctx, &case_count, &alts](WPLParser::SelectAlternativeContext *e) -> std::variant<TypedNode *, ErrorChain *>
         {
@@ -1831,15 +1826,16 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
         {
             // for (auto c : b->eval)
             // {
-                if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
-                {
-                    restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
-                }
+            if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
+            {
+                bindRestData(b->eval, rest);
+                // restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
+            }
             // }
         }
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
-        
+
         // FIXME: TEST PROTOCOLS THAT HAVE STUFF FOLLOWING CHOICE!
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::ProtoAlternativeContext>(
             ctx,
