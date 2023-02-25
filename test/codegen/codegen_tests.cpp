@@ -28,8 +28,7 @@ void EnsureCompilesTo(antlr4::ANTLRInputStream *input, string hash)
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
-    PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+    SemanticVisitor *sv = new SemanticVisitor(stm, 0);
     auto cuOpt = sv->visitCtx(tree);
     REQUIRE_FALSE(sv->hasErrors(0));
     REQUIRE(std::holds_alternative<CompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
@@ -51,8 +50,7 @@ void EnsureErrors(antlr4::ANTLRInputStream *input)
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
-    PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+    SemanticVisitor *sv = new SemanticVisitor(stm, 0);
     auto cuOpt = sv->visitCtx(tree);
     // REQUIRE(cuOpt.has_value());
 
@@ -269,8 +267,7 @@ TEST_CASE("programs/LambdaDef", "[codegen]")
 //     REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //     REQUIRE(tree != NULL);
 //     STManager *stm = new STManager();
-//     PropertyManager *pm = new PropertyManager();
-//     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+//     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
 //     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
 //     REQUIRE(cuOpt.has_value());
 
@@ -339,8 +336,7 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
 //     REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //     REQUIRE(tree != NULL);
 //     STManager *stm = new STManager();
-//     PropertyManager *pm = new PropertyManager();
-//     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+//     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
 //     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
 //     REQUIRE(cuOpt.has_value());
 
@@ -367,8 +363,7 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
 //     REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //     REQUIRE(tree != NULL);
 //     STManager *stm = new STManager();
-//     PropertyManager *pm = new PropertyManager();
-//     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+//     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
 //     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
 //     REQUIRE(cuOpt.has_value());
 
@@ -401,8 +396,7 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
-    PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+    SemanticVisitor *sv = new SemanticVisitor(stm, 0);
     auto cuOpt = sv->visitCtx(tree);
     // REQUIRE(cuOpt.has_value()); //FIXME: DO BETTER
 
@@ -599,8 +593,7 @@ TEST_CASE("Out of order function", "[codegen][program]")
     REQUIRE(tree->getText() != "");
 
     STManager *stmgr = new STManager();
-    PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+    SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
     REQUIRE(cuOpt.has_value());
@@ -684,8 +677,7 @@ TEST_CASE("programs/enumedit", "[codegen][enum]")
 //     REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //     REQUIRE(tree != NULL);
 //     STManager *stm = new STManager();
-//     PropertyManager *pm = new PropertyManager();
-//     SemanticVisitor *sv = new SemanticVisitor(stm, pm, 0);
+//     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
 //     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
 //     REQUIRE(cuOpt.has_value());
 
@@ -737,6 +729,5 @@ TEST_CASE("A Level Positive Test #2", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive2.prism"))),
-        "274e9b13e41b0c6202eb2cefb1401fb917e7711a9dfd796e19ea24f1868ffa69");
+        "ace8c3c6514149b996d88627290cecd4e53356f56828d9332225f637ae540db9");
 }
-

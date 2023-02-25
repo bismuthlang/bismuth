@@ -45,7 +45,7 @@ TEST_CASE("Inference If Errors - 1", "[semantic]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
 
@@ -85,7 +85,7 @@ TEST_CASE("Inference If - 1", "[semantic]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
 
@@ -125,7 +125,7 @@ TEST_CASE("Inference If - 2", "[semantic]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   
@@ -157,7 +157,7 @@ TEST_CASE("Inference If - 2", "[semantic]")
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   CHECK(sv->hasErrors(ERROR));
@@ -187,7 +187,7 @@ TEST_CASE("Inference If - 2", "[semantic]")
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   CHECK(sv->hasErrors(ERROR));

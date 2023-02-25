@@ -1197,3 +1197,50 @@ inline bool endsInReturn(TypedNode *n)
 
     return false;
 }
+
+inline bool
+endsInBranch(TypedNode *n);
+
+inline bool endsInBranch(vector<TypedNode *> n)
+{
+    if (n.size() == 0)
+        return false;
+    return endsInBranch(n.at(n.size() - 1));
+}
+
+inline bool endsInBranch(TypedNode *n)
+{
+    if (BlockNode *bn = dynamic_cast<BlockNode *>(n))
+    {
+        return endsInBranch(bn->exprs);
+    }
+
+    // FIXME: DO THESE BETTER!
+    if (ConditionalStatementNode *cn = dynamic_cast<ConditionalStatementNode *>(n))
+    {
+        return true; 
+    }
+
+    if (MatchStatementNode *cn = dynamic_cast<MatchStatementNode *>(n))
+    {
+        return true; 
+    }
+
+    if (SelectStatementNode *cn = dynamic_cast<SelectStatementNode *>(n))
+    {
+        return true; 
+    }
+
+    if(SelectStatementNode * sn = dynamic_cast<SelectStatementNode*>(n))
+    {
+        return true; 
+    }
+
+    // if(MatchStatementNode * cn = dynamic_cast<MatchStatementNode *>(n))
+    // {
+    //     // if(cn->post.size())
+    //     return endsInReturn(cn->post);
+    // }
+
+    return false;
+}

@@ -13,7 +13,6 @@
 #include "WPLBaseVisitor.h"
 #include "CompilerFlags.h"
 
-// #include "PropertyManager.h"
 #include "WPLErrorHandler.h"
 #include "SemanticVisitor.h"
 #include "llvm/ADT/StringRef.h"

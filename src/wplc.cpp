@@ -237,8 +237,7 @@ int main(int argc, const char *argv[])
      * there are any errors we print them out and exit.
      *******************************************************************/
     STManager *stm = new STManager();
-    PropertyManager *pm = new PropertyManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, pm, flags);
+    SemanticVisitor *sv = new SemanticVisitor(stm, flags);
     auto TypedOpt = sv->visitCtx(tree); // FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
 
     if (sv->hasErrors(0)) // Want to see all errors

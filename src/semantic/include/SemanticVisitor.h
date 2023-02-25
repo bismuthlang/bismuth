@@ -28,17 +28,14 @@ public:
      * @param p Property manager to use
      * @param f Compiler flags
      */
-    SemanticVisitor(STManager *s, PropertyManager *p, int f = 0)
+    SemanticVisitor(STManager *s, int f = 0)
     {
         stmgr = s;
-        bindings = p;
 
         flags = f;
     }
 
     std::string getErrors() { return errorHandler.errorList(); }
-    STManager *getSTManager() { return stmgr; }
-    PropertyManager *getBindings() { return bindings; }
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
 
     // From C++ Documentation for visitors
@@ -313,7 +310,7 @@ public:
      */
     std::variant<ProgramDefNode *, ErrorChain *> visitInvokeable(WPLParser::DefineProcContext *ctx)
     {
-        std::optional<Symbol *> symOpt = bindings->getBinding(ctx);
+        std::optional<Symbol *> symOpt = symBindings->getBinding(ctx);
 
         if (!symOpt && stmgr->lookupInCurrentScope(ctx->name->getText()))
         {
@@ -394,27 +391,41 @@ public:
     struct ConditionalData
     {
         vector<TypedNode *> cases;
-        vector<TypedNode *> post;
+        // vector<TypedNode *> post;
 
-        ConditionalData(vector<TypedNode *> cases, vector<TypedNode *> post) : cases(cases), post(post)
+        ConditionalData(vector<TypedNode *> cases) : cases(cases)
         {
         }
+    };
+
+    struct DeepRestData
+    {
+        vector<WPLParser::StatementContext *> ctxRest;
+        bool isGenerated;
+        vector<TypedNode *> post;
+
+        DeepRestData(vector<WPLParser::StatementContext *> ctx) : ctxRest(ctx), isGenerated(false) {}
     };
 
     template <typename T>
     inline std::variant<ConditionalData, ErrorChain *> checkBranch(
         antlr4::ParserRuleContext *ctx,
         std::vector<T *> ctxCases,
-        std::vector<WPLParser::StatementContext *> ctxRest,
+        // std::vector<WPLParser::StatementContext *> ctxRest,
+        DeepRestData* ctxRest, 
         bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
-        std::cout << stmgr->toString() << std::endl; 
-        std::vector<TypedNode *> cases;
-        std::vector<TypedNode *> restVec;
-        bool restVecFilled = false;
 
-        std::vector<Symbol *> syms = stmgr->getAvaliableLinears(true);                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+        // std::cout << stmgr->toString() << std::endl;
+
+        std::optional<std::deque<DeepRestData *> *> deepRest = restBindings->getBinding(ctx);
+
+        std::vector<TypedNode *> cases;
+        // std::vector<TypedNode *> restVec;
+        // bool restVecFilled = false;
+
+        std::vector<Symbol *> syms = stmgr->getAvaliableLinears(true);                // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
         std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
         for (Symbol *orig : syms)
         {
@@ -434,12 +445,12 @@ public:
             for (Symbol *s : syms)
             {
                 stmgr->addSymbol(s);
-                std::cout << "436 " << s->toString() << std::endl; 
+                std::cout << "436 " << s->toString() << std::endl;
             }
             for (auto pair : to_fix)
             {
                 pair.first->setProtocol(pair.second->getCopy());
-                std::cout << "441 " << pair.first->toString() << " " << pair.second->toString() << std::endl; 
+                std::cout << "441 " << pair.first->toString() << " " << pair.second->toString() << std::endl;
             }
 
             // proto->append(savedRest->getCopy());
@@ -462,27 +473,50 @@ public:
             cases.push_back(caseNode);
 
             // safeExitScope(ctx);
-
-            if (!endsInReturn(caseNode))
+            std::cout << "476 " << caseNode->toString() << std::endl; 
+            if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
             {
-                for (auto s : ctxRest)
+                for (auto s : ctxRest->ctxRest)
                 {
                     std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
-                    if (!restVecFilled)
+                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
                     {
+                        (*e)->addError(alt->getStart(), "Failed to typecheck code following branch.");
+                        return *e;
+                    }
 
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
+                    if (!ctxRest->isGenerated)
+                    {
+                        ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
+                    }
+                }
+
+                // restVecFilled = true;
+                ctxRest->isGenerated = true; 
+            }
+
+            if (deepRest && !endsInReturn(ctxRest->post))
+            {
+                for (auto r : *(deepRest.value()))
+                {
+                    for (auto s : r->ctxRest)
+                    {
+                        std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
                         {
                             (*e)->addError(ctx->getStart(), "2097");
                             return *e;
                         }
 
-                        restVec.push_back(std::get<TypedNode *>(rOpt));
+                        if (!r->isGenerated) // FIXME: MAY CAUSE DOUBLE FILL ISSUES IF PRIOR BRANCH ERRORS (WHEN WE CHANGE TO GET ALL ERRORS)
+                        {
+                            r->post.push_back(std::get<TypedNode *>(rOpt));
+                        }
                     }
+                    r->isGenerated = true;
                 }
-
-                restVecFilled = true;
             }
 
             safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
@@ -517,24 +551,44 @@ public:
 
             stmgr->enterScope(StopType::NONE);
 
-            for (auto s : ctxRest)
+            for (auto s : ctxRest->ctxRest)
             {
                 std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                if (!restVecFilled)
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                 {
-
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                    {
-                        (*e)->addError(ctx->getStart(), "2097");
-                        return *e;
-                    }
-
-                    restVec.push_back(std::get<TypedNode *>(rOpt));
+                    (*e)->addError(ctx->getStart(), "Failed to typecheck code when conditional skipped over.");
+                    return *e;
+                }
+                if (!ctxRest->isGenerated)
+                {
+                    ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
                 }
             }
 
-            restVecFilled = true;
+            if (deepRest && !endsInReturn(ctxRest->post))
+            {
+                for (auto r : *(deepRest.value())) //FIXME: NEED TO REVERSE?
+                {
+                    for (auto s : r->ctxRest)
+                    {
+                        std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
+                        {
+                            (*e)->addError(ctx->getStart(), "2097");
+                            return *e;
+                        }
+
+                        if (!r->isGenerated) // FIXME: MAY CAUSE DOUBLE FILL ISSUES IF PRIOR BRANCH ERRORS (WHEN WE CHANGE TO GET ALL ERRORS)
+                        {
+                            r->post.push_back(std::get<TypedNode *>(rOpt));
+                        }
+                    }
+                    r->isGenerated = true;
+                }
+            }
+
+            ctxRest->isGenerated = true;
 
             safeExitScope(ctx);
 
@@ -557,17 +611,17 @@ public:
 
         // return Types::UNDEFINED;
         // return ty.value();
-        return ConditionalData(cases, restVec);
+        return ConditionalData(cases);
     }
 
     template <typename T>
-    std::vector<T> Append(std::vector<T> &a, const std::vector<T> &b)
+    std::vector<T> *Append(std::vector<T> a, const std::vector<T> b)
     {
-        std::vector<T> ans; 
-        ans.reserve(a.size() + b.size());
-        ans.insert(ans.end(), a.begin(), a.end());
-        ans.insert(ans.end(), b.begin(), b.end());
-        return ans; 
+        std::vector<T> *ans = new std::vector<T>();
+        ans->reserve(a.size() + b.size());
+        ans->insert(ans->end(), a.begin(), a.end());
+        ans->insert(ans->end(), b.begin(), b.end());
+        return ans;
     }
 
     const Type *any2Type(std::any any)
@@ -587,7 +641,8 @@ public:
 
 private:
     STManager *stmgr;
-    PropertyManager *bindings;
+    PropertyManager<Symbol> *symBindings = new PropertyManager<Symbol>();
+    PropertyManager<std::deque<DeepRestData *>> *restBindings = new PropertyManager<std::deque<DeepRestData *>>();
     WPLErrorHandler errorHandler = WPLErrorHandler(SEMANTIC);
 
     int flags; // Compiler flags
@@ -646,7 +701,7 @@ private:
 
     std::variant<Symbol *, ErrorChain *> getFunctionSymbol(WPLParser::DefineFuncContext *ctx)
     {
-        std::optional<Symbol *> opt = bindings->getBinding(ctx);
+        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
         if (opt)
             return opt.value();
 
@@ -679,4 +734,51 @@ private:
 
         return sym;
     }
+
+    /*
+    void bindRestData(antlr4::ParserRuleContext * ctx, std::deque<DeepRestData *> rd) { //DeepRestData * rd) {
+        if(WPLParser::BlockStatementContext* bs = dynamic_cast<WPLParser::BlockStatementContext*>(ctx)) {
+            return bindRestData(bs->block(), rd);
+        }
+
+        if(WPLParser::BlockContext* blk = dynamic_cast<WPLParser::BlockContext*>(ctx)) {
+            if(blk->stmts.size() == 0) return; 
+
+            return bindRestData(blk->stmts.at(blk->stmts.size() - 1, rd)); 
+        }
+
+        if(WPLParser::ConditionalStatementContext* cs = dynamic_cast<WPLParser::ConditionalStatementContext*>(ctx)) {
+            // for(auto b : cs->block()) {
+            //     bindRestData(b, rd);
+            // }
+            restBindings->bind(cs, rd);
+            return; 
+        }
+
+        if(WPLParser::SelectStatementContext* sel = dynamic_cast<WPLParser::SelectStatementContext*>(ctx)) {
+            // for(auto c : sel->cases) {
+            //     bindRestData(c->eval, rd);
+            // }
+            restBindings->bind(sel, rd);
+            return; 
+        }
+
+        if(WPLParser::MatchStatementContext* mc = dynamic_cast<WPLParser::MatchStatementContext*>(ctx)) {
+            // for(auto c : mc->cases) {
+            //     bindRestData(c->eval, rd);
+            // }
+            restBindings->bind(mc, rd);
+            return; 
+        }
+
+        if(WPLParser::ProgramCaseContext* cc = dynamic_cast<WPLParser::ProgramCaseContext*>(ctx)) {
+            // for(auto o : cc->opts) {
+            //     bindRestData(o->eval, rd);
+            // }
+            restBindings->bind(cc, rd);
+            return;
+        }
+
+    }
+    */
 };
