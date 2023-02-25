@@ -416,9 +416,6 @@ public:
         bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
-
-        // std::cout << stmgr->toString() << std::endl;
-
         std::optional<std::deque<DeepRestData *> *> deepRest = restBindings->getBinding(ctx);
 
         std::vector<TypedNode *> cases;
@@ -445,12 +442,10 @@ public:
             for (Symbol *s : syms)
             {
                 stmgr->addSymbol(s);
-                // std::cout << "436 " << s->toString() << std::endl;
             }
             for (auto pair : to_fix)
             {
                 pair.first->setProtocol(pair.second->getCopy());
-                // std::cout << "441 " << pair.first->toString() << " " << pair.second->toString() << std::endl;
             }
 
             // proto->append(savedRest->getCopy());
@@ -473,13 +468,11 @@ public:
             cases.push_back(caseNode);
 
             // safeExitScope(ctx);
-            // std::cout << ctx->getText() << std::endl; 
-            std::cout << "476 " << caseNode->toString() <<"  " << !endsInReturn(caseNode) << " " << !endsInBranch(caseNode) << " " << !endsInReturn(caseNode) << " " << !endsInBranch(caseNode)  << std::endl; 
+
             if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
             {
                 for (auto s : ctxRest->ctxRest)
                 {
-                    std::cout << s->getText() << std::endl; 
                     std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
@@ -497,14 +490,14 @@ public:
                 // restVecFilled = true;
                 ctxRest->isGenerated = true; 
             }
-            std::cout << "500" << std::endl; 
+            
+            //FIXME: WILL NEED TO RUN THIS CHECK ON EACH ITERATION!
             if (deepRest && !endsInReturn(ctxRest->post) && !endsInBranch(ctxRest->post))
             {
                 for (auto r : *(deepRest.value()))
                 {
                     for (auto s : r->ctxRest)
                     {
-                        std::cout << s->getText() << std::endl; 
                         std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
                         if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
