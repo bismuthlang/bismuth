@@ -495,11 +495,10 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
-    std::optional<std::string> fnName = std::nullopt;
     virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
     {
-        if (fnName)
-            return M->getFunction(fnName.value());
+        llvm::Function * testFn = M->getFunction("_clone_int"); 
+        if(testFn) return testFn; 
 
         llvm::BasicBlock *ins = builder->GetInsertBlock();
 
@@ -512,9 +511,6 @@ public:
                                                         },
                                                         false),
                                                     llvm::GlobalValue::PrivateLinkage, "_clone_int", M);
-
-        TypeInt *mthis = const_cast<TypeInt *>(this);
-        mthis->fnName = fn->getName().str();
 
         llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
@@ -552,11 +548,10 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
-    std::optional<std::string> fnName = std::nullopt;
     virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
     {
-        if (fnName)
-            return M->getFunction(fnName.value());
+        llvm::Function * testFn = M->getFunction("_clone_bool"); 
+        if(testFn) return testFn; 
 
         llvm::BasicBlock *ins = builder->GetInsertBlock();
 
@@ -569,9 +564,6 @@ public:
                                                         },
                                                         false),
                                                     llvm::GlobalValue::PrivateLinkage, "_clone_bool", M);
-
-        TypeBool *mthis = const_cast<TypeBool *>(this);
-        mthis->fnName = fn->getName().str();
 
         llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
@@ -606,11 +598,10 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
-    std::optional<std::string> fnName = std::nullopt;
     virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
     {
-        if (fnName)
-            return M->getFunction(fnName.value());
+        llvm::Function * testFn = M->getFunction("_clone_string"); 
+        if(testFn) return testFn; 
 
         llvm::BasicBlock *ins = builder->GetInsertBlock();
 
@@ -623,9 +614,6 @@ public:
                                                         },
                                                         false),
                                                     llvm::GlobalValue::PrivateLinkage, "_clone_string", M);
-
-        TypeStr *mthis = const_cast<TypeStr *>(this);
-        mthis->fnName = fn->getName().str();
 
         llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
@@ -941,7 +929,7 @@ public:
         return description.str();
     }
 
-    const Type * getInnerType() const { return innerType; }
+    const Type *getInnerType() const { return innerType; }
 
     // TODO: Build LLVM Type here instead of in codegen!
     llvm::Type *getLLVMType(llvm::Module *M) const override
@@ -951,11 +939,10 @@ public:
 
     bool requiresDeepCopy() const override { return true; }
 
-    std::optional<std::string> fnName = std::nullopt;
     virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
     {
-        if (fnName)
-            return M->getFunction(fnName.value());
+        llvm::Function * testFn = M->getFunction("_clone_" + toString()); 
+        if(testFn) return testFn; 
 
         llvm::BasicBlock *ins = builder->GetInsertBlock();
 
@@ -969,9 +956,6 @@ public:
                                                         false),
                                                     llvm::GlobalValue::PrivateLinkage, "_clone_" + toString(), M);
 
-        TypeBox *mthis = const_cast<TypeBox *>(this);
-        mthis->fnName = fn->getName().str();
-
         llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
 
@@ -984,7 +968,6 @@ public:
 
         if (innerType->requiresDeepCopy())
         {
-            // FIXME: IMPL
             llvm::AllocaInst *m = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "m");
             builder->CreateStore(fn->getArg(1), m);
 
@@ -996,10 +979,8 @@ public:
                         {llvm::Type::getInt8PtrTy(M->getContext()),
                          llvm::Type::getInt8PtrTy(M->getContext())},
                         false)),
-                {
-                    builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m),
-                    builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext()))
-                });
+                {builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m),
+                 builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext()))});
 
             auto parentFn = builder->GetInsertBlock()->getParent();
 
@@ -1013,10 +994,9 @@ public:
                         hasValPtr,
                         llvm::Constant::getNullValue(hasValPtr->getType())
                         // llvm::ConstantInt::get(llvm::Type::getInt8Ty(M->getContext()), 0, true)
-                    ), 
-                    llvm::Type::getInt1Ty(M->getContext())
-                ), 
-                thenBlk, 
+                        ),
+                    llvm::Type::getInt1Ty(M->getContext())),
+                thenBlk,
                 elseBlk);
 
             /*
@@ -1024,7 +1004,7 @@ public:
              */
             builder->SetInsertPoint(thenBlk);
             llvm::Value *casted = builder->CreateBitCast(hasValPtr, innerType->getLLVMType(M));
-            
+
             builder->CreateBr(restBlk);
 
             thenBlk = builder->GetInsertBlock();
@@ -1062,7 +1042,6 @@ public:
             llvm::Value *casted2 = builder->CreateBitCast(alloc, innerType->getLLVMType(M)->getPointerTo());
             builder->CreateStore(phi, casted2);
             v = casted2;
-            
 
             builder->CreateCall(
                 M->getOrInsertFunction(
@@ -1073,11 +1052,9 @@ public:
                          llvm::Type::getInt8PtrTy(M->getContext()),
                          llvm::Type::getInt8PtrTy(M->getContext())},
                         false)),
-                {
-                    builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m),
-                    builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext())),
-                    alloc
-                });
+                {builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m),
+                 builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext())),
+                 alloc});
         }
         else
         {
@@ -1104,11 +1081,6 @@ public:
 
         return fn; // Stack value, can just return it for the copy.
     }
-    // std::optional<llvm::Value *> clone(llvm::Module *M, llvm::Value *orig) const override
-    // {
-    //     // FIXME: IMPL CLONE
-    //     return orig; // Stack value, can just return it for the copy.
-    // }
 
 protected:
     bool isSupertypeFor(const Type *other) const override
@@ -1951,11 +1923,170 @@ public:
         return false;
     }
 
-    // std::optional<llvm::Value *> clone(llvm::Module *M, llvm::Value *orig) const override
-    // {
-    //     // FIXME: COPY WRONG!
-    //     return orig; // Stack value, can just return it for the copy.
-    // }
+    virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
+    {
+        llvm::Function * testFn = M->getFunction("_clone_" + toString()); 
+        if(testFn) return testFn; 
+
+        llvm::BasicBlock *ins = builder->GetInsertBlock();
+
+        // FIXME: DONT DUPLICATE THESE ACROSS FILES
+        llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
+                                                        getLLVMType(M),
+                                                        {
+                                                            getLLVMType(M),                           // llvm::Type::getInt8PtrTy(M->getContext()), // Value
+                                                            llvm::Type::getInt8PtrTy(M->getContext()) // Map
+                                                        },
+                                                        false),
+                                                    llvm::GlobalValue::PrivateLinkage, "_clone_" + toString(), M);
+
+        llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
+        builder->SetInsertPoint(bBlk);
+
+        // Bind all of the arguments
+        // llvm::Value *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
+        llvm::Value *v = builder->CreateAlloca(getLLVMType(M), 0, "v");
+
+        builder->CreateStore((fn->args()).begin(), v);
+        llvm::Value *loaded = builder->CreateLoad(getLLVMType(M), v);
+
+        llvm::Value *alloc = builder->CreateCall(
+            M->getOrInsertFunction(
+                "GC_malloc",
+                llvm::FunctionType::get(
+                    llvm::Type::getInt8PtrTy(M->getContext()),
+                    {llvm::Type::getInt64Ty(M->getContext())},
+                    false)),
+            {builder->getInt64(M->getDataLayout().getTypeAllocSize(getLLVMType(M)))});
+
+        llvm::Value *casted = builder->CreateBitCast(alloc, getLLVMType(M)->getPointerTo());
+
+        builder->CreateStore(loaded, casted);
+        v = casted;
+
+        if (requiresDeepCopy())
+        {
+            llvm::AllocaInst *m = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "m");
+            builder->CreateStore(fn->getArg(1), m);
+
+            // for (unsigned int i = 0; i < elements.size(); i++)
+            for(auto eleItr : elements.getElements())
+            {
+                const Type *eleType = eleItr.second; 
+
+                if (eleType->requiresDeepCopy())
+                {
+                    llvm::Value *memLoc = builder->CreateGEP(casted, {
+                        llvm::ConstantInt::get(
+                            llvm::Type::getInt32Ty(M->getContext()),
+                            0,
+                            true),
+                        llvm::ConstantInt::get(
+                            llvm::Type::getInt32Ty(M->getContext()), 
+                            elements.getIndex(eleItr.first).value(), //In theory, bad opt access, but should never happen
+                            true
+                        )
+                    });
+
+                    llvm::Value * loaded = builder->CreateLoad(eleType->getLLVMType(M) , memLoc);
+
+                    // FIXME: IMPL
+                    llvm::Value *hasValPtr = builder->CreateCall(
+                        M->getOrInsertFunction(
+                            "_address_map_has",
+                            llvm::FunctionType::get(
+                                llvm::Type::getInt8PtrTy(M->getContext()),
+                                {llvm::Type::getInt8PtrTy(M->getContext()),
+                                 llvm::Type::getInt8PtrTy(M->getContext())},
+                                false)),
+                        {builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m),
+                         builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext()))});
+
+                    auto parentFn = builder->GetInsertBlock()->getParent();
+
+                    llvm::BasicBlock *thenBlk = llvm::BasicBlock::Create(M->getContext(), "then", parentFn);
+                    llvm::BasicBlock *elseBlk = llvm::BasicBlock::Create(M->getContext(), "else");
+                    llvm::BasicBlock *restBlk = llvm::BasicBlock::Create(M->getContext(), "ifcont");
+
+                    builder->CreateCondBr(
+                        builder->CreateZExtOrTrunc(
+                            builder->CreateICmpNE(
+                                hasValPtr,
+                                llvm::Constant::getNullValue(hasValPtr->getType())
+                                // llvm::ConstantInt::get(llvm::Type::getInt8Ty(M->getContext()), 0, true)
+                                ),
+                            llvm::Type::getInt1Ty(M->getContext())),
+                        thenBlk,
+                        elseBlk);
+
+                    /*
+                     * Then block
+                     */
+                    builder->SetInsertPoint(thenBlk);
+                    llvm::Value *casted = builder->CreateBitCast(hasValPtr, eleType->getLLVMType(M));
+
+                    builder->CreateBr(restBlk);
+
+                    thenBlk = builder->GetInsertBlock();
+
+                    /*
+                     * Insert the else block (same as rest if no else branch)
+                     */
+                    parentFn->getBasicBlockList().push_back(elseBlk);
+                    builder->SetInsertPoint(elseBlk);
+
+                    // Generate the code for the else block; follows the same logic as the then block.
+                    llvm::Value *cloned = builder->CreateCall(eleType->clone(M, builder), {loaded,
+                                                                                             builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m)});
+                    builder->CreateBr(restBlk);
+
+                    elseBlk = builder->GetInsertBlock();
+
+                    // As we have an else block, rest and else are different, so we have to merge back in.
+                    parentFn->getBasicBlockList().push_back(restBlk);
+                    builder->SetInsertPoint(restBlk);
+
+                    llvm::PHINode *phi = builder->CreatePHI(eleType->getLLVMType(M), 2, "phi");
+                    phi->addIncoming(casted, thenBlk);
+                    phi->addIncoming(cloned, elseBlk);
+
+                    // llvm::Value *alloc = builder->CreateCall(
+                    //     M->getOrInsertFunction(
+                    //         "GC_malloc",
+                    //         llvm::FunctionType::get(
+                    //             llvm::Type::getInt8PtrTy(M->getContext()),
+                    //             {llvm::Type::getInt64Ty(M->getContext())},
+                    //             false)),
+                    //     {builder->getInt64(M->getDataLayout().getTypeAllocSize(eleType->getLLVMType(M)))});
+
+                    // llvm::Value *casted2 = builder->CreateBitCast(alloc, eleType->getLLVMType(M)->getPointerTo());
+                    // builder->CreateStore(phi, casted2);
+
+                    builder->CreateStore(phi, memLoc);
+                    // v = casted2;
+
+                    builder->CreateCall(
+                        M->getOrInsertFunction(
+                            "_address_map_put",
+                            llvm::FunctionType::get(
+                                llvm::Type::getVoidTy(M->getContext()),
+                                {llvm::Type::getInt8PtrTy(M->getContext()),
+                                 llvm::Type::getInt8PtrTy(M->getContext()),
+                                 llvm::Type::getInt8PtrTy(M->getContext())},
+                                false)),
+                        {builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m),
+                         builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext())),
+                         phi});
+                }
+            }
+        }
+
+        builder->CreateRet(builder->CreateLoad(v, getLLVMType(M)));
+
+        builder->SetInsertPoint(ins);
+
+        return fn; // Stack value, can just return it for the copy.
+    }
 
 protected:
     bool isSupertypeFor(const Type *other) const override
