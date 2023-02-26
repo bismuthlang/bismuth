@@ -10,7 +10,6 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
      *
      ***********************************/
 
-
     /***********************************
      *
      *
@@ -336,11 +335,11 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
     llvm::Type *recvType = n->ty->getLLVMType(module);
 
     Value *valPtr = builder->CreateCall(getReadChannel(), {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
-    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                                         // Cast the void* to the correct type ptr
+    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                       // Cast the void* to the correct type ptr
 
-    Value * ans = builder->CreateLoad(recvType, casted);
+    Value *ans = builder->CreateLoad(recvType, casted);
 
-    builder->CreateCall(getFree(), {valPtr}); // Will be a void*
+    builder->CreateCall(getFree(), {valPtr}); // May leak depending on how GC works?
 
     return ans;
 }
@@ -389,11 +388,35 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
     }
 
     // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
-    Value *v = builder->CreateCall(getMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
 
-    builder->CreateStore(stoVal, v);
+    std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
+    {
+        if (n->lType->requiresDeepCopy())
+        {
+            Function *fn = n->lType->clone(module, builder);
+            if (fn == nullptr)
+            {
+                errorHandler.addError(n->getStart(), "Failed to generate clone fn for type: " + n->lType->toString());
+                return std::nullopt;
+            }
+            Value * addrMap = getNewAddressMap(); 
+            stoVal = builder->CreateCall(fn, {stoVal, addrMap}); // FIXME: NEED TO CREATE MAP!
+            deleteAddressMap(addrMap);
+            // return v;
+        }
 
-    Value *corrected = builder->CreateBitCast(v, i8p);
+        Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+        Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
+
+        builder->CreateStore(stoVal, casted);
+
+        return v;
+    }();
+
+    if (!v)
+        return std::nullopt; // Error handled already.
+
+    Value *corrected = builder->CreateBitCast(v.value(), i8p);
 
     if (!sym->val)
     {
@@ -534,6 +557,36 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
 
     Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
     return loaded;
+}
+
+std::optional<Value *> CodegenVisitor::visit(InitBoxNode *n)
+{
+    std::optional<Value *> valOpt = AcceptType(this, n->expr);
+    if (!valOpt)
+    {
+        errorHandler.addError(n->getStart(), "Failed to generate code");
+        return std::nullopt;
+    }
+
+    Value *stoVal = valOpt.value();
+
+    const TypeBox *box = n->boxType;
+
+    // llvm::Type *ty = box->getLLVMType(module);
+    // llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, "");
+
+    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(box->getInnerType()))
+    {
+        stoVal = correctSumAssignment(sum, stoVal);
+    }
+
+    Value *v = builder->CreateCall(getGCMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+    Value *casted = builder->CreateBitCast(v, box->getLLVMType(module));
+
+    builder->CreateStore(stoVal, casted);
+
+    // Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
+    return casted;
 }
 
 std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
@@ -921,6 +974,23 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
     }
 
     return valPtr;
+}
+
+std::optional<Value *> CodegenVisitor::visit(DerefBoxNode *n)
+{
+    std::optional<Value *> baseOpt = AcceptType(this, n->expr);
+
+    if (!baseOpt)
+    {
+        errorHandler.addError(n->getStart(), "985 - Failed to generate deref expr: " + n->expr->toString());
+        return std::nullopt;
+    }
+
+    Value *ptrVal = baseOpt.value();
+    return n->is_rvalue ? builder->CreateLoad(ptrVal->getType()->getPointerElementType(), ptrVal) : ptrVal; 
+
+// return loaded; 
+    // return n->is_rvalue ? builder->CreateLoad(loaded->getType()->getPointerElementType(), loaded) : loaded; 
 }
 
 std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)

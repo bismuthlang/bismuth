@@ -81,6 +81,9 @@ public:
     std::variant<FieldAccessNode *, ErrorChain *> visitCtx(WPLParser::FieldAccessExprContext *ctx, bool is_rvalue);
     std::any visitFieldAccessExpr(WPLParser::FieldAccessExprContext *ctx) override { return TNVariantCast<FieldAccessNode>(visitCtx(ctx, true)); }
 
+    std::variant<DerefBoxNode *, ErrorChain *> visitCtx(WPLParser::DereferenceExprContext *ctx, bool is_rvalue);
+    std::any visitDereferenceExpr(WPLParser::DereferenceExprContext *ctx) override { return TNVariantCast<DerefBoxNode>(visitCtx(ctx, true)); }
+
     // std::optional<ArrayAccessNode*> visitCtx(WPLParser::ArrayAccessContext *ctx);
     std::variant<ArrayAccessNode *, ErrorChain *> visitCtx(WPLParser::ArrayAccessContext *ctx, bool is_rvalue);
     std::any visitArrayAccess(WPLParser::ArrayAccessContext *ctx) override { return TNVariantCast<ArrayAccessNode>(visitCtx(ctx, true)); }
@@ -88,8 +91,8 @@ public:
     std::variant<ArrayAccessNode *, ErrorChain *> visitCtx(WPLParser::ArrayAccessExprContext *ctx) { return this->visitCtx(ctx->arrayAccess(), true); }
     std::any visitArrayAccessExpr(WPLParser::ArrayAccessExprContext *ctx) override { return TNVariantCast<ArrayAccessNode>(visitCtx(ctx)); }
 
-    std::variant<TypedNode *, ErrorChain *> visitCtx(WPLParser::ArrayOrVarContext *ctx);
-    std::any visitArrayOrVar(WPLParser::ArrayOrVarContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }
+    std::variant<TypedNode *, ErrorChain *> visitCtx(WPLParser::LValueContext *ctx);
+    std::any visitLValue(WPLParser::LValueContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }
 
     std::variant<AssignNode *, ErrorChain *> visitCtx(WPLParser::AssignStatementContext *ctx);
     std::any visitAssignStatement(WPLParser::AssignStatementContext *ctx) override { return TNVariantCast<AssignNode>(visitCtx(ctx)); }
@@ -159,6 +162,9 @@ public:
     std::variant<InitProductNode *, ErrorChain *> visitCtx(WPLParser::InitProductContext *ctx);
     std::any visitInitProduct(WPLParser::InitProductContext *ctx) override { return TNVariantCast<InitProductNode>(visitCtx(ctx)); }
 
+    std::variant<InitBoxNode *, ErrorChain *> visitCtx(WPLParser::InitBoxContext *ctx);
+    std::any visitInitBox(WPLParser::InitBoxContext *ctx) override { return TNVariantCast<InitBoxNode>(visitCtx(ctx)); }
+
     std::variant<ProgramSendNode *, ErrorChain *> TvisitProgramSend(WPLParser::ProgramSendContext *ctx);
     std::any visitProgramSend(WPLParser::ProgramSendContext *ctx) override { return TNVariantCast<ProgramSendNode>(TvisitProgramSend(ctx)); }
 
@@ -206,6 +212,9 @@ public:
 
     const Type *visitCtx(WPLParser::ChannelTypeContext *ctx);
     std::any visitChannelType(WPLParser::ChannelTypeContext *ctx) override { return visitCtx(ctx); }
+
+    const Type *visitCtx(WPLParser::BoxTypeContext *ctx);
+    std::any visitBoxType(WPLParser::BoxTypeContext *ctx) override { return visitCtx(ctx); }
 
     const Type *visitCtx(WPLParser::ProgramTypeContext *ctx);
     std::any visitProgramType(WPLParser::ProgramTypeContext *ctx) override { return visitCtx(ctx); }

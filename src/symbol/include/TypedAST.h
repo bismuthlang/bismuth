@@ -43,7 +43,6 @@ class BlockNode;
 
 class LambdaConstNode;
 class ProgramDefNode;
-class FunctionDefNode;
 class ConditionalStatementNode;
 class ReturnNode;
 class ProgramSendNode;
@@ -55,6 +54,8 @@ class ProgramAcceptNode;
 class DefineEnumNode;
 class DefineStructNode;
 class InitProductNode;
+class InitBoxNode;
+class DerefBoxNode;
 class WhileLoopNode;
 class ExternNode;
 class InvocationNode;
@@ -89,7 +90,6 @@ public:
     virtual std::optional<Value *> visit(BlockNode *n) = 0;
     virtual std::optional<Value *> visit(LambdaConstNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramDefNode *n) = 0;
-    // virtual std::optional<Value *> visit(FunctionDefNode *n) = 0;
     virtual std::optional<Value *> visit(ConditionalStatementNode *n) = 0;
     virtual std::optional<Value *> visit(ReturnNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramSendNode *n) = 0;
@@ -101,6 +101,8 @@ public:
     // virtual std::optional<Value *> visit(DefineEnumNode *n) = 0;
     // virtual std::optional<Value *> visit(DefineStructNode *n) = 0;
     virtual std::optional<Value *> visit(InitProductNode *n) = 0;
+    virtual std::optional<Value *> visit(InitBoxNode *n) = 0; 
+    virtual std::optional<Value *> visit(DerefBoxNode *n) = 0; 
     virtual std::optional<Value *> visit(WhileLoopNode *n) = 0;
     virtual std::optional<Value *> visit(ExternNode *n) = 0;
     virtual std::optional<Value *> visit(InvocationNode *n) = 0;
@@ -131,7 +133,6 @@ public:
     std::any any_visit(BlockNode *n) { return this->visit(n); }
     std::any any_visit(LambdaConstNode *n) { return this->visit(n); }
     std::any any_visit(ProgramDefNode *n) { return this->visit(n); }
-    std::any any_visit(FunctionDefNode *n) { return this->visit(n); }
     std::any any_visit(ConditionalStatementNode *n) { return this->visit(n); }
     std::any any_visit(ReturnNode *n) { return this->visit(n); }
     std::any any_visit(ProgramSendNode *n) { return this->visit(n); }
@@ -143,6 +144,8 @@ public:
     std::any any_visit(DefineEnumNode *n) { return this->visit(n); }
     std::any any_visit(DefineStructNode *n) { return this->visit(n); }
     std::any any_visit(InitProductNode *n) { return this->visit(n); }
+    std::any any_visit(InitBoxNode *n) { return this->visit(n); }
+    std::any any_visit(DerefBoxNode *n) { return this->visit(n); }
     std::any any_visit(WhileLoopNode *n) { return this->visit(n); }
     std::any any_visit(ExternNode *n) { return this->visit(n); }
     std::any any_visit(InvocationNode *n) { return this->visit(n); }
@@ -325,41 +328,6 @@ public:
 
     std::string toString() const override {
         return "PROG DEF";
-    }
-
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-};
-
-class FunctionDefNode : public TypedNode
-{
-public:
-    Symbol *sym;
-    const TypeInvoke *ty; // FIXME: ISNT REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
-    BlockNode *block;
-
-    // FIXME: WHY DO WE REQUIRE PARAM LIST NODE AND SUCH WEHEN WE HAVE TO CREATE THAT MANUALLY AS PART OF TYPECHECK ANYWAYS?
-    FunctionDefNode(std::string id, ParameterListNode p, const Type *r, BlockNode *b, antlr4::Token *tok) : TypedNode(tok) // string n, Symbol *cn, BlockNode *b, const TypeProgram *ty)
-    {
-        vector<const Type *> paramTypes;
-
-        for (ParameterNode param : p)
-        {
-            paramTypes.push_back(param.type);
-        }
-
-        ty = new TypeInvoke(paramTypes, r, false, true);
-        sym = new Symbol(id, ty, true, true);
-
-        block = b;
-    }
-
-    const TypeInvoke *getType() override
-    {
-        return ty;
-    }
-
-    std::string toString() const override {
-        return "FUNC DEF";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
@@ -615,6 +583,51 @@ public:
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+
+class InitBoxNode : public TypedNode
+{
+public:
+    const TypeBox *boxType;
+    TypedNode * expr;
+
+    InitBoxNode(const TypeBox *b, TypedNode * e, antlr4::Token *tok) : TypedNode(tok)
+    {
+        boxType = b;
+        expr = e;
+    }
+
+    std::string toString() const override {
+        return "INIT BOX";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    const TypeBox *getType() override { return boxType; }
+};
+
+class DerefBoxNode : public TypedNode
+{
+public:
+    const TypeBox *boxType;
+    TypedNode * expr;
+    bool is_rvalue; 
+
+    DerefBoxNode(const TypeBox *b, TypedNode * e, bool rv, antlr4::Token *tok) : TypedNode(tok)
+    {
+        boxType = b;
+        expr = e;
+        is_rvalue = rv; 
+    }
+
+    std::string toString() const override {
+        return "Deref BOX";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    const Type *getType() override { return boxType->getInnerType(); }
 };
 
 class WhileLoopNode : public TypedNode

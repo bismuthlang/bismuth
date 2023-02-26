@@ -107,6 +107,7 @@ public:
     std::optional<Value *> visit(ExternNode *n) override;
     std::optional<Value *> visit(InvocationNode *n) override;
     std::optional<Value *> visit(FieldAccessNode *n) override;
+    std::optional<Value *> visit(DerefBoxNode *n) override;
     std::optional<Value *> visit(ArrayAccessNode *n) override;
     std::optional<Value *> visit(AssignNode *n) override;
     std::optional<Value *> visit(BinaryRelNode *n) override;
@@ -124,6 +125,8 @@ public:
     std::optional<Value *> visit(ExitNode *n) override;
     std::optional<Value *> visit(ChannelCaseStatementNode *n) override;
     std::optional<Value *> visit(ProgramProjectNode *n) override;
+
+    std::optional<Value *> visit(InitBoxNode *n) override;
 
     std::optional<Value *> visitCompilationUnit(CompilationUnitNode *n) { return visit(n); }
 
@@ -409,6 +412,33 @@ public:
                 VoidTy,
                 {Int32Ty},
                 false));
+    }
+
+    llvm::FunctionCallee get_address_map_create()
+    {
+        return module->getOrInsertFunction(
+            "_address_map_create",
+            llvm::FunctionType::get(
+                i8p,
+                {},
+                false));
+    }
+
+    llvm::Value *getNewAddressMap()
+    {
+        return builder->CreateCall(get_address_map_create(), {});
+    }
+
+    void deleteAddressMap(llvm::Value *val)
+    {
+        builder->CreateCall(
+            module->getOrInsertFunction(
+                "_address_map_delete",
+                llvm::FunctionType::get(
+                    VoidTy,
+                    {i8p},
+                    false)),
+            val);
     }
 
     Value *correctSumAssignment(const TypeSum *sum, Value *original)

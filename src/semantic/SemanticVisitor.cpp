@@ -397,6 +397,34 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString());
 }
 
+std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::InitBoxContext *ctx)
+{
+    const Type *storeType = any2Type(ctx->ty->accept(this));
+
+    // TODO: METHODIZE WITH INVOKE AND INIT PRODUCT?
+    std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+    {
+        (*e)->addError(ctx->expr->getStart(), "Unable to generate expression in init box.");
+        return *e;
+    }
+
+    TypedNode *tn = std::get<TypedNode *>(opt);
+
+    const Type *providedType = tn->getType();
+
+    if (providedType->isNotSubtype(storeType))
+    {
+        std::ostringstream errorMsg;
+        errorMsg << "Initialize box expected " << storeType->toString() << ", but got " << providedType->toString() << ".";
+
+        return errorHandler.addError(ctx->getStart(), errorMsg.str());
+    }
+
+    return new InitBoxNode(new TypeBox(storeType), tn, ctx->getStart());
+}
+
 std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ArrayAccessContext *ctx, bool is_rvalue)
 {
     /*
@@ -406,7 +434,7 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->index->getStart(), "Unable array access index.");
+        (*e)->addError(ctx->index->getStart(), "Unable to typecheck array access index.");
         return *e;
     }
 
@@ -445,12 +473,16 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return errorHandler.addError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->field->getText() + " : " + field->getType()->toString());
 }
 
-std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
+std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LValueContext *ctx)
 {
     // Check if we are a var or an array
     if (ctx->var)
     {
         return TNVariantCast<FieldAccessNode>(visitCtx(ctx->var, false));
+    }
+    else if(ctx->deref)
+    {
+        return TNVariantCast<DerefBoxNode>(visitCtx(ctx->deref, false));
     }
 
     /*
@@ -802,6 +834,30 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
         }
     }
     return new FieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
+}
+
+//FIXME: BLOCK BOXES FROM CONTAINING CHANNELS
+
+std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DereferenceExprContext *ctx, bool is_rvalue)
+{
+    std::variant<TypedNode *, ErrorChain *> exprOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
+
+    // Determine the type of the expression we are visiting
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
+    {
+        (*e)->addError(ctx->expr->getStart(), "Unable to typecheck dereference expression.");
+        return *e;
+    }
+
+    TypedNode *expr = std::get<TypedNode *>(exprOpt);
+
+    const Type *exprType = expr->getType();
+    if (const TypeBox * box = dynamic_cast<const TypeBox*>(exprType))
+    {
+        return new DerefBoxNode(box, expr, is_rvalue, ctx->getStart());
+    }
+
+    return errorHandler.addError(ctx->getStart(), "Dereference expected Box<T> but got " + exprType->toString());
 }
 
 // Passthrough to expression
@@ -1721,6 +1777,12 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ChannelTypeContext *ctx)
     return new TypeChannel(proto);
 }
 
+const Type *SemanticVisitor::visitCtx(WPLParser::BoxTypeContext *ctx)
+{
+    const Type *inner = any2Type(ctx->ty->accept(this));
+    return new TypeBox(inner);
+}
+
 const Type *SemanticVisitor::visitCtx(WPLParser::ProgramTypeContext *ctx)
 {
     const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
@@ -1842,7 +1904,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
             ctx->protoAlternative(),
             restDat,
             false,
-            [this, savedRest, channel, sym](WPLParser::ProtoAlternativeContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+            [this, savedRest, channel](WPLParser::ProtoAlternativeContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
                 const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
 

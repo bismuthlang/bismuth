@@ -25,9 +25,15 @@ inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   
 invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr)  inv_args+;
 
 fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  ;
+dereferenceExpr     : MULTIPLY expr=expression                  ;
+
 //Helps allow us to use VARIABLE or arrayAccess and not other expressions (such as for assignments)
 arrayAccess         : field=fieldAccessExpr '[' index=expression ']'; 
-arrayOrVar          : var=fieldAccessExpr | array=arrayAccess  ; //FIXME: SHOULD BE FIELD ACCESS FOR VAR
+
+lValue              : deref=dereferenceExpr
+                    | var=fieldAccessExpr 
+                    | array=arrayAccess  
+                    ;
 
 /*
  * Expressions return values. These can be: 
@@ -57,10 +63,12 @@ expression          : LPAR ex=expression RPAR                       # ParenExpr
                     | left=expression op=(PLUS | MINUS) right=expression      # BinaryArithExpr
                     | left=expression op=(LESS | LESS_EQ | GREATER | GREATER_EQ) right=expression # BinaryRelExpr 
                     | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression # EqExpr
-                    | exprs+=expression (AND exprs+=expression)+     # LogAndExpr 
-                    | exprs+=expression (OR  exprs+=expression)+     # LogOrExpr
+                    | exprs+=expression (AND exprs+=expression)+    # LogAndExpr 
+                    | exprs+=expression (OR  exprs+=expression)+    # LogOrExpr
                     | call=invocation                               # CallExpr
                     | v=VARIABLE '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')' # InitProduct
+                    | 'Box'     LESS ty=type GREATER '::init' '(' expr=expression ')'           # InitBox
+                    | dereferenceExpr                               # Deref
                     | arrayAccess  # ArrayAccessExpr
                     | booleanConst # BConstExpr 
                     | i=INTEGER    # IConstExpr
@@ -133,24 +141,24 @@ assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
  * 10. Return statements
  * 11. Block statements. 
  */
-statement           : defineProc                                                            # ProgDef 
-                    | defineFunc                                                            # FuncDef
-                    | <assoc=right> to=arrayOrVar ASSIGN a=expression ';'                   # AssignStatement 
-                    | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'   # VarDeclStatement
-                    | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ConditionalStatement
-                    | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                       # SelectStatement     
-                    | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*         # MatchStatement      
+statement           : defineProc                                              # ProgDef 
+                    | defineFunc                                              # FuncDef
+                    | <assoc=right> to=lValue ASSIGN a=expression ';'         # AssignStatement 
+                    | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'     # VarDeclStatement
+                    | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                # ConditionalStatement
+                    | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                            # SelectStatement     
+                    | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*              # MatchStatement      
                     | call=invocation  ';'?     # CallStatement 
                     | RETURN expression? ';'    # ReturnStatement 
                     | EXIT                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
                     | block                     # BlockStatement
-                    | channel=VARIABLE '.send' '(' expr=expression ')' ';'?  # ProgramSend
+                    | channel=VARIABLE '.send' '(' expr=expression ')' ';'?   # ProgramSend
                     | WHILE check=condition block                                                       # ProgramLoop
                     | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*      # ProgramCase  
                     | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                              # ProgramCase   
                     | channel=VARIABLE LBRC sel=protocol RBRC                                                                   # ProgramProject
-                    | 'more' '(' channel=VARIABLE ')'   ';'?                # ProgramContract 
-                    | 'weaken' '(' channel=VARIABLE ')' ';'?                # ProgramWeaken
+                    | 'more' '(' channel=VARIABLE ')'   ';'?                  # ProgramContract 
+                    | 'weaken' '(' channel=VARIABLE ')' ';'?                  # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                 # ProgramAccept
                     ; 
                     
@@ -215,6 +223,7 @@ type            :    ty=type LBRC len=INTEGER RBRC                              
                 |    LPAR type (PLUS type)+ RPAR                                            # SumType 
                 |    'Channel' LESS proto=protocol GREATER                                  # ChannelType
                 |    'Program' LESS proto=protocol GREATER                                  # ProgramType
+                |    'Box'     LESS ty=type GREATER                                         # BoxType
                 |    VARIABLE                                                               # CustomType
                 ;
 
