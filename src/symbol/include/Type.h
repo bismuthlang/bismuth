@@ -1990,7 +1990,6 @@ public:
 
                     llvm::Value * loaded = builder->CreateLoad(eleType->getLLVMType(M) , memLoc);
 
-                    // FIXME: IMPL
                     llvm::Value *hasValPtr = builder->CreateCall(
                         M->getOrInsertFunction(
                             "_address_map_has",
@@ -2065,7 +2064,7 @@ public:
                     builder->CreateStore(phi, memLoc);
                     // v = casted2;
 
-                    builder->CreateCall(
+                    builder->CreateCall( //TODO: why here and not in just the case that we have to gen it?
                         M->getOrInsertFunction(
                             "_address_map_put",
                             llvm::FunctionType::get(
