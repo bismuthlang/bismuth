@@ -15,10 +15,11 @@ entry:
   %4 = bitcast i8* %3 to i32*
   %5 = load i32, i32* %4, align 4
   call void @free(i8* %3)
-  %6 = call i8* @malloc(i64 4)
-  store i32 %5, i8* %6, align 4
-  %7 = load i32, i32* %b, align 4
-  call void @WriteChannel(i32 %7, i8* %6)
+  %6 = call i8* @malloc(i32 4)
+  %7 = bitcast i8* %6 to i32*
+  store i32 %5, i32* %7, align 4
+  %8 = load i32, i32* %b, align 4
+  call void @WriteChannel(i32 %8, i8* %6)
   ret void
 }
 
@@ -33,10 +34,11 @@ entry:
   %4 = bitcast i8* %3 to i1*
   %5 = load i1, i1* %4, align 1
   call void @free(i8* %3)
-  %6 = call i8* @malloc(i64 1)
-  store i1 %5, i8* %6, align 1
-  %7 = load i32, i32* %b, align 4
-  call void @WriteChannel(i32 %7, i8* %6)
+  %6 = call i8* @malloc(i32 1)
+  %7 = bitcast i8* %6 to i1*
+  store i1 %5, i1* %7, align 1
+  %8 = load i32, i32* %b, align 4
+  call void @WriteChannel(i32 %8, i8* %6)
   ret void
 }
 
@@ -90,10 +92,11 @@ tagBranch2:                                       ; preds = %entry
 matchcont:                                        ; preds = %tagBranch2, %tagBranch1, %entry
   %21 = load i32, i32* %b, align 4
   call void @WriteProjection(i32 %21, i32 2)
-  %22 = call i8* @malloc(i64 4)
-  store i32 0, i8* %22, align 4
-  %23 = load i32, i32* %b, align 4
-  call void @WriteChannel(i32 %23, i8* %22)
+  %22 = call i8* @malloc(i32 4)
+  %23 = bitcast i8* %22 to i32*
+  store i32 0, i32* %23, align 4
+  %24 = load i32, i32* %b, align 4
+  call void @WriteChannel(i32 %24, i8* %22)
   ret void
 }
 
@@ -103,10 +106,11 @@ entry:
   store i32 %0, i32* %c, align 4
   %1 = load i32, i32* %c, align 4
   call void @WriteProjection(i32 %1, i32 1)
-  %2 = call i8* @malloc(i64 1)
-  store i1 false, i8* %2, align 1
-  %3 = load i32, i32* %c, align 4
-  call void @WriteChannel(i32 %3, i8* %2)
+  %2 = call i8* @malloc(i32 1)
+  %3 = bitcast i8* %2 to i1*
+  store i1 false, i1* %3, align 1
+  %4 = load i32, i32* %c, align 4
+  call void @WriteChannel(i32 %4, i8* %2)
   ret void
 }
 
@@ -159,19 +163,22 @@ entry:
   %linker = alloca i32, align 4
   store i32 %3, i32* %linker, align 4
   %l11 = load i32, i32* %l1, align 4
-  %4 = call i8* @malloc(i64 4)
-  store i32 %l11, i8* %4, align 4
-  %5 = load i32, i32* %linker, align 4
-  call void @WriteChannel(i32 %5, i8* %4)
+  %4 = call i8* @malloc(i32 4)
+  %5 = bitcast i8* %4 to i32*
+  store i32 %l11, i32* %5, align 4
+  %6 = load i32, i32* %linker, align 4
+  call void @WriteChannel(i32 %6, i8* %4)
   %l22 = load i32, i32* %l2, align 4
-  %6 = call i8* @malloc(i64 4)
-  store i32 %l22, i8* %6, align 4
-  %7 = load i32, i32* %linker, align 4
-  call void @WriteChannel(i32 %7, i8* %6)
-  %8 = call i8* @malloc(i64 4)
-  store i32 0, i8* %8, align 4
-  %9 = load i32, i32* %c, align 4
-  call void @WriteChannel(i32 %9, i8* %8)
+  %7 = call i8* @malloc(i32 4)
+  %8 = bitcast i8* %7 to i32*
+  store i32 %l22, i32* %8, align 4
+  %9 = load i32, i32* %linker, align 4
+  call void @WriteChannel(i32 %9, i8* %7)
+  %10 = call i8* @malloc(i32 4)
+  %11 = bitcast i8* %10 to i32*
+  store i32 0, i32* %11, align 4
+  %12 = load i32, i32* %c, align 4
+  call void @WriteChannel(i32 %12, i8* %10)
   ret void
 }
 

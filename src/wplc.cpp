@@ -57,7 +57,8 @@ enum CompileType
 {
   none,
   clang,
-  gcc
+  gcc,
+  clangll,
 };
 
 static llvm::cl::opt<CompileType>
@@ -66,7 +67,8 @@ static llvm::cl::opt<CompileType>
                 llvm::cl::values(
                     clEnumVal(none, "Will not generate an executable"),
                     clEnumVal(clang, "Will generate an executable using clang++"),
-                    clEnumVal(gcc, "Will generate an executable using g++")),
+                    clEnumVal(gcc, "Will generate an executable using g++"),
+                    clEnumVal(clangll, "Will generate an executable using clang++ on the .ll files (will still attempt to generate object files)")),
                 llvm::cl::init(none),
                 llvm::cl::cat(WPLCOptions));
 /**
@@ -355,6 +357,7 @@ int main(int argc, const char *argv[])
     switch (compileWith)
     {
     case clang:
+    case clangll:
       cmd << "clang++ ";
       break;
     case gcc:
@@ -364,9 +367,10 @@ int main(int argc, const char *argv[])
       return -1; // Not even possible
     }
 
+    std::string ext = compileWith == clangll ? ".ll " : ".o ";
     for (auto input : inputs)
     {
-      cmd << input.second << ".o ";
+      cmd << input.second << ext;
     }
 
     // cmd << "./runtime.o -no-pie ";

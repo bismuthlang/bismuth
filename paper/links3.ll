@@ -37,32 +37,36 @@ tagBranch1:                                       ; preds = %entry
   %14 = bitcast i8* %13 to i32*
   %15 = load i32, i32* %14, align 4
   call void @free(i8* %13)
-  %16 = call i8* @malloc(i64 4)
-  store i32 %15, i8* %16, align 4
-  %17 = load i32, i32* %b, align 4
-  call void @WriteChannel(i32 %17, i8* %16)
-  %18 = call i8* @malloc(i64 8)
-  store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @0, i32 0, i32 0), i8* %18, align 8
-  %19 = load i32, i32* %a, align 4
-  call void @WriteChannel(i32 %19, i8* %18)
+  %16 = call i8* @malloc(i32 4)
+  %17 = bitcast i8* %16 to i32*
+  store i32 %15, i32* %17, align 4
+  %18 = load i32, i32* %b, align 4
+  call void @WriteChannel(i32 %18, i8* %16)
+  %19 = call i8* @malloc(i32 8)
+  %20 = bitcast i8* %19 to i8**
+  store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @0, i32 0, i32 0), i8** %20, align 8
+  %21 = load i32, i32* %a, align 4
+  call void @WriteChannel(i32 %21, i8* %19)
   br label %matchcont
 
 tagBranch2:                                       ; preds = %entry
-  %20 = load i32, i32* %b, align 4
-  call void @WriteProjection(i32 %20, i32 1)
-  %21 = load i32, i32* %a, align 4
-  %22 = call i8* @ReadChannel(i32 %21)
-  %23 = bitcast i8* %22 to i1*
-  %24 = load i1, i1* %23, align 1
-  call void @free(i8* %22)
-  %25 = call i8* @malloc(i64 1)
-  store i1 %24, i8* %25, align 1
-  %26 = load i32, i32* %b, align 4
-  call void @WriteChannel(i32 %26, i8* %25)
-  %27 = call i8* @malloc(i64 8)
-  store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0), i8* %27, align 8
-  %28 = load i32, i32* %a, align 4
-  call void @WriteChannel(i32 %28, i8* %27)
+  %22 = load i32, i32* %b, align 4
+  call void @WriteProjection(i32 %22, i32 1)
+  %23 = load i32, i32* %a, align 4
+  %24 = call i8* @ReadChannel(i32 %23)
+  %25 = bitcast i8* %24 to i1*
+  %26 = load i1, i1* %25, align 1
+  call void @free(i8* %24)
+  %27 = call i8* @malloc(i32 1)
+  %28 = bitcast i8* %27 to i1*
+  store i1 %26, i1* %28, align 1
+  %29 = load i32, i32* %b, align 4
+  call void @WriteChannel(i32 %29, i8* %27)
+  %30 = call i8* @malloc(i32 8)
+  %31 = bitcast i8* %30 to i8**
+  store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0), i8** %31, align 8
+  %32 = load i32, i32* %a, align 4
+  call void @WriteChannel(i32 %32, i8* %30)
   br label %matchcont
 
 matchcont:                                        ; preds = %tagBranch2, %tagBranch1, %entry
@@ -75,17 +79,18 @@ entry:
   store i32 %0, i32* %c, align 4
   %1 = load i32, i32* %c, align 4
   call void @WriteProjection(i32 %1, i32 1)
-  %2 = call i8* @malloc(i64 1)
-  store i1 false, i8* %2, align 1
-  %3 = load i32, i32* %c, align 4
-  call void @WriteChannel(i32 %3, i8* %2)
+  %2 = call i8* @malloc(i32 1)
+  %3 = bitcast i8* %2 to i1*
+  store i1 false, i1* %3, align 1
   %4 = load i32, i32* %c, align 4
-  %5 = call i8* @ReadChannel(i32 %4)
-  %6 = bitcast i8* %5 to i8**
-  %7 = load i8*, i8** %6, align 8
-  call void @free(i8* %5)
+  call void @WriteChannel(i32 %4, i8* %2)
+  %5 = load i32, i32* %c, align 4
+  %6 = call i8* @ReadChannel(i32 %5)
+  %7 = bitcast i8* %6 to i8**
+  %8 = load i8*, i8** %7, align 8
+  call void @free(i8* %6)
   %xyz = alloca i8*, align 8
-  store i8* %7, i8** %xyz, align 8
+  store i8* %8, i8** %xyz, align 8
   ret void
 }
 
@@ -138,19 +143,22 @@ entry:
   %linker = alloca i32, align 4
   store i32 %3, i32* %linker, align 4
   %l11 = load i32, i32* %l1, align 4
-  %4 = call i8* @malloc(i64 4)
-  store i32 %l11, i8* %4, align 4
-  %5 = load i32, i32* %linker, align 4
-  call void @WriteChannel(i32 %5, i8* %4)
+  %4 = call i8* @malloc(i32 4)
+  %5 = bitcast i8* %4 to i32*
+  store i32 %l11, i32* %5, align 4
+  %6 = load i32, i32* %linker, align 4
+  call void @WriteChannel(i32 %6, i8* %4)
   %l22 = load i32, i32* %l2, align 4
-  %6 = call i8* @malloc(i64 4)
-  store i32 %l22, i8* %6, align 4
-  %7 = load i32, i32* %linker, align 4
-  call void @WriteChannel(i32 %7, i8* %6)
-  %8 = call i8* @malloc(i64 4)
-  store i32 0, i8* %8, align 4
-  %9 = load i32, i32* %c, align 4
-  call void @WriteChannel(i32 %9, i8* %8)
+  %7 = call i8* @malloc(i32 4)
+  %8 = bitcast i8* %7 to i32*
+  store i32 %l22, i32* %8, align 4
+  %9 = load i32, i32* %linker, align 4
+  call void @WriteChannel(i32 %9, i8* %7)
+  %10 = call i8* @malloc(i32 4)
+  %11 = bitcast i8* %10 to i32*
+  store i32 0, i32* %11, align 4
+  %12 = load i32, i32* %c, align 4
+  call void @WriteChannel(i32 %12, i8* %10)
   ret void
 }
 
