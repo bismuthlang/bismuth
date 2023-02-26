@@ -845,7 +845,7 @@ std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::
     // Determine the type of the expression we are visiting
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->expr->getStart(), "Unable to typecheck dereference expression.");
+        (*e)->addError(ctx->getStart(), "Unable to typecheck dereference expression.");
         return *e;
     }
 
