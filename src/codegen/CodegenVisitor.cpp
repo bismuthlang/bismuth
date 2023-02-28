@@ -10,91 +10,6 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
      *
      ***********************************/
 
-    {
-        // TODO: MAKE GET METHODS FOR THESE LIKE WE HAVE getWriteProjection
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    VoidTy,
-                    {Int32Ty,
-                     i8p},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "WriteChannel",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    i8p,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "ReadChannel",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    Int32Ty,
-                    {llvm::FunctionType::get(
-                         VoidTy,
-                         {Int32Ty},
-                         false)
-                         ->getPointerTo()},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "Execute",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    i8p,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "malloc",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    Int1Ty,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "ShouldLoop",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    VoidTy,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "ContractChannel",
-                module);
-        }
-
-        {
-            Function::Create(
-                llvm::FunctionType::get(
-                    VoidTy,
-                    {Int32Ty},
-                    false),
-                GlobalValue::ExternalLinkage,
-                "WeakenChannel",
-                module);
-        }
-    }
-
     /***********************************
      *
      *
@@ -188,7 +103,8 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     }
 
     Value *sumVal = optVal.value();
-    llvm::AllocaInst *SumPtr = builder->CreateAlloca(sumVal->getType());
+    std::cout << "106" << std::endl;
+    llvm::AllocaInst *SumPtr = CreateEntryBlockAlloc(sumVal->getType(), "");
     builder->CreateStore(sumVal, SumPtr);
 
     Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
@@ -222,7 +138,8 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
         llvm::Type *ty = localSym->type->getLLVMType(module);
 
         // Can skip global stuff
-        llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, localSym->getIdentifier());
+        std::cout << "141" << std::endl;
+        llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, localSym->getIdentifier());
         localSym->val = v;
         // varSymbol->val = v;
 
@@ -419,10 +336,14 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
 
     llvm::Type *recvType = n->ty->getLLVMType(module);
 
-    Value *valPtr = builder->CreateCall(module->getFunction("ReadChannel"), {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
-    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                                         // Cast the void* to the correct type ptr
+    Value *valPtr = builder->CreateCall(getReadChannel(), {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
+    Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                       // Cast the void* to the correct type ptr
 
-    return builder->CreateLoad(recvType, casted);
+    Value *ans = builder->CreateLoad(recvType, casted);
+
+    builder->CreateCall(getFree(), {valPtr}); // May leak depending on how GC works?
+
+    return ans;
 }
 
 std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
@@ -440,12 +361,12 @@ std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
     {
         llvm::Function *lambdaThread = static_cast<llvm::Function *>(fnVal);
 
-        Value *val = builder->CreateCall(module->getFunction("Execute"), {lambdaThread});
+        Value *val = builder->CreateCall(getExecute(), {lambdaThread});
         return val;
     }
     // TODO: REFACTOR, BOTH WITH THIS METHOD AND INVOCATION!
 
-    Value *val = builder->CreateCall(module->getFunction("Execute"), {fnVal});
+    Value *val = builder->CreateCall(getExecute(), {fnVal});
     return val;
 }
 
@@ -468,12 +389,36 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
         stoVal = correctSumAssignment(sum, stoVal);
     }
 
-    llvm::Function *mallocFn = module->getFunction("malloc"); // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
-    Value *v = builder->CreateCall(mallocFn, {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+    // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
 
-    builder->CreateStore(stoVal, v);
+    std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
+    {
+        if (n->lType->requiresDeepCopy())
+        {
+            Function *fn = n->lType->clone(module, builder);
+            if (fn == nullptr)
+            {
+                errorHandler.addError(n->getStart(), "Failed to generate clone fn for type: " + n->lType->toString());
+                return std::nullopt;
+            }
+            Value * addrMap = getNewAddressMap(); 
+            stoVal = builder->CreateCall(fn, {stoVal, addrMap}); // FIXME: NEED TO CREATE MAP!
+            deleteAddressMap(addrMap);
+            // return v;
+        }
 
-    Value *corrected = builder->CreateBitCast(v, i8p);
+        Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+        Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
+
+        builder->CreateStore(stoVal, casted);
+
+        return v;
+    }();
+
+    if (!v)
+        return std::nullopt; // Error handled already.
+
+    Value *corrected = builder->CreateBitCast(v.value(), i8p);
 
     if (!sym->val)
     {
@@ -483,7 +428,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     Value *chanVal = sym->val.value();
 
-    builder->CreateCall(module->getFunction("WriteChannel"), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
+    builder->CreateCall(getWriteChannel(), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return std::nullopt;
 }
 
@@ -499,7 +444,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
 
     Value *chanVal = sym->val.value();
 
-    builder->CreateCall(module->getFunction("ContractChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(getContractChannel(), {builder->CreateLoad(Int32Ty, chanVal)});
 
     return std::nullopt;
 }
@@ -516,7 +461,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
 
     Value *chanVal = sym->val.value();
 
-    builder->CreateCall(module->getFunction("WeakenChannel"), {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(getWeakenChannel(), {builder->CreateLoad(Int32Ty, chanVal)});
 
     return std::nullopt;
 }
@@ -535,7 +480,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
 
     Value *chanVal = sym->val.value();
 
-    llvm::Function *checkFn = module->getFunction("ShouldLoop");
+    auto checkFn = getShouldLoop();
     Value *check = builder->CreateCall(checkFn, {builder->CreateLoad(Int32Ty, chanVal)});
 
     auto parent = builder->GetInsertBlock()->getParent();
@@ -592,7 +537,7 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
     const TypeStruct *product = n->product;
 
     llvm::Type *ty = product->getLLVMType(module);
-    llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, "");
+    llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, "");
     {
         unsigned i = 0;
         std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
@@ -616,6 +561,33 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
     return loaded;
 }
 
+std::optional<Value *> CodegenVisitor::visit(InitBoxNode *n)
+{
+    std::optional<Value *> valOpt = AcceptType(this, n->expr);
+    if (!valOpt)
+    {
+        errorHandler.addError(n->getStart(), "Failed to generate code");
+        return std::nullopt;
+    }
+
+    Value *stoVal = valOpt.value();
+
+    const TypeBox *box = n->boxType;
+
+    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(box->getInnerType()))
+    {
+        stoVal = correctSumAssignment(sum, stoVal);
+    }
+
+    Value *v = builder->CreateCall(getGCMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+    Value *casted = builder->CreateBitCast(v, box->getLLVMType(module));
+
+    builder->CreateStore(stoVal, casted);
+
+    // Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
+    return casted;
+}
+
 std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
 {
     std::optional<Value *> index = AcceptType(this, n->indexExpr);
@@ -633,22 +605,7 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
         return std::nullopt;
     }
 
-    /*
-    Value *baseValue = arrayPtr.value();
-    llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
-    builder->CreateStore(baseValue, v);
-
-    auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
-    if (n->is_rvalue)
-    return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
-    return ptr;
-    */
-
     Value *v = arrayPtr.value();
-
-    // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
-    // module->dump();
-    // builder->CreateStore(baseValue, v);
 
     auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
 
@@ -1003,6 +960,23 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
     return valPtr;
 }
 
+std::optional<Value *> CodegenVisitor::visit(DerefBoxNode *n)
+{
+    std::optional<Value *> baseOpt = AcceptType(this, n->expr);
+
+    if (!baseOpt)
+    {
+        errorHandler.addError(n->getStart(), "985 - Failed to generate deref expr: " + n->expr->toString());
+        return std::nullopt;
+    }
+
+    Value *ptrVal = baseOpt.value();
+    return n->is_rvalue ? builder->CreateLoad(ptrVal->getType()->getPointerElementType(), ptrVal) : ptrVal; 
+
+// return loaded; 
+    // return n->is_rvalue ? builder->CreateLoad(loaded->getType()->getPointerElementType(), loaded) : loaded; 
+}
+
 std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
 {
     // Generate code for LHS and RHS
@@ -1222,7 +1196,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
             else
             {
                 //  As this is a local var we can just create an allocation for it
-                llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, varSymbol->getIdentifier());
+                llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, varSymbol->getIdentifier());
                 varSymbol->val = v;
 
                 // Similarly, if we have an expression for the local var, we can store it. Otherwise, we can leave it undefined.
@@ -1568,8 +1542,8 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 
         std::string argName = param->getIdentifier();
 
-        // Create an allocation for the argumentr
-        llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
+        // Create an allocation for the argument
+        llvm::AllocaInst *v = CreateEntryBlockAlloc(type, argName);
 
         param->val = v;
 

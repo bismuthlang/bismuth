@@ -1,0 +1,53 @@
+extern Unit func printf(str s, ...);
+extern int func GC_get_heap_size();  # FIXME: NOT GARBAGE COLLECTING HEAP PROPERLY!
+
+# Two Int Box Box
+define struct TIBB {
+  Box<Box<int>> b1; 
+  Box<Box<int>> b2; 
+}
+
+
+define func printTIBB(str name, TIBB b) {
+  # printf("%s = {b1 : %u, b2 : %u}\n", name, **b.b1, **b.b2);
+  return; 
+}
+
+define foo :: c : Channel<+TIBB;-int;+int> = {
+  var iPtr := c.recv(); 
+  printTIBB("iPtr (orig/5)", iPtr);
+  **iPtr.b1 := 7;
+  printTIBB("iPtr (mod/7)", iPtr);
+  c.send(-1);
+  var t := c.recv(); 
+  printTIBB("iPtr (mod/7)", iPtr);
+}
+
+define program :: c : Channel<-int> = {
+  int ctr := 0; 
+  Box<Box<int>> shared;
+  TIBB tibb; 
+
+  while true {
+    var a := exec foo; 
+
+    shared := Box<Box<int>>::init(Box<int>::init(5));
+    tibb := TIBB::init(shared, Box<Box<int>>::init(Box<int>::init(6)));
+
+    tibb.b1 := shared; # FIXME: THIS DOESNT WORK WHEN TIBB IS VAR
+    
+    printTIBB("b (orig/5;6)", tibb);
+    a.send(tibb)
+    var u := a.recv(); 
+    printTIBB("b (orig/5;6)", tibb);
+    # **shared = 9; 
+    *shared := Box<int>::init(9); 
+    printTIBB("b (orig/9;6)", tibb);
+    a.send(-1)
+    ctr := ctr + 1; 
+    printf("%u\n", GC_get_heap_size());
+  }
+
+
+  c.send(0);
+}

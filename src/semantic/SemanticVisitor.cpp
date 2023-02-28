@@ -30,7 +30,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
                 Symbol *funcSymbol = new Symbol(id, funcType, true, true);
                 // FIXME: test name collisions with externs & across all defs
                 stmgr->addSymbol(funcSymbol);
-                bindings->bind(fnCtx->defineProc(), funcSymbol);
+                symBindings->bind(fnCtx->defineProc(), funcSymbol);
             }
             else
             {
@@ -48,7 +48,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
             Symbol *funcSym = std::get<Symbol *>(funcSymOpt);
 
-            bindings->bind(fnCtx->defineFunc(), funcSym);
+            symBindings->bind(fnCtx->defineFunc(), funcSym);
         }
         else
         {
@@ -397,6 +397,34 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString());
 }
 
+std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::InitBoxContext *ctx)
+{
+    const Type *storeType = any2Type(ctx->ty->accept(this));
+
+    // TODO: METHODIZE WITH INVOKE AND INIT PRODUCT?
+    std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+    {
+        (*e)->addError(ctx->expr->getStart(), "Unable to generate expression in init box.");
+        return *e;
+    }
+
+    TypedNode *tn = std::get<TypedNode *>(opt);
+
+    const Type *providedType = tn->getType();
+
+    if (providedType->isNotSubtype(storeType))
+    {
+        std::ostringstream errorMsg;
+        errorMsg << "Initialize box expected " << storeType->toString() << ", but got " << providedType->toString() << ".";
+
+        return errorHandler.addError(ctx->getStart(), errorMsg.str());
+    }
+
+    return new InitBoxNode(new TypeBox(storeType), tn, ctx->getStart());
+}
+
 std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ArrayAccessContext *ctx, bool is_rvalue)
 {
     /*
@@ -406,7 +434,7 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->index->getStart(), "Unable array access index.");
+        (*e)->addError(ctx->index->getStart(), "Unable to typecheck array access index.");
         return *e;
     }
 
@@ -445,12 +473,16 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return errorHandler.addError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->field->getText() + " : " + field->getType()->toString());
 }
 
-std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ArrayOrVarContext *ctx)
+std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LValueContext *ctx)
 {
     // Check if we are a var or an array
     if (ctx->var)
     {
         return TNVariantCast<FieldAccessNode>(visitCtx(ctx->var, false));
+    }
+    else if(ctx->deref)
+    {
+        return TNVariantCast<DerefBoxNode>(visitCtx(ctx->deref, false));
     }
 
     /*
@@ -804,6 +836,30 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return new FieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
 }
 
+//FIXME: BLOCK BOXES FROM CONTAINING CHANNELS
+
+std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DereferenceExprContext *ctx, bool is_rvalue)
+{
+    std::variant<TypedNode *, ErrorChain *> exprOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
+
+    // Determine the type of the expression we are visiting
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Unable to typecheck dereference expression.");
+        return *e;
+    }
+
+    TypedNode *expr = std::get<TypedNode *>(exprOpt);
+
+    const Type *exprType = expr->getType();
+    if (const TypeBox * box = dynamic_cast<const TypeBox*>(exprType))
+    {
+        return new DerefBoxNode(box, expr, is_rvalue, ctx->getStart());
+    }
+
+    return errorHandler.addError(ctx->getStart(), "Dereference expected Box<T> but got " + exprType->toString());
+}
+
 // Passthrough to expression
 std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ParenExprContext *ctx)
 {
@@ -1119,10 +1175,20 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
         std::set<const Type *> foundCaseTypes = {};
         // TODO: Maybe make so these can return values?
 
+        DeepRestData *restDat = new DeepRestData(ctx->rest);
+        std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+        rest->push_front(restDat);
+
+        // bindRestData(ctx, restDat);
+        for (auto b : ctx->cases)
+        {
+            bindRestData(b->eval, rest);
+        }
+
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::MatchAlternativeContext>(
             ctx,
             ctx->cases,
-            ctx->rest,
+            restDat, // ctx->rest,
             false,
             [this, ctx, &cases, sumType, &foundCaseTypes](WPLParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
             {
@@ -1147,7 +1213,8 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
                 stmgr->addSymbol(local);
 
                 std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, altCtx->eval->accept(this));
-                this->safeExitScope(altCtx);
+                // this->safeExitScope(altCtx);
+                stmgr->exitScope();
 
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
                 {
@@ -1186,7 +1253,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
-        return new MatchStatementNode(sumType, cond, cases, dat.post, ctx->getStart());
+        return new MatchStatementNode(sumType, cond, cases, restDat->post, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString());
@@ -1253,10 +1320,26 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
     if (ctx->falseBlk)
         blksCtx.push_back(ctx->falseBlk);
 
+    DeepRestData *restDat = new DeepRestData(ctx->rest);
+    std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+    rest->push_front(restDat); // FIXME: NOTE HOW REVERSED
+
+    for (auto b : blksCtx)
+    {
+        for (auto c : b->stmts)
+        {
+            if (dynamic_cast<WPLParser::ConditionalStatementContext *>(c) || dynamic_cast<WPLParser::SelectStatementContext *>(c) || dynamic_cast<WPLParser::MatchStatementContext *>(c) || dynamic_cast<WPLParser::ProgramCaseContext *>(c))
+            {
+                bindRestData(c, rest);
+                // restBindings->bind(c, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
+            }
+        }
+    }
+
     std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::BlockContext>(
         ctx,
         blksCtx,
-        ctx->rest,
+        restDat, // ctx->rest,
         blksCtx.size() == 1,
         [this](WPLParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
         {
@@ -1270,10 +1353,10 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
 
     if (ctx->falseBlk)
     {
-        return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post, (BlockNode *)dat.cases.at(1));
+        return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), restDat->post, (BlockNode *)dat.cases.at(1));
     }
 
-    return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), dat.post);
+    return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), restDat->post);
 }
 
 std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
@@ -1284,6 +1367,23 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
         return errorHandler.addError(ctx->getStart(), "Select statement expected at least one alternative, but was given 0!");
     }
 
+    DeepRestData *restDat = new DeepRestData(ctx->rest);
+    std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+    rest->push_front(restDat); // FIXME: NOTE HOW REVERSED
+
+    // bindRestData(ctx, restDat);
+    for (auto b : ctx->cases)
+    {
+        // for (auto c : b->eval)
+        // {
+        if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
+        {
+            bindRestData(b->eval, rest);
+            // restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
+        }
+        // }
+    }
+
     unsigned int case_count = 0;
 
     std::vector<SelectAlternativeNode *> alts;
@@ -1291,7 +1391,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::SelectAlternativeContext>(
         ctx,
         ctx->cases,
-        ctx->rest,
+        restDat, // ctx->rest,
         true,
         [this, ctx, &case_count, &alts](WPLParser::SelectAlternativeContext *e) -> std::variant<TypedNode *, ErrorChain *>
         {
@@ -1342,9 +1442,9 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
                 return *e;
             }
 
-            SelectAlternativeNode * ans = new SelectAlternativeNode(check, std::get<TypedNode *>(evalOpt), ctx->getStart());
+            SelectAlternativeNode *ans = new SelectAlternativeNode(check, std::get<TypedNode *>(evalOpt), ctx->getStart());
             alts.push_back(ans);
-            return ans; //FIXME: DONT DO PUSH BACK AND RETURN!
+            return ans; // FIXME: DONT DO PUSH BACK AND RETURN!
         });
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
@@ -1354,7 +1454,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     }
 
     ConditionalData dat = std::get<ConditionalData>(branchOpt);
-    return new SelectStatementNode(ctx->getStart(), alts, dat.post);
+    return new SelectStatementNode(ctx->getStart(), alts, restDat->post);
 }
 
 std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
@@ -1677,6 +1777,12 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ChannelTypeContext *ctx)
     return new TypeChannel(proto);
 }
 
+const Type *SemanticVisitor::visitCtx(WPLParser::BoxTypeContext *ctx)
+{
+    const Type *inner = any2Type(ctx->ty->accept(this));
+    return new TypeBox(inner);
+}
+
 const Type *SemanticVisitor::visitCtx(WPLParser::ProgramTypeContext *ctx)
 {
     const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
@@ -1757,6 +1863,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
     }
 
     Symbol *sym = opt.value().second;
+    // stmgr->removeSymbol(sym);
 
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
@@ -1772,23 +1879,38 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
             return errorHandler.addError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
         }
 
+        DeepRestData *restDat = new DeepRestData(ctx->rest);
+        std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+        rest->push_front(restDat); // FIXME: NOTE HOW REVERSED
+
+        // bindRestData(ctx, restDat);
+        for (auto b : ctx->protoAlternative())
+        {
+            // for (auto c : b->eval)
+            // {
+            if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
+            {
+                bindRestData(b->eval, rest);
+                // restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
+            }
+            // }
+        }
+
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
+        // FIXME: TEST PROTOCOLS THAT HAVE STUFF FOLLOWING CHOICE!
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::ProtoAlternativeContext>(
             ctx,
             ctx->protoAlternative(),
-            ctx->rest,
+            restDat,
             false,
-            [this, savedRest, channel, sym](WPLParser::ProtoAlternativeContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+            [this, savedRest, channel](WPLParser::ProtoAlternativeContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
                 const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
 
                 proto->append(savedRest->getCopy());
                 channel->setProtocol(proto);
 
-                stmgr->addSymbol(sym);
-
-                stmgr->enterScope(StopType::NONE); // FIXME: IS THIS NEEDED?
                 std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
                 return optEval;
             });
@@ -1801,7 +1923,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
-        return new ChannelCaseStatementNode(sym, dat.cases, dat.post, ctx->getStart());
+        return new ChannelCaseStatementNode(sym, dat.cases, restDat->post, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot case on non-channel: " + id);

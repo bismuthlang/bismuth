@@ -114,7 +114,7 @@ public:
     }
 
     // FIXME: DO BETTER
-    std::vector<Symbol *> getRemainingLinearTypes()
+    std::vector<Symbol *> getRemainingLinearTypes(bool include_complete=false)
     {
         // Create an answer vector
         std::vector<Symbol *> ans;
@@ -124,7 +124,7 @@ public:
         {
             if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
             {
-                if (!inf->getProtocol()->isComplete() && !inf->getProtocol()->isGuarded())
+                if ((include_complete || !inf->getProtocol()->isComplete()) && !inf->getProtocol()->isGuarded())
                     ans.push_back(item.second);
             }
         }

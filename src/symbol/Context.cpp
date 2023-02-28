@@ -117,7 +117,7 @@ std::optional<Symbol *> Context::lookup(std::string id)
     return std::nullopt;
 }
 
-std::vector<Symbol *> Context::getAvaliableLinears() //TODO: DO BETTER
+std::vector<Symbol *> Context::getAvaliableLinears(bool include_complete) //TODO: DO BETTER
 {
     std::vector<Symbol *> ans;
 
@@ -129,7 +129,7 @@ std::vector<Symbol *> Context::getAvaliableLinears() //TODO: DO BETTER
     {
         Scope *scope = opt.value();
 
-        auto toAdd = scope->getRemainingLinearTypes();
+        auto toAdd = scope->getRemainingLinearTypes(include_complete);
         ans.insert(ans.end(), toAdd.begin(), toAdd.end());
 
         depth--;

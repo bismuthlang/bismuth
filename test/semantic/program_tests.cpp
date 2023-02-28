@@ -22,8 +22,7 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
 
   // if(sv->hasErrors(0))
@@ -46,8 +45,8 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   STManager *stm = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stm);
 //   sv->visitCompilationUnit(tree);
 
 //   // if(sv->hasErrors(0))
@@ -71,8 +70,8 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   STManager *stm = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stm);
 //   sv->visitCompilationUnit(tree);
 
 //   // if(sv->hasErrors(0))
@@ -98,8 +97,8 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   STManager *stm = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stm);
 //   sv->visitCompilationUnit(tree);
 
 //   // if(sv->hasErrors(0))
@@ -122,8 +121,7 @@ TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]"
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
 
   // if(sv->hasErrors(0))
@@ -146,8 +144,8 @@ TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don'
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
 
   // if(sv->hasErrors(0))
@@ -170,8 +168,8 @@ TEST_CASE("programs/test15 - No array equalities", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
 
   // if(sv->hasErrors(0))
@@ -201,7 +199,7 @@ TEST_CASE("Comment EOF", "[semantic]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
 
@@ -221,8 +219,8 @@ TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 }
@@ -240,8 +238,8 @@ TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 }
@@ -259,8 +257,8 @@ TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 }
@@ -278,8 +276,8 @@ TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 }
@@ -297,8 +295,8 @@ TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 }
@@ -316,8 +314,8 @@ TEST_CASE("programs/test16d - chain var", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 }
@@ -335,8 +333,8 @@ TEST_CASE("programs/test16e - chain var 2", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 
@@ -356,8 +354,8 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(0)); // FIXME: SHOULD WE COMPILE THESE?
 }
@@ -375,8 +373,8 @@ TEST_CASE("programs/test17 - var inf in decl", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(0));
 
@@ -406,7 +404,7 @@ TEST_CASE("Test program() should return int warning", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   CHECK_FALSE(sv->hasErrors(ERROR));
@@ -435,7 +433,7 @@ TEST_CASE("Test program() should not have parameters warning", "[semantic][condi
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   CHECK_FALSE(sv->hasErrors(ERROR));
@@ -470,8 +468,8 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -508,8 +506,8 @@ TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -553,8 +551,8 @@ define func program (int idk) : int { # FIXME: MAKE THROW ERROR B/C THIS MAKES M
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -584,7 +582,7 @@ TEST_CASE("Infer In return", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -615,8 +613,8 @@ TEST_CASE("Infer In return", "[semantic][program]")
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -653,8 +651,8 @@ TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -683,8 +681,8 @@ TEST_CASE("Invoke on Non-Invokable (str)", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -715,8 +713,8 @@ TEST_CASE("Invoke on Non-Invokable (int)", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -752,8 +750,8 @@ TEST_CASE("Redeclaration of function 1", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -789,8 +787,8 @@ TEST_CASE("Redeclaration of program 1", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -825,8 +823,8 @@ TEST_CASE("Redeclaration of program 1", "[semantic][program]")
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -861,8 +859,8 @@ TEST_CASE("Redeclaration of function 3", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -898,8 +896,8 @@ TEST_CASE("Redeclaration of program 3", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -935,9 +933,9 @@ TEST_CASE("Redeclaration of function 4", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -977,9 +975,9 @@ TEST_CASE("Redeclaration of program 4", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1013,9 +1011,9 @@ TEST_CASE("Redeclaration in extern", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1057,8 +1055,8 @@ define func foo (str a) {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1098,8 +1096,8 @@ define func foo (str a) {
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -1145,8 +1143,8 @@ define foo :: c : Channel<+int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1194,8 +1192,8 @@ define func foo (str a, int b) : int {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1236,8 +1234,8 @@ define func foo (str a, int b) : int {
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -1278,8 +1276,8 @@ define func foo (str a, int b) : int {
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -1309,8 +1307,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1340,8 +1338,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1371,8 +1369,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1402,8 +1400,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1433,8 +1431,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1464,8 +1462,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1495,8 +1493,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1527,8 +1525,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1559,8 +1557,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1591,8 +1589,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1623,8 +1621,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1654,8 +1652,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1685,8 +1683,8 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1715,9 +1713,9 @@ TEST_CASE("Assign to undefined", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1750,9 +1748,9 @@ TEST_CASE("Proc Returning", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1785,9 +1783,9 @@ TEST_CASE("Function return nothing", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1815,9 +1813,9 @@ TEST_CASE("Function return wrong type", "[semantic][program]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1852,9 +1850,9 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program]
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1888,9 +1886,9 @@ TEST_CASE("Nested Local Program - Disallow Local vars 1", "[semantic][program][l
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -1925,9 +1923,9 @@ TEST_CASE("Nested Local Program - Disallow Local vars 1", "[semantic][program][l
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
+//   
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -1964,9 +1962,9 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2f", "[semantic][pr
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -2004,9 +2002,9 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2p", "[semantic][pr
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -2045,9 +2043,9 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][pr
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   // sv->visitCompilationUnit(tree);
   // REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -2089,9 +2087,9 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
@@ -2137,9 +2135,9 @@ TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
@@ -2184,9 +2182,9 @@ TEST_CASE("Redeclaration - p2f", "[semantic][program][local-function]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
@@ -2232,9 +2230,9 @@ TEST_CASE("Redeclaration - f2p", "[semantic][program][local-function]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
@@ -2279,9 +2277,9 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
@@ -2320,9 +2318,9 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
+//   
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -2359,9 +2357,9 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
+//   
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -2399,9 +2397,9 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
+//   
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -2454,9 +2452,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -2509,9 +2507,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -2541,9 +2539,9 @@ define enum Inner {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -2573,9 +2571,9 @@ define struct Inner {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -2605,9 +2603,9 @@ define struct Inner {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -2639,9 +2637,9 @@ define struct Inner {
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
+//   
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -2667,9 +2665,9 @@ define struct Inner {
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
+//   
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -2697,9 +2695,9 @@ define struct Inner {
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   PropertyManager *pm = new PropertyManager();
+//   
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(ERROR));
@@ -2748,9 +2746,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -2779,9 +2777,9 @@ define foo :: c : Channel<+int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -2810,9 +2808,9 @@ define foo :: c : Channel<+int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -2849,9 +2847,9 @@ define bar :: c : Channel<?(?-int);+int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -2885,9 +2883,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -2921,9 +2919,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -2994,9 +2992,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -3066,9 +3064,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -3138,9 +3136,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -3209,9 +3207,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -3280,9 +3278,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -3317,9 +3315,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -3352,9 +3350,9 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  PropertyManager *pm = new PropertyManager();
+  
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, pm);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
@@ -3381,8 +3379,8 @@ define program :: c : Channel<-int> = {
 //   REQUIRE(syntaxListener->hasErrors(0));
 
 //   STManager *stm = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stm);
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(0));
 
@@ -3406,8 +3404,8 @@ define program :: c : Channel<-int> = {
 //   REQUIRE(syntaxListener->hasErrors(0));
 
 //   STManager *stm = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stm);
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(0));
 //   // std::cout << sv->getErrors() << std::endl;
@@ -3430,8 +3428,8 @@ TEST_CASE("B Level Negative Test #1", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 }
@@ -3449,8 +3447,8 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 }
@@ -3471,8 +3469,8 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   STManager *stm = new STManager();
-//   PropertyManager *pm = new PropertyManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+//   
+//   SemanticVisitor *sv = new SemanticVisitor(stm);
 //   sv->visitCompilationUnit(tree);
 //   REQUIRE(sv->hasErrors(0));
 // }
@@ -3490,8 +3488,8 @@ TEST_CASE("A Level Negative Test #2", "[semantic]")
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  PropertyManager *pm = new PropertyManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, pm);
+  
+  SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(0));
 }

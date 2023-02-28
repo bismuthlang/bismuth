@@ -15,10 +15,25 @@ extern int func getIntArg(int i);
 # return result;
 # }
 
-define program :: c : Channel<-int> = {
+define program :: c : Channel<-int> = { # FIXME: THIS TEST DOESNT WORK!
   var i;
   var result;
   i := getIntArg(1);
+  # select { # FIXME: TEST THIS!
+  #   i < 0: {
+  #     result := -1;
+  #   }
+  #   true: {
+  #     select {
+  #       i > 0: {
+  #         result := 1;
+  #       }
+  #       true: {
+  #         result := 0; 
+  #       }
+  #     }
+  #   }
+  # }
   if i < 0 {
     result := -1;
   } else {

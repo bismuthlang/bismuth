@@ -13,7 +13,6 @@
 #include "WPLBaseVisitor.h"
 #include "CompilerFlags.h"
 
-// #include "PropertyManager.h"
 #include "WPLErrorHandler.h"
 #include "SemanticVisitor.h"
 #include "llvm/ADT/StringRef.h"
@@ -76,6 +75,7 @@ public:
         // LLVM Types
         VoidTy = llvm::Type::getVoidTy(module->getContext());
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
+        Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
         Int8Ty = llvm::Type::getInt8Ty(module->getContext());
         Int32Zero = ConstantInt::get(Int32Ty, 0, true);
@@ -107,6 +107,7 @@ public:
     std::optional<Value *> visit(ExternNode *n) override;
     std::optional<Value *> visit(InvocationNode *n) override;
     std::optional<Value *> visit(FieldAccessNode *n) override;
+    std::optional<Value *> visit(DerefBoxNode *n) override;
     std::optional<Value *> visit(ArrayAccessNode *n) override;
     std::optional<Value *> visit(AssignNode *n) override;
     std::optional<Value *> visit(BinaryRelNode *n) override;
@@ -124,6 +125,8 @@ public:
     std::optional<Value *> visit(ExitNode *n) override;
     std::optional<Value *> visit(ChannelCaseStatementNode *n) override;
     std::optional<Value *> visit(ProgramProjectNode *n) override;
+
+    std::optional<Value *> visit(InitBoxNode *n) override;
 
     std::optional<Value *> visitCompilationUnit(CompilationUnitNode *n) { return visit(n); }
 
@@ -161,7 +164,8 @@ public:
         builder->SetInsertPoint(bBlk);
 
         // Bind all of the arguments
-        llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
+        std::cout << "167" << std::endl;
+        llvm::AllocaInst *v = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
         n->channelSymbol->val = v;
 
         builder->CreateStore((fn->args()).begin(), v);
@@ -309,6 +313,135 @@ public:
                                                false));
     }
 
+    llvm::FunctionCallee getMalloc()
+    {
+        return module->getOrInsertFunction(
+            "malloc",
+            llvm::FunctionType::get(
+                i8p,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getFree()
+    {
+        return module->getOrInsertFunction(
+            "free",
+            llvm::FunctionType::get(
+                VoidTy,
+                {i8p},
+                false));
+    }
+
+    llvm::FunctionCallee getGCMalloc()
+    {
+        // return module->getOrInsertFunction(
+        //     "malloc",
+        //     llvm::FunctionType::get(
+        //         i8p,
+        //         {Int32Ty},
+        //         false));
+
+        return module->getOrInsertFunction(
+            "GC_malloc",
+            llvm::FunctionType::get(
+                i8p,
+                {Int64Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getWeakenChannel()
+    {
+        return module->getOrInsertFunction(
+            "WeakenChannel",
+            llvm::FunctionType::get(
+                VoidTy,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getWriteChannel()
+    {
+        return module->getOrInsertFunction(
+            "WriteChannel",
+            llvm::FunctionType::get(
+                VoidTy,
+                {Int32Ty,
+                 i8p},
+                false));
+    }
+
+    llvm::FunctionCallee getReadChannel()
+    {
+        return module->getOrInsertFunction(
+            "ReadChannel",
+            llvm::FunctionType::get(
+                i8p,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getExecute()
+    {
+        return module->getOrInsertFunction(
+            "Execute",
+            llvm::FunctionType::get(
+                Int32Ty,
+                {llvm::FunctionType::get(
+                     VoidTy,
+                     {Int32Ty},
+                     false)
+                     ->getPointerTo()},
+                false));
+    }
+
+    llvm::FunctionCallee getShouldLoop()
+    {
+        return module->getOrInsertFunction(
+            "ShouldLoop",
+            llvm::FunctionType::get(
+                Int1Ty,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getContractChannel()
+    {
+        return module->getOrInsertFunction(
+            "ContractChannel",
+            llvm::FunctionType::get(
+                VoidTy,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee get_address_map_create()
+    {
+        return module->getOrInsertFunction(
+            "_address_map_create",
+            llvm::FunctionType::get(
+                i8p,
+                {},
+                false));
+    }
+
+    llvm::Value *getNewAddressMap()
+    {
+        return builder->CreateCall(get_address_map_create(), {});
+    }
+
+    void deleteAddressMap(llvm::Value *val)
+    {
+        builder->CreateCall(
+            module->getOrInsertFunction(
+                "_address_map_delete",
+                llvm::FunctionType::get(
+                    VoidTy,
+                    {i8p},
+                    false)),
+            val);
+    }
+
     Value *correctSumAssignment(const TypeSum *sum, Value *original)
     {
         unsigned int index = sum->getIndex(module, original->getType());
@@ -316,7 +449,8 @@ public:
         if (index != 0)
         {
             llvm::Type *sumTy = sum->getLLVMType(module);
-            llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+            std::cout << "452" << std::endl;
+            llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
 
             Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
 
@@ -331,6 +465,27 @@ public:
         }
 
         return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cass...
+    }
+
+    // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
+    llvm::AllocaInst * CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
+    {
+        std::cout << "471 " << identifier << std::endl;
+        llvm::Function* fn = builder->GetInsertBlock()->getParent();
+
+        // if (fn != nullptr)
+        // {
+            // if (llvm::isa<llvm::Function>(insPoint))
+            // {
+                // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
+                IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+                std::cout << "480 " << identifier << std::endl;
+                return tempBuilder.CreateAlloca(ty, 0, identifier); 
+            // }
+
+            // insPoint = insPoint->getParent();
+        // }
+        // return std::nullopt; 
     }
 
 private:
@@ -348,6 +503,7 @@ private:
     llvm::Type *Int1Ty;
     llvm::IntegerType *Int8Ty;
     llvm::IntegerType *Int32Ty; // Things like 32 bit integers
+    llvm::IntegerType *Int64Ty;
     llvm::Type *i8p;
     llvm::Type *Int8PtrPtrTy;
     Constant *Int32Zero;

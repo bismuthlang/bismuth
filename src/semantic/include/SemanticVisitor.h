@@ -28,17 +28,14 @@ public:
      * @param p Property manager to use
      * @param f Compiler flags
      */
-    SemanticVisitor(STManager *s, PropertyManager *p, int f = 0)
+    SemanticVisitor(STManager *s, int f = 0)
     {
         stmgr = s;
-        bindings = p;
 
         flags = f;
     }
 
     std::string getErrors() { return errorHandler.errorList(); }
-    STManager *getSTManager() { return stmgr; }
-    PropertyManager *getBindings() { return bindings; }
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
 
     // From C++ Documentation for visitors
@@ -84,6 +81,9 @@ public:
     std::variant<FieldAccessNode *, ErrorChain *> visitCtx(WPLParser::FieldAccessExprContext *ctx, bool is_rvalue);
     std::any visitFieldAccessExpr(WPLParser::FieldAccessExprContext *ctx) override { return TNVariantCast<FieldAccessNode>(visitCtx(ctx, true)); }
 
+    std::variant<DerefBoxNode *, ErrorChain *> visitCtx(WPLParser::DereferenceExprContext *ctx, bool is_rvalue);
+    std::any visitDereferenceExpr(WPLParser::DereferenceExprContext *ctx) override { return TNVariantCast<DerefBoxNode>(visitCtx(ctx, true)); }
+
     // std::optional<ArrayAccessNode*> visitCtx(WPLParser::ArrayAccessContext *ctx);
     std::variant<ArrayAccessNode *, ErrorChain *> visitCtx(WPLParser::ArrayAccessContext *ctx, bool is_rvalue);
     std::any visitArrayAccess(WPLParser::ArrayAccessContext *ctx) override { return TNVariantCast<ArrayAccessNode>(visitCtx(ctx, true)); }
@@ -91,8 +91,8 @@ public:
     std::variant<ArrayAccessNode *, ErrorChain *> visitCtx(WPLParser::ArrayAccessExprContext *ctx) { return this->visitCtx(ctx->arrayAccess(), true); }
     std::any visitArrayAccessExpr(WPLParser::ArrayAccessExprContext *ctx) override { return TNVariantCast<ArrayAccessNode>(visitCtx(ctx)); }
 
-    std::variant<TypedNode *, ErrorChain *> visitCtx(WPLParser::ArrayOrVarContext *ctx);
-    std::any visitArrayOrVar(WPLParser::ArrayOrVarContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }
+    std::variant<TypedNode *, ErrorChain *> visitCtx(WPLParser::LValueContext *ctx);
+    std::any visitLValue(WPLParser::LValueContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }
 
     std::variant<AssignNode *, ErrorChain *> visitCtx(WPLParser::AssignStatementContext *ctx);
     std::any visitAssignStatement(WPLParser::AssignStatementContext *ctx) override { return TNVariantCast<AssignNode>(visitCtx(ctx)); }
@@ -162,6 +162,9 @@ public:
     std::variant<InitProductNode *, ErrorChain *> visitCtx(WPLParser::InitProductContext *ctx);
     std::any visitInitProduct(WPLParser::InitProductContext *ctx) override { return TNVariantCast<InitProductNode>(visitCtx(ctx)); }
 
+    std::variant<InitBoxNode *, ErrorChain *> visitCtx(WPLParser::InitBoxContext *ctx);
+    std::any visitInitBox(WPLParser::InitBoxContext *ctx) override { return TNVariantCast<InitBoxNode>(visitCtx(ctx)); }
+
     std::variant<ProgramSendNode *, ErrorChain *> TvisitProgramSend(WPLParser::ProgramSendContext *ctx);
     std::any visitProgramSend(WPLParser::ProgramSendContext *ctx) override { return TNVariantCast<ProgramSendNode>(TvisitProgramSend(ctx)); }
 
@@ -209,6 +212,9 @@ public:
 
     const Type *visitCtx(WPLParser::ChannelTypeContext *ctx);
     std::any visitChannelType(WPLParser::ChannelTypeContext *ctx) override { return visitCtx(ctx); }
+
+    const Type *visitCtx(WPLParser::BoxTypeContext *ctx);
+    std::any visitBoxType(WPLParser::BoxTypeContext *ctx) override { return visitCtx(ctx); }
 
     const Type *visitCtx(WPLParser::ProgramTypeContext *ctx);
     std::any visitProgramType(WPLParser::ProgramTypeContext *ctx) override { return visitCtx(ctx); }
@@ -313,7 +319,7 @@ public:
      */
     std::variant<ProgramDefNode *, ErrorChain *> visitInvokeable(WPLParser::DefineProcContext *ctx)
     {
-        std::optional<Symbol *> symOpt = bindings->getBinding(ctx);
+        std::optional<Symbol *> symOpt = symBindings->getBinding(ctx);
 
         if (!symOpt && stmgr->lookupInCurrentScope(ctx->name->getText()))
         {
@@ -394,26 +400,38 @@ public:
     struct ConditionalData
     {
         vector<TypedNode *> cases;
-        vector<TypedNode *> post;
+        // vector<TypedNode *> post;
 
-        ConditionalData(vector<TypedNode *> cases, vector<TypedNode *> post) : cases(cases), post(post)
+        ConditionalData(vector<TypedNode *> cases) : cases(cases)
         {
         }
+    };
+
+    struct DeepRestData
+    {
+        vector<WPLParser::StatementContext *> ctxRest;
+        bool isGenerated;
+        vector<TypedNode *> post;
+
+        DeepRestData(vector<WPLParser::StatementContext *> ctx) : ctxRest(ctx), isGenerated(false) {}
     };
 
     template <typename T>
     inline std::variant<ConditionalData, ErrorChain *> checkBranch(
         antlr4::ParserRuleContext *ctx,
         std::vector<T *> ctxCases,
-        std::vector<WPLParser::StatementContext *> ctxRest,
+        // std::vector<WPLParser::StatementContext *> ctxRest,
+        DeepRestData* ctxRest, 
         bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
-        std::vector<TypedNode *> cases;
-        std::vector<TypedNode *> restVec;
-        bool restVecFilled = false;
+        std::optional<std::deque<DeepRestData *> *> deepRest = restBindings->getBinding(ctx);
 
-        std::vector<Symbol *> syms = stmgr->getAvaliableLinears();                    // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+        std::vector<TypedNode *> cases;
+        // std::vector<TypedNode *> restVec;
+        // bool restVecFilled = false;
+
+        std::vector<Symbol *> syms = stmgr->getAvaliableLinears(true);                // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
         std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
         for (Symbol *orig : syms)
         {
@@ -460,29 +478,53 @@ public:
 
             // safeExitScope(ctx);
 
-            if (!endsInReturn(caseNode))
+            if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
             {
-                for (auto s : ctxRest)
+                for (auto s : ctxRest->ctxRest)
                 {
                     std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
-                    if (!restVecFilled)
+                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
                     {
+                        (*e)->addError(alt->getStart(), "Failed to typecheck code following branch.");
+                        return *e;
+                    }
 
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
+                    if (!ctxRest->isGenerated)
+                    {
+                        ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
+                    }
+                }
+
+                // restVecFilled = true;
+                ctxRest->isGenerated = true; 
+            }
+            
+            //FIXME: WILL NEED TO RUN THIS CHECK ON EACH ITERATION!
+            if (deepRest && !endsInReturn(ctxRest->post) && !endsInBranch(ctxRest->post))
+            {
+                for (auto r : *(deepRest.value()))
+                {
+                    for (auto s : r->ctxRest)
+                    {
+                        std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
                         {
                             (*e)->addError(ctx->getStart(), "2097");
                             return *e;
                         }
 
-                        restVec.push_back(std::get<TypedNode *>(rOpt));
+                        if (!r->isGenerated) // FIXME: MAY CAUSE DOUBLE FILL ISSUES IF PRIOR BRANCH ERRORS (WHEN WE CHANGE TO GET ALL ERRORS)
+                        {
+                            r->post.push_back(std::get<TypedNode *>(rOpt));
+                        }
                     }
+                    r->isGenerated = true;
                 }
-
-                restVecFilled = true;
             }
 
-            safeExitScope(ctx);
+            safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
 
             std::vector<Symbol *> lins = stmgr->getAvaliableLinears();
 
@@ -497,7 +539,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(alt->getStart(), "537 Unused linear types in context: " + details.str());
             }
         }
 
@@ -514,24 +556,44 @@ public:
 
             stmgr->enterScope(StopType::NONE);
 
-            for (auto s : ctxRest)
+            for (auto s : ctxRest->ctxRest)
             {
                 std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                if (!restVecFilled)
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                 {
-
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                    {
-                        (*e)->addError(ctx->getStart(), "2097");
-                        return *e;
-                    }
-
-                    restVec.push_back(std::get<TypedNode *>(rOpt));
+                    (*e)->addError(ctx->getStart(), "Failed to typecheck code when conditional skipped over.");
+                    return *e;
+                }
+                if (!ctxRest->isGenerated)
+                {
+                    ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
                 }
             }
 
-            restVecFilled = true;
+            if (deepRest && !endsInReturn(ctxRest->post))
+            {
+                for (auto r : *(deepRest.value())) //FIXME: NEED TO REVERSE?
+                {
+                    for (auto s : r->ctxRest)
+                    {
+                        std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
+                        {
+                            (*e)->addError(ctx->getStart(), "2097");
+                            return *e;
+                        }
+
+                        if (!r->isGenerated) // FIXME: MAY CAUSE DOUBLE FILL ISSUES IF PRIOR BRANCH ERRORS (WHEN WE CHANGE TO GET ALL ERRORS)
+                        {
+                            r->post.push_back(std::get<TypedNode *>(rOpt));
+                        }
+                    }
+                    r->isGenerated = true;
+                }
+            }
+
+            ctxRest->isGenerated = true;
 
             safeExitScope(ctx);
 
@@ -548,13 +610,23 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "608 Unused linear types in context: " + details.str());
             }
         }
 
         // return Types::UNDEFINED;
         // return ty.value();
-        return ConditionalData(cases, restVec);
+        return ConditionalData(cases);
+    }
+
+    template <typename T>
+    std::vector<T> *Append(std::vector<T> a, const std::vector<T> b)
+    {
+        std::vector<T> *ans = new std::vector<T>();
+        ans->reserve(a.size() + b.size());
+        ans->insert(ans->end(), a.begin(), a.end());
+        ans->insert(ans->end(), b.begin(), b.end());
+        return ans;
     }
 
     const Type *any2Type(std::any any)
@@ -574,7 +646,8 @@ public:
 
 private:
     STManager *stmgr;
-    PropertyManager *bindings;
+    PropertyManager<Symbol> *symBindings = new PropertyManager<Symbol>();
+    PropertyManager<std::deque<DeepRestData *>> *restBindings = new PropertyManager<std::deque<DeepRestData *>>();
     WPLErrorHandler errorHandler = WPLErrorHandler(SEMANTIC);
 
     int flags; // Compiler flags
@@ -623,7 +696,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
             }
         }
         // return res;
@@ -633,7 +706,7 @@ private:
 
     std::variant<Symbol *, ErrorChain *> getFunctionSymbol(WPLParser::DefineFuncContext *ctx)
     {
-        std::optional<Symbol *> opt = bindings->getBinding(ctx);
+        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
         if (opt)
             return opt.value();
 
@@ -666,4 +739,51 @@ private:
 
         return sym;
     }
+
+    
+    void bindRestData(antlr4::ParserRuleContext * ctx, std::deque<DeepRestData *>* rd) { //DeepRestData * rd) {
+        if(WPLParser::BlockStatementContext* bs = dynamic_cast<WPLParser::BlockStatementContext*>(ctx)) {
+            return bindRestData(bs->block(), rd);
+        }
+
+        if(WPLParser::BlockContext* blk = dynamic_cast<WPLParser::BlockContext*>(ctx)) {
+            if(blk->stmts.size() == 0) return; 
+
+            return bindRestData(blk->stmts.at(blk->stmts.size() - 1), rd); 
+        }
+
+        if(WPLParser::ConditionalStatementContext* cs = dynamic_cast<WPLParser::ConditionalStatementContext*>(ctx)) {
+            // for(auto b : cs->block()) {
+            //     bindRestData(b, rd);
+            // }
+            restBindings->bind(cs, rd);
+            return; 
+        }
+
+        if(WPLParser::SelectStatementContext* sel = dynamic_cast<WPLParser::SelectStatementContext*>(ctx)) {
+            // for(auto c : sel->cases) {
+            //     bindRestData(c->eval, rd);
+            // }
+            restBindings->bind(sel, rd);
+            return; 
+        }
+
+        if(WPLParser::MatchStatementContext* mc = dynamic_cast<WPLParser::MatchStatementContext*>(ctx)) {
+            // for(auto c : mc->cases) {
+            //     bindRestData(c->eval, rd);
+            // }
+            restBindings->bind(mc, rd);
+            return; 
+        }
+
+        if(WPLParser::ProgramCaseContext* cc = dynamic_cast<WPLParser::ProgramCaseContext*>(ctx)) {
+            // for(auto o : cc->opts) {
+            //     bindRestData(o->eval, rd);
+            // }
+            restBindings->bind(cc, rd);
+            return;
+        }
+
+    }
+    
 };

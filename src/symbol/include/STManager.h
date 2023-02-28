@@ -124,7 +124,7 @@ public:
     return dangerContext.getCurrentScope();
   }
 
-  std::vector<Symbol *> getAvaliableLinears() { return linearContext.getAvaliableLinears(); }
+  std::vector<Symbol *> getAvaliableLinears(bool include_complete=false) { return linearContext.getAvaliableLinears(include_complete); }
 
   /**
    * @brief Gets the number of scopes

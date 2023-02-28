@@ -17,7 +17,7 @@
 //   WPLParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
-//   SemanticVisitor *sv = new SemanticVisitor(new STManager(), new PropertyManager());
+//   SemanticVisitor *sv = new SemanticVisitor(new STManager());
 //   sv->visitCompilationUnit(tree);                                                    
 //   // if (sv->hasErrors(ERROR)) {
 //   //   CHECK("foo" == sv->getErrors());
@@ -36,7 +36,7 @@
 //   WPLParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
-//   SemanticVisitor *sv = new SemanticVisitor(new STManager(), new PropertyManager());
+//   SemanticVisitor *sv = new SemanticVisitor(new STManager());
 //   sv->visitCompilationUnit(tree);                                                    
 //   REQUIRE(sv->hasErrors(ERROR));
 // }
@@ -52,7 +52,7 @@
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 
-//   SemanticVisitor *sv = new SemanticVisitor(new STManager(), new PropertyManager());
+//   SemanticVisitor *sv = new SemanticVisitor(new STManager());
 //   sv->visitCompilationUnit(tree);
 
 //   CHECK_FALSE(sv->hasErrors(ERROR));
@@ -87,7 +87,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr, new PropertyManager());
+//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
 
 //   const Type *ty = std::any_cast<const Type *>(tree->accept(sv));//sv->visit(tree));
 
