@@ -3,9 +3,9 @@ source_filename = "WPLC.ll"
 
 define void @linkRecvInt(i32 %0, i32 %1) {
 entry:
+  %b = alloca i32, align 4
   %a = alloca i32, align 4
   store i32 %0, i32* %a, align 4
-  %b = alloca i32, align 4
   store i32 %1, i32* %b, align 4
   %2 = load i32, i32* %a, align 4
   %3 = call i8* @ReadChannel(i32 %2)
@@ -22,9 +22,9 @@ entry:
 
 define void @linkRecvBool(i32 %0, i32 %1) {
 entry:
+  %b = alloca i32, align 4
   %a = alloca i32, align 4
   store i32 %0, i32* %a, align 4
-  %b = alloca i32, align 4
   store i32 %1, i32* %b, align 4
   %2 = load i32, i32* %a, align 4
   %3 = call i8* @ReadChannel(i32 %2)
@@ -41,6 +41,8 @@ entry:
 
 define void @foo(i32 %0) {
 entry:
+  %b = alloca i32, align 4
+  %a = alloca i32, align 4
   %c = alloca i32, align 4
   store i32 %0, i32* %c, align 4
   %1 = load i32, i32* %c, align 4
@@ -48,14 +50,12 @@ entry:
   %3 = bitcast i8* %2 to i32*
   %4 = load i32, i32* %3, align 4
   call void @free(i8* %2)
-  %a = alloca i32, align 4
   store i32 %4, i32* %a, align 4
   %5 = load i32, i32* %c, align 4
   %6 = call i8* @ReadChannel(i32 %5)
   %7 = bitcast i8* %6 to i32*
   %8 = load i32, i32* %7, align 4
   call void @free(i8* %6)
-  %b = alloca i32, align 4
   store i32 %8, i32* %b, align 4
   %9 = load i32, i32* %a, align 4
   %10 = call i32 @ReadProjection(i32 %9)
@@ -100,6 +100,8 @@ entry:
 
 define void @bar2(i32 %0) {
 entry:
+  %i = alloca i32, align 4
+  %b = alloca i1, align 1
   %c = alloca i32, align 4
   store i32 %0, i32* %c, align 4
   %1 = load i32, i32* %c, align 4
@@ -115,7 +117,6 @@ tagBranch1:                                       ; preds = %entry
   %5 = bitcast i8* %4 to i1*
   %6 = load i1, i1* %5, align 1
   call void @free(i8* %4)
-  %b = alloca i1, align 1
   store i1 %6, i1* %b, align 1
   br label %matchcont
 
@@ -125,7 +126,6 @@ tagBranch2:                                       ; preds = %entry
   %9 = bitcast i8* %8 to i32*
   %10 = load i32, i32* %9, align 4
   call void @free(i8* %8)
-  %i = alloca i32, align 4
   store i32 %10, i32* %i, align 4
   br label %matchcont
 
@@ -135,16 +135,16 @@ matchcont:                                        ; preds = %tagBranch2, %tagBra
 
 define void @program(i32 %0) {
 entry:
+  %linker = alloca i32, align 4
+  %l2 = alloca i32, align 4
+  %l1 = alloca i32, align 4
   %c = alloca i32, align 4
   store i32 %0, i32* %c, align 4
   %1 = call i32 @Execute(void (i32)* @bar1)
-  %l1 = alloca i32, align 4
   store i32 %1, i32* %l1, align 4
   %2 = call i32 @Execute(void (i32)* @bar2)
-  %l2 = alloca i32, align 4
   store i32 %2, i32* %l2, align 4
   %3 = call i32 @Execute(void (i32)* @foo)
-  %linker = alloca i32, align 4
   store i32 %3, i32* %linker, align 4
   %l11 = load i32, i32* %l1, align 4
   %4 = call i8* @malloc(i32 4)

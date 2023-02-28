@@ -143,6 +143,28 @@ public:
     }
 };
 
+//FIXME: REFACTOR WITH METHOD IN CODEGENVISITOR!
+inline llvm::AllocaInst *CreateEntryBlockAlloc(llvm::IRBuilder<llvm::NoFolder> *builder, llvm::Type *ty, std::string identifier)
+{
+    std::cout << "149" << std::endl; 
+    llvm::Function *fn = builder->GetInsertBlock()->getParent();
+
+    // if (fn != nullptr)
+    // {
+    // if (llvm::isa<llvm::Function>(insPoint))
+    // {
+    // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
+    llvm::IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+    std::cout << fn << std::endl; 
+    return tempBuilder.CreateAlloca(ty, 0, identifier);
+    // return builder->CreateAlloca(ty, 0, identifier);
+    // }
+
+    // insPoint = insPoint->getParent();
+    // }
+    // return std::nullopt;
+}
+
 // FIXME: DO BETTER
 struct ProtocolCompare
 {
@@ -961,15 +983,14 @@ public:
         builder->SetInsertPoint(bBlk);
 
         // Bind all of the arguments
-        // llvm::Value *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
-        llvm::Value *v = builder->CreateAlloca(getLLVMType(M), 0, "v");
+        llvm::Value *v = CreateEntryBlockAlloc(builder, getLLVMType(M), "v");
 
         builder->CreateStore((fn->args()).begin(), v);
         llvm::Value *loaded = builder->CreateLoad(innerType->getLLVMType(M), builder->CreateLoad(getLLVMType(M), v));
 
         if (innerType->requiresDeepCopy())
         {
-            llvm::AllocaInst *m = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "m");
+            llvm::AllocaInst *m = CreateEntryBlockAlloc(builder, llvm::Type::getInt8PtrTy(M->getContext()), "m");
             builder->CreateStore(fn->getArg(1), m);
 
             llvm::Value *hasValPtr = builder->CreateCall(
@@ -1801,8 +1822,7 @@ public:
         builder->SetInsertPoint(bBlk);
 
         // Bind all of the arguments
-        // llvm::Value *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
-        llvm::Value *v = builder->CreateAlloca(getLLVMType(M), 0, "v");
+        llvm::Value *v = CreateEntryBlockAlloc(builder, getLLVMType(M), "v");
 
         builder->CreateStore((fn->args()).begin(), v);
         llvm::Value *loaded = builder->CreateLoad(getLLVMType(M), v);
@@ -1825,7 +1845,7 @@ public:
         {
             auto origParent = builder->GetInsertBlock()->getParent();
 
-            llvm::AllocaInst *m = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "m");
+            llvm::AllocaInst *m = CreateEntryBlockAlloc(builder, llvm::Type::getInt8PtrTy(M->getContext()), "m");
             builder->CreateStore(fn->getArg(1), m);
 
             llvm::BasicBlock *mergeBlk = llvm::BasicBlock::Create(M->getContext(), "matchcont");
@@ -1955,7 +1975,7 @@ public:
                         builder->CreateStore(cloned, corrected);
                     }
                 }
-                builder->CreateRet( builder->CreateLoad(v, getLLVMType(M)));
+                builder->CreateRet(builder->CreateLoad(v, getLLVMType(M)));
             }
             origParent->getBasicBlockList().push_back(mergeBlk);
             builder->SetInsertPoint(mergeBlk);
@@ -2131,8 +2151,7 @@ public:
         builder->SetInsertPoint(bBlk);
 
         // Bind all of the arguments
-        // llvm::Value *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
-        llvm::Value *v = builder->CreateAlloca(getLLVMType(M), 0, "v");
+        llvm::Value *v = CreateEntryBlockAlloc(builder, getLLVMType(M), "v");
 
         builder->CreateStore((fn->args()).begin(), v);
         llvm::Value *loaded = builder->CreateLoad(getLLVMType(M), v);
@@ -2153,7 +2172,7 @@ public:
 
         if (requiresDeepCopy())
         {
-            llvm::AllocaInst *m = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "m");
+            llvm::AllocaInst *m = CreateEntryBlockAlloc(builder, llvm::Type::getInt8PtrTy(M->getContext()), "m");
             builder->CreateStore(fn->getArg(1), m);
 
             // for (unsigned int i = 0; i < elements.size(); i++)

@@ -1,0 +1,33 @@
+extern Unit func printf(str s, ...);
+extern int func GC_get_heap_size(); 
+
+define program :: c : Channel<-int> = {
+  int i; 
+  
+  while i < 10000000 {
+    Box<Box<int>> b := Box<Box<int>>::init(Box<int>::init(i));
+    # Box<int> b2 := Box<int>::init(i);
+
+    printf("Heap size = %ld\n", GC_get_heap_size());
+
+    i := i + 1; 
+  }
+
+  c.send(0); 
+}
+# int main()
+# {
+#   int i;
+
+#   GC_INIT();	/* Optional on Linux/X86; see below.  */
+#   for (i = 0; i < 10000000; ++i)
+#    {
+#      int **p = (int **) GC_MALLOC(sizeof(int *));
+#      int *q = (int *) GC_MALLOC_ATOMIC(sizeof(int));
+#      assert(*p == 0);
+#      *p = (int *) GC_REALLOC(q, 2 * sizeof(int));
+#      if (i % 100000 == 0)
+#        printf("Heap size = %ld\n", GC_get_heap_size());
+#    }
+#   return 0;
+# }

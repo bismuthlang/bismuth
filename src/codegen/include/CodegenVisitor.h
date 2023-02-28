@@ -164,7 +164,8 @@ public:
         builder->SetInsertPoint(bBlk);
 
         // Bind all of the arguments
-        llvm::AllocaInst *v = builder->CreateAlloca(Int32Ty, 0, n->channelSymbol->getIdentifier());
+        std::cout << "167" << std::endl;
+        llvm::AllocaInst *v = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
         n->channelSymbol->val = v;
 
         builder->CreateStore((fn->args()).begin(), v);
@@ -448,7 +449,8 @@ public:
         if (index != 0)
         {
             llvm::Type *sumTy = sum->getLLVMType(module);
-            llvm::AllocaInst *alloc = builder->CreateAlloca(sumTy, 0, "");
+            std::cout << "452" << std::endl;
+            llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
 
             Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
 
@@ -463,6 +465,27 @@ public:
         }
 
         return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cass...
+    }
+
+    // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
+    llvm::AllocaInst * CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
+    {
+        std::cout << "471 " << identifier << std::endl;
+        llvm::Function* fn = builder->GetInsertBlock()->getParent();
+
+        // if (fn != nullptr)
+        // {
+            // if (llvm::isa<llvm::Function>(insPoint))
+            // {
+                // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
+                IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+                std::cout << "480 " << identifier << std::endl;
+                return tempBuilder.CreateAlloca(ty, 0, identifier); 
+            // }
+
+            // insPoint = insPoint->getParent();
+        // }
+        // return std::nullopt; 
     }
 
 private:

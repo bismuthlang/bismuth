@@ -1,0 +1,31 @@
+extern int func printf(str s, ...); 
+define sender :: c : Channel<?-str> = {
+    int i := 0; 
+    while true {
+        more(c)
+printf("Sending! %u\n", i); 
+        i := i + 1; 
+        c.send("Well hello there. This is a very long string. And I hope it will take up a lot of memory. Just so that way we can prove how we are in fact clearing memory over time---hopefully. Lets see what happens! This will be fun! (lol it wont be). But who cares?")
+    }
+    weaken(c)
+}
+
+define reciever :: c : Channel<!+str> = {
+    accept(c) {
+        str s := c.recv(); 
+    }
+}
+
+define program :: c : Channel<-int> = {
+    var a := exec sender, b := exec reciever; 
+
+    accept(a) {
+        # more(b)
+        str i := a.recv();
+        # b.send(a.recv());
+        # b
+    }
+    weaken(b)
+
+    c.send(0)
+}

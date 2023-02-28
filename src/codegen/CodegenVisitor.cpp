@@ -103,7 +103,8 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     }
 
     Value *sumVal = optVal.value();
-    llvm::AllocaInst *SumPtr = builder->CreateAlloca(sumVal->getType());
+    std::cout << "106" << std::endl;
+    llvm::AllocaInst *SumPtr = CreateEntryBlockAlloc(sumVal->getType(), "");
     builder->CreateStore(sumVal, SumPtr);
 
     Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
@@ -137,7 +138,8 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
         llvm::Type *ty = localSym->type->getLLVMType(module);
 
         // Can skip global stuff
-        llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, localSym->getIdentifier());
+        std::cout << "141" << std::endl;
+        llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, localSym->getIdentifier());
         localSym->val = v;
         // varSymbol->val = v;
 
@@ -535,7 +537,7 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
     const TypeStruct *product = n->product;
 
     llvm::Type *ty = product->getLLVMType(module);
-    llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, "");
+    llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, "");
     {
         unsigned i = 0;
         std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
@@ -572,9 +574,6 @@ std::optional<Value *> CodegenVisitor::visit(InitBoxNode *n)
 
     const TypeBox *box = n->boxType;
 
-    // llvm::Type *ty = box->getLLVMType(module);
-    // llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, "");
-
     if (const TypeSum *sum = dynamic_cast<const TypeSum *>(box->getInnerType()))
     {
         stoVal = correctSumAssignment(sum, stoVal);
@@ -606,22 +605,7 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
         return std::nullopt;
     }
 
-    /*
-    Value *baseValue = arrayPtr.value();
-    llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
-    builder->CreateStore(baseValue, v);
-
-    auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
-    if (n->is_rvalue)
-    return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
-    return ptr;
-    */
-
     Value *v = arrayPtr.value();
-
-    // llvm::AllocaInst *v = builder->CreateAlloca(baseValue->getType());
-    // module->dump();
-    // builder->CreateStore(baseValue, v);
 
     auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
 
@@ -1212,7 +1196,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
             else
             {
                 //  As this is a local var we can just create an allocation for it
-                llvm::AllocaInst *v = builder->CreateAlloca(ty, 0, varSymbol->getIdentifier());
+                llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, varSymbol->getIdentifier());
                 varSymbol->val = v;
 
                 // Similarly, if we have an expression for the local var, we can store it. Otherwise, we can leave it undefined.
@@ -1558,8 +1542,8 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
 
         std::string argName = param->getIdentifier();
 
-        // Create an allocation for the argumentr
-        llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
+        // Create an allocation for the argument
+        llvm::AllocaInst *v = CreateEntryBlockAlloc(type, argName);
 
         param->val = v;
 
