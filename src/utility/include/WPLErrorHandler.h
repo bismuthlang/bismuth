@@ -43,19 +43,13 @@ enum ErrSev
  */
 struct WPLError
 {
-  ErrType type;         // The Type of the error
   antlr4::Token *token; // Where the error occurred
   std::string message;  // Error Message text
 
-  ErrSev severity; // Error Severity level
-
-  WPLError(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
+  WPLError(antlr4::Token *tok, std::string msg)
   {
     token = tok;
     message = msg;
-
-    type = et;
-    severity = es;
   }
 
   std::string toString()
@@ -63,10 +57,58 @@ struct WPLError
     if (!token)
       return message; // FIXME: DO BETTER
     std::ostringstream e;
-    e << getStringForSeverity(severity) << ": " << getStringForErrorType(type) << ": [" << token->getLine() << ',' << token->getCharPositionInLine()
-      << "]: " << message;
+    e << "[" << token->getLine() << ',' << token->getCharPositionInLine() << "]: " << message;
     return e.str();
   }
+};
+
+struct ErrorChain
+{
+  ErrType errType;
+  ErrSev errSev;
+
+  std::vector<WPLError *> chain;
+
+  ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
+  {
+    errType = et;
+    errSev = es;
+    WPLError *primaryError = new WPLError(tok, msg);
+    chain.push_back(primaryError);
+  }
+
+  void addError(antlr4::Token *t, std::string msg)
+  {
+    WPLError *e = new WPLError(t, msg);
+    chain.push_back(e);
+  }
+
+  void addCritWarning(antlr4::Token *t, std::string msg)
+  {
+    WPLError *e = new WPLError(t, msg);
+    chain.push_back(e);
+  }
+
+  std::string toString()
+  {
+    std::ostringstream e;
+
+    e << ErrorChain::getStringForSeverity(errSev) << " (" << ErrorChain::getStringForErrorType(errType) << "): " << std::endl;
+
+    if (chain.size() == 0)
+    {
+      e << "UNKNOWN ERROR" << std::endl; // Shouldn't be possible anymore
+    }
+
+    for (WPLError *error : chain)
+    {
+      e << error->toString() << std::endl;
+    }
+
+    return e.str();
+  }
+
+  ErrSev getSeverity() { return errSev; }
 
   static std::string getStringForErrorType(ErrType e)
   {
@@ -97,54 +139,11 @@ struct WPLError
   }
 };
 
-struct ErrorChain
-{
-  ErrType errType; 
-
-  std::vector<WPLError *> chain;
-
-  ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
-  {
-    errType = et; 
-    WPLError *primaryError = new WPLError(tok, msg, et, es);
-    chain.push_back(primaryError);
-  }
-
-  void addError(antlr4::Token *t, std::string msg)
-  {
-    WPLError *e = new WPLError(t, msg, errType, ERROR);
-    chain.push_back(e);
-  }
-
-  void addCritWarning(antlr4::Token *t, std::string msg)
-  {
-    WPLError *e = new WPLError(t, msg, errType, CRITICAL_WARNING);
-    chain.push_back(e);
-  }
-
-  std::string toString()
-  {
-    std::ostringstream e;
-
-    if(chain.size() == 0) {
-      e << "UNKNOWN ERROR" << std::endl; // Shouldn't be possible anymore
-    } 
-
-    for (WPLError *error : chain)
-    {
-      e << error->toString() << std::endl;
-    }
-
-    return e.str();
-  }
-
-  ErrSev getSeverity() { return (chain.size() == 0) ?  ERROR : chain.at(0)->severity; } //TODO: change this to be the MAX error?
-};
-
 class WPLErrorHandler
 {
-private: 
-  ErrType errType; 
+private:
+  ErrType errType;
+
 public:
   WPLErrorHandler(ErrType ty) : errType(ty) {}
 
@@ -163,7 +162,6 @@ public:
 
     return e;
   }
-
 
   std::vector<ErrorChain *> &getErrors() { return errors; }
 
@@ -223,6 +221,6 @@ class WPLSyntaxErrorListener : public antlr4::BaseErrorListener, public WPLError
     // throw std::invalid_argument("test error thrown: " + msg);
   }
 
-  public: 
-    WPLSyntaxErrorListener() : WPLErrorHandler(SYNTAX) {}
+public:
+  WPLSyntaxErrorListener() : WPLErrorHandler(SYNTAX) {}
 };

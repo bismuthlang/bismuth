@@ -1328,7 +1328,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
 
     DeepRestData *restDat = new DeepRestData(ctx->rest);
     std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
-    rest->push_front(restDat); // FIXME: NOTE HOW REVERSED
+    rest->push_front(restDat); //Is deque so that way we keep things reversed
 
     for (auto b : blksCtx)
     {
@@ -1375,7 +1375,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
     DeepRestData *restDat = new DeepRestData(ctx->rest);
     std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
-    rest->push_front(restDat); // FIXME: NOTE HOW REVERSED
+    rest->push_front(restDat); // Is deque so that way we keep things reversed
 
     // bindRestData(ctx, restDat);
     for (auto b : ctx->cases)
@@ -1893,7 +1893,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         DeepRestData *restDat = new DeepRestData(ctx->rest);
         std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
-        rest->push_front(restDat); // FIXME: NOTE HOW REVERSED
+        rest->push_front(restDat); // Is deque so that way we keep things reversed
 
         // bindRestData(ctx, restDat);
         for (auto b : ctx->protoAlternative())
