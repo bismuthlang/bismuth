@@ -167,7 +167,7 @@ bool ProtocolSequence::contract() const
 
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = wn->getInnerProtocol()->steps;
-        // std::cout << "CONT 152 " << wn->getInnerProtocol()->toString() << std::endl; 
+        
         mthis->steps.insert(steps.begin(), other.begin(), other.end()); //FIXME: WE PROBABLY NEED TO DO BETTER FLATTENING!
         return true;
     }

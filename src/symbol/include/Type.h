@@ -146,7 +146,6 @@ public:
 //FIXME: REFACTOR WITH METHOD IN CODEGENVISITOR!
 inline llvm::AllocaInst *CreateEntryBlockAlloc(llvm::IRBuilder<llvm::NoFolder> *builder, llvm::Type *ty, std::string identifier)
 {
-    std::cout << "149" << std::endl; 
     llvm::Function *fn = builder->GetInsertBlock()->getParent();
 
     // if (fn != nullptr)
@@ -155,7 +154,6 @@ inline llvm::AllocaInst *CreateEntryBlockAlloc(llvm::IRBuilder<llvm::NoFolder> *
     // {
     // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
     llvm::IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-    std::cout << fn << std::endl; 
     return tempBuilder.CreateAlloca(ty, 0, identifier);
     // return builder->CreateAlloca(ty, 0, identifier);
     // }
@@ -517,38 +515,6 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
-    // virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
-    // {
-    //     llvm::Function * testFn = M->getFunction("_clone_int");
-    //     if(testFn) return testFn;
-
-    //     llvm::BasicBlock *ins = builder->GetInsertBlock();
-
-    //     // FIXME: DONT DUPLICATE THESE ACROSS FILES
-    //     llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
-    //                                                     getLLVMType(M),
-    //                                                     {
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext()), // Value
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext())  // Map
-    //                                                     },
-    //                                                     false),
-    //                                                 llvm::GlobalValue::PrivateLinkage, "_clone_int", M);
-
-    //     llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
-    //     builder->SetInsertPoint(bBlk);
-
-    //     // Bind all of the arguments
-    //     llvm::AllocaInst *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
-
-    //     builder->CreateStore((fn->args()).begin(), v);
-
-    //     builder->CreateRet(v);
-
-    //     builder->SetInsertPoint(ins);
-
-    //     return fn; // Stack value, can just return it for the copy.
-    // }
-
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -570,38 +536,6 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
-    // virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
-    // {
-    //     llvm::Function * testFn = M->getFunction("_clone_bool");
-    //     if(testFn) return testFn;
-
-    //     llvm::BasicBlock *ins = builder->GetInsertBlock();
-
-    //     // FIXME: DONT DUPLICATE THESE ACROSS FILES
-    //     llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
-    //                                                     getLLVMType(M),
-    //                                                     {
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext()), // Value
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext())  // Map
-    //                                                     },
-    //                                                     false),
-    //                                                 llvm::GlobalValue::PrivateLinkage, "_clone_bool", M);
-
-    //     llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
-    //     builder->SetInsertPoint(bBlk);
-
-    //     // Bind all of the arguments
-    //     llvm::AllocaInst *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
-
-    //     builder->CreateStore((fn->args()).begin(), v);
-
-    //     builder->CreateRet(v);
-
-    //     builder->SetInsertPoint(ins);
-
-    //     return fn; // Stack value, can just return it for the copy.
-    // }
-
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -619,38 +553,6 @@ public:
     llvm::Type *getLLVMType(llvm::Module *M) const override { return llvm::Type::getInt8PtrTy(M->getContext()); }
 
     bool requiresDeepCopy() const override { return false; }
-
-    // virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
-    // {
-    //     llvm::Function * testFn = M->getFunction("_clone_string");
-    //     if(testFn) return testFn;
-
-    //     llvm::BasicBlock *ins = builder->GetInsertBlock();
-
-    //     // FIXME: DONT DUPLICATE THESE ACROSS FILES
-    //     llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
-    //                                                     getLLVMType(M),
-    //                                                     {
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext()), // Value
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext())  // Map
-    //                                                     },
-    //                                                     false),
-    //                                                 llvm::GlobalValue::PrivateLinkage, "_clone_string", M);
-
-    //     llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
-    //     builder->SetInsertPoint(bBlk);
-
-    //     // Bind all of the arguments
-    //     llvm::AllocaInst *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
-
-    //     builder->CreateStore((fn->args()).begin(), v);
-
-    //     builder->CreateRet(v);
-
-    //     builder->SetInsertPoint(ins);
-
-    //     return fn; // Stack value, can just return it for the copy.
-    // }
 
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
@@ -936,7 +838,6 @@ private:
      *
      */
     const Type *innerType;
-    // FIXME: WILL NOT WORK WITH TRADITIONAL COPY!
 
 public:
     TypeBox(const Type *t) : innerType(t)
@@ -1128,7 +1029,7 @@ private:
      * @brief Represents the types of the function's arguments
      *
      */
-    const TypeChannel *channel; // FIXME: PROBABLY NEEDS TO BE SEQ!
+    const TypeChannel *channel;
 
     /**
      * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
@@ -1849,7 +1750,7 @@ public:
             builder->CreateStore(fn->getArg(1), m);
 
             llvm::BasicBlock *mergeBlk = llvm::BasicBlock::Create(M->getContext(), "matchcont");
-            std::cout << "1832" << std::endl;
+            
             llvm::Value *tagPtr = builder->CreateGEP(v,
                                                      {llvm::ConstantInt::get(
                                                           llvm::Type::getInt32Ty(M->getContext()),
@@ -1859,7 +1760,7 @@ public:
                                                           llvm::Type::getInt32Ty(M->getContext()),
                                                           0,
                                                           true)});
-            std::cout << "1842" << std::endl;
+            
             llvm::Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
 
             llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, cases.size());

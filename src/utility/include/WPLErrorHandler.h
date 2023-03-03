@@ -55,7 +55,7 @@ struct WPLError
   std::string toString()
   {
     if (!token)
-      return message; // FIXME: DO BETTER
+      return message; // TODO: DO BETTER
     std::ostringstream e;
     e << "[" << token->getLine() << ',' << token->getCharPositionInLine() << "]: " << message;
     return e.str();
