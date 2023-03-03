@@ -402,7 +402,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
                 return std::nullopt;
             }
             Value * addrMap = getNewAddressMap(); 
-            stoVal = builder->CreateCall(fn, {stoVal, addrMap}); // FIXME: NEED TO CREATE MAP!
+            stoVal = builder->CreateCall(fn, {stoVal, addrMap});
             deleteAddressMap(addrMap);
             // return v;
         }
@@ -1122,7 +1122,6 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
             builder->CreateStore(corrected, v);
             return std::nullopt;
         }
-
         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
 
         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
@@ -1209,11 +1208,12 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
                         if (index == 0)
                         {
+                            std::cout << "1211 " << varSymbol->type->toString() << std::endl; 
                             Value *corrected = builder->CreateBitCast(stoVal, varSymbol->type->getLLVMType(module));
                             builder->CreateStore(corrected, v);
                             return std::nullopt;
                         }
-
+                        module->dump(); 
                         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
 
                         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
@@ -1221,6 +1221,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
                         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
                         builder->CreateStore(stoVal, corrected);
+                        module->dump(); 
                     }
                     else
                     {

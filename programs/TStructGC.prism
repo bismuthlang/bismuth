@@ -1,5 +1,5 @@
 extern Unit func printf(str s, ...);
-extern int func GC_get_heap_size();  # FIXME: NOT GARBAGE COLLECTING HEAP PROPERLY!
+extern int func GC_get_heap_size(); 
 
 # Two Int Box Box
 define struct TIBB {

@@ -32,7 +32,7 @@ define program :: c : Channel<-int> = {
 
   # var d := Box<int>::init(5);
   # a.send(d)
-  var b := Box<Box<int>>::init(Box<int>::init(5)); # FIXME
+  var b := Box<Box<int>>::init(Box<int>::init(5));
   printBoxBoxInt("b (orig/5)", b);
   a.send(b)
   var u := a.recv(); 

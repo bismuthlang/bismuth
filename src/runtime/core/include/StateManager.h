@@ -81,7 +81,7 @@ extern "C" unsigned int Execute(void (*func)(unsigned int))
     return idOut;
 }
 
-// FIXME: do better error handling for WriteHelper instead of just logging and returns!
+// TODO: do better error handling for WriteHelper instead of just logging and returns!
 void WriteHelper(unsigned int aId, Message m) { //uint8_t * (*func)(unsigned int)) {
     exec_mutex.lock();
     auto i_oAId = LookupOther.find(aId);

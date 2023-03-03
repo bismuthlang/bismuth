@@ -274,7 +274,7 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
                 // if i > fnParams.size() as that would imply we are
                 // checking a variadic
                 const Type *expectedType = fnParams.at(
-                    i < fnParams.size() ? i : (fnParams.size() - 1)); // FIXME: TURNARY NEVER FULLY EVALED DUE TO CONTINUE!
+                    i < fnParams.size() ? i : (fnParams.size() - 1)); // FIXME: ternary NEVER FULLY evaluated DUE TO CONTINUE!
 
                 actualTypes.push_back(expectedType);
 
@@ -401,6 +401,10 @@ std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::I
 {
     const Type *storeType = any2Type(ctx->ty->accept(this));
 
+    if(isLinear(storeType)) {
+        return errorHandler.addError(ctx->ty->getStart(), "Cannot create a box with a linear type!");
+    }
+
     // TODO: METHODIZE WITH INVOKE AND INIT PRODUCT?
     std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
 
@@ -413,6 +417,10 @@ std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::I
     TypedNode *tn = std::get<TypedNode *>(opt);
 
     const Type *providedType = tn->getType();
+
+    if(isLinear(providedType)) {
+        return errorHandler.addError(ctx->expr->getStart(), "Cannot create a box with a linear type!");
+    }
 
     if (providedType->isNotSubtype(storeType))
     {
@@ -835,8 +843,6 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     }
     return new FieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
 }
-
-//FIXME: BLOCK BOXES FROM CONTAINING CHANNELS
 
 std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DereferenceExprContext *ctx, bool is_rvalue)
 {
@@ -1780,6 +1786,12 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ChannelTypeContext *ctx)
 const Type *SemanticVisitor::visitCtx(WPLParser::BoxTypeContext *ctx)
 {
     const Type *inner = any2Type(ctx->ty->accept(this));
+
+    if(isLinear(inner)) {
+        errorHandler.addError(ctx->ty->getStart(), "Cannot box a linear resource.");
+        return Types::ABSURD; 
+    }
+
     return new TypeBox(inner);
 }
 
