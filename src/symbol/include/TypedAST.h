@@ -127,7 +127,7 @@ public:
 
     // virtual std::optional<Value
 
-    // private: //FIXME: DO SOMETHING FOR THE ONES WE DONT NEED/USE
+    // private:
     std::any any_visit(SelectAlternativeNode *n) { return this->visit(n); }
     std::any any_visit(SelectStatementNode *n) { return this->visit(n); }
     std::any any_visit(BlockNode *n) { return this->visit(n); }
@@ -235,7 +235,7 @@ public:
 
     vector<TypedNode *> getExprs() { return exprs; }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // PLAN: Change this to allow for more functional style? 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 
     std::string toString() const override {
@@ -350,10 +350,10 @@ public:
         post = p;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // PLAN: Change this to allow for a more functional style syntax?
 
     std::string toString() const override {
-        return "COND STATMENT NODE";
+        return "COND STATEMENT NODE";
     }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -1095,7 +1095,7 @@ public:
 
     const TypeUnit *getType() override
     {
-        return Types::UNIT; // FIXME: DO BETTER
+        return Types::UNIT; // PLAN: Change this to allow for a more functional style syntax?
     }
 
     std::string toString() const override {
