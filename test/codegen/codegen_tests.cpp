@@ -443,14 +443,14 @@ TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
         "a42b57453552706aad51cd5830bd3d0b3b6e84aa19ac27a432450dd88c87ff13");
 }
 
-TEST_CASE("programs/enum2 - Basic Enum 2", "[codegen][enum]")
+TEST_CASE("programs/enum2 - Basic Enum 2 - double cast", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum2.prism"))),
-        "57585471e0c206d25df999471586fe66161e97c6732cca186cc72f4f2ba6108c");
+        "d3a7016043df7d8f066989bf51778834ed1b6e9479bc19a2a0279542bba6aa26");
 }
 
-TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignmens outside of decl", "[codegen][enum]")
+TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignments outside of decl", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumAssign.prism"))),

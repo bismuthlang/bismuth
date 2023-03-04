@@ -401,7 +401,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
                 errorHandler.addError(n->getStart(), "Failed to generate clone fn for type: " + n->lType->toString());
                 return std::nullopt;
             }
-            Value * addrMap = getNewAddressMap(); 
+            Value *addrMap = getNewAddressMap();
             stoVal = builder->CreateCall(fn, {stoVal, addrMap});
             deleteAddressMap(addrMap);
             // return v;
@@ -971,10 +971,10 @@ std::optional<Value *> CodegenVisitor::visit(DerefBoxNode *n)
     }
 
     Value *ptrVal = baseOpt.value();
-    return n->is_rvalue ? builder->CreateLoad(ptrVal->getType()->getPointerElementType(), ptrVal) : ptrVal; 
+    return n->is_rvalue ? builder->CreateLoad(ptrVal->getType()->getPointerElementType(), ptrVal) : ptrVal;
 
-// return loaded; 
-    // return n->is_rvalue ? builder->CreateLoad(loaded->getType()->getPointerElementType(), loaded) : loaded; 
+    // return loaded;
+    // return n->is_rvalue ? builder->CreateLoad(loaded->getType()->getPointerElementType(), loaded) : loaded;
 }
 
 std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
@@ -1118,8 +1118,10 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
 
         if (index == 0)
         {
-            Value *corrected = builder->CreateBitCast(stoVal, varSymType->getLLVMType(module));
-            builder->CreateStore(corrected, v);
+            // Value *corrected = builder->CreateBitCast(stoVal, varSymType->getLLVMType(module));
+            // builder->CreateStore(corrected, v);
+            Value *corrected = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
+            builder->CreateStore(stoVal, corrected);
             return std::nullopt;
         }
         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
@@ -1208,12 +1210,13 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
                         if (index == 0)
                         {
-                            std::cout << "1211 " << varSymbol->type->toString() << std::endl; 
-                            Value *corrected = builder->CreateBitCast(stoVal, varSymbol->type->getLLVMType(module));
-                            builder->CreateStore(corrected, v);
+                            std::cout << "1211 " << varSymbol->type->toString() << std::endl;
+                            // Value *corrected = builder->CreateBitCast(stoVal, varSymbol->type->getLLVMType(module));
+                            Value *corrected = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
+                            builder->CreateStore(stoVal, corrected);
                             return std::nullopt;
                         }
-                        module->dump(); 
+                        module->dump();
                         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
 
                         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
@@ -1221,7 +1224,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
                         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
                         builder->CreateStore(stoVal, corrected);
-                        module->dump(); 
+                        module->dump();
                     }
                     else
                     {

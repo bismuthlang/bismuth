@@ -143,7 +143,7 @@ public:
     }
 };
 
-//FIXME: REFACTOR WITH METHOD IN CODEGENVISITOR!
+// FIXME: REFACTOR WITH METHOD IN CODEGENVISITOR!
 inline llvm::AllocaInst *CreateEntryBlockAlloc(llvm::IRBuilder<llvm::NoFolder> *builder, llvm::Type *ty, std::string identifier)
 {
     llvm::Function *fn = builder->GetInsertBlock()->getParent();
@@ -1613,7 +1613,6 @@ public:
             }
             i++;
         }
-
         return (unsigned int)0;
     }
 
@@ -1750,7 +1749,7 @@ public:
             builder->CreateStore(fn->getArg(1), m);
 
             llvm::BasicBlock *mergeBlk = llvm::BasicBlock::Create(M->getContext(), "matchcont");
-            
+
             llvm::Value *tagPtr = builder->CreateGEP(v,
                                                      {llvm::ConstantInt::get(
                                                           llvm::Type::getInt32Ty(M->getContext()),
@@ -1760,7 +1759,7 @@ public:
                                                           llvm::Type::getInt32Ty(M->getContext()),
                                                           0,
                                                           true)});
-            
+
             llvm::Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
 
             llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, cases.size());
