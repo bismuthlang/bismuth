@@ -1542,17 +1542,16 @@ public:
     TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) : cases(c), name(n), defined(true)
     {}
 
-    TypeSum() : defined(false)
+    TypeSum(std::string n) : name(n), defined(false)
     {}
 
-    bool define(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) const {
+    bool define(std::set<const Type *, TypeCompare> c) const {
         if(isDefined()) return false; 
 
         TypeSum *mthis = const_cast<TypeSum *>(this);
         mthis->defined = true; 
 
         mthis->cases = c; 
-        mthis->name = n; 
 
         return true; 
     }
@@ -1922,7 +1921,7 @@ public:
     TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) : elements(e), name(n), defined(true)
     {}
 
-    TypeStruct() : defined(false)
+    TypeStruct(std::string n) : name(n), defined(false)
     {}
 
     std::optional<const Type *> get(std::string id) const
@@ -1935,14 +1934,14 @@ public:
         return elements.getIndex(id);
     }
 
-    bool define(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) const {
+    bool define(LinkedMap<std::string, const Type *> e) const {
         if(isDefined()) return false; 
 
         TypeStruct *mthis = const_cast<TypeStruct *>(this);
         mthis->defined = true; 
 
         mthis->elements = e; 
-        mthis->name = n; 
+        // mthis->name = n; 
 
         return true; 
     }

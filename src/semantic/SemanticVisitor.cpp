@@ -63,7 +63,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of struct " + id);
             }
 
-            TypeStruct *structType = new TypeStruct();
+            TypeStruct *structType = new TypeStruct(id);
             Symbol *sym = new Symbol(id, structType, true, true);
             symBindings->bind(prodCtx, sym);
             stmgr->addSymbol(sym);
@@ -81,7 +81,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of enum " + id);
             }
 
-            TypeSum *ty = new TypeSum();
+            TypeSum *ty = new TypeSum(id);
             Symbol *sym = new Symbol(id, ty, true, true);
             symBindings->bind(sumCtx, sym);
             stmgr->addSymbol(sym);
@@ -1685,7 +1685,7 @@ std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
     }
 
     Symbol *sym = opt.value_or(
-        new Symbol(id, new TypeSum(), true, true));
+        new Symbol(id, new TypeSum(id), true, true));
 
     if (const TypeSum *sumTy = dynamic_cast<const TypeSum *>(sym->type))
     {
@@ -1710,7 +1710,7 @@ std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
                 return errorHandler.addError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
             }
 
-            sumTy->define(cases, id);
+            sumTy->define(cases);
 
             stmgr->addSymbol(sym);
         }
@@ -1731,7 +1731,7 @@ std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPars
     }
 
     Symbol *sym = opt.value_or(
-        new Symbol(id, new TypeStruct(), true, true));
+        new Symbol(id, new TypeStruct(id), true, true));
 
     if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(sym->type))
     {
@@ -1755,9 +1755,7 @@ std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPars
 
                 el.insert({caseName, caseTy});
             }
-            structType->define(el, id);
-            // TypeStruct *product = new TypeStruct(el, id); // FIXME: SHOULD THIS BE CONST?
-            // Symbol *prodSym = new Symbol(id, product, true, true);
+            structType->define(el);
             stmgr->addSymbol(sym);
         } // FIXME: ERROR HANDLE IF DEFINED?
         // FIXME: TRY USING FUNC DEFS AS TYPES! (FUNCS DONT SEEM TO WORK WITH PREDECL IN ENUMS!)
