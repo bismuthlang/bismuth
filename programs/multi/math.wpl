@@ -1,9 +1,9 @@
 
-(*
+/*
  * 
  * Math Helper functions to be called from other file
  *
- *)
+ */
 
 int func pow(int number, int power) {
     if power = 0 {

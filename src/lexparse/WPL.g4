@@ -302,7 +302,7 @@ INLINE_COMMENT  :   '#' .*? ('\n'|EOF)  -> skip;
  * in the comment outside of another comment, but I figure that its probably a good practice
  * to leave it in there.  
  */
-STD_COMMENT     :   '(*'  (STD_COMMENT | '('~'*' | ~'*'')' | ~'(')*? '*)' -> skip ;  
+STD_COMMENT     :   '/*'  (STD_COMMENT | '/'~'*' | ~'*''/' | ~'/')*? '*/' -> skip ;  
 
 //Typical whitespace skip
 WS  : [ \t\r\n\f]+ -> skip; 

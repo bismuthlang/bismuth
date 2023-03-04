@@ -469,8 +469,6 @@ public:
 
         for (auto alt : ctxCases)
         {
-            // const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
-
             for (Symbol *s : syms)
             {
                 stmgr->addSymbol(s);
@@ -480,15 +478,8 @@ public:
                 pair.first->setProtocol(pair.second->getCopy());
             }
 
-            // proto->append(savedRest->getCopy());
-            // channel->setProtocol(proto);
-
-            // stmgr->addSymbol(sym);
-
             stmgr->enterScope(StopType::NONE);
             std::variant<TypedNode *, ErrorChain *> optEval = typeCheck(alt);
-
-            // anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
             {
@@ -674,7 +665,6 @@ private:
 
     int flags; // Compiler flags
 
-    // INFO: TEST UNERLYING FNS!!!
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
         // First, try exiting the scope
@@ -763,9 +753,8 @@ private:
                                                     : Types::UNIT;
                 
                 funcType->setInvoke(ps, retType);
-                // Symbol *sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
 
-                // stmgr->addSymbol(sym);
+                // stmgr->addSymbol(sym); //Maybe do this here instead? would be more similar to how others are managed...
             }
 
             return sym;

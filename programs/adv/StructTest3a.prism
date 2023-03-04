@@ -72,7 +72,7 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
 }
 
 
-(*
+/*
 Color func getColor(int r, int g, int b) {
     int[3] rgb; 
 
@@ -85,7 +85,7 @@ Color func getColor(int r, int g, int b) {
                        (Color c) : int { return c[1]; },
                        (Color c) : int { return c[2]; });
 } 
-*)
+*/
 
 # int func lamePrint(Color c) {
 define func lamePrint (Color c) : int {

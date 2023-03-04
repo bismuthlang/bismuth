@@ -102,11 +102,11 @@ define getSampleColors :: io : Channel<+ColorHelper;-Color[3]> = {
     io.send(ans)
 }
 
-(*
+/*
  * Foo cannot access local variables; however, it can access 
  * any function definition in the global scope as well as 
  * any function definitions prior to it in the local scope
- *)
+ */
 # Unit func printPrimitive((int + boolean + str) toPrint) {
 # define printPrimitive :: io : Channel<+(int + boolean + str)> = {
 define func printPrimitive ((int + boolean + str) toPrint) {

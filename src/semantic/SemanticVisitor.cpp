@@ -1258,7 +1258,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
                 }
                 else
                 {
-                    foundCaseTypes.insert(caseType); // FIXME: DO BETTER TRACKING OF SATISFYING RQMTS. Right now, can pass check for having all cases due to having invalid ones!!
+                    foundCaseTypes.insert(caseType);
                 }
 
                 stmgr->enterScope(StopType::NONE);
@@ -1652,7 +1652,6 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
     for (auto e : ctx->type()) // FIXME: ADD TEST CASES LIKE THIS FOR STRUCT + ENUM!! (LINEAR CHECK?)
     {
         const Type *caseType = any2Type(e->accept(this));
-        std::cout << "1640 " << caseType->toString() << std::endl;
 
         if (isLinear(caseType))
         {
@@ -1696,7 +1695,7 @@ std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
             for (auto e : ctx->cases)
             {
                 const Type *caseType = any2Type(e->accept(this));
-                std::cout << "1676 " << caseType->toString() << std::endl;
+
                 if (isLinear(caseType))
                 {
                     return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
@@ -1758,7 +1757,6 @@ std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPars
             structType->define(el);
             stmgr->addSymbol(sym);
         } // FIXME: ERROR HANDLE IF DEFINED?
-        // FIXME: TRY USING FUNC DEFS AS TYPES! (FUNCS DONT SEEM TO WORK WITH PREDECL IN ENUMS!)
         return new DefineStructNode(id, structType, ctx->getStart());
     }
 
@@ -1958,7 +1956,6 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
-        // FIXME: TEST PROTOCOLS THAT HAVE STUFF FOLLOWING CHOICE!
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::ProtoAlternativeContext>(
             ctx,
             ctx->protoAlternative(),

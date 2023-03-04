@@ -29,8 +29,6 @@
 #include "LinkedMap.h"
 #include "Protocol.h"
 
-#include <iostream> // Cout
-
 /*******************************************
  *
  * Top Type Definition
@@ -1988,27 +1986,22 @@ public:
      */
     llvm::StructType *getLLVMType(llvm::Module *M) const override
     {
-        std::cout << "1989" << std::endl;
         llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-std::cout << "1991" << std::endl;
         if (ty)
             return ty;
 
         ty = llvm::StructType::create(M->getContext(), toString());
 
-std::cout << "1994" << std::endl;
         std::vector<llvm::Type *> typeVec;
-std::cout << "1996" << std::endl;
+
         for (auto ty : elements.getElements())
         {
             typeVec.push_back(ty.second->getLLVMType(M));
         }
-std::cout << "2001" << std::endl;
+
         llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-        ty->setBody(ref);
-        // Needed to prevent duplicating the type's definition
-        // ty = llvm::StructType::create(M->getContext(), ref, toString());
-std::cout << "2006 " << ty << std::endl;
+        ty->setBody(ref); //Done like this to enable recursive types
+
         return ty;
     }
 

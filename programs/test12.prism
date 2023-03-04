@@ -2,7 +2,7 @@ extern int func printf(...);
 
 # TODO: Params named by what they are, ret named by fn name...
 # boolean func isPrime(int n) {
-(*
+/*
 define isPrime :: c : Channel<+int;-boolean> = {
   int n := c.recv(); # TODO: ENABLE THIS NOTATION!
   var i := 3;
@@ -16,7 +16,7 @@ define isPrime :: c : Channel<+int;-boolean> = {
   # return true;
   c.send(true)
 }
-*)
+*/
 
 
 define isPrime :: c : Channel<+int;-boolean> = {

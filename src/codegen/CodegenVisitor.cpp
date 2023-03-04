@@ -380,16 +380,14 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     Symbol *sym = n->sym;
 
-    Value *stoVal = valOpt.value(); // FIXMME: STILL NEEDS TO BE DONE
+    Value *stoVal = valOpt.value();
 
     // Same as return node's
     if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->lType))
     {
         stoVal = correctSumAssignment(sum, stoVal);
     }
-
-    // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
-
+    
     std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
     {
         if (n->lType->requiresDeepCopy())
