@@ -91,7 +91,7 @@ TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
 }
     )"""");
 
-  WPLLexer lexer(input);
+  WPLLexer lexer(&input);
   antlr4::CommonTokenStream tokens(&lexer);
   WPLParser parser(&tokens);
   parser.removeErrorListeners();

@@ -283,7 +283,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                (*e)->addError(ctx->getStart(), "h280");
+                (*e)->addError(ctx->getStart(), "Failed to typecheck statement in block.");
                 return *e;
             }
 
@@ -376,7 +376,7 @@ public:
             std::variant<BlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
             if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
             {
-                (*e)->addError(ctx->getStart(), "h374");
+                (*e)->addError(ctx->getStart(), "Failed to safe visit block.");
                 return *e;
             }
 
@@ -426,7 +426,7 @@ public:
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
         std::optional<std::deque<DeepRestData *> *> deepRest = restBindings->getBinding(ctx);
-
+        std::cout << "429 " << ctx->getText() << " " << deepRest.has_value() << std::endl; 
         std::vector<TypedNode *> cases;
         // std::vector<TypedNode *> restVec;
         // bool restVecFilled = false;
@@ -477,7 +477,7 @@ public:
             cases.push_back(caseNode);
 
             // safeExitScope(ctx);
-
+            std::cout << "429 " << ctx->getText() << " " << endsInReturn(caseNode) << " "  << endsInBranch(caseNode) << caseNode->toString() << std::endl; 
             if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
             {
                 for (auto s : ctxRest->ctxRest)
@@ -543,6 +543,7 @@ public:
             }
         }
 
+        std::cout << "546 " << ctx->getText() << " "  << checkRestIndependently << " " << deepRest.has_value() << std::endl; 
         if (checkRestIndependently)
         {
             for (Symbol *s : syms)

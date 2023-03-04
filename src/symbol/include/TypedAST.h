@@ -1244,7 +1244,13 @@ inline bool endsInBranch(TypedNode *n)
         return true; 
     }
 
-    if(SelectStatementNode * sn = dynamic_cast<SelectStatementNode*>(n))
+    if (SelectAlternativeNode *cn = dynamic_cast<SelectAlternativeNode *>(n))
+    {
+        return endsInBranch(cn->eval);
+        // return true; 
+    }
+
+    if(ChannelCaseStatementNode * sn = dynamic_cast<ChannelCaseStatementNode*>(n))
     {
         return true; 
     }

@@ -1,39 +1,10 @@
 extern int func getIntArg(int i);
-# define program :: c : Channel<-int> = {
-#   var i;
-#   var result;
-#   i := getIntArg(1);
-#   if i < 0 {
-#     result := -1;
-#   } else {
-#     if i > 0 {
-#       result := 1;
-#     } else {
-#       result := 0;
-#     }
-#   }
-# return result;
-# }
 
-define program :: c : Channel<-int> = { # FIXME: THIS TEST DOESNT WORK!
+define program :: c : Channel<-int> = { 
   var i;
   var result;
   i := getIntArg(1);
-  # select { # FIXME: TEST THIS!
-  #   i < 0: {
-  #     result := -1;
-  #   }
-  #   true: {
-  #     select {
-  #       i > 0: {
-  #         result := 1;
-  #       }
-  #       true: {
-  #         result := 0; 
-  #       }
-  #     }
-  #   }
-  # }
+
   if i < 0 {
     result := -1;
   } else {

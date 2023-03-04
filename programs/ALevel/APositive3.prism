@@ -1,0 +1,23 @@
+extern int func getIntArg(int i);
+
+define program :: c : Channel<-int> = {
+  var i;
+  var result;
+  i := getIntArg(1);
+  select {
+    i < 0: {
+      result := -1;
+    }
+    true: {
+      select {
+        i > 0: {
+          result := 1;
+        }
+        true: {
+          result := 0; 
+        }
+      }
+    }
+  }
+  c.send(result)
+}

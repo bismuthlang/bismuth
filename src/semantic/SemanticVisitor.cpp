@@ -100,7 +100,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
-                (*e)->addError(ctx->getStart(), "127");
+                (*e)->addError(ctx->getStart(), "Failed to typecheck program.");
                 return *e;
             }
 
@@ -112,7 +112,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
-                (*e)->addError(ctx->getStart(), "139");
+                (*e)->addError(ctx->getStart(), "Failed to typecheck function.");
                 return *e;
             }
 
@@ -1253,7 +1253,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            (*e)->addError(ctx->getStart(), "2081");
+            (*e)->addError(ctx->getStart(), "Failed to typecheck match statement.");
             return *e;
         }
 
@@ -1382,8 +1382,9 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     {
         // for (auto c : b->eval)
         // {
-        if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
+        // if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
         {
+            //FIXME: REMOVE IF FOR ALL OF THESE SO THAT WAY WE WONT HAVE ISSUES WITH BLOCKS & SUCH 
             bindRestData(b->eval, rest);
             // restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
         }
@@ -1455,7 +1456,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
     {
-        (*e)->addError(ctx->getStart(), "2081");
+        (*e)->addError(ctx->getStart(), "Failed to typecheck select statement.");
         return *e;
     }
 
@@ -1929,7 +1930,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            (*e)->addError(ctx->getStart(), "2081");
+            (*e)->addError(ctx->getStart(), "Failed to typecheck external choice.");
             return *e;
         }
 

@@ -774,9 +774,16 @@ TEST_CASE("A Level Positive Test #1", "[codegen]")
         "7a0d3342785b78cffa33ad1c1bbbecd7bd7367463705b97a0bc3a831d732f899");
 }
 
-TEST_CASE("A Level Positive Test #2", "[codegen]")
+TEST_CASE("A Level Positive Test #2 - If", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive2.prism"))),
         "ecfc5bb3a1c80dfbb6a081db21981d480c5bc8a7554ea97c1b448bfa32873279");
+}
+
+TEST_CASE("A Level Positive Test #3 - Select", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive3.prism"))),
+        "3e4bbb78e55db74faabe73e8cfc7ac1d99ebbdb47db4709ea202dea539fa7206");
 }
