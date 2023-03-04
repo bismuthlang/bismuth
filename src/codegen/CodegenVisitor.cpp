@@ -103,7 +103,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     }
 
     Value *sumVal = optVal.value();
-    std::cout << "106" << std::endl;
+    
     llvm::AllocaInst *SumPtr = CreateEntryBlockAlloc(sumVal->getType(), "");
     builder->CreateStore(sumVal, SumPtr);
 
@@ -138,7 +138,6 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
         llvm::Type *ty = localSym->type->getLLVMType(module);
 
         // Can skip global stuff
-        std::cout << "141" << std::endl;
         llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, localSym->getIdentifier());
         localSym->val = v;
         // varSymbol->val = v;
@@ -1210,13 +1209,12 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
                         if (index == 0)
                         {
-                            std::cout << "1211 " << varSymbol->type->toString() << std::endl;
                             // Value *corrected = builder->CreateBitCast(stoVal, varSymbol->type->getLLVMType(module));
                             Value *corrected = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
                             builder->CreateStore(stoVal, corrected);
                             return std::nullopt;
                         }
-                        module->dump();
+
                         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
 
                         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
@@ -1224,7 +1222,6 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
                         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
                         builder->CreateStore(stoVal, corrected);
-                        module->dump();
                     }
                     else
                     {

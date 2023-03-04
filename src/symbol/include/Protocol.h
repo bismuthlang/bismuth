@@ -16,7 +16,6 @@
 
 #include <any>      // Needed for anycasts
 #include <utility>  // Needed for anycasts
-#include <iostream> // cout
 #include <vector>   // Vectors
 #include <optional> // Optionals
 

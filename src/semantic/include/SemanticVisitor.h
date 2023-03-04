@@ -426,7 +426,7 @@ public:
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
         std::optional<std::deque<DeepRestData *> *> deepRest = restBindings->getBinding(ctx);
-        std::cout << "429 " << ctx->getText() << " " << deepRest.has_value() << std::endl; 
+
         std::vector<TypedNode *> cases;
         // std::vector<TypedNode *> restVec;
         // bool restVecFilled = false;
@@ -477,7 +477,6 @@ public:
             cases.push_back(caseNode);
 
             // safeExitScope(ctx);
-            std::cout << "429 " << ctx->getText() << " " << endsInReturn(caseNode) << " "  << endsInBranch(caseNode) << caseNode->toString() << std::endl; 
             if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
             {
                 for (auto s : ctxRest->ctxRest)
@@ -543,7 +542,6 @@ public:
             }
         }
 
-        std::cout << "546 " << ctx->getText() << " "  << checkRestIndependently << " " << deepRest.has_value() << std::endl; 
         if (checkRestIndependently)
         {
             for (Symbol *s : syms)

@@ -19,7 +19,6 @@
 
 #include <any>      // Needed for anycasts
 #include <utility>  // Needed for anycasts
-#include <iostream> // cout
 #include <vector>   // Vectors
 #include <optional> // Optionals
 
@@ -1399,7 +1398,6 @@ protected:
             {
                 if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
                 {
-                    std::cout << "PARAM FAIL" << std::endl;
                     return false;
                 }
             }

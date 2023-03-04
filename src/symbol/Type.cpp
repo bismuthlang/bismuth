@@ -177,7 +177,6 @@ bool ProtocolSequence::contract() const
 
 bool ProtocolSequence::weaken() const
 {
-    // std::cout << "WEAK 162 " <<this->toString() << std::endl; 
     if (isWN())
     {
         if(steps.front()->isGuarded() || this->isGuarded())
@@ -190,32 +189,6 @@ bool ProtocolSequence::weaken() const
 
     return false;
 }
-
-// bool ProtocolSequence::isWNWN() const
-// {
-//     if (isComplete())
-//         return false;
-//     const Protocol *proto = steps.front();
-//     if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto))
-//     {
-//         return wn->getInnerProtocol()->isWN();
-//     }
-
-//     return false;
-// }
-
-// optional<const ProtocolSequence *> ProtocolSequence::shearLoop() const
-// {
-//     if (isWNWN())
-//     {
-//         const Protocol *proto = steps.front();
-//         const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto);
-
-//         return toSequence(wn->getInnerProtocol()->getCopy());
-//     }
-
-//     return std::nullopt;
-// }
 
 bool ProtocolSequence::isOC() const
 {

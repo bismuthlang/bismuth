@@ -164,7 +164,6 @@ public:
         builder->SetInsertPoint(bBlk);
 
         // Bind all of the arguments
-        std::cout << "167" << std::endl;
         llvm::AllocaInst *v = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
         n->channelSymbol->val = v;
 
@@ -449,7 +448,7 @@ public:
         if (index != 0)
         {
             llvm::Type *sumTy = sum->getLLVMType(module);
-            std::cout << "452" << std::endl;
+
             llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
 
             Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
@@ -470,7 +469,6 @@ public:
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst * CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
-        std::cout << "471 " << identifier << std::endl;
         llvm::Function* fn = builder->GetInsertBlock()->getParent();
 
         // if (fn != nullptr)
@@ -479,7 +477,6 @@ public:
             // {
                 // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
                 IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-                std::cout << "480 " << identifier << std::endl;
                 return tempBuilder.CreateAlloca(ty, 0, identifier); 
             // }
 
