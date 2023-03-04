@@ -33,7 +33,7 @@ extern "C" void waitForAllToFinish()
 
 std::map<unsigned int, IPCBuffer<Message> *> State;
 
-std::map<unsigned int, unsigned int> LookupOther; // FIXME: NAME BETTER
+std::map<unsigned int, unsigned int> LookupOther; //Name this something better?
 
 std::mutex exec_mutex;
 

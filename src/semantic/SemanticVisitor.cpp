@@ -401,7 +401,8 @@ std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::I
 {
     const Type *storeType = any2Type(ctx->ty->accept(this));
 
-    if(isLinear(storeType)) {
+    if (isLinear(storeType))
+    {
         return errorHandler.addError(ctx->ty->getStart(), "Cannot create a box with a linear type!");
     }
 
@@ -418,7 +419,8 @@ std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::I
 
     const Type *providedType = tn->getType();
 
-    if(isLinear(providedType)) {
+    if (isLinear(providedType))
+    {
         return errorHandler.addError(ctx->expr->getStart(), "Cannot create a box with a linear type!");
     }
 
@@ -488,7 +490,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LVa
     {
         return TNVariantCast<FieldAccessNode>(visitCtx(ctx->var, false));
     }
-    else if(ctx->deref)
+    else if (ctx->deref)
     {
         return TNVariantCast<DerefBoxNode>(visitCtx(ctx->deref, false));
     }
@@ -858,7 +860,7 @@ std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::
     TypedNode *expr = std::get<TypedNode *>(exprOpt);
 
     const Type *exprType = expr->getType();
-    if (const TypeBox * box = dynamic_cast<const TypeBox*>(exprType))
+    if (const TypeBox *box = dynamic_cast<const TypeBox *>(exprType))
     {
         return new DerefBoxNode(box, expr, is_rvalue, ctx->getStart());
     }
@@ -1185,7 +1187,6 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
         std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
         rest->push_front(restDat);
 
-        // bindRestData(ctx, restDat);
         for (auto b : ctx->cases)
         {
             bindRestData(b->eval, rest);
@@ -1328,17 +1329,13 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
 
     DeepRestData *restDat = new DeepRestData(ctx->rest);
     std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
-    rest->push_front(restDat); //Is deque so that way we keep things reversed
+    rest->push_front(restDat); // Is deque so that way we keep things reversed
 
     for (auto b : blksCtx)
     {
         for (auto c : b->stmts)
         {
-            if (dynamic_cast<WPLParser::ConditionalStatementContext *>(c) || dynamic_cast<WPLParser::SelectStatementContext *>(c) || dynamic_cast<WPLParser::MatchStatementContext *>(c) || dynamic_cast<WPLParser::ProgramCaseContext *>(c))
-            {
-                bindRestData(c, rest);
-                // restBindings->bind(c, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
-            }
+            bindRestData(c, rest);
         }
     }
 
@@ -1377,18 +1374,9 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
     rest->push_front(restDat); // Is deque so that way we keep things reversed
 
-    // bindRestData(ctx, restDat);
     for (auto b : ctx->cases)
     {
-        // for (auto c : b->eval)
-        // {
-        // if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
-        {
-            //FIXME: REMOVE IF FOR ALL OF THESE SO THAT WAY WE WONT HAVE ISSUES WITH BLOCKS & SUCH 
-            bindRestData(b->eval, rest);
-            // restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
-        }
-        // }
+        bindRestData(b->eval, rest);
     }
 
     unsigned int case_count = 0;
@@ -1788,9 +1776,10 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BoxTypeContext *ctx)
 {
     const Type *inner = any2Type(ctx->ty->accept(this));
 
-    if(isLinear(inner)) {
+    if (isLinear(inner))
+    {
         errorHandler.addError(ctx->ty->getStart(), "Cannot box a linear resource.");
-        return Types::ABSURD; 
+        return Types::ABSURD;
     }
 
     return new TypeBox(inner);
@@ -1896,17 +1885,9 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
         std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
         rest->push_front(restDat); // Is deque so that way we keep things reversed
 
-        // bindRestData(ctx, restDat);
         for (auto b : ctx->protoAlternative())
         {
-            // for (auto c : b->eval)
-            // {
-            if (dynamic_cast<WPLParser::ConditionalStatementContext *>(b->eval) || dynamic_cast<WPLParser::SelectStatementContext *>(b->eval) || dynamic_cast<WPLParser::MatchStatementContext *>(b->eval) || dynamic_cast<WPLParser::ProgramCaseContext *>(b->eval))
-            {
-                bindRestData(b->eval, rest);
-                // restBindings->bind(b->eval, rest); // Append<WPLParser::StatementContext*>({}, ctx->rest));
-            }
-            // }
+            bindRestData(b->eval, rest);
         }
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
