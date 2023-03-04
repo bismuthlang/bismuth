@@ -523,9 +523,9 @@ class DefineEnumNode : public TypedNode
 {
 public:
     string name;
-    TypeSum *sum;
+    const TypeSum *sum;
 
-    DefineEnumNode(string n, TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
+    DefineEnumNode(string n, const TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;
@@ -545,9 +545,9 @@ class DefineStructNode : public TypedNode
 {
 public:
     string name;
-    TypeStruct *product;
+    const TypeStruct *product;
 
-    DefineStructNode(string n, TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
+    DefineStructNode(string n, const TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;

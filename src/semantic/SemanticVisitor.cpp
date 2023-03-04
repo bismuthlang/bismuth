@@ -7,10 +7,10 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
     std::vector<ExternNode *> externs;
 
-    std::vector<std::pair<WPLParser::DefineProcContext *, TypeProgram*>> progs; 
-    std::vector<std::pair<WPLParser::DefineFuncContext *, TypeInvoke*>> funcs; 
-    std::vector<std::pair<WPLParser::DefineStructContext *, LinkedMap<std::string, const Type *>>> structs; 
-    std::vector<std::pair<WPLParser::DefineEnumContext *, std::set<const Type *, TypeCompare>>> enums; 
+    std::vector<std::pair<WPLParser::DefineProcContext *, TypeProgram *>> progs;
+    std::vector<std::pair<WPLParser::DefineFuncContext *, TypeInvoke *>> funcs;
+    std::vector<std::pair<WPLParser::DefineStructContext *, TypeStruct *>> structs;
+    std::vector<std::pair<WPLParser::DefineEnumContext *, TypeSum *>> enums;
 
     std::vector<DefinitionNode> defs;
 
@@ -27,8 +27,8 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of program " + id);
             }
 
-            TypeProgram * progType = new TypeProgram(); 
-            Symbol *progSym = new Symbol(id, progType, true, true); 
+            TypeProgram *progType = new TypeProgram();
+            Symbol *progSym = new Symbol(id, progType, true, true);
             symBindings->bind(progCtx->defineProc(), progSym);
             stmgr->addSymbol(progSym);
 
@@ -36,7 +36,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
         }
         else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))
         {
-            std::string id = fnCtx->defineFunc()->name->getText(); 
+            std::string id = fnCtx->defineFunc()->name->getText();
 
             std::optional<SymbolContext> opt = stmgr->lookup(id);
 
@@ -45,12 +45,48 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of function " + id);
             }
 
-            TypeInvoke * funcType = new TypeInvoke(); 
-            Symbol *sym = new Symbol(id, funcType, true, true); 
+            TypeInvoke *funcType = new TypeInvoke();
+            Symbol *sym = new Symbol(id, funcType, true, true);
             symBindings->bind(fnCtx->defineFunc(), sym);
             stmgr->addSymbol(sym);
 
             funcs.push_back({fnCtx->defineFunc(), funcType});
+        }
+        else if (WPLParser::DefineStructContext *prodCtx = dynamic_cast<WPLParser::DefineStructContext *>(e))
+        {
+            std::string id = prodCtx->name->getText();
+
+            std::optional<SymbolContext> opt = stmgr->lookup(id);
+
+            if (opt)
+            {
+                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of struct " + id);
+            }
+
+            TypeStruct *structType = new TypeStruct();
+            Symbol *sym = new Symbol(id, structType, true, true);
+            symBindings->bind(prodCtx, sym);
+            stmgr->addSymbol(sym);
+
+            structs.push_back({prodCtx, structType});
+        }
+        else if (WPLParser::DefineEnumContext *sumCtx = dynamic_cast<WPLParser::DefineEnumContext *>(e))
+        {
+            std::string id = sumCtx->name->getText();
+
+            std::optional<SymbolContext> opt = stmgr->lookup(id);
+
+            if (opt)
+            {
+                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of enum " + id);
+            }
+
+            TypeSum *ty = new TypeSum();
+            Symbol *sym = new Symbol(id, ty, true, true);
+            symBindings->bind(sumCtx, sym);
+            stmgr->addSymbol(sym);
+
+            enums.push_back({sumCtx, ty});
         }
         else
         {
@@ -61,18 +97,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
                 return *e;
             }
 
-            if (dynamic_cast<WPLParser::DefineStructContext *>(e))
-            {
-                defs.push_back(dynamic_cast<DefineStructNode *>(std::get<TypedNode *>(opt)));
-            }
-            else if (dynamic_cast<WPLParser::DefineEnumContext *>(e))
-            {
-                defs.push_back(dynamic_cast<DefineEnumNode *>(std::get<TypedNode *>(opt)));
-            }
-            else
-            {
-                errorHandler.addError(ctx->getStart(), "Unhandled case");
-            }
+            errorHandler.addError(ctx->getStart(), "Unhandled case");
         }
     }
 
@@ -93,13 +118,21 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     // Auto forward decl
 
     // FIXME: ERROR CHECK!
-    for(auto e : progs)
+    for (auto e : progs)
     {
         getProgramSymbol(e.first);
     }
-    for(auto e : funcs) 
+    for (auto e : funcs)
     {
         getFunctionSymbol(e.first);
+    }
+    for (auto e : structs)
+    {
+        std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
+    }
+    for (auto e : enums)
+    {
+        std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
     }
 
     // Visit the statements contained in the unit
@@ -1619,6 +1652,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
     for (auto e : ctx->type()) // FIXME: ADD TEST CASES LIKE THIS FOR STRUCT + ENUM!! (LINEAR CHECK?)
     {
         const Type *caseType = any2Type(e->accept(this));
+        std::cout << "1640 " << caseType->toString() << std::endl;
 
         if (isLinear(caseType))
         {
@@ -1643,73 +1677,94 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
 std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineEnumContext *ctx)
 {
     std::string id = ctx->name->getText();
-    std::optional<SymbolContext> opt = stmgr->lookup(id);
-    if (opt)
+    // std::optional<SymbolContext> opt = stmgr->lookup(id);
+    std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+    if (!opt && stmgr->lookup(id))
     {
         return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
     }
 
-    std::set<const Type *, TypeCompare> cases = {};
+    Symbol *sym = opt.value_or(
+        new Symbol(id, new TypeSum(), true, true));
 
-    for (auto e : ctx->cases)
+    if (const TypeSum *sumTy = dynamic_cast<const TypeSum *>(sym->type))
     {
-        const Type *caseType = any2Type(e->accept(this));
-
-        if (isLinear(caseType))
+        if (!sumTy->isDefined())
         {
-            return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
+            std::set<const Type *, TypeCompare> cases = {};
+
+            for (auto e : ctx->cases)
+            {
+                const Type *caseType = any2Type(e->accept(this));
+                std::cout << "1676 " << caseType->toString() << std::endl;
+                if (isLinear(caseType))
+                {
+                    return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
+                }
+
+                cases.insert(caseType);
+            }
+
+            if (cases.size() != ctx->cases.size())
+            {
+                return errorHandler.addError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
+            }
+
+            sumTy->define(cases, id);
+
+            stmgr->addSymbol(sym);
         }
-
-        cases.insert(caseType);
+        return new DefineEnumNode(id, sumTy, ctx->getStart());
     }
 
-    if (cases.size() != ctx->cases.size())
-    {
-        return errorHandler.addError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
-    }
-
-    TypeSum *sum = new TypeSum(cases, id); // SHOULD THIS BE CONST?
-    Symbol *enumSym = new Symbol(id, sum, true, true);
-
-    stmgr->addSymbol(enumSym);
-
-    return new DefineEnumNode(id, sum, ctx->getStart());
+    return errorHandler.addError(ctx->getStart(), "Expected enum/sum, but got: " + sym->type->toString());
 }
 
 std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineStructContext *ctx)
 {
     std::string id = ctx->name->getText();
-    std::optional<SymbolContext> opt = stmgr->lookup(id);
-    if (opt)
+    std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+    // std::optional<SymbolContext> opt = stmgr->lookup(id);
+    if (!opt && stmgr->lookup(id))
     {
         return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
     }
 
-    LinkedMap<std::string, const Type *> el;
+    Symbol *sym = opt.value_or(
+        new Symbol(id, new TypeStruct(), true, true));
 
-    for (WPLParser::StructCaseContext *caseCtx : ctx->cases)
+    if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(sym->type))
     {
-        std::string caseName = caseCtx->name->getText();
-        if (el.lookup(caseName))
+        if (!structType->isDefined())
         {
-            return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
-        }
-        const Type *caseTy = any2Type(caseCtx->ty->accept(this));
+            LinkedMap<std::string, const Type *> el;
 
-        if (isLinear(caseTy))
-        {
-            return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString() + ", in non-linear container.");
-        }
+            for (WPLParser::StructCaseContext *caseCtx : ctx->cases)
+            {
+                std::string caseName = caseCtx->name->getText();
+                if (el.lookup(caseName))
+                {
+                    return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
+                }
+                const Type *caseTy = any2Type(caseCtx->ty->accept(this));
 
-        el.insert({caseName, caseTy});
+                if (isLinear(caseTy))
+                {
+                    return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString() + ", in non-linear container.");
+                }
+
+                el.insert({caseName, caseTy});
+            }
+            structType->define(el, id);
+            // TypeStruct *product = new TypeStruct(el, id); // FIXME: SHOULD THIS BE CONST?
+            // Symbol *prodSym = new Symbol(id, product, true, true);
+            stmgr->addSymbol(sym);
+        } // FIXME: ERROR HANDLE IF DEFINED?
+        // FIXME: TRY USING FUNC DEFS AS TYPES! (FUNCS DONT SEEM TO WORK WITH PREDECL IN ENUMS!)
+        return new DefineStructNode(id, structType, ctx->getStart());
     }
 
-    TypeStruct *product = new TypeStruct(el, id); // FIXME: SHOULD THIS BE CONST?
-    Symbol *prodSym = new Symbol(id, product, true, true);
-    stmgr->addSymbol(prodSym);
-
-    // FIXME: TRY USING FUNC DEFS AS TYPES! (FUNCS DONT SEEM TO WORK WITH PREDECL IN ENUMS!)
-    return new DefineStructNode(id, product, ctx->getStart());
+    return errorHandler.addError(ctx->getStart(), "Expected struct/product, but got: " + sym->type->toString());
 }
 
 const Type *SemanticVisitor::visitCtx(WPLParser::CustomTypeContext *ctx)

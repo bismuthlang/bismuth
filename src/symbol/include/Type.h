@@ -1040,7 +1040,8 @@ private:
 
 public:
     TypeProgram() : defined(false)
-    {}
+    {
+    }
     /**
      * @brief Construct a new Type Invoke object
      *
@@ -1049,23 +1050,25 @@ public:
      * @param d Determines if this has been fully defined
      */
     TypeProgram(const TypeChannel *c) : channel(c), defined(true)
-    {}
+    {
+    }
 
-    bool setChannel(const TypeChannel *c) const {
-        if(defined) return false; 
+    bool setChannel(const TypeChannel *c) const
+    {
+        if (defined)
+            return false;
 
-        
         TypeProgram *mthis = const_cast<TypeProgram *>(this);
-        mthis->defined = true; 
-        mthis->channel = c; 
+        mthis->defined = true;
+        mthis->channel = c;
 
-        return true; 
+        return true;
     }
 
     std::string toString() const override
     {
         std::ostringstream description;
-        description << "PROGRAM : " << (channel ?  channel->toString() : "PARTIAL DEFINITION");
+        description << "PROGRAM : " << (channel ? channel->toString() : "PARTIAL DEFINITION");
 
         return description.str();
     }
@@ -1197,7 +1200,8 @@ public:
      *
      */
     TypeInvoke() : defined(false)
-    {}
+    {
+    }
 
     /**
      * @brief Construct a new Type Invoke object
@@ -1206,21 +1210,23 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeInvoke(std::vector<const Type *> p, const Type *r=Types::UNIT, bool v=false) : paramTypes(p), retType(r), variadic(v), defined(true)
-    {}
-
-    bool setInvoke(std::vector<const Type *> p, const Type *r=Types::UNIT, bool v=false) const {
-        if(defined) return false; 
-
-        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
-        mthis->defined = true; 
-        mthis->paramTypes = p; 
-        mthis->retType = r; 
-        mthis->variadic = v;
-
-        return true; 
+    TypeInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) : paramTypes(p), retType(r), variadic(v), defined(true)
+    {
     }
 
+    bool setInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) const
+    {
+        if (defined)
+            return false;
+
+        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
+        mthis->defined = true;
+        mthis->paramTypes = p;
+        mthis->retType = r;
+        mthis->variadic = v;
+
+        return true;
+    }
 
     /**
      * @brief Returns a string representation of the type in format: <PROC | FUNC> (param_0, param_1, ...) -> return_type.
@@ -1230,7 +1236,7 @@ public:
     std::string toString() const override
     {
         std::ostringstream description;
-        
+
         if (paramTypes.size() == 0)
             description << "()"; // TODO: change whole thing to tuple to make it easier to deal with
 
@@ -1530,12 +1536,28 @@ private:
     // llvm::Type * llvmType;
     std::optional<std::string> name = {};
 
+    bool defined; 
+
 public:
-    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {})
-    {
-        cases = c;
-        name = n;
+    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) : cases(c), name(n), defined(true)
+    {}
+
+    TypeSum() : defined(false)
+    {}
+
+    bool define(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) const {
+        if(isDefined()) return false; 
+
+        TypeSum *mthis = const_cast<TypeSum *>(this);
+        mthis->defined = true; 
+
+        mthis->cases = c; 
+        mthis->name = n; 
+
+        return true; 
     }
+
+    bool isDefined() const { return defined; }
 
     // auto lexical_compare = [](int a, int b) { return to_string(a) < to_string(b); };
 
@@ -1890,12 +1912,18 @@ private:
      */
     std::optional<std::string> name;
 
+    /**
+     * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
+     *
+     */
+    bool defined;
+
 public:
-    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {})
-    {
-        elements = e;
-        name = n;
-    }
+    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) : elements(e), name(n), defined(true)
+    {}
+
+    TypeStruct() : defined(false)
+    {}
 
     std::optional<const Type *> get(std::string id) const
     {
@@ -1906,6 +1934,20 @@ public:
     {
         return elements.getIndex(id);
     }
+
+    bool define(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) const {
+        if(isDefined()) return false; 
+
+        TypeStruct *mthis = const_cast<TypeStruct *>(this);
+        mthis->defined = true; 
+
+        mthis->elements = e; 
+        mthis->name = n; 
+
+        return true; 
+    }
+
+    bool isDefined() const { return defined; }
 
     // std::map<std::string, const Type*> getElements() const { return elements; }
     vector<pair<std::string, const Type *>> getElements() const { return elements.getElements(); }
