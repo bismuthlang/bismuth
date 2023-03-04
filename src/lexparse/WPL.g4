@@ -5,7 +5,7 @@
 grammar WPL; //FIXME: IF WE UPDATE THE SYNTAX, THEN OUR PROGRAM TESTS WILL INCORRECTLY FAIL/PASS DUE TO SYNTAX ERROR
 
 // Parser rules
-compilationUnit   :  (extens+=externStatement | defs+=defineType)* EOF ; 
+compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ; 
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
 

@@ -307,6 +307,43 @@ public:
         return new BlockNode(nodes, ctx->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
 
+    std::variant<Symbol *, ErrorChain *> getProgramSymbol(WPLParser::DefineProcContext *ctx)
+    {
+        std::optional<Symbol *> symOpt = symBindings->getBinding(ctx);
+
+        if (!symOpt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+        {
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+        }
+
+        Symbol *sym = symOpt.value_or(
+            new Symbol(
+                ctx->name->getText(), new TypeProgram(),
+                true, false));
+
+        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->type))
+        {
+            // std::string funcId = ctx->name->getText();
+
+            if (!progType->isDefined())
+            {
+                const Type *ty = any2Type(ctx->ty->accept(this));
+
+                if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
+                {
+                    progType->setChannel(channel);
+                }
+                else
+                {
+                    return errorHandler.addError(ctx->getStart(), "Process expected channel but got " + ty->toString());
+                }
+            }
+            return sym;
+        }
+
+        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString());
+    }
+
     /**
      * @brief Visits an invokable definition (PROC or FUNC)
      *
@@ -319,42 +356,28 @@ public:
      */
     std::variant<ProgramDefNode *, ErrorChain *> visitInvokeable(WPLParser::DefineProcContext *ctx)
     {
-        std::optional<Symbol *> symOpt = symBindings->getBinding(ctx);
+        std::variant<Symbol *, ErrorChain *> symOpt = getProgramSymbol(ctx);
 
-        if (!symOpt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
         {
-            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+            return *e;
         }
 
-        Symbol *sym = symOpt.value_or(
-            new Symbol(
-                ctx->name->getText(), [this, ctx]() -> const Type *
-                {
-                    const Type *retType = any2Type(ctx->ty->accept(this));
+        Symbol *sym = std::get<Symbol *>(symOpt);
 
-                    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(retType))
-                    {
-                        // Create a new func with the return type (or reuse the procType) NOTE: We do NOT need to worry about discarding the variadic here as variadic FUNC/PROC is not supported
-                        const TypeProgram *funcType = new TypeProgram(channel, false);
-
-                        return funcType;
-                    }
-                    return retType; }(),
-                true, false));
-
-        if (const TypeProgram *funcType = dynamic_cast<const TypeProgram *>(sym->type))
+        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->type))
         {
             std::string funcId = ctx->name->getText();
 
             // If the symbol name is program, do some extra checks to make sure it has no arguments and returns an INT. Otherwise, we will get a link error.
             // if (funcId == "program") //FIXME: DO BETTER
             // {
-            //     if (!dynamic_cast<const TypeInt *>(funcType->getReturnType()))
+            //     if (!dynamic_cast<const TypeInt *>(progType->getReturnType()))
             //     {
             //         errorHandler.addSemanticCritWarning(ctx->getStart(), "program() should return type INT");
             //     }
 
-            //     if (funcType->getParamTypes().size() != 0)
+            //     if (progType->getParamTypes().size() != 0)
             //     {
             //         errorHandler.addSemanticCritWarning(ctx->getStart(), "program() should have no arguments");
             //     }
@@ -366,7 +389,7 @@ public:
             stmgr->addSymbol(sym);
             stmgr->enterScope(StopType::GLOBAL); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
 
-            Symbol *channelSymbol = new Symbol(ctx->channelName->getText(), funcType->getChannelType()->getCopy(), false, false);
+            Symbol *channelSymbol = new Symbol(ctx->channelName->getText(), progType->getChannelType()->getCopy(), false, false);
 
             stmgr->addSymbol(channelSymbol);
             // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
@@ -389,7 +412,7 @@ public:
             // Safe exit the scope.
             safeExitScope(ctx);
 
-            return new ProgramDefNode(funcId, channelSymbol, std::get<BlockNode *>(blkOpt), funcType, ctx->getStart());
+            return new ProgramDefNode(funcId, channelSymbol, std::get<BlockNode *>(blkOpt), progType, ctx->getStart());
         }
         else
         {
@@ -421,7 +444,7 @@ public:
         antlr4::ParserRuleContext *ctx,
         std::vector<T *> ctxCases,
         // std::vector<WPLParser::StatementContext *> ctxRest,
-        DeepRestData* ctxRest, 
+        DeepRestData *ctxRest,
         bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
     {
@@ -496,10 +519,10 @@ public:
                 }
 
                 // restVecFilled = true;
-                ctxRest->isGenerated = true; 
+                ctxRest->isGenerated = true;
             }
-            
-            //FIXME: WILL NEED TO RUN THIS CHECK ON EACH ITERATION!
+
+            // FIXME: WILL NEED TO RUN THIS CHECK ON EACH ITERATION!
             if (deepRest && !endsInReturn(ctxRest->post) && !endsInBranch(ctxRest->post))
             {
                 for (auto r : *(deepRest.value()))
@@ -571,7 +594,7 @@ public:
 
             if (deepRest && !endsInReturn(ctxRest->post))
             {
-                for (auto r : *(deepRest.value())) //FIXME: NEED TO REVERSE?
+                for (auto r : *(deepRest.value())) // FIXME: NEED TO REVERSE?
                 {
                     for (auto s : r->ctxRest)
                     {
@@ -706,83 +729,106 @@ private:
     std::variant<Symbol *, ErrorChain *> getFunctionSymbol(WPLParser::DefineFuncContext *ctx)
     {
         std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-        if (opt)
-            return opt.value();
-
-        if (stmgr->lookupInCurrentScope(ctx->name->getText()))
+        
+        if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
         {
             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
         }
 
-        std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
+        Symbol *sym = opt.value_or(
+            new Symbol(
+                ctx->name->getText(), new TypeInvoke(),
+                true, false));
 
-        if (!paramTypeOpt)
+        if (const TypeInvoke *funcType = dynamic_cast<const TypeInvoke *>(sym->type))
         {
-            return errorHandler.addError(ctx->getStart(), "340");
+            if (!funcType->isDefined())
+            {
+                std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
+
+                if (!paramTypeOpt)
+                {
+                    return errorHandler.addError(ctx->getStart(), "340");
+                }
+
+                ParameterListNode params = paramTypeOpt.value();
+                std::vector<const Type *> ps;
+
+                for (ParameterNode param : params)
+                {
+                    ps.push_back(param.type);
+                }
+
+                const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this))
+                                                    : Types::UNIT;
+                
+                funcType->setInvoke(ps, retType);
+                // Symbol *sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
+
+                // stmgr->addSymbol(sym);
+            }
+
+            return sym;
         }
 
-        ParameterListNode params = paramTypeOpt.value();
-        std::vector<const Type *> ps;
-
-        for (ParameterNode param : params)
-        {
-            ps.push_back(param.type);
-        }
-
-        const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this))
-                                            : Types::UNIT;
-
-        Symbol *sym = new Symbol(ctx->name->getText(), new TypeInvoke(ps, retType), true, false); // FIXME: DO BETTER;
-
-        stmgr->addSymbol(sym);
-
-        return sym;
+        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString());
     }
 
-    
-    void bindRestData(antlr4::ParserRuleContext * ctx, std::deque<DeepRestData *>* rd) { //DeepRestData * rd) {
-        if(WPLParser::BlockStatementContext* bs = dynamic_cast<WPLParser::BlockStatementContext*>(ctx)) {
+    void bindRestData(antlr4::ParserRuleContext *ctx, std::deque<DeepRestData *> *rd)
+    { // DeepRestData * rd) {
+        if (WPLParser::BlockStatementContext *bs = dynamic_cast<WPLParser::BlockStatementContext *>(ctx))
+        {
             return bindRestData(bs->block(), rd);
         }
 
-        if(WPLParser::BlockContext* blk = dynamic_cast<WPLParser::BlockContext*>(ctx)) {
-            if(blk->stmts.size() == 0) return; 
+        if (WPLParser::BlockContext *blk = dynamic_cast<WPLParser::BlockContext *>(ctx))
+        {
+            if (blk->stmts.size() == 0)
+                return;
 
-            return bindRestData(blk->stmts.at(blk->stmts.size() - 1), rd); 
+            return bindRestData(blk->stmts.at(blk->stmts.size() - 1), rd);
         }
 
-        if(WPLParser::ConditionalStatementContext* cs = dynamic_cast<WPLParser::ConditionalStatementContext*>(ctx)) {
+        if (WPLParser::ConditionalStatementContext *cs = dynamic_cast<WPLParser::ConditionalStatementContext *>(ctx))
+        {
             // for(auto b : cs->block()) {
             //     bindRestData(b, rd);
             // }
             restBindings->bind(cs, rd);
-            return; 
+            return;
         }
 
-        if(WPLParser::SelectStatementContext* sel = dynamic_cast<WPLParser::SelectStatementContext*>(ctx)) {
+        if (WPLParser::SelectStatementContext *sel = dynamic_cast<WPLParser::SelectStatementContext *>(ctx))
+        {
             // for(auto c : sel->cases) {
             //     bindRestData(c->eval, rd);
             // }
             restBindings->bind(sel, rd);
-            return; 
+            return;
         }
 
-        if(WPLParser::MatchStatementContext* mc = dynamic_cast<WPLParser::MatchStatementContext*>(ctx)) {
+        if (WPLParser::MatchStatementContext *mc = dynamic_cast<WPLParser::MatchStatementContext *>(ctx))
+        {
             // for(auto c : mc->cases) {
             //     bindRestData(c->eval, rd);
             // }
             restBindings->bind(mc, rd);
-            return; 
+            return;
         }
 
-        if(WPLParser::ProgramCaseContext* cc = dynamic_cast<WPLParser::ProgramCaseContext*>(ctx)) {
+        if (WPLParser::ProgramCaseContext *cc = dynamic_cast<WPLParser::ProgramCaseContext *>(ctx))
+        {
             // for(auto o : cc->opts) {
             //     bindRestData(o->eval, rd);
             // }
             restBindings->bind(cc, rd);
             return;
         }
-
     }
-    
+
+    void isTypeCyclical(const Type *def, const Type *inner)
+    {
+        std::vector<const Type *> toVisit = {inner};
+        std::set<const Type *> visited = {def};
+    }
 };

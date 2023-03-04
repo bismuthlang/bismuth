@@ -6,49 +6,51 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     stmgr->enterScope(StopType::NONE);
 
     std::vector<ExternNode *> externs;
+
+    std::vector<std::pair<WPLParser::DefineProcContext *, TypeProgram*>> progs; 
+    std::vector<std::pair<WPLParser::DefineFuncContext *, TypeInvoke*>> funcs; 
+    std::vector<std::pair<WPLParser::DefineStructContext *, LinkedMap<std::string, const Type *>>> structs; 
+    std::vector<std::pair<WPLParser::DefineEnumContext *, std::set<const Type *, TypeCompare>>> enums; 
+
     std::vector<DefinitionNode> defs;
 
     for (auto e : ctx->defs)
     {
-        if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
+        if (WPLParser::DefineProgramContext *progCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
         {
-            std::string id = fnCtx->defineProc()->name->getText();
+            std::string id = progCtx->defineProc()->name->getText();
 
             std::optional<SymbolContext> opt = stmgr->lookup(id);
 
             if (opt)
             {
-                errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of program " + id);
-                // return Types::UNDEFINED;
+                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of program " + id);
             }
 
-            const Type *ty = any2Type(fnCtx->defineProc()->ty->accept(this));
+            TypeProgram * progType = new TypeProgram(); 
+            Symbol *progSym = new Symbol(id, progType, true, true); 
+            symBindings->bind(progCtx->defineProc(), progSym);
+            stmgr->addSymbol(progSym);
 
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
-            {
-                const TypeProgram *funcType = new TypeProgram(channel, false);
-                Symbol *funcSymbol = new Symbol(id, funcType, true, true);
-                // FIXME: test name collisions with externs & across all defs
-                stmgr->addSymbol(funcSymbol);
-                symBindings->bind(fnCtx->defineProc(), funcSymbol);
-            }
-            else
-            {
-                errorHandler.addError(ctx->getStart(), "Process expected channel but got " + ty->toString());
-            }
+            progs.push_back({progCtx->defineProc(), progType});
         }
         else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))
         {
-            std::variant<Symbol *, ErrorChain *> funcSymOpt = getFunctionSymbol(fnCtx->defineFunc());
+            std::string id = fnCtx->defineFunc()->name->getText(); 
 
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&funcSymOpt))
+            std::optional<SymbolContext> opt = stmgr->lookup(id);
+
+            if (opt)
             {
-                return *e;
+                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of function " + id);
             }
 
-            Symbol *funcSym = std::get<Symbol *>(funcSymOpt);
+            TypeInvoke * funcType = new TypeInvoke(); 
+            Symbol *sym = new Symbol(id, funcType, true, true); 
+            symBindings->bind(fnCtx->defineFunc(), sym);
+            stmgr->addSymbol(sym);
 
-            symBindings->bind(fnCtx->defineFunc(), funcSym);
+            funcs.push_back({fnCtx->defineFunc(), funcType});
         }
         else
         {
@@ -75,7 +77,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     }
 
     // Visit externs first; they will report any errors if they have any.
-    for (auto e : ctx->extens)
+    for (auto e : ctx->externs)
     {
         std::variant<ExternNode *, ErrorChain *> extOpt = this->visitCtx(e);
 
@@ -89,6 +91,16 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     }
 
     // Auto forward decl
+
+    // FIXME: ERROR CHECK!
+    for(auto e : progs)
+    {
+        getProgramSymbol(e.first);
+    }
+    for(auto e : funcs) 
+    {
+        getFunctionSymbol(e.first);
+    }
 
     // Visit the statements contained in the unit
     for (auto e : ctx->defs)
@@ -311,6 +323,7 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     }
 
     Symbol *funcSym = std::get<Symbol *>(funcSymOpt);
+    stmgr->addSymbol(funcSym);
 
     std::variant<LambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam);
 
@@ -1788,7 +1801,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BoxTypeContext *ctx)
 const Type *SemanticVisitor::visitCtx(WPLParser::ProgramTypeContext *ctx)
 {
     const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
-    return new TypeProgram(new TypeChannel(proto), true); // FIXME: SEEMS A BIT ODD TO INC CHANNEL IN PROGRAM?
+    return new TypeProgram(new TypeChannel(proto)); // FIXME: SEEMS A BIT ODD TO INC CHANNEL IN PROGRAM?
 }
 
 std::variant<ProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)
@@ -2072,7 +2085,7 @@ std::variant<ProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableE
     std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->prog->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
     {
-        (*e)->addError(ctx->getStart(), "2269");
+        (*e)->addError(ctx->getStart(), "Failed to typecheck exec");
         return *e;
     }
     // Symbol *sym = opt.value().second;

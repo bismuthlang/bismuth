@@ -667,7 +667,7 @@ public:
             paramTypes.push_back(param.type);
         }
 
-        ty = new TypeInvoke(paramTypes, r, v, true);
+        ty = new TypeInvoke(paramTypes, r, v);
         sym = new Symbol(id, ty, true, true);
     }
 

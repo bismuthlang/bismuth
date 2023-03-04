@@ -227,10 +227,6 @@ public:
 
     bool weaken() const;
 
-    // bool isWNWN() const;
-
-    // optional<const ProtocolSequence *> shearLoop() const;
-
     bool isOC() const;
 
     optional<const ProtocolSequence *> acceptLoop() const;
@@ -1034,7 +1030,7 @@ private:
      * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
      *
      */
-    bool defined = true;
+    bool defined;
 
     /**
      * @brief Name used by llvm to represent this function
@@ -1043,6 +1039,8 @@ private:
     std::optional<std::string> name = {}; // NOT FOR SEMANTIC NAMES!!! THIS ONE IS FOR LLVM ONLY
 
 public:
+    TypeProgram() : defined(false)
+    {}
     /**
      * @brief Construct a new Type Invoke object
      *
@@ -1050,25 +1048,31 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeProgram(const TypeChannel *c, bool d) // TODO: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
-    {
-        channel = c;
+    TypeProgram(const TypeChannel *c) : channel(c), defined(true)
+    {}
 
-        defined = d;
+    bool setChannel(const TypeChannel *c) const {
+        if(defined) return false; 
+
+        
+        TypeProgram *mthis = const_cast<TypeProgram *>(this);
+        mthis->defined = true; 
+        mthis->channel = c; 
+
+        return true; 
     }
 
     std::string toString() const override
     {
-
         std::ostringstream description;
-        description << "PROGRAM : " << channel->toString();
+        description << "PROGRAM : " << (channel ?  channel->toString() : "PARTIAL DEFINITION");
 
         return description.str();
     }
 
     llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const
     {
-        // Cretae a vector for our argument types
+        // Create a vector for our argument types
         // std::vector<llvm::Type *> typeVec;
         // llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
 
@@ -1111,16 +1115,6 @@ public:
      * @return false
      */
     bool isDefined() const { return defined; }
-
-    /**
-     * @brief Marks this invokable as defined
-     *
-     */
-    void define() const
-    {
-        TypeProgram *mthis = const_cast<TypeProgram *>(this);
-        mthis->defined = true;
-    }
 
     const TypeChannel *getChannelType() const
     {
@@ -1189,7 +1183,7 @@ private:
      * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
      *
      */
-    bool defined = true;
+    bool defined;
 
     /**
      * @brief Name used by llvm to represent this function
@@ -1202,21 +1196,8 @@ public:
      * @brief Construct a new Type Invoke object that has no return and no arguments
      *
      */
-    TypeInvoke()
-    {
-        retType = Types::UNIT;
-    }
-
-    /**
-     * @brief Construct a new Type Invoke object with the provided arguments and no return type
-     *
-     * @param p The types of the arguments
-     */
-    TypeInvoke(std::vector<const Type *> p)
-    {
-        paramTypes = p;
-        retType = Types::UNIT;
-    }
+    TypeInvoke() : defined(false)
+    {}
 
     /**
      * @brief Construct a new Type Invoke object
@@ -1225,43 +1206,21 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeInvoke(std::vector<const Type *> p, bool v, bool d)
-    {
-        paramTypes = p;
-        retType = Types::UNIT;
+    TypeInvoke(std::vector<const Type *> p, const Type *r=Types::UNIT, bool v=false) : paramTypes(p), retType(r), variadic(v), defined(true)
+    {}
 
-        variadic = v;
-        defined = d;
+    bool setInvoke(std::vector<const Type *> p, const Type *r=Types::UNIT, bool v=false) const {
+        if(defined) return false; 
+
+        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
+        mthis->defined = true; 
+        mthis->paramTypes = p; 
+        mthis->retType = r; 
+        mthis->variadic = v;
+
+        return true; 
     }
 
-    /**
-     * @brief Construct a new Type Invoke object
-     *
-     * @param p List of type parameters
-     * @param r Return type
-     */
-    TypeInvoke(std::vector<const Type *> p, const Type *r)
-    {
-        paramTypes = p;
-        retType = r;
-    }
-
-    /**
-     * @brief Construct a new Type Invoke object
-     *
-     * @param p List of type parameters
-     * @param r Return type
-     * @param v Determines if this should be a variadic
-     * @param d Determines if this has been fully defined
-     */
-    TypeInvoke(std::vector<const Type *> p, const Type *r, bool v, bool d)
-    {
-        paramTypes = p;
-        retType = r;
-
-        variadic = v;
-        defined = d;
-    }
 
     /**
      * @brief Returns a string representation of the type in format: <PROC | FUNC> (param_0, param_1, ...) -> return_type.
@@ -1270,12 +1229,10 @@ public:
      */
     std::string toString() const override
     {
-        // bool isProc = dynamic_cast<const TypeUnit *>(retType);
-
         std::ostringstream description;
-        // description << (isProc ? "Unit" : "");
+        
         if (paramTypes.size() == 0)
-            description << "()"; // TODO: change whole thing to touple to make it easier to deal with
+            description << "()"; // TODO: change whole thing to tuple to make it easier to deal with
 
         for (unsigned int i = 0; i < paramTypes.size(); i++)
         {
@@ -1298,7 +1255,7 @@ public:
 
     llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const
     {
-        // Cretae a vector for our argument types
+        // Create a vector for our argument types
         std::vector<llvm::Type *> typeVec;
 
         for (const Type *ty : paramTypes)
@@ -1368,16 +1325,6 @@ public:
      * @return false
      */
     bool isDefined() const { return defined; }
-
-    /**
-     * @brief Marks this invokable as defined
-     *
-     */
-    void define() const
-    {
-        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
-        mthis->defined = true;
-    }
 
 protected:
     bool isSupertypeFor(const Type *other) const override
