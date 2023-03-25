@@ -208,7 +208,7 @@ public:
         {
             // e->accept(this);
             this->accept(e);
-            module->dump();
+            // module->dump();
         }
 
         // If we are a PROC, make sure to add a return type (if we don't already have one)
