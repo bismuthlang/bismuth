@@ -1,6 +1,5 @@
 /**
- * @file wplc.cpp
- * @author ahfriedman & gpollice
+ * @file bismuthc.cpp
  * @brief
  * @version 0.1
  * @date 2022-09-07
@@ -8,7 +7,7 @@
  * @copyright Copyright (c) 2022
  */
 
-#include "wplc.h"
+#include "bismuthc.h"
 
 llvm::cl::OptionCategory CLIOptions("Bismuth CLI Options");
 static llvm::cl::list<std::string>

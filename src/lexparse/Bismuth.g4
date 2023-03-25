@@ -52,7 +52,7 @@ lValue              : deref=dereferenceExpr
  *      10. Array accesses such as: array[0]. 
  *              Note: While theoreticaly, a language could allow for something like:
  *               (<condition> ? array1 : array2)[(<condition> ? array 1 : array2).length - 1]
- *              because WPL does not appear to have this functionality, it is easier to require
+ *              because Bismuth does not yet have this functionality, it is easier to require
  *              the use of variables instead of expressions for array access
  *      11-14. Typical boolean and variable constants. 
  */

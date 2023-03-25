@@ -35,7 +35,7 @@ add_subdirectory(runtime)
 
 
 
-add_executable(bismuthc wplc.cpp)
+add_executable(bismuthc bismuthc.cpp)
 
 llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_TARGETS_TO_BUILD} support core irreader codegen mc mcparser option)
 
