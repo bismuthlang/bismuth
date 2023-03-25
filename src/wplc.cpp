@@ -372,7 +372,7 @@ Version: Pre-Alpha 1.2
     }
 
     // cmd << "./runtime.o -no-pie ";
-    cmd << "./bdwgc/libgc.a ./bdwgc/libgccpp.a ./build/bin/runtime/libwpl_runtime_archive.a -no-pie";
+    cmd << "./bdwgc/libgc.a ./bdwgc/libgccpp.a ./build/bin/runtime/libbismuth_runtime_archive.a -no-pie";
 
     if (useOutputFileName)
     {

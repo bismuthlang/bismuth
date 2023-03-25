@@ -4,21 +4,21 @@ include(Runtime)
 
 # add_subdirectory(core)
 
-add_library(wpl_runtime OBJECT
+add_library(bismuth_runtime OBJECT
   ${RUNTIME_SOURCES}
   ${CORE_SOURCES}
 )
 
-include_directories(wpl_runtime_archive 
+include_directories(bismuth_runtime_archive 
   ${CORE_INCLUDE}
 )
 
-add_library(wpl_runtime_archive STATIC
+add_library(bismuth_runtime_archive STATIC
   ${RUNTIME_SOURCES}
   ${CORE_SOURCES}
 )
 
-include_directories(wpl_runtime 
+include_directories(bismuth_runtime 
   ${CORE_INCLUDE}
 )
 

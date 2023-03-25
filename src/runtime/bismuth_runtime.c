@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// The WPL program entry function
+// The program entry function
 void program(unsigned int i);
 
 unsigned int Execute(void (*func)(unsigned int));
@@ -23,7 +23,7 @@ int argCount;
 char **args;
 
 /**
- * @brief main program that calls the WPL program() function
+ * @brief main program that calls the program() function
  * 
  * @param argc 
  * @param argv 
@@ -39,10 +39,6 @@ int main(int argc, char *argv[]) {
 
   waitForAllToFinish();
   return 0; 
-  // return *((int *) ptr);
-
-
-  // return program();
 }
 
 /**

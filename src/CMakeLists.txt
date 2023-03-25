@@ -46,7 +46,7 @@ add_dependencies(bismuthc
   semantic_lib
   utility_lib
   codegen_lib
-  wpl_runtime
+  bismuth_runtime
 )
 
 target_include_directories(bismuthc PUBLIC 
