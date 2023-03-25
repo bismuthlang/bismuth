@@ -10,48 +10,48 @@
 
 #include "wplc.h"
 
-llvm::cl::OptionCategory WPLCOptions("wplc Options");
+llvm::cl::OptionCategory CLIOptions("Bismuth CLI Options");
 static llvm::cl::list<std::string>
     inputFileName(llvm::cl::Positional,
                   llvm::cl::desc("<input files>"),
                   // llvm::cl::init("-")
                   llvm::cl::ZeroOrMore,
-                  llvm::cl::cat(WPLCOptions));
+                  llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<bool>
     printOutput("p",
                 llvm::cl::desc("Print the IR"),
-                llvm::cl::cat(WPLCOptions));
+                llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<std::string>
     inputString("s",
                 llvm::cl::desc("Take input from a string, Do not use an input file if -s is used"),
                 llvm::cl::value_desc("input string"),
                 llvm::cl::init("-"),
-                llvm::cl::cat(WPLCOptions));
+                llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<std::string>
     outputFileName("o",
                    llvm::cl::desc("supply alternate output file"),
                    llvm::cl::value_desc("output file"),
                    llvm::cl::init("-.ll"),
-                   llvm::cl::cat(WPLCOptions));
+                   llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<bool>
     noCode("nocode",
            llvm::cl::desc("Do not generate any output file"),
-           llvm::cl::cat(WPLCOptions));
+           llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<bool>
     noRuntime("no-runtime",
               llvm::cl::desc("Program will not use the WPL runtime; Compiler will automatically treat program() as the entry point."),
-              llvm::cl::cat(WPLCOptions));
+              llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<bool>
     isVerbose("verbose",
               llvm::cl::desc("If true, compiler will print out status messages; if false (default), compiler will only print errors."),
               llvm::cl::init(false),
-              llvm::cl::cat(WPLCOptions));
+              llvm::cl::cat(CLIOptions));
 
 enum CompileType
 {
@@ -70,7 +70,7 @@ static llvm::cl::opt<CompileType>
                     clEnumVal(gcc, "Will generate an executable using g++"),
                     clEnumVal(clangll, "Will generate an executable using clang++ on the .ll files (will still attempt to generate object files)")),
                 llvm::cl::init(none),
-                llvm::cl::cat(WPLCOptions));
+                llvm::cl::cat(CLIOptions));
 /**
  * @brief Main compiler driver.
  */
@@ -80,7 +80,7 @@ int main(int argc, const char *argv[])
    * Commandline handling from the llvm::cl classes.
    * @see https://llvm.org/docs/CommandLine.html
    * ******************************************************************/
-  llvm::cl::HideUnrelatedOptions(WPLCOptions);
+  llvm::cl::HideUnrelatedOptions(CLIOptions);
   // Note: Sub zero font
   llvm::cl::SetVersionPrinter([](llvm::raw_ostream &o)
                               { o << R""""( 
