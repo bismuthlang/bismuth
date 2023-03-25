@@ -196,7 +196,7 @@ Version: Pre-Alpha 1.2
      *
      * Run the lexer on the input
      *******************************************************************/
-    WPLLexer lexer(input.first);
+    BismuthLexer lexer(input.first);
     antlr4::CommonTokenStream tokens(&lexer);
 
     /*******************************************************************
@@ -205,14 +205,14 @@ Version: Pre-Alpha 1.2
      *
      * Run the parser on our previously generated tokens
      *******************************************************************/
-    WPLParser parser(&tokens);
+    BismuthParser parser(&tokens);
     parser.removeErrorListeners();
     WPLSyntaxErrorListener *syntaxListener = new WPLSyntaxErrorListener();
     parser.addErrorListener(syntaxListener);
     // delete syntaxListener;
 
     // Run The parser
-    WPLParser::CompilationUnitContext *tree = NULL;
+    BismuthParser::CompilationUnitContext *tree = NULL;
     tree = parser.compilationUnit();
 
     if (syntaxListener->hasErrors(0)) // Want to see all errors.

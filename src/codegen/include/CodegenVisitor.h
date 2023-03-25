@@ -10,7 +10,7 @@
  */
 #pragma once
 #include "antlr4-runtime.h"
-#include "WPLBaseVisitor.h"
+#include "BismuthBaseVisitor.h"
 #include "CompilerFlags.h"
 
 #include "WPLErrorHandler.h"
@@ -158,7 +158,7 @@ public:
         inv->setName(fn->getName().str());
 
         // Get the parameter list context for the invokable
-        // WPLParser::ParameterListContext *paramList = ctx->paramList;
+        // BismuthParser::ParameterListContext *paramList = ctx->paramList;
         // Create basic block
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
@@ -201,7 +201,7 @@ public:
         */
 
         // Get the codeblock for the PROC/FUNC
-        // WPLParser::BlockContext *block = ctx->block();
+        // BismuthParser::BlockContext *block = ctx->block();
 
         // Generate code for the block
         for (auto e : n->block->exprs)

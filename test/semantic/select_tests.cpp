@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "antlr4-runtime.h"
-#include "WPLLexer.h"
-#include "WPLParser.h"
+#include "BismuthLexer.h"
+#include "BismuthParser.h"
 #include "WPLErrorHandler.h"
 #include "SemanticVisitor.h"
 
@@ -25,15 +25,15 @@ TEST_CASE("Basic select", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -58,15 +58,15 @@ TEST_CASE("Select without any cases", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -98,15 +98,15 @@ TEST_CASE("Basic select inf error 1", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -135,15 +135,15 @@ TEST_CASE("Basic select inf 1", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -173,15 +173,15 @@ TEST_CASE("Basic select inf 2", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -212,15 +212,15 @@ TEST_CASE("Basic select inf 3", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -249,15 +249,15 @@ TEST_CASE("Basic select - Dead Code - var", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -284,15 +284,15 @@ TEST_CASE("Basic select - Dead Code - proc", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -319,15 +319,15 @@ TEST_CASE("Basic select - Dead Code - func", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -357,15 +357,15 @@ TEST_CASE("Wrong case Type in Select", "[semantic][conditional]")
       }
     )""""
   );
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");

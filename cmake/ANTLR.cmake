@@ -7,12 +7,12 @@ set(ANTLR_GENERATED_DIR ${CMAKE_SOURCE_DIR}/src/generated)
 
 # Add all generated ANTLR sources we care about here
 SET(ANTLR_SOURCES
-  ${ANTLR_GENERATED_DIR}/WPLLexer.cpp
-  ${ANTLR_GENERATED_DIR}/WPLParser.cpp 
-  ${ANTLR_GENERATED_DIR}/WPLBaseListener.cpp
-  ${ANTLR_GENERATED_DIR}/WPLBaseVisitor.cpp
-  ${ANTLR_GENERATED_DIR}/WPLListener.cpp
-  ${ANTLR_GENERATED_DIR}/WPLVisitor.cpp
+  ${ANTLR_GENERATED_DIR}/BismuthLexer.cpp
+  ${ANTLR_GENERATED_DIR}/BismuthParser.cpp 
+  ${ANTLR_GENERATED_DIR}/BismuthBaseListener.cpp
+  ${ANTLR_GENERATED_DIR}/BismuthBaseVisitor.cpp
+  ${ANTLR_GENERATED_DIR}/BismuthListener.cpp
+  ${ANTLR_GENERATED_DIR}/BismuthVisitor.cpp
 )
 
 #########################################################################################

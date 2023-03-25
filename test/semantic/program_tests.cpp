@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "antlr4-runtime.h"
-#include "WPLLexer.h"
-#include "WPLParser.h"
+#include "BismuthLexer.h"
+#include "BismuthParser.h"
 #include "WPLErrorHandler.h"
 #include "SemanticVisitor.h"
 
@@ -14,11 +14,11 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test4.wpl");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -37,11 +37,11 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 //   std::fstream *inStream = new std::fstream("/home/shared/programs/test9Err.wpl");
 //   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-//   WPLLexer lexer(input);
+//   BismuthLexer lexer(input);
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   STManager *stm = new STManager();
@@ -62,11 +62,11 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 //   std::fstream *inStream = new std::fstream("/home/shared/programs/test11err.wpl");
 //   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-//   WPLLexer lexer(input);
+//   BismuthLexer lexer(input);
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   STManager *stm = new STManager();
@@ -91,11 +91,11 @@ TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -110,11 +110,11 @@ TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]"
   std::fstream *inStream = new std::fstream("/home/shared/programs/doubleArg2.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -133,11 +133,11 @@ TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don'
   std::fstream *inStream = new std::fstream("/home/shared/programs/doubleArg3.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -157,11 +157,11 @@ TEST_CASE("programs/test15 - No array equalities", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test15.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -180,15 +180,15 @@ TEST_CASE("Comment EOF", "[semantic]")
 {
   antlr4::ANTLRInputStream input(
       "# Hello # there!");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
 
@@ -208,11 +208,11 @@ TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test16.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -227,11 +227,11 @@ TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test16a.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -246,11 +246,11 @@ TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test16c.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -265,11 +265,11 @@ TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-1.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -284,11 +284,11 @@ TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-2.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -303,11 +303,11 @@ TEST_CASE("programs/test16d - chain var", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test16d.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -322,11 +322,11 @@ TEST_CASE("programs/test16e - chain var 2", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test16e.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -343,11 +343,11 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test16f.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -362,11 +362,11 @@ TEST_CASE("programs/test17 - var inf in decl", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/test17.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -387,15 +387,15 @@ TEST_CASE("Test program() should return int warning", "[semantic][conditional]")
         return; # FIXME: DO THESE HAVE TO END IN RETURN?
       }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -416,15 +416,15 @@ TEST_CASE("Test program() should not have parameters warning", "[semantic][condi
         return 0;
       }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -451,15 +451,15 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
         return 0;
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -489,15 +489,15 @@ TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
     }
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -534,15 +534,15 @@ define func program (int idk) : int { # FIXME: MAKE THROW ERROR B/C THIS MAKES M
     return 0; 
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -565,15 +565,15 @@ TEST_CASE("Infer In return", "[semantic][program]")
         c.send(a)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -596,15 +596,15 @@ TEST_CASE("Infer In return", "[semantic][program]")
 //         return 0;
 //     }
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -634,15 +634,15 @@ TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -664,15 +664,15 @@ TEST_CASE("Invoke on Non-Invokable (str)", "[semantic][program]")
       x();
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -696,15 +696,15 @@ TEST_CASE("Invoke on Non-Invokable (int)", "[semantic][program]")
       x();
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -733,15 +733,15 @@ TEST_CASE("Redeclaration of function 1", "[semantic][program]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -770,15 +770,15 @@ TEST_CASE("Redeclaration of program 1", "[semantic][program]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -806,15 +806,15 @@ TEST_CASE("Redeclaration of program 1", "[semantic][program]")
 //       return 0;
 //     }
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -842,15 +842,15 @@ TEST_CASE("Redeclaration of function 3", "[semantic][program]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -879,15 +879,15 @@ TEST_CASE("Redeclaration of program 3", "[semantic][program]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -916,15 +916,15 @@ TEST_CASE("Redeclaration of function 4", "[semantic][program]")
       return 0; 
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -957,15 +957,15 @@ TEST_CASE("Redeclaration of program 4", "[semantic][program]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -992,15 +992,15 @@ TEST_CASE("Redeclaration in extern", "[semantic][program]")
       return 0; 
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1035,15 +1035,15 @@ define func foo (str a) {
     printf("a = %s\n", a);
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1076,15 +1076,15 @@ define func foo (str a) {
 
 // str a := "hello";
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -1123,15 +1123,15 @@ define foo :: c : Channel<+int> = {
 
 # str a := "hello";
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1172,15 +1172,15 @@ define func foo (str a, int b) : int {
 # str a := "hello";
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1214,15 +1214,15 @@ define func foo (str a, int b) : int {
 // str a := "hello";
 //     )"""");
 
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -1256,15 +1256,15 @@ define func foo (str a, int b) : int {
 // str a := "hello";
 //     )"""");
 
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -1287,15 +1287,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1318,15 +1318,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1349,15 +1349,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1380,15 +1380,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1411,15 +1411,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1442,15 +1442,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1473,15 +1473,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1505,15 +1505,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1537,15 +1537,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1569,15 +1569,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1601,15 +1601,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1632,15 +1632,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1663,15 +1663,15 @@ define program :: c : Channel<-int> = {
 }
     )"""");
 
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1693,15 +1693,15 @@ TEST_CASE("Assign to undefined", "[semantic][program]")
       return 0; 
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1727,15 +1727,15 @@ TEST_CASE("Proc Returning", "[semantic][program]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1761,15 +1761,15 @@ TEST_CASE("Function return nothing", "[semantic][program]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1790,15 +1790,15 @@ TEST_CASE("Function return wrong type", "[semantic][program]")
       return "hey"; 
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1826,15 +1826,15 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program]
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1861,15 +1861,15 @@ TEST_CASE("Nested Local Program - Disallow Local vars 1", "[semantic][program][l
       return 0; 
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1897,15 +1897,15 @@ TEST_CASE("Nested Local Program - Disallow Local vars 1", "[semantic][program][l
 //       return 0;
 //     }
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -1936,15 +1936,15 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2f", "[semantic][pr
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -1975,15 +1975,15 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2p", "[semantic][pr
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2015,15 +2015,15 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][pr
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2058,15 +2058,15 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2105,15 +2105,15 @@ TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2150,15 +2150,15 @@ TEST_CASE("Redeclaration - p2f", "[semantic][program][local-function]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2197,15 +2197,15 @@ TEST_CASE("Redeclaration - f2p", "[semantic][program][local-function]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2243,15 +2243,15 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
       c.send(0)
     }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2283,15 +2283,15 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
 //       return 0;
 //     }
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -2322,15 +2322,15 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
 //       return 0;
 //     }
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -2362,15 +2362,15 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
 //       return 0;
 //     }
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -2417,15 +2417,15 @@ define program :: c : Channel<-int> = {
     return 0; 
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2471,15 +2471,15 @@ define program :: c : Channel<-int> = {
     return 0; 
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2502,15 +2502,15 @@ define enum Inner {
     int
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2533,15 +2533,15 @@ define struct Inner {
     int c;
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2564,15 +2564,15 @@ define struct Inner {
     int a;
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2597,15 +2597,15 @@ define struct Inner {
 
 // Inner I := I::init(5, false, 6);
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -2625,15 +2625,15 @@ define struct Inner {
 //       R""""(
 // (int + boolean) b := false;
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -2655,15 +2655,15 @@ define struct Inner {
 //     return a * b;
 // };
 //     )"""");
-//   WPLLexer lexer(&input);
+//   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
 //   // lexer.addErrorListener(new TestErrorListener());
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   parser.addErrorListener(new TestErrorListener());
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
@@ -2706,15 +2706,15 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2736,15 +2736,15 @@ define foo :: c : Channel<+int> = {
   int a := c.recv(); # C is no longer defined
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2766,15 +2766,15 @@ define foo :: c : Channel<+int> = {
   int a := b.recv(); # C is no longer defined
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2804,15 +2804,15 @@ define bar :: c : Channel<?(?-int);+int> = {
     int a := c.recv();
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2839,15 +2839,15 @@ define program :: c : Channel<-int> = {
     c.send(a)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2874,15 +2874,15 @@ define program :: c : Channel<-int> = {
     c.send(a)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -2946,15 +2946,15 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -3017,15 +3017,15 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -3088,15 +3088,15 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -3158,15 +3158,15 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -3228,15 +3228,15 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -3264,15 +3264,15 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -3298,15 +3298,15 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""");
-  WPLLexer lexer(&input);
+  BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
   // lexer.addErrorListener(new TestErrorListener());
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   parser.addErrorListener(new TestErrorListener());
 
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
@@ -3327,14 +3327,14 @@ define program :: c : Channel<-int> = {
 //   std::fstream *inStream = new std::fstream("/home/shared/programs/CLevel/CNegative1.wpl");
 //   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-//   WPLLexer lexer(input);
+//   BismuthLexer lexer(input);
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   WPLSyntaxErrorListener *syntaxListener = new WPLSyntaxErrorListener();
 //   parser.addErrorListener(syntaxListener);
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(syntaxListener->hasErrors(0));
@@ -3352,14 +3352,14 @@ define program :: c : Channel<-int> = {
 //   std::fstream *inStream = new std::fstream("/home/shared/programs/CLevel/CNegative2.wpl");
 //   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-//   WPLLexer lexer(input);
+//   BismuthLexer lexer(input);
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
 //   WPLSyntaxErrorListener *syntaxListener = new WPLSyntaxErrorListener();
 //   parser.addErrorListener(syntaxListener);
 
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(syntaxListener->hasErrors(0));
@@ -3381,11 +3381,11 @@ TEST_CASE("B Level Negative Test #1", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative1.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -3400,11 +3400,11 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative2.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
@@ -3422,11 +3422,11 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
 //   std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/ANegative1.wpl");
 //   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-//   WPLLexer lexer(input);
+//   BismuthLexer lexer(input);
 //   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
+//   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   WPLParser::CompilationUnitContext *tree = NULL;
+//   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   STManager *stm = new STManager();
@@ -3441,11 +3441,11 @@ TEST_CASE("A Level Negative Test #2", "[semantic]")
   std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/ANegative2.prism");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-  WPLLexer lexer(input);
+  BismuthLexer lexer(input);
   antlr4::CommonTokenStream tokens(&lexer);
-  WPLParser parser(&tokens);
+  BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  WPLParser::CompilationUnitContext *tree = NULL;
+  BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();

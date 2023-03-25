@@ -3,8 +3,8 @@
 #include <iostream>
 #include <fstream>
 #include "antlr4-runtime.h"
-#include "WPLLexer.h"
-#include "WPLParser.h"
+#include "BismuthLexer.h"
+#include "BismuthParser.h"
 
 #include "TypedAST.h"
 

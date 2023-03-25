@@ -1,7 +1,7 @@
 #include <catch2/catch_test_macros.hpp>
 #include "antlr4-runtime.h"
-#include "WPLLexer.h"
-#include "WPLParser.h"
+#include "BismuthLexer.h"
+#include "BismuthParser.h"
 #include "WPLErrorHandler.h"
 #include "SemanticVisitor.h"
 

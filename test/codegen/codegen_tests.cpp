@@ -10,8 +10,8 @@
  */
 #include <catch2/catch_test_macros.hpp>
 #include "antlr4-runtime.h"
-#include "WPLLexer.h"
-#include "WPLParser.h"
+#include "BismuthLexer.h"
+#include "BismuthParser.h"
 #include "WPLErrorHandler.h"
 #include "SemanticVisitor.h"
 #include "CodegenVisitor.h"
@@ -20,11 +20,11 @@
 
 void EnsureCompilesTo(antlr4::ANTLRInputStream *input, string hash)
 {
-    WPLLexer lexer(input);
+    BismuthLexer lexer(input);
     antlr4::CommonTokenStream tokens(&lexer);
-    WPLParser parser(&tokens);
+    BismuthParser parser(&tokens);
     parser.removeErrorListeners();
-    WPLParser::CompilationUnitContext *tree = NULL;
+    BismuthParser::CompilationUnitContext *tree = NULL;
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
@@ -42,11 +42,11 @@ void EnsureCompilesTo(antlr4::ANTLRInputStream *input, string hash)
 
 void EnsureErrors(antlr4::ANTLRInputStream *input)
 {
-    WPLLexer lexer(input);
+    BismuthLexer lexer(input);
     antlr4::CommonTokenStream tokens(&lexer);
-    WPLParser parser(&tokens);
+    BismuthParser parser(&tokens);
     parser.removeErrorListeners();
-    WPLParser::CompilationUnitContext *tree = NULL;
+    BismuthParser::CompilationUnitContext *tree = NULL;
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
@@ -259,11 +259,11 @@ TEST_CASE("programs/adv/LambdaDef", "[codegen]")
 //     std::fstream *inStream = new std::fstream("/home/shared/programs/test-runtime.wpl");
 //     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-//     WPLLexer lexer(input);
+//     BismuthLexer lexer(input);
 //     antlr4::CommonTokenStream tokens(&lexer);
-//     WPLParser parser(&tokens);
+//     BismuthParser parser(&tokens);
 //     parser.removeErrorListeners();
-//     WPLParser::CompilationUnitContext *tree = NULL;
+//     BismuthParser::CompilationUnitContext *tree = NULL;
 //     REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //     REQUIRE(tree != NULL);
 //     STManager *stm = new STManager();
@@ -328,11 +328,11 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
 //     std::fstream *inStream = new std::fstream("/home/shared/programs/test19.wpl");
 //     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-//     WPLLexer lexer(input);
+//     BismuthLexer lexer(input);
 //     antlr4::CommonTokenStream tokens(&lexer);
-//     WPLParser parser(&tokens);
+//     BismuthParser parser(&tokens);
 //     parser.removeErrorListeners();
-//     WPLParser::CompilationUnitContext *tree = NULL;
+//     BismuthParser::CompilationUnitContext *tree = NULL;
 //     REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //     REQUIRE(tree != NULL);
 //     STManager *stm = new STManager();
@@ -355,11 +355,11 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
 //     std::fstream *inStream = new std::fstream("/home/shared/programs/testGlobalAndLocal.wpl");
 //     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-//     WPLLexer lexer(input);
+//     BismuthLexer lexer(input);
 //     antlr4::CommonTokenStream tokens(&lexer);
-//     WPLParser parser(&tokens);
+//     BismuthParser parser(&tokens);
 //     parser.removeErrorListeners();
-//     WPLParser::CompilationUnitContext *tree = NULL;
+//     BismuthParser::CompilationUnitContext *tree = NULL;
 //     REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //     REQUIRE(tree != NULL);
 //     STManager *stm = new STManager();
@@ -388,11 +388,11 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
     std::fstream *inStream = new std::fstream("/home/shared/programs/forwardWrongArg2.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-    WPLLexer lexer(input);
+    BismuthLexer lexer(input);
     antlr4::CommonTokenStream tokens(&lexer);
-    WPLParser parser(&tokens);
+    BismuthParser parser(&tokens);
     parser.removeErrorListeners();
-    WPLParser::CompilationUnitContext *tree = NULL;
+    BismuthParser::CompilationUnitContext *tree = NULL;
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
@@ -579,15 +579,15 @@ TEST_CASE("Out of order function", "[codegen][program]")
     std::fstream *inStream = new std::fstream("/home/shared/programs/ooof.prism");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-    WPLLexer lexer(input);
+    BismuthLexer lexer(input);
     // lexer.removeErrorListeners();
     // lexer.addErrorListener(new TestErrorListener());
     antlr4::CommonTokenStream tokens(&lexer);
-    WPLParser parser(&tokens);
+    BismuthParser parser(&tokens);
     parser.removeErrorListeners();
     //   parser.addErrorListener(new TestErrorListener()); //FIXME: SHOULD WE TEST THESE HERE?
 
-    WPLParser::CompilationUnitContext *tree = NULL;
+    BismuthParser::CompilationUnitContext *tree = NULL;
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     REQUIRE(tree->getText() != "");
@@ -718,11 +718,11 @@ TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]"
 //     std::fstream *inStream = new std::fstream("/home/shared/programs/CLevel/CPositive1.wpl");
 //     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
-//     WPLLexer lexer(input);
+//     BismuthLexer lexer(input);
 //     antlr4::CommonTokenStream tokens(&lexer);
-//     WPLParser parser(&tokens);
+//     BismuthParser parser(&tokens);
 //     parser.removeErrorListeners();
-//     WPLParser::CompilationUnitContext *tree = NULL;
+//     BismuthParser::CompilationUnitContext *tree = NULL;
 //     REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //     REQUIRE(tree != NULL);
 //     STManager *stm = new STManager();

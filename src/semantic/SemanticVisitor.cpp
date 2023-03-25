@@ -1,22 +1,22 @@
 #include "SemanticVisitor.h"
 
-std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::CompilationUnitContext *ctx)
+std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx)
 {
     // Enter initial scope
     stmgr->enterScope(StopType::NONE);
 
     std::vector<ExternNode *> externs;
 
-    std::vector<std::pair<WPLParser::DefineProcContext *, TypeProgram *>> progs;
-    std::vector<std::pair<WPLParser::DefineFuncContext *, TypeInvoke *>> funcs;
-    std::vector<std::pair<WPLParser::DefineStructContext *, TypeStruct *>> structs;
-    std::vector<std::pair<WPLParser::DefineEnumContext *, TypeSum *>> enums;
+    std::vector<std::pair<BismuthParser::DefineProcContext *, TypeProgram *>> progs;
+    std::vector<std::pair<BismuthParser::DefineFuncContext *, TypeInvoke *>> funcs;
+    std::vector<std::pair<BismuthParser::DefineStructContext *, TypeStruct *>> structs;
+    std::vector<std::pair<BismuthParser::DefineEnumContext *, TypeSum *>> enums;
 
     std::vector<DefinitionNode> defs;
 
     for (auto e : ctx->defs)
     {
-        if (WPLParser::DefineProgramContext *progCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
+        if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
             std::string id = progCtx->defineProc()->name->getText();
 
@@ -34,7 +34,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
             progs.push_back({progCtx->defineProc(), progType});
         }
-        else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))
+        else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
             std::string id = fnCtx->defineFunc()->name->getText();
 
@@ -52,7 +52,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
             funcs.push_back({fnCtx->defineFunc(), funcType});
         }
-        else if (WPLParser::DefineStructContext *prodCtx = dynamic_cast<WPLParser::DefineStructContext *>(e))
+        else if (BismuthParser::DefineStructContext *prodCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
         {
             std::string id = prodCtx->name->getText();
 
@@ -70,7 +70,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
             structs.push_back({prodCtx, structType});
         }
-        else if (WPLParser::DefineEnumContext *sumCtx = dynamic_cast<WPLParser::DefineEnumContext *>(e))
+        else if (BismuthParser::DefineEnumContext *sumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
         {
             std::string id = sumCtx->name->getText();
 
@@ -139,7 +139,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     for (auto e : ctx->defs)
     {
         // e->accept(this);
-        if (WPLParser::DefineProgramContext *fnCtx = dynamic_cast<WPLParser::DefineProgramContext *>(e))
+        if (BismuthParser::DefineProgramContext *fnCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
             std::variant<ProgramDefNode *, ErrorChain *> progOpt = visitInvokeable(fnCtx->defineProc()); // e->accept(this);
 
@@ -151,7 +151,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
             defs.push_back(std::get<ProgramDefNode *>(progOpt));
         }
-        else if (WPLParser::DefineFunctionContext *fnCtx = dynamic_cast<WPLParser::DefineFunctionContext *>(e))
+        else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
             std::variant<LambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx->defineFunc());
 
@@ -235,7 +235,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     return new CompilationUnitNode(externs, defs);
 }
 
-std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::InvocationContext *ctx)
+std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InvocationContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) ? TNVariantCast<LambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<FieldAccessNode>(visitCtx(ctx->field, true));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
@@ -346,7 +346,7 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
     return (InvocationNode *)tn;
 }
 
-std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineFuncContext *ctx)
+std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFuncContext *ctx)
 {
     std::variant<Symbol *, ErrorChain *> funcSymOpt = getFunctionSymbol(ctx);
 
@@ -374,7 +374,7 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return lam;
 }
 
-std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::InitProductContext *ctx)
+std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitProductContext *ctx)
 {
     std::string name = ctx->v->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(name);
@@ -443,7 +443,7 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString());
 }
 
-std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::InitBoxContext *ctx)
+std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitBoxContext *ctx)
 {
     const Type *storeType = any2Type(ctx->ty->accept(this));
 
@@ -481,7 +481,7 @@ std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::I
     return new InitBoxNode(new TypeBox(storeType), tn, ctx->getStart());
 }
 
-std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ArrayAccessContext *ctx, bool is_rvalue)
+std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue)
 {
     /*
      * Check that we are provided an INT for the index.
@@ -529,7 +529,7 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return errorHandler.addError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->field->getText() + " : " + field->getType()->toString());
 }
 
-std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LValueContext *ctx)
+std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LValueContext *ctx)
 {
     // Check if we are a var or an array
     if (ctx->var)
@@ -547,12 +547,12 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LVa
     return TNVariantCast<ArrayAccessNode>(this->visitCtx(ctx->array, false));
 }
 
-std::variant<IConstExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::IConstExprContext *ctx)
+std::variant<IConstExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IConstExprContext *ctx)
 {
     return new IConstExprNode(std::stoi(ctx->i->getText()), ctx->getStart());
 }
 
-std::variant<StringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SConstExprContext *ctx)
+std::variant<StringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SConstExprContext *ctx)
 {
     // TODO: do this better, ensure that we can only escape these chars...
     std::string full(ctx->s->getText());
@@ -601,7 +601,7 @@ std::variant<StringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
  * @param ctx The UnaryExpressionContext to type check
  * @return const Type* Returns the type of the inner expression if valid; UNDEFINED otherwise.
  */
-std::variant<UnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::UnaryExprContext *ctx)
+std::variant<UnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::UnaryExprContext *ctx)
 {
     // Lookup the inner type
     std::variant<TypedNode *, ErrorChain *> innerNodeOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this));
@@ -619,13 +619,13 @@ std::variant<UnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
     // Switch on the operation so we can ensure that the type and operation are compatable.
     switch (ctx->op->getType())
     {
-    case WPLParser::MINUS:
+    case BismuthParser::MINUS:
         if (innerType->isNotSubtype(Types::INT))
         {
             return errorHandler.addError(ctx->getStart(), "INT expected in unary minus, but got " + innerType->toString());
         }
         return new UnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
-    case WPLParser::NOT:
+    case BismuthParser::NOT:
         if (innerType->isNotSubtype(Types::BOOL))
         {
             return errorHandler.addError(ctx->getStart(), "BOOL expected in unary not, but got " + innerType->toString());
@@ -642,7 +642,7 @@ std::variant<UnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
  * @param ctx The BinaryArithExprContext to Visit
  * @return const Type* INT if lhs and rhs are INT; UNDEFINED otherwise.
  */
-std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::BinaryArithExprContext *ctx)
+std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BinaryArithExprContext *ctx)
 {
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
@@ -681,7 +681,7 @@ std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
         ctx->getStart());
 }
 
-std::variant<EqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::EqExprContext *ctx)
+std::variant<EqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::EqExprContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> rhsOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
     std::variant<TypedNode *, ErrorChain *> lhsOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
@@ -725,17 +725,17 @@ std::variant<EqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Eq
  * @param ctx The LogAndExprContext to Visit
  * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
  */
-std::variant<LogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LogAndExprContext *ctx)
+std::variant<LogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LogAndExprContext *ctx)
 {
-    std::vector<WPLParser::ExpressionContext *> toVisit = ctx->exprs;
-    std::vector<WPLParser::ExpressionContext *> toGen;
+    std::vector<BismuthParser::ExpressionContext *> toVisit = ctx->exprs;
+    std::vector<BismuthParser::ExpressionContext *> toGen;
 
     while (toVisit.size() > 0)
     {
-        WPLParser::ExpressionContext *curr = toVisit.at(0);
+        BismuthParser::ExpressionContext *curr = toVisit.at(0);
         toVisit.erase(toVisit.begin());
 
-        if (WPLParser::LogAndExprContext *orCtx = dynamic_cast<WPLParser::LogAndExprContext *>(curr))
+        if (BismuthParser::LogAndExprContext *orCtx = dynamic_cast<BismuthParser::LogAndExprContext *>(curr))
         {
             toVisit.insert(toVisit.end(), orCtx->exprs.begin(), orCtx->exprs.end());
         }
@@ -747,7 +747,7 @@ std::variant<LogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
 
     std::vector<TypedNode *> nodes;
 
-    for (WPLParser::ExpressionContext *e : toGen)
+    for (BismuthParser::ExpressionContext *e : toGen)
     {
         std::variant<TypedNode *, ErrorChain *> nodeOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
 
@@ -778,17 +778,17 @@ std::variant<LogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
  * @param ctx The LogOrExprContext to Visit
  * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
  */
-std::variant<LogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LogOrExprContext *ctx)
+std::variant<LogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LogOrExprContext *ctx)
 {
-    std::vector<WPLParser::ExpressionContext *> toVisit = ctx->exprs;
-    std::vector<WPLParser::ExpressionContext *> toGen;
+    std::vector<BismuthParser::ExpressionContext *> toVisit = ctx->exprs;
+    std::vector<BismuthParser::ExpressionContext *> toGen;
 
     while (toVisit.size() > 0)
     {
-        WPLParser::ExpressionContext *curr = toVisit.at(0);
+        BismuthParser::ExpressionContext *curr = toVisit.at(0);
         toVisit.erase(toVisit.begin());
 
-        if (WPLParser::LogOrExprContext *orCtx = dynamic_cast<WPLParser::LogOrExprContext *>(curr))
+        if (BismuthParser::LogOrExprContext *orCtx = dynamic_cast<BismuthParser::LogOrExprContext *>(curr))
         {
             toVisit.insert(toVisit.end(), orCtx->exprs.begin(), orCtx->exprs.end());
         }
@@ -800,7 +800,7 @@ std::variant<LogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
 
     std::vector<TypedNode *> nodes;
 
-    for (WPLParser::ExpressionContext *e : toGen)
+    for (BismuthParser::ExpressionContext *e : toGen)
     {
         // const Type *type = any2Type(e->accept(this));
         std::variant<TypedNode *, ErrorChain *> nodeOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
@@ -832,7 +832,7 @@ std::variant<LogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
  * @param ctx the FieldAccessExprContext to visit
  * @return const Type* INT if correctly used to test array length; UNDEFINED if any errors.
  */
-std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::FieldAccessExprContext *ctx, bool is_rvalue)
+std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::FieldAccessExprContext *ctx, bool is_rvalue)
 {
     // Determine the type of the expression we are visiting
     std::optional<SymbolContext> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
@@ -892,7 +892,7 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return new FieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
 }
 
-std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DereferenceExprContext *ctx, bool is_rvalue)
+std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue)
 {
     std::variant<TypedNode *, ErrorChain *> exprOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
 
@@ -915,7 +915,7 @@ std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::
 }
 
 // Passthrough to expression
-std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ParenExprContext *ctx)
+std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ParenExprContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this));
 
@@ -934,7 +934,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Par
  * @param ctx The BinaryRelExprContext to visit.
  * @return const Type* BOOL if lhs and rhs INT; UNDEFINED otherwise.
  */
-std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::BinaryRelExprContext *ctx)
+std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BinaryRelExprContext *ctx)
 {
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
@@ -979,7 +979,7 @@ std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
  * @param ctx The ConditionContext to visit
  * @return const Type* Always returns UNDEFINED as to prevent assignments
  */
-std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ConditionContext *ctx)
+std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ConditionContext *ctx)
 {
     // auto conditionType = any2Type(ctx->ex->accept(this));
     std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this));
@@ -1001,7 +1001,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Con
     return cond;
 }
 
-std::variant<SelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectAlternativeContext *ctx)
+std::variant<SelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SelectAlternativeContext *ctx)
 {
     return errorHandler.addError(ctx->getStart(), "COMP ERROR");
 }
@@ -1012,9 +1012,9 @@ std::variant<SelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(WP
  * @param ctx The ParameterListContext to process.
  * @return const Type* TypeInvoke representing the parameter types.
  */
-std::optional<ParameterListNode> SemanticVisitor::visitCtx(WPLParser::ParameterListContext *ctx)
+std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::ParameterListContext *ctx)
 {
-    std::map<std::string, WPLParser::ParameterContext *> map;
+    std::map<std::string, BismuthParser::ParameterContext *> map;
 
     ParameterListNode paramList;
 
@@ -1039,18 +1039,18 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(WPLParser::ParameterL
     return paramList;
 }
 
-ParameterNode SemanticVisitor::visitCtx(WPLParser::ParameterContext *ctx)
+ParameterNode SemanticVisitor::visitCtx(BismuthParser::ParameterContext *ctx)
 {
     return ParameterNode(any2Type(ctx->ty->accept(this)), ctx->name->getText()); // FIXME: WHAT AB ERRORS?
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::AssignmentContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::AssignmentContext *ctx)
 {
     errorHandler.addError(ctx->getStart(), "Assignment should never be visited directly during type checking!");
     return Types::UNIT;
 }
 
-std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ExternStatementContext *ctx)
+std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExternStatementContext *ctx)
 {
 
     bool variadic = ctx->variadic || ctx->ELLIPSIS();
@@ -1082,7 +1082,7 @@ std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Ex
     return node;
 };
 
-std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::AssignStatementContext *ctx)
+std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::AssignStatementContext *ctx)
 {
     // This one is the update one!
 
@@ -1126,7 +1126,7 @@ std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::As
     return new AssignNode(var, expr, ctx->getStart());
 }
 
-std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::VarDeclStatementContext *ctx)
+std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::VarDeclStatementContext *ctx)
 {
     std::vector<AssignmentNode *> a;
 
@@ -1137,9 +1137,9 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
 
         if (e->a && stmgr->isGlobalScope())
         {
-            if (!(dynamic_cast<WPLParser::BConstExprContext *>(e->a) ||
-                  dynamic_cast<WPLParser::IConstExprContext *>(e->a) ||
-                  dynamic_cast<WPLParser::SConstExprContext *>(e->a)))
+            if (!(dynamic_cast<BismuthParser::BConstExprContext *>(e->a) ||
+                  dynamic_cast<BismuthParser::IConstExprContext *>(e->a) ||
+                  dynamic_cast<BismuthParser::SConstExprContext *>(e->a)))
             {
                 errorHandler.addError(e->a->getStart(), "Global variables must be assigned explicit constants or initialized at runtime!");
             }
@@ -1210,7 +1210,7 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::V
     return new VarDeclNode(a, ctx->getStart());
 }
 
-std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::MatchStatementContext *ctx)
+std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::MatchStatementContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->check->ex->accept(this));
 
@@ -1238,12 +1238,12 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
             bindRestData(b->eval, rest);
         }
 
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::MatchAlternativeContext>(
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::MatchAlternativeContext>(
             ctx,
             ctx->cases,
             restDat, // ctx->rest,
             false,
-            [this, ctx, &cases, sumType, &foundCaseTypes](WPLParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
+            [this, ctx, &cases, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
             {
                 const Type *caseType = any2Type(altCtx->type()->accept(this));
 
@@ -1275,9 +1275,9 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
                     return *e;
                 }
 
-                if (dynamic_cast<WPLParser::ProgDefContext *>(altCtx->eval) ||
-                    dynamic_cast<WPLParser::VarDeclStatementContext *>(altCtx->eval) ||
-                    dynamic_cast<WPLParser::FuncDefContext *>(altCtx->eval))
+                if (dynamic_cast<BismuthParser::ProgDefContext *>(altCtx->eval) ||
+                    dynamic_cast<BismuthParser::VarDeclStatementContext *>(altCtx->eval) ||
+                    dynamic_cast<BismuthParser::FuncDefContext *>(altCtx->eval))
                 {
                     return errorHandler.addError(altCtx->getStart(), "Dead code: definition as select alternative.");
                 }
@@ -1289,7 +1289,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
                 return ans;
             });
 
-        // for (WPLParser::MatchAlternativeContext *altCtx : ctx->cases)
+        // for (BismuthParser::MatchAlternativeContext *altCtx : ctx->cases)
         // {
         // }
 
@@ -1318,7 +1318,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPa
  * @param ctx The LoopStatementContext to type check
  * @return const Type* UNDEFINED as this is a statement.
  */
-std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ProgramLoopContext *ctx)
+std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ProgramLoopContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
 
@@ -1358,7 +1358,7 @@ std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser:
     return new WhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<BlockNode *>(blkOpt), ctx->getStart());
 }
 
-std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ConditionalStatementContext *ctx)
+std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ConditionalStatementContext *ctx)
 {
     // Automatically handles checking that we have a valid condition
     std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCtx(ctx->check);
@@ -1369,7 +1369,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
         return *e;
     }
 
-    std::vector<WPLParser::BlockContext *> blksCtx = {ctx->trueBlk};
+    std::vector<BismuthParser::BlockContext *> blksCtx = {ctx->trueBlk};
     if (ctx->falseBlk)
         blksCtx.push_back(ctx->falseBlk);
 
@@ -1385,12 +1385,12 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
         }
     }
 
-    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::BlockContext>(
+    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::BlockContext>(
         ctx,
         blksCtx,
         restDat, // ctx->rest,
         blksCtx.size() == 1,
-        [this](WPLParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
+        [this](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
         {
             return TNVariantCast<BlockNode>(this->visitCtx(blk));
         });
@@ -1408,7 +1408,7 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
     return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), restDat->post);
 }
 
-std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::SelectStatementContext *ctx)
+std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SelectStatementContext *ctx)
 {
     // Define a recursive fn which takes ctx->cases as arg, then processes first vs rest?
     if (ctx->cases.size() < 1)
@@ -1429,19 +1429,19 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
 
     std::vector<SelectAlternativeNode *> alts;
 
-    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::SelectAlternativeContext>(
+    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::SelectAlternativeContext>(
         ctx,
         ctx->cases,
         restDat, // ctx->rest,
         true,
-        [this, ctx, &case_count, &alts](WPLParser::SelectAlternativeContext *e) -> std::variant<TypedNode *, ErrorChain *>
+        [this, ctx, &case_count, &alts](BismuthParser::SelectAlternativeContext *e) -> std::variant<TypedNode *, ErrorChain *>
         {
             /*
              *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
              */
-            if (dynamic_cast<WPLParser::ProgDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
-                dynamic_cast<WPLParser::VarDeclStatementContext *>(e->eval) ||
-                dynamic_cast<WPLParser::FuncDefContext *>(e->eval))
+            if (dynamic_cast<BismuthParser::ProgDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
+                dynamic_cast<BismuthParser::VarDeclStatementContext *>(e->eval) ||
+                dynamic_cast<BismuthParser::FuncDefContext *>(e->eval))
             {
                 return errorHandler.addError(e->getStart(), "Dead code: definition as select alternative.");
             }
@@ -1498,7 +1498,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLP
     return new SelectStatementNode(ctx->getStart(), alts, restDat->post);
 }
 
-std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ReturnStatementContext *ctx)
+std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ReturnStatementContext *ctx)
 {
     /*
      * Lookup the @RETURN symbol which can ONLY be defined by entering FUNC/PROC
@@ -1556,7 +1556,7 @@ std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Re
     return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but recieved nothing.");
 }
 
-std::variant<ExitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::ExitStatementContext *ctx)
+std::variant<ExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExitStatementContext *ctx)
 {
     std::optional<SymbolContext> symOpt = stmgr->lookup("@EXIT");
 
@@ -1569,7 +1569,7 @@ std::variant<ExitNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::Exit
     return new ExitNode(ctx->getStart());
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
 {
     // If we don't have a type context, then we know that we must be doing inference
     if (!(ctx->type()))
@@ -1585,7 +1585,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::TypeOrVarContext *ctx)
     return type;
 }
 
-std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::LambdaConstExprContext *ctx)
+std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx)
 {
     std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
 
@@ -1627,7 +1627,7 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParse
     return new LambdaConstNode(ctx->getStart(), ps, retType, blk);
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::LambdaTypeContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::LambdaTypeContext *ctx)
 {
     std::vector<const Type *> params;
 
@@ -1645,7 +1645,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::LambdaTypeContext *ctx)
     return lamType;
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
 {
     std::set<const Type *, TypeCompare> cases = {};
 
@@ -1673,7 +1673,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::SumTypeContext *ctx)
     return sum;
 }
 
-std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineEnumContext *ctx)
+std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
 {
     std::string id = ctx->name->getText();
     // std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1719,7 +1719,7 @@ std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser
     return errorHandler.addError(ctx->getStart(), "Expected enum/sum, but got: " + sym->type->toString());
 }
 
-std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::DefineStructContext *ctx)
+std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
 {
     std::string id = ctx->name->getText();
     std::optional<Symbol *> opt = symBindings->getBinding(ctx);
@@ -1738,7 +1738,7 @@ std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPars
         {
             LinkedMap<std::string, const Type *> el;
 
-            for (WPLParser::StructCaseContext *caseCtx : ctx->cases)
+            for (BismuthParser::StructCaseContext *caseCtx : ctx->cases)
             {
                 std::string caseName = caseCtx->name->getText();
                 if (el.lookup(caseName))
@@ -1763,7 +1763,7 @@ std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLPars
     return errorHandler.addError(ctx->getStart(), "Expected struct/product, but got: " + sym->type->toString());
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::CustomTypeContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::CustomTypeContext *ctx)
 {
     std::string name = ctx->VARIABLE()->getText();
 
@@ -1785,7 +1785,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::CustomTypeContext *ctx)
     return sym->type;
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::ArrayTypeContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::ArrayTypeContext *ctx)
 {
     const Type *subType = any2Type(ctx->ty->accept(this));
 
@@ -1801,7 +1801,7 @@ const Type *SemanticVisitor::visitCtx(WPLParser::ArrayTypeContext *ctx)
     const Type *arr = new TypeArray(subType, len);
     return arr;
 }
-const Type *SemanticVisitor::visitCtx(WPLParser::BaseTypeContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::BaseTypeContext *ctx)
 {
     if (ctx->TYPE_INT())
     {
@@ -1824,19 +1824,19 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BaseTypeContext *ctx)
     return Types::ABSURD;
 }
 
-std::variant<BooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(WPLParser::BooleanConstContext *ctx)
+std::variant<BooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BooleanConstContext *ctx)
 {
     return new BooleanConstNode(ctx->TRUE() ? true : false, ctx->getStart());
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::ChannelTypeContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
 {
     const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
 
     return new TypeChannel(proto);
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::BoxTypeContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::BoxTypeContext *ctx)
 {
     const Type *inner = any2Type(ctx->ty->accept(this));
 
@@ -1849,13 +1849,13 @@ const Type *SemanticVisitor::visitCtx(WPLParser::BoxTypeContext *ctx)
     return new TypeBox(inner);
 }
 
-const Type *SemanticVisitor::visitCtx(WPLParser::ProgramTypeContext *ctx)
+const Type *SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 {
     const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
     return new TypeProgram(new TypeChannel(proto)); // FIXME: SEEMS A BIT ODD TO INC CHANNEL IN PROGRAM?
 }
 
-std::variant<ProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(WPLParser::ProgramSendContext *ctx)
+std::variant<ProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(BismuthParser::ProgramSendContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1891,7 +1891,7 @@ std::variant<ProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend
     return errorHandler.addError(ctx->getStart(), "Cannot send on non-channel: " + id);
 }
 
-std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableRecv(WPLParser::AssignableRecvContext *ctx)
+std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1918,7 +1918,7 @@ std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableR
     return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);
 }
 
-std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(WPLParser::ProgramCaseContext *ctx)
+std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(BismuthParser::ProgramCaseContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1956,12 +1956,12 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<WPLParser::ProtoAlternativeContext>(
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ProtoAlternativeContext>(
             ctx,
             ctx->protoAlternative(),
             restDat,
             false,
-            [this, savedRest, channel](WPLParser::ProtoAlternativeContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+            [this, savedRest, channel](BismuthParser::ProtoAlternativeContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
                 const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
 
@@ -1985,7 +1985,7 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
     return errorHandler.addError(ctx->getStart(), "Cannot case on non-channel: " + id);
 }
-std::variant<ProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramProject(WPLParser::ProgramProjectContext *ctx)
+std::variant<ProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramProject(BismuthParser::ProgramProjectContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2012,7 +2012,7 @@ std::variant<ProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramP
 
     return errorHandler.addError(ctx->getStart(), "Cannot project on non-channel: " + id);
 }
-std::variant<ProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgramContract(WPLParser::ProgramContractContext *ctx)
+std::variant<ProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgramContract(BismuthParser::ProgramContractContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2051,7 +2051,7 @@ std::variant<ProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
     return errorHandler.addError(ctx->getStart(), "Cannot contract on non-channel: " + id);
 }
-std::variant<ProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWeaken(WPLParser::ProgramWeakenContext *ctx)
+std::variant<ProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2074,7 +2074,7 @@ std::variant<ProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWe
 
     return errorHandler.addError(ctx->getStart(), "Cannot weaken on non-channel: " + id);
 }
-std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAccept(WPLParser::ProgramAcceptContext *ctx)
+std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAccept(BismuthParser::ProgramAcceptContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2130,7 +2130,7 @@ std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAc
 
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
 }
-std::variant<ProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableExec(WPLParser::AssignableExecContext *ctx)
+std::variant<ProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableExec(BismuthParser::AssignableExecContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->prog->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -2158,7 +2158,7 @@ std::variant<ProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableE
  *
  *************************************************************/
 
-const Protocol *SemanticVisitor::visitProto(WPLParser::ProtocolContext *ctx)
+const Protocol *SemanticVisitor::visitProto(BismuthParser::ProtocolContext *ctx)
 {
     std::vector<const Protocol *> steps;
 
@@ -2170,31 +2170,31 @@ const Protocol *SemanticVisitor::visitProto(WPLParser::ProtocolContext *ctx)
     return new ProtocolSequence(steps);
 }
 
-const Protocol *SemanticVisitor::visitProto(WPLParser::RecvTypeContext *ctx)
+const Protocol *SemanticVisitor::visitProto(BismuthParser::RecvTypeContext *ctx)
 {
     const Type *ty = any2Type(ctx->ty->accept(this));
     return new ProtocolRecv(ty);
 }
 
-const Protocol *SemanticVisitor::visitProto(WPLParser::SendTypeContext *ctx)
+const Protocol *SemanticVisitor::visitProto(BismuthParser::SendTypeContext *ctx)
 {
     const Type *ty = any2Type(ctx->ty->accept(this));
     return new ProtocolSend(ty);
 }
 
-const Protocol *SemanticVisitor::visitProto(WPLParser::WnProtoContext *ctx)
+const Protocol *SemanticVisitor::visitProto(BismuthParser::WnProtoContext *ctx)
 {
     const Protocol *proto = any2Protocol(ctx->proto->accept(this));
     return new ProtocolWN(toSequence(proto));
 }
 
-const Protocol *SemanticVisitor::visitProto(WPLParser::OcProtoContext *ctx)
+const Protocol *SemanticVisitor::visitProto(BismuthParser::OcProtoContext *ctx)
 {
     const Protocol *proto = any2Protocol(ctx->proto->accept(this));
     return new ProtocolOC(toSequence(proto));
 }
 
-const Protocol *SemanticVisitor::visitProto(WPLParser::ExtChoiceProtoContext *ctx)
+const Protocol *SemanticVisitor::visitProto(BismuthParser::ExtChoiceProtoContext *ctx)
 {
     std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
 
@@ -2212,7 +2212,7 @@ const Protocol *SemanticVisitor::visitProto(WPLParser::ExtChoiceProtoContext *ct
     // return new Protocol(steps);
     return new ProtocolEChoice(opts);
 }
-const Protocol *SemanticVisitor::visitProto(WPLParser::IntChoiceProtoContext *ctx)
+const Protocol *SemanticVisitor::visitProto(BismuthParser::IntChoiceProtoContext *ctx)
 {
     // std::vector<const ProtocolSequence *> opts;
     std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
