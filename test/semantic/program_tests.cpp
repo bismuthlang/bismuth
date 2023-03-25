@@ -3331,7 +3331,7 @@ define program :: c : Channel<-int> = {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   WPLSyntaxErrorListener *syntaxListener = new WPLSyntaxErrorListener();
+//   BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
 //   parser.addErrorListener(syntaxListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -3356,7 +3356,7 @@ define program :: c : Channel<-int> = {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   WPLSyntaxErrorListener *syntaxListener = new WPLSyntaxErrorListener();
+//   BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
 //   parser.addErrorListener(syntaxListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;

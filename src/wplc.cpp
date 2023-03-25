@@ -207,7 +207,7 @@ Version: Pre-Alpha 1.2
      *******************************************************************/
     BismuthParser parser(&tokens);
     parser.removeErrorListeners();
-    WPLSyntaxErrorListener *syntaxListener = new WPLSyntaxErrorListener();
+    BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
     parser.addErrorListener(syntaxListener);
     // delete syntaxListener;
 

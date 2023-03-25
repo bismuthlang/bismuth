@@ -203,10 +203,10 @@ protected:
 };
 
 /**
- * @brief Wapper around BismuthErrorHandler and antlr4::BaseErrorListener so we can report syntax errors just like the other error types
+ * @brief Wrapper around BismuthErrorHandler and antlr4::BaseErrorListener so we can report syntax errors just like the other error types
  *
  */
-class WPLSyntaxErrorListener : public antlr4::BaseErrorListener, public BismuthErrorHandler
+class BismuthSyntaxErrorListener : public antlr4::BaseErrorListener, public BismuthErrorHandler
 {
   virtual void syntaxError(
       antlr4::Recognizer *recognizer,
@@ -222,5 +222,5 @@ class WPLSyntaxErrorListener : public antlr4::BaseErrorListener, public BismuthE
   }
 
 public:
-  WPLSyntaxErrorListener() : BismuthErrorHandler(SYNTAX) {}
+  BismuthSyntaxErrorListener() : BismuthErrorHandler(SYNTAX) {}
 };
