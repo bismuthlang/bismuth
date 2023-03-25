@@ -1388,7 +1388,7 @@ public:
     }
 
     /**
-     * @brief Returns if type inference has detemined the type of this var yet
+     * @brief Returns if type inference has determined the type of this var yet
      *
      * @return true
      * @return false
@@ -1472,7 +1472,7 @@ protected:
             }
         }
 
-        // Return true/false depending on if the afformentoned process was successful.
+        // Return true/false depending on if the aforementioned process was successful.
         return valid;
     }
 
@@ -1501,7 +1501,7 @@ protected:
                 return setValue(oinf->valueType->value());
             }
 
-            // Otherwise, add the types to be dependencies of eachother, and return true.
+            // Otherwise, add the types to be dependencies of each other, and return true.
             TypeInfer *mthis = const_cast<TypeInfer *>(this);
             mthis->infTypes.push_back(oinf);
 

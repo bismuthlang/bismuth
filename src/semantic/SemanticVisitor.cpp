@@ -111,8 +111,17 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
             (*e)->addError(ctx->getStart(), "108");
             return *e;
         }
+        ExternNode *node = std::get<ExternNode *>(extOpt);
 
-        externs.push_back(std::get<ExternNode *>(extOpt));
+        if (flags & CompilerFlags::DEMO_MODE)
+        {
+            if (!(node->getSymbol()->getIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::STR) && node->getType()->getReturnType()->isSubtype(Types::INT) && node->getType()->isVariadic()))
+            {
+                errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode.");
+            }
+        }
+
+        externs.push_back(node);
     }
 
     // Auto forward decl
@@ -169,7 +178,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
      * Extra checks depending on compiler flags
      *******************************************/
 
-    if (flags & CompilerFlags::NO_RUNTIME)
+    if (flags & CompilerFlags::DEMO_MODE)
     {
         /**********************************************************
          * As there is no runtime, we need to make sure that
@@ -178,40 +187,28 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
         if (stmgr->lookup("main"))
         {
-            errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, main is reserved!");
+            errorHandler.addError(ctx->getStart(), "When compiling in demo mode, main is reserved!");
         }
 
-        // Check that program is invokeable and correctly defined.
+        std::optional<SymbolContext> opt = stmgr->lookup("program");
+        if (!opt)
         {
-            std::optional<SymbolContext> opt = stmgr->lookup("program");
-            if (!opt)
+            errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, 'program :: * : Channel<-int>' must be defined.");
+        }
+        else
+        {
+            Symbol *sym = opt.value().second;
+
+            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
             {
-                errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, program() must be defined!");
+                if (!inv->getChannelType()->isSubtype(new TypeChannel(new ProtocolSequence({new ProtocolSend(Types::INT)}))))
+                {
+                    errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString());
+                }
             }
             else
             {
-                Symbol *sym = opt.value().second;
-
-                if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type))
-                {
-                    if (inv->getParamTypes().size() != 0)
-                    {
-                        errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, program must not require arguments!");
-                    }
-
-                    {
-                        std::optional<const Type *> retOpt = inv->getReturnType();
-
-                        if (!retOpt || !dynamic_cast<const TypeInt *>(retOpt.value()))
-                        {
-                            errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, program() must return INT");
-                        }
-                    }
-                }
-                else
-                {
-                    errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, program() must be an invokable!");
-                }
+                errorHandler.addError(ctx->getStart(), "When compiling in demo, 'program :: * : Channel<-int>' is required.");
             }
         }
     }
@@ -1328,7 +1325,7 @@ std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
         return *e;
     }
 
-    std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
+    std::vector<Symbol *> syms = stmgr->getAvailableLinears();
 
     std::vector<const TypeChannel *> to_fix;
 
@@ -1553,7 +1550,7 @@ std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
         return new ReturnNode(ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but recieved nothing.");
+    return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but received nothing.");
 }
 
 std::variant<ExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExitStatementContext *ctx)
@@ -2093,7 +2090,7 @@ std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAc
             return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
         }
 
-        std::vector<Symbol *> syms = stmgr->getAvaliableLinears();
+        std::vector<Symbol *> syms = stmgr->getAvailableLinears();
         // FIXME: DO BETTER B/C HERE WE TRY TO ASSIGN TO THE VAR WE MANUALLY NEED TO ASSIGN? NO BC IT FAILS CHECK!
 
         std::vector<const TypeChannel *> to_fix;

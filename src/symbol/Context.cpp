@@ -117,7 +117,7 @@ std::optional<Symbol *> Context::lookup(std::string id)
     return std::nullopt;
 }
 
-std::vector<Symbol *> Context::getAvaliableLinears(bool include_complete) //TODO: DO BETTER
+std::vector<Symbol *> Context::getAvailableLinears(bool include_complete) //TODO: DO BETTER
 {
     std::vector<Symbol *> ans;
 

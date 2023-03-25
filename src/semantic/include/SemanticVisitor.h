@@ -454,7 +454,7 @@ public:
         // std::vector<TypedNode *> restVec;
         // bool restVecFilled = false;
 
-        std::vector<Symbol *> syms = stmgr->getAvaliableLinears(true);                // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
+        std::vector<Symbol *> syms = stmgr->getAvailableLinears(true);                // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
         std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
         for (Symbol *orig : syms)
         {
@@ -539,7 +539,7 @@ public:
 
             safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
 
-            std::vector<Symbol *> lins = stmgr->getAvaliableLinears();
+            std::vector<Symbol *> lins = stmgr->getAvailableLinears();
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -610,7 +610,7 @@ public:
 
             safeExitScope(ctx);
 
-            std::vector<Symbol *> lins = stmgr->getAvaliableLinears();
+            std::vector<Symbol *> lins = stmgr->getAvailableLinears();
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope

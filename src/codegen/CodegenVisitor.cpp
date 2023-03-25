@@ -63,25 +63,6 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
      * Extra checks depending on compiler flags
      *******************************************/
 
-    if (flags & CompilerFlags::NO_RUNTIME)
-    {
-        /*
-         * Need to create main method and invoke program()
-         * Based on semantic analysis, both of these should be defined.
-         *
-         * This will segfault if not found, but, as stated, that should be impossible.
-         */
-
-        FunctionType *mainFuncType = FunctionType::get(Int32Ty, {Int32Ty, Int8PtrPtrTy}, false);
-        Function *mainFunc = Function::Create(mainFuncType, GlobalValue::ExternalLinkage, "main", module);
-
-        // Create block to attach to main
-        BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", mainFunc);
-        builder->SetInsertPoint(bBlk);
-
-        builder->CreateRet(builder->CreateCall(module->getFunction("program"), {}));
-    }
-
     return std::nullopt;
 }
 

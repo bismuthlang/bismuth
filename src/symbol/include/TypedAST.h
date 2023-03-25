@@ -172,7 +172,7 @@ public:
     std::any accept(TypedNode *n)
     {
         return n->accept(this);
-        // return dynamic_cast<T>(n->accept(this)); // Hacky, but completley safe
+        // return dynamic_cast<T>(n->accept(this)); // Hacky, but completely safe
         // return n->accept(this);
     }
 };
@@ -655,7 +655,7 @@ class ExternNode : public TypedNode
 {
 private:
     Symbol *sym;
-    const TypeInvoke *ty; // FIXME: ISNT REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
+    const TypeInvoke *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
     ExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
@@ -680,7 +680,7 @@ public:
         return "EXTERN NODE";
     }
 
-    Symbol *getSymbol() { return sym; } // WHY ARENT THINGS LIKE THIS CONST?
+    Symbol *getSymbol() { return sym; } // WHY AREN'T THINGS LIKE THIS CONST?
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 

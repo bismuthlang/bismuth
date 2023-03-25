@@ -42,9 +42,9 @@ static llvm::cl::opt<bool>
            llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<bool>
-    noRuntime("no-runtime",
-              llvm::cl::desc("Program will not use the Bismuth runtime; Compiler will automatically treat program() as the entry point."),
-              llvm::cl::cat(CLIOptions));
+    demoMode("demo-mode",
+             llvm::cl::desc("Demo mode for web editor: main programs required & limited imports"),
+             llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<bool>
     isVerbose("verbose",
@@ -225,7 +225,7 @@ Version: Pre-Alpha 1.2
      * Sets up compiler flags. These need to be sent to the visitors.
      */
 
-    int flags = (noRuntime) ? CompilerFlags::NO_RUNTIME : 0;
+    int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
 
     /*******************************************************************
      * Semantic Analysis
@@ -247,9 +247,9 @@ Version: Pre-Alpha 1.2
       continue;
     }
 
-    if (std::holds_alternative<ErrorChain *>(TypedOpt)) 
+    if (std::holds_alternative<ErrorChain *>(TypedOpt))
     {
-      //SHouldn't be possible, but somehow it cah happen....?)
+      // SHouldn't be possible, but somehow it cah happen....?)
       std::cerr << "Failed to generate Typed AST" << std::endl;
       std::cerr << std::get<ErrorChain *>(TypedOpt)->toString() << std::endl;
       isValid = false;
@@ -306,14 +306,7 @@ Version: Pre-Alpha 1.2
 
     if (isVerbose)
     {
-      if (noRuntime)
-      {
-        std::cout << "Code generation completed for " << input.second << "; program does NOT support runtime." << std::endl;
-      }
-      else
-      {
-        std::cout << "Code generation completed for " << input.second << "; program may require runtime." << std::endl;
-      }
+      std::cout << "Code generation completed for " << input.second << "." << std::endl;
     }
 
     if (compileWith != none)
