@@ -160,7 +160,7 @@ Version: Pre-Alpha 1.2
   {
     // For each file name, make sure the file exist. If so, create an input stream to it
     // and set its output filename to be the provided name (if we are compiling just
-    // one file, and a name was provided), or the file's name but with the .wpl
+    // one file, and a name was provided), or the file's name but with the extension
     // extension replaced with .ll
     for (auto fileName : inputFileName)
     {
@@ -269,7 +269,7 @@ Version: Pre-Alpha 1.2
      * If we have yet to recieve any errors for the file, then
      * generate code for it.
      *******************************************************************/
-    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", flags);
+    CodegenVisitor *cv = new CodegenVisitor("BismuthProgram", flags);
     cv->visitCompilationUnit(cu);
     if (cv->hasErrors(0)) // Want to see all errors
     {
@@ -308,11 +308,11 @@ Version: Pre-Alpha 1.2
     {
       if (noRuntime)
       {
-        std::cout << "Code generation completed for " << input.second << ".wpl; program does NOT support runtime." << std::endl;
+        std::cout << "Code generation completed for " << input.second << "; program does NOT support runtime." << std::endl;
       }
       else
       {
-        std::cout << "Code generation completed for " << input.second << ".wpl; program may require runtime." << std::endl;
+        std::cout << "Code generation completed for " << input.second << "; program may require runtime." << std::endl;
       }
     }
 

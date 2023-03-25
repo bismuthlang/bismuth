@@ -733,7 +733,7 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
 /**
  * @brief Generates code for Logical Ands
  *
- * Tested in: test2.prism
+ * Tested in: test2.bismuth
  *
  * @param ctx LogAndExprContext to generate this from
  * @return std::optional<Value *> The resulting value or {} if errors.
@@ -805,7 +805,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
 /**
  * @brief Generates code for Logical Ors.
  *
- * Tested in: test2.prism
+ * Tested in: test2.bismuth
  *
  * @param ctx Context to generate code from
  * @return std::optional<Value *> The resulting value or {} if errors.

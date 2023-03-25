@@ -33,7 +33,7 @@ void EnsureCompilesTo(antlr4::ANTLRInputStream *input, string hash)
     REQUIRE_FALSE(sv->hasErrors(0));
     REQUIRE(std::holds_alternative<CompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
 
-    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
+    CodegenVisitor *cv = new CodegenVisitor("BismuthProgram", 0);
     cv->visitCompilationUnit(std::get<CompilationUnitNode*>(cuOpt));//cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
@@ -617,20 +617,20 @@ TEST_CASE("B Level Positive Test #2", "[codegen]")
 TEST_CASE("A Level Positive Test #1", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive1.prism"))),
-        "7a0d3342785b78cffa33ad1c1bbbecd7bd7367463705b97a0bc3a831d732f899");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive1.bismuth"))),
+        "516859c91ce4af7e04ffcd78e5a0d2b1c7b247d7cc13f2bde5a197f4b6b564e0");
 }
 
 TEST_CASE("A Level Positive Test #2 - If", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive2.prism"))),
-        "ecfc5bb3a1c80dfbb6a081db21981d480c5bc8a7554ea97c1b448bfa32873279");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive2.bismuth"))),
+        "52a548a0f9a6e652a26ee7a8abc3c07d531a0bef14141707f92a9717fa359c05");
 }
 
 TEST_CASE("A Level Positive Test #3 - Select", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive3.prism"))),
-        "3e4bbb78e55db74faabe73e8cfc7ac1d99ebbdb47db4709ea202dea539fa7206");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive3.bismuth"))),
+        "72bb25c93d65ff774af3d84c1dfac8eaaaa382779143ae29ce2149c675d6c9d4");
 }
