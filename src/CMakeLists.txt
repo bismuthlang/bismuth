@@ -35,12 +35,12 @@ add_subdirectory(runtime)
 
 
 
-add_executable(wplc wplc.cpp)
+add_executable(bismuthc wplc.cpp)
 
 llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_TARGETS_TO_BUILD} support core irreader codegen mc mcparser option)
 
 # add dependencies as you need them
-add_dependencies(wplc 
+add_dependencies(bismuthc 
   parser_lib 
   sym_lib 
   semantic_lib
@@ -49,7 +49,7 @@ add_dependencies(wplc
   wpl_runtime
 )
 
-target_include_directories(wplc PUBLIC 
+target_include_directories(bismuthc PUBLIC 
   ${ANTLR_INCLUDE} ${ANTLR_GENERATED_DIR}
   ${SYMBOL_INCLUDE}
   ${SEMANTIC_INCLUDE}
@@ -60,7 +60,7 @@ target_include_directories(wplc PUBLIC
   ${LLVM_TARGETS_TO_BUILD}
 )
 
-target_link_libraries(wplc 
+target_link_libraries(bismuthc 
   PRIVATE
   ${ANTLR_RUNTIME_LIB}
   parser_lib

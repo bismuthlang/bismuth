@@ -7,5 +7,5 @@ set (UTILITY_DIR ${CMAKE_SOURCE_DIR}/src/utility)
 set (UTILITY_INCLUDE ${UTILITY_DIR}/include)
 
 set (UTILITY_SOURCES
-  ${UTILITY_DIR}/WPLErrorHandler.cpp
+  ${UTILITY_DIR}/BismuthErrorHandler.cpp
 )

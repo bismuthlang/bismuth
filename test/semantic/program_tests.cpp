@@ -2,7 +2,7 @@
 #include "antlr4-runtime.h"
 #include "BismuthLexer.h"
 #include "BismuthParser.h"
-#include "WPLErrorHandler.h"
+#include "BismuthErrorHandler.h"
 #include "SemanticVisitor.h"
 
 #include "CodegenVisitor.h"

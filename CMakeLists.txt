@@ -1,7 +1,7 @@
 # Top-level CMake file for Bismiuth
 
 cmake_minimum_required(VERSION 3.20.0)
-project(WPL_COMPILER 
+project(BISMUTH_COMPILER 
   LANGUAGES CXX C
   VERSION 0.1
   DESCRIPTION "Bismuth Compiler"

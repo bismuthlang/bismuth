@@ -1,5 +1,5 @@
 /**
- * @file WPLErrorHandler.h
+ * @file BismuthErrorHandler.h
  * @author Alex Friedman (ahfriedman.com)
  * @brief Basic error handler for reporting during compile time. Based on example.
  * @version 0.1
@@ -41,12 +41,12 @@ enum ErrSev
  * @brief Defines an error in the language
  *
  */
-struct WPLError
+struct BismuthError
 {
   antlr4::Token *token; // Where the error occurred
   std::string message;  // Error Message text
 
-  WPLError(antlr4::Token *tok, std::string msg)
+  BismuthError(antlr4::Token *tok, std::string msg)
   {
     token = tok;
     message = msg;
@@ -67,25 +67,25 @@ struct ErrorChain
   ErrType errType;
   ErrSev errSev;
 
-  std::vector<WPLError *> chain;
+  std::vector<BismuthError *> chain;
 
   ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
   {
     errType = et;
     errSev = es;
-    WPLError *primaryError = new WPLError(tok, msg);
+    BismuthError *primaryError = new BismuthError(tok, msg);
     chain.push_back(primaryError);
   }
 
   void addError(antlr4::Token *t, std::string msg)
   {
-    WPLError *e = new WPLError(t, msg);
+    BismuthError *e = new BismuthError(t, msg);
     chain.push_back(e);
   }
 
   void addCritWarning(antlr4::Token *t, std::string msg)
   {
-    WPLError *e = new WPLError(t, msg);
+    BismuthError *e = new BismuthError(t, msg);
     chain.push_back(e);
   }
 
@@ -100,7 +100,7 @@ struct ErrorChain
       e << "UNKNOWN ERROR" << std::endl; // Shouldn't be possible anymore
     }
 
-    for (WPLError *error : chain)
+    for (BismuthError *error : chain)
     {
       e << error->toString() << std::endl;
     }
@@ -139,13 +139,13 @@ struct ErrorChain
   }
 };
 
-class WPLErrorHandler
+class BismuthErrorHandler
 {
 private:
   ErrType errType;
 
 public:
-  WPLErrorHandler(ErrType ty) : errType(ty) {}
+  BismuthErrorHandler(ErrType ty) : errType(ty) {}
 
   ErrorChain *addError(antlr4::Token *t, std::string msg)
   {
@@ -203,10 +203,10 @@ protected:
 };
 
 /**
- * @brief Wapper around WPLErrorHandler and antlr4::BaseErrorListener so we can report syntax errors just like the other error types
+ * @brief Wapper around BismuthErrorHandler and antlr4::BaseErrorListener so we can report syntax errors just like the other error types
  *
  */
-class WPLSyntaxErrorListener : public antlr4::BaseErrorListener, public WPLErrorHandler
+class WPLSyntaxErrorListener : public antlr4::BaseErrorListener, public BismuthErrorHandler
 {
   virtual void syntaxError(
       antlr4::Recognizer *recognizer,
@@ -222,5 +222,5 @@ class WPLSyntaxErrorListener : public antlr4::BaseErrorListener, public WPLError
   }
 
 public:
-  WPLSyntaxErrorListener() : WPLErrorHandler(SYNTAX) {}
+  WPLSyntaxErrorListener() : BismuthErrorHandler(SYNTAX) {}
 };

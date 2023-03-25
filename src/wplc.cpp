@@ -44,7 +44,7 @@ static llvm::cl::opt<bool>
 
 static llvm::cl::opt<bool>
     noRuntime("no-runtime",
-              llvm::cl::desc("Program will not use the WPL runtime; Compiler will automatically treat program() as the entry point."),
+              llvm::cl::desc("Program will not use the Bismuth runtime; Compiler will automatically treat program() as the entry point."),
               llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<bool>

@@ -3,7 +3,7 @@
 #include "BismuthBaseVisitor.h"
 #include "STManager.h"
 #include "PropertyManager.h"
-#include "WPLErrorHandler.h"
+#include "BismuthErrorHandler.h"
 #include "CompilerFlags.h"
 #include "TypedAST.h"
 #include "CastUtils.h"
@@ -661,7 +661,7 @@ private:
     STManager *stmgr;
     PropertyManager<Symbol> *symBindings = new PropertyManager<Symbol>();
     PropertyManager<std::deque<DeepRestData *>> *restBindings = new PropertyManager<std::deque<DeepRestData *>>();
-    WPLErrorHandler errorHandler = WPLErrorHandler(SEMANTIC);
+    BismuthErrorHandler errorHandler = BismuthErrorHandler(SEMANTIC);
 
     int flags; // Compiler flags
 

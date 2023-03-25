@@ -13,7 +13,7 @@
 #include "BismuthBaseVisitor.h"
 #include "CompilerFlags.h"
 
-#include "WPLErrorHandler.h"
+#include "BismuthErrorHandler.h"
 #include "SemanticVisitor.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/IRBuilder.h"
@@ -489,7 +489,7 @@ public:
 private:
     int flags;
 
-    WPLErrorHandler errorHandler = WPLErrorHandler(CODEGEN);
+    BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN);
 
     // LLVM
     LLVMContext *context;
