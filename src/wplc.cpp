@@ -84,18 +84,16 @@ int main(int argc, const char *argv[])
   // Note: Sub zero font
   llvm::cl::SetVersionPrinter([](llvm::raw_ostream &o)
                               { o << R""""( 
-      ______   ______     __     ______     __    __    
-     /\  == \ /\  == \   /\ \   /\  ___\   /\ "-./  \   
-     \ \  _-/ \ \  __<   \ \ \  \ \___  \  \ \ \-./\ \  
-      \ \_\    \ \_\ \_\  \ \_\  \/\_____\  \ \_\ \ \_\ 
-       \/_/     \/_/ /_/   \/_/   \/_____/   \/_/  \/_/ 
-     ===================================================
-     Process Calculus Compiler - Created by Alex Friedman
-     Website: https://ahfriedman.com
-     Version: Pre-Alpha 1.0
-
-
-       )""""; });
+ ______     __     ______     __    __     __  __     ______   __  __    
+/\  == \   /\ \   /\  ___\   /\ "-./  \   /\ \/\ \   /\__  _\ /\ \_\ \   
+\ \  __<   \ \ \  \ \___  \  \ \ \-./\ \  \ \ \_\ \  \/_/\ \/ \ \  __ \  
+ \ \_____\  \ \_\  \/\_____\  \ \_\ \ \_\  \ \_____\    \ \_\  \ \_\ \_\ 
+  \/_____/   \/_/   \/_____/   \/_/  \/_/   \/_____/     \/_/   \/_/\/_/ 
+=========================================================================
+Bismuth Process Calculus Compiler - Created by Alex Friedman (https://ahfriedman.com)
+Website: https://bismuth-lang.org
+Version: Pre-Alpha 1.2
+)""""; });
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
   // FIXME: ENABLE SEPARATLEY?

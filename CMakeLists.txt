@@ -1,10 +1,10 @@
-# Top-level CMake file for WPL
+# Top-level CMake file for Bismiuth
 
 cmake_minimum_required(VERSION 3.20.0)
 project(WPL_COMPILER 
   LANGUAGES CXX C
   VERSION 0.1
-  DESCRIPTION "Compiler to compile the WPL source to LLVM IR"
+  DESCRIPTION "Bismuth Compiler"
 )
 
 option(BUILD_COVERAGE "Build coverage for test programs" OFF)

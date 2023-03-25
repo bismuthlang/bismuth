@@ -276,13 +276,13 @@ fragment SAFE_STRING : ~["\\]    ;
 
 
 /*
-    Prism has two types of comments, inline comments and standard comments. 
+    Bismuth has two types of comments, inline comments and standard comments. 
     Inline comments start with a '#' character that is not in a string 
     literal, and continue to the end of the line (or end of file if this 
     is the last line of the program).
 
-    Standard comments begin with a "(*" sequence and end with a matching 
-    "*)" sequence.  Standard comments may be nested.
+    Standard comments begin with a "/*" sequence and end with a matching 
+    "*\/" sequence.  Standard comments may be nested.
 
     Whitespace consists of this set of characters `[ \t\r\n\f]` 
     (not including the brackets). Comments and whitespace are not passed 
@@ -293,12 +293,12 @@ fragment SAFE_STRING : ~["\\]    ;
 INLINE_COMMENT  :   '#' .*? ('\n'|EOF)  -> skip;
 
 /*
- * Regular comments start with (* and go until *) while supporting nesting comments. 
- * To achieve this, after the start of a nested comment with (*, we allow the comment 
+ * Regular comments start with /* and go until *\/ while supporting nesting comments. 
+ * To achieve this, after the start of a nested comment with /*, we allow the comment 
  * to contain another regular comment, and we otherwise do not allow them to contain 
- * (* or *). This ensures proper nesting or a syntax error. By then using the non-greedy
- * repitition rule (*?), we make sure that we close out the nested comment on the first valid *)
- * that we encounter. This step might not be needed given the explicit disallow of (* and *)
+ * /* or *\/. This ensures proper nesting or a syntax error. By then using the non-greedy
+ * repitition rule (*?), we make sure that we close out the nested comment on the first valid *\/
+ * that we encounter. This step might not be needed given the explicit disallow of /* and *\/
  * in the comment outside of another comment, but I figure that its probably a good practice
  * to leave it in there.  
  */

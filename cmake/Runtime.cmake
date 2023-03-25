@@ -16,7 +16,7 @@ set (RUNTIME_SOURCES
 
 ###################################################
 #
-# PRISM Core Includes # FIXME: FIND A WAY TO PREVENT THSE FROM BEING ACCESSED BY USERS DIRECTLY!
+# Bismuth Core Includes # FIXME: FIND A WAY TO PREVENT THSE FROM BEING ACCESSED BY USERS DIRECTLY!
 #
 ###################################################
 
