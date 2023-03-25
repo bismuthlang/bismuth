@@ -32,55 +32,6 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
   REQUIRE(sv->hasErrors(0));
 }
 
-// TEST_CASE("programs/test9Err - Test assign var to array", "[semantic]")
-// {
-//   std::fstream *inStream = new std::fstream("/home/shared/programs/test9Err.wpl");
-//   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-//   BismuthLexer lexer(input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   STManager *stm = new STManager();
-//
-//   SemanticVisitor *sv = new SemanticVisitor(stm);
-//   sv->visitCompilationUnit(tree);
-
-//   // if(sv->hasErrors(0))
-//   // {
-//   //     CHECK("foo" == sv->getErrors());
-//   // }
-//   REQUIRE(sv->hasErrors(0));
-
-// }
-
-// TEST_CASE("programs/test11Err - Prevent global exprs", "[semantic]")
-// {
-//   std::fstream *inStream = new std::fstream("/home/shared/programs/test11err.wpl");
-//   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-//   BismuthLexer lexer(input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   STManager *stm = new STManager();
-//
-//   SemanticVisitor *sv = new SemanticVisitor(stm);
-//   sv->visitCompilationUnit(tree);
-
-//   // if(sv->hasErrors(0))
-//   // {
-//   //     CHECK("foo" == sv->getErrors());
-//   // }
-//   REQUIRE(sv->hasErrors(0));
-
-// }
 TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
 {
 

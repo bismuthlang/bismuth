@@ -52,16 +52,8 @@ void EnsureErrors(antlr4::ANTLRInputStream *input)
     STManager *stm = new STManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
     auto cuOpt = sv->visitCtx(tree);
-    // REQUIRE(cuOpt.has_value());
 
     REQUIRE(sv->hasErrors(0));
-
-    // CodegenVisitor *cv = new CodegenVisitor("WPLC.ll");
-    // cv->visitCompilationUnit(cuOpt.value());
-
-    // REQUIRE_FALSE(cv->hasErrors(0));
-
-    // REQUIRE(llvmIrToSHA256(cv->getModule()) == "e0f894f1b6dd6613bd18eee553f5d6c8896228b4e4a21400b5dd6f1433ab0670");
 }
 // FIXME: REMOVE NO RUNTIME
 TEST_CASE("programs/test1 - General Overview", "[codegen]")
@@ -253,34 +245,6 @@ TEST_CASE("programs/adv/LambdaDef", "[codegen]")
         "cd84f09094e376bd739dfc717c9238432519acf5ef516fcf83043929b0dc7f79");
 }
 
-// TEST_CASE("programs/test-runtime - Basic runtime tests", "[codegen]")
-// {
-//     // NOTE: tested linking each runtime function locally
-//     std::fstream *inStream = new std::fstream("/home/shared/programs/test-runtime.wpl");
-//     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-//     BismuthLexer lexer(input);
-//     antlr4::CommonTokenStream tokens(&lexer);
-//     BismuthParser parser(&tokens);
-//     parser.removeErrorListeners();
-//     BismuthParser::CompilationUnitContext *tree = NULL;
-//     REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//     REQUIRE(tree != NULL);
-//     STManager *stm = new STManager();
-//     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
-//     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
-//     REQUIRE(cuOpt.has_value());
-
-//     REQUIRE_FALSE(sv->hasErrors(0));
-
-//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
-//     cv->visitCompilationUnit(cuOpt.value());
-
-//     REQUIRE_FALSE(cv->hasErrors(0));
-
-//     REQUIRE(llvmIrToSHA256(cv->getModule()) == "6c84e861ca345b6cf3b11cf5abe99daed731acac1e48a302ac8efe6640cad7b6");
-// }
-
 TEST_CASE("programs/test-shortcircuit - Basic Short Circuit (and)", "[codegen]")
 {
     EnsureCompilesTo(
@@ -323,60 +287,6 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
         "ce3e033ecc420dd2358792f7a0aa6da05f68f531d383febaf066612ecb8861ad");
 }
 
-// TEST_CASE("programs/test19 - Editing Global String and Using Across Inv", "[codegen]")
-// {
-//     std::fstream *inStream = new std::fstream("/home/shared/programs/test19.wpl");
-//     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-//     BismuthLexer lexer(input);
-//     antlr4::CommonTokenStream tokens(&lexer);
-//     BismuthParser parser(&tokens);
-//     parser.removeErrorListeners();
-//     BismuthParser::CompilationUnitContext *tree = NULL;
-//     REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//     REQUIRE(tree != NULL);
-//     STManager *stm = new STManager();
-//     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
-//     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
-//     REQUIRE(cuOpt.has_value());
-
-//     REQUIRE_FALSE(sv->hasErrors(0));
-
-//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
-//     cv->visitCompilationUnit(cuOpt.value());
-
-//     REQUIRE_FALSE(cv->hasErrors(0));
-
-//     REQUIRE(llvmIrToSHA256(cv->getModule()) == "bd911e955a6da1d18d92cf4ca430456daa8ea8c4c8601f778e0f8bb83178222e");
-// }
-
-// TEST_CASE("programs/testGlobalAndLocal - Parody", "[codegen]")
-// {
-//     std::fstream *inStream = new std::fstream("/home/shared/programs/testGlobalAndLocal.wpl");
-//     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-//     BismuthLexer lexer(input);
-//     antlr4::CommonTokenStream tokens(&lexer);
-//     BismuthParser parser(&tokens);
-//     parser.removeErrorListeners();
-//     BismuthParser::CompilationUnitContext *tree = NULL;
-//     REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//     REQUIRE(tree != NULL);
-//     STManager *stm = new STManager();
-//     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
-//     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
-//     REQUIRE(cuOpt.has_value());
-
-//     REQUIRE_FALSE(sv->hasErrors(0));
-
-//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
-//     cv->visitCompilationUnit(cuOpt.value());
-
-//     REQUIRE_FALSE(cv->hasErrors(0));
-
-//     REQUIRE(llvmIrToSHA256(cv->getModule()) == "f9b33450b1f1522122b1dffbf07819f959e08aac6ccdfc112cac7c25690a5c78");
-// }
-
 TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[codegen]")
 {
     EnsureErrors(
@@ -398,14 +308,8 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
     STManager *stm = new STManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
     auto cuOpt = sv->visitCtx(tree);
-    // REQUIRE(cuOpt.has_value()); //FIXME: DO BETTER
 
     REQUIRE(sv->hasErrors(0));
-
-    // CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
-    // cv->visitCompilationUnit(cuOpt.value());
-
-    // REQUIRE(cv->hasErrors(0));
 }
 
 TEST_CASE("programs/Lambda1 - Basic lambda Test", "[codegen][lambda]")
@@ -574,36 +478,6 @@ TEST_CASE("Out of order function", "[codegen][program]")
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ooof.prism"))),
         "666f41868e4c247efc9209510c4307b49702ce9d967cbe7e9c6858b6ad63cfb8");
-
-/*
-    std::fstream *inStream = new std::fstream("/home/shared/programs/ooof.prism");
-    antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-    BismuthLexer lexer(input);
-    // lexer.removeErrorListeners();
-    // lexer.addErrorListener(new TestErrorListener());
-    antlr4::CommonTokenStream tokens(&lexer);
-    BismuthParser parser(&tokens);
-    parser.removeErrorListeners();
-    //   parser.addErrorListener(new TestErrorListener()); //FIXME: SHOULD WE TEST THESE HERE?
-
-    BismuthParser::CompilationUnitContext *tree = NULL;
-    REQUIRE_NOTHROW(tree = parser.compilationUnit());
-    REQUIRE(tree != NULL);
-    REQUIRE(tree->getText() != "");
-
-    STManager *stmgr = new STManager();
-    SemanticVisitor *sv = new SemanticVisitor(stmgr);
-
-    std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
-    REQUIRE(cuOpt.has_value());
-    REQUIRE_FALSE(sv->hasErrors(ERROR));
-    CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
-    cv->visitCompilationUnit(cuOpt.value());
-    REQUIRE_FALSE(cv->hasErrors(0));
-
-    REQUIRE(llvmIrToSHA256(cv->getModule()) == "64619d22222218e680ba738a540068053b6f865e7a1624f9826593fe81123069");
-    */
 }
 
 TEST_CASE("programs/example", "[codegen][program]")

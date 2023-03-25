@@ -1,7 +1,0 @@
-# Unused: Basically a syntax test
-
-func program() {
-  int i;
-  i := 14;
-  return i * j;
-}
