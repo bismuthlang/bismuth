@@ -59,243 +59,173 @@ void EnsureErrors(antlr4::ANTLRInputStream *input)
 TEST_CASE("programs/test1 - General Overview", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test1.prism"))),
-        "415be2ce27e73540b328ab05f7d987706b1bc7305d6b2dd5e70555781aaf6987");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test1.bismuth"))),
+        "e924aba0c9dc1aec315058b1cc5d9cbb1ec6f4690281d1295a55a1fb0413cc7d");
 }
 
 TEST_CASE("programs/test1a", "[codegen]")
 {
     EnsureErrors(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test1a.prism"))));
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test1a.bismuth"))));
 }
 
 TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test2.prism"))),
-        "af53832c31eaf8652ac114582dd868d13e74927762f4af2f1d400afc3a5d59a4");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test2.bismuth"))),
+        "d960ec3adaf7e3db41b7af853208c3bc794c3143658ab959bf2d4c62746db9b0");
 }
 
 TEST_CASE("programs/test3 - If w/o else", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test3.prism"))),
-        "d27d0d239006b6d256cd621f7f0eb6f11e597cd913bad1f920c28a28eb88290e");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test3.bismuth"))),
+        "4c9b159d3f7157d535dd2c93da7d2d1aa93f1413888c382a889bcb5515ad4aca");
 }
 
 TEST_CASE("programs/test4a - Use and redeclaration of parameters", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test4a.prism"))),
-        "2992d3f3809c2abb3bcf1132fca191f04243979b8da9f8c87064397bdbcbe9bf");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test4a.bismuth"))),
+        "c035a02790b32548d08cecd14ab26943085a733bf5d9bd7236d77b69a999fc0a");
 }
 
 TEST_CASE("programs/test5 - Nested ifs and if equality", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test5.prism"))),
-        "622869192aca287b5ae72b5405dc9770d270da8b0e891f64dc11bc02d80b708d");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test5.bismuth"))),
+        "69f48883f0bb3f09285e00ab330bdd9e203019c1cbe7bd2f3e163dd66715f0ec");
 }
 
 TEST_CASE("programs/test6 - Basic Select with Return", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test6.prism"))),
-        "e1158cff65c37995d9ba1c00dd10791482ca277cf642ae487698aa956214b675");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test6.bismuth"))),
+        "b3aa939b881a8c46b6b10e646e1fb7ee85dd4cd1b2fd3ff5dad07bfaa6b6baa4");
 }
 
 TEST_CASE("programs/testSelectBlock1 - Basic Select with Blocks that Return", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock1.prism"))),
-        "51b4dfed1451e17d3eae47007c4a244df5ab15bba7e6c4628c373ec0c69790f5");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock1.bismuth"))),
+        "b9d5d3ce4b52b1ac0981b2414b97621e090f1e6c442ce91420003f6deb21833b");
 }
 
 TEST_CASE("programs/testSelectBlock1-fn - Basic Select with Blocks that Return", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock1-fn.prism"))),
-        "b6e15986faeb5f829c3ed521cc3cf1f3cd372a494e0fd22dc44f327dce461308");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock1-fn.bismuth"))),
+        "d092ab0d012ffb3cacb7838d13cc446e65d6c341bc2acca15eff743f9cc7c7fb");
 }
 
 TEST_CASE("programs/test6a (CAFE!) - Basic Nested Selects, LEQ, GEQ", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test6a.prism"))),
-        "b3db6d234feea09d25c09cda9211d844a8469268b94d209b54a66ee1fda70f21");//"cafe2b3e17335a03444e7c3e1be095eaea8cb901741e8c0d8f1f79a17a8fe6c4");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test6a.bismuth"))),
+        "da043d54ee98593b9ba89dde35bda6ab8fbd8a5b0e01d773fcb1fd456bde32cb");//"cafe2b3e17335a03444e7c3e1be095eaea8cb901741e8c0d8f1f79a17a8fe6c4");
 }
 
 TEST_CASE("programs/testSelectBlock2 - Select with blocks that don't return", "[codegen]")
 {
     // NOTE: Should be same as test6a
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock2.prism"))),
-        "1459d21fe2cb8fa1058424bea5ef3be3a1a1dd4d97dc2561a4597221f8b8d408");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock2.bismuth"))),
+        "8c63b79f3ef7bda116711af51992e9cbe1a579b7a6ca5732f9b86e4d0c3601a1");
 }
 
 TEST_CASE("programs/test7 - Test String equality + Nested Loops", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test7.prism"))),
-        "da940a5f52f7aa5fc7c39c6c413bac2e53263fc70fa0ca829e794f53145be5c3");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test7.bismuth"))),
+        "00079ce6f50b837d383f1ea96807142a65ece9b0dffe747e8c81419b13e944bd");
 }
 
 TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test8.prism"))),
-        "d92d22dac1a93253c939b39f15e4424852e938deb63fa15d86f952b3952b2172");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test8.bismuth"))),
+        "3c1e166ca647c9c1311088cd0f931689e36ae351f0f15298b63f53018bbf6f38");
 }
-
-// TEST_CASE("programs/test9i - Global Integers", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9i.prism"))),
-//         "328e5295eaad33348eee23da5f8302153e778c8bb631707f37fd4d03daae7cfa");
-// }
-
-// TEST_CASE("programs/test9iv - Global Integer Inference", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9iv.prism"))),
-//         "328e5295eaad33348eee23da5f8302153e778c8bb631707f37fd4d03daae7cfa");
-// }
-
-// TEST_CASE("programs/test9b - Global Booleans", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9b.prism"))),
-//         "d871755f7c89cd02ee76c67541ec1935a2117a1e3f23cc86a09573fa1ef8422c");
-// }
-
-// TEST_CASE("programs/test9bv - Global Boolean Inference", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9bv.prism"))),
-//         "d871755f7c89cd02ee76c67541ec1935a2117a1e3f23cc86a09573fa1ef8422c");
-// }
-
-// TEST_CASE("programs/test9s - Global Strings", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9s.prism"))),
-//         "4b20b6db3a31f068485c29786b8ca97704cff2931829462517cf402811ed711a");
-// }
-
-// TEST_CASE("programs/test9sv - Global String Inference", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9sv.prism"))),
-//         "4b20b6db3a31f068485c29786b8ca97704cff2931829462517cf402811ed711a");
-// }
-
-// TEST_CASE("programs/test9ba - Global Boolean Array", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9ba.prism"))),
-//         "b6b98b36e98caffd2ef053023bd97db39bfc12c3a2c38b90bffacb8fb1436097");
-// }
-
-// TEST_CASE("programs/test9ia - Global Integer Array", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9ia.prism"))),
-//         "0b667384676913d1b0aee9853fd9be42eabea34887e18cd1de6b54c5cf1823ca");
-// }
-
-// TEST_CASE("programs/test9sa - Global String Array - FLAWED", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9sa.prism"))),
-//         "9e5834e13db9f511e072a26b22de0bee49ae44d914fc08ecb86f9b14f1c4fdc1");
-// }
-
-// TEST_CASE("programs/test9sa-1 - Global String Array - CORRECT", "[codegen]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test9sa-1.prism"))),
-//         "b7e94a1425ecfbc8a9b99dbc9160cb966bfcd7ae69e13bee2cf4702d310d9f0c");
-// }
 
 TEST_CASE("programs/test11 - Expressions in decl (let*) ", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test11.prism"))),
-        "59d7588c8b4be0b964dca8e16cb9d9789044d55725b38194be0c484ebad3c481");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test11.bismuth"))),
+        "d5dc54d24e1bb556df93cbc6e0d060da4c6af21ebcf6a4169273ebf1af65da50");
 }
 
 TEST_CASE("programs/test12 - Scopes & Prime Finder Example! ", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test12.prism"))),
-        "e0bff826a7faf334b6b7f2a18bb043ac9cb8fa0fa9ffc119d620ccaedf18848d");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test12.bismuth"))),
+        "64a93c0bfa70e443ec19004017d43d083402d27f43c52f74e7119fd27ab9fe7e");
 }
 
 TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test13.prism"))),
-        "41f8f39372b13576d98fe0046731194085a7ef2f7f8ab9704ed6ef478ef1f95f");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test13.bismuth"))),
+        "3ea49235a9149b4fd2be493d25344810d5b43a741921d1195dc223cdbebafd69");
 }
 
 TEST_CASE("programs/adv/LambdaDef", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/LambdaDef.prism"))),
-        "cd84f09094e376bd739dfc717c9238432519acf5ef516fcf83043929b0dc7f79");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/LambdaDef.bismuth"))),
+        "cdde3db3c5cbfd66c15cca74c06451458547ef82cdd3246492b845be25391ea0");
 }
 
 TEST_CASE("programs/test-shortcircuit - Basic Short Circuit (and)", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-shortcircuit.prism"))),
-        "73a4dd9e35e5661231a84fe837b788a8c34ac29627383363586e7d29d4475e43");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-shortcircuit.bismuth"))),
+        "d3a11c1824ca7f5a4edb5b41b9897c70b3e489b1439f14b93a7726e135ee97ac");
 }
 
 TEST_CASE("programs/test-shortcircuit-rt - Basic Short Circuit (and + or) w/ Runtime", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-shortcircuit-rt.prism"))),
-        "4e05ae4967e419d953ab239aff7559813b44a1ae6498d790ea38c88e2edb4900");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-shortcircuit-rt.bismuth"))),
+        "b8dc56fa5b1811eeeb81a1909aca8753d474561d106be03a950715d461bf51e1");
 }
 
 TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editing arrays in functions", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-arrayAssign.prism"))),
-        "e29a5085d61a320b84053092f1f4f35e6116cf558dc537c026c12683311daf51");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-arrayAssign.bismuth"))),
+        "b5e681a9802a301b11cc2b033ec9774fef8762c9203f95aeffeb5dc176afdad6");
 }
 
 TEST_CASE("programs/externProc - Declaring an external proc", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/externProc.prism"))),
-        "3b6a1ebaa5528806093451a07b8534d689f61c7e8ee73ce1f326eee723e74138");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/externProc.bismuth"))),
+        "544ab1ac6c968c7c98f8487c687b737dbd56bf1929da47ccfcff31bf5394feb2");
 }
 
 TEST_CASE("programs/test14a - Test nested/more complex shorting", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test14a.prism"))),
-        "f638bd6436bc260b4c76f483a3e0f8e3199a45e09ebed0cdca9f35b235f0978a");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test14a.bismuth"))),
+        "7b82d83c0fefb224d3a97f1971835f186232671e1d40331d40febfba0d34de41");
 }
 
 TEST_CASE("programs/test18 - Parody", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test18.prism"))),
-        "ce3e033ecc420dd2358792f7a0aa6da05f68f531d383febaf066612ecb8861ad");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test18.bismuth"))),
+        "c0119e03e335bdb87d7360333ec7da01ab55890802c8820033066bec88788fa5");
 }
 
 TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[codegen]")
 {
     EnsureErrors(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg.prism"))));
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg.bismuth"))));
 }
 
 TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
 {
-    std::fstream *inStream = new std::fstream("/home/shared/programs/forwardWrongArg2.prism");
+    std::fstream *inStream = new std::fstream("/home/shared/programs/forwardWrongArg2.bismuth");
     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
     BismuthLexer lexer(input);
@@ -315,274 +245,267 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
 TEST_CASE("programs/Lambda1 - Basic lambda Test", "[codegen][lambda]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda1.prism"))),
-        "63c45fdcadce7ce1f1ffc831c02b48ca69b9534f052aa70a335f4fff177058c4");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda1.bismuth"))),
+        "a48f54af9e20ecdfa58f1bc7008979db6aec6878609fa714f549365d780ce7b9");
 }
 
 TEST_CASE("programs/Lambda2 - Basic lambda Test w/ return", "[codegen][lambda]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda2.prism"))),
-        "3bf49ea90712b5d059cf6656f023e5ac15bef128c6efb9e6921089022b48fbaf");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda2.bismuth"))),
+        "bb17743f7fd8af8ec38a0d18e24c1eac156d657a83492031ea4cb21ea1385949");
 }
 
 TEST_CASE("programs/Lambda3 - Basic lambda Test w/ return and same name", "[codegen][lambda]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda3.prism"))),
-        "1d39ca927685e22ac7b14e3f3c46b5eff92b92bb979c9a4448cf46b13446afa3");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda3.bismuth"))),
+        "4477627f4d231f38194ace91b9baf910ab2b62ce5dbbc65c5562829786b0445e");
 }
 
 TEST_CASE("programs/externLambda", "[codegen][lambda]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/externLambda.prism"))),
-        "1b3ccc3e68c565ccd812d37d4b2841bf9fd801fcb8f28c49de58bcf8f47babdc");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/externLambda.bismuth"))),
+        "65d7f5ce2cde89cadb49ad7e0b95b058a85a27c10b9342a1e78630468603903c");
 }
 
 TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum1.prism"))),
-        "a42b57453552706aad51cd5830bd3d0b3b6e84aa19ac27a432450dd88c87ff13");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum1.bismuth"))),
+        "763c8100ff0905d08d6aed303eb9ae254c974407768dc9fbaef7c9da7ca8e92a");
 }
 
 TEST_CASE("programs/enum2 - Basic Enum 2 - double cast", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum2.prism"))),
-        "d3a7016043df7d8f066989bf51778834ed1b6e9479bc19a2a0279542bba6aa26");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum2.bismuth"))),
+        "810b35f512aedb2fc1fd62943c40540e416653f5d395b1f0f4f17dffa6cd09d7");
 }
 
 TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignments outside of decl", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumAssign.prism"))),
-        "bd241994232085c70b063764d3a4748aadab357216cef4374c0bca33c0e20a6b");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumAssign.bismuth"))),
+        "e6c8801905838695d1bda3c7e050122f40a2a041a4232e3a1c80787fb7ba138d");
 }
 
 TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[codegen][enum][lambda]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumAssign2.prism"))),
-        "e262d62d5c1ef840d184fcb6cd525a88c98cb3ebfe36d1cd5a81c42bb2cecb00");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumAssign2.bismuth"))),
+        "3a12ee45c9f8bd91bfe887ebce266376eadf3381830c8cb5cf5891e9ced6d8aa");
 }
 
 TEST_CASE("programs/enum3", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum3.prism"))),
-        "36260f88b385f071d2838b2f743413af7363ff39238aadce412f5fe88cc43dfa");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enum3.bismuth"))),
+        "a741dba5c9292682a3a7201f6dccbe6bcd12e45fdd08d2a10b05da169142da78");
 }
 
 TEST_CASE("programs/adv/StructTest2", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest2.prism"))),
-        "8bb35ff9c2fd1fea53b4368ce5bf3c10a11174d38bd15f88800c6ac42ca577f4");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest2.bismuth"))),
+        "4db0f2286d0312eb6cf29fcd551ee03e444547064ebe9396300a389c4d0dbcc6");
 }
 
 TEST_CASE("programs/adv/StructTest3", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest3.prism"))),
-        "cd01f43c830e5343e0b17200324158d90dd32e13efed9e435692ed94aea233c8");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest3.bismuth"))),
+        "99d15b5a4bff1917b4d4f70d540025e6852eeb64d38921cffe43caec07a57701");
 }
 
 TEST_CASE("programs/adv/StructTest3a - nested fields", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest3a.prism"))),
-        "db29deb7800a9bfdace39ff48c3d6b48252173a9770808b05b7f7593c24fb015");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest3a.bismuth"))),
+        "556d6db48e032142d647634ef271662f3412498f1ae42dc9d71efeb8d9d46e12");
 }
 
 TEST_CASE("programs/adv/StructTest3b - nested fields", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest3b.prism"))),
-        "a0a030b79819269512d50f562ff4b29b7a165760dc9b10c053157c811b145784");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest3b.bismuth"))),
+        "3c929637635039cc2c8bb69f1c45680fbbe612a211c312159372c061bec6b00d");
 }
 
 TEST_CASE("programs/adv/StructTest4", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest4.prism"))),
-        "32631bd5eea0649ee8a09a99716afa02fa1121e8c084180cdc86af8c5b307427");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/StructTest4.bismuth"))),
+        "ccfbf57063a59d18f1e8e4195f5219837b729dbf203b9f1bb755bca712f37050");
 }
 
 TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/NestedEnum.prism"))),
-        "99bfc25c5c7fe842c5cbd0078ffc9a3507eebe1cdc458c086df5ca43db7b3e96");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/NestedEnum.bismuth"))),
+        "cb34bf2298c8274805ee9d181510acbddb6b4aa32ed8ed3170214b0d35fd43d2");
 }
 
 TEST_CASE("programs/dangerLambda-Program - lambdas with dupl function names", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Program.prism"))),
-        "9a70c6533dbb16365eb5baae2f19ff89fc72e2de44ad88df875a9d647c3089c1");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Program.bismuth"))),
+        "7882b98e906b7940d8287897d6da0c8628ff3228120d368d95bd02b333ba5c9d");
 }
 
 TEST_CASE("programs/dangerLambda-Lambda - lambdas with dupl function names", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Lambda.prism"))),
-        "9fb6efc04666ab8bdda949587e652d9d0936a01212a528099d1c3574ed9e4d31");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Lambda.bismuth"))),
+        "b74417c2d8cc515d3ace17995a291c3dda18725821217cb226a90465d991b4f4");
 }
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing.prism"))),
-        "606306c66c12b0de47a94eb01db9718f6916e21007cf02724d054b39386174cd");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing.bismuth"))),
+        "a614d4b87f14e71df9b1feade1ea3d12f8d27b6e14fe4db9ce1c57fea9471f76");
 }
 
 TEST_CASE("programs/adv/enumPassing-fn - passing non-enum as enum argument", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing-fn.prism"))),
-        "2ffb92824d162035e66080ba3bc59e8c4994029ef24d26700a54e6a59df8c979");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing-fn.bismuth"))),
+        "380d9ca5f50617934a81082258e603ccbf0a788bf8b7f84df9f6631442bbd516");
 }
 
 TEST_CASE("programs/Lambda2a - More nested lambdas", "[codegen][lambda]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda2a.prism"))),
-        "16cc65827ceb397bc0f1c99af418dc81a37b78df96de4c85408d07271881d816");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda2a.bismuth"))),
+        "8b5f5279022525c732b694bd7d37d7323e2e34713adc2354e4b3652e78f449a4");
 }
 
 TEST_CASE("programs/adv/enumPassingInf - Enum passing with Type Inference", "[codegen][enum][type-inf]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassingInf.prism"))),
-        "6cd54c06e5bc45fe0dd70e5276341fca0934a4a0f11b1c6a2d0d01f373897b3d");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassingInf.bismuth"))),
+        "8dc7252035284ad9216742f6e150cc376b4a0fa630e1f085c47f41d4f180b9a7");
 }
 
 TEST_CASE("programs/adv/enumPassingInf-fn - Enum passing with Type Inference", "[codegen][enum][type-inf]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassingInf-fn.prism"))),
-        "1e22662e7fd9c5ecbf2a13cda93a221c26fed21d855d5c9c6d0971cd9c50d64f");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassingInf-fn.bismuth"))),
+        "a13b983d7bbed83e2ada8a1bc9d0bd1a646631b9928c9b77fbef3444d344f056");
 }
 
 TEST_CASE("programs/Lambda2b - More nested lambdas", "[codegen][struct]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda2b.prism"))),
-        "d316878e4f8ee8ca29be1e7e28c1c5f71090080e4b97cec8fcdeaaa39b3e795a");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda2b.bismuth"))),
+        "19e8480116cdfc653e5e10cd2c78290daf48985ab505d63de50b895776ccde88");
 }
 
 TEST_CASE("Out of order function", "[codegen][program]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ooof.prism"))),
-        "666f41868e4c247efc9209510c4307b49702ce9d967cbe7e9c6858b6ad63cfb8");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ooof.bismuth"))),
+        "3d0f86623f4d1bf6e857becf47475e106aaa73ee27e8105a61817518f2961f48");
 }
 
 TEST_CASE("programs/example", "[codegen][program]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/example.prism"))),
-        "1c071c51694d1c57e85d55bd484b651cbb1cad3d417841b2441844405afd82cf");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/example.bismuth"))),
+        "567e9b12de1834da95185e5533c517c09148c74fb0d3f1b7c79a99c6952b9e41");
 }
 
 TEST_CASE("programs/SendChannel", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/SendChannel.prism"))),
-        "57b73830c46f97a2aac3c55036681eef24384ed6210a9560c50326c742d72f78");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/SendChannel.bismuth"))),
+        "dde4461b8f52e8299d8bea102ecd4a63c8e7412c56d74db874a3aafa1afb6e44");
 }
 
 TEST_CASE("paper/links", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links.prism"))),
-        "8afbf3ea9b748a97e9434264b250191f27f356f9498266341d06cf1cc2ee143f");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links.bismuth"))),
+        "bc05f2f1d3d3d41398b2e137b9a5ab0608300cbcd049dff5eeb08e7f7f745c0b");
 }
 
 TEST_CASE("paper/links2", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links2.prism"))),
-        "152aaf8ee2c7f3401e73cf85baa578e6a66707710df60ca4bf4a1ca9c13296e8");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links2.bismuth"))),
+        "e349dcd0fe96fffac88721bd4a2b329c89247d184ac340be1bf317dc2e778277");
 }
 
 TEST_CASE("paper/links3", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links3.prism"))),
-        "1afbc3347fc948b2c93d894a8d57206d67572fe5ace6121b5cc5f6859344995e");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links3.bismuth"))),
+        "59191f536676f5ee77103b6fef255e053bcdd829c76b8ed81e47b1c65cbb4138");
 }
 
 TEST_CASE("paper/links4", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links4.prism"))),
-        "5b7a1cd44234ce005ff1610fec15d8c68bd676df2fccb52cbb0ebf166ad28653");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links4.bismuth"))),
+        "a975cb1e7c092bee6c985101fc71a58a802bc9b08da3ca6379a42bf94eaf9bdd");
 }
 
 TEST_CASE("programs/doubleArg1c2 - weakening and loops", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/doubleArg1c2.prism"))),
-        "8bc18d76e13d127eaf3bc1bc3da646bbe2268ebf7148223ed769a6f500b40b46");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/doubleArg1c2.bismuth"))),
+        "f0442fe747fff7ab10d187b72d21950c809a1c39dfebb97bed0d80f242bdb9fe");
 }
 
 TEST_CASE("programs/enumedit", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumedit.prism"))),
-        "88c1cc1075d8c0b562697ad3b2dd060d9e67fd49753e48913112642b01fc19f3");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumedit.bismuth"))),
+        "167f5e90ed8ec3142cd664c555ebb253c37d2acc39a7e0b43f346cbc9b1ac6a3");
 }
 
 TEST_CASE("programs/TBox - Parody + Clone w/ boxes", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TBox.prism"))),
-        "274bb2bba6c91dbc24790bcdc4e35a520aea784ade07e8560cf79b19594a339c");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TBox.bismuth"))),
+        "2966ba092c30e85bfeed8ed3df1464aae4cb3255e8a6cf51668f4bc9e8256974");
 }
 
 TEST_CASE("programs/TStruct - Parody + Clone w/ Struct Boxes ", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStruct.prism"))),
-        "baf6e007ca836ec49afaafeec76b993d06242e166d06d807f3c5ddce8eeb2053");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStruct.bismuth"))),
+        "5be010fecfba6d6a45e2258e2983affa5a13026d897d253d6e45f286028dcb34");
 }
 
 TEST_CASE("programs/TStructEnum - Parody + Clone w/ Enum Struct Boxes ", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnum.prism"))),
-        "9cf823c8fe1ffb661f72a5d54a20da85f3142ebe753138c3233d2230e35b4e87");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnum.bismuth"))),
+        "020b5f800e25cf725e95be0b98fe07f110ff04e5553b062860e71bebec96d1f0");
 }
 
 TEST_CASE("programs/loop - Basic GC with boxes in loops based on example", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/loop.prism"))),
-        "b1d81501ea0b2158489a3905a3f185d8c9ac43088f9681e80ae6c9768c5396d2");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/loop.bismuth"))),
+        "c01529e2f8f5540e2e25ae47e8a9f784d94d2446ce60244902fe1da964f713e9");
 }
-
-// TEST_CASE("programs/loop - Basic GC with boxes in loops based on example", "[codegen][enum]")
-// {
-//     EnsureCompilesTo(
-//         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/loop.prism"))),
-//         "b1d81501ea0b2158489a3905a3f185d8c9ac43088f9681e80ae6c9768c5396d2");
-// }
 
 TEST_CASE("programs/GC-test - Basic GC w/ Send", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/GC-test.prism"))),
-        "c738317d75486cc6ebb892ccea8de93f8dff561a1cb41b2e01c59c26fb847d2d");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/GC-test.bismuth"))),
+        "4961a24485194590afaa69fb222b662881a1a79eb97a27a78dd78890c639c9af");
 }
 
 TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructGC.prism"))),
-        "b57b7dc794ffaee50b9ad0c2c0a041e3c3d959c19c0a30ce67330719024316c4");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructGC.bismuth"))),
+        "dc1fe2a258977539416a6b0edd588790d3e05f0875d4d41f0f6a8260630ca4af");
 }
 /************************************
  * Example C-Level Tests
@@ -590,8 +513,8 @@ TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]"
 TEST_CASE("C Level Positive Test #2", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/CLevel/CPositive2.prism"))),
-        "8ed8362341e3ade5afb69cbdd17869ac2ba012c355ff997ffd064647fa26f6ff");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/CLevel/CPositive2.bismuth"))),
+        "7d58301030c4f328b84753f57acfe0cdb94b4abae63088327c653ad3859d6cf7");
 }
 
 /************************************
@@ -600,15 +523,15 @@ TEST_CASE("C Level Positive Test #2", "[codegen]")
 TEST_CASE("B Level Positive Test #1", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BPositive1.prism"))),
-        "c4cce320f9b1cba817e830e9e34b90db6aa651a2f7021f2483d495c64e5060bb");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BPositive1.bismuth"))),
+        "351de154d74d97942665f3005a6fb2b55418c5d9086986d441d4ff1f31911864");
 }
 
 TEST_CASE("B Level Positive Test #2", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BPositive2.prism"))),
-        "66804c0cff90330168e1c72b4c761e5d6fee8bd6249a71cc86dd8fc4fb9999ad");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BPositive2.bismuth"))),
+        "22a43a88c13da41b2b7f6a863fe84823feb453e5f93f91bf50d6c6f84bb71a2c");
 }
 
 /************************************

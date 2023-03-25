@@ -54,7 +54,7 @@ TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
 
 TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/doubleArg2.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/doubleArg2.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -77,7 +77,7 @@ TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]"
 
 TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don't crash", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/doubleArg3.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/doubleArg3.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -101,7 +101,7 @@ TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don'
 
 TEST_CASE("programs/test15 - No array equalities", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test15.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test15.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -152,7 +152,7 @@ TEST_CASE("Comment EOF", "[semantic]")
 
 TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -171,7 +171,7 @@ TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
 
 TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16a.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16a.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -190,7 +190,7 @@ TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
 
 TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -209,7 +209,7 @@ TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
 
 TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-1.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-1.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -228,7 +228,7 @@ TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
 
 TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-2.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16c-2.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -247,7 +247,7 @@ TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
 
 TEST_CASE("programs/test16d - chain var", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16d.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16d.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -266,7 +266,7 @@ TEST_CASE("programs/test16d - chain var", "[semantic]")
 
 TEST_CASE("programs/test16e - chain var 2", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16e.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16e.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -287,7 +287,7 @@ TEST_CASE("programs/test16e - chain var 2", "[semantic]")
 
 TEST_CASE("programs/test16f - var loop", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16f.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test16f.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -306,7 +306,7 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
 
 TEST_CASE("programs/test17 - var inf in decl", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test17.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test17.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -3271,7 +3271,7 @@ define program :: c : Channel<-int> = {
  *********************************/
 TEST_CASE("B Level Negative Test #1", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative1.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative1.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -3290,7 +3290,7 @@ TEST_CASE("B Level Negative Test #1", "[semantic]")
 
 TEST_CASE("B Level Negative Test #2", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative2.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/BLevel/BNegative2.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -3313,7 +3313,7 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
 
 TEST_CASE("A Level Negative Test #2", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/ANegative2.prism");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/ANegative2.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);

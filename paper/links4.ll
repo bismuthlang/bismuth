@@ -1,5 +1,5 @@
-; ModuleID = 'WPLC.ll'
-source_filename = "WPLC.ll"
+; ModuleID = 'BismuthProgram'
+source_filename = "BismuthProgram"
 
 @0 = private unnamed_addr constant [2 x i8] c"5\00", align 1
 

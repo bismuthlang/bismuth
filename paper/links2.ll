@@ -1,5 +1,5 @@
-; ModuleID = 'WPLC.ll'
-source_filename = "WPLC.ll"
+; ModuleID = 'BismuthProgram'
+source_filename = "BismuthProgram"
 
 define void @linkRecvInt(i32 %0, i32 %1) {
 entry:
