@@ -587,33 +587,6 @@ TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]"
 /************************************
  * Example C-Level Tests
  ************************************/
-// TEST_CASE("C Level Positive Test #1", "[codegen]")
-// {
-//     std::fstream *inStream = new std::fstream("/home/shared/programs/CLevel/CPositive1.wpl");
-//     antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-//     BismuthLexer lexer(input);
-//     antlr4::CommonTokenStream tokens(&lexer);
-//     BismuthParser parser(&tokens);
-//     parser.removeErrorListeners();
-//     BismuthParser::CompilationUnitContext *tree = NULL;
-//     REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//     REQUIRE(tree != NULL);
-//     STManager *stm = new STManager();
-//     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
-//     std::optional<CompilationUnitNode *> cuOpt = sv->visitCtx(tree);
-//     REQUIRE(cuOpt.has_value());
-
-//     REQUIRE_FALSE(sv->hasErrors(0));
-
-//     CodegenVisitor *cv = new CodegenVisitor("WPLC.ll", 0);
-//     cv->visitCompilationUnit(cuOpt.value());
-
-//     REQUIRE_FALSE(cv->hasErrors(0));
-
-//     REQUIRE(llvmIrToSHA256(cv->getModule()) == "fdf9d19f4d205022b83770d7ec87c120a51d65fc5719eaad7d3a65d955aee64c");
-// }
-
 TEST_CASE("C Level Positive Test #2", "[codegen]")
 {
     EnsureCompilesTo(

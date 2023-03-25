@@ -11,7 +11,7 @@
 
 TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test4.wpl");
+  std::fstream *inStream = new std::fstream("/home/shared/programs/test4.bismuth");
   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
 
   BismuthLexer lexer(input);
@@ -25,10 +25,6 @@ TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
   SemanticVisitor *sv = new SemanticVisitor(stm);
   sv->visitCompilationUnit(tree);
 
-  // if(sv->hasErrors(0))
-  // {
-  //     CHECK("foo" == sv->getErrors());
-  // }
   REQUIRE(sv->hasErrors(0));
 }
 
@@ -3271,60 +3267,6 @@ define program :: c : Channel<-int> = {
 }
 
 /*********************************
- * C-Level Example tests
- *********************************/
-// TEST_CASE("C Level Negative Test #1", "[semantic]")
-// {
-//   std::fstream *inStream = new std::fstream("/home/shared/programs/CLevel/CNegative1.wpl");
-//   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-//   BismuthLexer lexer(input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
-//   parser.addErrorListener(syntaxListener);
-
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(syntaxListener->hasErrors(0));
-
-//   STManager *stm = new STManager();
-//
-//   SemanticVisitor *sv = new SemanticVisitor(stm);
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(0));
-
-// }
-
-// TEST_CASE("C Level Negative Test #2", "[semantic]")
-// {
-//   std::fstream *inStream = new std::fstream("/home/shared/programs/CLevel/CNegative2.wpl");
-//   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-//   BismuthLexer lexer(input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
-//   parser.addErrorListener(syntaxListener);
-
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(syntaxListener->hasErrors(0));
-
-//   STManager *stm = new STManager();
-//
-//   SemanticVisitor *sv = new SemanticVisitor(stm);
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(0));
-//   // std::cout << sv->getErrors() << std::endl;
-
-// }
-
-/*********************************
  * B-Level Example tests
  *********************************/
 TEST_CASE("B Level Negative Test #1", "[semantic]")
@@ -3368,24 +3310,6 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
 /*********************************
  * A-Level Example tests
  *********************************/
-// TEST_CASE("A Level Negative Test #1", "[semantic]")
-// {
-//   std::fstream *inStream = new std::fstream("/home/shared/programs/ALevel/ANegative1.wpl");
-//   antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-//   BismuthLexer lexer(input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   STManager *stm = new STManager();
-//
-//   SemanticVisitor *sv = new SemanticVisitor(stm);
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(0));
-// }
 
 TEST_CASE("A Level Negative Test #2", "[semantic]")
 {
