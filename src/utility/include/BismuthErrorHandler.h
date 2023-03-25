@@ -31,8 +31,8 @@ enum ErrType
  */
 enum ErrSev
 {
-  ERROR = 1,            // Definitley an error, and the compiler should stop ASAP.
-  CRITICAL_WARNING = 2, // Not an error persay, but need to stop compiling.
+  ERROR = 1,            // Definitely an error, and the compiler should stop ASAP.
+  CRITICAL_WARNING = 2, // Not an error per se, but need to stop compiling.
   WARNING = 4,          // Important warning message, but nothing that prevents compiling (Currently unused)
   INFO = 8,             // Informational message (currently unused)
 };

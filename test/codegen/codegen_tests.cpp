@@ -347,14 +347,14 @@ TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
         "cb34bf2298c8274805ee9d181510acbddb6b4aa32ed8ed3170214b0d35fd43d2");
 }
 
-TEST_CASE("programs/dangerLambda-Program - lambdas with dupl function names", "[codegen][struct]")
+TEST_CASE("programs/dangerLambda-Program - lambdas with duplicate function names", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Program.bismuth"))),
         "7882b98e906b7940d8287897d6da0c8628ff3228120d368d95bd02b333ba5c9d");
 }
 
-TEST_CASE("programs/dangerLambda-Lambda - lambdas with dupl function names", "[codegen][struct]")
+TEST_CASE("programs/dangerLambda-Lambda - lambdas with duplicate function names", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Lambda.bismuth"))),

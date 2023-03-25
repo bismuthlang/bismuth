@@ -76,7 +76,7 @@ static llvm::cl::opt<CompileType>
 int main(int argc, const char *argv[])
 {
   /******************************************************************
-   * Commandline handling from the llvm::cl classes.
+   * Command line handling from the llvm::cl classes.
    * @see https://llvm.org/docs/CommandLine.html
    * ******************************************************************/
   llvm::cl::HideUnrelatedOptions(CLIOptions);
@@ -95,7 +95,7 @@ Version: Pre-Alpha 1.2
 )""""; });
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
-  // FIXME: ENABLE SEPARATLEY?
+  // FIXME: ENABLE SEPARATELY?
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
   llvm::InitializeAllTargetMCs();
@@ -266,7 +266,7 @@ Version: Pre-Alpha 1.2
      * Code Generation
      * ================================================================
      *
-     * If we have yet to recieve any errors for the file, then
+     * If we have yet to receive any errors for the file, then
      * generate code for it.
      *******************************************************************/
     CodegenVisitor *cv = new CodegenVisitor("BismuthProgram", flags);

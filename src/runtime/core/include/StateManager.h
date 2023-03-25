@@ -119,7 +119,7 @@ Message ReadHelper(unsigned int aId)
 
     if (i_buffer == State.end())
     {
-        throw "Preservation error: failed to reac channel!";
+        throw "Preservation error: failed to read channel!";
     }
 
     return i_buffer->second->dequeue();

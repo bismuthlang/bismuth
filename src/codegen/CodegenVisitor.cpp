@@ -205,7 +205,7 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
     // for (std::pair<Symbol *, TypedNode *> caseNode : n->cases)
     for (unsigned int i = 0; i < n->cases.size(); i++)
     {
-        // TODO: find a way to error handle cases where coreetc block DNE or something
+        // TODO: find a way to error handle cases where correct block DNE or something
         BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(i + 1));
 
         builder->SetInsertPoint(matchBlk);
@@ -1021,7 +1021,7 @@ std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
 
     if (!symbol->type)
     {
-        errorHandler.addError(n->getStart(), "Type for extern statement not correctly bound! Probably a compiler errror.");
+        errorHandler.addError(n->getStart(), "Type for extern statement not correctly bound! Probably a compiler error.");
         return std::nullopt;
     }
 
@@ -1152,7 +1152,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
             return std::nullopt;
         }
 
-        // For each of the variabes being assigned to that value
+        // For each of the variables being assigned to that value
         for (Symbol *varSymbol : e->syms)
         {
             //  Get the type of the symbol
@@ -1161,7 +1161,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
             // Branch depending on if the var is global or not
             if (varSymbol->isGlobal)
             {
-                // If it is global, then we need to insert a new gobal variable of this type.
+                // If it is global, then we need to insert a new global variable of this type.
                 // A lot of these options are done to make it match what a C program would
                 // generate for global vars
                 module->getOrInsertGlobal(varSymbol->getIdentifier(), ty);
@@ -1530,7 +1530,7 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
     // Bind all of the arguments
     for (auto &arg : fn->args())
     {
-        // Get the argumengt number (just seems easier than making my own counter)
+        // Get the argument number (just seems easier than making my own counter)
         int argNumber = arg.getArgNo();
 
         // Get the argument's type

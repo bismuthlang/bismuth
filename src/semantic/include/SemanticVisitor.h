@@ -190,7 +190,7 @@ public:
     std::any visitVarDeclStatement(BismuthParser::VarDeclStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
 
     std::variant<MatchStatementNode *, ErrorChain *> visitCtx(BismuthParser::MatchStatementContext *ctx);
-    std::any visitMatchStatement(BismuthParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // NOTE: CASTS NEEDED B/C OF HOW C++ HANDLES ANYS BY MANGLED NAME!
+    std::any visitMatchStatement(BismuthParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // NOTE: CASTS NEEDED B/C OF HOW C++ HANDLES ANYs BY MANGLED NAME!
 
     std::variant<ExitNode *, ErrorChain *> visitCtx(BismuthParser::ExitStatementContext *ctx);
     std::any visitExitStatement(BismuthParser::ExitStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }

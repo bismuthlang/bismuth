@@ -146,7 +146,7 @@ public:
     {
         BasicBlock *ins = builder->GetInsertBlock();
 
-        // Get the function name. Done separatley from sym in case the symbol isn't found
+        // Get the function name. Done separately from sym in case the symbol isn't found
         std::string funcId = n->name;
 
         const TypeProgram *inv = n->getType();
@@ -172,7 +172,7 @@ public:
         /*
         for (auto &arg : fn->args())
         {
-            // Get the argumengt number (just seems easier than making my own counter)
+            // Get the argument number (just seems easier than making my own counter)
             int argNumber = arg.getArgNo();
 
             // Get the argument's type
@@ -181,10 +181,10 @@ public:
             // Get the argument name (This even works for arrays!)
             std::string argName = paramList->params.at(argNumber)->getText();
 
-            // Create an allocation for the argumentr
+            // Create an allocation for the argument
             llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
 
-            // Try to find the parameter's bnding to determine what value to bind to it.
+            // Try to find the parameter's binding to determine what value to bind to it.
             std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber));
 
             if (!symOpt)
@@ -464,7 +464,7 @@ public:
             return builder->CreateLoad(sumTy, alloc);
         }
 
-        return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cass...
+        return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cases...
     }
 
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
