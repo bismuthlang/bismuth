@@ -14,7 +14,7 @@
 #include "CompilerFlags.h"
 
 #include "BismuthErrorHandler.h"
-#include "SemanticVisitor.h"
+// #include "SemanticVisitor.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
@@ -29,6 +29,7 @@
 #include <regex>
 
 #include <variant>
+#include <optional>
 
 #include "TypedAST.h"
 

@@ -1,4 +1,7 @@
 #pragma once
+#include <optional>
+#include <variant>
+#include "TypedAST.h"
 
 template <typename T>
 std::optional<T> anyOpt2Val(const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available

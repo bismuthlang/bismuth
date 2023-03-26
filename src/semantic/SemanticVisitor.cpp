@@ -1023,7 +1023,6 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::AssignmentContext *ctx)
 
 std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExternStatementContext *ctx)
 {
-
     bool variadic = ctx->variadic || ctx->ELLIPSIS();
 
     std::string id = ctx->name->getText();
@@ -1093,7 +1092,6 @@ std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
         return errorHandler.addError(ctx->getStart(), "Assignment statement expected " + type->toString() + " but got " + exprType->toString());
     }
 
-    // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
     return new AssignNode(var, expr, ctx->getStart());
 }
 
@@ -1120,8 +1118,6 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
                 errorHandler.addError(e->a->getStart(), "Sums cannot be initialized at a global level");
             }
         }
-
-        // std::vector<Symbol *> s;
 
         for (auto var : e->VARIABLE())
         {
@@ -1170,7 +1166,7 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
                 const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType;
 
-                Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later inferencing purposes
+                Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later type inference purposes
                 stmgr->addSymbol(symbol);
 
                 a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Inefficient but needed for linears
@@ -1212,7 +1208,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismu
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::MatchAlternativeContext>(
             ctx,
             ctx->matchAlternative(),
-            restDat, // ctx->rest,
+            restDat,
             false,
             [this, ctx, &cases, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
             {
@@ -1418,7 +1414,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
                 std::variant<TypedNode *, ErrorChain *> checkOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->cases.at(i)->check->accept(this));
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
                 {
-                    (*e)->addError(ctx->getStart(), "1319"); // FIXME: BETTER ERROR MSG, AND THIS IS AN INEFFICIENT MANNER TO ENSURE LINEARS ARE USED CORRECTLY DUE TO CASE EXPRESSIONS
+                    (*e)->addError(ctx->getStart(), "1319"); // FIXME: BETTER ERROR MSG, AND THIS IS AN INEFFICIENT MANNER TO ENSURE LINEAR RESOURCES ARE USED CORRECTLY DUE TO CASE EXPRESSIONS
                     return *e;
                 }
             }

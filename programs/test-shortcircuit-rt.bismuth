@@ -3,9 +3,6 @@ extern int func getArgCount();
 extern int func getIntArg(int i);
 
 define program :: c : Channel<-int> = {
-
-  # TODO: Reserved words such as do and while? 
-
   var i := 1;
 
   if getArgCount() < 2 {

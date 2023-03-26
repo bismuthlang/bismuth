@@ -14,8 +14,6 @@ define enum a {
     (str, int -> str + str -> str)
 }
 
-# TODO: LET FOR () AROUND FN PARAMS IN Grammar?
-
 define program :: c : Channel<-int> = {
     var fn := (str msg, int times) : str {
         while times > 0 {

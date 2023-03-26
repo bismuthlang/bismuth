@@ -43,7 +43,7 @@ define getRGBColor :: io : Channel<+int;-Color> = {
             printf("DEBUG=%u\n", 0);
             printf("r=%u]\n", rgb.rgb.r);
         }
-        HSVColor hsv => { # TODO: THESE BLOCKS CAN BE EMPTY?
+        HSVColor hsv => {
             printf("hsv\n");
         }
     }
