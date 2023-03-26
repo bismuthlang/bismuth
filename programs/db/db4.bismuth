@@ -36,7 +36,7 @@ define Database :: c : Channel<
   accept(c) {
     offer c 
       | +int;-OptVal => { 
-            c.send(data[c.recv()])
+            c.send(Lookup(data, c.recv()))
         }
       | +int;+Value => {
             var key := c.recv(); 
@@ -117,10 +117,20 @@ define requests :: c : Channel<
     printf("Read Request for 4 got: ");
 
     match opt {
-        Empty e => { printf("empty\n"); 
-            }
-        Value v => { printf("%u\n", v.v); 
-            }
+        Empty e => { printf("empty\n"); }
+        Value v => { printf("%u\n", v.v); }
+    }
+
+    more(c)
+    c[-int;+OptVal]
+    c.send(20)
+    opt := c.recv(); 
+
+    printf("Read Request for 20 got: ");
+
+    match opt {
+        Empty e => { printf("empty\n"); }
+        Value v => { printf("%u\n", v.v); }
     }
 
     weaken(c)

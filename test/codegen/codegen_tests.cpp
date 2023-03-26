@@ -536,6 +536,13 @@ TEST_CASE("programs/db/db3 - Basic DB 3", "[codegen][enum]")
         "62033b04aabdb9f20a05ab0c3cec1fbb100eb0d874a14321c22f2b4fac6ff317");
 }
 
+TEST_CASE("programs/db/db4 - Basic DB 4", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db4.bismuth"))),
+        "16aab7fadbe6ef659bb6edbd94fc5bae10de6a14d18e1eb67712bc2b940b980e");
+}
+
 TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
 {
     EnsureCompilesTo(
