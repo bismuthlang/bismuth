@@ -1910,24 +1910,14 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
             auto a = toSequence(any2Protocol(alt->check->accept(this))); 
             opts.insert(a);
             optsI.insert({a->getInverse(), alt->eval});
-            // std::cout << "1913 " << a->toString() << " : " << a->getInverse()->toString() << std::endl; 
         }
 
         std::vector<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>*> vecI = {};
         for(auto itr : optsI) {
-            // std::cout << "1918 " << itr.first->toString() << std::endl; 
             vecI.push_back(
                 new std::pair(itr.first, itr.second)
             ); 
         }
-
-        for(unsigned int i = 0; i < vecI.size(); i++)
-        {
-            std::cout << (i + 1) << " " << vecI.at(i)->first->toString() << std::endl; 
-        }
-        // for(auto itr : vecI) {
-        //     std::cout << "1923 " << itr->first->toString() << std::endl; 
-        // }
 
         if (!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
         {
@@ -1991,7 +1981,7 @@ std::variant<ProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramP
     {
         const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
         unsigned int projectIndex = channel->getProtocol()->project(ps);
-        std::cout << "P" << projectIndex << " " << ps->toString() << std::endl; 
+        
         if (!projectIndex)
         {
             return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString());
@@ -2096,8 +2086,6 @@ std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAc
             }
         }
         channel->setProtocol(acceptOpt.value());
-
-        std::cout << "POST " << sym->toString() << std::endl;
 
         // stmgr->addSymbol(sym);
 

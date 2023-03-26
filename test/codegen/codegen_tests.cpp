@@ -507,6 +507,28 @@ TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]"
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructGC.bismuth"))),
         "dc1fe2a258977539416a6b0edd588790d3e05f0875d4d41f0f6a8260630ca4af");
 }
+
+TEST_CASE("programs/db/db - Basic DB 1", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db.bismuth"))),
+        "21d00b39996638de397985e5b446b89106d05b159d4030d67dda69119584e557");
+}
+
+TEST_CASE("programs/db/db2 - Basic DB 2", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db2.bismuth"))),
+        "a5d61f336666fffc261697e7a730076ecfc3f09c14c971d7013129169f3ac57d");
+}
+
+TEST_CASE("programs/db/db3 - Basic DB 3", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db3.bismuth"))),
+        "62033b04aabdb9f20a05ab0c3cec1fbb100eb0d874a14321c22f2b4fac6ff317");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/
