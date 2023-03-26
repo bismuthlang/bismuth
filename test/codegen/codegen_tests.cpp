@@ -536,6 +536,27 @@ TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
         "0ba04bd66d4c3a5779ce9cae39c204dd84f658a9ebca85f6318aa250d5c905a5");
 }
 
+TEST_CASE("programs/parity-check - Parity Check 1", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/parity-check.bismuth"))),
+        "4fbd9999e6e13b2a4a1b4b037d25b53d9a7f464e21bf30071959b761846730f6");
+}
+
+TEST_CASE("programs/parity-check - Parity Check 2", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/parity-check2.bismuth"))),
+        "902f69add9c4e58afe13ef307f3dc5a803f59aa197cf02cea92e39bf39fed47b");
+}
+
+TEST_CASE("programs/parity-check - Parity Check 2a", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/parity-check2a.bismuth"))),
+        "9aa5a075cde50a16ecf15236dd4a75bd0530eb7ecd025b86a2d30ff7b48fdfcc");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/

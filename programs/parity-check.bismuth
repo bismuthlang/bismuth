@@ -1,0 +1,55 @@
+extern int func printf(str s, ...);
+
+define struct Empty {}
+
+define struct IntBox {
+    int number;
+}
+
+# define func PrintBox (IntBox b) {
+#     printf(":")
+# }
+
+
+define prog1 :: c : Channel<-IntBox; +Empty> = {
+    IntBox ib := IntBox::init(15); 
+
+    printf("prog1: ib.number = %u\n", ib.number);
+    printf("prog1: sending ib...\n")
+
+    c.send(ib)
+
+    Empty sig := c.recv(); 
+
+    printf("prog1: recvd signal\n");
+    printf("prog1: ib.number = %u\n", ib.number);
+
+}
+
+define prog2 :: c : Channel<+IntBox; -Empty> = {
+    IntBox ib := c.recv(); 
+
+    printf("prog2: recvd IntBox\n");
+    printf("prog2: ib.number = %u\n", ib.number);
+
+    ib.number := 20; 
+    printf("prog2: ib.number = %u\n", ib.number);
+
+    printf("prog2: sending signal...\n")
+ 
+    c.send(Empty::init())
+}
+
+define program :: c : Channel<-int> = {
+    var p1 := exec prog1, p2 := exec prog2; 
+
+    var temp := p1.recv(); 
+    # p2.send(p1.recv())
+    p2.send(temp)
+
+    var temp2 := p2.recv(); 
+    p1.send(temp2)
+    # p1.send(p2.recv())
+
+    c.send(-1)
+}
