@@ -970,34 +970,6 @@ std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
         ctx->getStart());
 }
 
-/**
- * @brief Visits a condition's expression ensuring that it is of type BOOL.
- *
- * @param ctx The ConditionContext to visit
- * @return const Type* Always returns UNDEFINED as to prevent assignments
- */
-std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ConditionContext *ctx)
-{
-    // auto conditionType = any2Type(ctx->ex->accept(this));
-    std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
-    {
-        (*e)->addError(ctx->getStart(), "Unable to typecheck condition expression.");
-        return *e;
-    }
-
-    TypedNode *cond = std::get<TypedNode *>(condOpt);
-    const Type *conditionType = cond->getType();
-
-    if (conditionType->isNotSubtype(Types::BOOL))
-    {
-        return errorHandler.addError(ctx->getStart(), "Condition expected BOOL, but was given " + conditionType->toString());
-    }
-
-    return cond;
-}
-
 std::variant<SelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SelectAlternativeContext *ctx)
 {
     return errorHandler.addError(ctx->getStart(), "COMP ERROR");
@@ -1931,11 +1903,31 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
     {
         std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
+        std::set<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
 
         for (auto alt : ctx->protoAlternative())
         {
-            opts.insert(toSequence(any2Protocol(alt->check->accept(this))));
+            auto a = toSequence(any2Protocol(alt->check->accept(this))); 
+            opts.insert(a);
+            optsI.insert({a->getInverse(), alt->eval});
+            // std::cout << "1913 " << a->toString() << " : " << a->getInverse()->toString() << std::endl; 
         }
+
+        std::vector<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>*> vecI = {};
+        for(auto itr : optsI) {
+            // std::cout << "1918 " << itr.first->toString() << std::endl; 
+            vecI.push_back(
+                new std::pair(itr.first, itr.second)
+            ); 
+        }
+
+        for(unsigned int i = 0; i < vecI.size(); i++)
+        {
+            std::cout << (i + 1) << " " << vecI.at(i)->first->toString() << std::endl; 
+        }
+        // for(auto itr : vecI) {
+        //     std::cout << "1923 " << itr->first->toString() << std::endl; 
+        // }
 
         if (!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
         {
@@ -1953,19 +1945,20 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ProtoAlternativeContext>(
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>>(
             ctx,
-            ctx->protoAlternative(),
+            vecI,// ctx->protoAlternative(),
+            // optsI,
             restDat,
             false,
-            [this, savedRest, channel](BismuthParser::ProtoAlternativeContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+            [this, savedRest, channel](std::pair<const ProtocolSequence *, BismuthParser::StatementContext *> *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
-                const ProtocolSequence *proto = toSequence(any2Protocol(alt->check->accept(this)));
+                const ProtocolSequence *proto = alt->first->getInverse();//toSequence(any2Protocol(alt->check->accept(this)));
 
                 proto->append(savedRest->getCopy());
                 channel->setProtocol(proto);
 
-                std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->eval->accept(this));
+                std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->second->accept(this));
                 return optEval;
             });
 
@@ -1998,7 +1991,7 @@ std::variant<ProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramP
     {
         const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
         unsigned int projectIndex = channel->getProtocol()->project(ps);
-
+        std::cout << "P" << projectIndex << " " << ps->toString() << std::endl; 
         if (!projectIndex)
         {
             return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString());
@@ -2089,28 +2082,43 @@ std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAc
         {
             return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
         }
+        const ProtocolSequence *postC = channel->getProtocolCopy();
 
         std::vector<Symbol *> syms = stmgr->getAvailableLinears();
-        // FIXME: DO BETTER B/C HERE WE TRY TO ASSIGN TO THE VAR WE MANUALLY NEED TO ASSIGN? NO BC IT FAILS CHECK!
 
         std::vector<const TypeChannel *> to_fix;
-
         for (Symbol *orig : syms)
         {
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+            if (const TypeChannel *c2 = dynamic_cast<const TypeChannel *>(orig->type))
             {
-                channel->getProtocol()->guard();
-                to_fix.push_back(channel);
+                c2->getProtocol()->guard();
+                to_fix.push_back(c2);
             }
         }
-        const ProtocolSequence *restProto = channel->getProtocol();
-
         channel->setProtocol(acceptOpt.value());
-        stmgr->addSymbol(sym);
+
+        std::cout << "POST " << sym->toString() << std::endl;
+
+        // stmgr->addSymbol(sym);
 
         std::variant<BlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
+        std::vector<Symbol *> lins = stmgr->getAvailableLinears();
 
-        channel->setProtocol(restProto);
+        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+        // due to the var leaving the scope
+        if (lins.size() > 0)
+        {
+            std::ostringstream details;
+
+            for (auto e : lins)
+            {
+                details << e->toString() << "; ";
+            }
+
+            errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
+        }
+
+        channel->setProtocol(postC);
         for (auto c : to_fix)
         {
             c->getProtocol()->unguard();
@@ -2127,6 +2135,89 @@ std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAc
 
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
 }
+
+std::variant<ProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx)
+{
+    std::string id = ctx->VARIABLE()->getText();
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
+    if (!opt)
+    {
+        return errorHandler.addError(ctx->getStart(), "Unbound identifier: " + id);
+    }
+
+    Symbol *sym = opt.value().second;
+
+    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    {
+        std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCondition(ctx->ex);
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
+        {
+            (*e)->addError(ctx->getStart(), "1350");
+            return *e;
+        }
+
+        std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptWhileLoop();
+        if (!acceptOpt)
+        {
+            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
+        }
+        const ProtocolSequence *postC = channel->getProtocolCopy();
+
+        std::vector<Symbol *> syms = stmgr->getAvailableLinears();
+
+        std::vector<const TypeChannel *> to_fix;
+
+        for (Symbol *orig : syms)
+        {
+            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
+            {
+                channel->getProtocol()->guard();
+                to_fix.push_back(channel);
+            }
+        }
+        channel->setProtocol(acceptOpt.value());
+
+        // const ProtocolSequence *restProto = channel->getProtocol();
+
+        // channel->setProtocol(acceptOpt.value());
+        // stmgr->addSymbol(sym);
+
+        std::variant<BlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
+        std::vector<Symbol *> lins = stmgr->getAvailableLinears();
+
+        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+        // due to the var leaving the scope
+        if (lins.size() > 0)
+        {
+            std::ostringstream details;
+
+            for (auto e : lins)
+            {
+                details << e->toString() << "; ";
+            }
+
+            errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
+        }
+
+        channel->setProtocol(postC);
+        for (auto c : to_fix)
+        {
+            c->getProtocol()->unguard();
+        }
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
+        {
+            (*e)->addError(ctx->getStart(), "2255");
+            return *e;
+        }
+
+        return new ProgramAcceptWhileNode(sym, std::get<TypedNode *>(condOpt), std::get<BlockNode *>(blkOpt), ctx->getStart());
+    }
+
+    return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
+}
+
 std::variant<ProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableExec(BismuthParser::AssignableExecContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->prog->accept(this));

@@ -2,7 +2,9 @@
 source_filename = "BismuthProgram"
 
 @0 = private unnamed_addr constant [2 x i8] c"5\00", align 1
-@1 = private unnamed_addr constant [2 x i8] c"5\00", align 1
+@1 = private unnamed_addr constant [16 x i8] c"bool (correct)\0A\00", align 1
+@2 = private unnamed_addr constant [2 x i8] c"5\00", align 1
+@3 = private unnamed_addr constant [17 x i8] c"int (incorrect)\0A\00", align 1
 
 define void @foo(i32 %0) {
 entry:
@@ -31,15 +33,15 @@ entry:
 
 tagBranch1:                                       ; preds = %entry
   %11 = load i32, i32* %b, align 4
-  call void @WriteProjection(i32 %11, i32 2)
+  call void @WriteProjection(i32 %11, i32 1)
   %12 = load i32, i32* %a, align 4
   %13 = call i8* @ReadChannel(i32 %12)
-  %14 = bitcast i8* %13 to i32*
-  %15 = load i32, i32* %14, align 4
+  %14 = bitcast i8* %13 to i1*
+  %15 = load i1, i1* %14, align 1
   call void @free(i8* %13)
-  %16 = call i8* @malloc(i32 4)
-  %17 = bitcast i8* %16 to i32*
-  store i32 %15, i32* %17, align 4
+  %16 = call i8* @malloc(i32 1)
+  %17 = bitcast i8* %16 to i1*
+  store i1 %15, i1* %17, align 1
   %18 = load i32, i32* %b, align 4
   call void @WriteChannel(i32 %18, i8* %16)
   %19 = call i8* @malloc(i32 8)
@@ -47,26 +49,28 @@ tagBranch1:                                       ; preds = %entry
   store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @0, i32 0, i32 0), i8** %20, align 8
   %21 = load i32, i32* %a, align 4
   call void @WriteChannel(i32 %21, i8* %19)
+  %22 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @1, i32 0, i32 0))
   br label %matchcont
 
 tagBranch2:                                       ; preds = %entry
-  %22 = load i32, i32* %b, align 4
-  call void @WriteProjection(i32 %22, i32 1)
-  %23 = load i32, i32* %a, align 4
-  %24 = call i8* @ReadChannel(i32 %23)
-  %25 = bitcast i8* %24 to i1*
-  %26 = load i1, i1* %25, align 1
-  call void @free(i8* %24)
-  %27 = call i8* @malloc(i32 1)
-  %28 = bitcast i8* %27 to i1*
-  store i1 %26, i1* %28, align 1
-  %29 = load i32, i32* %b, align 4
-  call void @WriteChannel(i32 %29, i8* %27)
-  %30 = call i8* @malloc(i32 8)
-  %31 = bitcast i8* %30 to i8**
-  store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @1, i32 0, i32 0), i8** %31, align 8
-  %32 = load i32, i32* %a, align 4
-  call void @WriteChannel(i32 %32, i8* %30)
+  %23 = load i32, i32* %b, align 4
+  call void @WriteProjection(i32 %23, i32 2)
+  %24 = load i32, i32* %a, align 4
+  %25 = call i8* @ReadChannel(i32 %24)
+  %26 = bitcast i8* %25 to i32*
+  %27 = load i32, i32* %26, align 4
+  call void @free(i8* %25)
+  %28 = call i8* @malloc(i32 4)
+  %29 = bitcast i8* %28 to i32*
+  store i32 %27, i32* %29, align 4
+  %30 = load i32, i32* %b, align 4
+  call void @WriteChannel(i32 %30, i8* %28)
+  %31 = call i8* @malloc(i32 8)
+  %32 = bitcast i8* %31 to i8**
+  store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @2, i32 0, i32 0), i8** %32, align 8
+  %33 = load i32, i32* %a, align 4
+  call void @WriteChannel(i32 %33, i8* %31)
+  %34 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @3, i32 0, i32 0))
   br label %matchcont
 
 matchcont:                                        ; preds = %tagBranch2, %tagBranch1, %entry

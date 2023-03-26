@@ -9,11 +9,13 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel
                 b[-int]
                 b.send(a.recv())
                 a.send("5")
+                printf("int (incorrect)\n");
             }
         | +boolean => {
                 b[-boolean]
                 b.send(a.recv())
                 a.send("5")
+                printf("bool (correct)\n");
             }
 }
 

@@ -160,6 +160,8 @@ statement           : defineProc                                              # 
                     | 'more' '(' channel=VARIABLE ')'   ';'?                  # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')' ';'?                  # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                 # ProgramAccept
+                    | 'accept' '(' channel=VARIABLE ',' ex=expression ')' block         # ProgramAcceptWhile
+                    | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block    # ProgramAcceptWhile
                     ; 
                     
 

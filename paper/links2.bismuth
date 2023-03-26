@@ -18,19 +18,14 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>>;+Channel<Inte
         | +int => {
                 b[-int]
                 linkRecvInt(a, b)
+                printf("int (incorrect)\n");
             }
         | +boolean => {
                 b[-boolean]
                 # b.send(false)
                 linkRecvBool(a, b)
+                printf("bool (correct)\n");
             }
-
-    # offer a 
-    #     | +int => {var F := a.recv();}
-    #     | +boolean => {var F := a.recv();}
-
-    # b[-int]
-    # b.send(5)
 }
 
 define bar1 :: c : Channel<InternalChoice<-int, -boolean>> = {

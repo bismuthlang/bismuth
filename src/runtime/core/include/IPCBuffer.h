@@ -22,25 +22,61 @@ public:
     void enqueue(T t)
     {
         std::lock_guard<std::mutex> lock(m);
-        
+
         q.push(t);
         c.notify_one();
     }
 
     // Get the "front"-element.
-    // If the queue is empty, wait till a element is avaiable.
+    // If the queue is empty, wait till a element is available.
     T dequeue(void)
     {
         std::unique_lock<std::mutex> lock(m);
         while (q.empty())
         {
-            // release lock as long as the wait and reaquire it afterwards.
+            // release lock as long as the wait and reacquire it afterwards.
             c.wait(lock);
         }
         T val = q.front();
         q.pop();
-        
+
         return val;
+    }
+
+    T peak(void)
+    {
+        std::unique_lock<std::mutex> lock(m);
+        while (q.empty())
+        {
+            // release lock as long as the wait and reacquire it afterwards.
+            c.wait(lock);
+        }
+        T val = q.front();
+        // q.pop();
+
+        return val;
+    }
+
+    void pop(void)
+    {
+        std::unique_lock<std::mutex> lock(m);
+        while (q.empty())
+        {
+            // release lock as long as the wait and reacquire it afterwards.
+            c.wait(lock);
+        }
+        // T val = q.front();
+        q.pop();
+
+        return;
+    }
+
+    bool empty() {
+        return q.empty(); 
+    }
+
+    std::queue<T> copy() {
+        return q; 
     }
 
 private:

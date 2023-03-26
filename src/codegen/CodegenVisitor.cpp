@@ -494,6 +494,73 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
     return std::nullopt;
 }
 
+std::optional<Value *> CodegenVisitor::visit(ProgramAcceptWhileNode *n)
+{
+    // Very similar to regular loop & Accept while
+    // FIXME: Somewhat inefficient due to dequeuing 
+
+    Symbol *sym = n->sym;
+
+    if (!sym->val)
+    {
+        errorHandler.addError(n->getStart(), "Could not find value for channel in accept: " + n->sym->getIdentifier());
+        return std::nullopt;
+    }
+
+    Value *chanVal = sym->val.value();
+
+    auto parent = builder->GetInsertBlock()->getParent();
+    BasicBlock *condBlk = BasicBlock::Create(module->getContext(), "aw-cond", parent);
+    BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "aw-then");
+
+    BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop");
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
+
+    builder->CreateBr(condBlk);
+    builder->SetInsertPoint(condBlk);
+    std::optional<Value *> condOpt = AcceptType(this, n->cond);
+
+    if (!condOpt)
+    {
+        errorHandler.addError(n->getStart(), "521 - Failed to generate code for: " + n->cond->toString());
+        return std::nullopt;
+    }
+
+    builder->CreateCondBr(condOpt.value(), thenBlk, restBlk);
+    condBlk = builder->GetInsertBlock();
+
+    parent->getBasicBlockList().push_back(thenBlk);
+    builder->SetInsertPoint(thenBlk);
+    Value *check = builder->CreateCall(getShouldAcceptWhileLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
+    
+    builder->CreateCondBr(check, loopBlk, restBlk);
+    
+    thenBlk = builder->GetInsertBlock();
+
+    /*
+     * In the loop block
+     */
+    parent->getBasicBlockList().push_back(loopBlk);
+    builder->SetInsertPoint(loopBlk);
+    for (auto e : n->blk->exprs)
+    {
+        AcceptType(this, e);
+    }
+
+    // Check if we need to loop back again...
+    builder->CreateBr(condBlk);
+    loopBlk = builder->GetInsertBlock();
+
+    /*
+     * Out of loop
+     */
+    parent->getBasicBlockList().push_back(restBlk);
+    builder->SetInsertPoint(restBlk);
+    // builder->CreateCall(getPopEndLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
+
+    return std::nullopt;
+}
+
 std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
 {
     std::vector<Value *> args;
@@ -1294,7 +1361,6 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
     builder->SetInsertPoint(thenBlk);
     for (auto e : n->trueBlk->exprs)
     {
-        // e->accept(this);
         AcceptType(this, e);
     }
 

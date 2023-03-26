@@ -100,6 +100,7 @@ public:
     std::optional<Value *> visit(ProgramWeakenNode *n) override;
     std::optional<Value *> visit(ProgramExecNode *n) override;
     std::optional<Value *> visit(ProgramAcceptNode *n) override;
+    std::optional<Value *> visit(ProgramAcceptWhileNode *n) override;
     // std::optional<Value *> visit(DefineEnumNode *n) override;
     // std::optional<Value *> visit(DefineStructNode *n) override;
     std::optional<Value *> visit(InitProductNode *n) override;
@@ -401,6 +402,25 @@ public:
             "ShouldLoop",
             llvm::FunctionType::get(
                 Int1Ty,
+                {Int32Ty},
+                false));
+    }
+    llvm::FunctionCallee getShouldAcceptWhileLoop()
+    {
+        return module->getOrInsertFunction(
+            "ShouldAcceptWhileLoop",
+            llvm::FunctionType::get(
+                Int1Ty,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getPopEndLoop()
+    {
+        return module->getOrInsertFunction(
+            "PopEndLoop",
+            llvm::FunctionType::get(
+                VoidTy,
                 {Int32Ty},
                 false));
     }

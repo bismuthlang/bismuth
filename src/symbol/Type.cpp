@@ -224,6 +224,37 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
     return std::nullopt;
 }
 
+bool ProtocolSequence::isOCorGuarded() const
+{
+    if (isComplete())
+        return false;
+    const Protocol *proto = steps.front();
+
+    if (const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
+{
+    if (isOCorGuarded())
+    {
+        const Protocol *proto = steps.front();
+        const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
+        const ProtocolSequence *ans = toSequence(wn->getInnerProtocol()->getCopy());
+
+        // ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
+        // mthis->steps.erase(steps.begin());
+
+        return ans;
+    }
+
+    return std::nullopt;
+}
+
 // FIXME: METHODIZE A LOT OF THESE
 bool ProtocolSequence::isIntChoice() const
 {

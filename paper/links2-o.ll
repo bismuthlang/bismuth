@@ -1,9 +1,43 @@
 ; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 
-@0 = private unnamed_addr constant [16 x i8] c"bool (correct)\0A\00", align 1
-@1 = private unnamed_addr constant [17 x i8] c"int (incorrect)\0A\00", align 1
-@2 = private unnamed_addr constant [2 x i8] c"5\00", align 1
+define void @linkRecvInt(i32 %0, i32 %1) {
+entry:
+  %b = alloca i32, align 4
+  %a = alloca i32, align 4
+  store i32 %0, i32* %a, align 4
+  store i32 %1, i32* %b, align 4
+  %2 = load i32, i32* %a, align 4
+  %3 = call i8* @ReadChannel(i32 %2)
+  %4 = bitcast i8* %3 to i32*
+  %5 = load i32, i32* %4, align 4
+  call void @free(i8* %3)
+  %6 = call i8* @malloc(i32 4)
+  %7 = bitcast i8* %6 to i32*
+  store i32 %5, i32* %7, align 4
+  %8 = load i32, i32* %b, align 4
+  call void @WriteChannel(i32 %8, i8* %6)
+  ret void
+}
+
+define void @linkRecvBool(i32 %0, i32 %1) {
+entry:
+  %b = alloca i32, align 4
+  %a = alloca i32, align 4
+  store i32 %0, i32* %a, align 4
+  store i32 %1, i32* %b, align 4
+  %2 = load i32, i32* %a, align 4
+  %3 = call i8* @ReadChannel(i32 %2)
+  %4 = bitcast i8* %3 to i1*
+  %5 = load i1, i1* %4, align 1
+  call void @free(i8* %3)
+  %6 = call i8* @malloc(i32 1)
+  %7 = bitcast i8* %6 to i1*
+  store i1 %5, i1* %7, align 1
+  %8 = load i32, i32* %b, align 4
+  call void @WriteChannel(i32 %8, i8* %6)
+  ret void
+}
 
 define void @foo(i32 %0) {
 entry:
@@ -32,48 +66,26 @@ entry:
 
 tagBranch1:                                       ; preds = %entry
   %11 = load i32, i32* %b, align 4
-  call void @WriteProjection(i32 %11, i32 1)
-  %12 = load i32, i32* %a, align 4
-  %13 = call i8* @ReadChannel(i32 %12)
-  %14 = bitcast i8* %13 to i1*
-  %15 = load i1, i1* %14, align 1
-  call void @free(i8* %13)
-  %16 = call i8* @malloc(i32 1)
-  %17 = bitcast i8* %16 to i1*
-  store i1 %15, i1* %17, align 1
-  %18 = load i32, i32* %b, align 4
-  call void @WriteChannel(i32 %18, i8* %16)
-  %19 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0))
+  call void @WriteProjection(i32 %11, i32 2)
+  %a1 = load i32, i32* %a, align 4
+  %b2 = load i32, i32* %b, align 4
+  call void @linkRecvInt(i32 %a1, i32 %b2)
   br label %matchcont
 
 tagBranch2:                                       ; preds = %entry
-  %20 = load i32, i32* %b, align 4
-  call void @WriteProjection(i32 %20, i32 2)
-  %21 = load i32, i32* %a, align 4
-  %22 = call i8* @ReadChannel(i32 %21)
-  %23 = bitcast i8* %22 to i32*
-  %24 = load i32, i32* %23, align 4
-  call void @free(i8* %22)
-  %25 = call i8* @malloc(i32 4)
-  %26 = bitcast i8* %25 to i32*
-  store i32 %24, i32* %26, align 4
-  %27 = load i32, i32* %b, align 4
-  call void @WriteChannel(i32 %27, i8* %25)
-  %28 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @1, i32 0, i32 0))
+  %12 = load i32, i32* %b, align 4
+  call void @WriteProjection(i32 %12, i32 1)
+  %a3 = load i32, i32* %a, align 4
+  %b4 = load i32, i32* %b, align 4
+  call void @linkRecvBool(i32 %a3, i32 %b4)
   br label %matchcont
 
 matchcont:                                        ; preds = %tagBranch2, %tagBranch1, %entry
-  %29 = call i8* @malloc(i32 8)
-  %30 = bitcast i8* %29 to i8**
-  store i8* getelementptr inbounds ([2 x i8], [2 x i8]* @2, i32 0, i32 0), i8** %30, align 8
-  %31 = load i32, i32* %a, align 4
-  call void @WriteChannel(i32 %31, i8* %29)
   ret void
 }
 
 define void @bar1(i32 %0) {
 entry:
-  %xyz = alloca i8*, align 8
   %c = alloca i32, align 4
   store i32 %0, i32* %c, align 4
   %1 = load i32, i32* %c, align 4
@@ -83,12 +95,6 @@ entry:
   store i1 false, i1* %3, align 1
   %4 = load i32, i32* %c, align 4
   call void @WriteChannel(i32 %4, i8* %2)
-  %5 = load i32, i32* %c, align 4
-  %6 = call i8* @ReadChannel(i32 %5)
-  %7 = bitcast i8* %6 to i8**
-  %8 = load i8*, i8** %7, align 8
-  call void @free(i8* %6)
-  store i8* %8, i8** %xyz, align 8
   ret void
 }
 
@@ -166,12 +172,12 @@ declare i8* @ReadChannel(i32)
 
 declare void @free(i8*)
 
-declare i32 @ReadProjection(i32)
-
-declare void @WriteProjection(i32, i32)
-
 declare i8* @malloc(i32)
 
 declare void @WriteChannel(i32, i8*)
+
+declare i32 @ReadProjection(i32)
+
+declare void @WriteProjection(i32, i32)
 
 declare i32 @Execute(void (i32)*)

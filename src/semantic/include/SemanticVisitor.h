@@ -124,7 +124,7 @@ public:
     std::variant<InvocationNode *, ErrorChain *> visitCtx(BismuthParser::CallExprContext *ctx) { return this->visitCtx(ctx->call); }
     std::any visitCallExpr(BismuthParser::CallExprContext *ctx) override { return TNVariantCast<InvocationNode>(visitCtx(ctx)); }
 
-    std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::ConditionContext *ctx);
+    std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::ConditionContext *ctx) { return this->visitCondition(ctx->ex); }
     std::any visitCondition(BismuthParser::ConditionContext *ctx) override { return visitCtx(ctx); }
 
     std::variant<BinaryRelNode *, ErrorChain *> visitCtx(BismuthParser::BinaryRelExprContext *ctx);
@@ -182,6 +182,9 @@ public:
 
     std::variant<ProgramAcceptNode *, ErrorChain *> TvisitProgramAccept(BismuthParser::ProgramAcceptContext *ctx);
     std::any visitProgramAccept(BismuthParser::ProgramAcceptContext *ctx) override { return TNVariantCast<ProgramAcceptNode>(TvisitProgramAccept(ctx)); }
+
+    std::variant<ProgramAcceptWhileNode *, ErrorChain *> TvisitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx);
+    std::any visitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx) override { return TNVariantCast<ProgramAcceptWhileNode>(TvisitProgramAcceptWhile(ctx)); }
 
     std::variant<CompilationUnitNode *, ErrorChain *> visitCtx(BismuthParser::CompilationUnitContext *ctx);
     std::any visitCompilationUnit(BismuthParser::CompilationUnitContext *ctx) override { return visitCtx(ctx); }
@@ -258,6 +261,27 @@ public:
 
     std::variant<ProgramProjectNode *, ErrorChain *> TvisitProgramProject(BismuthParser::ProgramProjectContext *ctx);
     std::any visitProgramProject(BismuthParser::ProgramProjectContext *ctx) override { return TNVariantCast<ProgramProjectNode>(TvisitProgramProject(ctx)); }
+
+    std::variant<TypedNode *, ErrorChain *> visitCondition(BismuthParser::ExpressionContext *ex)
+    {
+        std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, ex->accept(this));
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
+        {
+            (*e)->addError(ex->getStart(), "Unable to typecheck condition expression.");
+            return *e;
+        }
+
+        TypedNode *cond = std::get<TypedNode *>(condOpt);
+        const Type *conditionType = cond->getType();
+
+        if (conditionType->isNotSubtype(Types::BOOL))
+        {
+            return errorHandler.addError(ex->getStart(), "Condition expected BOOL, but was given " + conditionType->toString());
+        }
+
+        return cond;
+    }
 
     /**
      * @brief Used to safely enter a block. This is used to ensure there aren't FUNC/PROC definitions / code following returns in it.
@@ -420,6 +444,16 @@ public:
         }
     }
 
+    struct ProtocolCompareInv
+    {
+        bool operator()(std::pair<const Protocol *, BismuthParser::StatementContext *> a, 
+                        std::pair<const Protocol *, BismuthParser::StatementContext *> b) const
+        {
+            std::cout << a.first->toString() << " < " << b.first->toString() << " = " << (a.first->toString() < b.second->toString()) << std::endl; 
+            return a.first->toString() < b.first->toString();
+        }
+    };
+
     struct ConditionalData
     {
         vector<TypedNode *> cases;
@@ -499,7 +533,7 @@ public:
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
                     {
-                        (*e)->addError(alt->getStart(), "Failed to typecheck code following branch.");
+                        (*e)->addError(nullptr, "Failed to typecheck code following branch.");
                         return *e;
                     }
 
@@ -552,7 +586,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(alt->getStart(), "537 Unused linear types in context: " + details.str());
+                errorHandler.addError(nullptr, "537 Unused linear types in context: " + details.str());
             }
         }
 
@@ -719,7 +753,7 @@ private:
     std::variant<Symbol *, ErrorChain *> getFunctionSymbol(BismuthParser::DefineFuncContext *ctx)
     {
         std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-        
+
         if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
         {
             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
@@ -751,7 +785,7 @@ private:
 
                 const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this))
                                                     : Types::UNIT;
-                
+
                 funcType->setInvoke(ps, retType);
 
                 // stmgr->addSymbol(sym); //Maybe do this here instead? would be more similar to how others are managed...

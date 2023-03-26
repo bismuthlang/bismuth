@@ -428,28 +428,28 @@ TEST_CASE("paper/links", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links.bismuth"))),
-        "bc05f2f1d3d3d41398b2e137b9a5ab0608300cbcd049dff5eeb08e7f7f745c0b");
+        "0cd21f2d04102f9c56fadefc48311508cf7f4c5e5b13fa158e549d3083d5720d");
 }
 
 TEST_CASE("paper/links2", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links2.bismuth"))),
-        "e349dcd0fe96fffac88721bd4a2b329c89247d184ac340be1bf317dc2e778277");
+        "f2ad6e1f177f59882fb54b0464d796dcda343823b5adc45946a0b5eb1be80067");
 }
 
 TEST_CASE("paper/links3", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links3.bismuth"))),
-        "59191f536676f5ee77103b6fef255e053bcdd829c76b8ed81e47b1c65cbb4138");
+        "290b0f39eec6442b46b87dd5b836cd475f928c01fbbf8805938cebeaff8a3489");
 }
 
 TEST_CASE("paper/links4", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links4.bismuth"))),
-        "a975cb1e7c092bee6c985101fc71a58a802bc9b08da3ca6379a42bf94eaf9bdd");
+        "75f82d658b99a5816cdf4c531e7d7c640be1f77c3de56d8eb9491b230ef0dbc9");
 }
 
 TEST_CASE("programs/doubleArg1c2 - weakening and loops", "[codegen][linear-types]")

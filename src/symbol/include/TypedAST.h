@@ -51,6 +51,7 @@ class ProgramContractNode;
 class ProgramWeakenNode;
 class ProgramExecNode;
 class ProgramAcceptNode;
+class ProgramAcceptWhileNode; 
 class DefineEnumNode;
 class DefineStructNode;
 class InitProductNode;
@@ -98,6 +99,7 @@ public:
     virtual std::optional<Value *> visit(ProgramWeakenNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramExecNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramAcceptNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramAcceptWhileNode *n) = 0; 
     // virtual std::optional<Value *> visit(DefineEnumNode *n) = 0;
     // virtual std::optional<Value *> visit(DefineStructNode *n) = 0;
     virtual std::optional<Value *> visit(InitProductNode *n) = 0;
@@ -141,6 +143,7 @@ public:
     std::any any_visit(ProgramWeakenNode *n) { return this->visit(n); }
     std::any any_visit(ProgramExecNode *n) { return this->visit(n); }
     std::any any_visit(ProgramAcceptNode *n) { return this->visit(n); }
+    std::any any_visit(ProgramAcceptWhileNode *n) { return this->visit(n); }
     std::any any_visit(DefineEnumNode *n) { return this->visit(n); }
     std::any any_visit(DefineStructNode *n) { return this->visit(n); }
     std::any any_visit(InitProductNode *n) { return this->visit(n); }
@@ -514,6 +517,29 @@ public:
 
     std::string toString() const override {
         return "ACCEPT NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+class ProgramAcceptWhileNode : public TypedNode
+{
+public:
+    Symbol *sym;
+    TypedNode *cond;
+    BlockNode *blk;
+
+    ProgramAcceptWhileNode(Symbol *s, TypedNode *c, BlockNode *b, antlr4::Token *tok) : TypedNode(tok)
+    {
+        sym = s;
+        cond = c; 
+        blk = b;
+    }
+
+    const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "ACCEPT WHILE NODE";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }

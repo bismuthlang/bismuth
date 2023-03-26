@@ -171,6 +171,14 @@ struct ProtocolCompare
     }
 };
 
+// struct ProtocolCompareInt
+// {
+//     bool operator()(const Protocol *a, const Protocol *b) const
+//     {
+//         return a->getInverse()->toString() < b->getInverse()->toString();
+//     }
+// };
+
 /*******************************************
  *
  * Sequential Protocol
@@ -202,7 +210,7 @@ public:
         return description.str();
     }
 
-    const Protocol *getInverse() const override;
+    const ProtocolSequence *getInverse() const override;
 
     const ProtocolSequence *getCopy() const override;
 
@@ -229,7 +237,10 @@ public:
 
     bool isOC() const;
 
+    bool isOCorGuarded() const; 
+
     optional<const ProtocolSequence *> acceptLoop() const;
+    optional<const ProtocolSequence *> acceptWhileLoop() const;
 
     bool isIntChoice() const;
 
@@ -421,44 +432,6 @@ public:
 
 /*******************************************
  *
- * Internal Choice Protocol
- *
- *******************************************/
-class ProtocolIChoice : public Protocol
-{
-private:
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
-
-public:
-    ProtocolIChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
-    {
-        opts = o;
-    }
-
-    std::string as_str() const override
-    {
-        std::ostringstream description;
-
-        unsigned int i = 0;
-        for (auto p : opts)
-        {
-            if (i != 0)
-                description << "&";
-            description << p->toString();
-            i++;
-        }
-
-        return description.str();
-    }
-
-    const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override;
-
-    std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
-};
-
-/*******************************************
- *
  * External Choice Protocol
  *
  *******************************************/
@@ -493,6 +466,45 @@ public:
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
 };
+
+/*******************************************
+ *
+ * Internal Choice Protocol
+ *
+ *******************************************/
+class ProtocolIChoice : public Protocol
+{
+private:
+    std::set<const ProtocolSequence *, ProtocolCompare> opts;
+
+public:
+    ProtocolIChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
+    {
+        opts = o;
+    }
+
+    std::string as_str() const override
+    {
+        std::ostringstream description;
+
+        unsigned int i = 0;
+        for (auto p : opts)
+        {
+            if (i != 0)
+                description << "&";
+            description << p->toString();
+            i++;
+        }
+
+        return description.str();
+    }
+
+    const ProtocolEChoice *getInverse() const override;
+    const Protocol *getCopy() const override;
+
+    std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
+};
+
 
 /*******************************************
  *

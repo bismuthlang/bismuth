@@ -1,3 +1,5 @@
+extern int func printf(str s, ...);
+
 define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
     Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
@@ -6,10 +8,12 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel
         | +int => {
                 b[-int]
                 b.send(a.recv())
+                printf("int (incorrect)\n");
             }
         | +boolean => {
                 b[-boolean]
                 b.send(a.recv())
+                printf("bool (correct)\n");
             }
 
     a.send("5")
