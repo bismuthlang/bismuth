@@ -210,6 +210,13 @@ TEST_CASE("programs/test14a - Test nested/more complex shorting", "[codegen]")
         "7b82d83c0fefb224d3a97f1971835f186232671e1d40331d40febfba0d34de41");
 }
 
+TEST_CASE("programs/17 - var inf in decl", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test17.bismuth"))),
+        "fac65e4acc03e57dbee1a12b0a0cdb207cae39bbd48962bdc2fe0fd6878da4ac");
+}
+
 TEST_CASE("programs/test18 - Parody", "[codegen]")
 {
     EnsureCompilesTo(

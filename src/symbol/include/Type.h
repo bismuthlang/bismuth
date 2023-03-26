@@ -1686,7 +1686,6 @@ public:
 
         llvm::BasicBlock *ins = builder->GetInsertBlock();
 
-        // FIXME: DONT DUPLICATE THESE ACROSS FILES
         llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
                                                         getLLVMType(M),
                                                         {
@@ -2034,7 +2033,6 @@ public:
 
         llvm::BasicBlock *ins = builder->GetInsertBlock();
 
-        // FIXME: DONT DUPLICATE THESE ACROSS FILES
         llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
                                                         getLLVMType(M),
                                                         {

@@ -304,28 +304,8 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
   REQUIRE_FALSE(sv->hasErrors(0));
 }
 
-TEST_CASE("programs/test17 - var inf in decl", "[semantic]")
-{
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test17.bismuth");
-  antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-  BismuthLexer lexer(input);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  STManager *stm = new STManager();
-
-  SemanticVisitor *sv = new SemanticVisitor(stm);
-  sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(0));
-
-  // FIXME: REQUIRE dd078039953b6a079ba980b9e1194ea063a9cf8c44194aece3adb115125877f3?
-}
-/*
 //FIXME: REENABLE AGAIN!
+/*
 TEST_CASE("Test program() should return int warning", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
