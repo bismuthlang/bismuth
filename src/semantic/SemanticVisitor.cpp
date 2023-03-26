@@ -137,11 +137,13 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
     }
     for (auto e : structs)
     {
-        std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
+        // std::variant<TypedNode *, ErrorChain *> opt = 
+        anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
     }
     for (auto e : enums)
     {
-        std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
+        // std::variant<TypedNode *, ErrorChain *> opt = 
+        anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
     }
 
     // Visit the statements contained in the unit
@@ -1010,7 +1012,7 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::Parame
 
 ParameterNode SemanticVisitor::visitCtx(BismuthParser::ParameterContext *ctx)
 {
-    return ParameterNode(any2Type(ctx->ty->accept(this)), ctx->name->getText()); // FIXME: WHAT AB ERRORS?
+    return ParameterNode(any2Type(ctx->ty->accept(this)), ctx->name->getText()); 
 }
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::AssignmentContext *ctx)
@@ -1420,7 +1422,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
                 std::variant<TypedNode *, ErrorChain *> checkOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->cases.at(i)->check->accept(this));
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
                 {
-                    (*e)->addError(ctx->getStart(), "1319"); // FIXME: BETTER ERROR MSG, AND THIS IS AN INNEFICIENT MANNER TO ENSURE LINEARS ARE USED CORRECTLY DUE TO CASE EXPRESSIONS
+                    (*e)->addError(ctx->getStart(), "1319"); // FIXME: BETTER ERROR MSG, AND THIS IS AN INEFFICIENT MANNER TO ENSURE LINEARS ARE USED CORRECTLY DUE TO CASE EXPRESSIONS
                     return *e;
                 }
             }

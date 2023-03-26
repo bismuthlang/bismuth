@@ -533,7 +533,7 @@ public:
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
                     {
-                        (*e)->addError(nullptr, "Failed to typecheck code following branch.");
+                        (*e)->addError(nullptr, "Failed to typecheck code following branch."); //FIXME: SWITCH THESE BACK TO ALTCTX?
                         return *e;
                     }
 
