@@ -56,26 +56,26 @@ lValue              : deref=dereferenceExpr
  *              the use of variables instead of expressions for array access
  *      11-14. Typical boolean and variable constants. 
  */
-expression          : LPAR ex=expression RPAR                       # ParenExpr
-                    | fieldAccessExpr                               # FieldAccess
-                    | <assoc=right> op=(MINUS | NOT) ex=expression  # UnaryExpr 
-                    | left=expression op=(MULTIPLY | DIVIDE) right=expression # BinaryArithExpr
-                    | left=expression op=(PLUS | MINUS) right=expression      # BinaryArithExpr
-                    | left=expression op=(LESS | LESS_EQ | GREATER | GREATER_EQ) right=expression # BinaryRelExpr 
-                    | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression # EqExpr
-                    | exprs+=expression (AND exprs+=expression)+    # LogAndExpr 
-                    | exprs+=expression (OR  exprs+=expression)+    # LogOrExpr
-                    | call=invocation                               # CallExpr
-                    | v=VARIABLE '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')' # InitProduct
-                    | 'Box'     LESS ty=type GREATER '::init' '(' expr=expression ')'           # InitBox
+expression          : LPAR ex=expression RPAR                                                       # ParenExpr
+                    | fieldAccessExpr                                                               # FieldAccess
+                    | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 
+                    | left=expression op=(MULTIPLY | DIVIDE) right=expression                       # BinaryArithExpr
+                    | left=expression op=(PLUS | MINUS) right=expression                            # BinaryArithExpr
+                    | left=expression op=(LESS | LESS_EQ | GREATER | GREATER_EQ) right=expression   # BinaryRelExpr 
+                    | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression         # EqExpr
+                    | exprs+=expression (AND exprs+=expression)+                                    # LogAndExpr 
+                    | exprs+=expression (OR  exprs+=expression)+                                    # LogOrExpr
+                    | call=invocation                                                               # CallExpr
+                    | v=VARIABLE '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')'     # InitProduct
+                    | 'Box'     LESS ty=type GREATER '::init' '(' expr=expression ')'               # InitBox
                     | dereferenceExpr                               # Deref
-                    | arrayAccess  # ArrayAccessExpr
-                    | booleanConst # BConstExpr 
-                    | i=INTEGER    # IConstExpr
-                    | s=STRING     # SConstExpr 
-                    | lambdaConstExpr # LambdaExpr
-                    | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv
-                    | 'exec' prog=expression                 # AssignableExec
+                    | arrayAccess                                   # ArrayAccessExpr
+                    | booleanConst                                  # BConstExpr 
+                    | i=INTEGER                                     # IConstExpr
+                    | s=STRING                                      # SConstExpr 
+                    | lambdaConstExpr                               # LambdaExpr
+                    | channel=VARIABLE '.recv' '(' ')'              # AssignableRecv
+                    | 'exec' prog=expression                        # AssignableExec
                     ;
 
 lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
@@ -147,22 +147,22 @@ statement           : defineProc                                              # 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'     # VarDeclStatement
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                            # SelectStatement     
-                    | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*              # MatchStatement   
-                    | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*              # MatchStatement   
-                    | call=invocation  ';'?     # CallStatement 
-                    | RETURN expression? ';'    # ReturnStatement 
-                    | EXIT                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
-                    | block                     # BlockStatement
-                    | channel=VARIABLE '.send' '(' expr=expression ')' ';'?   # ProgramSend
-                    | WHILE check=condition block                                                       # ProgramLoop
+                    | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                    # MatchStatement   
+                    | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*                       # MatchStatement   
+                    | call=invocation  ';'?                                                                     # CallStatement 
+                    | RETURN expression? ';'                                                                    # ReturnStatement 
+                    | EXIT                                                                                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
+                    | block                                                                                     # BlockStatement
+                    | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                     # ProgramSend
+                    | WHILE check=condition block                                                                               # ProgramLoop
                     | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*      # ProgramCase  
                     | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                              # ProgramCase   
                     | channel=VARIABLE LBRC sel=protocol RBRC                                                                   # ProgramProject
-                    | 'more' '(' channel=VARIABLE ')'   ';'?                  # ProgramContract 
-                    | 'weaken' '(' channel=VARIABLE ')' ';'?                  # ProgramWeaken
-                    | 'accept' '(' channel=VARIABLE ')' block                 # ProgramAccept
-                    | 'accept' '(' channel=VARIABLE ',' ex=expression ')' block         # ProgramAcceptWhile
-                    | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block    # ProgramAcceptWhile
+                    | 'more' '(' channel=VARIABLE ')'   ';'?                                # ProgramContract 
+                    | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
+                    | 'accept' '(' channel=VARIABLE ')' block                               # ProgramAccept
+                    | 'accept' '(' channel=VARIABLE ',' ex=expression ')' block             # ProgramAcceptWhile
+                    | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block        # ProgramAcceptWhile
                     ; 
                     
 

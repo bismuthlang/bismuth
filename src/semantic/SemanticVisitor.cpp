@@ -1040,7 +1040,7 @@ std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
 
     if (!tyOpt)
     {
-        return errorHandler.addError(ctx->getStart(), "Failed to genrate parameters for extern!");
+        return errorHandler.addError(ctx->getStart(), "Failed to generate parameters for extern!");
     }
 
     const Type *retType = ctx->ty ? any2Type(ctx->ty->accept(this))

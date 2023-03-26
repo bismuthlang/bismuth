@@ -59,7 +59,7 @@ public:
     /**
      * @brief Determines if this type is a supertype of another
      *
-     * @param other The posposed subtype of this type.
+     * @param other The type to check against.
      * @return true If this is a supertype for other.
      * @return false If this is not a supertype for other.
      */
@@ -1432,7 +1432,7 @@ public:
         if (valueType->has_value())
             return valueType->value()->getLLVMType(M);
 
-        // This should never happen: we should have always detected such cases in our semantic analyis
+        // This should never happen: we should have always detected such cases in our semantic analysis
         return nullptr;
     }
 
@@ -2220,6 +2220,6 @@ inline bool isGuarded(const Type *ty)
 inline bool isLinear(const Type *ty)
 {
     if (dynamic_cast<const TypeChannel *>(ty))
-        return true; // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure tehy are used?
+        return true; // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure they are used?
     return false;
 }
