@@ -529,6 +529,13 @@ TEST_CASE("programs/db/db3 - Basic DB 3", "[codegen][enum]")
         "62033b04aabdb9f20a05ab0c3cec1fbb100eb0d874a14321c22f2b4fac6ff317");
 }
 
+TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/bt.bismuth"))),
+        "0ba04bd66d4c3a5779ce9cae39c204dd84f658a9ebca85f6318aa250d5c905a5");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/

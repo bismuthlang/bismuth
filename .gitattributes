@@ -1,0 +1,5 @@
+.gitattributes export-ignore
+.gitignore export-ignore
+makeArchive.sh export-ignore
+runArchiveTests.sh export-ignore
+antlr/ export-ignore

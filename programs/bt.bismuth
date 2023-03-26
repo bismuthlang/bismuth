@@ -1,0 +1,127 @@
+extern int func printf(str s, ...);
+
+# define foo :: c : Channel<+int> = {
+#   Channel<+int> b := c; 
+#   int a := b.recv(); # C is no longer defined
+# }
+
+# define func foo () {
+#   return;
+# }
+
+define struct Empty {}
+
+define struct BinaryTree {
+  int value; 
+  (Empty + Box<BinaryTree>) lhs;  
+  (Empty + Box<BinaryTree>) rhs; 
+  # Box<BinaryTree> rhs; 
+}
+
+
+define struct IDK {
+  foo f;
+}
+
+define func foo () {
+  return; 
+}
+
+define func insertBT(Box<BinaryTree> root, int value) {
+  BinaryTree bt := *root; 
+  if bt.value < value {
+    match bt.lhs {
+      Empty e => { 
+        bt.lhs := Box<BinaryTree>::init(BinaryTree::init(value, Empty::init(), Empty::init()));
+      }
+      Box<BinaryTree> n => insertBT( n, value );
+    }
+  } else {
+    match bt.rhs {
+      Empty e => { 
+        bt.rhs := Box<BinaryTree>::init(BinaryTree::init(value, Empty::init(), Empty::init()));
+      }
+      Box<BinaryTree> n => insertBT( n, value );
+    }
+  }
+  *root := bt; 
+  return; 
+}
+
+
+define func printPadding(int chars) {
+  int i := 0; 
+  while i < chars {
+    printf(" ");
+    i := i + 1; 
+  }
+
+  return; 
+}
+
+define func printBT(BinaryTree node) 
+{
+  printf("%u", node.value);
+  printf("\n");
+
+
+  match node.lhs {
+    Empty e => {}
+    Box<BinaryTree> n => traversePreOrder(0, "├──", *n);
+  }
+
+  match node.rhs {
+    Empty e => {}
+    Box<BinaryTree> n => traversePreOrder(0, "└──", *n);
+  }
+
+  printf("\n");
+  return; 
+}
+
+define func traversePreOrder(int padding, str pointer, BinaryTree node) {
+  printPadding(padding);
+  printf(pointer);
+  printf("%u", node.value);
+  printf("\n");
+
+  match node.lhs {
+    Empty e => {}
+    Box<BinaryTree> n => traversePreOrder(padding + 3, "├──", *n);
+  }
+
+  match node.rhs {
+    Empty e => {}
+    Box<BinaryTree> n => traversePreOrder(padding + 3, "└──", *n);
+  }
+  
+  return;
+}
+
+
+
+define program :: c : Channel<-int> = {
+
+  # BinaryTree node := BinaryTree::init(5, Empty::init(), Empty::init());
+  Box<BinaryTree> node := Box<BinaryTree>::init(BinaryTree::init(5, Empty::init(), Empty::init()));
+  printBT( *node);
+  insertBT(node, 6);
+  printBT( *node);
+
+  insertBT(node, 2);
+  printBT( *node);
+
+  insertBT(node, 3);
+  printBT( *node);
+  insertBT(node, 4);
+  printBT( *node);
+
+  insertBT(node, 7);
+  printBT( *node);
+
+  # while true {
+  #   var b := c;
+  # }
+
+  c.send(0)
+}
