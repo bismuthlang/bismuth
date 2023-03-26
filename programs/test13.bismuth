@@ -6,7 +6,7 @@ define fib :: c : Channel<+int;-int> = {
 
   if(n == 0 | n == 1) {
     # return n;
-    c.send(n) exit
+    c.send(1) exit
   }
 
   Channel<-int;+int> f1 := exec fib; 
@@ -17,8 +17,7 @@ define fib :: c : Channel<+int;-int> = {
 
   int v1 := f1.recv(), v2 := f2.recv();
 
-
-  c.send(v1 + v1)
+  c.send(v1 + v2)
 
   # return fib(n - 1) + fib(n - 2);
 }

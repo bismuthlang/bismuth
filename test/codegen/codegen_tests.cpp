@@ -165,7 +165,7 @@ TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test13.bismuth"))),
-        "3ea49235a9149b4fd2be493d25344810d5b43a741921d1195dc223cdbebafd69");
+        "a339a2f3d23ad90b9adf4e19e52781756b9a6118fd8337a4f38ba08d1eeab7ed");
 }
 
 TEST_CASE("programs/adv/LambdaDef", "[codegen]")
