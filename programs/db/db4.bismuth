@@ -116,10 +116,9 @@ define requests :: c : Channel<
 
     printf("Read Request for 4 got: ");
 
-    match opt {
-        Empty e => { printf("empty\n"); }
-        Value v => { printf("%u\n", v.v); }
-    }
+    match opt
+      | Empty e => { printf("empty\n"); }
+      | Value v => { printf("%u\n", v.v); }
 
     more(c)
     c[-int;+OptVal]
@@ -128,10 +127,9 @@ define requests :: c : Channel<
 
     printf("Read Request for 20 got: ");
 
-    match opt {
-        Empty e => { printf("empty\n"); }
-        Value v => { printf("%u\n", v.v); }
-    }
+    match opt
+      | Empty e => { printf("empty\n"); }
+      | Value v => { printf("%u\n", v.v); }
 
     weaken(c)
 }

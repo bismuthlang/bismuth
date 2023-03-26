@@ -147,7 +147,8 @@ statement           : defineProc                                              # 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'     # VarDeclStatement
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                            # SelectStatement     
-                    | MATCH check=condition LSQB (cases+=matchAlternative)* '}' (rest+=statement)*              # MatchStatement      
+                    | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*              # MatchStatement   
+                    | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*              # MatchStatement   
                     | call=invocation  ';'?     # CallStatement 
                     | RETURN expression? ';'    # ReturnStatement 
                     | EXIT                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?

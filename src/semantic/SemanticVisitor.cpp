@@ -1204,14 +1204,14 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismu
         std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
         rest->push_front(restDat);
 
-        for (auto b : ctx->cases)
+        for (auto b : ctx->matchAlternative())
         {
             bindRestData(b->eval, rest);
         }
 
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::MatchAlternativeContext>(
             ctx,
-            ctx->cases,
+            ctx->matchAlternative(),
             restDat, // ctx->rest,
             false,
             [this, ctx, &cases, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
@@ -1259,10 +1259,6 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismu
 
                 return ans;
             });
-
-        // for (BismuthParser::MatchAlternativeContext *altCtx : ctx->cases)
-        // {
-        // }
 
         if (foundCaseTypes.size() != sumType->getCases().size())
         {
