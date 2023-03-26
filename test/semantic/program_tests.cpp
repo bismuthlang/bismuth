@@ -532,39 +532,6 @@ TEST_CASE("Infer In return", "[semantic][program]")
   REQUIRE_FALSE(sv->hasErrors(ERROR));
 }
 
-//   // TODO: WHEN USING OPTIONALS FOR getLLVMTYPE?
-
-// TEST_CASE("Uninferred", "[semantic][program]") //FIXME: IMPL WHEN WE HAVE VAR TYPES DECL?
-// {
-//   antlr4::ANTLRInputStream input(
-//       R""""(
-//     var a;
-//     define program :: c : Channel<-int> = {
-//         return 0;
-//     }
-//     )"""");
-//   BismuthLexer lexer(&input);
-//   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
-
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(tree->getText() != "");
-
-//   STManager *stmgr = new STManager();
-//
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
-
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
-
-// }
-
 // FIXME: TEST THAT WHEN HAS ERRORS TREE EMPTY?
 TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
 {

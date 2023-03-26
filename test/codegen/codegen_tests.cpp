@@ -55,7 +55,7 @@ void EnsureErrors(antlr4::ANTLRInputStream *input)
 
     REQUIRE(sv->hasErrors(0));
 }
-// FIXME: REMOVE NO RUNTIME
+
 TEST_CASE("programs/test1 - General Overview", "[codegen]")
 {
     EnsureCompilesTo(
