@@ -533,7 +533,7 @@ public:
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
                     {
-                        (*e)->addError(nullptr, "Failed to typecheck code following branch."); //FIXME: SWITCH THESE BACK TO ALTCTX?
+                        (*e)->addError(alt->getStart(), "Failed to typecheck code following branch."); //FIXME: SWITCH THESE BACK TO ALTCTX?
                         return *e;
                     }
 
@@ -586,7 +586,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(nullptr, "537 Unused linear types in context: " + details.str());
+                errorHandler.addError(alt->getStart(), "537 Unused linear types in context: " + details.str());
             }
         }
 

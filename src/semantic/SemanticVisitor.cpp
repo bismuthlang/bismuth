@@ -1906,11 +1906,12 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
             optsI.insert({a->getInverse(), alt->eval});
         }
 
-        std::vector<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>*> vecI = {};
+        std::vector<const ProtocolSequence *> sequences = {};
+        std::vector<BismuthParser::StatementContext *> alternatives = {};
+        
         for(auto itr : optsI) {
-            vecI.push_back(
-                new std::pair(itr.first, itr.second)
-            ); 
+            sequences.push_back(itr.first->getInverse());
+            alternatives.push_back(itr.second);
         }
 
         if (!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
@@ -1929,20 +1930,20 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>>(
+        unsigned int branch = 0; 
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::StatementContext>(
             ctx,
-            vecI,// ctx->protoAlternative(),
-            // optsI,
+            alternatives,
             restDat,
             false,
-            [this, savedRest, channel](std::pair<const ProtocolSequence *, BismuthParser::StatementContext *> *alt) -> std::variant<TypedNode *, ErrorChain *>
+            [this, savedRest, channel, sequences, &branch](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
-                const ProtocolSequence *proto = alt->first->getInverse();//toSequence(any2Protocol(alt->check->accept(this)));
+                const ProtocolSequence *proto = sequences.at(branch++); 
 
                 proto->append(savedRest->getCopy());
                 channel->setProtocol(proto);
 
-                std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->second->accept(this));
+                std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
                 return optEval;
             });
 
