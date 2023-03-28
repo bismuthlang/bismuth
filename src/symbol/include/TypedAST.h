@@ -51,6 +51,7 @@ class ProgramContractNode;
 class ProgramWeakenNode;
 class ProgramExecNode;
 class ProgramAcceptNode;
+class ProgramAcceptWhileNode; 
 class DefineEnumNode;
 class DefineStructNode;
 class InitProductNode;
@@ -98,6 +99,7 @@ public:
     virtual std::optional<Value *> visit(ProgramWeakenNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramExecNode *n) = 0;
     virtual std::optional<Value *> visit(ProgramAcceptNode *n) = 0;
+    virtual std::optional<Value *> visit(ProgramAcceptWhileNode *n) = 0; 
     // virtual std::optional<Value *> visit(DefineEnumNode *n) = 0;
     // virtual std::optional<Value *> visit(DefineStructNode *n) = 0;
     virtual std::optional<Value *> visit(InitProductNode *n) = 0;
@@ -127,7 +129,7 @@ public:
 
     // virtual std::optional<Value
 
-    // private: //FIXME: DO SOMETHING FOR THE ONES WE DONT NEED/USE
+    // private:
     std::any any_visit(SelectAlternativeNode *n) { return this->visit(n); }
     std::any any_visit(SelectStatementNode *n) { return this->visit(n); }
     std::any any_visit(BlockNode *n) { return this->visit(n); }
@@ -141,6 +143,7 @@ public:
     std::any any_visit(ProgramWeakenNode *n) { return this->visit(n); }
     std::any any_visit(ProgramExecNode *n) { return this->visit(n); }
     std::any any_visit(ProgramAcceptNode *n) { return this->visit(n); }
+    std::any any_visit(ProgramAcceptWhileNode *n) { return this->visit(n); }
     std::any any_visit(DefineEnumNode *n) { return this->visit(n); }
     std::any any_visit(DefineStructNode *n) { return this->visit(n); }
     std::any any_visit(InitProductNode *n) { return this->visit(n); }
@@ -172,7 +175,7 @@ public:
     std::any accept(TypedNode *n)
     {
         return n->accept(this);
-        // return dynamic_cast<T>(n->accept(this)); // Hacky, but completley safe
+        // return dynamic_cast<T>(n->accept(this)); // Hacky, but completely safe
         // return n->accept(this);
     }
 };
@@ -235,7 +238,7 @@ public:
 
     vector<TypedNode *> getExprs() { return exprs; }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // PLAN: Change this to allow for more functional style? 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 
     std::string toString() const override {
@@ -350,10 +353,10 @@ public:
         post = p;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit *getType() override { return Types::UNIT; } // PLAN: Change this to allow for a more functional style syntax?
 
     std::string toString() const override {
-        return "COND STATMENT NODE";
+        return "COND STATEMENT NODE";
     }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -519,13 +522,36 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
+class ProgramAcceptWhileNode : public TypedNode
+{
+public:
+    Symbol *sym;
+    TypedNode *cond;
+    BlockNode *blk;
+
+    ProgramAcceptWhileNode(Symbol *s, TypedNode *c, BlockNode *b, antlr4::Token *tok) : TypedNode(tok)
+    {
+        sym = s;
+        cond = c; 
+        blk = b;
+    }
+
+    const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "ACCEPT WHILE NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
 class DefineEnumNode : public TypedNode
 {
 public:
     string name;
-    TypeSum *sum;
+    const TypeSum *sum;
 
-    DefineEnumNode(string n, TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
+    DefineEnumNode(string n, const TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;
@@ -545,9 +571,9 @@ class DefineStructNode : public TypedNode
 {
 public:
     string name;
-    TypeStruct *product;
+    const TypeStruct *product;
 
-    DefineStructNode(string n, TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
+    DefineStructNode(string n, const TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;
@@ -655,7 +681,7 @@ class ExternNode : public TypedNode
 {
 private:
     Symbol *sym;
-    const TypeInvoke *ty; // FIXME: ISNT REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
+    const TypeInvoke *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
     ExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
@@ -667,7 +693,7 @@ public:
             paramTypes.push_back(param.type);
         }
 
-        ty = new TypeInvoke(paramTypes, r, v, true);
+        ty = new TypeInvoke(paramTypes, r, v);
         sym = new Symbol(id, ty, true, true);
     }
 
@@ -680,7 +706,7 @@ public:
         return "EXTERN NODE";
     }
 
-    Symbol *getSymbol() { return sym; } // WHY ARENT THINGS LIKE THIS CONST?
+    Symbol *getSymbol() { return sym; } // WHY AREN'T THINGS LIKE THIS CONST?
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -1095,7 +1121,7 @@ public:
 
     const TypeUnit *getType() override
     {
-        return Types::UNIT; // FIXME: DO BETTER
+        return Types::UNIT; // PLAN: Change this to allow for a more functional style syntax?
     }
 
     std::string toString() const override {
@@ -1244,7 +1270,13 @@ inline bool endsInBranch(TypedNode *n)
         return true; 
     }
 
-    if(SelectStatementNode * sn = dynamic_cast<SelectStatementNode*>(n))
+    if (SelectAlternativeNode *cn = dynamic_cast<SelectAlternativeNode *>(n))
+    {
+        return endsInBranch(cn->eval);
+        // return true; 
+    }
+
+    if(ChannelCaseStatementNode * sn = dynamic_cast<ChannelCaseStatementNode*>(n))
     {
         return true; 
     }

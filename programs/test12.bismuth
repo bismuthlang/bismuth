@@ -1,0 +1,56 @@
+extern int func printf(...);
+
+# TODO: Params named by what they are, ret named by fn name...
+# boolean func isPrime(int n) {
+/*
+define isPrime :: c : Channel<+int;-boolean> = {
+  int n := c.recv(); # TODO: ENABLE THIS NOTATION!
+  var i := 3;
+  while (i < n) { 
+    if (n / i * i == n) { c.send(false) } 
+    i := i + 2;
+    {
+      int i := 0;
+    }
+  }
+  # return true;
+  c.send(true)
+}
+*/
+
+
+define isPrime :: c : Channel<+int;-boolean> = {
+  int n := c.recv();
+  var i := 3, done := false, ans := true;
+
+  while (!done & i < n) { 
+    if (n / i * i == n) { 
+      done := true; 
+      ans := false; 
+    }
+    else  
+    {
+      i := i + 2;
+    }
+  }
+  # return true;
+  c.send(ans)
+}
+
+define program :: c : Channel<-int> = {
+  var current := 3;        
+  int nPrimes := 2;       # explicit type 
+  while current < 100 { 
+    Channel<-int; +boolean> c1 := exec isPrime; 
+    c1.send(current)
+    boolean ans := c1.recv();
+
+    if ans { 
+      printf("%d is the %dth prime!\n", current, nPrimes);
+      nPrimes := nPrimes + 1;
+    }
+    current := current + 2;
+  }
+#  return nPrimes;
+  c.send(nPrimes)
+}

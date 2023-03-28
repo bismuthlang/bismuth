@@ -1,99 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include "antlr4-runtime.h"
-#include "WPLLexer.h"
-#include "WPLParser.h"
-#include "WPLErrorHandler.h"
+#include "BismuthLexer.h"
+#include "BismuthParser.h"
+#include "BismuthErrorHandler.h"
 #include "SemanticVisitor.h"
 
 #include "test_error_handlers.h"
-
-// TEST_CASE("Development Semantic tests", "[semantic]")
-// {
-//   antlr4::ANTLRInputStream input("42;");
-//   WPLLexer lexer(&input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   WPLParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   SemanticVisitor *sv = new SemanticVisitor(new STManager());
-//   sv->visitCompilationUnit(tree);                                                    
-//   // if (sv->hasErrors(ERROR)) {
-//   //   CHECK("foo" == sv->getErrors());
-//   // }
-//   CHECK_FALSE(sv->hasErrors(ERROR));
-// }
-
-
-// TEST_CASE("Invalid Array Semantics", "[semantic]")
-// {
-//   antlr4::ANTLRInputStream input("int [0] a;");
-//   WPLLexer lexer(&input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   WPLParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   SemanticVisitor *sv = new SemanticVisitor(new STManager());
-//   sv->visitCompilationUnit(tree);                                                    
-//   REQUIRE(sv->hasErrors(ERROR));
-// }
-// TEST_CASE("Bool Const Tests", "[semantic]")
-// {
-//   antlr4::ANTLRInputStream input("false; true;");
-//   WPLLexer lexer(&input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   WPLParser::CompilationUnitContext *tree = NULL;
-
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-
-//   SemanticVisitor *sv = new SemanticVisitor(new STManager());
-//   sv->visitCompilationUnit(tree);
-
-//   CHECK_FALSE(sv->hasErrors(ERROR));
-// }
-
-// TEST_CASE("Type from compilationUnit", "[semantic]")
-// {
-//   antlr4::ANTLRInputStream input("int"); // We should get filtered out here
-//   WPLLexer lexer(&input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
-//   WPLParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_THROWS(tree = parser.compilationUnit());
-//   REQUIRE(tree == NULL);
-// }
-
-//FIXME: FIND A WAY TO RE-ENABLE!
-// TEST_CASE("Visit Type - INT", "[semantic]")
-// {
-//   antlr4::ANTLRInputStream input("int"); // We shouldn't get filtered out here
-//   WPLLexer lexer(&input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   WPLParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
-//   WPLParser::TypeContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.type());
-//   REQUIRE(tree != NULL);
-
-//   REQUIRE(tree->getText() != "");
-
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
-
-//   const Type *ty = std::any_cast<const Type *>(tree->accept(sv));//sv->visit(tree));
-
-//   REQUIRE(ty->isSubtype(Types::INT));
-// }
-
 
 TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 {

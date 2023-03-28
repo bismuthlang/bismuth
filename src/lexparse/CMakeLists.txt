@@ -11,7 +11,7 @@ add_custom_command(
   )
   BYPRODUCTS ${ANTLR_SOURCES}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMAND /bin/sh  generate.sh WPL  # Change this if you have a different script
+  COMMAND /bin/sh  generate.sh Bismuth  # Change this if you have a different script
 )
 
 add_custom_target(generate_parser ALL

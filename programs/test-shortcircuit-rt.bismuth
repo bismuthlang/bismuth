@@ -1,0 +1,45 @@
+extern int func printf(str a, ...);
+extern int func getArgCount();
+extern int func getIntArg(int i);
+
+define program :: c : Channel<-int> = {
+  var i := 1;
+
+  if getArgCount() < 2 {
+    printf("Needs at least two arguments!\n");
+    # return -1; 
+    c.send(-1)
+    exit
+  }
+
+  while i < getArgCount() {
+    printf("i = %d, argCount = %d\n", i, getArgCount());
+    var a := getIntArg(i); 
+    var b := getIntArg(i + 1);
+
+    printf("%d > 0 & %d = 2\n", a, b);
+    var test := a > 0 & b == 2; 
+
+    printf("%d > 0 | %d = 2\n", a, b);
+    var test2 := a > 0 | b == 2; 
+
+    if test {
+      printf("true + ");
+    } else {
+      printf("false + ");
+    }
+
+    
+    if test2 {
+      printf("true\n");
+    } else {
+      printf("false\n");
+    }
+
+
+    i := i + 2; 
+  }
+
+  # return 0; 
+  c.send(0)
+}

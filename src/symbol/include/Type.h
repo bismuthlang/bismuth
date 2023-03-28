@@ -19,7 +19,6 @@
 
 #include <any>      // Needed for anycasts
 #include <utility>  // Needed for anycasts
-#include <iostream> // cout
 #include <vector>   // Vectors
 #include <optional> // Optionals
 
@@ -60,7 +59,7 @@ public:
     /**
      * @brief Determines if this type is a supertype of another
      *
-     * @param other The posposed subtype of this type.
+     * @param other The type to check against.
      * @return true If this is a supertype for other.
      * @return false If this is not a supertype for other.
      */
@@ -143,10 +142,9 @@ public:
     }
 };
 
-//FIXME: REFACTOR WITH METHOD IN CODEGENVISITOR!
+// FIXME: REFACTOR WITH METHOD IN CODEGENVISITOR!
 inline llvm::AllocaInst *CreateEntryBlockAlloc(llvm::IRBuilder<llvm::NoFolder> *builder, llvm::Type *ty, std::string identifier)
 {
-    std::cout << "149" << std::endl; 
     llvm::Function *fn = builder->GetInsertBlock()->getParent();
 
     // if (fn != nullptr)
@@ -155,7 +153,6 @@ inline llvm::AllocaInst *CreateEntryBlockAlloc(llvm::IRBuilder<llvm::NoFolder> *
     // {
     // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
     llvm::IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-    std::cout << fn << std::endl; 
     return tempBuilder.CreateAlloca(ty, 0, identifier);
     // return builder->CreateAlloca(ty, 0, identifier);
     // }
@@ -173,6 +170,14 @@ struct ProtocolCompare
         return a->toString() < b->toString();
     }
 };
+
+// struct ProtocolCompareInt
+// {
+//     bool operator()(const Protocol *a, const Protocol *b) const
+//     {
+//         return a->getInverse()->toString() < b->getInverse()->toString();
+//     }
+// };
 
 /*******************************************
  *
@@ -205,7 +210,7 @@ public:
         return description.str();
     }
 
-    const Protocol *getInverse() const override;
+    const ProtocolSequence *getInverse() const override;
 
     const ProtocolSequence *getCopy() const override;
 
@@ -230,13 +235,12 @@ public:
 
     bool weaken() const;
 
-    // bool isWNWN() const;
-
-    // optional<const ProtocolSequence *> shearLoop() const;
-
     bool isOC() const;
 
+    bool isOCorGuarded() const; 
+
     optional<const ProtocolSequence *> acceptLoop() const;
+    optional<const ProtocolSequence *> acceptWhileLoop() const;
 
     bool isIntChoice() const;
 
@@ -428,44 +432,6 @@ public:
 
 /*******************************************
  *
- * Internal Choice Protocol
- *
- *******************************************/
-class ProtocolIChoice : public Protocol
-{
-private:
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
-
-public:
-    ProtocolIChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
-    {
-        opts = o;
-    }
-
-    std::string as_str() const override
-    {
-        std::ostringstream description;
-
-        unsigned int i = 0;
-        for (auto p : opts)
-        {
-            if (i != 0)
-                description << "&";
-            description << p->toString();
-            i++;
-        }
-
-        return description.str();
-    }
-
-    const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override;
-
-    std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
-};
-
-/*******************************************
- *
  * External Choice Protocol
  *
  *******************************************/
@@ -503,6 +469,45 @@ public:
 
 /*******************************************
  *
+ * Internal Choice Protocol
+ *
+ *******************************************/
+class ProtocolIChoice : public Protocol
+{
+private:
+    std::set<const ProtocolSequence *, ProtocolCompare> opts;
+
+public:
+    ProtocolIChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
+    {
+        opts = o;
+    }
+
+    std::string as_str() const override
+    {
+        std::ostringstream description;
+
+        unsigned int i = 0;
+        for (auto p : opts)
+        {
+            if (i != 0)
+                description << "&";
+            description << p->toString();
+            i++;
+        }
+
+        return description.str();
+    }
+
+    const ProtocolEChoice *getInverse() const override;
+    const Protocol *getCopy() const override;
+
+    std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
+};
+
+
+/*******************************************
+ *
  * Integer (32 bit, signed) Type Definition
  *
  *******************************************/
@@ -516,38 +521,6 @@ public:
     }
 
     bool requiresDeepCopy() const override { return false; }
-
-    // virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
-    // {
-    //     llvm::Function * testFn = M->getFunction("_clone_int");
-    //     if(testFn) return testFn;
-
-    //     llvm::BasicBlock *ins = builder->GetInsertBlock();
-
-    //     // FIXME: DONT DUPLICATE THESE ACROSS FILES
-    //     llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
-    //                                                     getLLVMType(M),
-    //                                                     {
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext()), // Value
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext())  // Map
-    //                                                     },
-    //                                                     false),
-    //                                                 llvm::GlobalValue::PrivateLinkage, "_clone_int", M);
-
-    //     llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
-    //     builder->SetInsertPoint(bBlk);
-
-    //     // Bind all of the arguments
-    //     llvm::AllocaInst *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
-
-    //     builder->CreateStore((fn->args()).begin(), v);
-
-    //     builder->CreateRet(v);
-
-    //     builder->SetInsertPoint(ins);
-
-    //     return fn; // Stack value, can just return it for the copy.
-    // }
 
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
@@ -570,38 +543,6 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
-    // virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
-    // {
-    //     llvm::Function * testFn = M->getFunction("_clone_bool");
-    //     if(testFn) return testFn;
-
-    //     llvm::BasicBlock *ins = builder->GetInsertBlock();
-
-    //     // FIXME: DONT DUPLICATE THESE ACROSS FILES
-    //     llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
-    //                                                     getLLVMType(M),
-    //                                                     {
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext()), // Value
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext())  // Map
-    //                                                     },
-    //                                                     false),
-    //                                                 llvm::GlobalValue::PrivateLinkage, "_clone_bool", M);
-
-    //     llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
-    //     builder->SetInsertPoint(bBlk);
-
-    //     // Bind all of the arguments
-    //     llvm::AllocaInst *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
-
-    //     builder->CreateStore((fn->args()).begin(), v);
-
-    //     builder->CreateRet(v);
-
-    //     builder->SetInsertPoint(ins);
-
-    //     return fn; // Stack value, can just return it for the copy.
-    // }
-
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -619,38 +560,6 @@ public:
     llvm::Type *getLLVMType(llvm::Module *M) const override { return llvm::Type::getInt8PtrTy(M->getContext()); }
 
     bool requiresDeepCopy() const override { return false; }
-
-    // virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
-    // {
-    //     llvm::Function * testFn = M->getFunction("_clone_string");
-    //     if(testFn) return testFn;
-
-    //     llvm::BasicBlock *ins = builder->GetInsertBlock();
-
-    //     // FIXME: DONT DUPLICATE THESE ACROSS FILES
-    //     llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
-    //                                                     getLLVMType(M),
-    //                                                     {
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext()), // Value
-    //                                                         llvm::Type::getInt8PtrTy(M->getContext())  // Map
-    //                                                     },
-    //                                                     false),
-    //                                                 llvm::GlobalValue::PrivateLinkage, "_clone_string", M);
-
-    //     llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
-    //     builder->SetInsertPoint(bBlk);
-
-    //     // Bind all of the arguments
-    //     llvm::AllocaInst *v = builder->CreateAlloca(llvm::Type::getInt8PtrTy(M->getContext()), 0, "v");
-
-    //     builder->CreateStore((fn->args()).begin(), v);
-
-    //     builder->CreateRet(v);
-
-    //     builder->SetInsertPoint(ins);
-
-    //     return fn; // Stack value, can just return it for the copy.
-    // }
 
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
@@ -936,7 +845,6 @@ private:
      *
      */
     const Type *innerType;
-    // FIXME: WILL NOT WORK WITH TRADITIONAL COPY!
 
 public:
     TypeBox(const Type *t) : innerType(t)
@@ -1128,13 +1036,13 @@ private:
      * @brief Represents the types of the function's arguments
      *
      */
-    const TypeChannel *channel; // FIXME: PROBABLY NEEDS TO BE SEQ!
+    const TypeChannel *channel;
 
     /**
      * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
      *
      */
-    bool defined = true;
+    bool defined;
 
     /**
      * @brief Name used by llvm to represent this function
@@ -1143,6 +1051,9 @@ private:
     std::optional<std::string> name = {}; // NOT FOR SEMANTIC NAMES!!! THIS ONE IS FOR LLVM ONLY
 
 public:
+    TypeProgram() : defined(false)
+    {
+    }
     /**
      * @brief Construct a new Type Invoke object
      *
@@ -1150,25 +1061,33 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeProgram(const TypeChannel *c, bool d) // TODO: why is d required, if it also defaults to true? (or really, why do we say true if we have to specify it? NOTE: INVOKE defaults to true... and here we use things the same way)
+    TypeProgram(const TypeChannel *c) : channel(c), defined(true)
     {
-        channel = c;
+    }
 
-        defined = d;
+    bool setChannel(const TypeChannel *c) const
+    {
+        if (defined)
+            return false;
+
+        TypeProgram *mthis = const_cast<TypeProgram *>(this);
+        mthis->defined = true;
+        mthis->channel = c;
+
+        return true;
     }
 
     std::string toString() const override
     {
-
         std::ostringstream description;
-        description << "PROGRAM : " << channel->toString();
+        description << "PROGRAM : " << (channel ? channel->toString() : "PARTIAL DEFINITION");
 
         return description.str();
     }
 
     llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const
     {
-        // Cretae a vector for our argument types
+        // Create a vector for our argument types
         // std::vector<llvm::Type *> typeVec;
         // llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
 
@@ -1211,16 +1130,6 @@ public:
      * @return false
      */
     bool isDefined() const { return defined; }
-
-    /**
-     * @brief Marks this invokable as defined
-     *
-     */
-    void define() const
-    {
-        TypeProgram *mthis = const_cast<TypeProgram *>(this);
-        mthis->defined = true;
-    }
 
     const TypeChannel *getChannelType() const
     {
@@ -1289,7 +1198,7 @@ private:
      * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
      *
      */
-    bool defined = true;
+    bool defined;
 
     /**
      * @brief Name used by llvm to represent this function
@@ -1302,20 +1211,8 @@ public:
      * @brief Construct a new Type Invoke object that has no return and no arguments
      *
      */
-    TypeInvoke()
+    TypeInvoke() : defined(false)
     {
-        retType = Types::UNIT;
-    }
-
-    /**
-     * @brief Construct a new Type Invoke object with the provided arguments and no return type
-     *
-     * @param p The types of the arguments
-     */
-    TypeInvoke(std::vector<const Type *> p)
-    {
-        paramTypes = p;
-        retType = Types::UNIT;
     }
 
     /**
@@ -1325,42 +1222,22 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeInvoke(std::vector<const Type *> p, bool v, bool d)
+    TypeInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) : paramTypes(p), retType(r), variadic(v), defined(true)
     {
-        paramTypes = p;
-        retType = Types::UNIT;
-
-        variadic = v;
-        defined = d;
     }
 
-    /**
-     * @brief Construct a new Type Invoke object
-     *
-     * @param p List of type parameters
-     * @param r Return type
-     */
-    TypeInvoke(std::vector<const Type *> p, const Type *r)
+    bool setInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) const
     {
-        paramTypes = p;
-        retType = r;
-    }
+        if (defined)
+            return false;
 
-    /**
-     * @brief Construct a new Type Invoke object
-     *
-     * @param p List of type parameters
-     * @param r Return type
-     * @param v Determines if this should be a variadic
-     * @param d Determines if this has been fully defined
-     */
-    TypeInvoke(std::vector<const Type *> p, const Type *r, bool v, bool d)
-    {
-        paramTypes = p;
-        retType = r;
+        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
+        mthis->defined = true;
+        mthis->paramTypes = p;
+        mthis->retType = r;
+        mthis->variadic = v;
 
-        variadic = v;
-        defined = d;
+        return true;
     }
 
     /**
@@ -1370,12 +1247,10 @@ public:
      */
     std::string toString() const override
     {
-        // bool isProc = dynamic_cast<const TypeUnit *>(retType);
-
         std::ostringstream description;
-        // description << (isProc ? "Unit" : "");
+
         if (paramTypes.size() == 0)
-            description << "()"; // TODO: change whole thing to touple to make it easier to deal with
+            description << "()"; // TODO: change whole thing to tuple to make it easier to deal with
 
         for (unsigned int i = 0; i < paramTypes.size(); i++)
         {
@@ -1398,7 +1273,7 @@ public:
 
     llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const
     {
-        // Cretae a vector for our argument types
+        // Create a vector for our argument types
         std::vector<llvm::Type *> typeVec;
 
         for (const Type *ty : paramTypes)
@@ -1469,16 +1344,6 @@ public:
      */
     bool isDefined() const { return defined; }
 
-    /**
-     * @brief Marks this invokable as defined
-     *
-     */
-    void define() const
-    {
-        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
-        mthis->defined = true;
-    }
-
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
@@ -1498,7 +1363,6 @@ protected:
             {
                 if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
                 {
-                    std::cout << "PARAM FAIL" << std::endl;
                     return false;
                 }
             }
@@ -1536,7 +1400,7 @@ public:
     }
 
     /**
-     * @brief Returns if type inference has detemined the type of this var yet
+     * @brief Returns if type inference has determined the type of this var yet
      *
      * @return true
      * @return false
@@ -1568,7 +1432,7 @@ public:
         if (valueType->has_value())
             return valueType->value()->getLLVMType(M);
 
-        // This should never happen: we should have always detected such cases in our semantic analyis
+        // This should never happen: we should have always detected such cases in our semantic analysis
         return nullptr;
     }
 
@@ -1620,7 +1484,7 @@ protected:
             }
         }
 
-        // Return true/false depending on if the afformentoned process was successful.
+        // Return true/false depending on if the aforementioned process was successful.
         return valid;
     }
 
@@ -1649,7 +1513,7 @@ protected:
                 return setValue(oinf->valueType->value());
             }
 
-            // Otherwise, add the types to be dependencies of eachother, and return true.
+            // Otherwise, add the types to be dependencies of each other, and return true.
             TypeInfer *mthis = const_cast<TypeInfer *>(this);
             mthis->infTypes.push_back(oinf);
 
@@ -1684,12 +1548,27 @@ private:
     // llvm::Type * llvmType;
     std::optional<std::string> name = {};
 
+    bool defined; 
+
 public:
-    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {})
-    {
-        cases = c;
-        name = n;
+    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) : cases(c), name(n), defined(true)
+    {}
+
+    TypeSum(std::string n) : name(n), defined(false)
+    {}
+
+    bool define(std::set<const Type *, TypeCompare> c) const {
+        if(isDefined()) return false; 
+
+        TypeSum *mthis = const_cast<TypeSum *>(this);
+        mthis->defined = true; 
+
+        mthis->cases = c; 
+
+        return true; 
     }
+
+    bool isDefined() const { return defined; }
 
     // auto lexical_compare = [](int a, int b) { return to_string(a) < to_string(b); };
 
@@ -1712,7 +1591,6 @@ public:
             }
             i++;
         }
-
         return (unsigned int)0;
     }
 
@@ -1808,7 +1686,6 @@ public:
 
         llvm::BasicBlock *ins = builder->GetInsertBlock();
 
-        // FIXME: DONT DUPLICATE THESE ACROSS FILES
         llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
                                                         getLLVMType(M),
                                                         {
@@ -1849,7 +1726,7 @@ public:
             builder->CreateStore(fn->getArg(1), m);
 
             llvm::BasicBlock *mergeBlk = llvm::BasicBlock::Create(M->getContext(), "matchcont");
-            std::cout << "1832" << std::endl;
+
             llvm::Value *tagPtr = builder->CreateGEP(v,
                                                      {llvm::ConstantInt::get(
                                                           llvm::Type::getInt32Ty(M->getContext()),
@@ -1859,7 +1736,7 @@ public:
                                                           llvm::Type::getInt32Ty(M->getContext()),
                                                           0,
                                                           true)});
-            std::cout << "1842" << std::endl;
+
             llvm::Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
 
             llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, cases.size());
@@ -2045,12 +1922,18 @@ private:
      */
     std::optional<std::string> name;
 
+    /**
+     * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
+     *
+     */
+    bool defined;
+
 public:
-    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {})
-    {
-        elements = e;
-        name = n;
-    }
+    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) : elements(e), name(n), defined(true)
+    {}
+
+    TypeStruct(std::string n) : name(n), defined(false)
+    {}
 
     std::optional<const Type *> get(std::string id) const
     {
@@ -2061,6 +1944,20 @@ public:
     {
         return elements.getIndex(id);
     }
+
+    bool define(LinkedMap<std::string, const Type *> e) const {
+        if(isDefined()) return false; 
+
+        TypeStruct *mthis = const_cast<TypeStruct *>(this);
+        mthis->defined = true; 
+
+        mthis->elements = e; 
+        // mthis->name = n; 
+
+        return true; 
+    }
+
+    bool isDefined() const { return defined; }
 
     // std::map<std::string, const Type*> getElements() const { return elements; }
     vector<pair<std::string, const Type *>> getElements() const { return elements.getElements(); }
@@ -2101,9 +1998,10 @@ public:
     llvm::StructType *getLLVMType(llvm::Module *M) const override
     {
         llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-
         if (ty)
             return ty;
+
+        ty = llvm::StructType::create(M->getContext(), toString());
 
         std::vector<llvm::Type *> typeVec;
 
@@ -2113,9 +2011,7 @@ public:
         }
 
         llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-
-        // Needed to prevent duplicating the type's definition
-        ty = llvm::StructType::create(M->getContext(), ref, toString());
+        ty->setBody(ref); //Done like this to enable recursive types
 
         return ty;
     }
@@ -2137,7 +2033,6 @@ public:
 
         llvm::BasicBlock *ins = builder->GetInsertBlock();
 
-        // FIXME: DONT DUPLICATE THESE ACROSS FILES
         llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
                                                         getLLVMType(M),
                                                         {
@@ -2325,6 +2220,6 @@ inline bool isGuarded(const Type *ty)
 inline bool isLinear(const Type *ty)
 {
     if (dynamic_cast<const TypeChannel *>(ty))
-        return true; // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure tehy are used?
+        return true; // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure they are used?
     return false;
 }

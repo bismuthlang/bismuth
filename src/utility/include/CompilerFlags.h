@@ -20,5 +20,6 @@
  */
 enum CompilerFlags 
 {
-  NO_RUNTIME = 1, //Used to represent that the program will NOT use a runtime (and thus we should generate a main method manually)
+  // NO_RUNTIME = 1, //Used to represent that the program will NOT use a runtime (and thus we should generate a main method manually)
+  DEMO_MODE = 1, // Used to signal that limited imports are allowed & that we need to ensure main program. 
 };

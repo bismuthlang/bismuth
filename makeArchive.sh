@@ -1,1 +1,1 @@
-git archive --prefix=ahfriedman-prism/ --format zip -o "ahfriedman-prism-$(git rev-parse --short HEAD).zip" HEAD
+git archive --prefix=ahfriedman-bismuth/ --format zip -o "ahfriedman-bismuth-$(git rev-parse --short HEAD).zip" HEAD

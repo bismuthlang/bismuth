@@ -8,7 +8,7 @@ set (RUNTIME_DIR ${CMAKE_SOURCE_DIR}/src/runtime)
 # 
 #################################################
 set (RUNTIME_SOURCES
-  ${RUNTIME_DIR}/wpl_runtime.c
+  ${RUNTIME_DIR}/bismuth_runtime.c
 )
 
 
@@ -16,7 +16,7 @@ set (RUNTIME_SOURCES
 
 ###################################################
 #
-# PRISM Core Includes # FIXME: FIND A WAY TO PREVENT THSE FROM BEING ACCESSED BY USERS DIRECTLY!
+# Bismuth Core Includes # FIXME: FIND A WAY TO PREVENT THSE FROM BEING ACCESSED BY USERS DIRECTLY!
 #
 ###################################################
 

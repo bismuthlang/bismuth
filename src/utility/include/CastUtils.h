@@ -1,4 +1,7 @@
 #pragma once
+#include <optional>
+#include <variant>
+#include "TypedAST.h"
 
 template <typename T>
 std::optional<T> anyOpt2Val(const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available
@@ -19,7 +22,7 @@ std::optional<T> any2Opt(const std::any &a) // https://stackoverflow.com/questio
 
 
 template <typename T>
-std::variant<T *, ErrorChain*> anyOpt2VarError(WPLErrorHandler errorHandler, const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available
+std::variant<T *, ErrorChain*> anyOpt2VarError(BismuthErrorHandler errorHandler, const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available
 {
     std::optional<std::variant<T *, ErrorChain*>> opt = any2Opt<std::variant<T *, ErrorChain*>>(a);
 

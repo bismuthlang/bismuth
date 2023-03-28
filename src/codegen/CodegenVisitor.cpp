@@ -63,25 +63,6 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
      * Extra checks depending on compiler flags
      *******************************************/
 
-    if (flags & CompilerFlags::NO_RUNTIME)
-    {
-        /*
-         * Need to create main method and invoke program()
-         * Based on semantic analysis, both of these should be defined.
-         *
-         * This will segfault if not found, but, as stated, that should be impossible.
-         */
-
-        FunctionType *mainFuncType = FunctionType::get(Int32Ty, {Int32Ty, Int8PtrPtrTy}, false);
-        Function *mainFunc = Function::Create(mainFuncType, GlobalValue::ExternalLinkage, "main", module);
-
-        // Create block to attach to main
-        BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", mainFunc);
-        builder->SetInsertPoint(bBlk);
-
-        builder->CreateRet(builder->CreateCall(module->getFunction("program"), {}));
-    }
-
     return std::nullopt;
 }
 
@@ -103,7 +84,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     }
 
     Value *sumVal = optVal.value();
-    std::cout << "106" << std::endl;
+    
     llvm::AllocaInst *SumPtr = CreateEntryBlockAlloc(sumVal->getType(), "");
     builder->CreateStore(sumVal, SumPtr);
 
@@ -138,7 +119,6 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
         llvm::Type *ty = localSym->type->getLLVMType(module);
 
         // Can skip global stuff
-        std::cout << "141" << std::endl;
         llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, localSym->getIdentifier());
         localSym->val = v;
         // varSymbol->val = v;
@@ -206,7 +186,7 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
     // for (std::pair<Symbol *, TypedNode *> caseNode : n->cases)
     for (unsigned int i = 0; i < n->cases.size(); i++)
     {
-        // TODO: find a way to error handle cases where coreetc block DNE or something
+        // TODO: find a way to error handle cases where correct block DNE or something
         BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(i + 1));
 
         builder->SetInsertPoint(matchBlk);
@@ -381,16 +361,14 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
 
     Symbol *sym = n->sym;
 
-    Value *stoVal = valOpt.value(); // FIXMME: STILL NEEDS TO BE DONE
+    Value *stoVal = valOpt.value();
 
     // Same as return node's
     if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->lType))
     {
         stoVal = correctSumAssignment(sum, stoVal);
     }
-
-    // FIXME: WILL NEED TO FREE! (AND DO SO WITHOUT MESSING UP POINTERS.... but we dont have pointers quite yet.... I think)
-
+    
     std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
     {
         if (n->lType->requiresDeepCopy())
@@ -401,8 +379,8 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
                 errorHandler.addError(n->getStart(), "Failed to generate clone fn for type: " + n->lType->toString());
                 return std::nullopt;
             }
-            Value * addrMap = getNewAddressMap(); 
-            stoVal = builder->CreateCall(fn, {stoVal, addrMap}); // FIXME: NEED TO CREATE MAP!
+            Value *addrMap = getNewAddressMap();
+            stoVal = builder->CreateCall(fn, {stoVal, addrMap});
             deleteAddressMap(addrMap);
             // return v;
         }
@@ -512,6 +490,73 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
+
+    return std::nullopt;
+}
+
+std::optional<Value *> CodegenVisitor::visit(ProgramAcceptWhileNode *n)
+{
+    // Very similar to regular loop & Accept while
+    // FIXME: Somewhat inefficient due to dequeuing 
+
+    Symbol *sym = n->sym;
+
+    if (!sym->val)
+    {
+        errorHandler.addError(n->getStart(), "Could not find value for channel in accept: " + n->sym->getIdentifier());
+        return std::nullopt;
+    }
+
+    Value *chanVal = sym->val.value();
+
+    auto parent = builder->GetInsertBlock()->getParent();
+    BasicBlock *condBlk = BasicBlock::Create(module->getContext(), "aw-cond", parent);
+    BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "aw-then");
+
+    BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop");
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
+
+    builder->CreateBr(condBlk);
+    builder->SetInsertPoint(condBlk);
+    std::optional<Value *> condOpt = AcceptType(this, n->cond);
+
+    if (!condOpt)
+    {
+        errorHandler.addError(n->getStart(), "521 - Failed to generate code for: " + n->cond->toString());
+        return std::nullopt;
+    }
+
+    builder->CreateCondBr(condOpt.value(), thenBlk, restBlk);
+    condBlk = builder->GetInsertBlock();
+
+    parent->getBasicBlockList().push_back(thenBlk);
+    builder->SetInsertPoint(thenBlk);
+    Value *check = builder->CreateCall(getShouldAcceptWhileLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
+    
+    builder->CreateCondBr(check, loopBlk, restBlk);
+    
+    thenBlk = builder->GetInsertBlock();
+
+    /*
+     * In the loop block
+     */
+    parent->getBasicBlockList().push_back(loopBlk);
+    builder->SetInsertPoint(loopBlk);
+    for (auto e : n->blk->exprs)
+    {
+        AcceptType(this, e);
+    }
+
+    // Check if we need to loop back again...
+    builder->CreateBr(condBlk);
+    loopBlk = builder->GetInsertBlock();
+
+    /*
+     * Out of loop
+     */
+    parent->getBasicBlockList().push_back(restBlk);
+    builder->SetInsertPoint(restBlk);
+    // builder->CreateCall(getPopEndLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
 
     return std::nullopt;
 }
@@ -736,7 +781,7 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
 /**
  * @brief Generates code for Logical Ands
  *
- * Tested in: test2.prism
+ * Tested in: test2.bismuth
  *
  * @param ctx LogAndExprContext to generate this from
  * @return std::optional<Value *> The resulting value or {} if errors.
@@ -808,7 +853,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
 /**
  * @brief Generates code for Logical Ors.
  *
- * Tested in: test2.prism
+ * Tested in: test2.bismuth
  *
  * @param ctx Context to generate code from
  * @return std::optional<Value *> The resulting value or {} if errors.
@@ -971,10 +1016,10 @@ std::optional<Value *> CodegenVisitor::visit(DerefBoxNode *n)
     }
 
     Value *ptrVal = baseOpt.value();
-    return n->is_rvalue ? builder->CreateLoad(ptrVal->getType()->getPointerElementType(), ptrVal) : ptrVal; 
+    return n->is_rvalue ? builder->CreateLoad(ptrVal->getType()->getPointerElementType(), ptrVal) : ptrVal;
 
-// return loaded; 
-    // return n->is_rvalue ? builder->CreateLoad(loaded->getType()->getPointerElementType(), loaded) : loaded; 
+    // return loaded;
+    // return n->is_rvalue ? builder->CreateLoad(loaded->getType()->getPointerElementType(), loaded) : loaded;
 }
 
 std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
@@ -1024,7 +1069,7 @@ std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
 
     if (!symbol->type)
     {
-        errorHandler.addError(n->getStart(), "Type for extern statement not correctly bound! Probably a compiler errror.");
+        errorHandler.addError(n->getStart(), "Type for extern statement not correctly bound! Probably a compiler error.");
         return std::nullopt;
     }
 
@@ -1118,11 +1163,12 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
 
         if (index == 0)
         {
-            Value *corrected = builder->CreateBitCast(stoVal, varSymType->getLLVMType(module));
-            builder->CreateStore(corrected, v);
+            // Value *corrected = builder->CreateBitCast(stoVal, varSymType->getLLVMType(module));
+            // builder->CreateStore(corrected, v);
+            Value *corrected = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
+            builder->CreateStore(stoVal, corrected);
             return std::nullopt;
         }
-
         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
 
         builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
@@ -1154,7 +1200,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
             return std::nullopt;
         }
 
-        // For each of the variabes being assigned to that value
+        // For each of the variables being assigned to that value
         for (Symbol *varSymbol : e->syms)
         {
             //  Get the type of the symbol
@@ -1163,7 +1209,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
             // Branch depending on if the var is global or not
             if (varSymbol->isGlobal)
             {
-                // If it is global, then we need to insert a new gobal variable of this type.
+                // If it is global, then we need to insert a new global variable of this type.
                 // A lot of these options are done to make it match what a C program would
                 // generate for global vars
                 module->getOrInsertGlobal(varSymbol->getIdentifier(), ty);
@@ -1209,8 +1255,9 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
 
                         if (index == 0)
                         {
-                            Value *corrected = builder->CreateBitCast(stoVal, varSymbol->type->getLLVMType(module));
-                            builder->CreateStore(corrected, v);
+                            // Value *corrected = builder->CreateBitCast(stoVal, varSymbol->type->getLLVMType(module));
+                            Value *corrected = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
+                            builder->CreateStore(stoVal, corrected);
                             return std::nullopt;
                         }
 
@@ -1314,7 +1361,6 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
     builder->SetInsertPoint(thenBlk);
     for (auto e : n->trueBlk->exprs)
     {
-        // e->accept(this);
         AcceptType(this, e);
     }
 
@@ -1531,7 +1577,7 @@ std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
     // Bind all of the arguments
     for (auto &arg : fn->args())
     {
-        // Get the argumengt number (just seems easier than making my own counter)
+        // Get the argument number (just seems easier than making my own counter)
         int argNumber = arg.getArgNo();
 
         // Get the argument's type

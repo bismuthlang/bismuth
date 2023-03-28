@@ -7,14 +7,16 @@
  *  ProtocolRecv
  * 
  * ********************************************/
-const Protocol *ProtocolRecv::getInverse() const
+const Protocol *ProtocolRecv::getInverse() const //FIXME: ADD GUARD?
 {
     return new ProtocolSend(this->recvType);
 }
 
 const Protocol *ProtocolRecv::getCopy() const
 {
-    return new ProtocolRecv(this->recvType);
+    auto ans = new ProtocolRecv(this->recvType); 
+    ans->guardCount = this->guardCount;
+    return ans;
 }
 
 
@@ -30,7 +32,9 @@ const Protocol *ProtocolSend::getInverse() const
 
 const Protocol *ProtocolSend::getCopy() const
 {
-    return new ProtocolSend(this->sendType);
+    auto ans = new ProtocolSend(this->sendType);; 
+    ans->guardCount = this->guardCount;
+    return ans;
 }
 
 
@@ -46,7 +50,9 @@ const Protocol *ProtocolWN::getInverse() const
 
 const Protocol *ProtocolWN::getCopy() const
 {
-    return new ProtocolWN(toSequence(this->proto->getCopy()));
+    auto ans = new ProtocolWN(toSequence(this->proto->getCopy())); 
+    ans->guardCount = this->guardCount;
+    return ans;
 }
 
 
@@ -62,7 +68,9 @@ const Protocol *ProtocolOC::getInverse() const
 
 const Protocol *ProtocolOC::getCopy() const
 {
-    return new ProtocolOC(toSequence(this->proto->getCopy()));
+    auto ans = new ProtocolOC(toSequence(this->proto->getCopy())); 
+    ans->guardCount = this->guardCount;
+    return ans;
 }
 
 
@@ -71,7 +79,7 @@ const Protocol *ProtocolOC::getCopy() const
  *  ProtocolSequence
  * 
  * ********************************************/
-const Protocol *ProtocolSequence::getInverse() const
+const ProtocolSequence *ProtocolSequence::getInverse() const
 {
     vector<const Protocol *> invs;
 
@@ -92,7 +100,9 @@ const ProtocolSequence *ProtocolSequence::getCopy() const
         invs.push_back(p->getCopy());
     }
 
-    return new ProtocolSequence(invs);
+    auto ans = new ProtocolSequence(invs); 
+    ans->guardCount = this->guardCount;
+    return ans;
 }
 
 
@@ -103,7 +113,7 @@ const ProtocolSequence *ProtocolSequence::getCopy() const
  * 
  * ********************************************/
 
-const Protocol *ProtocolIChoice::getInverse() const
+const ProtocolEChoice *ProtocolIChoice::getInverse() const
 {
     std::set<const ProtocolSequence *, ProtocolCompare> opts;
 
@@ -124,7 +134,9 @@ const Protocol *ProtocolIChoice::getCopy() const
         opts.insert(toSequence(p->getCopy()));
     }
 
-    return new ProtocolIChoice(opts);
+    auto ans = new ProtocolIChoice(opts); 
+    ans->guardCount = this->guardCount;
+    return ans;
 }
 
 
@@ -155,5 +167,7 @@ const Protocol *ProtocolEChoice::getCopy() const
         opts.insert(toSequence(p->getCopy()));
     }
 
-    return new ProtocolEChoice(opts);
+    auto ans = new ProtocolEChoice(opts); 
+    ans->guardCount = this->guardCount;
+    return ans;
 }

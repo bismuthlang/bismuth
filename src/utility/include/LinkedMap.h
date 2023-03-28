@@ -3,7 +3,6 @@
 #include <vector>   // Vectors
 #include <map>      // Map
 #include <optional> // Optionals
-#include <iostream> // cout
 
 using namespace std;
 

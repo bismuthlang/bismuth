@@ -120,7 +120,7 @@ define program :: c : Channel<-int> = {
     return -1; 
 }
 
-(*
+/*
 proc procedurezero () {
     int a := 0; 
 
@@ -130,4 +130,4 @@ proc procedurezero () {
     }
 
 }
-*)
+*/

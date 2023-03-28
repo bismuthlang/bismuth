@@ -1,0 +1,102 @@
+extern int func printf(str s, ...);
+
+define struct Empty {}
+define struct Value {int v;}
+define enum OptVal {Empty, Value}
+
+define Database :: c : Channel<
+                        !ExternalChoice<
+                              +int;-OptVal,
+                              +int;+Value,
+                              +int>> = {
+
+  Value[10] data; 
+
+  accept(c) {
+    #printf("36\n");
+    offer c 
+      | +int;-OptVal => { 
+            #printf("39\n");
+            c.send(data[c.recv()])
+            #printf("41\n");
+        }
+      | +int;+Value => {
+            #printf("44\n");
+            var key := c.recv(); 
+            #printf("46\n");
+            data[key] := c.recv(); 
+            #printf("48\n");
+        }
+      | +int => {
+          #printf("51\n");
+          var k := c.recv();
+        }
+  }
+}
+
+define program :: c : Channel<-int> = {
+    var db := exec Database;
+    var rqs := exec requests;
+
+    var setRq := exec writeRequest; 
+   
+    accept(setRq) {
+        more(db); 
+        db[-int;-Value]
+        db.send(setRq.recv())
+        db.send(setRq.recv())
+      }
+
+    #printf("67\n");
+    accept(rqs) {
+   
+      more(db)
+      offer rqs 
+        | +int;-OptVal => { 
+            #printf("72\n"); 
+            db[-int;+OptVal] 
+            #printf("72a\n"); 
+            db.send(rqs.recv()) 
+            #printf("72b\n"); 
+            var a := db.recv();
+            #printf("72bb\n"); 
+            rqs.send(a) 
+            #printf("72c\n");
+          } 
+        | +int;+Value => { db[-int;-Value] db.send(rqs.recv()) db.send(rqs.recv()) }
+        | +int => { 
+            printf("72\n"); 
+            db[-int] 
+            db.send(rqs.recv())
+          }
+  
+    }
+
+    weaken(db)
+    c.send(0);
+}
+
+
+define requests :: c : Channel<
+                        ?InternalChoice<
+                              -int;+OptVal,
+                              -int;-Value,
+                              -int>> = {
+
+    
+    more(c)
+    c[-int;+OptVal]
+    c.send(0)
+    var opt := c.recv(); 
+
+    weaken(c)
+}
+
+define writeRequest :: c : Channel<?(-int;-Value)> = {
+    
+    more(c)
+    c.send(4)
+    c.send(Value::init(2))
+    
+    weaken(c)
+}

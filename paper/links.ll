@@ -1,8 +1,8 @@
-; ModuleID = 'WPLC.ll'
-source_filename = "WPLC.ll"
+; ModuleID = 'BismuthProgram'
+source_filename = "BismuthProgram"
 
-@0 = private unnamed_addr constant [4 x i8] c"54\0A\00", align 1
-@1 = private unnamed_addr constant [4 x i8] c"57\0A\00", align 1
+@0 = private unnamed_addr constant [16 x i8] c"bool (correct)\0A\00", align 1
+@1 = private unnamed_addr constant [17 x i8] c"int (incorrect)\0A\00", align 1
 
 define void @linkRecvInt(i32 %0, i32 %1) {
 entry:
@@ -44,8 +44,8 @@ entry:
 
 define void @foo(i32 %0) {
 entry:
-  %b1 = alloca i1, align 1
   %i = alloca i32, align 4
+  %b1 = alloca i1, align 1
   %b = alloca i32, align 4
   %a = alloca i32, align 4
   %c = alloca i32, align 4
@@ -72,21 +72,21 @@ entry:
 tagBranch1:                                       ; preds = %entry
   %11 = load i32, i32* %a, align 4
   %12 = call i8* @ReadChannel(i32 %11)
-  %13 = bitcast i8* %12 to i32*
-  %14 = load i32, i32* %13, align 4
+  %13 = bitcast i8* %12 to i1*
+  %14 = load i1, i1* %13, align 1
   call void @free(i8* %12)
-  store i32 %14, i32* %i, align 4
-  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @0, i32 0, i32 0))
+  store i1 %14, i1* %b1, align 1
+  %15 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0))
   br label %matchcont
 
 tagBranch2:                                       ; preds = %entry
   %16 = load i32, i32* %a, align 4
   %17 = call i8* @ReadChannel(i32 %16)
-  %18 = bitcast i8* %17 to i1*
-  %19 = load i1, i1* %18, align 1
+  %18 = bitcast i8* %17 to i32*
+  %19 = load i32, i32* %18, align 4
   call void @free(i8* %17)
-  store i1 %19, i1* %b1, align 1
-  %20 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([4 x i8], [4 x i8]* @1, i32 0, i32 0))
+  store i32 %19, i32* %i, align 4
+  %20 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @1, i32 0, i32 0))
   br label %matchcont
 
 matchcont:                                        ; preds = %tagBranch2, %tagBranch1, %entry

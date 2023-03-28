@@ -1,5 +1,8 @@
-; ModuleID = 'WPLC.ll'
-source_filename = "WPLC.ll"
+; ModuleID = 'BismuthProgram'
+source_filename = "BismuthProgram"
+
+@0 = private unnamed_addr constant [16 x i8] c"bool (correct)\0A\00", align 1
+@1 = private unnamed_addr constant [17 x i8] c"int (incorrect)\0A\00", align 1
 
 define void @linkRecvInt(i32 %0, i32 %1) {
 entry:
@@ -66,18 +69,20 @@ entry:
 
 tagBranch1:                                       ; preds = %entry
   %11 = load i32, i32* %b, align 4
-  call void @WriteProjection(i32 %11, i32 2)
+  call void @WriteProjection(i32 %11, i32 1)
   %a1 = load i32, i32* %a, align 4
   %b2 = load i32, i32* %b, align 4
-  call void @linkRecvInt(i32 %a1, i32 %b2)
+  call void @linkRecvBool(i32 %a1, i32 %b2)
+  %12 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0))
   br label %matchcont
 
 tagBranch2:                                       ; preds = %entry
-  %12 = load i32, i32* %b, align 4
-  call void @WriteProjection(i32 %12, i32 1)
+  %13 = load i32, i32* %b, align 4
+  call void @WriteProjection(i32 %13, i32 2)
   %a3 = load i32, i32* %a, align 4
   %b4 = load i32, i32* %b, align 4
-  call void @linkRecvBool(i32 %a3, i32 %b4)
+  call void @linkRecvInt(i32 %a3, i32 %b4)
+  %14 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([17 x i8], [17 x i8]* @1, i32 0, i32 0))
   br label %matchcont
 
 matchcont:                                        ; preds = %tagBranch2, %tagBranch1, %entry

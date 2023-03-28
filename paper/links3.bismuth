@@ -1,0 +1,48 @@
+extern int func printf(str s, ...);
+
+define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
+    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
+    
+    offer a 
+        | +int => {
+                b[-int]
+                b.send(a.recv())
+                a.send("5")
+                printf("int (incorrect)\n");
+            }
+        | +boolean => {
+                b[-boolean]
+                b.send(a.recv())
+                a.send("5")
+                printf("bool (correct)\n");
+            }
+}
+
+define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+    c[-boolean]
+    c.send(false)
+    var xyz := c.recv(); 
+}
+
+define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+    c.case(
+        +boolean => {
+            boolean b := c.recv(); 
+        }
+        +int => {
+            int i := c.recv(); 
+        }
+    )
+}
+
+define program :: c : Channel<-int> = {
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    linker.send(l1)
+    linker.send(l2)
+
+    c.send(0)
+}

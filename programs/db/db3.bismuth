@@ -1,0 +1,97 @@
+extern int func printf(str s, ...);
+
+define struct Value {int v;}
+
+define Database :: c : Channel<
+                        !ExternalChoice<
+                              +int;-int,
+                              +int;+Value,
+                              +int>> = {
+
+
+  accept(c) {
+    #printf("36\n");
+    offer c 
+      | +int;-int => { 
+            printf("16\n");
+            c.send(c.recv())
+        }
+      | +int;+Value => {
+            printf("20\n");
+            var key := c.recv(); 
+            var val := c.recv(); 
+        }
+      | +int => {
+          printf("25\n");
+          var k := c.recv();
+        }
+  }
+}
+
+define program :: c : Channel<-int> = {
+    var db := exec Database;
+    var rqs := exec requests;
+
+    var setRq := exec writeRequest; 
+   
+    accept(setRq) {
+        more(db); 
+        db[-int;-Value]
+        db.send(setRq.recv())
+        db.send(setRq.recv())
+      }
+
+    #printf("67\n");
+    accept(rqs) {
+   
+      more(db)
+      offer rqs 
+        | +int;-int => { 
+            printf("50\n"); 
+            db[-int;+int] 
+            db.send(rqs.recv()) 
+            var a := db.recv();
+            rqs.send(a) 
+          } 
+        | +int;+Value => { 
+          printf("57\n"); 
+            db[-int;-Value] 
+            db.send(rqs.recv()) 
+            db.send(rqs.recv()) 
+          }
+        | +int => { 
+            printf("72\n"); 
+            db[-int] 
+            db.send(rqs.recv())
+          }
+  
+    }
+
+    weaken(db)
+    c.send(0);
+}
+
+
+define requests :: c : Channel<
+                        ?InternalChoice<
+                              -int;+int,
+                              -int;-Value,
+                              -int>> = {
+
+    
+    more(c)
+    c[-int;+int]
+    c.send(0)
+    var opt := c.recv(); 
+
+    weaken(c)
+}
+
+define writeRequest :: c : Channel<?(-int;-Value)> = {
+    
+    more(c)
+    c.send(4)
+    c.send(Value::init(2))
+    
+    weaken(c)
+}

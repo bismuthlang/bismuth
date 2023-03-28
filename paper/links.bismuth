@@ -1,0 +1,57 @@
+extern int func printf(str s, ...);
+
+define func linkRecvInt (Channel<+int> a, Channel<-int> b) { 
+    b.send(a.recv())
+    return;
+}
+
+define func linkRecvBool (Channel<+boolean> a, Channel<-boolean> b) {
+    b.send(a.recv())
+    return; 
+}
+
+define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>>;+Channel<InternalChoice<-int, -boolean>>> = {
+    Channel<ExternalChoice<+int, + boolean>> a := c.recv(); 
+    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
+
+    a.case(
+        +int => {
+            int i := a.recv(); 
+            printf("int (incorrect)\n");
+        }
+        +boolean => {
+            boolean b := a.recv(); 
+            printf("bool (correct)\n");
+        }
+    )
+
+    b[-int]
+    b.send(0)
+}
+
+define bar1 :: c : Channel<InternalChoice<-int, -boolean>> = {
+    c[-boolean]
+    c.send(false)
+}
+
+define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+    c.case(
+        +boolean => {
+            boolean b := c.recv(); 
+        }
+        +int => {
+            int i := c.recv(); 
+        }
+    )
+}
+
+define program :: c : Channel<-int> = {
+    Channel<ExternalChoice<+int, +boolean>> l1 := exec bar1; 
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+
+    Channel<-Channel<ExternalChoice<+int, +boolean>>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    linker.send(l1)
+    linker.send(l2)
+
+    c.send(0)
+}

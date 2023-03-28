@@ -6,8 +6,6 @@ include(Utility)
 include(Codegen)
 include(LLVM)
 
-# TODO: IS PROPERTYMANAGER IN HERE SOMEWHERE? IF SO, SHOULD WE REMOVE IT? 
-
 ####################################################################
 # See: https://cmake.org/cmake/help/latest/command/find_package.html
 ####################################################################
@@ -34,7 +32,7 @@ include_directories(codegen_lib
   ${ANTLR_INCLUDE}
   ${ANTLR_GENERATED_DIR}
   ${SYMBOL_INCLUDE}
-  ${SEMANTIC_INCLUDE}
+  # ${SEMANTIC_INCLUDE}
   ${UTILITY_INCLUDE}
   ${CODEGEN_INCLUDE}
   ${LLVM_BINARY_DIR}/include

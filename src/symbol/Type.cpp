@@ -167,7 +167,7 @@ bool ProtocolSequence::contract() const
 
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = wn->getInnerProtocol()->steps;
-        // std::cout << "CONT 152 " << wn->getInnerProtocol()->toString() << std::endl; 
+        
         mthis->steps.insert(steps.begin(), other.begin(), other.end()); //FIXME: WE PROBABLY NEED TO DO BETTER FLATTENING!
         return true;
     }
@@ -177,7 +177,6 @@ bool ProtocolSequence::contract() const
 
 bool ProtocolSequence::weaken() const
 {
-    // std::cout << "WEAK 162 " <<this->toString() << std::endl; 
     if (isWN())
     {
         if(steps.front()->isGuarded() || this->isGuarded())
@@ -190,32 +189,6 @@ bool ProtocolSequence::weaken() const
 
     return false;
 }
-
-// bool ProtocolSequence::isWNWN() const
-// {
-//     if (isComplete())
-//         return false;
-//     const Protocol *proto = steps.front();
-//     if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto))
-//     {
-//         return wn->getInnerProtocol()->isWN();
-//     }
-
-//     return false;
-// }
-
-// optional<const ProtocolSequence *> ProtocolSequence::shearLoop() const
-// {
-//     if (isWNWN())
-//     {
-//         const Protocol *proto = steps.front();
-//         const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto);
-
-//         return toSequence(wn->getInnerProtocol()->getCopy());
-//     }
-
-//     return std::nullopt;
-// }
 
 bool ProtocolSequence::isOC() const
 {
@@ -244,6 +217,37 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
 
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         mthis->steps.erase(steps.begin());
+
+        return ans;
+    }
+
+    return std::nullopt;
+}
+
+bool ProtocolSequence::isOCorGuarded() const
+{
+    if (isComplete())
+        return false;
+    const Protocol *proto = steps.front();
+
+    if (const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto))
+    {
+        return true;
+    }
+
+    return false;
+}
+
+optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
+{
+    if (isOCorGuarded())
+    {
+        const Protocol *proto = steps.front();
+        const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
+        const ProtocolSequence *ans = toSequence(wn->getInnerProtocol()->getCopy());
+
+        // ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
+        // mthis->steps.erase(steps.begin());
 
         return ans;
     }

@@ -1,0 +1,38 @@
+extern int func printf(...);
+
+# int func fib(int n) {
+define fib :: c : Channel<+int;-int> = {
+  int n := c.recv(); 
+
+  if(n == 0 | n == 1) {
+    # return n;
+    c.send(1) exit
+  }
+
+  Channel<-int;+int> f1 := exec fib; 
+  Channel<-int;+int> f2 := exec fib; 
+
+  f1.send(n - 1)
+  f2.send(n - 2)
+
+  int v1 := f1.recv(), v2 := f2.recv();
+
+  c.send(v1 + v2)
+
+  # return fib(n - 1) + fib(n - 2);
+}
+
+define program :: c : Channel<-int> = {
+ var current := 1;        
+ while current < 20 { 
+  #  var i := fib(current); 
+    Channel<-int;+int> f := exec fib; 
+    f.send(current)
+    int i := f.recv();
+
+   printf("The %dth fibonacci number is: %d\n", current, i);
+   current := current + 1; 
+ }
+#  return -1;
+  c.send(-1)
+}

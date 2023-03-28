@@ -10,11 +10,11 @@
  */
 #pragma once
 #include "antlr4-runtime.h"
-#include "WPLBaseVisitor.h"
+#include "BismuthBaseVisitor.h"
 #include "CompilerFlags.h"
 
-#include "WPLErrorHandler.h"
-#include "SemanticVisitor.h"
+#include "BismuthErrorHandler.h"
+// #include "SemanticVisitor.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
@@ -29,6 +29,7 @@
 #include <regex>
 
 #include <variant>
+#include <optional>
 
 #include "TypedAST.h"
 
@@ -100,6 +101,7 @@ public:
     std::optional<Value *> visit(ProgramWeakenNode *n) override;
     std::optional<Value *> visit(ProgramExecNode *n) override;
     std::optional<Value *> visit(ProgramAcceptNode *n) override;
+    std::optional<Value *> visit(ProgramAcceptWhileNode *n) override;
     // std::optional<Value *> visit(DefineEnumNode *n) override;
     // std::optional<Value *> visit(DefineStructNode *n) override;
     std::optional<Value *> visit(InitProductNode *n) override;
@@ -146,7 +148,7 @@ public:
     {
         BasicBlock *ins = builder->GetInsertBlock();
 
-        // Get the function name. Done separatley from sym in case the symbol isn't found
+        // Get the function name. Done separately from sym in case the symbol isn't found
         std::string funcId = n->name;
 
         const TypeProgram *inv = n->getType();
@@ -158,13 +160,12 @@ public:
         inv->setName(fn->getName().str());
 
         // Get the parameter list context for the invokable
-        // WPLParser::ParameterListContext *paramList = ctx->paramList;
+        // BismuthParser::ParameterListContext *paramList = ctx->paramList;
         // Create basic block
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
 
         // Bind all of the arguments
-        std::cout << "167" << std::endl;
         llvm::AllocaInst *v = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
         n->channelSymbol->val = v;
 
@@ -173,7 +174,7 @@ public:
         /*
         for (auto &arg : fn->args())
         {
-            // Get the argumengt number (just seems easier than making my own counter)
+            // Get the argument number (just seems easier than making my own counter)
             int argNumber = arg.getArgNo();
 
             // Get the argument's type
@@ -182,10 +183,10 @@ public:
             // Get the argument name (This even works for arrays!)
             std::string argName = paramList->params.at(argNumber)->getText();
 
-            // Create an allocation for the argumentr
+            // Create an allocation for the argument
             llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
 
-            // Try to find the parameter's bnding to determine what value to bind to it.
+            // Try to find the parameter's binding to determine what value to bind to it.
             std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber));
 
             if (!symOpt)
@@ -202,13 +203,14 @@ public:
         */
 
         // Get the codeblock for the PROC/FUNC
-        // WPLParser::BlockContext *block = ctx->block();
+        // BismuthParser::BlockContext *block = ctx->block();
 
         // Generate code for the block
         for (auto e : n->block->exprs)
         {
             // e->accept(this);
             this->accept(e);
+            // module->dump();
         }
 
         // If we are a PROC, make sure to add a return type (if we don't already have one)
@@ -404,6 +406,25 @@ public:
                 {Int32Ty},
                 false));
     }
+    llvm::FunctionCallee getShouldAcceptWhileLoop()
+    {
+        return module->getOrInsertFunction(
+            "ShouldAcceptWhileLoop",
+            llvm::FunctionType::get(
+                Int1Ty,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getPopEndLoop()
+    {
+        return module->getOrInsertFunction(
+            "PopEndLoop",
+            llvm::FunctionType::get(
+                VoidTy,
+                {Int32Ty},
+                false));
+    }
 
     llvm::FunctionCallee getContractChannel()
     {
@@ -449,7 +470,7 @@ public:
         if (index != 0)
         {
             llvm::Type *sumTy = sum->getLLVMType(module);
-            std::cout << "452" << std::endl;
+
             llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
 
             Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
@@ -464,13 +485,12 @@ public:
             return builder->CreateLoad(sumTy, alloc);
         }
 
-        return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cass...
+        return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cases...
     }
 
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst * CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
-        std::cout << "471 " << identifier << std::endl;
         llvm::Function* fn = builder->GetInsertBlock()->getParent();
 
         // if (fn != nullptr)
@@ -479,7 +499,6 @@ public:
             // {
                 // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
                 IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-                std::cout << "480 " << identifier << std::endl;
                 return tempBuilder.CreateAlloca(ty, 0, identifier); 
             // }
 
@@ -491,7 +510,7 @@ public:
 private:
     int flags;
 
-    WPLErrorHandler errorHandler = WPLErrorHandler(CODEGEN);
+    BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN);
 
     // LLVM
     LLVMContext *context;
