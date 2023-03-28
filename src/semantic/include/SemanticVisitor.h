@@ -485,8 +485,6 @@ public:
         std::optional<std::deque<DeepRestData *> *> deepRest = restBindings->getBinding(ctx);
 
         std::vector<TypedNode *> cases;
-        // std::vector<TypedNode *> restVec;
-        // bool restVecFilled = false;
 
         std::vector<Symbol *> syms = stmgr->getAvailableLinears(true);                // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
         std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
@@ -661,8 +659,6 @@ public:
             }
         }
 
-        // return Types::UNDEFINED;
-        // return ty.value();
         return ConditionalData(cases);
     }
 
