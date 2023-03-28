@@ -149,7 +149,6 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
     // Visit the statements contained in the unit
     for (auto e : ctx->defs)
     {
-        // e->accept(this);
         if (BismuthParser::DefineProgramContext *fnCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
             std::variant<ProgramDefNode *, ErrorChain *> progOpt = visitInvokeable(fnCtx->defineProc()); // e->accept(this);
@@ -515,8 +514,6 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     /*
      * Check that the symbol is of array type.
      */
-
-    // Symbol *sym = opt.value();
     FieldAccessNode *field = std::get<FieldAccessNode *>(opt);
 
     if (const TypeArray *arr = dynamic_cast<const TypeArray *>(field->getType()))
