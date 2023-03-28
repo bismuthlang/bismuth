@@ -1924,7 +1924,7 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][pr
   // REQUIRE_FALSE(sv->hasErrors(ERROR));
   auto TypedOpt = sv->visitCtx(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  REQUIRE(std::holds_alternative<CompilationUnitNode *>(TypedOpt));
+  REQUIRE(std::holds_alternative<TCompilationUnitNode *>(TypedOpt));
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][program][local-function]")
@@ -1966,7 +1966,7 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
   auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
-  REQUIRE(std::holds_alternative<CompilationUnitNode *>(TypedOpt));
+  REQUIRE(std::holds_alternative<TCompilationUnitNode *>(TypedOpt));
 }
 
 TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")

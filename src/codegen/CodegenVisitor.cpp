@@ -1,6 +1,6 @@
 #include "CodegenVisitor.h"
 
-std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
+std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
 {
     /***********************************
      *
@@ -19,18 +19,18 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
      ***********************************/
     for (auto e : n->defs)
     {
-        if (std::holds_alternative<ProgramDefNode *>(e))
+        if (std::holds_alternative<TProgramDefNode *>(e))
         {
-            ProgramDefNode *octx = std::get<ProgramDefNode *>(e);
+            TProgramDefNode *octx = std::get<TProgramDefNode *>(e);
 
             const TypeProgram *type = octx->getType();
 
             Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->name, module);
             type->setName(fn->getName().str());
         }
-        else if (std::holds_alternative<LambdaConstNode *>(e))
+        else if (std::holds_alternative<TLambdaConstNode *>(e))
         {
-            LambdaConstNode *octx = std::get<LambdaConstNode *>(e);
+            TLambdaConstNode *octx = std::get<TLambdaConstNode *>(e);
 
             const TypeInvoke *type = octx->getType();
 
@@ -47,14 +47,14 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
     for (auto e : n->defs)
     {
         // Generate code for statement
-        if (std::holds_alternative<ProgramDefNode *>(e))
+        if (std::holds_alternative<TProgramDefNode *>(e))
         {
-            ProgramDefNode *a = std::get<ProgramDefNode *>(e);
+            TProgramDefNode *a = std::get<TProgramDefNode *>(e);
             AcceptType(this, a);
         }
-        else if (std::holds_alternative<LambdaConstNode *>(e))
+        else if (std::holds_alternative<TLambdaConstNode *>(e))
         {
-            LambdaConstNode *a = std::get<LambdaConstNode *>(e);
+            TLambdaConstNode *a = std::get<TLambdaConstNode *>(e);
             AcceptType(this, a);
         }
     }
@@ -66,7 +66,7 @@ std::optional<Value *> CodegenVisitor::visit(CompilationUnitNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
+std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
 {
     const TypeSum *sumType = n->matchType;
 
@@ -134,7 +134,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
         // altCtx->eval->accept(this);
         AcceptType(this, caseNode.second);
 
-        if (BlockNode *blkStmtCtx = dynamic_cast<BlockNode *>(caseNode.second))
+        if (TBlockNode *blkStmtCtx = dynamic_cast<TBlockNode *>(caseNode.second))
         {
             if (!endsInReturn(blkStmtCtx))
             {
@@ -142,7 +142,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
             }
             // if it ends in a return, we're good!
         }
-        else if (ReturnNode *retCtx = dynamic_cast<ReturnNode *>(caseNode.second))
+        else if (TReturnNode *retCtx = dynamic_cast<TReturnNode *>(caseNode.second))
         {
             // Similarly, we don't need to generate the branch
         }
@@ -163,7 +163,7 @@ std::optional<Value *> CodegenVisitor::visit(MatchStatementNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
+std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
 {
     auto origParent = builder->GetInsertBlock()->getParent();
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
@@ -199,7 +199,7 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
 
         AcceptType(this, caseNode);
 
-        if (BlockNode *blkStmtCtx = dynamic_cast<BlockNode *>(caseNode))
+        if (TBlockNode *blkStmtCtx = dynamic_cast<TBlockNode *>(caseNode))
         {
             if (!endsInReturn(blkStmtCtx))
             {
@@ -207,7 +207,7 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
             }
             // if it ends in a return, we're good!
         }
-        else if (ReturnNode *retCtx = dynamic_cast<ReturnNode *>(caseNode))
+        else if (TReturnNode *retCtx = dynamic_cast<TReturnNode *>(caseNode))
         {
             // Similarly, we don't need to generate the branch
         }
@@ -228,7 +228,7 @@ std::optional<Value *> CodegenVisitor::visit(ChannelCaseStatementNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ProgramProjectNode *n)
+std::optional<Value *> CodegenVisitor::visit(TProgramProjectNode *n)
 {
     Symbol *sym = n->sym;
 
@@ -245,7 +245,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramProjectNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
+std::optional<Value *> CodegenVisitor::visit(TInvocationNode *n)
 {
     vector<TypedNode *> argNodes = n->args;
 
@@ -302,7 +302,7 @@ std::optional<Value *> CodegenVisitor::visit(InvocationNode *n)
     return val;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
+std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode *n)
 {
     Symbol *sym = n->sym;
 
@@ -326,7 +326,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramRecvNode *n)
     return ans;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
+std::optional<Value *> CodegenVisitor::visit(TProgramExecNode *n)
 {
     std::optional<Value *> fnOpt = AcceptType(this, n->prog);
 
@@ -350,7 +350,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramExecNode *n)
     return val;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
+std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
 {
     std::optional<Value *> valOpt = AcceptType(this, n->expr);
     if (!valOpt)
@@ -410,7 +410,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramSendNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
+std::optional<Value *> CodegenVisitor::visit(TProgramContractNode *n)
 {
     Symbol *sym = n->sym;
 
@@ -427,7 +427,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramContractNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
+std::optional<Value *> CodegenVisitor::visit(TProgramWeakenNode *n)
 {
     Symbol *sym = n->sym;
 
@@ -444,7 +444,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramWeakenNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
+std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode *n)
 {
     // Very similar to regular loop
 
@@ -494,7 +494,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ProgramAcceptWhileNode *n)
+std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
 {
     // Very similar to regular loop & Accept while
     // FIXME: Somewhat inefficient due to dequeuing 
@@ -561,7 +561,7 @@ std::optional<Value *> CodegenVisitor::visit(ProgramAcceptWhileNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
+std::optional<Value *> CodegenVisitor::visit(TInitProductNode *n)
 {
     std::vector<Value *> args;
 
@@ -606,7 +606,7 @@ std::optional<Value *> CodegenVisitor::visit(InitProductNode *n)
     return loaded;
 }
 
-std::optional<Value *> CodegenVisitor::visit(InitBoxNode *n)
+std::optional<Value *> CodegenVisitor::visit(TInitBoxNode *n)
 {
     std::optional<Value *> valOpt = AcceptType(this, n->expr);
     if (!valOpt)
@@ -633,7 +633,7 @@ std::optional<Value *> CodegenVisitor::visit(InitBoxNode *n)
     return casted;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
+std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n)
 {
     std::optional<Value *> index = AcceptType(this, n->indexExpr);
 
@@ -659,12 +659,12 @@ std::optional<Value *> CodegenVisitor::visit(ArrayAccessNode *n)
     return ptr;
 }
 
-std::optional<Value *> CodegenVisitor::visit(IConstExprNode *n)
+std::optional<Value *> CodegenVisitor::visit(TIntConstExprNode *n)
 {
     return builder->getInt32(n->value);
 }
 
-std::optional<Value *> CodegenVisitor::visit(StringConstNode *n)
+std::optional<Value *> CodegenVisitor::visit(TStringConstNode *n)
 {
     // Create a constant to represent our string (now with the escape characters corrected)
     llvm::Constant *dat = llvm::ConstantDataArray::getString(module->getContext(), n->value);
@@ -693,7 +693,7 @@ std::optional<Value *> CodegenVisitor::visit(StringConstNode *n)
     return val;
 }
 
-std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
+std::optional<Value *> CodegenVisitor::visit(TUnaryExprNode *n)
 {
     switch (n->op)
     {
@@ -725,7 +725,7 @@ std::optional<Value *> CodegenVisitor::visit(UnaryExprNode *n)
     }
 }
 
-std::optional<Value *> CodegenVisitor::visit(BinaryArithNode *n)
+std::optional<Value *> CodegenVisitor::visit(TBinaryArithNode *n)
 {
     std::optional<Value *> lhs = AcceptType(this, n->lhs);
     std::optional<Value *> rhs = AcceptType(this, n->rhs);
@@ -749,7 +749,7 @@ std::optional<Value *> CodegenVisitor::visit(BinaryArithNode *n)
     }
 }
 
-std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
+std::optional<Value *> CodegenVisitor::visit(TEqExprNode *n)
 {
     std::optional<Value *> lhs = AcceptType(this, n->lhs);
     std::optional<Value *> rhs = AcceptType(this, n->rhs);
@@ -786,7 +786,7 @@ std::optional<Value *> CodegenVisitor::visit(EqExprNode *n)
  * @param ctx LogAndExprContext to generate this from
  * @return std::optional<Value *> The resulting value or {} if errors.
  */
-std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
+std::optional<Value *> CodegenVisitor::visit(TLogAndExprNode *n)
 {
     // Create the basic block for our conditions
     BasicBlock *current = builder->GetInsertBlock();
@@ -858,7 +858,7 @@ std::optional<Value *> CodegenVisitor::visit(LogAndExprNode *n)
  * @param ctx Context to generate code from
  * @return std::optional<Value *> The resulting value or {} if errors.
  */
-std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
+std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode *n)
 {
     // Create the basic block for our conditions
     BasicBlock *current = builder->GetInsertBlock();
@@ -923,7 +923,7 @@ std::optional<Value *> CodegenVisitor::visit(LogOrExprNode *n)
     return phi;
 }
 
-std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
+std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 {
     Symbol *sym = n->symbol;
 
@@ -1005,7 +1005,7 @@ std::optional<Value *> CodegenVisitor::visit(FieldAccessNode *n)
     return valPtr;
 }
 
-std::optional<Value *> CodegenVisitor::visit(DerefBoxNode *n)
+std::optional<Value *> CodegenVisitor::visit(TDerefBoxNode *n)
 {
     std::optional<Value *> baseOpt = AcceptType(this, n->expr);
 
@@ -1022,7 +1022,7 @@ std::optional<Value *> CodegenVisitor::visit(DerefBoxNode *n)
     // return n->is_rvalue ? builder->CreateLoad(loaded->getType()->getPointerElementType(), loaded) : loaded;
 }
 
-std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
+std::optional<Value *> CodegenVisitor::visit(TBinaryRelNode *n)
 {
     // Generate code for LHS and RHS
     std::optional<Value *> lhs = AcceptType(this, n->lhs);
@@ -1063,7 +1063,7 @@ std::optional<Value *> CodegenVisitor::visit(BinaryRelNode *n)
     return v;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
+std::optional<Value *> CodegenVisitor::visit(TExternNode *n)
 {
     Symbol *symbol = n->getSymbol(); // WHY ARE SOME PRIVATE AND OTHERS PUBLIC?
 
@@ -1081,7 +1081,7 @@ std::optional<Value *> CodegenVisitor::visit(ExternNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
+std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
 {
     // Visit the expression to get the value we will assign
     std::optional<Value *> exprVal = AcceptType(this, n->val);
@@ -1185,7 +1185,7 @@ std::optional<Value *> CodegenVisitor::visit(AssignNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
+std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
 {
     /*
      * Visit each of the assignments in the context (variables paired with an expression)
@@ -1280,7 +1280,7 @@ std::optional<Value *> CodegenVisitor::visit(VarDeclNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
+std::optional<Value *> CodegenVisitor::visit(TWhileLoopNode *n)
 {
     // Very similar to conditionals
 
@@ -1330,7 +1330,7 @@ std::optional<Value *> CodegenVisitor::visit(WhileLoopNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
+std::optional<Value *> CodegenVisitor::visit(TConditionalStatementNode *n)
 {
     // Get the condition that the if statement is for
     std::optional<Value *> cond = AcceptType(this, n->cond);
@@ -1407,7 +1407,7 @@ std::optional<Value *> CodegenVisitor::visit(ConditionalStatementNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
+std::optional<Value *> CodegenVisitor::visit(TSelectStatementNode *n)
 {
     /*
      * Set up the merge block that all cases go to after the select statement
@@ -1418,7 +1418,7 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
     // Iterate through each of the cases
     for (unsigned long i = 0; i < n->nodes.size(); i++)
     {
-        SelectAlternativeNode *evalCase = n->nodes.at(i);
+        TSelectAlternativeNode *evalCase = n->nodes.at(i);
 
         // Visit the check code
         std::optional<Value *> optVal = AcceptType(this, evalCase->check);
@@ -1462,7 +1462,7 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
          * Must be done as it determines if we create
          * a merge into the merge block or not.
          */
-        if (BlockNode *blk = dynamic_cast<BlockNode *>(evalCase->eval))
+        if (TBlockNode *blk = dynamic_cast<TBlockNode *>(evalCase->eval))
         {
             if (!endsInReturn(blk))
             {
@@ -1470,7 +1470,7 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
             }
             // if it ends in a return, we're good!
         }
-        else if (ReturnNode *retCtx = dynamic_cast<ReturnNode *>(evalCase->eval))
+        else if (TReturnNode *retCtx = dynamic_cast<TReturnNode *>(evalCase->eval))
         {
             // Similarly, we don't need to generate the branch
         }
@@ -1505,7 +1505,7 @@ std::optional<Value *> CodegenVisitor::visit(SelectStatementNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
+std::optional<Value *> CodegenVisitor::visit(TReturnNode *n)
 {
     // Check if we are returning an expression or not
     if (n->expr)
@@ -1535,18 +1535,18 @@ std::optional<Value *> CodegenVisitor::visit(ReturnNode *n)
     return builder->CreateRetVoid();
 }
 
-std::optional<Value *> CodegenVisitor::visit(ExitNode *n)
+std::optional<Value *> CodegenVisitor::visit(TExitNode *n)
 {
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
     return builder->CreateRetVoid();
 }
 
-std::optional<Value *> CodegenVisitor::visit(BooleanConstNode *n)
+std::optional<Value *> CodegenVisitor::visit(TBooleanConstNode *n)
 {
     return n->value ? builder->getTrue() : builder->getFalse();
 }
 
-std::optional<Value *> CodegenVisitor::visit(BlockNode *n)
+std::optional<Value *> CodegenVisitor::visit(TBlockNode *n)
 {
     for (auto e : n->exprs)
     {
@@ -1556,7 +1556,7 @@ std::optional<Value *> CodegenVisitor::visit(BlockNode *n)
     return std::nullopt;
 }
 
-std::optional<Value *> CodegenVisitor::visit(LambdaConstNode *n)
+std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
 {
     // Get the current insertion point
     BasicBlock *ins = builder->GetInsertBlock();

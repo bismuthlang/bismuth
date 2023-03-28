@@ -256,7 +256,7 @@ Version: Pre-Alpha 1.2
       continue;
     }
 
-    CompilationUnitNode *cu = std::get<CompilationUnitNode *>(TypedOpt); // TypedOpt.value();
+    TCompilationUnitNode *cu = std::get<TCompilationUnitNode *>(TypedOpt); // TypedOpt.value();
 
     if (isVerbose)
     {

@@ -88,49 +88,49 @@ public:
     /******************************************************************
      * Standard visitor methods all defined to use the typed versions
      ******************************************************************/
-    // std::optional<Value *> visit(SelectAlternativeNode *n) override;
-    std::optional<Value *> visit(SelectStatementNode *n) override;
-    std::optional<Value *> visit(BlockNode *n) override;
-    std::optional<Value *> visit(LambdaConstNode *n) override;
-    std::optional<Value *> visit(ProgramDefNode *n) override { return visitInvokeable(n); };
-    std::optional<Value *> visit(ConditionalStatementNode *n) override;
-    std::optional<Value *> visit(ReturnNode *n) override;
-    std::optional<Value *> visit(ProgramSendNode *n) override;
-    std::optional<Value *> visit(ProgramRecvNode *n) override;
-    std::optional<Value *> visit(ProgramContractNode *n) override;
-    std::optional<Value *> visit(ProgramWeakenNode *n) override;
-    std::optional<Value *> visit(ProgramExecNode *n) override;
-    std::optional<Value *> visit(ProgramAcceptNode *n) override;
-    std::optional<Value *> visit(ProgramAcceptWhileNode *n) override;
-    // std::optional<Value *> visit(DefineEnumNode *n) override;
-    // std::optional<Value *> visit(DefineStructNode *n) override;
-    std::optional<Value *> visit(InitProductNode *n) override;
-    std::optional<Value *> visit(WhileLoopNode *n) override;
-    std::optional<Value *> visit(ExternNode *n) override;
-    std::optional<Value *> visit(InvocationNode *n) override;
-    std::optional<Value *> visit(FieldAccessNode *n) override;
-    std::optional<Value *> visit(DerefBoxNode *n) override;
-    std::optional<Value *> visit(ArrayAccessNode *n) override;
-    std::optional<Value *> visit(AssignNode *n) override;
-    std::optional<Value *> visit(BinaryRelNode *n) override;
-    std::optional<Value *> visit(BinaryArithNode *n) override;
-    std::optional<Value *> visit(EqExprNode *n) override;
-    std::optional<Value *> visit(UnaryExprNode *n) override;
-    std::optional<Value *> visit(LogAndExprNode *n) override;
-    std::optional<Value *> visit(LogOrExprNode *n) override;
-    std::optional<Value *> visit(StringConstNode *n) override;
-    std::optional<Value *> visit(BooleanConstNode *n) override;
-    std::optional<Value *> visit(IConstExprNode *n) override;
-    std::optional<Value *> visit(CompilationUnitNode *n) override;
-    std::optional<Value *> visit(VarDeclNode *n) override;
-    std::optional<Value *> visit(MatchStatementNode *n) override;
-    std::optional<Value *> visit(ExitNode *n) override;
-    std::optional<Value *> visit(ChannelCaseStatementNode *n) override;
-    std::optional<Value *> visit(ProgramProjectNode *n) override;
+    // std::optional<Value *> visit(TSelectAlternativeNode *n) override;
+    std::optional<Value *> visit(TSelectStatementNode *n) override;
+    std::optional<Value *> visit(TBlockNode *n) override;
+    std::optional<Value *> visit(TLambdaConstNode *n) override;
+    std::optional<Value *> visit(TProgramDefNode *n) override { return visitInvokeable(n); };
+    std::optional<Value *> visit(TConditionalStatementNode *n) override;
+    std::optional<Value *> visit(TReturnNode *n) override;
+    std::optional<Value *> visit(TProgramSendNode *n) override;
+    std::optional<Value *> visit(TProgramRecvNode *n) override;
+    std::optional<Value *> visit(TProgramContractNode *n) override;
+    std::optional<Value *> visit(TProgramWeakenNode *n) override;
+    std::optional<Value *> visit(TProgramExecNode *n) override;
+    std::optional<Value *> visit(TProgramAcceptNode *n) override;
+    std::optional<Value *> visit(TProgramAcceptWhileNode *n) override;
+    // std::optional<Value *> visit(TDefineEnumNode *n) override;
+    // std::optional<Value *> visit(TDefineStructNode *n) override;
+    std::optional<Value *> visit(TInitProductNode *n) override;
+    std::optional<Value *> visit(TWhileLoopNode *n) override;
+    std::optional<Value *> visit(TExternNode *n) override;
+    std::optional<Value *> visit(TInvocationNode *n) override;
+    std::optional<Value *> visit(TFieldAccessNode *n) override;
+    std::optional<Value *> visit(TDerefBoxNode *n) override;
+    std::optional<Value *> visit(TArrayAccessNode *n) override;
+    std::optional<Value *> visit(TAssignNode *n) override;
+    std::optional<Value *> visit(TBinaryRelNode *n) override;
+    std::optional<Value *> visit(TBinaryArithNode *n) override;
+    std::optional<Value *> visit(TEqExprNode *n) override;
+    std::optional<Value *> visit(TUnaryExprNode *n) override;
+    std::optional<Value *> visit(TLogAndExprNode *n) override;
+    std::optional<Value *> visit(TLogOrExprNode *n) override;
+    std::optional<Value *> visit(TStringConstNode *n) override;
+    std::optional<Value *> visit(TBooleanConstNode *n) override;
+    std::optional<Value *> visit(TIntConstExprNode *n) override;
+    std::optional<Value *> visit(TCompilationUnitNode *n) override;
+    std::optional<Value *> visit(TVarDeclNode *n) override;
+    std::optional<Value *> visit(TMatchStatementNode *n) override;
+    std::optional<Value *> visit(TExitNode *n) override;
+    std::optional<Value *> visit(TChannelCaseStatementNode *n) override;
+    std::optional<Value *> visit(TProgramProjectNode *n) override;
 
-    std::optional<Value *> visit(InitBoxNode *n) override;
+    std::optional<Value *> visit(TInitBoxNode *n) override;
 
-    std::optional<Value *> visitCompilationUnit(CompilationUnitNode *n) { return visit(n); }
+    std::optional<Value *> visitCompilationUnit(TCompilationUnitNode *n) { return visit(n); }
 
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
@@ -144,7 +144,7 @@ public:
      * @param sum The FuncDefContext to build the function from
      * @return std::optional<Value *> Empty as this shouldn't be seen as a value
      */
-    std::optional<Value *> visitInvokeable(ProgramDefNode *n)
+    std::optional<Value *> visitInvokeable(TProgramDefNode *n)
     {
         BasicBlock *ins = builder->GetInsertBlock();
 

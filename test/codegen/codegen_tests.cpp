@@ -31,10 +31,10 @@ void EnsureCompilesTo(antlr4::ANTLRInputStream *input, string hash)
     SemanticVisitor *sv = new SemanticVisitor(stm, 0);
     auto cuOpt = sv->visitCtx(tree);
     REQUIRE_FALSE(sv->hasErrors(0));
-    REQUIRE(std::holds_alternative<CompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
+    REQUIRE(std::holds_alternative<TCompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
 
     CodegenVisitor *cv = new CodegenVisitor("BismuthProgram", 0);
-    cv->visitCompilationUnit(std::get<CompilationUnitNode*>(cuOpt));//cuOpt.value());
+    cv->visitCompilationUnit(std::get<TCompilationUnitNode*>(cuOpt));//cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
     REQUIRE(llvmIrToSHA256(cv->getModule()) == hash);
