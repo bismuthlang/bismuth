@@ -37,139 +37,139 @@ struct overloaded : Ts...
 template <class... Ts>
 overloaded(Ts...) -> overloaded<Ts...>;
 
-class SelectAlternativeNode;
-class SelectStatementNode;
-class BlockNode;
+class TSelectAlternativeNode;
+class TSelectStatementNode;
+class TBlockNode;
 
-class LambdaConstNode;
-class ProgramDefNode;
-class ConditionalStatementNode;
-class ReturnNode;
-class ProgramSendNode;
-class ProgramRecvNode;
-class ProgramContractNode;
-class ProgramWeakenNode;
-class ProgramExecNode;
-class ProgramAcceptNode;
-class ProgramAcceptWhileNode; 
-class DefineEnumNode;
-class DefineStructNode;
-class InitProductNode;
-class InitBoxNode;
-class DerefBoxNode;
-class WhileLoopNode;
-class ExternNode;
-class InvocationNode;
-class FieldAccessNode;
-class ArrayAccessNode;
-class AssignNode;
-class BinaryRelNode;
-class BinaryArithNode;
-class EqExprNode;
-class UnaryExprNode;
-class LogAndExprNode;
-class LogOrExprNode;
-class StringConstNode;
-class BooleanConstNode;
-class IConstExprNode;
-class CompilationUnitNode;
+class TLambdaConstNode;
+class TProgramDefNode;
+class TConditionalStatementNode;
+class TReturnNode;
+class TProgramSendNode;
+class TProgramRecvNode;
+class TProgramContractNode;
+class TProgramWeakenNode;
+class TProgramExecNode;
+class TProgramAcceptNode;
+class TProgramAcceptWhileNode; 
+class TDefineEnumNode;
+class TDefineStructNode;
+class TInitProductNode;
+class TInitBoxNode;
+class TDerefBoxNode;
+class TWhileLoopNode;
+class TExternNode;
+class TInvocationNode;
+class TFieldAccessNode;
+class TArrayAccessNode;
+class TAssignNode;
+class TBinaryRelNode;
+class TBinaryArithNode;
+class TEqExprNode;
+class TUnaryExprNode;
+class TLogAndExprNode;
+class TLogOrExprNode;
+class TStringConstNode;
+class TBooleanConstNode;
+class TIntConstExprNode;
+class TCompilationUnitNode;
 
-class VarDeclNode;
-class MatchStatementNode;
-class ExitNode;
+class TVarDeclNode;
+class TMatchStatementNode;
+class TExitNode;
 
-class ChannelCaseStatementNode;
-class ProgramProjectNode;
+class TChannelCaseStatementNode;
+class TProgramProjectNode;
 
 class TypedASTVisitor
 {
 public:
     virtual ~TypedASTVisitor() = default;
 
-    // virtual std::optional<Value *> visit(SelectAlternativeNode *n) = 0;
-    virtual std::optional<Value *> visit(SelectStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(BlockNode *n) = 0;
-    virtual std::optional<Value *> visit(LambdaConstNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramDefNode *n) = 0;
-    virtual std::optional<Value *> visit(ConditionalStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(ReturnNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramSendNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramRecvNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramContractNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramWeakenNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramExecNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramAcceptNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramAcceptWhileNode *n) = 0; 
-    // virtual std::optional<Value *> visit(DefineEnumNode *n) = 0;
-    // virtual std::optional<Value *> visit(DefineStructNode *n) = 0;
-    virtual std::optional<Value *> visit(InitProductNode *n) = 0;
-    virtual std::optional<Value *> visit(InitBoxNode *n) = 0; 
-    virtual std::optional<Value *> visit(DerefBoxNode *n) = 0; 
-    virtual std::optional<Value *> visit(WhileLoopNode *n) = 0;
-    virtual std::optional<Value *> visit(ExternNode *n) = 0;
-    virtual std::optional<Value *> visit(InvocationNode *n) = 0;
-    virtual std::optional<Value *> visit(FieldAccessNode *n) = 0;
-    virtual std::optional<Value *> visit(ArrayAccessNode *n) = 0;
-    virtual std::optional<Value *> visit(AssignNode *n) = 0;
-    virtual std::optional<Value *> visit(BinaryRelNode *n) = 0;
-    virtual std::optional<Value *> visit(BinaryArithNode *n) = 0;
-    virtual std::optional<Value *> visit(EqExprNode *n) = 0;
-    virtual std::optional<Value *> visit(UnaryExprNode *n) = 0;
-    virtual std::optional<Value *> visit(LogAndExprNode *n) = 0;
-    virtual std::optional<Value *> visit(LogOrExprNode *n) = 0;
-    virtual std::optional<Value *> visit(StringConstNode *n) = 0;
-    virtual std::optional<Value *> visit(BooleanConstNode *n) = 0;
-    virtual std::optional<Value *> visit(IConstExprNode *n) = 0;
-    virtual std::optional<Value *> visit(CompilationUnitNode *n) = 0;
-    virtual std::optional<Value *> visit(VarDeclNode *n) = 0;
-    virtual std::optional<Value *> visit(MatchStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(ExitNode *n) = 0;
-    virtual std::optional<Value *> visit(ChannelCaseStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(ProgramProjectNode *n) = 0;
+    // virtual std::optional<Value *> visit(TSelectAlternativeNode *n) = 0;
+    virtual std::optional<Value *> visit(TSelectStatementNode *n) = 0;
+    virtual std::optional<Value *> visit(TBlockNode *n) = 0;
+    virtual std::optional<Value *> visit(TLambdaConstNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramDefNode *n) = 0;
+    virtual std::optional<Value *> visit(TConditionalStatementNode *n) = 0;
+    virtual std::optional<Value *> visit(TReturnNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramSendNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramRecvNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramContractNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramWeakenNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramExecNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramAcceptNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramAcceptWhileNode *n) = 0; 
+    // virtual std::optional<Value *> visit(TDefineEnumNode *n) = 0;
+    // virtual std::optional<Value *> visit(TDefineStructNode *n) = 0;
+    virtual std::optional<Value *> visit(TInitProductNode *n) = 0;
+    virtual std::optional<Value *> visit(TInitBoxNode *n) = 0; 
+    virtual std::optional<Value *> visit(TDerefBoxNode *n) = 0; 
+    virtual std::optional<Value *> visit(TWhileLoopNode *n) = 0;
+    virtual std::optional<Value *> visit(TExternNode *n) = 0;
+    virtual std::optional<Value *> visit(TInvocationNode *n) = 0;
+    virtual std::optional<Value *> visit(TFieldAccessNode *n) = 0;
+    virtual std::optional<Value *> visit(TArrayAccessNode *n) = 0;
+    virtual std::optional<Value *> visit(TAssignNode *n) = 0;
+    virtual std::optional<Value *> visit(TBinaryRelNode *n) = 0;
+    virtual std::optional<Value *> visit(TBinaryArithNode *n) = 0;
+    virtual std::optional<Value *> visit(TEqExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TUnaryExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TLogAndExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TLogOrExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TStringConstNode *n) = 0;
+    virtual std::optional<Value *> visit(TBooleanConstNode *n) = 0;
+    virtual std::optional<Value *> visit(TIntConstExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TCompilationUnitNode *n) = 0;
+    virtual std::optional<Value *> visit(TVarDeclNode *n) = 0;
+    virtual std::optional<Value *> visit(TMatchStatementNode *n) = 0;
+    virtual std::optional<Value *> visit(TExitNode *n) = 0;
+    virtual std::optional<Value *> visit(TChannelCaseStatementNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramProjectNode *n) = 0;
 
     // virtual std::optional<Value
 
     // private:
-    std::any any_visit(SelectAlternativeNode *n) { return this->visit(n); }
-    std::any any_visit(SelectStatementNode *n) { return this->visit(n); }
-    std::any any_visit(BlockNode *n) { return this->visit(n); }
-    std::any any_visit(LambdaConstNode *n) { return this->visit(n); }
-    std::any any_visit(ProgramDefNode *n) { return this->visit(n); }
-    std::any any_visit(ConditionalStatementNode *n) { return this->visit(n); }
-    std::any any_visit(ReturnNode *n) { return this->visit(n); }
-    std::any any_visit(ProgramSendNode *n) { return this->visit(n); }
-    std::any any_visit(ProgramRecvNode *n) { return this->visit(n); }
-    std::any any_visit(ProgramContractNode *n) { return this->visit(n); }
-    std::any any_visit(ProgramWeakenNode *n) { return this->visit(n); }
-    std::any any_visit(ProgramExecNode *n) { return this->visit(n); }
-    std::any any_visit(ProgramAcceptNode *n) { return this->visit(n); }
-    std::any any_visit(ProgramAcceptWhileNode *n) { return this->visit(n); }
-    std::any any_visit(DefineEnumNode *n) { return this->visit(n); }
-    std::any any_visit(DefineStructNode *n) { return this->visit(n); }
-    std::any any_visit(InitProductNode *n) { return this->visit(n); }
-    std::any any_visit(InitBoxNode *n) { return this->visit(n); }
-    std::any any_visit(DerefBoxNode *n) { return this->visit(n); }
-    std::any any_visit(WhileLoopNode *n) { return this->visit(n); }
-    std::any any_visit(ExternNode *n) { return this->visit(n); }
-    std::any any_visit(InvocationNode *n) { return this->visit(n); }
-    std::any any_visit(FieldAccessNode *n) { return this->visit(n); }
-    std::any any_visit(ArrayAccessNode *n) { return this->visit(n); }
-    std::any any_visit(AssignNode *n) { return this->visit(n); }
-    std::any any_visit(BinaryRelNode *n) { return this->visit(n); }
-    std::any any_visit(BinaryArithNode *n) { return this->visit(n); }
-    std::any any_visit(EqExprNode *n) { return this->visit(n); }
-    std::any any_visit(UnaryExprNode *n) { return this->visit(n); }
-    std::any any_visit(LogAndExprNode *n) { return this->visit(n); }
-    std::any any_visit(LogOrExprNode *n) { return this->visit(n); }
-    std::any any_visit(StringConstNode *n) { return this->visit(n); }
-    std::any any_visit(BooleanConstNode *n) { return this->visit(n); }
-    std::any any_visit(IConstExprNode *n) { return this->visit(n); }
-    std::any any_visit(CompilationUnitNode *n) { return this->visit(n); }
-    std::any any_visit(VarDeclNode *n) { return this->visit(n); }
-    std::any any_visit(MatchStatementNode *n) { return this->visit(n); }
-    std::any any_visit(ExitNode *n) { return this->visit(n); }
-    std::any any_visit(ChannelCaseStatementNode *n) { return this->visit(n); }
-    std::any any_visit(ProgramProjectNode *n) { return this->visit(n); }
+    std::any any_visit(TSelectAlternativeNode *n) { return this->visit(n); }
+    std::any any_visit(TSelectStatementNode *n) { return this->visit(n); }
+    std::any any_visit(TBlockNode *n) { return this->visit(n); }
+    std::any any_visit(TLambdaConstNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramDefNode *n) { return this->visit(n); }
+    std::any any_visit(TConditionalStatementNode *n) { return this->visit(n); }
+    std::any any_visit(TReturnNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramSendNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramRecvNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramContractNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramWeakenNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramExecNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramAcceptNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramAcceptWhileNode *n) { return this->visit(n); }
+    std::any any_visit(TDefineEnumNode *n) { return this->visit(n); }
+    std::any any_visit(TDefineStructNode *n) { return this->visit(n); }
+    std::any any_visit(TInitProductNode *n) { return this->visit(n); }
+    std::any any_visit(TInitBoxNode *n) { return this->visit(n); }
+    std::any any_visit(TDerefBoxNode *n) { return this->visit(n); }
+    std::any any_visit(TWhileLoopNode *n) { return this->visit(n); }
+    std::any any_visit(TExternNode *n) { return this->visit(n); }
+    std::any any_visit(TInvocationNode *n) { return this->visit(n); }
+    std::any any_visit(TFieldAccessNode *n) { return this->visit(n); }
+    std::any any_visit(TArrayAccessNode *n) { return this->visit(n); }
+    std::any any_visit(TAssignNode *n) { return this->visit(n); }
+    std::any any_visit(TBinaryRelNode *n) { return this->visit(n); }
+    std::any any_visit(TBinaryArithNode *n) { return this->visit(n); }
+    std::any any_visit(TEqExprNode *n) { return this->visit(n); }
+    std::any any_visit(TUnaryExprNode *n) { return this->visit(n); }
+    std::any any_visit(TLogAndExprNode *n) { return this->visit(n); }
+    std::any any_visit(TLogOrExprNode *n) { return this->visit(n); }
+    std::any any_visit(TStringConstNode *n) { return this->visit(n); }
+    std::any any_visit(TBooleanConstNode *n) { return this->visit(n); }
+    std::any any_visit(TIntConstExprNode *n) { return this->visit(n); }
+    std::any any_visit(TCompilationUnitNode *n) { return this->visit(n); }
+    std::any any_visit(TVarDeclNode *n) { return this->visit(n); }
+    std::any any_visit(TMatchStatementNode *n) { return this->visit(n); }
+    std::any any_visit(TExitNode *n) { return this->visit(n); }
+    std::any any_visit(TChannelCaseStatementNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramProjectNode *n) { return this->visit(n); }
 
     std::any visit(std::any n) { return "FIXME"; }
     std::any accept(TypedNode *n)
@@ -185,13 +185,13 @@ inline std::optional<Value *> AcceptType(TypedASTVisitor *visitor, TypedNode *n)
     return any_cast<std::optional<Value *>>(n->accept(visitor));
 }
 
-class SelectAlternativeNode : public TypedNode
+class TSelectAlternativeNode : public TypedNode
 {
 public:
     TypedNode *check;
     TypedNode *eval;
 
-    SelectAlternativeNode(TypedNode *c, TypedNode *e, antlr4::Token *tok) : TypedNode(tok)
+    TSelectAlternativeNode(TypedNode *c, TypedNode *e, antlr4::Token *tok) : TypedNode(tok)
     {
         check = c;
         eval = e;
@@ -206,13 +206,13 @@ public:
     }
 };
 
-class SelectStatementNode : public TypedNode
+class TSelectStatementNode : public TypedNode
 {
 public:
-    vector<SelectAlternativeNode *> nodes;
+    vector<TSelectAlternativeNode *> nodes;
     vector<TypedNode *> post;
 
-    SelectStatementNode(antlr4::Token *tok, vector<SelectAlternativeNode *> n, vector<TypedNode *> p) : TypedNode(tok)
+    TSelectStatementNode(antlr4::Token *tok, vector<TSelectAlternativeNode *> n, vector<TypedNode *> p) : TypedNode(tok)
     {
         nodes = n;
         post = p;
@@ -226,12 +226,12 @@ public:
     }
 };
 
-class BlockNode : public TypedNode
+class TBlockNode : public TypedNode
 {
 public:
     vector<TypedNode *> exprs;
 
-    BlockNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
+    TBlockNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         exprs = e;
     }
@@ -261,7 +261,7 @@ public:
 
 typedef vector<ParameterNode> ParameterListNode;
 
-class LambdaConstNode : public TypedNode
+class TLambdaConstNode : public TypedNode
 {
     // private:
 
@@ -269,10 +269,10 @@ public:
     string name;
     vector<Symbol *> paramSymbols;
     const Type *retType;
-    BlockNode *block;
+    TBlockNode *block;
     TypeInvoke *type;
 
-    LambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, BlockNode *b, string n = "LAM") : TypedNode(tok)
+    TLambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, TBlockNode *b, string n = "LAM") : TypedNode(tok)
     {
         // paramList = p;
         paramSymbols = p;
@@ -303,7 +303,7 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramDefNode : public TypedNode
+class TProgramDefNode : public TypedNode
 {
 private:
     const TypeProgram *type;
@@ -312,9 +312,9 @@ public:
     string name;
     Symbol *channelSymbol;
     // TypeChannel * channelType;
-    BlockNode *block;
+    TBlockNode *block;
 
-    ProgramDefNode(string n, Symbol *cn, BlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : TypedNode(tok)
+    TProgramDefNode(string n, Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         channelSymbol = cn;
@@ -336,16 +336,16 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ConditionalStatementNode : public TypedNode
+class TConditionalStatementNode : public TypedNode
 {
 public:
     TypedNode *cond;
-    BlockNode *trueBlk;
-    std::optional<BlockNode *> falseOpt;
+    TBlockNode *trueBlk;
+    std::optional<TBlockNode *> falseOpt;
 
     std::vector<TypedNode *> post;
 
-    ConditionalStatementNode(antlr4::Token *tok, TypedNode *c, BlockNode *t, std::vector<TypedNode *> p, std::optional<BlockNode *> f = {}) : TypedNode(tok)
+    TConditionalStatementNode(antlr4::Token *tok, TypedNode *c, TBlockNode *t, std::vector<TypedNode *> p, std::optional<TBlockNode *> f = {}) : TypedNode(tok)
     {
         cond = c;
         trueBlk = t;
@@ -361,13 +361,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ReturnNode : public TypedNode
+class TReturnNode : public TypedNode
 {
 public:
     // First is the actual type
     optional<pair<const Type *, TypedNode *>> expr;
 
-    ReturnNode(antlr4::Token *tok, optional<pair<const Type *, TypedNode *>> e = {}) : TypedNode(tok)
+    TReturnNode(antlr4::Token *tok, optional<pair<const Type *, TypedNode *>> e = {}) : TypedNode(tok)
     {
         expr = e;
     }
@@ -381,10 +381,10 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ExitNode : public TypedNode
+class TExitNode : public TypedNode
 {
 public:
-    ExitNode(antlr4::Token *tok) : TypedNode(tok)
+    TExitNode(antlr4::Token *tok) : TypedNode(tok)
     {
     }
 
@@ -397,14 +397,14 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramSendNode : public TypedNode
+class TProgramSendNode : public TypedNode
 {
 public:
     Symbol *sym;
     TypedNode *expr;
     const Type *lType; // Tracks type send expects. Needed for sums
 
-    ProgramSendNode(Symbol *s, TypedNode *e, const Type *l, antlr4::Token *tok) : TypedNode(tok)
+    TProgramSendNode(Symbol *s, TypedNode *e, const Type *l, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         expr = e;
@@ -420,13 +420,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramRecvNode : public TypedNode
+class TProgramRecvNode : public TypedNode
 {
 public:
     Symbol *sym;
     const Type *ty;
 
-    ProgramRecvNode(Symbol *s, const Type *t, antlr4::Token *tok) : TypedNode(tok)
+    TProgramRecvNode(Symbol *s, const Type *t, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         // expr = e;
@@ -442,12 +442,12 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramContractNode : public TypedNode
+class TProgramContractNode : public TypedNode
 {
 public:
     Symbol *sym;
 
-    ProgramContractNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
+    TProgramContractNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
     }
@@ -461,12 +461,12 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramWeakenNode : public TypedNode // FIXME: COMBINE THIS WITH PREV AND USE ENUM FOR OP?
+class TProgramWeakenNode : public TypedNode // FIXME: COMBINE THIS WITH PREV AND USE ENUM FOR OP?
 {
 public:
     Symbol *sym;
 
-    ProgramWeakenNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
+    TProgramWeakenNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
     }
@@ -480,13 +480,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramExecNode : public TypedNode
+class TProgramExecNode : public TypedNode
 {
 public:
     TypedNode *prog;
     TypeChannel *chanType;
 
-    ProgramExecNode(TypedNode *p, TypeChannel *c, antlr4::Token *tok) : TypedNode(tok)
+    TProgramExecNode(TypedNode *p, TypeChannel *c, antlr4::Token *tok) : TypedNode(tok)
     {
         prog = p;
         chanType = c;
@@ -501,13 +501,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramAcceptNode : public TypedNode
+class TProgramAcceptNode : public TypedNode
 {
 public:
     Symbol *sym;
-    BlockNode *blk;
+    TBlockNode *blk;
 
-    ProgramAcceptNode(Symbol *s, BlockNode *b, antlr4::Token *tok) : TypedNode(tok)
+    TProgramAcceptNode(Symbol *s, TBlockNode *b, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         blk = b;
@@ -522,14 +522,14 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ProgramAcceptWhileNode : public TypedNode
+class TProgramAcceptWhileNode : public TypedNode
 {
 public:
     Symbol *sym;
     TypedNode *cond;
-    BlockNode *blk;
+    TBlockNode *blk;
 
-    ProgramAcceptWhileNode(Symbol *s, TypedNode *c, BlockNode *b, antlr4::Token *tok) : TypedNode(tok)
+    TProgramAcceptWhileNode(Symbol *s, TypedNode *c, TBlockNode *b, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         cond = c; 
@@ -545,13 +545,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class DefineEnumNode : public TypedNode
+class TDefineEnumNode : public TypedNode
 {
 public:
     string name;
     const TypeSum *sum;
 
-    DefineEnumNode(string n, const TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
+    TDefineEnumNode(string n, const TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;
@@ -567,13 +567,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class DefineStructNode : public TypedNode
+class TDefineStructNode : public TypedNode
 {
 public:
     string name;
     const TypeStruct *product;
 
-    DefineStructNode(string n, const TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
+    TDefineStructNode(string n, const TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
     {
         name = n;
         // cases = c;
@@ -590,13 +590,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class InitProductNode : public TypedNode
+class TInitProductNode : public TypedNode
 {
 public:
     const TypeStruct *product;
     vector<TypedNode *> exprs;
 
-    InitProductNode(const TypeStruct *p, vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
+    TInitProductNode(const TypeStruct *p, vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         product = p;
         exprs = e;
@@ -612,13 +612,13 @@ public:
 };
 
 
-class InitBoxNode : public TypedNode
+class TInitBoxNode : public TypedNode
 {
 public:
     const TypeBox *boxType;
     TypedNode * expr;
 
-    InitBoxNode(const TypeBox *b, TypedNode * e, antlr4::Token *tok) : TypedNode(tok)
+    TInitBoxNode(const TypeBox *b, TypedNode * e, antlr4::Token *tok) : TypedNode(tok)
     {
         boxType = b;
         expr = e;
@@ -633,14 +633,14 @@ public:
     const TypeBox *getType() override { return boxType; }
 };
 
-class DerefBoxNode : public TypedNode
+class TDerefBoxNode : public TypedNode
 {
 public:
     const TypeBox *boxType;
     TypedNode * expr;
     bool is_rvalue; 
 
-    DerefBoxNode(const TypeBox *b, TypedNode * e, bool rv, antlr4::Token *tok) : TypedNode(tok)
+    TDerefBoxNode(const TypeBox *b, TypedNode * e, bool rv, antlr4::Token *tok) : TypedNode(tok)
     {
         boxType = b;
         expr = e;
@@ -656,13 +656,13 @@ public:
     const Type *getType() override { return boxType->getInnerType(); }
 };
 
-class WhileLoopNode : public TypedNode
+class TWhileLoopNode : public TypedNode
 {
 public:
     TypedNode *cond;
-    BlockNode *blk;
+    TBlockNode *blk;
 
-    WhileLoopNode(TypedNode *c, BlockNode *t, antlr4::Token *tok) : TypedNode(tok)
+    TWhileLoopNode(TypedNode *c, TBlockNode *t, antlr4::Token *tok) : TypedNode(tok)
     {
         cond = c;
         blk = t;
@@ -677,14 +677,14 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ExternNode : public TypedNode
+class TExternNode : public TypedNode
 {
 private:
     Symbol *sym;
     const TypeInvoke *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
-    ExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
+    TExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
     {
         vector<const Type *> paramTypes;
 
@@ -710,14 +710,14 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class InvocationNode : public TypedNode
+class TInvocationNode : public TypedNode
 {
 public:
     TypedNode *fn;
     vector<TypedNode *> args;
     vector<const Type *> paramType; // Used for sums
 
-    InvocationNode(TypedNode *f, vector<TypedNode *> a, vector<const Type *> p, antlr4::Token *tok) : TypedNode(tok)
+    TInvocationNode(TypedNode *f, vector<TypedNode *> a, vector<const Type *> p, antlr4::Token *tok) : TypedNode(tok)
     {
         fn = f;
         args = a;
@@ -737,7 +737,7 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class FieldAccessNode : public TypedNode
+class TFieldAccessNode : public TypedNode
 {
 private:
     const Type *type;
@@ -747,7 +747,7 @@ public:
     vector<pair<string, const Type *>> accesses;
     bool is_rvalue;
 
-    FieldAccessNode(antlr4::Token *tok, Symbol *f, bool rv, vector<pair<string, const Type *>> r = {}) : TypedNode(tok)
+    TFieldAccessNode(antlr4::Token *tok, Symbol *f, bool rv, vector<pair<string, const Type *>> r = {}) : TypedNode(tok)
     {
         symbol = f;
         is_rvalue = rv;
@@ -775,14 +775,14 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class ArrayAccessNode : public TypedNode
+class TArrayAccessNode : public TypedNode
 {
 public:
-    FieldAccessNode *field;
+    TFieldAccessNode *field;
     TypedNode *indexExpr;
     bool is_rvalue;
 
-    ArrayAccessNode(FieldAccessNode *f, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
+    TArrayAccessNode(TFieldAccessNode *f, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
     {
         field = f;
         indexExpr = i;
@@ -801,13 +801,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class AssignNode : public TypedNode
+class TAssignNode : public TypedNode
 {
 public:
     TypedNode *var; // FIXME: DO THESE FIELDS BETTER (THEIR TYPES AND SUCH)
     TypedNode *val;
 
-    AssignNode(TypedNode *sym, TypedNode *v, antlr4::Token *tok) : TypedNode(tok)
+    TAssignNode(TypedNode *sym, TypedNode *v, antlr4::Token *tok) : TypedNode(tok)
     {
         var = sym;
         val = v;
@@ -830,14 +830,14 @@ enum BinaryRelOperator
     BINARY_Rel_GREATER_EQ
 };
 
-class BinaryRelNode : public TypedNode
+class TBinaryRelNode : public TypedNode
 {
 public:
     BinaryRelOperator op;
     TypedNode *lhs;
     TypedNode *rhs;
 
-    BinaryRelNode(BinaryRelOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
+    TBinaryRelNode(BinaryRelOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         lhs = l;
@@ -861,14 +861,14 @@ enum BinaryArithOperator
     BINARY_ARITH_DIV
 };
 
-class BinaryArithNode : public TypedNode
+class TBinaryArithNode : public TypedNode
 {
 public:
     BinaryArithOperator op;
     TypedNode *lhs;
     TypedNode *rhs;
 
-    BinaryArithNode(BinaryArithOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
+    TBinaryArithNode(BinaryArithOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         lhs = l;
@@ -889,14 +889,14 @@ enum EqExprOperator
     NOT_EQUAL_OP
 };
 
-class EqExprNode : public TypedNode
+class TEqExprNode : public TypedNode
 {
 public:
     EqExprOperator op;
     TypedNode *lhs;
     TypedNode *rhs;
 
-    EqExprNode(EqExprOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
+    TEqExprNode(EqExprOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         lhs = l;
@@ -918,13 +918,13 @@ enum UnaryOperator
     UNARY_NOT
 };
 
-class UnaryExprNode : public TypedNode
+class TUnaryExprNode : public TypedNode
 {
 public:
     UnaryOperator op;
     TypedNode *value;
 
-    UnaryExprNode(UnaryOperator o, TypedNode *v, antlr4::Token *tok) : TypedNode(tok)
+    TUnaryExprNode(UnaryOperator o, TypedNode *v, antlr4::Token *tok) : TypedNode(tok)
     {
         op = o;
         value = v;
@@ -948,12 +948,12 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class LogAndExprNode : public TypedNode
+class TLogAndExprNode : public TypedNode
 {
 public:
     vector<TypedNode *> exprs;
 
-    LogAndExprNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
+    TLogAndExprNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         exprs = e;
     }
@@ -969,12 +969,12 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class LogOrExprNode : public TypedNode
+class TLogOrExprNode : public TypedNode
 {
 public:
     vector<TypedNode *> exprs;
 
-    LogOrExprNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
+    TLogOrExprNode(vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
     {
         exprs = e;
     }
@@ -990,12 +990,12 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class StringConstNode : public TypedNode
+class TStringConstNode : public TypedNode
 {
 public:
     string value;
 
-    StringConstNode(string s, antlr4::Token *tok) : TypedNode(tok)
+    TStringConstNode(string s, antlr4::Token *tok) : TypedNode(tok)
     {
         value = s;
     }
@@ -1009,12 +1009,12 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class BooleanConstNode : public TypedNode
+class TBooleanConstNode : public TypedNode
 {
 public:
     bool value;
 
-    BooleanConstNode(bool b, antlr4::Token *tok) : TypedNode(tok)
+    TBooleanConstNode(bool b, antlr4::Token *tok) : TypedNode(tok)
     {
         value = b;
     }
@@ -1028,12 +1028,12 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class IConstExprNode : public TypedNode
+class TIntConstExprNode : public TypedNode
 {
 public:
     int value;
 
-    IConstExprNode(int v, antlr4::Token *tok) : TypedNode(tok)
+    TIntConstExprNode(int v, antlr4::Token *tok) : TypedNode(tok)
     {
         value = v;
     }
@@ -1049,15 +1049,15 @@ public:
 
 /////////////////////
 
-typedef variant<DefineEnumNode *, DefineStructNode *, ProgramDefNode *, LambdaConstNode *> DefinitionNode;
+typedef variant<TDefineEnumNode *, TDefineStructNode *, TProgramDefNode *, TLambdaConstNode *> DefinitionNode;
 
-class CompilationUnitNode
+class TCompilationUnitNode
 {
 public:
-    vector<ExternNode *> externs;
+    vector<TExternNode *> externs;
     vector<DefinitionNode> defs;
 
-    CompilationUnitNode(vector<ExternNode *> e, vector<DefinitionNode> d)
+    TCompilationUnitNode(vector<TExternNode *> e, vector<DefinitionNode> d)
     {
         externs = e;
         defs = d;
@@ -1079,11 +1079,11 @@ public:
     }
 };
 
-class VarDeclNode : public TypedNode
+class TVarDeclNode : public TypedNode
 {
 public:
     vector<AssignmentNode *> assignments;
-    VarDeclNode(vector<AssignmentNode *> a, antlr4::Token *tok) : TypedNode(tok)
+    TVarDeclNode(vector<AssignmentNode *> a, antlr4::Token *tok) : TypedNode(tok)
     {
         assignments = a;
     }
@@ -1099,7 +1099,7 @@ public:
     std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class MatchStatementNode : public TypedNode
+class TMatchStatementNode : public TypedNode
 {
 public:
     const TypeSum *matchType;
@@ -1108,7 +1108,7 @@ public:
 
     vector<TypedNode *> post;
 
-    MatchStatementNode(const TypeSum *m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
+    TMatchStatementNode(const TypeSum *m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
     {
         matchType = m;
         checkExpr = e;
@@ -1129,7 +1129,7 @@ public:
     }
 };
 
-class ChannelCaseStatementNode : public TypedNode
+class TChannelCaseStatementNode : public TypedNode
 {
 public:
     // TypedNode *checkExpr;
@@ -1137,7 +1137,7 @@ public:
     vector<TypedNode *> cases;
     vector<TypedNode *> post;
 
-    ChannelCaseStatementNode(Symbol *c, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
+    TChannelCaseStatementNode(Symbol *c, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = c;
         cases = v;
@@ -1157,13 +1157,13 @@ public:
 
 };
 
-class ProgramProjectNode : public TypedNode // FIXME: DO BETTER, VERY SIMILAR TO SEND
+class TProgramProjectNode : public TypedNode // FIXME: DO BETTER, VERY SIMILAR TO SEND
 {
 public:
     Symbol *sym;
     unsigned int projectIndex;
 
-    ProgramProjectNode(Symbol *s, unsigned int p, antlr4::Token *tok) : TypedNode(tok)
+    TProgramProjectNode(Symbol *s, unsigned int p, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         projectIndex = p;
@@ -1194,41 +1194,41 @@ inline bool endsInReturn(vector<TypedNode *> n)
 
 inline bool endsInReturn(TypedNode *n)
 {
-    if (dynamic_cast<ReturnNode *>(n))
+    if (dynamic_cast<TReturnNode *>(n))
         return true;
-    if (dynamic_cast<ExitNode *>(n))
+    if (dynamic_cast<TExitNode *>(n))
         return true;
 
-    if (BlockNode *bn = dynamic_cast<BlockNode *>(n))
+    if (TBlockNode *bn = dynamic_cast<TBlockNode *>(n))
     {
         return endsInReturn(bn->exprs);
     }
 
     // FIXME: DO THESE BETTER!
-    if (ConditionalStatementNode *cn = dynamic_cast<ConditionalStatementNode *>(n))
+    if (TConditionalStatementNode *cn = dynamic_cast<TConditionalStatementNode *>(n))
     {
         // if(cn->post.size())
         return endsInReturn(cn->post);
     }
 
-    if (MatchStatementNode *cn = dynamic_cast<MatchStatementNode *>(n))
+    if (TMatchStatementNode *cn = dynamic_cast<TMatchStatementNode *>(n))
     {
         // if(cn->post.size())
         return endsInReturn(cn->post);
     }
 
-    if (SelectStatementNode *cn = dynamic_cast<SelectStatementNode *>(n))
+    if (TSelectStatementNode *cn = dynamic_cast<TSelectStatementNode *>(n))
     {
         // if(cn->post.size())
         return endsInReturn(cn->post);
     }
 
-    if(SelectAlternativeNode * cn = dynamic_cast<SelectAlternativeNode*>(n))
+    if(TSelectAlternativeNode * cn = dynamic_cast<TSelectAlternativeNode*>(n))
     {
         return endsInReturn(cn->eval);
     }
 
-    // if(MatchStatementNode * cn = dynamic_cast<MatchStatementNode *>(n))
+    // if(TMatchStatementNode * cn = dynamic_cast<TMatchStatementNode *>(n))
     // {
     //     // if(cn->post.size())
     //     return endsInReturn(cn->post);
@@ -1249,39 +1249,39 @@ inline bool endsInBranch(vector<TypedNode *> n)
 
 inline bool endsInBranch(TypedNode *n)
 {
-    if (BlockNode *bn = dynamic_cast<BlockNode *>(n))
+    if (TBlockNode *bn = dynamic_cast<TBlockNode *>(n))
     {
         return endsInBranch(bn->exprs);
     }
 
     // FIXME: DO THESE BETTER!
-    if (ConditionalStatementNode *cn = dynamic_cast<ConditionalStatementNode *>(n))
+    if (TConditionalStatementNode *cn = dynamic_cast<TConditionalStatementNode *>(n))
     {
         return true; 
     }
 
-    if (MatchStatementNode *cn = dynamic_cast<MatchStatementNode *>(n))
+    if (TMatchStatementNode *cn = dynamic_cast<TMatchStatementNode *>(n))
     {
         return true; 
     }
 
-    if (SelectStatementNode *cn = dynamic_cast<SelectStatementNode *>(n))
+    if (TSelectStatementNode *cn = dynamic_cast<TSelectStatementNode *>(n))
     {
         return true; 
     }
 
-    if (SelectAlternativeNode *cn = dynamic_cast<SelectAlternativeNode *>(n))
+    if (TSelectAlternativeNode *cn = dynamic_cast<TSelectAlternativeNode *>(n))
     {
         return endsInBranch(cn->eval);
         // return true; 
     }
 
-    if(ChannelCaseStatementNode * sn = dynamic_cast<ChannelCaseStatementNode*>(n))
+    if(TChannelCaseStatementNode * sn = dynamic_cast<TChannelCaseStatementNode*>(n))
     {
         return true; 
     }
 
-    // if(MatchStatementNode * cn = dynamic_cast<MatchStatementNode *>(n))
+    // if(TMatchStatementNode * cn = dynamic_cast<TMatchStatementNode *>(n))
     // {
     //     // if(cn->post.size())
     //     return endsInReturn(cn->post);

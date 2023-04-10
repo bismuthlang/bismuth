@@ -256,7 +256,7 @@ Version: Pre-Alpha 1.2
       continue;
     }
 
-    CompilationUnitNode *cu = std::get<CompilationUnitNode *>(TypedOpt); // TypedOpt.value();
+    TCompilationUnitNode *cu = std::get<TCompilationUnitNode *>(TypedOpt); // TypedOpt.value();
 
     if (isVerbose)
     {
@@ -323,7 +323,7 @@ Version: Pre-Alpha 1.2
         std::cerr << "Could not open file: " << EC.message() << std::endl;
         return 1;
       }
-
+      
       llvm::legacy::PassManager pass;
       auto FileType = llvm::CGFT_ObjectFile;
 

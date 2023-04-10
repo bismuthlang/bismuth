@@ -1,11 +1,11 @@
 #include "SemanticVisitor.h"
 
-std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx)
+std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx)
 {
     // Enter initial scope
     stmgr->enterScope(StopType::NONE);
 
-    std::vector<ExternNode *> externs;
+    std::vector<TExternNode *> externs;
 
     std::vector<std::pair<BismuthParser::DefineProcContext *, TypeProgram *>> progs;
     std::vector<std::pair<BismuthParser::DefineFuncContext *, TypeInvoke *>> funcs;
@@ -104,14 +104,14 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
     // Visit externs first; they will report any errors if they have any.
     for (auto e : ctx->externs)
     {
-        std::variant<ExternNode *, ErrorChain *> extOpt = this->visitCtx(e);
+        std::variant<TExternNode *, ErrorChain *> extOpt = this->visitCtx(e);
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&extOpt))
         {
             (*e)->addError(ctx->getStart(), "108");
             return *e;
         }
-        ExternNode *node = std::get<ExternNode *>(extOpt);
+        TExternNode *node = std::get<TExternNode *>(extOpt);
 
         if (flags & CompilerFlags::DEMO_MODE)
         {
@@ -151,7 +151,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
     {
         if (BismuthParser::DefineProgramContext *fnCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
-            std::variant<ProgramDefNode *, ErrorChain *> progOpt = visitInvokeable(fnCtx->defineProc()); // e->accept(this);
+            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitInvokeable(fnCtx->defineProc()); // e->accept(this);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
@@ -159,11 +159,11 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
                 return *e;
             }
 
-            defs.push_back(std::get<ProgramDefNode *>(progOpt));
+            defs.push_back(std::get<TProgramDefNode *>(progOpt));
         }
         else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
-            std::variant<LambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx->defineFunc());
+            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx->defineFunc());
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
@@ -171,7 +171,7 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
                 return *e;
             }
 
-            defs.push_back(std::get<LambdaConstNode *>(opt));
+            defs.push_back(std::get<TLambdaConstNode *>(opt));
         }
     }
 
@@ -230,12 +230,12 @@ std::variant<CompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
         errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
     }
     // Return UNDEFINED as this should be viewed as a statement and not something assignable
-    return new CompilationUnitNode(externs, defs);
+    return new TCompilationUnitNode(externs, defs);
 }
 
-std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InvocationContext *ctx)
+std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InvocationContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) ? TNVariantCast<LambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<FieldAccessNode>(visitCtx(ctx->field, true));
+    std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) ? TNVariantCast<TLambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<TFieldAccessNode>(visitCtx(ctx->field, true));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
     {
         (*e)->addError(ctx->getStart(), "Unable to generate expression to invoke.");
@@ -331,8 +331,8 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
                 }
             }
 
-            tn = new InvocationNode(tn, args, actualTypes, ctx->getStart());
-            // return new InvocationNode(tn, args, actualTypes, ctx->getStart());
+            tn = new TInvocationNode(tn, args, actualTypes, ctx->getStart());
+            // return new TInvocationNode(tn, args, actualTypes, ctx->getStart());
         }
         else
         {
@@ -340,11 +340,11 @@ std::variant<InvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
             return errorHandler.addError(ctx->getStart(), "Can only invoke PROC and FUNC, not " + name + " : " + tn->getType()->toString());
         }
     }
-    // return new InvocationNode(tn, args, actualTypes, ctx->getStart());
-    return (InvocationNode *)tn;
+    // return new TInvocationNode(tn, args, actualTypes, ctx->getStart());
+    return (TInvocationNode *)tn;
 }
 
-std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFuncContext *ctx)
+std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFuncContext *ctx)
 {
     std::variant<Symbol *, ErrorChain *> funcSymOpt = getFunctionSymbol(ctx);
 
@@ -356,7 +356,7 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     Symbol *funcSym = std::get<Symbol *>(funcSymOpt);
     stmgr->addSymbol(funcSym);
 
-    std::variant<LambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam);
+    std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&lamOpt))
     {
@@ -364,7 +364,7 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         return *e;
     }
 
-    LambdaConstNode *lam = std::get<LambdaConstNode *>(lamOpt);
+    TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
 
     lam->type = const_cast<TypeInvoke *>(dynamic_cast<const TypeInvoke *>(funcSym->type)); // FIXME: DO BETTER! NEEDED B/C OF NAME RES!
 
@@ -372,7 +372,7 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     return lam;
 }
 
-std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitProductContext *ctx)
+std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitProductContext *ctx)
 {
     std::string name = ctx->v->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(name);
@@ -435,13 +435,13 @@ std::variant<InitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
             return errorHandler.addError(ctx->getStart(), "Invalid parameters passed to product init.");
         }
 
-        return new InitProductNode(product, n, ctx->getStart());
+        return new TInitProductNode(product, n, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString());
 }
 
-std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitBoxContext *ctx)
+std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitBoxContext *ctx)
 {
     const Type *storeType = any2Type(ctx->ty->accept(this));
 
@@ -476,10 +476,10 @@ std::variant<InitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         return errorHandler.addError(ctx->getStart(), errorMsg.str());
     }
 
-    return new InitBoxNode(new TypeBox(storeType), tn, ctx->getStart());
+    return new TInitBoxNode(new TypeBox(storeType), tn, ctx->getStart());
 }
 
-std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue)
+std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue)
 {
     /*
      * Check that we are provided an INT for the index.
@@ -504,7 +504,7 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
      * Look up the symbol and check that it is defined.
      */
 
-    std::variant<FieldAccessNode *, ErrorChain *> opt = visitCtx(ctx->field, false); // Always have to load the array field
+    std::variant<TFieldAccessNode *, ErrorChain *> opt = visitCtx(ctx->field, false); // Always have to load the array field
     if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
     {
         (*e)->addError(ctx->field->getStart(), "Cannot access value from undefined array: " + ctx->field->getText());
@@ -514,11 +514,11 @@ std::variant<ArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     /*
      * Check that the symbol is of array type.
      */
-    FieldAccessNode *field = std::get<FieldAccessNode *>(opt);
+    TFieldAccessNode *field = std::get<TFieldAccessNode *>(opt);
 
     if (const TypeArray *arr = dynamic_cast<const TypeArray *>(field->getType()))
     {
-        return new ArrayAccessNode(field, expr, is_rvalue, ctx->getStart());
+        return new TArrayAccessNode(field, expr, is_rvalue, ctx->getStart());
     }
 
     // Report error
@@ -530,25 +530,25 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     // Check if we are a var or an array
     if (ctx->var)
     {
-        return TNVariantCast<FieldAccessNode>(visitCtx(ctx->var, false));
+        return TNVariantCast<TFieldAccessNode>(visitCtx(ctx->var, false));
     }
     else if (ctx->deref)
     {
-        return TNVariantCast<DerefBoxNode>(visitCtx(ctx->deref, false));
+        return TNVariantCast<TDerefBoxNode>(visitCtx(ctx->deref, false));
     }
 
     /*
      * As we are not a var, we must be an array access, so we must visit that context.
      */
-    return TNVariantCast<ArrayAccessNode>(this->visitCtx(ctx->array, false));
+    return TNVariantCast<TArrayAccessNode>(this->visitCtx(ctx->array, false));
 }
 
-std::variant<IConstExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IConstExprContext *ctx)
+std::variant<TIntConstExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IConstExprContext *ctx)
 {
-    return new IConstExprNode(std::stoi(ctx->i->getText()), ctx->getStart());
+    return new TIntConstExprNode(std::stoi(ctx->i->getText()), ctx->getStart());
 }
 
-std::variant<StringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SConstExprContext *ctx)
+std::variant<TStringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SConstExprContext *ctx)
 {
     // TODO: do this better, ensure that we can only escape these chars...
     std::string full(ctx->s->getText());
@@ -588,7 +588,7 @@ std::variant<StringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         out = regex_replace(out, e.first, e.second);
     }
 
-    return new StringConstNode(out, ctx->getStart());
+    return new TStringConstNode(out, ctx->getStart());
 }
 
 /**
@@ -597,7 +597,7 @@ std::variant<StringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
  * @param ctx The UnaryExpressionContext to type check
  * @return const Type* Returns the type of the inner expression if valid; UNDEFINED otherwise.
  */
-std::variant<UnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::UnaryExprContext *ctx)
+std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::UnaryExprContext *ctx)
 {
     // Lookup the inner type
     std::variant<TypedNode *, ErrorChain *> innerNodeOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this));
@@ -620,13 +620,13 @@ std::variant<UnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
         {
             return errorHandler.addError(ctx->getStart(), "INT expected in unary minus, but got " + innerType->toString());
         }
-        return new UnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
+        return new TUnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
     case BismuthParser::NOT:
         if (innerType->isNotSubtype(Types::BOOL))
         {
             return errorHandler.addError(ctx->getStart(), "BOOL expected in unary not, but got " + innerType->toString());
         }
-        return new UnaryExprNode(UNARY_NOT, innerNode, ctx->getStart());
+        return new TUnaryExprNode(UNARY_NOT, innerNode, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "605");
@@ -638,7 +638,7 @@ std::variant<UnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
  * @param ctx The BinaryArithExprContext to Visit
  * @return const Type* INT if lhs and rhs are INT; UNDEFINED otherwise.
  */
-std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BinaryArithExprContext *ctx)
+std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BinaryArithExprContext *ctx)
 {
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
@@ -668,7 +668,7 @@ std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
     }
 
-    return new BinaryArithNode(
+    return new TBinaryArithNode(
         ctx->MULTIPLY() ? BINARY_ARITH_MULT : ctx->DIVIDE() ? BINARY_ARITH_DIV
                                           : ctx->PLUS()     ? BINARY_ARITH_PLUS
                                                             : BINARY_ARITH_MINUS,
@@ -677,7 +677,7 @@ std::variant<BinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         ctx->getStart());
 }
 
-std::variant<EqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::EqExprContext *ctx)
+std::variant<TEqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::EqExprContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> rhsOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
     std::variant<TypedNode *, ErrorChain *> lhsOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
@@ -710,7 +710,7 @@ std::variant<EqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
         errorHandler.addError(ctx->getStart(), "Cannot perform equality operation on arrays; they are always seen as unequal!");
     }
 
-    return new EqExprNode(
+    return new TEqExprNode(
         ctx->EQUAL() ? EQUAL_OP : NOT_EQUAL_OP,
         lhs, rhs, ctx->getStart());
 }
@@ -721,7 +721,7 @@ std::variant<EqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
  * @param ctx The LogAndExprContext to Visit
  * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
  */
-std::variant<LogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LogAndExprContext *ctx)
+std::variant<TLogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LogAndExprContext *ctx)
 {
     std::vector<BismuthParser::ExpressionContext *> toVisit = ctx->exprs;
     std::vector<BismuthParser::ExpressionContext *> toGen;
@@ -765,7 +765,7 @@ std::variant<LogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
             nodes.push_back(node);
         }
     }
-    return new LogAndExprNode(nodes, ctx->getStart());
+    return new TLogAndExprNode(nodes, ctx->getStart());
 }
 
 /**
@@ -774,7 +774,7 @@ std::variant<LogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
  * @param ctx The LogOrExprContext to Visit
  * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
  */
-std::variant<LogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LogOrExprContext *ctx)
+std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LogOrExprContext *ctx)
 {
     std::vector<BismuthParser::ExpressionContext *> toVisit = ctx->exprs;
     std::vector<BismuthParser::ExpressionContext *> toGen;
@@ -819,7 +819,7 @@ std::variant<LogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
             nodes.push_back(node);
         }
     }
-    return new LogOrExprNode(nodes, ctx->getStart());
+    return new TLogOrExprNode(nodes, ctx->getStart());
 }
 
 /**
@@ -828,7 +828,7 @@ std::variant<LogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
  * @param ctx the FieldAccessExprContext to visit
  * @return const Type* INT if correctly used to test array length; UNDEFINED if any errors.
  */
-std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::FieldAccessExprContext *ctx, bool is_rvalue)
+std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::FieldAccessExprContext *ctx, bool is_rvalue)
 {
     // Determine the type of the expression we are visiting
     std::optional<SymbolContext> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
@@ -885,10 +885,10 @@ std::variant<FieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
             return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
         }
     }
-    return new FieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
+    return new TFieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
 }
 
-std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue)
+std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue)
 {
     std::variant<TypedNode *, ErrorChain *> exprOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
 
@@ -904,7 +904,7 @@ std::variant<DerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     const Type *exprType = expr->getType();
     if (const TypeBox *box = dynamic_cast<const TypeBox *>(exprType))
     {
-        return new DerefBoxNode(box, expr, is_rvalue, ctx->getStart());
+        return new TDerefBoxNode(box, expr, is_rvalue, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Dereference expected Box<T> but got " + exprType->toString());
@@ -930,7 +930,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
  * @param ctx The BinaryRelExprContext to visit.
  * @return const Type* BOOL if lhs and rhs INT; UNDEFINED otherwise.
  */
-std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BinaryRelExprContext *ctx)
+std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BinaryRelExprContext *ctx)
 {
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
@@ -960,7 +960,7 @@ std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
         return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
     }
 
-    return new BinaryRelNode(
+    return new TBinaryRelNode(
         ctx->LESS() ? BINARY_Rel_LESS : ctx->LESS_EQ() ? BINARY_Rel_LESS_EQ
                                     : ctx->GREATER()   ? BINARY_Rel_GREATER
                                                        : BINARY_Rel_GREATER_EQ,
@@ -969,7 +969,7 @@ std::variant<BinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
         ctx->getStart());
 }
 
-std::variant<SelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SelectAlternativeContext *ctx)
+std::variant<TSelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SelectAlternativeContext *ctx)
 {
     return errorHandler.addError(ctx->getStart(), "COMP ERROR");
 }
@@ -1018,7 +1018,7 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::AssignmentContext *ctx)
     return Types::UNIT;
 }
 
-std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExternStatementContext *ctx)
+std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExternStatementContext *ctx)
 {
     bool variadic = ctx->variadic || ctx->ELLIPSIS();
 
@@ -1042,14 +1042,14 @@ std::variant<ExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
     const Type *retType = ctx->ty ? any2Type(ctx->ty->accept(this))
                                   : Types::UNIT;
 
-    ExternNode *node = new ExternNode(id, tyOpt.value(), retType, variadic, ctx->getStart());
+    TExternNode *node = new TExternNode(id, tyOpt.value(), retType, variadic, ctx->getStart());
 
     stmgr->addSymbol(node->getSymbol());
 
     return node;
 };
 
-std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::AssignStatementContext *ctx)
+std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::AssignStatementContext *ctx)
 {
     // This one is the update one!
 
@@ -1089,10 +1089,10 @@ std::variant<AssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
         return errorHandler.addError(ctx->getStart(), "Assignment statement expected " + type->toString() + " but got " + exprType->toString());
     }
 
-    return new AssignNode(var, expr, ctx->getStart());
+    return new TAssignNode(var, expr, ctx->getStart());
 }
 
-std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::VarDeclStatementContext *ctx)
+std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::VarDeclStatementContext *ctx)
 {
     std::vector<AssignmentNode *> a;
 
@@ -1171,10 +1171,10 @@ std::variant<VarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         }
         // a.push_back(new AssignmentNode(s, exprOpt));
     }
-    return new VarDeclNode(a, ctx->getStart());
+    return new TVarDeclNode(a, ctx->getStart());
 }
 
-std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::MatchStatementContext *ctx)
+std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::MatchStatementContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->check->ex->accept(this));
 
@@ -1266,7 +1266,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismu
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
-        return new MatchStatementNode(sumType, cond, cases, restDat->post, ctx->getStart());
+        return new TMatchStatementNode(sumType, cond, cases, restDat->post, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString());
@@ -1278,7 +1278,7 @@ std::variant<MatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismu
  * @param ctx The LoopStatementContext to type check
  * @return const Type* UNDEFINED as this is a statement.
  */
-std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ProgramLoopContext *ctx)
+std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ProgramLoopContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
 
@@ -1301,7 +1301,7 @@ std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
         }
     }
 
-    std::variant<BlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
+    std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
     {
@@ -1315,10 +1315,10 @@ std::variant<WhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
-    return new WhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<BlockNode *>(blkOpt), ctx->getStart());
+    return new TWhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
 }
 
-std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ConditionalStatementContext *ctx)
+std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ConditionalStatementContext *ctx)
 {
     // Automatically handles checking that we have a valid condition
     std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCtx(ctx->check);
@@ -1352,7 +1352,8 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
         blksCtx.size() == 1,
         [this](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
         {
-            return TNVariantCast<BlockNode>(this->visitCtx(blk));
+            // Scopes automatically handled, have to use false bc we can't have the block autoscope otherwise we might throw an error before we get the chance to realize that we use all linears. 
+            return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
         });
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
@@ -1362,13 +1363,13 @@ std::variant<ConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx
 
     if (ctx->falseBlk)
     {
-        return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), restDat->post, (BlockNode *)dat.cases.at(1));
+        return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), restDat->post, (TBlockNode *)dat.cases.at(1));
     }
 
-    return new ConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (BlockNode *)dat.cases.at(0), restDat->post);
+    return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), restDat->post);
 }
 
-std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SelectStatementContext *ctx)
+std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SelectStatementContext *ctx)
 {
     // Define a recursive fn which takes ctx->cases as arg, then processes first vs rest?
     if (ctx->cases.size() < 1)
@@ -1387,7 +1388,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
     unsigned int case_count = 0;
 
-    std::vector<SelectAlternativeNode *> alts;
+    std::vector<TSelectAlternativeNode *> alts;
 
     std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::SelectAlternativeContext>(
         ctx,
@@ -1443,7 +1444,7 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
                 return *e;
             }
 
-            SelectAlternativeNode *ans = new SelectAlternativeNode(check, std::get<TypedNode *>(evalOpt), ctx->getStart());
+            TSelectAlternativeNode *ans = new TSelectAlternativeNode(check, std::get<TypedNode *>(evalOpt), ctx->getStart());
             alts.push_back(ans);
             return ans; // FIXME: DONT DO PUSH BACK AND RETURN!
         });
@@ -1455,10 +1456,10 @@ std::variant<SelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
     }
 
     ConditionalData dat = std::get<ConditionalData>(branchOpt);
-    return new SelectStatementNode(ctx->getStart(), alts, restDat->post);
+    return new TSelectStatementNode(ctx->getStart(), alts, restDat->post);
 }
 
-std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ReturnStatementContext *ctx)
+std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ReturnStatementContext *ctx)
 {
     /*
      * Lookup the @RETURN symbol which can ONLY be defined by entering FUNC/PROC
@@ -1504,19 +1505,19 @@ std::variant<ReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
 
         std::pair<const Type *, TypedNode *> ans = {sym->type, val};
 
-        return new ReturnNode(ctx->getStart(), ans);
+        return new TReturnNode(ctx->getStart(), ans);
     }
 
     // We do not have an expression to return, so make sure that the return type is also a BOT.
     if (dynamic_cast<const TypeUnit *>(sym->type))
     {
-        return new ReturnNode(ctx->getStart());
+        return new TReturnNode(ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but received nothing.");
 }
 
-std::variant<ExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExitStatementContext *ctx)
+std::variant<TExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExitStatementContext *ctx)
 {
     std::optional<SymbolContext> symOpt = stmgr->lookup("@EXIT");
 
@@ -1526,7 +1527,7 @@ std::variant<ExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::
         return errorHandler.addError(ctx->getStart(), "Cannot use exit outside of program");
     }
 
-    return new ExitNode(ctx->getStart());
+    return new TExitNode(ctx->getStart());
 }
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
@@ -1545,7 +1546,7 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
     return type;
 }
 
-std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx)
+std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx)
 {
     std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
 
@@ -1569,14 +1570,14 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         ps.push_back(paramSymbol);
     }
 
-    std::variant<BlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
+    std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
     {
         (*e)->addError(ctx->getStart(), "1741");
         return *e;
     }
-    BlockNode *blk = std::get<BlockNode *>(blkOpt);
+    TBlockNode *blk = std::get<TBlockNode *>(blkOpt);
 
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
     if (!endsInReturn(blk))
@@ -1584,7 +1585,7 @@ std::variant<LambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         errorHandler.addError(ctx->getStart(), "Lambda must end in return statement");
     }
     safeExitScope(ctx);
-    return new LambdaConstNode(ctx->getStart(), ps, retType, blk);
+    return new TLambdaConstNode(ctx->getStart(), ps, retType, blk);
 }
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::LambdaTypeContext *ctx)
@@ -1633,7 +1634,7 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
     return sum;
 }
 
-std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
+std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
 {
     std::string id = ctx->name->getText();
     // std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1673,13 +1674,13 @@ std::variant<DefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
             stmgr->addSymbol(sym);
         }
-        return new DefineEnumNode(id, sumTy, ctx->getStart());
+        return new TDefineEnumNode(id, sumTy, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Expected enum/sum, but got: " + sym->type->toString());
 }
 
-std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
+std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
 {
     std::string id = ctx->name->getText();
     std::optional<Symbol *> opt = symBindings->getBinding(ctx);
@@ -1717,7 +1718,7 @@ std::variant<DefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
             structType->define(el);
             stmgr->addSymbol(sym);
         } // FIXME: ERROR HANDLE IF DEFINED?
-        return new DefineStructNode(id, structType, ctx->getStart());
+        return new TDefineStructNode(id, structType, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Expected struct/product, but got: " + sym->type->toString());
@@ -1784,9 +1785,9 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::BaseTypeContext *ctx)
     return Types::ABSURD;
 }
 
-std::variant<BooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BooleanConstContext *ctx)
+std::variant<TBooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BooleanConstContext *ctx)
 {
-    return new BooleanConstNode(ctx->TRUE() ? true : false, ctx->getStart());
+    return new TBooleanConstNode(ctx->TRUE() ? true : false, ctx->getStart());
 }
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
@@ -1815,7 +1816,7 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
     return new TypeProgram(new TypeChannel(proto)); // FIXME: SEEMS A BIT ODD TO INC CHANNEL IN PROGRAM?
 }
 
-std::variant<ProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(BismuthParser::ProgramSendContext *ctx)
+std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(BismuthParser::ProgramSendContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1845,13 +1846,13 @@ std::variant<ProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend
         {
             return errorHandler.addError(ctx->getStart(), "Failed to send " + ty->toString() + " over channel " + sym->toString());
         }
-        return new ProgramSendNode(sym, tn, canSend.value(), ctx->getStart());
+        return new TProgramSendNode(sym, tn, canSend.value(), ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot send on non-channel: " + id);
 }
 
-std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx)
+std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1872,13 +1873,13 @@ std::variant<ProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableR
             return errorHandler.addError(ctx->getStart(), "Failed to recv over channel: " + sym->toString());
         }
 
-        return new ProgramRecvNode(sym, ty.value(), ctx->getStart());
+        return new TProgramRecvNode(sym, ty.value(), ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);
 }
 
-std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(BismuthParser::ProgramCaseContext *ctx)
+std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(BismuthParser::ProgramCaseContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1952,12 +1953,12 @@ std::variant<ChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitPr
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
-        return new ChannelCaseStatementNode(sym, dat.cases, restDat->post, ctx->getStart());
+        return new TChannelCaseStatementNode(sym, dat.cases, restDat->post, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot case on non-channel: " + id);
 }
-std::variant<ProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramProject(BismuthParser::ProgramProjectContext *ctx)
+std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramProject(BismuthParser::ProgramProjectContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -1979,12 +1980,12 @@ std::variant<ProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramP
             return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString());
         }
 
-        return new ProgramProjectNode(sym, projectIndex, ctx->getStart());
+        return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot project on non-channel: " + id);
 }
-std::variant<ProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgramContract(BismuthParser::ProgramContractContext *ctx)
+std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgramContract(BismuthParser::ProgramContractContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2018,12 +2019,12 @@ std::variant<ProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
 
         */
-        return new ProgramContractNode(sym, ctx->getStart());
+        return new TProgramContractNode(sym, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot contract on non-channel: " + id);
 }
-std::variant<ProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx)
+std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx)
 {
     std::string id = ctx->channel->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2041,12 +2042,12 @@ std::variant<ProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWe
         {
             return errorHandler.addError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString());
         }
-        return new ProgramWeakenNode(sym, ctx->getStart());
+        return new TProgramWeakenNode(sym, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot weaken on non-channel: " + id);
 }
-std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAccept(BismuthParser::ProgramAcceptContext *ctx)
+std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAccept(BismuthParser::ProgramAcceptContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2081,7 +2082,7 @@ std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAc
 
         // stmgr->addSymbol(sym);
 
-        std::variant<BlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
+        std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
         std::vector<Symbol *> lins = stmgr->getAvailableLinears();
 
         // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
@@ -2110,13 +2111,13 @@ std::variant<ProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAc
             return *e;
         }
 
-        return new ProgramAcceptNode(sym, std::get<BlockNode *>(blkOpt), ctx->getStart());
+        return new TProgramAcceptNode(sym, std::get<TBlockNode *>(blkOpt), ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
 }
 
-std::variant<ProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx)
+std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
     std::optional<SymbolContext> opt = stmgr->lookup(id);
@@ -2163,7 +2164,7 @@ std::variant<ProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitProg
         // channel->setProtocol(acceptOpt.value());
         // stmgr->addSymbol(sym);
 
-        std::variant<BlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
+        std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
         std::vector<Symbol *> lins = stmgr->getAvailableLinears();
 
         // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
@@ -2192,13 +2193,13 @@ std::variant<ProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitProg
             return *e;
         }
 
-        return new ProgramAcceptWhileNode(sym, std::get<TypedNode *>(condOpt), std::get<BlockNode *>(blkOpt), ctx->getStart());
+        return new TProgramAcceptWhileNode(sym, std::get<TypedNode *>(condOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
 }
 
-std::variant<ProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableExec(BismuthParser::AssignableExecContext *ctx)
+std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableExec(BismuthParser::AssignableExecContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->prog->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -2211,7 +2212,7 @@ std::variant<ProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableE
 
     if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(prog->getType()))
     {
-        return new ProgramExecNode(
+        return new TProgramExecNode(
             prog,
             new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse())),
             ctx->getStart());
