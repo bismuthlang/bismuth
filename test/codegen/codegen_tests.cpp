@@ -571,6 +571,14 @@ TEST_CASE("programs/parity-check - Parity Check 2a", "[codegen][enum]")
         "9aa5a075cde50a16ecf15236dd4a75bd0530eb7ecd025b86a2d30ff7b48fdfcc");
 }
 
+
+TEST_CASE("programs/adder - Add Stream", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder.bismuth"))),
+        "b35904d3c75206e755ec6ac9a19fe731a7bf547d946f4e499d311a7f992a3ef9");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/

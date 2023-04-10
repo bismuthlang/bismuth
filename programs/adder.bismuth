@@ -1,0 +1,85 @@
+extern int func printf(str s, ...);
+
+
+# FIXME: DOESNT WORK IF BINARYCOUNTER DEFINED BEFORE THIS!!!
+define program :: c : Channel<-int> = {
+    var addStream := exec BinaryCounter;
+    addStream.send(exec Num7);
+    addStream.send(exec Num5);
+
+    accept(addStream) {
+        printf("%s",(boolean b) : str {
+            if b { return "1"; }
+            return "0";
+        }(addStream.recv()));
+    }
+    printf("\n");
+
+    c.send(0); 
+}
+
+# FIXME: DOESNT WORK
+define func XOR (boolean a, boolean b) : boolean {
+    return (a & !b) | (!a & b);
+}
+define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> = {
+    var i1 := c.recv(), i2 := c.recv();
+
+    boolean carry := false; 
+    boolean shouldLoop := true; 
+    while shouldLoop {
+        boolean looped1 := false; 
+        boolean val1 := false; 
+        acceptWhile(i1, !looped1) {val1 := i1.recv(); looped1 := true;}
+
+        boolean looped2, val2 := false; 
+        acceptWhile(i2, !looped2) {val2 := i2.recv(); looped2 := true;}
+
+        shouldLoop := looped1 & looped2; 
+        boolean xor := XOR(val1, val2); 
+        boolean sum := XOR(xor, carry); 
+        boolean car := (xor & carry) | (val1 & val2);
+        more(c);
+        c.send(sum);
+        carry := car;  
+    }
+    # Only one or the other of the accepts will end up running
+    accept(i1) {
+        boolean val := i1.recv(); 
+        more(c); 
+        c.send(XOR(val, carry));
+        carry := val & carry; 
+    }
+    accept(i2) {
+        boolean val := i2.recv(); 
+        more(c); 
+        c.send(XOR(val, carry));
+        carry := val & carry; 
+    }
+    if carry {
+        more(c); 
+        c.send(carry);
+    }
+
+    weaken(c);  
+}
+
+define Num7 :: c : Channel<?-boolean> = {
+    more(c); 
+    c.send(true); 
+    more(c); 
+    c.send(true); 
+    more(c)
+    c.send(true); 
+    weaken(c); 
+}
+
+define Num5 :: c : Channel<?-boolean> = {
+    more(c); 
+    c.send(true); 
+    more(c); 
+    c.send(false); 
+    more(c)
+    c.send(true); 
+    weaken(c); 
+}

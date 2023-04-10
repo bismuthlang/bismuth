@@ -811,7 +811,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogAndExprNode *n)
     Value *lastValue = first.value();
 
     auto parent = current->getParent();
-    phi->addIncoming(lastValue, current);
+    phi->addIncoming(lastValue, builder->GetInsertBlock());
 
     BasicBlock *falseBlk;
 
@@ -883,7 +883,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode *n)
     Value *lastValue = first.value();
 
     auto parent = current->getParent();
-    phi->addIncoming(lastValue, current);
+    phi->addIncoming(lastValue, builder->GetInsertBlock());
 
     BasicBlock *falseBlk;
 

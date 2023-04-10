@@ -323,7 +323,6 @@ public:
             if (dynamic_cast<BismuthParser::ReturnStatementContext *>(e))
                 foundReturn = true;
         }
-
         // If we entered a new scope, then we can now safely exit a scope
         if (newScope)
             this->safeExitScope(ctx);
@@ -639,7 +638,6 @@ public:
             }
 
             ctxRest->isGenerated = true;
-
             safeExitScope(ctx);
 
             std::vector<Symbol *> lins = stmgr->getAvailableLinears();
@@ -737,7 +735,6 @@ private:
                 {
                     details << e->toString() << "; ";
                 }
-
                 errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
             }
         }
