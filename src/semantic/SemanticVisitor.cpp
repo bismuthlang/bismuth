@@ -1352,10 +1352,8 @@ std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCt
         blksCtx.size() == 1,
         [this](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
         {
-            // stmgr->enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
-            auto ans = TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));;
-            // stmgr->exitScope(); 
-            return ans;
+            // Scopes automatically handled, have to use false bc we can't have the block autoscope otherwise we might throw an error before we get the chance to realize that we use all linears. 
+            return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
         });
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
