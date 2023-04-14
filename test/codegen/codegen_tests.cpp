@@ -572,11 +572,25 @@ TEST_CASE("programs/parity-check - Parity Check 2a", "[codegen][enum]")
 }
 
 
-TEST_CASE("programs/adder - Add Stream", "[codegen][enum]")
+TEST_CASE("programs/adder - Add Stream", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder.bismuth"))),
         "b35904d3c75206e755ec6ac9a19fe731a7bf547d946f4e499d311a7f992a3ef9");
+}
+
+TEST_CASE("programs/adder2 - Add Stream 2", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder2.bismuth"))),
+        "2a2d322b3733c6977f136ac6b10379fc672f63b80894cfed5a947c2d7bfea436");
+}
+
+TEST_CASE("programs/adder3 - Add Stream 3", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder3.bismuth"))),
+        "b2b9e850fed9c84c0f5bfa2e7c47ea0ca71d177ac6477ac82a13dc21679fb7b8");
 }
 
 /************************************

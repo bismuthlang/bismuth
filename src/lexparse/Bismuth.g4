@@ -59,7 +59,7 @@ lValue              : deref=dereferenceExpr
 expression          : LPAR ex=expression RPAR                                                       # ParenExpr
                     | fieldAccessExpr                                                               # FieldAccess
                     | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 
-                    | left=expression op=(MULTIPLY | DIVIDE) right=expression                       # BinaryArithExpr
+                    | left=expression op=(MULTIPLY | DIVIDE | MOD) right=expression                       # BinaryArithExpr
                     | left=expression op=(PLUS | MINUS) right=expression                            # BinaryArithExpr
                     | left=expression op=(LESS | LESS_EQ | GREATER | GREATER_EQ) right=expression   # BinaryRelExpr 
                     | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression         # EqExpr
@@ -172,6 +172,7 @@ MINUS       :       '-'     ;
 NOT         :       '!'     ;
 MULTIPLY    :       '*'     ;
 DIVIDE      :       '/'     ;
+MOD         :       '%'     ;
 PLUS        :       '+'     ;
 LESS        :       '<'     ;
 LESS_EQ     :       '<='    ;
