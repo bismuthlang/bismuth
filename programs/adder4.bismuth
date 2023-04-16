@@ -1,0 +1,78 @@
+extern int func printf(str s, ...);
+
+define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> = {
+    var i1 := c.recv(), i2 := c.recv();
+
+    boolean carry := false; 
+    # Only one or the other of the accepts will end up running
+    accept(i1) {
+        boolean val := i1.recv(); 
+
+        boolean looped2, val2 := false; 
+        acceptWhile(i2, !looped2) {val2 := i2.recv(); looped2 := true;}
+
+        boolean xor := XOR(val, val2); 
+        boolean sum := XOR(xor, carry); 
+        boolean car := (xor & carry) | (val & val2);
+        more(c);
+        c.send(sum);
+        carry := car; 
+    }
+    accept(i2) {
+        boolean val := i2.recv(); 
+        more(c); 
+        c.send(XOR(val, carry));
+        carry := val & carry; 
+    }
+    if carry {
+        more(c); 
+        c.send(carry);
+    }
+
+    weaken(c);  
+}
+
+define program :: c : Channel<-int> = {
+    var addStream := exec BinaryCounter, s1, s2 := exec toBinary, printer := exec toDecimal;
+    s1.send(120);
+    s2.send(75); 
+    addStream.send(s1);
+    addStream.send(s2);
+
+    printer.send(addStream);
+    c.send(0); 
+}
+
+define func XOR (boolean a, boolean b) : boolean {
+    return (a & !b) | (!a & b);
+}
+
+define toBinary :: c : Channel<+int;?-boolean> = {
+    int n := c.recv(); 
+
+    while n > 0 {
+        more(c)
+        if n % 2 == 1 {
+            c.send(true);
+        } else {
+            c.send(false);
+        }
+        n := n / 2; 
+    }
+
+    weaken(c);
+}
+
+define toDecimal :: c : Channel<+Channel<!+boolean>> = {
+    var a := c.recv(), dec_val := 0, base := 1; 
+ 
+    accept(a) { 
+        if a.recv() {
+            dec_val := dec_val + base; 
+        }
+ 
+        base := base * 2;
+    }
+ 
+    printf("%u\n", dec_val);
+}

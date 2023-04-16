@@ -746,6 +746,8 @@ std::optional<Value *> CodegenVisitor::visit(TBinaryArithNode *n)
         return builder->CreateNSWMul(lhs.value(), rhs.value());
     case BINARY_ARITH_DIV:
         return builder->CreateSDiv(lhs.value(), rhs.value());
+    case BINARY_ARITH_MOD: 
+        return builder->CreateSRem(lhs.value(), rhs.value());
     }
 }
 

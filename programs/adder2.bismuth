@@ -1,6 +1,5 @@
 extern int func printf(str s, ...);
 
-
 define program :: c : Channel<-int> = {
     var addStream := exec BinaryCounter;
     addStream.send(exec Num7);
@@ -25,29 +24,19 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
     var i1 := c.recv(), i2 := c.recv();
 
     boolean carry := false; 
-    boolean shouldLoop := true; 
-    while shouldLoop {
-        boolean looped1 := false; 
-        boolean val1 := false; 
-        acceptWhile(i1, !looped1) {val1 := i1.recv(); looped1 := true;}
+    # Only one or the other of the accepts will end up running
+    accept(i1) {
+        boolean val := i1.recv(); 
 
         boolean looped2, val2 := false; 
         acceptWhile(i2, !looped2) {val2 := i2.recv(); looped2 := true;}
 
-        shouldLoop := looped1 & looped2; 
-        boolean xor := XOR(val1, val2); 
+        boolean xor := XOR(val, val2); 
         boolean sum := XOR(xor, carry); 
-        boolean car := (xor & carry) | (val1 & val2);
+        boolean car := (xor & carry) | (val & val2);
         more(c);
         c.send(sum);
-        carry := car;  
-    }
-    # Only one or the other of the accepts will end up running
-    accept(i1) {
-        boolean val := i1.recv(); 
-        more(c); 
-        c.send(XOR(val, carry));
-        carry := val & carry; 
+        carry := car; 
     }
     accept(i2) {
         boolean val := i2.recv(); 

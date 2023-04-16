@@ -2223,3 +2223,17 @@ inline bool isLinear(const Type *ty)
         return true; // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure they are used?
     return false;
 }
+
+// Needed so that way we can make a copy of the channel type during send/receive protocols. 
+// If we don't then type checking processes w/ higher order channels break 
+// when defined before their use as the channel in the protocol gets messed up. 
+// See program/adder4
+inline const Type * copyType(const Type * ty)
+{
+    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
+    {
+        return new TypeChannel(channel->getProtocolCopy());
+    }
+
+    return ty;
+}
