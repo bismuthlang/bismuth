@@ -237,7 +237,7 @@ public:
 
     bool isOC() const;
 
-    bool isOCorGuarded() const; 
+    bool isOCorGuarded() const;
 
     optional<const ProtocolSequence *> acceptLoop() const;
     optional<const ProtocolSequence *> acceptWhileLoop() const;
@@ -505,7 +505,6 @@ public:
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
 };
 
-
 /*******************************************
  *
  * Integer (32 bit, signed) Type Definition
@@ -708,11 +707,106 @@ public:
 
     bool requiresDeepCopy() const override { return valueType->requiresDeepCopy(); }
 
-    // std::optional<llvm::Value *> clone(llvm::Module *M, llvm::Value *orig) const override
-    // {
-    //     // FIXME: WRONG!
-    //     return orig; // Stack value, can just return it for the copy.
-    // }
+    virtual llvm::Function *clone(llvm::Module *M, llvm::IRBuilder<llvm::NoFolder> *builder) const override
+    {
+        llvm::Function *testFn = M->getFunction("_clone_" + toString());
+        if (testFn)
+            return testFn;
+
+        llvm::BasicBlock *ins = builder->GetInsertBlock();
+
+        llvm::Function *fn = llvm::Function::Create(llvm::FunctionType::get(
+                                                        getLLVMType(M),
+                                                        {
+                                                            getLLVMType(M),                           // llvm::Type::getInt8PtrTy(M->getContext()), // Value
+                                                            llvm::Type::getInt8PtrTy(M->getContext()) // Map
+                                                        },
+                                                        false),
+                                                    llvm::GlobalValue::PrivateLinkage, "_clone_" + toString(), M);
+
+        llvm::BasicBlock *bBlk = llvm::BasicBlock::Create(M->getContext(), "entry", fn);
+        builder->SetInsertPoint(bBlk);
+
+        llvm::Value *v = CreateEntryBlockAlloc(builder, getLLVMType(M), "v");
+
+        builder->CreateStore((fn->args()).begin(), v);
+        llvm::Value *loaded = builder->CreateLoad(getLLVMType(M), v);
+
+        llvm::Value *alloc = builder->CreateCall(
+            M->getOrInsertFunction(
+                "GC_malloc",
+                llvm::FunctionType::get(
+                    llvm::Type::getInt8PtrTy(M->getContext()),
+                    {llvm::Type::getInt64Ty(M->getContext())},
+                    false)),
+            {builder->getInt64(M->getDataLayout().getTypeAllocSize(getLLVMType(M)))});
+
+        llvm::Value *casted = builder->CreateBitCast(alloc, getLLVMType(M)->getPointerTo());
+
+        builder->CreateStore(loaded, casted);
+        v = casted;
+        if (requiresDeepCopy())
+        {
+            llvm::AllocaInst *m = CreateEntryBlockAlloc(builder, llvm::Type::getInt8PtrTy(M->getContext()), "m");
+            builder->CreateStore(fn->getArg(1), m);
+
+            llvm::AllocaInst *loop_index = CreateEntryBlockAlloc(builder, llvm::Type::getInt32Ty(M->getContext()), "idx");
+            llvm::AllocaInst *loop_len = CreateEntryBlockAlloc(builder, llvm::Type::getInt32Ty(M->getContext()), "len");
+            builder->CreateStore(llvm::ConstantInt::get(llvm::Type::getInt32Ty(M->getContext()), 0, true), loop_index);
+            builder->CreateStore(llvm::ConstantInt::get(llvm::Type::getInt32Ty(M->getContext()), getLength(), true), loop_len);
+
+            auto parent = builder->GetInsertBlock()->getParent();
+            llvm::BasicBlock *condBlk = llvm::BasicBlock::Create(M->getContext(), "loop-cond", parent);
+
+            llvm::BasicBlock *loopBlk = llvm::BasicBlock::Create(M->getContext(), "loop");
+            llvm::BasicBlock *restBlk = llvm::BasicBlock::Create(M->getContext(), "rest");
+
+            builder->CreateBr(condBlk);
+            builder->SetInsertPoint(condBlk);
+
+            builder->CreateCondBr(builder->CreateICmpSLT(builder->CreateLoad(llvm::Type::getInt32Ty(M->getContext()), loop_index), builder->CreateLoad(llvm::Type::getInt32Ty(M->getContext()), loop_len)), loopBlk, restBlk);
+            condBlk = builder->GetInsertBlock();
+
+            parent->getBasicBlockList().push_back(loopBlk);
+            builder->SetInsertPoint(loopBlk);
+            // M->dump();
+            /******************Loop Body********************/
+            /**     Note: This may Have to be improved depending on **/
+            /**           how inheritance & such ends up working.   **/
+            /**/
+            /**/ llvm::Value *memLoc = builder->CreateGEP(casted, {llvm::ConstantInt::get(
+                                                                       llvm::Type::getInt32Ty(M->getContext()),
+                                                                       0,
+                                                                       true),
+                                                                   builder->CreateLoad(llvm::Type::getInt32Ty(M->getContext()), loop_index)});
+
+             llvm::Value *cloned = builder->CreateCall(valueType->clone(M, builder), {builder->CreateLoad(getValueType()->getLLVMType(M), memLoc),
+                                                                               builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m)});
+
+             builder->CreateStore(cloned, memLoc);
+            /**/
+            /**/
+            /***********************************************/
+            builder->CreateStore(
+                builder->CreateNSWAdd(builder->CreateLoad(llvm::Type::getInt32Ty(M->getContext()), loop_index),
+                                      llvm::ConstantInt::get(
+                                          llvm::Type::getInt32Ty(M->getContext()),
+                                          1,
+                                          true)),
+                loop_index);
+            builder->CreateBr(condBlk);
+            loopBlk = builder->GetInsertBlock();
+
+            parent->getBasicBlockList().push_back(restBlk);
+            builder->SetInsertPoint(restBlk);
+        }
+
+        builder->CreateRet(builder->CreateLoad(v, getLLVMType(M)));
+
+        builder->SetInsertPoint(ins);
+
+        return fn;
+    }
 
 protected:
     bool isSupertypeFor(const Type *other) const override
@@ -775,12 +869,6 @@ public:
     }
 
     bool requiresDeepCopy() const override { return false; }
-
-    // std::optional<llvm::Value *> clone(llvm::Module *M, llvm::Value *orig) const override
-    // {
-    //     // FIXME: MOVE NOT COPY!
-    //     return orig; // Stack value, can just return it for the copy.
-    // }
 
     const ProtocolSequence *getProtocol() const
     {
@@ -1106,11 +1194,6 @@ public:
     }
 
     bool requiresDeepCopy() const override { return false; }
-
-    // std::optional<llvm::Value *> clone(llvm::Module *M, llvm::Value *orig) const override
-    // {
-    //     return orig; // Stack value, can just return it for the copy.
-    // }
 
     std::optional<std::string> getLLVMName() const { return name; }
     bool setName(std::string n) const
@@ -1548,24 +1631,28 @@ private:
     // llvm::Type * llvmType;
     std::optional<std::string> name = {};
 
-    bool defined; 
+    bool defined;
 
 public:
     TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) : cases(c), name(n), defined(true)
-    {}
+    {
+    }
 
     TypeSum(std::string n) : name(n), defined(false)
-    {}
+    {
+    }
 
-    bool define(std::set<const Type *, TypeCompare> c) const {
-        if(isDefined()) return false; 
+    bool define(std::set<const Type *, TypeCompare> c) const
+    {
+        if (isDefined())
+            return false;
 
         TypeSum *mthis = const_cast<TypeSum *>(this);
-        mthis->defined = true; 
+        mthis->defined = true;
 
-        mthis->cases = c; 
+        mthis->cases = c;
 
-        return true; 
+        return true;
     }
 
     bool isDefined() const { return defined; }
@@ -1930,10 +2017,12 @@ private:
 
 public:
     TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) : elements(e), name(n), defined(true)
-    {}
+    {
+    }
 
     TypeStruct(std::string n) : name(n), defined(false)
-    {}
+    {
+    }
 
     std::optional<const Type *> get(std::string id) const
     {
@@ -1945,16 +2034,18 @@ public:
         return elements.getIndex(id);
     }
 
-    bool define(LinkedMap<std::string, const Type *> e) const {
-        if(isDefined()) return false; 
+    bool define(LinkedMap<std::string, const Type *> e) const
+    {
+        if (isDefined())
+            return false;
 
         TypeStruct *mthis = const_cast<TypeStruct *>(this);
-        mthis->defined = true; 
+        mthis->defined = true;
 
-        mthis->elements = e; 
-        // mthis->name = n; 
+        mthis->elements = e;
+        // mthis->name = n;
 
-        return true; 
+        return true;
     }
 
     bool isDefined() const { return defined; }
@@ -2011,7 +2102,7 @@ public:
         }
 
         llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-        ty->setBody(ref); //Done like this to enable recursive types
+        ty->setBody(ref); // Done like this to enable recursive types
 
         return ty;
     }
@@ -2088,7 +2179,7 @@ public:
 
                     llvm::Value *loaded = builder->CreateLoad(eleType->getLLVMType(M), memLoc);
 
-                    if (eleType->getLLVMType(M)->isPointerTy())
+                    if (eleType->getLLVMType(M)->isPointerTy()) // FIXME: will this bug out w/ lambdas?
                     {
                         llvm::Value *hasValPtr = builder->CreateCall(
                             M->getOrInsertFunction(
@@ -2192,7 +2283,7 @@ public:
 
         builder->SetInsertPoint(ins);
 
-        return fn; // Stack value, can just return it for the copy.
+        return fn;
     }
 
 protected:
@@ -2224,11 +2315,11 @@ inline bool isLinear(const Type *ty)
     return false;
 }
 
-// Needed so that way we can make a copy of the channel type during send/receive protocols. 
-// If we don't then type checking processes w/ higher order channels break 
-// when defined before their use as the channel in the protocol gets messed up. 
+// Needed so that way we can make a copy of the channel type during send/receive protocols.
+// If we don't then type checking processes w/ higher order channels break
+// when defined before their use as the channel in the protocol gets messed up.
 // See program/adder4
-inline const Type * copyType(const Type * ty)
+inline const Type *copyType(const Type *ty)
 {
     if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
     {
