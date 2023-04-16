@@ -159,6 +159,7 @@ statement           : defineProc                                              # 
                     | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                              # ProgramCase   
                     | channel=VARIABLE LBRC sel=protocol RBRC                                                                   # ProgramProject
                     | 'more' '(' channel=VARIABLE ')'   ';'?                                # ProgramContract 
+                    | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                               # ProgramAccept
                     | 'accept' '(' channel=VARIABLE ',' ex=expression ')' block             # ProgramAcceptWhile

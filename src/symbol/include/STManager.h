@@ -67,7 +67,8 @@ public:
    */
   bool addSymbol(Symbol *symbol)
   {
-    if (isLinear(symbol->type))
+    if (isLinear(symbol->type) &&
+        symbol->getIdentifier() != "@RETURN") //Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elim.
       return linearContext.addSymbol(symbol);
     return dangerContext.addSymbol(symbol);
   }

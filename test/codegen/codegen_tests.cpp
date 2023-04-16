@@ -600,6 +600,13 @@ TEST_CASE("programs/adder4 - Add Stream 3 but out of order and higher-order chan
         "ad58a85b3ebc6de127ad50e3a5b49611df5c1092e1ef6f9328bb111628d6e661");
 }
 
+TEST_CASE("programs/adder5 - Add Stream 4 but using fn that returns linear variable", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder5.bismuth"))),
+        "62a90a5edfd2a52b6c87d717ae2db8a758f0127e55f9359eb36bcb0d48c80780");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/

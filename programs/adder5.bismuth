@@ -33,11 +33,9 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
 }
 
 define program :: c : Channel<-int> = {
-    var addStream := exec BinaryCounter, s1, s2 := exec toBinary, printer := exec toDecimal;
-    s1.send(120);
-    s2.send(75); 
-    addStream.send(s1);
-    addStream.send(s2);
+    var addStream := exec BinaryCounter, printer := exec toDecimal;
+    addStream.send(getBinaryStreamFor(120));
+    addStream.send(getBinaryStreamFor(75));
 
     printer.send(addStream);
     c.send(0); 
@@ -45,6 +43,12 @@ define program :: c : Channel<-int> = {
 
 define func XOR (boolean a, boolean b) : boolean {
     return (a & !b) | (!a & b);
+}
+
+define func getBinaryStreamFor(int n) : Channel<!+boolean> {
+    var c := exec toBinary; 
+    c.send(n); 
+    return c; 
 }
 
 define toBinary :: c : Channel<+int;?-boolean> = {
