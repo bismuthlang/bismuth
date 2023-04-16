@@ -9,4 +9,5 @@ set (CODEGEN_INCLUDE ${CODEGEN_DIR}/include)
 #
 set (CODEGEN_SOURCES
   ${CODEGEN_DIR}/CodegenVisitor.cpp
+  ${CODEGEN_DIR}/DeepCopyVisitor.cpp
 )

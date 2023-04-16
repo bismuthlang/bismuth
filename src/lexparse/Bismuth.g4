@@ -9,7 +9,7 @@ compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ;
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
 
-defineProc        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '=' block  ;
+defineProc        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block  ;
 
 defineFunc        : DEFINE 'func' name=VARIABLE lam=lambdaConstExpr ;
 
