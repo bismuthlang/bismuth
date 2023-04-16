@@ -413,7 +413,6 @@ public:
             stmgr->enterScope(StopType::GLOBAL); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
 
             Symbol *channelSymbol = new Symbol(ctx->channelName->getText(), progType->getChannelType()->getCopy(), false, false);
-
             stmgr->addSymbol(channelSymbol);
             // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
             stmgr->addSymbol(new Symbol("@EXIT", Types::UNIT, false, false));
@@ -434,7 +433,6 @@ public:
 
             // Safe exit the scope.
             safeExitScope(ctx);
-
             return new TProgramDefNode(funcId, channelSymbol, std::get<TBlockNode *>(blkOpt), progType, ctx->getStart());
         }
         else

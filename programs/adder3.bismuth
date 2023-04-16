@@ -1,6 +1,5 @@
 extern int func printf(str s, ...);
 
-# FIXME: DOESNT WORK IF BINARYCOUNTER DEFINED BEFORE THIS!!!
 define program :: c : Channel<-int> = {
     var addStream := exec BinaryCounter, s1, s2 := exec toBinary, printer := exec toDecimal;
     s1.send(120);
@@ -47,14 +46,6 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
 
     weaken(c);  
 }
-
-
-# FIXME: DOESNT WORK
-# define func getBinaryStreamFor(int n) : Channel<!+boolean> {
-#     var c := exec toBinary; 
-#     c.send(n); 
-#     return c; 
-# }
 
 define toBinary :: c : Channel<+int;?-boolean> = {
     int n := c.recv(); 

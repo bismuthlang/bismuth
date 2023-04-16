@@ -593,6 +593,13 @@ TEST_CASE("programs/adder3 - Add Stream 3", "[codegen]")
         "b2b9e850fed9c84c0f5bfa2e7c47ea0ca71d177ac6477ac82a13dc21679fb7b8");
 }
 
+TEST_CASE("programs/adder4 - Add Stream 3 but out of order and higher-order channel", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder4.bismuth"))),
+        "ad58a85b3ebc6de127ad50e3a5b49611df5c1092e1ef6f9328bb111628d6e661");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/

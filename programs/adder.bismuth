@@ -1,7 +1,6 @@
 extern int func printf(str s, ...);
 
 
-# FIXME: DOESNT WORK IF BINARYCOUNTER DEFINED BEFORE THIS!!!
 define program :: c : Channel<-int> = {
     var addStream := exec BinaryCounter;
     addStream.send(exec Num7);
