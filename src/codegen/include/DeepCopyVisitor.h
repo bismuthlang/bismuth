@@ -67,7 +67,7 @@ public:
         errorHandler = e;
 
         // Use the NoFolder to turn off constant folding
-        builder = new IRBuilder<NoFolder>(module->getContext());
+        // builder = new IRBuilder<NoFolder>(module->getContext());
 
         // LLVM Types
         VoidTy = llvm::Type::getVoidTy(module->getContext());
@@ -97,7 +97,7 @@ public:
                 false));
     }
 
-    Value *runMalloc(llvm::TypeSize size)
+    Value *runMalloc(IRBuilder<NoFolder> *builder, llvm::TypeSize size)
     {
         return builder->CreateCall(
             getMalloc(),
@@ -131,11 +131,12 @@ public:
                 false));
     }
 
-    Value *runGCMalloc(llvm::TypeSize size)
+    Value *runGCMalloc(IRBuilder<NoFolder> *builder, llvm::TypeSize size)
     {
         return builder->CreateCall(
             getGCMalloc(),
             {builder->getInt64(size)});
+        // return runMalloc(builder, size);
     }
 
     llvm::FunctionCallee get_address_map_create()
@@ -148,12 +149,12 @@ public:
                 false));
     }
 
-    Value *getNewAddressMap()
+    Value *getNewAddressMap(IRBuilder<NoFolder> *builder)
     {
         return builder->CreateCall(get_address_map_create(), {});
     }
 
-    void deleteAddressMap(Value *val)
+    void deleteAddressMap(IRBuilder<NoFolder> *builder, Value *val)
     {
         builder->CreateCall(
             module->getOrInsertFunction(
@@ -188,7 +189,7 @@ public:
     }
 
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
-    llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
+    llvm::AllocaInst *CreateEntryBlockAlloc(IRBuilder<NoFolder> *builder, llvm::Type *ty, std::string identifier)
     {
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
         // // for(auto B = fn->begin(), e = fn->end(); B != e; ++B)
@@ -219,11 +220,11 @@ public:
         // return std::nullopt;
     }
 
-    optional<Value *> deepCopy(const Type *type, Value *to_copy)
+    optional<Value *> deepCopy(IRBuilder<NoFolder> *builder, const Type *type, Value *to_copy)
     {
-        Value *addrMap = getNewAddressMap();
-        optional<Value *> ans = deepCopyHelper(type, to_copy, addrMap, MIXED_MALLOC);
-        deleteAddressMap(addrMap);
+        Value *addrMap = getNewAddressMap(builder);
+        optional<Value *> ans = deepCopyHelper(builder, type, to_copy, addrMap, MIXED_MALLOC);
+        deleteAddressMap(builder, addrMap);
         return ans;
     }
 
@@ -232,7 +233,7 @@ private:
 
     // LLVM
     Module *module;
-    IRBuilder<NoFolder> *builder;
+    // IRBuilder<NoFolder> *builder;
 
     // Commonly used types
     llvm::Type *VoidTy;
@@ -255,7 +256,7 @@ private:
         return getSizeForType(val->getType());
     }
 
-    optional<Value *> deepCopyHelper(const Type *type, Value *stoVal, Value *addrMap, DeepCopyType copyType)
+    optional<Value *> deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap, DeepCopyType copyType)
     {
         if (isLinear(type))
         {
@@ -264,13 +265,13 @@ private:
         }
 
         if (!type->requiresDeepCopy())
-        {
-            Value *v = (copyType == GC_MALLOC) ? runGCMalloc(getSizeForValue(stoVal))
-                                               : runMalloc(getSizeForValue(stoVal));
-
+        { 
+            Value *v = (copyType == GC_MALLOC) ? runGCMalloc(builder, getSizeForValue(stoVal))
+                                               : runMalloc(builder, getSizeForValue(stoVal));
             Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
             builder->CreateStore(stoVal, casted);
-            return v;
+            // return casted;
+            return builder->CreateLoad(stoVal->getType(), casted);
         }
 
         Function *testFn = module->getFunction("_clone_" + type->toString());
@@ -294,11 +295,11 @@ private:
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
 
-        Value *v = CreateEntryBlockAlloc(llvmType, "v");
+        Value *v = CreateEntryBlockAlloc(builder, llvmType, "v");
         builder->CreateStore((fn->args()).begin(), v);
-        Value *loaded = builder->CreateLoad(llvmType, v);
+        // Value *loaded = builder->CreateLoad(llvmType, v);
 
-        AllocaInst *m = CreateEntryBlockAlloc(i8p, "m");
+        AllocaInst *m = CreateEntryBlockAlloc(builder, i8p, "m");
         builder->CreateStore(fn->getArg(1), m);
 
         if (const TypeBox *boxType = dynamic_cast<const TypeBox *>(type))
@@ -328,7 +329,7 @@ private:
              * Then block
              */
             builder->SetInsertPoint(thenBlk);
-            Value *casted = builder->CreateBitCast(hasValPtr, innerType->getLLVMType(module));
+            Value *casted = builder->CreateBitCast(hasValPtr, type->getLLVMType(module));
 
             builder->CreateBr(restBlk);
 
@@ -341,13 +342,20 @@ private:
             builder->SetInsertPoint(elseBlk);
 
             // // Generate the code for the else block; follows the same logic as the then block.
-            // Value *cloned = builder->CreateCall(innerType->clone(module, builder), {loaded,
-            //                                                                          builder->CreateLoad(i8p, m)});
-            optional<Value *> clonedOpt = deepCopyHelper(innerType, loaded, builder->CreateLoad(i8p, m), GC_MALLOC);
-            if(!clonedOpt) return std::nullopt; 
-            Value * cloned = clonedOpt.value(); 
+            optional<Value *> clonedOpt = deepCopyHelper(builder, innerType, builder->CreateLoad(innerType->getLLVMType(module), builder->CreateLoad(llvmType, v)), builder->CreateLoad(i8p, m), GC_MALLOC);
+            if (!clonedOpt)
+                return std::nullopt;
+            // Value *cloned = clonedOpt.value();
+            Value *alloc = runGCMalloc(builder, getSizeForType(type->getLLVMType(module)));
+            Value *casted2 = builder->CreateBitCast(alloc, type->getLLVMType(module));
+            builder->CreateStore(clonedOpt.value(), casted2);
+            builder->CreateCall(
+                get_address_map_put(),
+                {builder->CreateLoad(i8p, m),
+                 builder->CreateBitCast(v, i8p),
+                 alloc});
 
-            builder->CreateBr(restBlk); // FIXME: LEFT OFF HERE
+            builder->CreateBr(restBlk);
 
             elseBlk = builder->GetInsertBlock();
 
@@ -355,22 +363,26 @@ private:
             parentFn->getBasicBlockList().push_back(restBlk);
             builder->SetInsertPoint(restBlk);
 
-            llvm::PHINode *phi = builder->CreatePHI(innerType->getLLVMType(module), 2, "phi");
+            llvm::PHINode *phi = builder->CreatePHI(type->getLLVMType(module), 2, "phi");
             phi->addIncoming(casted, thenBlk);
-            phi->addIncoming(cloned, elseBlk);
-
-            Value *alloc = runGCMalloc(getSizeForType(innerType->getLLVMType(module)));
-
-            Value *casted2 = builder->CreateBitCast(alloc, innerType->getLLVMType(module)->getPointerTo());
-            builder->CreateStore(phi, casted2);
-            v = casted2;
-
-            builder->CreateCall(
-                get_address_map_put(),
-                {builder->CreateLoad(i8p, m),
-                 builder->CreateBitCast(loaded, i8p),
-                 alloc});
+            phi->addIncoming(casted2, elseBlk);
+            v = phi;
         }
+        else if(const TypeStruct * structType = dynamic_cast<const TypeStruct*>(type))
+        {
+            
+        }
+        else
+        {
+            builder->CreateRet(v);
+            builder->SetInsertPoint(ins);
+            errorHandler->addError(nullptr, "Compiler Error (Please report this bug!): I don't know how to copy the following type: " + type->toString());
+            return std::nullopt;
+        }
+
+        builder->CreateRet(v);
+        builder->SetInsertPoint(ins);
+        return builder->CreateCall(fn, {stoVal, addrMap});
 
         // Value * alloc = runGCMalloc(getSizeForType(llvmType));
 

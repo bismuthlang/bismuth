@@ -14,6 +14,7 @@
 #include "CompilerFlags.h"
 
 #include "BismuthErrorHandler.h"
+#include "DeepCopyVisitor.h"
 // #include "SemanticVisitor.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/IRBuilder.h"
@@ -72,6 +73,8 @@ public:
 
         // Use the NoFolder to turn off constant folding
         builder = new IRBuilder<NoFolder>(module->getContext());
+
+        copyVisitor = new DeepCopyVisitor(module, &errorHandler);
 
         // LLVM Types
         VoidTy = llvm::Type::getVoidTy(module->getContext());
@@ -525,7 +528,7 @@ private:
     int flags;
 
     BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN);
-
+    DeepCopyVisitor * copyVisitor; 
     // LLVM
     LLVMContext *context;
     Module *module;
