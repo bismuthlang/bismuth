@@ -494,6 +494,26 @@ TEST_CASE("programs/TStructEnum - Parody + Clone w/ Enum Struct Boxes ", "[codeg
         "020b5f800e25cf725e95be0b98fe07f110ff04e5553b062860e71bebec96d1f0");
 }
 
+TEST_CASE("programs/TArray - Parody + Clone w/ Array", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TArray.bismuth"))),
+        "65edbe5d4c64770c27493659b1a77c138519cdbf3a324b368bdadf5f731bf90f");
+}
+TEST_CASE("programs/TArray2 - Parody + Clone w/ Array Double box", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TArray2.bismuth"))),
+        "3a51012724e3522c569d8d39c28e70c514e42bd14edad860af503c01702283a2");
+}
+
+TEST_CASE("programs/TStructEnumArray - Parody + Clone w/ Struct Enum Array", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnumArray.bismuth"))),
+        "a18193f4b388e2a29a166ac604072e40ed653cace95fe6287caa3a476791f767");
+}
+
 TEST_CASE("programs/loop - Basic GC with boxes in loops based on example", "[codegen][enum]")
 {
     EnsureCompilesTo(

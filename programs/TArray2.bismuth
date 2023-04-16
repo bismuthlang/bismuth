@@ -1,0 +1,60 @@
+extern Unit func printf(str s, ...);
+
+define func print(str name, Box<Box<int>>[2] b) {
+  printf("%s = {b1 : %u, b2 : %u}\n", name, **b[0], **b[1]);
+  return; 
+}
+
+define foo :: c : Channel<+Box<Box<int>>[2];-int;+int> = {
+  var iPtr := c.recv(); 
+  print("iPtr (orig/5)", iPtr);
+  **iPtr[0] := 7;
+  print("iPtr (mod/7)", iPtr);
+  c.send(-1);
+  var t := c.recv(); 
+  print("iPtr (mod/7)", iPtr);
+
+}
+
+define program :: c : Channel<-int> = {
+  {
+    var a := exec foo; 
+
+    var shared := Box<Box<int>>::init(Box<int>::init(5));
+
+    Box<Box<int>>[2] arr; 
+    arr[0] := shared; 
+    arr[1] := Box<Box<int>>::init(Box<int>::init(6));
+
+    printf("");
+    print("b (orig/5;6)", arr);
+    a.send(arr)
+    var u := a.recv(); 
+    print("b (orig/5;6)", arr);
+    # **shared = 9; 
+    *shared := Box<int>::init(9); 
+    print("b (orig/9;6)", arr);
+    a.send(-1);
+  }
+  printf("------\n");
+  {
+    var a := exec foo; 
+
+    var shared := Box<Box<int>>::init(Box<int>::init(5));
+    Box<Box<int>>[2] arr; 
+    arr[0] := shared; 
+    arr[1] := shared; 
+  
+    printf("");
+    print("b (orig/5;5)", arr);
+    a.send(arr)
+    var u := a.recv(); 
+    print("b (orig/5;5)", arr);
+    # **shared = 9; 
+    *shared := Box<int>::init(9); 
+    print("b (orig/9;9)", arr);
+    a.send(-1);
+  }
+
+  c.send(0);
+}

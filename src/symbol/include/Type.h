@@ -774,16 +774,102 @@ public:
             /**     Note: This may Have to be improved depending on **/
             /**           how inheritance & such ends up working.   **/
             /**/
-            /**/ llvm::Value *memLoc = builder->CreateGEP(casted, {llvm::ConstantInt::get(
-                                                                       llvm::Type::getInt32Ty(M->getContext()),
-                                                                       0,
-                                                                       true),
-                                                                   builder->CreateLoad(llvm::Type::getInt32Ty(M->getContext()), loop_index)});
+            /**/
+            {
+                llvm::Value *origLoc = builder->CreateGEP(v, {llvm::ConstantInt::get(
+                                                                  llvm::Type::getInt32Ty(M->getContext()),
+                                                                  0,
+                                                                  true),
+                                                              builder->CreateLoad(llvm::Type::getInt32Ty(M->getContext()), loop_index)});
 
-             llvm::Value *cloned = builder->CreateCall(valueType->clone(M, builder), {builder->CreateLoad(getValueType()->getLLVMType(M), memLoc),
-                                                                               builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m)});
+                llvm::Value *memLoc = builder->CreateGEP(casted, {llvm::ConstantInt::get(
+                                                                  llvm::Type::getInt32Ty(M->getContext()),
+                                                                  0,
+                                                                  true),
+                                                              builder->CreateLoad(llvm::Type::getInt32Ty(M->getContext()), loop_index)});
 
-             builder->CreateStore(cloned, memLoc);
+                llvm::Value *loaded = builder->CreateLoad(getValueType()->getLLVMType(M), origLoc);
+
+                llvm::Value *hasValPtr = builder->CreateCall(
+                    M->getOrInsertFunction(
+                        "_address_map_has",
+                        llvm::FunctionType::get(
+                            llvm::Type::getInt8PtrTy(M->getContext()),
+                            {llvm::Type::getInt8PtrTy(M->getContext()),
+                             llvm::Type::getInt8PtrTy(M->getContext())},
+                            false)),
+                    {builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m),
+                     builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext()))});
+
+                auto parentFn = builder->GetInsertBlock()->getParent();
+
+                llvm::BasicBlock *thenBlk = llvm::BasicBlock::Create(M->getContext(), "then", parentFn);
+                llvm::BasicBlock *elseBlk = llvm::BasicBlock::Create(M->getContext(), "else");
+                llvm::BasicBlock *restBlk = llvm::BasicBlock::Create(M->getContext(), "ifcont");
+
+                builder->CreateCondBr(
+                    builder->CreateZExtOrTrunc(
+                        builder->CreateICmpNE(
+                            hasValPtr,
+                            llvm::Constant::getNullValue(hasValPtr->getType())
+                            ),
+                        llvm::Type::getInt1Ty(M->getContext())),
+                    thenBlk,
+                    elseBlk);
+
+                /*
+                 * Then block
+                 */
+                builder->SetInsertPoint(thenBlk);
+                llvm::Value *casted = builder->CreateBitCast(hasValPtr, getValueType()->getLLVMType(M));
+
+                builder->CreateBr(restBlk);
+
+                thenBlk = builder->GetInsertBlock();
+
+                /*
+                 * Insert the else block (same as rest if no else branch)
+                 */
+                parentFn->getBasicBlockList().push_back(elseBlk);
+                builder->SetInsertPoint(elseBlk);
+
+                // Generate the code for the else block; follows the same logic as the then block.
+                // llvm::Value *cloned = builder->CreateCall(getValueType()->clone(M, builder), {loaded,
+                                                                                        //  builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m)});
+                llvm::Value *cloned = builder->CreateCall(getValueType()->clone(M, builder), {builder->CreateLoad(getValueType()->getLLVMType(M), memLoc),
+                                                                                     builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m)});                                                                    
+                builder->CreateBr(restBlk);
+
+                elseBlk = builder->GetInsertBlock();
+
+                // As we have an else block, rest and else are different, so we have to merge back in.
+                parentFn->getBasicBlockList().push_back(restBlk);
+                builder->SetInsertPoint(restBlk);
+
+                llvm::PHINode *phi = builder->CreatePHI(getValueType()->getLLVMType(M), 2, "phi");
+                phi->addIncoming(casted, thenBlk);
+                phi->addIncoming(cloned, elseBlk);
+
+                // llvm::Value *casted2 = builder->CreateBitCast(alloc, getValueType()->getLLVMType(M)->getPointerTo());
+                // builder->CreateStore(phi, casted2);
+                // v = casted2;
+                // builder->CreateStore(cloned, memLoc);
+                builder->CreateStore(phi, memLoc);
+
+                builder->CreateCall(
+                    M->getOrInsertFunction(
+                        "_address_map_put",
+                        llvm::FunctionType::get(
+                            llvm::Type::getVoidTy(M->getContext()),
+                            {llvm::Type::getInt8PtrTy(M->getContext()),
+                             llvm::Type::getInt8PtrTy(M->getContext()),
+                             llvm::Type::getInt8PtrTy(M->getContext())},
+                            false)),
+                    {builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m),
+                     builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext())),
+                     builder->CreateBitCast(phi, llvm::Type::getInt8PtrTy(M->getContext()))});
+            }
+
             /**/
             /**/
             /***********************************************/
@@ -2265,7 +2351,7 @@ public:
                                      llvm::Type::getInt8PtrTy(M->getContext())},
                                     false)),
                             {builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m),
-                             builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext())),
+                             builder->CreateBitCast(loaded, llvm::Type::getInt8PtrTy(M->getContext())), //FIXME: DOES THIS DO ANYTHING? SEEMS TO JUST STORE THE NEW THING WE CREATED WHICH WOULDNT ACTUALLY TELL ANYONE ELSE TO USE THE NEW VALUE
                              builder->CreateBitCast(phi, llvm::Type::getInt8PtrTy(M->getContext()))});
                     }
                     else
