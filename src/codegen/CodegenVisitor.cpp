@@ -374,19 +374,18 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
     {
         if (n->lType->requiresDeepCopy())
         {
-            Function *fn = n->lType->clone(module, builder);
-            if (fn == nullptr)
-            {
-                errorHandler.addError(n->getStart(), "Failed to generate clone fn for type: " + n->lType->toString());
-                return std::nullopt;
-            }
-            Value *addrMap = getNewAddressMap();
-            stoVal = builder->CreateCall(fn, {stoVal, addrMap});
-            deleteAddressMap(addrMap);
-            // return v;
-            // auto opt =  copyVisitor->deepCopy(builder, n->lType, stoVal);
-            // if(!opt) return std::nullopt; 
-            // stoVal = opt.value(); 
+            // Function *fn = n->lType->clone(module, builder);
+            // if (fn == nullptr)
+            // {
+            //     errorHandler.addError(n->getStart(), "Failed to generate clone fn for type: " + n->lType->toString());
+            //     return std::nullopt;
+            // }
+            // Value *addrMap = getNewAddressMap();
+            // stoVal = builder->CreateCall(fn, {stoVal, addrMap});
+            // deleteAddressMap(addrMap);
+            auto opt =  copyVisitor->deepCopy(builder, n->lType, stoVal);
+            if(!opt) return std::nullopt; 
+            stoVal = opt.value(); 
         }
 
         Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});

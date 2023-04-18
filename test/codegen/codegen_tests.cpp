@@ -477,41 +477,41 @@ TEST_CASE("programs/TBox - Parody + Clone w/ boxes", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TBox.bismuth"))),
-        "2966ba092c30e85bfeed8ed3df1464aae4cb3255e8a6cf51668f4bc9e8256974");
+        "692d79cf18cb93cd353a720c4e0661f014a14c79601b337f7593caa23c152188");
 }
 
 TEST_CASE("programs/TStruct - Parody + Clone w/ Struct Boxes ", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStruct.bismuth"))),
-        "5be010fecfba6d6a45e2258e2983affa5a13026d897d253d6e45f286028dcb34");
+        "0bb307ad6ec0b68233e662b99812e6470779c0812b4816678b71894c4556e567");
 }
 
 TEST_CASE("programs/TStructEnum - Parody + Clone w/ Enum Struct Boxes ", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnum.bismuth"))),
-        "020b5f800e25cf725e95be0b98fe07f110ff04e5553b062860e71bebec96d1f0");
+        "1a37efb1d02777ef28c19067c3d0cafc2c4ce017a9dda2bc56868f13d20282a9");
 }
 
 TEST_CASE("programs/TArray - Parody + Clone w/ Array", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TArray.bismuth"))),
-        "65edbe5d4c64770c27493659b1a77c138519cdbf3a324b368bdadf5f731bf90f");
+        "7b8581af80725bc50edb40a20c108d590d80f4d1d558f3744e0ab65d51505a8a");
 }
 TEST_CASE("programs/TArray2 - Parody + Clone w/ Array Double box", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TArray2.bismuth"))),
-        "3a51012724e3522c569d8d39c28e70c514e42bd14edad860af503c01702283a2");
+        "e87e9a654c71e2fc9f6dd8f0604e92dd5f2c5c1af048d274d7c65b7ed38425a4");
 }
 
 TEST_CASE("programs/TStructEnumArray - Parody + Clone w/ Struct Enum Array", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnumArray.bismuth"))),
-        "a18193f4b388e2a29a166ac604072e40ed653cace95fe6287caa3a476791f767");
+        "9b4ac54a3a35ae9b5253169d5016dcb8bc293458cf164597f21b44d3385a12ab");
 }
 
 TEST_CASE("programs/loop - Basic GC with boxes in loops based on example", "[codegen][enum]")
@@ -532,7 +532,7 @@ TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]"
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructGC.bismuth"))),
-        "dc1fe2a258977539416a6b0edd588790d3e05f0875d4d41f0f6a8260630ca4af");
+        "b26b395f6fa0b063f60927d204d97b4012d5f0c2ed56589f9199a7416f8716f4");
 }
 
 TEST_CASE("programs/db/db - Basic DB 1", "[codegen][enum]")

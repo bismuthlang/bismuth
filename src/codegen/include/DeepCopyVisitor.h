@@ -47,6 +47,7 @@ using llvm::NoFolder;
 using llvm::PHINode;
 using llvm::StringRef;
 using llvm::Value;
+using llvm::SwitchInst; 
 
 using std::optional;
 
@@ -188,6 +189,7 @@ public:
                 false));
     }
 
+    // TODO: REFACTOR W IMPL IN CODEGEN VISITOR
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst *CreateEntryBlockAlloc(IRBuilder<NoFolder> *builder, llvm::Type *ty, std::string identifier)
     {
@@ -256,6 +258,7 @@ private:
         return getSizeForType(val->getType());
     }
 
+    // FIXME: DONT DUPLICATE THESE ACROSS FILES
     optional<Value *> deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap, DeepCopyType copyType)
     {
         if (isLinear(type))
@@ -265,13 +268,14 @@ private:
         }
 
         if (!type->requiresDeepCopy())
-        { 
-            Value *v = (copyType == GC_MALLOC) ? runGCMalloc(builder, getSizeForValue(stoVal))
-                                               : runMalloc(builder, getSizeForValue(stoVal));
-            Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
-            builder->CreateStore(stoVal, casted);
-            // return casted;
-            return builder->CreateLoad(stoVal->getType(), casted);
+        {
+            // Value *v = (copyType == GC_MALLOC) ? runGCMalloc(builder, getSizeForValue(stoVal))
+            //                                    : runMalloc(builder, getSizeForValue(stoVal));
+            // Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
+            // builder->CreateStore(stoVal, casted);
+            // // return casted;
+            // return builder->CreateLoad(stoVal->getType(), casted);
+            return stoVal;//builder->CreateLoad(stoVal->getType(), stoVal);
         }
 
         Function *testFn = module->getFunction("_clone_" + type->toString());
@@ -368,9 +372,128 @@ private:
             phi->addIncoming(casted2, elseBlk);
             v = phi;
         }
-        else if(const TypeStruct * structType = dynamic_cast<const TypeStruct*>(type))
+        else if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(type))
         {
+            for (auto eleItr : structType->getElements())
+            {
+                const Type *localTy = eleItr.second;
+
+                if (localTy->requiresDeepCopy())
+                {
+                    Value *memLoc = builder->CreateGEP(v, {Int32Zero,
+                                                           ConstantInt::get(Int32Ty,
+                                                                            structType->getElementIndex(eleItr.first).value(), // In theory, bad opt access, but should never happen
+                                                                            true)});
+                    Value *loaded = builder->CreateLoad(eleItr.second->getLLVMType(module), memLoc);
+
+                    optional<Value *> valOpt = deepCopyHelper(builder, eleItr.second, loaded, builder->CreateLoad(i8p, m), GC_MALLOC);
+                    if (!valOpt)
+                        return std::nullopt;
+                    builder->CreateStore(valOpt.value(), memLoc);
+                }
+            }
+            v = builder->CreateLoad(llvmType, v);
+        }
+        else if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(type))
+        {
+            auto origParent = builder->GetInsertBlock()->getParent();
+
+            BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
+
+            Value *memLoc = builder->CreateGEP(v, {Int32Zero, Int32One});
+            Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
+            Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
+            SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
+
+            unsigned int index = 0;
+            for(const Type * caseNode : sumType->getCases())
+            {
+                index = index + 1;
+                BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(index));
+                builder->SetInsertPoint(matchBlk);
+                
+                switchInst->addCase(ConstantInt::get(Int32Ty, index, true), matchBlk);
+                origParent->getBasicBlockList().push_back(matchBlk);
+
+                Value *corrected = builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
+                Value *loaded = builder->CreateLoad(caseNode->getLLVMType(module), corrected);
+
+                optional<Value *> valOpt = deepCopyHelper(builder, caseNode, loaded, builder->CreateLoad(i8p, m), GC_MALLOC);
+                    if (!valOpt)
+                        return std::nullopt;
+                                                                                                 // builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m)});
+                builder->CreateStore(valOpt.value(), corrected);
+                builder->CreateBr(mergeBlk);
+            }
+
+            origParent->getBasicBlockList().push_back(mergeBlk);
+            builder->SetInsertPoint(mergeBlk);
+            v = builder->CreateLoad(llvmType, v);
+        }
+        else if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(type))
+        {
+            const Type * valueType = arrayType->getValueType(); 
             
+            AllocaInst *loop_index = CreateEntryBlockAlloc(builder,Int32Ty, "idx");
+            AllocaInst *loop_len = CreateEntryBlockAlloc(builder, Int32Ty, "len");
+            builder->CreateStore(Int32Zero, loop_index);
+            builder->CreateStore(ConstantInt::get(Int32Ty, arrayType->getLength(), true), loop_len);
+
+            auto parent = builder->GetInsertBlock()->getParent();
+            BasicBlock *condBlk = BasicBlock::Create(module->getContext(), "loop-cond", parent);
+
+            BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop");
+            BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
+
+            builder->CreateBr(condBlk);
+            builder->SetInsertPoint(condBlk);
+
+            builder->CreateCondBr(builder->CreateICmpSLT(builder->CreateLoad(Int32Ty, loop_index), builder->CreateLoad(Int32Ty, loop_len)), loopBlk, restBlk);
+            condBlk = builder->GetInsertBlock();
+
+            parent->getBasicBlockList().push_back(loopBlk);
+            builder->SetInsertPoint(loopBlk);
+
+            /******************Loop Body********************/
+            /**     Note: This may Have to be improved depending on **/
+            /**           how inheritance & such ends up working.   **/
+            /**/
+            /**/
+            {
+                Value *memLoc = builder->CreateGEP(v, {Int32Zero,
+                                                              builder->CreateLoad(Int32Ty, loop_index)});
+
+                Value *loaded = builder->CreateLoad(valueType->getLLVMType(module), memLoc);
+
+                optional<Value *> valOpt = deepCopyHelper(builder, valueType, loaded, builder->CreateLoad(i8p, m), GC_MALLOC);
+                    if (!valOpt)
+                        return std::nullopt;
+                builder->CreateStore(valOpt.value(), memLoc);
+            }
+
+            /**/
+            /**/
+            /***********************************************/
+            builder->CreateStore(
+                builder->CreateNSWAdd(builder->CreateLoad(Int32Ty, loop_index),
+                                      Int32One),
+                loop_index);
+            builder->CreateBr(condBlk);
+            loopBlk = builder->GetInsertBlock();
+
+            parent->getBasicBlockList().push_back(restBlk);
+            builder->SetInsertPoint(restBlk);
+            v = builder->CreateLoad(llvmType, v);
+
+        }
+        else if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(type))
+        {
+            if(infType->hasBeenInferred()) {
+                return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, builder->CreateLoad(i8p, m), GC_MALLOC);
+
+                // return deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap, DeepCopyType copyType) 
+            }
+            return std::nullopt; //FIXME: ADD ERROR 
         }
         else
         {
