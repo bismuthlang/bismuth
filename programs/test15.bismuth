@@ -1,5 +1,5 @@
 extern int func printf(...);
-# FIXME: UNUSED
+
 define func fib(int n, int[5] a) : int {
   if(n == 0 | n == 1) {
     return n;

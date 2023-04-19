@@ -91,8 +91,7 @@ int main(int argc, const char *argv[])
 =========================================================================
 Bismuth Process Calculus Compiler - Created by Alex Friedman (https://ahfriedman.com)
 Website: https://bismuth-lang.org
-Version: Pre-Alpha 1.2
-)""""; });
+Version: Pre-Alpha 1.3 @ )"""" << GIT_COMMIT_HASH << "\n"; });
   llvm::cl::ParseCommandLineOptions(argc, argv);
 
   // FIXME: ENABLE SEPARATELY?
