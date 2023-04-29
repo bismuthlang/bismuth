@@ -1474,7 +1474,7 @@ public:
             }
         }
 
-        // FIXME: ADD THIS TO STRUCT
+        // Probably not needed in struct, but might be. 
         // Needed in the case that we generate the type while generating one of the subtypes...
         ty = llvm::StructType::getTypeByName(M->getContext(), toString());
         if (ty)
