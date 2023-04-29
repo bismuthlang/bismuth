@@ -84,7 +84,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
     }
 
     Value *sumVal = optVal.value();
-    
+
     llvm::AllocaInst *SumPtr = CreateEntryBlockAlloc(sumVal->getType(), "");
     builder->CreateStore(sumVal, SumPtr);
 
@@ -368,7 +368,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
     {
         stoVal = correctSumAssignment(sum, stoVal);
     }
-    
+
     // std::optional<Value *> v = copyVisitor->deepCopy(builder, n->lType, stoVal);
     std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
     {
@@ -383,9 +383,10 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
             // Value *addrMap = getNewAddressMap();
             // stoVal = builder->CreateCall(fn, {stoVal, addrMap});
             // deleteAddressMap(addrMap);
-            auto opt =  copyVisitor->deepCopy(builder, n->lType, stoVal);
-            if(!opt) return std::nullopt; 
-            stoVal = opt.value(); 
+            auto opt = copyVisitor->deepCopy(builder, n->lType, stoVal);
+            if (!opt)
+                return std::nullopt;
+            stoVal = opt.value();
         }
 
         Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
@@ -523,7 +524,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
 {
     // Very similar to regular loop & Accept while
-    // FIXME: Somewhat inefficient due to dequeuing 
+    // FIXME: Somewhat inefficient due to dequeuing
 
     Symbol *sym = n->sym;
 
@@ -558,9 +559,9 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
     parent->getBasicBlockList().push_back(thenBlk);
     builder->SetInsertPoint(thenBlk);
     Value *check = builder->CreateCall(getShouldAcceptWhileLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
-    
+
     builder->CreateCondBr(check, loopBlk, restBlk);
-    
+
     thenBlk = builder->GetInsertBlock();
 
     /*
@@ -772,7 +773,7 @@ std::optional<Value *> CodegenVisitor::visit(TBinaryArithNode *n)
         return builder->CreateNSWMul(lhs.value(), rhs.value());
     case BINARY_ARITH_DIV:
         return builder->CreateSDiv(lhs.value(), rhs.value());
-    case BINARY_ARITH_MOD: 
+    case BINARY_ARITH_MOD:
         return builder->CreateSRem(lhs.value(), rhs.value());
     }
 }
@@ -839,7 +840,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogAndExprNode *n)
     Value *lastValue = first.value();
 
     auto parent = current->getParent();
-    phi->addIncoming(lastValue, builder->GetInsertBlock()); //Have to use insert block as, due to nested short circuiting, its possible that the insert block isnt actually the entryblock anymore
+    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isnt actually the entryblock anymore
 
     BasicBlock *falseBlk;
 
@@ -911,7 +912,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode *n)
     Value *lastValue = first.value();
 
     auto parent = current->getParent();
-    phi->addIncoming(lastValue, builder->GetInsertBlock()); //Have to use insert block as, due to nested short circuiting, its possible that the insert block isnt actually the entryblock anymore
+    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isnt actually the entryblock anymore
 
     BasicBlock *falseBlk;
 
@@ -1629,6 +1630,23 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
     {
         AcceptType(this, e);
     }
+
+
+    // Needed to help make the branching programs work due to switches being exhaustive. Will have to do this better eventually!
+    llvm::Instruction * inst = &*(builder->GetInsertBlock()->rbegin());
+    if(!dyn_cast<llvm::ReturnInst>(inst))
+    {
+        builder->CreateUnreachable(); 
+    }
+    // if(!llvm::isa<llvm::ReturnInst>(builder->GetInsertBlock()->end()))
+    // if(llvm::ReturnInst * dead = dynamic_cast<llvm::ReturnInst>(builder->GetInsertBlock()->end()))
+    // {
+        
+    // }
+    // else 
+    // {
+    //     builder->CreateUnreachable(); 
+    // }
 
     // NOTE HOW WE DONT NEED TO CREATE RET VOID EVER BC NO FN!
 

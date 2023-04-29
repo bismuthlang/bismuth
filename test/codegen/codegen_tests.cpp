@@ -480,6 +480,13 @@ TEST_CASE("programs/TBox - Parody + Clone w/ boxes", "[codegen][enum]")
         "692d79cf18cb93cd353a720c4e0661f014a14c79601b337f7593caa23c152188");
 }
 
+TEST_CASE("programs/TBox2 - Parody + Clone w/ boxes", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TBox2.bismuth"))),
+        "4a67c4ef75b8d2190190acaa755d0ece0e2eb3a8d7c823a128aa3bcc4dfbc9d7");
+}
+
 TEST_CASE("programs/TStruct - Parody + Clone w/ Struct Boxes ", "[codegen][enum]")
 {
     EnsureCompilesTo(
@@ -568,6 +575,13 @@ TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/bt.bismuth"))),
         "0ba04bd66d4c3a5779ce9cae39c204dd84f658a9ebca85f6318aa250d5c905a5");
+}
+
+TEST_CASE("programs/bt-walker1 - Basic Binary Tree w/ walker", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/bt-walker1.bismuth"))),
+        "a716556a7f3f0802a83a2fcbabd094f828969419f707a3bc91cb1b6cadd7ffa7");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 1", "[codegen][enum]")

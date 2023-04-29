@@ -731,7 +731,7 @@ public:
     }
 
     std::string toString() const override {
-        return "INVOKE NODE";
+        return "INVOKE NODE " + fn->toString();
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
@@ -769,7 +769,7 @@ public:
     }
 
     std::string toString() const override {
-        return "FIELD ACCESS NODE";
+        return "FIELD ACCESS NODE " + symbol->toString();
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
@@ -1214,8 +1214,14 @@ inline bool endsInReturn(TypedNode *n)
 
     if (TMatchStatementNode *cn = dynamic_cast<TMatchStatementNode *>(n))
     {
-        // if(cn->post.size())
-        return endsInReturn(cn->post);
+        // FIXME: ADD TO OTHERS
+        if(cn->post.size())
+            return endsInReturn(cn->post);
+        
+        for(auto branch : cn->cases)
+            if(!endsInReturn(branch.second))
+                return false; 
+        return true; 
     }
 
     if (TSelectStatementNode *cn = dynamic_cast<TSelectStatementNode *>(n))
@@ -1228,13 +1234,7 @@ inline bool endsInReturn(TypedNode *n)
     {
         return endsInReturn(cn->eval);
     }
-
-    // if(TMatchStatementNode * cn = dynamic_cast<TMatchStatementNode *>(n))
-    // {
-    //     // if(cn->post.size())
-    //     return endsInReturn(cn->post);
-    // }
-
+    
     return false;
 }
 

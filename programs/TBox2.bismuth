@@ -1,0 +1,34 @@
+extern Unit func printf(str s, ...);
+
+define func printBoxInt(str name, Box<int> b) {
+  printf("%s = %u\n", name, *b);
+  return; 
+}
+
+
+define foo :: c : Channel<+Box<int>;-int;+int> = {
+  var iPtr := c.recv(); 
+  printf("recv %u\n", iPtr);
+  printBoxInt("iPtr (orig/5)", iPtr);
+  *iPtr := 7; 
+  printBoxInt("iPtr (mod/7)", iPtr);
+  c.send(-1);
+  var t := c.recv(); 
+  printBoxInt("iPtr (mod/7)", iPtr);
+
+}
+
+define program :: c : Channel<-int> = {
+  var a := exec foo; 
+
+  var b := Box<int>::init(5);
+  printBoxInt("b (orig/5)", b);
+  a.send(b)
+  var u := a.recv(); 
+  printBoxInt("b (orig/5)", b);
+  *b := 9; 
+  printBoxInt("b (orig/9)", b);
+  a.send(-1);
+
+  c.send(0);
+}

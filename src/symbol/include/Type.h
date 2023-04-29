@@ -23,6 +23,7 @@
 #include <optional> // Optionals
 
 #include <set> // Sets
+#include <iostream>  // cout
 
 #include <climits> // Max & Min
 
@@ -1444,8 +1445,9 @@ public:
      */
     llvm::StructType *getLLVMType(llvm::Module *M) const override
     {
+        std::cout << "Get Type " << toString() << std::endl; 
         llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-
+        std::cout << "GOT: " << (ty ? ty->getName().str() : "NOTHING") << std::endl; 
         if (ty)
             return ty;
 
@@ -1455,6 +1457,7 @@ public:
         for (auto e : cases)
         {
             // Note: This is why one has to use pointers in order to nest a type into itself
+            std::cout << "\t case " << e->toString() << std::endl; 
             unsigned int t = M->getDataLayout().getTypeAllocSize(e->getLLVMType(M));
             // FIXME: DO BETTER - ALSO WILL NOT WORK ON VARS! (there are actually a LOT of places where using a var may break things bc we only check for TypeSum)
 
@@ -1471,6 +1474,12 @@ public:
             }
         }
 
+        // FIXME: ADD THIS TO STRUCT
+        // Needed in the case that we generate the type while generating one of the subtypes...
+        ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+        if (ty)
+            return ty;
+
         // FIXME: DO BETTER
         uint64_t len = (uint64_t)max;
         llvm::Type *inner = llvm::Type::getInt8Ty(M->getContext());
@@ -1479,8 +1488,9 @@ public:
         std::vector<llvm::Type *> typeVec = {llvm::Type::getInt32Ty(M->getContext()), arr};
 
         llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-
-        return llvm::StructType::create(M->getContext(), ref, toString());
+        auto ans = llvm::StructType::create(M->getContext(), ref, toString());
+        std::cout << "CREATED: " << ans->getName().str() << std::endl; 
+        return ans;
     }
 
     bool requiresDeepCopy() const override
