@@ -1205,16 +1205,21 @@ inline bool endsInReturn(TypedNode *n)
         return endsInReturn(bn->exprs);
     }
 
-    // FIXME: DO THESE BETTER!
     if (TConditionalStatementNode *cn = dynamic_cast<TConditionalStatementNode *>(n))
     {
-        // if(cn->post.size())
-        return endsInReturn(cn->post);
+        if(cn->post.size())
+            return endsInReturn(cn->post);
+        
+        if(cn->falseOpt) 
+        {
+            return endsInReturn(cn->falseOpt.value()) && endsInReturn(cn->trueBlk);
+        }
+
+        return false; 
     }
 
     if (TMatchStatementNode *cn = dynamic_cast<TMatchStatementNode *>(n))
     {
-        // FIXME: ADD TO OTHERS
         if(cn->post.size())
             return endsInReturn(cn->post);
         
@@ -1226,8 +1231,13 @@ inline bool endsInReturn(TypedNode *n)
 
     if (TSelectStatementNode *cn = dynamic_cast<TSelectStatementNode *>(n))
     {
-        // if(cn->post.size())
-        return endsInReturn(cn->post);
+        if(cn->post.size())
+            return endsInReturn(cn->post);
+        
+        for(auto branch : cn->nodes)
+            if(!endsInReturn(branch))
+                return false; 
+        return true; 
     }
 
     if(TSelectAlternativeNode * cn = dynamic_cast<TSelectAlternativeNode*>(n))
@@ -1281,12 +1291,6 @@ inline bool endsInBranch(TypedNode *n)
     {
         return true; 
     }
-
-    // if(TMatchStatementNode * cn = dynamic_cast<TMatchStatementNode *>(n))
-    // {
-    //     // if(cn->post.size())
-    //     return endsInReturn(cn->post);
-    // }
 
     return false;
 }
