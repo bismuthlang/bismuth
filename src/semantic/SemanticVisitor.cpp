@@ -1718,7 +1718,7 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
             }
             structType->define(el);
             stmgr->addSymbol(sym);
-        } // FIXME: ERROR HANDLE IF DEFINED?
+        } 
         return new TDefineStructNode(id, structType, ctx->getStart());
     }
 
