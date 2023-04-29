@@ -23,7 +23,6 @@
 #include <optional> // Optionals
 
 #include <set> // Sets
-#include <iostream>  // cout
 
 #include <climits> // Max & Min
 
@@ -1445,9 +1444,7 @@ public:
      */
     llvm::StructType *getLLVMType(llvm::Module *M) const override
     {
-        std::cout << "Get Type " << toString() << std::endl; 
         llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-        std::cout << "GOT: " << (ty ? ty->getName().str() : "NOTHING") << std::endl; 
         if (ty)
             return ty;
 
@@ -1457,7 +1454,6 @@ public:
         for (auto e : cases)
         {
             // Note: This is why one has to use pointers in order to nest a type into itself
-            std::cout << "\t case " << e->toString() << std::endl; 
             unsigned int t = M->getDataLayout().getTypeAllocSize(e->getLLVMType(M));
             // FIXME: DO BETTER - ALSO WILL NOT WORK ON VARS! (there are actually a LOT of places where using a var may break things bc we only check for TypeSum)
 
@@ -1489,7 +1485,7 @@ public:
 
         llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
         auto ans = llvm::StructType::create(M->getContext(), ref, toString());
-        std::cout << "CREATED: " << ans->getName().str() << std::endl; 
+        
         return ans;
     }
 
