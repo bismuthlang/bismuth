@@ -733,7 +733,10 @@ private:
                 {
                     details << e->toString() << "; ";
                 }
-                errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
+                std::cout << stmgr->toString() << std::endl;
+                std::cout << "scope: \n\n" << std::endl; 
+                std::cout << scope->toString() << std::endl; 
+                errorHandler.addError(ctx->getStart(), "736 Unused linear types in context: " + details.str());
             }
         }
         // return res;

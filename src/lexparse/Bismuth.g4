@@ -152,6 +152,7 @@ statement           : defineProc                                              # 
                     | call=invocation  ';'?                                                                     # CallStatement 
                     | RETURN expression? ';'                                                                    # ReturnStatement 
                     | EXIT                                                                                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
+                    | 'skip'                                                                                    # SkipStatement //FIXME: ENABLE
                     | block                                                                                     # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                     # ProgramSend
                     | WHILE check=condition block                                                                               # ProgramLoop
@@ -162,8 +163,10 @@ statement           : defineProc                                              # 
                     | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                               # ProgramAccept
-                    | 'accept' '(' channel=VARIABLE ',' ex=expression ')' block             # ProgramAcceptWhile
+                    // | 'accept' '(' channel=VARIABLE ',' ex=expression ')' block             # ProgramAcceptWhile
                     | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block        # ProgramAcceptWhile
+                    | 'acceptIf' '(' channel=VARIABLE ',' check=condition ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf //FIXME: ENABLE
+                    | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  //FIXME: ENABLE
                     ; 
                     
 
@@ -249,6 +252,7 @@ EXTERN          :   'extern';
 MATCH           :   'match' ;
 DEFINE          :   'define';
 EXIT            :   'exit'  ;
+
 
 
 //Booleans

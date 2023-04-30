@@ -137,12 +137,12 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     }
     for (auto e : structs)
     {
-        // std::variant<TypedNode *, ErrorChain *> opt = 
+        // std::variant<TypedNode *, ErrorChain *> opt =
         anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
     }
     for (auto e : enums)
     {
-        // std::variant<TypedNode *, ErrorChain *> opt = 
+        // std::variant<TypedNode *, ErrorChain *> opt =
         anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
     }
 
@@ -670,7 +670,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     return new TBinaryArithNode(
         ctx->MULTIPLY() ? BINARY_ARITH_MULT : ctx->DIVIDE() ? BINARY_ARITH_DIV
-                                          : ctx->MOD()      ? BINARY_ARITH_MOD 
+                                          : ctx->MOD()      ? BINARY_ARITH_MOD
                                           : ctx->PLUS()     ? BINARY_ARITH_PLUS
                                                             : BINARY_ARITH_MINUS,
         left,
@@ -881,6 +881,19 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
             break; // Shouldn't be needed, but is here anyways
         }
+        else if (i + 1 == ctx->fields.size() && ctx->fields.at(i)->getText() == "is_present")
+        {
+            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
+            {
+                if (channel->getProtocol()->isOCorGuarded())
+                {
+                    a.push_back({"is_present",
+                                 Types::BOOL}); //TODO: would be a linear fn, but then cant require we use it... maybe should be functional style? idk
+                    break; // Shouldn't be needed, but is here anyways
+                }
+            }
+            return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
+        }
         else
         {
             return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
@@ -1010,7 +1023,7 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::Parame
 
 ParameterNode SemanticVisitor::visitCtx(BismuthParser::ParameterContext *ctx)
 {
-    return ParameterNode(any2Type(ctx->ty->accept(this)), ctx->name->getText()); 
+    return ParameterNode(any2Type(ctx->ty->accept(this)), ctx->name->getText());
 }
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::AssignmentContext *ctx)
@@ -1353,7 +1366,7 @@ std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCt
         blksCtx.size() == 1,
         [this](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
         {
-            // Scopes automatically handled, have to use false bc we can't have the block autoscope otherwise we might throw an error before we get the chance to realize that we use all linears. 
+            // Scopes automatically handled, have to use false bc we can't have the block autoscope otherwise we might throw an error before we get the chance to realize that we use all linears.
             return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
         });
 
@@ -1718,7 +1731,7 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
             }
             structType->define(el);
             stmgr->addSymbol(sym);
-        } 
+        }
         return new TDefineStructNode(id, structType, ctx->getStart());
     }
 
@@ -1900,15 +1913,16 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
         for (auto alt : ctx->protoAlternative())
         {
-            auto a = toSequence(any2Protocol(alt->check->accept(this))); 
+            auto a = toSequence(any2Protocol(alt->check->accept(this)));
             opts.insert(a);
             optsI.insert({a->getInverse(), alt->eval});
         }
 
         std::vector<const ProtocolSequence *> sequences = {};
         std::vector<BismuthParser::StatementContext *> alternatives = {};
-        
-        for(auto itr : optsI) {
+
+        for (auto itr : optsI)
+        {
             sequences.push_back(itr.first->getInverse());
             alternatives.push_back(itr.second);
         }
@@ -1929,7 +1943,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
-        unsigned int branch = 0; 
+        unsigned int branch = 0;
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::StatementContext>(
             ctx,
             alternatives,
@@ -1937,7 +1951,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             false,
             [this, savedRest, channel, sequences, &branch](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
-                const ProtocolSequence *proto = sequences.at(branch++); 
+                const ProtocolSequence *proto = sequences.at(branch++);
 
                 proto->append(savedRest->getCopy());
                 channel->setProtocol(proto);
@@ -1975,7 +1989,7 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
     {
         const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
         unsigned int projectIndex = channel->getProtocol()->project(ps);
-        
+
         if (!projectIndex)
         {
             return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString());
@@ -2097,7 +2111,7 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
                 details << e->toString() << "; ";
             }
 
-            errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
+            errorHandler.addError(ctx->getStart(), "2114 Unused linear types in context: " + details.str());
         }
 
         channel->setProtocol(postC);
@@ -2179,7 +2193,7 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
                 details << e->toString() << "; ";
             }
 
-            errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
+            errorHandler.addError(ctx->getStart(), "2196 Unused linear types in context: " + details.str());
         }
 
         channel->setProtocol(postC);
