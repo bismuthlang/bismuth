@@ -1958,16 +1958,11 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
                 if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
                 {
                     channel->setProtocol(proto);
-                    std::cout << this->stmgr->toString() << std::endl;
                     std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
-                return optEval;
+                    return optEval;
                 }
-                // else
-                // {
-                    return errorHandler.addError(alt->getStart(), "FAILED; COMPILER ERROR"); 
-                // }
 
-                
+                return errorHandler.addError(alt->getStart(), "FAILED; COMPILER ERROR");
             });
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
@@ -2028,7 +2023,7 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         {
             return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id);
         }
-       // stmgr->addSymbol(sym); // Makes sure we enforce weakening rules...
+        // stmgr->addSymbol(sym); // Makes sure we enforce weakening rules...
 
         /*
         c : |?-int|
@@ -2116,7 +2111,6 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
             errorHandler.addError(ctx->getStart(), "2114 Unused linear types in context: " + details.str());
         }
 
-        
         channel->setProtocol(postC);
         if (!stmgr->unguard())
         {
@@ -2192,7 +2186,6 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
         channel->setProtocol(postC);
         if (!stmgr->unguard())
         {
-            std::cout << stmgr->toString() << std::endl; 
             return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
         }
 

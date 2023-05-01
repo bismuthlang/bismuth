@@ -149,7 +149,6 @@ public:
      */
     std::optional<Value *> visitInvokeable(TProgramDefNode *n)
     {
-        std::cout << "152" << std::endl;
         BasicBlock *ins = builder->GetInsertBlock();
 
         // Get the function name. Done separately from sym in case the symbol isn't found
@@ -162,22 +161,18 @@ public:
         Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);
         ; // Lookup the function first
         inv->setName(fn->getName().str());
-        std::cout << "165" << std::endl;
+        
         // Get the parameter list context for the invokable
         // BismuthParser::ParameterListContext *paramList = ctx->paramList;
         // Create basic block
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
 
-        std::cout << "172" << std::endl;
         // Bind all of the arguments
         llvm::AllocaInst *v = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
-        std::cout << "175 " << std::endl;
         // n->channelSymbol->val = v;
         n->channelSymbol->setAllocation(v);
-        std::cout << "177" << std::endl;
         builder->CreateStore((fn->args()).begin(), v);
-        std::cout << "179" << std::endl;
         /*
         for (auto &arg : fn->args())
         {
@@ -211,30 +206,27 @@ public:
 
         // Get the codeblock for the PROC/FUNC
         // BismuthParser::BlockContext *block = ctx->block();
-        std::cout << "211" << std::endl;
         // Generate code for the block
         for (auto e : n->block->exprs)
         {
-            std::cout << "218 " << e->toString() << std::endl;
             // e->accept(this);
             this->accept(e);
             // module->dump();
         }
-        std::cout << "219" << std::endl;
+        
         // If we are a PROC, make sure to add a return type (if we don't already have one)
         // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
         if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE
         {
             builder->CreateRetVoid();
         }
-        std::cout << "226" << std::endl;
+        
         builder->SetInsertPoint(ins);
         return std::nullopt;
     }
 
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {
-        std::cout << "237h " << sym->toString() << std::endl;
         // Try getting the type for the symbol, raising an error if it could not be determined
         llvm::Type *type = sym->type->getLLVMType(module);
         if (!type)
@@ -242,10 +234,9 @@ public:
             errorHandler.addError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
             return std::nullopt;
         }
-        std::cout << "245h " << std::endl;
+        
         // Make sure the variable has an allocation (or that we can find it due to it being a global var)
         std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
-        std::cout << "248h " << std::endl;
         if (!optVal)
         {
             // If the symbol is a global var
@@ -293,21 +284,12 @@ public:
             errorHandler.addError(nullptr, "Unable to find allocation for variable: " + sym->getIdentifier());
             return std::nullopt;
         }
-        std::cout << "296h " << optVal.value() << std::endl;
+
         if (!is_rvalue)
             return optVal.value();
-        std::cout << "299h " << std::endl; // << optVal.value()->getAllocatedType()->getStructName().str() << "<-" << std::endl;
-        // std::string type_str;
-        // std::cout << "299h " << std::endl;
-        // llvm::raw_string_ostream rso(type_str);
-        // std::cout << "299h " << std::endl;
-        // optVal.value()->getAllocatedType()->print(rso);
-        // std::cout << "299h " << std::endl;
-        // std::cout << rso.str() << std::endl;;
-        module->dump();
+
         // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
         Value *v = builder->CreateLoad(type, optVal.value(), sym->getIdentifier());
-        std::cout << "302h " << optVal.value() << std::endl;
         // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
         // builder->CreateStore(v, alloc);
         // return alloc;

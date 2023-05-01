@@ -152,7 +152,6 @@ public:
             {
                 if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->type))
                 {
-                    std::cout << item.first << " " << item.second->toString() << std::endl;
                     if (!inf->hasBeenInferred())
                         ans.push_back(item.second);
                 }
@@ -162,7 +161,6 @@ public:
             {
                 if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
                 {
-                    std::cout << item.first << " " << flags << " " << item.second->toString()  << " " << include_complete << "||" << include_guarded << "||" <<  include_pending << std::endl;
                     if (
                         (include_complete || !inf->getProtocol()->isComplete()) &&
                         (include_guarded || !inf->getProtocol()->isGuarded()))

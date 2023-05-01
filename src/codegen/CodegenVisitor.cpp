@@ -2,7 +2,6 @@
 
 std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
 {
-    std::cout << "5" << std::endl; 
     /***********************************
      *
      *
@@ -39,7 +38,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
             type->setName(fn->getName().str());
         }
     }
-std::cout << "42" << std::endl; 
+
     for (auto e : n->externs)
     {
         AcceptType(this, e);
@@ -59,7 +58,6 @@ std::cout << "42" << std::endl;
             AcceptType(this, a);
         }
     }
-    std::cout << "62" << std::endl; 
 
     /*******************************************
      * Extra checks depending on compiler flags
@@ -358,14 +356,13 @@ std::optional<Value *> CodegenVisitor::visit(TProgramExecNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
 {
-    std::cout << "357" << std::endl; 
     std::optional<Value *> valOpt = AcceptType(this, n->expr);
     if (!valOpt)
     {
         errorHandler.addError(n->getStart(), "Failed to generate code");
         return std::nullopt;
     }
-std::cout << "364" << std::endl; 
+
     Symbol *sym = n->sym;
 
     Value *stoVal = valOpt.value();
@@ -375,7 +372,7 @@ std::cout << "364" << std::endl;
     {
         stoVal = correctSumAssignment(sum, stoVal);
     }
-std::cout << "374" << std::endl; 
+
     // std::optional<Value *> v = copyVisitor->deepCopy(builder, n->lType, stoVal);
     std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
     {
@@ -403,7 +400,7 @@ std::cout << "374" << std::endl;
 
         return v;
     }();
-    std::cout << "402" << std::endl; 
+
     // std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
     // {
     //     if (n->lType->requiresDeepCopy())
@@ -433,7 +430,7 @@ std::cout << "374" << std::endl;
 
     Value *corrected = builder->CreateBitCast(v.value(), i8p);
     std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
-std::cout << "431" << std::endl; 
+
     if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in send: " + n->sym->getIdentifier());
@@ -441,7 +438,6 @@ std::cout << "431" << std::endl;
     }
 
     Value *chanVal = optVal.value();
-std::cout << "439" << std::endl; 
     builder->CreateCall(getWriteChannel(), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return std::nullopt;
 }
@@ -967,7 +963,6 @@ std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 {
-    std::cout << "970 " << std::endl; 
     Symbol *sym = n->symbol;
 
     if (!sym->type)
@@ -989,7 +984,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 
         // Can't throw error b/c length could be field of struct
     }
-std::cout << "992 " << std::endl; 
+
     const Type *ty = sym->type;
     std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0 ? n->is_rvalue : false);
 
@@ -998,7 +993,7 @@ std::cout << "992 " << std::endl;
         errorHandler.addError(n->getStart(), "1023 - Failed to generate field access: " + n->toString());
         return std::nullopt;
     }
-std::cout << "1001 " << std::endl; 
+
     Value *baseValue = baseOpt.value();
 
     if (n->accesses.size() == 0)
@@ -1007,7 +1002,7 @@ std::cout << "1001 " << std::endl;
     }
 
     std::vector<Value *> addresses = {Int32Zero};
-std::cout << "1010 " << std::endl; 
+
     for (unsigned int i = 0; i < n->accesses.size(); i++)
     {
         if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
@@ -1067,25 +1062,23 @@ std::optional<Value *> CodegenVisitor::visit(TDerefBoxNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TBinaryRelNode *n)
 {
-    std::cout << "1069 " << std::endl; 
     // Generate code for LHS and RHS
     std::optional<Value *> lhs = AcceptType(this, n->lhs);
-    std::cout << "1072 " << std::endl; 
     std::optional<Value *> rhs = AcceptType(this, n->rhs);
-std::cout << "1074 " << std::endl; 
+
     // Ensure we successfully generated LHS and RHS
     if (!lhs)
     {
         errorHandler.addError(n->getStart(), "Failed to generate code for lhs of BinaryRel: " + n->lhs->toString());
         return std::nullopt;
     }
-std::cout << "1081 " << std::endl; 
+
     if (!rhs)
     {
         errorHandler.addError(n->getStart(), "Failed to generate code for rhs of BinaryRel: " + n->rhs->toString());
         return std::nullopt;
     }
-std::cout << "1087 " << std::endl; 
+
     Value *v1;
 
     switch (n->op)
@@ -1103,7 +1096,7 @@ std::cout << "1087 " << std::endl;
         v1 = builder->CreateICmpSGE(lhs.value(), rhs.value());
         break;
     }
-std::cout << "1105 " << std::endl; 
+
     Value *v = builder->CreateZExtOrTrunc(v1, Int1Ty);
     return v;
 }
@@ -1329,20 +1322,19 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
 std::optional<Value *> CodegenVisitor::visit(TWhileLoopNode *n)
 {
     // Very similar to conditionals
-    std::cout << "1329 " << std::endl; 
     std::optional<Value *> check = AcceptType(this, n->cond);
-std::cout << "1331 " << std::endl; 
+
     if (!check)
     {
         errorHandler.addError(n->getStart(), "1342 - Failed to generate code for: " + n->cond->toString());
         return std::nullopt;
     }
-std::cout << "1337 " << std::endl; 
+
     auto parent = builder->GetInsertBlock()->getParent();
 
     BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop", parent);
     BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
-std::cout << "1342 " << std::endl; 
+
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
 
     /*
@@ -1354,7 +1346,7 @@ std::cout << "1342 " << std::endl;
     {
         AcceptType(this, e);
     }
-std::cout << "1354 " << std::endl; 
+
     // Re-calculate the loop condition
     check = AcceptType(this, n->cond);
     if (!check)
@@ -1362,7 +1354,7 @@ std::cout << "1354 " << std::endl;
         errorHandler.addError(n->getStart(), "1367 - Failed to generate code for: " + n->cond->toString());
         return std::nullopt;
     }
-std::cout << "1362 " << std::endl; 
+
     // Check if we need to loop back again...
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
     loopBlk = builder->GetInsertBlock();
@@ -1372,7 +1364,6 @@ std::cout << "1362 " << std::endl;
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-std::cout << "1372 " << std::endl; 
     return std::nullopt;
 }
 
@@ -1594,12 +1585,11 @@ std::optional<Value *> CodegenVisitor::visit(TBooleanConstNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TBlockNode *n)
 {
-    std::cout << "1582" << std::endl; 
     for (auto e : n->exprs)
     {
         AcceptType(this, e);
     }
-std::cout << "1587" << std::endl; 
+    
     return std::nullopt;
 }
 

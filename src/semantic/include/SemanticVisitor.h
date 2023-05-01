@@ -492,7 +492,6 @@ public:
 
             if (checkRestIndependently || i + 1 < ctxCases.size())
             {
-                std::cout << alt->getStart()->getLine() << " " << "495" << std::endl; 
                 std::optional<STManager *> optSTCopy = origStmgr->getCopy();
                 if (!optSTCopy)
                     return errorHandler.addError(alt->getStart(), "Failed to copy symbol table; this is likely a compiler error.");
@@ -500,7 +499,6 @@ public:
             }
             else 
             {
-                std::cout << alt->getStart()->getLine() << " " <<  "502 set" << std::endl; 
                 this->stmgr = origStmgr; 
             }
 
@@ -577,7 +575,7 @@ public:
                 {
                     details << e->toString() << "; ";
                 }
-                std::cout << stmgr->toString() << std::endl;
+
                 errorHandler.addError(alt->getStart(), "537 Unused linear types in context: " + details.str());
             }
         }
@@ -686,7 +684,6 @@ private:
 
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
-       // std::cout << stmgr->toString() << std::endl;
         // First, try exiting the scope
         std::pair<std::optional<Scope *>, std::optional<Scope *>> res = stmgr->exitScope();
 
