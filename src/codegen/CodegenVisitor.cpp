@@ -2,6 +2,7 @@
 
 std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
 {
+    std::cout << "5" << std::endl; 
     /***********************************
      *
      *
@@ -38,7 +39,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
             type->setName(fn->getName().str());
         }
     }
-
+std::cout << "42" << std::endl; 
     for (auto e : n->externs)
     {
         AcceptType(this, e);
@@ -58,6 +59,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
             AcceptType(this, a);
         }
     }
+    std::cout << "62" << std::endl; 
 
     /*******************************************
      * Extra checks depending on compiler flags
@@ -120,7 +122,8 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
 
         // Can skip global stuff
         llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, localSym->getIdentifier());
-        localSym->val = v;
+        // *localSym->val = v;
+        localSym->setAllocation(v); 
         // varSymbol->val = v;
 
         // Now to store the var
@@ -170,14 +173,15 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
 
     // Attempt to cast the check; if this fails, then codegen for the check failed
     Symbol *sym = n->sym;
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
 
-    if (!sym->val)
+    if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in case: " + n->sym->getIdentifier());
         return std::nullopt;
     }
 
-    Value *chanVal = sym->val.value();
+    Value *chanVal = optVal.value();
     // ReadProjection
     Value *tag = builder->CreateCall(getReadProjection(), {builder->CreateLoad(Int32Ty, chanVal)});
 
@@ -231,14 +235,15 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramProjectNode *n)
 {
     Symbol *sym = n->sym;
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
 
-    if (!sym->val)
+    if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in case: " + n->sym->getIdentifier());
         return std::nullopt;
     }
 
-    Value *chanVal = sym->val.value();
+    Value *chanVal = optVal.value();
 
     builder->CreateCall(getWriteProjection(), {builder->CreateLoad(Int32Ty, chanVal),
                                                ConstantInt::get(Int32Ty, n->projectIndex, false)});
@@ -305,14 +310,15 @@ std::optional<Value *> CodegenVisitor::visit(TInvocationNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode *n)
 {
     Symbol *sym = n->sym;
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
 
-    if (!sym->val)
+    if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in recv: " + n->sym->getIdentifier());
         return std::nullopt;
     }
 
-    Value *chanVal = sym->val.value();
+    Value *chanVal = optVal.value();
 
     llvm::Type *recvType = n->ty->getLLVMType(module);
 
@@ -352,13 +358,14 @@ std::optional<Value *> CodegenVisitor::visit(TProgramExecNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
 {
+    std::cout << "357" << std::endl; 
     std::optional<Value *> valOpt = AcceptType(this, n->expr);
     if (!valOpt)
     {
         errorHandler.addError(n->getStart(), "Failed to generate code");
         return std::nullopt;
     }
-
+std::cout << "364" << std::endl; 
     Symbol *sym = n->sym;
 
     Value *stoVal = valOpt.value();
@@ -368,7 +375,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
     {
         stoVal = correctSumAssignment(sum, stoVal);
     }
-
+std::cout << "374" << std::endl; 
     // std::optional<Value *> v = copyVisitor->deepCopy(builder, n->lType, stoVal);
     std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
     {
@@ -396,6 +403,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
 
         return v;
     }();
+    std::cout << "402" << std::endl; 
     // std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
     // {
     //     if (n->lType->requiresDeepCopy())
@@ -424,15 +432,16 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
         return std::nullopt; // Error handled already.
 
     Value *corrected = builder->CreateBitCast(v.value(), i8p);
-
-    if (!sym->val)
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
+std::cout << "431" << std::endl; 
+    if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in send: " + n->sym->getIdentifier());
         return std::nullopt;
     }
 
-    Value *chanVal = sym->val.value();
-
+    Value *chanVal = optVal.value();
+std::cout << "439" << std::endl; 
     builder->CreateCall(getWriteChannel(), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
     return std::nullopt;
 }
@@ -440,14 +449,15 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramContractNode *n)
 {
     Symbol *sym = n->sym;
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
 
-    if (!sym->val)
+    if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in contract: " + n->sym->getIdentifier());
         return std::nullopt;
     }
 
-    Value *chanVal = sym->val.value();
+    Value *chanVal = optVal.value();
 
     builder->CreateCall(getContractChannel(), {builder->CreateLoad(Int32Ty, chanVal)});
 
@@ -457,14 +467,15 @@ std::optional<Value *> CodegenVisitor::visit(TProgramContractNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramWeakenNode *n)
 {
     Symbol *sym = n->sym;
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
 
-    if (!sym->val)
+    if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in weaken: " + n->sym->getIdentifier());
         return std::nullopt;
     }
 
-    Value *chanVal = sym->val.value();
+    Value *chanVal = optVal.value();
 
     builder->CreateCall(getWeakenChannel(), {builder->CreateLoad(Int32Ty, chanVal)});
 
@@ -476,14 +487,15 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode *n)
     // Very similar to regular loop
 
     Symbol *sym = n->sym;
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
 
-    if (!sym->val)
+    if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in accept: " + n->sym->getIdentifier());
         return std::nullopt;
     }
 
-    Value *chanVal = sym->val.value();
+    Value *chanVal = optVal.value();
 
     auto checkFn = getShouldLoop();
     Value *check = builder->CreateCall(checkFn, {builder->CreateLoad(Int32Ty, chanVal)});
@@ -527,14 +539,15 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
     // FIXME: Somewhat inefficient due to dequeuing
 
     Symbol *sym = n->sym;
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
 
-    if (!sym->val)
+    if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in accept: " + n->sym->getIdentifier());
         return std::nullopt;
     }
 
-    Value *chanVal = sym->val.value();
+    Value *chanVal = optVal.value();
 
     auto parent = builder->GetInsertBlock()->getParent();
     BasicBlock *condBlk = BasicBlock::Create(module->getContext(), "aw-cond", parent);
@@ -954,6 +967,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 {
+    std::cout << "970 " << std::endl; 
     Symbol *sym = n->symbol;
 
     if (!sym->type)
@@ -975,7 +989,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 
         // Can't throw error b/c length could be field of struct
     }
-
+std::cout << "992 " << std::endl; 
     const Type *ty = sym->type;
     std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0 ? n->is_rvalue : false);
 
@@ -984,7 +998,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
         errorHandler.addError(n->getStart(), "1023 - Failed to generate field access: " + n->toString());
         return std::nullopt;
     }
-
+std::cout << "1001 " << std::endl; 
     Value *baseValue = baseOpt.value();
 
     if (n->accesses.size() == 0)
@@ -993,7 +1007,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
     }
 
     std::vector<Value *> addresses = {Int32Zero};
-
+std::cout << "1010 " << std::endl; 
     for (unsigned int i = 0; i < n->accesses.size(); i++)
     {
         if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
@@ -1053,23 +1067,25 @@ std::optional<Value *> CodegenVisitor::visit(TDerefBoxNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TBinaryRelNode *n)
 {
+    std::cout << "1069 " << std::endl; 
     // Generate code for LHS and RHS
     std::optional<Value *> lhs = AcceptType(this, n->lhs);
+    std::cout << "1072 " << std::endl; 
     std::optional<Value *> rhs = AcceptType(this, n->rhs);
-
+std::cout << "1074 " << std::endl; 
     // Ensure we successfully generated LHS and RHS
     if (!lhs)
     {
         errorHandler.addError(n->getStart(), "Failed to generate code for lhs of BinaryRel: " + n->lhs->toString());
         return std::nullopt;
     }
-
+std::cout << "1081 " << std::endl; 
     if (!rhs)
     {
         errorHandler.addError(n->getStart(), "Failed to generate code for rhs of BinaryRel: " + n->rhs->toString());
         return std::nullopt;
     }
-
+std::cout << "1087 " << std::endl; 
     Value *v1;
 
     switch (n->op)
@@ -1087,7 +1103,7 @@ std::optional<Value *> CodegenVisitor::visit(TBinaryRelNode *n)
         v1 = builder->CreateICmpSGE(lhs.value(), rhs.value());
         break;
     }
-
+std::cout << "1105 " << std::endl; 
     Value *v = builder->CreateZExtOrTrunc(v1, Int1Ty);
     return v;
 }
@@ -1272,7 +1288,8 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
             {
                 //  As this is a local var we can just create an allocation for it
                 llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, varSymbol->getIdentifier());
-                varSymbol->val = v;
+                // *varSymbol->val = v;
+                varSymbol->setAllocation(v);
 
                 // Similarly, if we have an expression for the local var, we can store it. Otherwise, we can leave it undefined.
                 if (e->val)
@@ -1312,20 +1329,20 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
 std::optional<Value *> CodegenVisitor::visit(TWhileLoopNode *n)
 {
     // Very similar to conditionals
-
+    std::cout << "1329 " << std::endl; 
     std::optional<Value *> check = AcceptType(this, n->cond);
-
+std::cout << "1331 " << std::endl; 
     if (!check)
     {
         errorHandler.addError(n->getStart(), "1342 - Failed to generate code for: " + n->cond->toString());
         return std::nullopt;
     }
-
+std::cout << "1337 " << std::endl; 
     auto parent = builder->GetInsertBlock()->getParent();
 
     BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop", parent);
     BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
-
+std::cout << "1342 " << std::endl; 
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
 
     /*
@@ -1337,7 +1354,7 @@ std::optional<Value *> CodegenVisitor::visit(TWhileLoopNode *n)
     {
         AcceptType(this, e);
     }
-
+std::cout << "1354 " << std::endl; 
     // Re-calculate the loop condition
     check = AcceptType(this, n->cond);
     if (!check)
@@ -1345,7 +1362,7 @@ std::optional<Value *> CodegenVisitor::visit(TWhileLoopNode *n)
         errorHandler.addError(n->getStart(), "1367 - Failed to generate code for: " + n->cond->toString());
         return std::nullopt;
     }
-
+std::cout << "1362 " << std::endl; 
     // Check if we need to loop back again...
     builder->CreateCondBr(check.value(), loopBlk, restBlk);
     loopBlk = builder->GetInsertBlock();
@@ -1355,7 +1372,7 @@ std::optional<Value *> CodegenVisitor::visit(TWhileLoopNode *n)
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-
+std::cout << "1372 " << std::endl; 
     return std::nullopt;
 }
 
@@ -1577,11 +1594,12 @@ std::optional<Value *> CodegenVisitor::visit(TBooleanConstNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TBlockNode *n)
 {
+    std::cout << "1582" << std::endl; 
     for (auto e : n->exprs)
     {
         AcceptType(this, e);
     }
-
+std::cout << "1587" << std::endl; 
     return std::nullopt;
 }
 
@@ -1620,7 +1638,8 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
         // Create an allocation for the argument
         llvm::AllocaInst *v = CreateEntryBlockAlloc(type, argName);
 
-        param->val = v;
+        // *param->val = v;
+        param->setAllocation(v); 
 
         builder->CreateStore(&arg, v);
     }

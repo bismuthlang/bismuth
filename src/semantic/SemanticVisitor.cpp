@@ -214,7 +214,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
     }
 
-    std::vector<const Symbol *> uninf = stmgr->getCurrentScope().value()->getUninferred(); // TODO: shouldn't ever be an issue, but still.
+    std::vector<Symbol *> uninf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
 
     // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
     // due to the var leaving the scope
@@ -227,7 +227,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             details << e->toString() << "; ";
         }
 
-        errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
+        errorHandler.addError(ctx->getStart(), "230 Uninferred types in context: " + details.str());
     }
     // Return UNDEFINED as this should be viewed as a statement and not something assignable
     return new TCompilationUnitNode(externs, defs);
@@ -888,8 +888,8 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
                 if (channel->getProtocol()->isOCorGuarded())
                 {
                     a.push_back({"is_present",
-                                 Types::BOOL}); //TODO: would be a linear fn, but then cant require we use it... maybe should be functional style? idk
-                    break; // Shouldn't be needed, but is here anyways
+                                 Types::BOOL}); // TODO: would be a linear fn, but then cant require we use it... maybe should be functional style? idk
+                    break;                      // Shouldn't be needed, but is here anyways
                 }
             }
             return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
@@ -1302,18 +1302,7 @@ std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return *e;
     }
 
-    std::vector<Symbol *> syms = stmgr->getAvailableLinears();
-
-    std::vector<const TypeChannel *> to_fix;
-
-    for (Symbol *orig : syms)
-    {
-        if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-        {
-            channel->getProtocol()->guard();
-            to_fix.push_back(channel);
-        }
-    }
+    stmgr->guard();
 
     std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
 
@@ -1323,9 +1312,9 @@ std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return *e;
     }
 
-    for (auto c : to_fix) // This shouldn't break anything...
+    if (!stmgr->unguard())
     {
-        c->getProtocol()->unguard();
+        return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
@@ -1949,15 +1938,36 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             alternatives,
             restDat,
             false,
-            [this, savedRest, channel, sequences, &branch](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+            [this, savedRest, channel, sequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
                 const ProtocolSequence *proto = sequences.at(branch++);
 
                 proto->append(savedRest->getCopy());
-                channel->setProtocol(proto);
+                // channel->setProtocol(proto);
 
-                std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
+                std::optional<SymbolContext> opt = stmgr->lookup(id);
+
+                if (!opt)
+                {
+                    return errorHandler.addError(alt->getStart(), "Could not find channel: " + id);
+                }
+
+                Symbol *sym = opt.value().second;
+                // stmgr->removeSymbol(sym);
+
+                if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+                {
+                    channel->setProtocol(proto);
+                    std::cout << this->stmgr->toString() << std::endl;
+                    std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
                 return optEval;
+                }
+                // else
+                // {
+                    return errorHandler.addError(alt->getStart(), "FAILED; COMPILER ERROR"); 
+                // }
+
+                
             });
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
@@ -2018,7 +2028,7 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         {
             return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id);
         }
-        stmgr->addSymbol(sym); // Makes sure we enforce weakening rules...
+       // stmgr->addSymbol(sym); // Makes sure we enforce weakening rules...
 
         /*
         c : |?-int|
@@ -2081,24 +2091,16 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
             return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
         }
         const ProtocolSequence *postC = channel->getProtocolCopy();
+        postC->guard();
 
-        std::vector<Symbol *> syms = stmgr->getAvailableLinears();
+        stmgr->guard();
 
-        std::vector<const TypeChannel *> to_fix;
-        for (Symbol *orig : syms)
-        {
-            if (const TypeChannel *c2 = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                c2->getProtocol()->guard();
-                to_fix.push_back(c2);
-            }
-        }
         channel->setProtocol(acceptOpt.value());
 
         // stmgr->addSymbol(sym);
 
         std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-        std::vector<Symbol *> lins = stmgr->getAvailableLinears();
+        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
         // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
         // due to the var leaving the scope
@@ -2114,10 +2116,11 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
             errorHandler.addError(ctx->getStart(), "2114 Unused linear types in context: " + details.str());
         }
 
+        
         channel->setProtocol(postC);
-        for (auto c : to_fix)
+        if (!stmgr->unguard())
         {
-            c->getProtocol()->unguard();
+            return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
         }
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
@@ -2159,19 +2162,9 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
             return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
         }
         const ProtocolSequence *postC = channel->getProtocolCopy();
+        postC->guard();
 
-        std::vector<Symbol *> syms = stmgr->getAvailableLinears();
-
-        std::vector<const TypeChannel *> to_fix;
-
-        for (Symbol *orig : syms)
-        {
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                channel->getProtocol()->guard();
-                to_fix.push_back(channel);
-            }
-        }
+        stmgr->guard();
         channel->setProtocol(acceptOpt.value());
 
         // const ProtocolSequence *restProto = channel->getProtocol();
@@ -2180,7 +2173,7 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
         // stmgr->addSymbol(sym);
 
         std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-        std::vector<Symbol *> lins = stmgr->getAvailableLinears();
+        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
         // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
         // due to the var leaving the scope
@@ -2197,9 +2190,10 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
         }
 
         channel->setProtocol(postC);
-        for (auto c : to_fix)
+        if (!stmgr->unguard())
         {
-            c->getProtocol()->unguard();
+            std::cout << stmgr->toString() << std::endl; 
+            return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
         }
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))

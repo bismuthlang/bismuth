@@ -79,6 +79,9 @@ public:
 
     virtual bool requiresDeepCopy() const { return false; } // FIXME: WHAT TO DO?
 
+    virtual const Type * getCopy() const { return this; }
+
+
 protected:
     /**
      * @brief Internal tool used to determine if this type is a supertype for another type. NOTE: THIS SHOULD NEVER BE CALLED DIRECTLY OUTSIDE OF THE TYPE DEFINITIONS. DOING SO MAY LEAD TO UNUSUAL BEHAVIOR!
@@ -499,6 +502,8 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
+    const TypeInt * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -520,6 +525,8 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
+    const TypeBool * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -538,6 +545,8 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
+    const TypeStr * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -553,6 +562,8 @@ class TypeBottom : public Type
 public:
     std::string toString() const override { return "\u22A5"; }
 
+    const TypeBottom * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -567,6 +578,8 @@ class TypeUnit : public Type
 public:
     std::string toString() const override { return "1"; }
 
+    const TypeUnit * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -580,6 +593,8 @@ class TypeAbsurd : public Type
 {
 public:
     std::string toString() const override { return "0"; }
+
+    const TypeAbsurd * getCopy() const override { return this; };
 
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
@@ -685,6 +700,8 @@ public:
 
     bool requiresDeepCopy() const override { return valueType->requiresDeepCopy(); }
 
+    const TypeArray * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
@@ -757,7 +774,7 @@ public:
         return toSequence(protocol->getCopy());
     }
 
-    const TypeChannel *getCopy() const
+    const TypeChannel *getCopy() const override
     {
         return new TypeChannel(getProtocolCopy());
     }
@@ -833,6 +850,8 @@ public:
     }
 
     bool requiresDeepCopy() const override { return true; }
+
+    const TypeBox * getCopy() const override { return this; };
 
 protected:
     bool isSupertypeFor(const Type *other) const override
@@ -952,6 +971,8 @@ public:
     {
         return channel;
     }
+
+    const TypeProgram * getCopy() const override { return this; };
 
 protected:
     bool isSupertypeFor(const Type *other) const override
@@ -1156,6 +1177,8 @@ public:
      */
     bool isDefined() const { return defined; }
 
+    const TypeInvoke * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
@@ -1256,6 +1279,8 @@ public:
 
     // FIXME: BAD OPT ACCESS
     bool requiresDeepCopy() const override { return valueType->value()->requiresDeepCopy(); }
+
+    const TypeInfer * getCopy() const override { return this; };
 
 protected:
     /**
@@ -1498,6 +1523,8 @@ public:
         return false;
     }
 
+    const TypeSum * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
@@ -1660,6 +1687,8 @@ public:
 
         return false;
     }
+
+    const TypeStruct * getCopy() const override { return this; };
 
 protected:
     bool isSupertypeFor(const Type *other) const override

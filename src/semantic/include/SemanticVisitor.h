@@ -443,10 +443,10 @@ public:
 
     struct ProtocolCompareInv
     {
-        bool operator()(std::pair<const Protocol *, BismuthParser::StatementContext *> a, 
+        bool operator()(std::pair<const Protocol *, BismuthParser::StatementContext *> a,
                         std::pair<const Protocol *, BismuthParser::StatementContext *> b) const
         {
-            std::cout << a.first->toString() << " < " << b.first->toString() << " = " << (a.first->toString() < b.second->toString()) << std::endl; 
+            std::cout << a.first->toString() << " < " << b.first->toString() << " = " << (a.first->toString() < b.second->toString()) << std::endl;
             return a.first->toString() < b.first->toString();
         }
     };
@@ -460,7 +460,7 @@ public:
         {
         }
     };
-
+    //FIXME: WHAT AB Ext<A,B>;!P;Ext<A,B>?
     struct DeepRestData
     {
         vector<BismuthParser::StatementContext *> ctxRest;
@@ -483,28 +483,25 @@ public:
 
         std::vector<TypedNode *> cases;
 
-        std::vector<Symbol *> syms = stmgr->getAvailableLinears(true);                // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
-        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
-        for (Symbol *orig : syms)
-        {
-            // FIXME: DO BETTER, WONT WORK WITH VALUES!
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                to_fix.push_back({channel, channel->getProtocolCopy()});
-            }
-        }
+        STManager *origStmgr = this->stmgr;
 
-        // const ProtocolSequence *savedRest = channel->getProtocolCopy();
-
-        for (auto alt : ctxCases)
+        // for (auto alt : ctxCases)
+        for (unsigned int i = 0; i < ctxCases.size(); i++)
         {
-            for (Symbol *s : syms)
+            auto alt = ctxCases.at(i);
+
+            if (checkRestIndependently || i + 1 < ctxCases.size())
             {
-                stmgr->addSymbol(s);
+                std::cout << alt->getStart()->getLine() << " " << "495" << std::endl; 
+                std::optional<STManager *> optSTCopy = origStmgr->getCopy();
+                if (!optSTCopy)
+                    return errorHandler.addError(alt->getStart(), "Failed to copy symbol table; this is likely a compiler error.");
+                this->stmgr = optSTCopy.value(); // TODO: DELETE RESOURCE?
             }
-            for (auto pair : to_fix)
+            else 
             {
-                pair.first->setProtocol(pair.second->getCopy());
+                std::cout << alt->getStart()->getLine() << " " <<  "502 set" << std::endl; 
+                this->stmgr = origStmgr; 
             }
 
             stmgr->enterScope(StopType::NONE);
@@ -528,7 +525,7 @@ public:
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
                     {
-                        (*e)->addError(alt->getStart(), "Failed to typecheck code following branch."); //FIXME: SWITCH THESE BACK TO ALTCTX?
+                        (*e)->addError(alt->getStart(), "Failed to typecheck code following branch."); // FIXME: SWITCH THESE BACK TO ALTCTX?
                         return *e;
                     }
 
@@ -568,7 +565,7 @@ public:
 
             safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
 
-            std::vector<Symbol *> lins = stmgr->getAvailableLinears();
+            std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -580,23 +577,18 @@ public:
                 {
                     details << e->toString() << "; ";
                 }
-
+                std::cout << stmgr->toString() << std::endl;
                 errorHandler.addError(alt->getStart(), "537 Unused linear types in context: " + details.str());
             }
         }
 
         if (checkRestIndependently)
         {
-            for (Symbol *s : syms)
-            {
-                stmgr->addSymbol(s);
-            }
-            for (auto pair : to_fix)
-            {
-                pair.first->setProtocol(pair.second->getCopy());
-            }
+            // std::optional<STManager *> optSTCopy = origStmgr->getCopy();
+            // if(!optSTCopy) return errorHandler.addError(ctx->getStart(), "Failed to copy symbol table; this is likely a compiler error.");
+            this->stmgr = origStmgr; // optSTCopy.value(); //TODO: DELETE?
 
-            stmgr->enterScope(StopType::NONE);
+            stmgr->enterScope(StopType::NONE); // Why? This doesnt make sense..
 
             for (auto s : ctxRest->ctxRest)
             {
@@ -638,7 +630,7 @@ public:
             ctxRest->isGenerated = true;
             safeExitScope(ctx);
 
-            std::vector<Symbol *> lins = stmgr->getAvailableLinears();
+            std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -655,6 +647,7 @@ public:
             }
         }
 
+        // this->stmgr = origStmgr;
         return ConditionalData(cases);
     }
 
@@ -693,6 +686,7 @@ private:
 
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
+       // std::cout << stmgr->toString() << std::endl;
         // First, try exiting the scope
         std::pair<std::optional<Scope *>, std::optional<Scope *>> res = stmgr->exitScope();
 
@@ -701,7 +695,7 @@ private:
         {
             // Get the Scope* and check for any uninferred symbols
             Scope *scope = res.first.value();
-            std::vector<const Symbol *> uninf = scope->getUninferred();
+            std::vector<Symbol *> uninf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -714,14 +708,14 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "711 Uninferred types in context: " + details.str());
             }
         }
 
         if (res.second)
         {
             Scope *scope = res.second.value();
-            std::vector<Symbol *> lins = scope->getRemainingLinearTypes();
+            std::vector<Symbol *> lins = scope->getSymbols(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -733,9 +727,7 @@ private:
                 {
                     details << e->toString() << "; ";
                 }
-                std::cout << stmgr->toString() << std::endl;
-                std::cout << "scope: \n\n" << std::endl; 
-                std::cout << scope->toString() << std::endl; 
+
                 errorHandler.addError(ctx->getStart(), "736 Unused linear types in context: " + details.str());
             }
         }
