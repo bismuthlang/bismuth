@@ -33,7 +33,7 @@ bool Scope::removeSymbol(const Symbol * symbol)
   std::string id = symbol->identifier;
   if (symbols.find(id) != symbols.end())
   {
-    symbols.erase(symbols.find(id)); //FIXME: DO BETTER
+    symbols.erase(symbols.find(id));
     return true;
   }
 

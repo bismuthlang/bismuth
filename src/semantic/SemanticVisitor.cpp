@@ -1938,7 +1938,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             alternatives,
             restDat,
             false,
-            [this, savedRest, channel, sequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+            [this, savedRest, sequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
                 const ProtocolSequence *proto = sequences.at(branch++);
 

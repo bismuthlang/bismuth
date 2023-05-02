@@ -132,8 +132,6 @@ optional<const Type *> ProtocolSequence::recv() const
     // FIXME: BETTER ERROR HANDLING
     if (canRecv())
     {
-        // FIXME: DO BETTER:
-
         const Protocol *proto = steps.front();
         const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto);
 

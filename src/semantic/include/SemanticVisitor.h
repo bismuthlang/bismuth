@@ -485,7 +485,6 @@ public:
 
         STManager *origStmgr = this->stmgr;
 
-        // for (auto alt : ctxCases)
         for (unsigned int i = 0; i < ctxCases.size(); i++)
         {
             auto alt = ctxCases.at(i);
@@ -521,7 +520,7 @@ public:
                 {
                     std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
+                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                     {
                         (*e)->addError(alt->getStart(), "Failed to typecheck code following branch."); // FIXME: SWITCH THESE BACK TO ALTCTX?
                         return *e;
@@ -546,13 +545,13 @@ public:
                     {
                         std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                         {
-                            (*e)->addError(ctx->getStart(), "2097");
+                            (*e)->addError(ctx->getStart(), "Failed to typecheck when no branch followed.");
                             return *e;
                         }
 
-                        if (!r->isGenerated) // FIXME: MAY CAUSE DOUBLE FILL ISSUES IF PRIOR BRANCH ERRORS (WHEN WE CHANGE TO GET ALL ERRORS)
+                        if (!r->isGenerated)
                         {
                             r->post.push_back(std::get<TypedNode *>(rOpt));
                         }
@@ -582,9 +581,7 @@ public:
 
         if (checkRestIndependently)
         {
-            // std::optional<STManager *> optSTCopy = origStmgr->getCopy();
-            // if(!optSTCopy) return errorHandler.addError(ctx->getStart(), "Failed to copy symbol table; this is likely a compiler error.");
-            this->stmgr = origStmgr; // optSTCopy.value(); //TODO: DELETE?
+            this->stmgr = origStmgr;
 
             stmgr->enterScope(StopType::NONE); // Why? This doesnt make sense..
 
@@ -610,13 +607,13 @@ public:
                     {
                         std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                         {
                             (*e)->addError(ctx->getStart(), "2097");
                             return *e;
                         }
 
-                        if (!r->isGenerated) // FIXME: MAY CAUSE DOUBLE FILL ISSUES IF PRIOR BRANCH ERRORS (WHEN WE CHANGE TO GET ALL ERRORS)
+                        if (!r->isGenerated)
                         {
                             r->post.push_back(std::get<TypedNode *>(rOpt));
                         }
@@ -644,8 +641,7 @@ public:
                 errorHandler.addError(ctx->getStart(), "608 Unused linear types in context: " + details.str());
             }
         }
-
-        // this->stmgr = origStmgr;
+        
         return ConditionalData(cases);
     }
 
