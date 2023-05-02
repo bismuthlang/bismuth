@@ -356,7 +356,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramExecNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
 {
-    std::optional<Value *> valOpt = AcceptType(this, n->expr);
+    std::optional<Value *> valOpt = AcceptType(this, new TExprCopyNode(n->expr, n->token));
     if (!valOpt)
     {
         errorHandler.addError(n->getStart(), "Failed to generate code");
@@ -373,38 +373,13 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
         stoVal = correctSumAssignment(sum, stoVal);
     }
 
-    // std::optional<Value *> v = copyVisitor->deepCopy(builder, n->lType, stoVal);
-    std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
-    {
-        if (n->lType->requiresDeepCopy())
-        {
-            // Function *fn = n->lType->clone(module, builder);
-            // if (fn == nullptr)
-            // {
-            //     errorHandler.addError(n->getStart(), "Failed to generate clone fn for type: " + n->lType->toString());
-            //     return std::nullopt;
-            // }
-            // Value *addrMap = getNewAddressMap();
-            // stoVal = builder->CreateCall(fn, {stoVal, addrMap});
-            // deleteAddressMap(addrMap);
-            auto opt = copyVisitor->deepCopy(builder, n->lType, stoVal);
-            if (!opt)
-                return std::nullopt;
-            stoVal = opt.value();
-        }
-
         Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
         Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
 
         builder->CreateStore(stoVal, casted);
 
-        return v;
-    }();
 
-    if (!v)
-        return std::nullopt; // Error handled already.
-
-    Value *corrected = builder->CreateBitCast(v.value(), i8p);
+    Value *corrected = builder->CreateBitCast(v, i8p);
     std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
     if (!optVal)
@@ -1642,7 +1617,6 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TExprCopyNode *n)
 {
-    //TODO: REFACTOR W/ PROGRAM SEND?
     std::optional<Value *> valOpt = AcceptType(this, n->expr);
     if (!valOpt)
     {
@@ -1652,18 +1626,13 @@ std::optional<Value *> CodegenVisitor::visit(TExprCopyNode *n)
 
     Value *stoVal = valOpt.value();
 
-    if (n->lType->requiresDeepCopy())
+    if (n->getType()->requiresDeepCopy())
     {
-        auto opt = copyVisitor->deepCopy(builder, n->lType, stoVal);
+        auto opt = copyVisitor->deepCopy(builder, n->getType(), stoVal);
         if (!opt)
             return std::nullopt;
         stoVal = opt.value();
     }
-
-    // Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
-    // Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
-
-    // builder->CreateStore(stoVal, casted);
 
     return stoVal;
 }

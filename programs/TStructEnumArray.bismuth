@@ -46,9 +46,10 @@ define program :: c : Channel<-int> = {
     var tibb := TIBB::init(array);
 
     tibb.b[0] := shared;
+    ETIBBOB toSend := tibb;
     # printf("");
     printTIBB("b (orig/5;6)", tibb);
-    a.send(tibb)
+    a.send(toSend)
     var u := a.recv(); 
     printTIBB("b (orig/5;6)", tibb);
     # **shared = 9; 
@@ -67,9 +68,10 @@ define program :: c : Channel<-int> = {
     var tibb := TIBB::init(array);
 
     tibb.b[0] := shared;
+    ETIBBOB toSend := tibb;
     # printf("");
     printTIBB("b (orig/5;5)", tibb);
-    a.send(tibb)
+    a.send(toSend)
     var u := a.recv(); 
     printTIBB("b (orig/5;5)", tibb);
     # **shared = 9; 

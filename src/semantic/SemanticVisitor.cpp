@@ -2239,8 +2239,8 @@ std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(Bism
     {
         return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty->toString());
     }
-    
-    return new TExprCopyNode(tn, ty, ctx->getStart());
+
+    return new TExprCopyNode(tn, ctx->getStart());
 }
 
 /*************************************************************

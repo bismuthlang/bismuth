@@ -1202,15 +1202,14 @@ class TExprCopyNode : public TypedNode
 {
 public:
     TypedNode *expr;
-    const Type *lType; // Tracks type send expects. Needed for sums
 
-    TExprCopyNode(TypedNode *e, const Type *l, antlr4::Token *tok) : TypedNode(tok), expr(e),  lType(l)
+    TExprCopyNode(TypedNode *e, antlr4::Token *tok) : TypedNode(tok), expr(e)
     {
         // expr = e;
         // lType = l;
     }
 
-    const Type *getType() override { return lType; }
+    const Type *getType() override { return expr->getType(); }
 
     std::string toString() const override {
         return "COPY NODE";

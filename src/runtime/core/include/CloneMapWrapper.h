@@ -2,7 +2,7 @@
 
 #include <map>
 #include <cstdint>
-
+// #include <iostream>
 
 typedef std::map<uint8_t *, uint8_t *> Map;
 
@@ -17,11 +17,13 @@ extern "C"
 
     void _address_map_put(uint8_t *map, uint8_t *k, uint8_t *v)
     {
+        // std::cout << "Put! " << (void*) k << ", " << (void*) v << std::endl; 
         Map *m = reinterpret_cast<Map *>(map);
         m->insert(std::pair<uint8_t *, uint8_t *>(k, v));
     }
 
     uint8_t * _address_map_has(uint8_t *map, uint8_t *k) {
+        // std::cout << "Has? " << (void*) k << std::endl; 
         Map *m = reinterpret_cast<Map *>(map);
         auto itr = m->find(k); 
 
