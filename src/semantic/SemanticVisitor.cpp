@@ -93,7 +93,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to typecheck definition.");
+                (*e)->addError(ctx->getStart(), "Failed to type check definition.");
                 return *e;
             }
 
@@ -155,7 +155,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to typecheck program.");
+                (*e)->addError(ctx->getStart(), "Failed to type check program.");
                 return *e;
             }
 
@@ -167,7 +167,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to typecheck function.");
+                (*e)->addError(ctx->getStart(), "Failed to type check function.");
                 return *e;
             }
 
@@ -488,7 +488,7 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->index->getStart(), "Unable to typecheck array access index.");
+        (*e)->addError(ctx->index->getStart(), "Unable to type check array access index.");
         return *e;
     }
 
@@ -909,7 +909,7 @@ std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
     // Determine the type of the expression we are visiting
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to typecheck dereference expression.");
+        (*e)->addError(ctx->getStart(), "Unable to type check dereference expression.");
         return *e;
     }
 
@@ -963,7 +963,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&rightOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to typecheck RHS of binary relation expression.");
+        (*e)->addError(ctx->getStart(), "Unable to type check RHS of binary relation expression.");
         return *e;
     }
 
@@ -1072,7 +1072,7 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to typecheck assignment.");
+        (*e)->addError(ctx->getStart(), "Unable to type check assignment.");
         return *e;
     }
 
@@ -1152,7 +1152,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOptO))
                     {
-                        (*e)->addError(ctx->getStart(), "Unable to typecheck assignment.");
+                        (*e)->addError(ctx->getStart(), "Unable to type check assignment.");
                         return *e;
                     }
 
@@ -1274,7 +1274,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            (*e)->addError(ctx->getStart(), "Failed to typecheck match statement.");
+            (*e)->addError(ctx->getStart(), "Failed to type check match statement.");
             return *e;
         }
 
@@ -1454,7 +1454,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
     {
-        (*e)->addError(ctx->getStart(), "Failed to typecheck select statement.");
+        (*e)->addError(ctx->getStart(), "Failed to type check select statement.");
         return *e;
     }
 
@@ -1967,7 +1967,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            (*e)->addError(ctx->getStart(), "Failed to typecheck external choice.");
+            (*e)->addError(ctx->getStart(), "Failed to type check external choice.");
             return *e;
         }
 
@@ -2206,7 +2206,7 @@ std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
     std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->prog->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
     {
-        (*e)->addError(ctx->getStart(), "Failed to typecheck exec");
+        (*e)->addError(ctx->getStart(), "Failed to type check exec");
         return *e;
     }
     // Symbol *sym = opt.value().second;
@@ -2221,6 +2221,26 @@ std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot exec: " + prog->getType()->toString());
+}
+
+std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(BismuthParser::CopyExprContext *ctx)
+{
+    std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to type check copy expression");
+        return *e;
+    }
+
+    TypedNode *tn = std::get<TypedNode *>(tnOpt);
+    const Type *ty = tn->getType();
+
+    if (isLinear(ty))
+    {
+        return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty->toString());
+    }
+    
+    return new TExprCopyNode(tn, ty, ctx->getStart());
 }
 
 /*************************************************************

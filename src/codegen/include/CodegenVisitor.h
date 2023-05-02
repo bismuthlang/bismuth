@@ -130,8 +130,8 @@ public:
     std::optional<Value *> visit(TExitNode *n) override;
     std::optional<Value *> visit(TChannelCaseStatementNode *n) override;
     std::optional<Value *> visit(TProgramProjectNode *n) override;
-
     std::optional<Value *> visit(TInitBoxNode *n) override;
+    std::optional<Value *> visit(TExprCopyNode *n) override; 
 
     std::optional<Value *> visitCompilationUnit(TCompilationUnitNode *n) { return visit(n); }
 

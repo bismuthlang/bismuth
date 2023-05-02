@@ -121,7 +121,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
         // Can skip global stuff
         llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, localSym->getIdentifier());
         // *localSym->val = v;
-        localSym->setAllocation(v); 
+        localSym->setAllocation(v);
         // varSymbol->val = v;
 
         // Now to store the var
@@ -171,7 +171,7 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
 
     // Attempt to cast the check; if this fails, then codegen for the check failed
     Symbol *sym = n->sym;
-    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
     if (!optVal)
     {
@@ -233,7 +233,7 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramProjectNode *n)
 {
     Symbol *sym = n->sym;
-    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
     if (!optVal)
     {
@@ -308,7 +308,7 @@ std::optional<Value *> CodegenVisitor::visit(TInvocationNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode *n)
 {
     Symbol *sym = n->sym;
-    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
     if (!optVal)
     {
@@ -401,35 +401,11 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
         return v;
     }();
 
-    // std::optional<Value *> v = [this, n, &stoVal]() -> std::optional<Value *>
-    // {
-    //     if (n->lType->requiresDeepCopy())
-    //     {
-    //         Function *fn = n->lType->clone(module, builder);
-    //         if (fn == nullptr)
-    //         {
-    //             errorHandler.addError(n->getStart(), "Failed to generate clone fn for type: " + n->lType->toString());
-    //             return std::nullopt;
-    //         }
-    //         Value *addrMap = getNewAddressMap();
-    //         stoVal = builder->CreateCall(fn, {stoVal, addrMap});
-    //         deleteAddressMap(addrMap);
-    //         // return v;
-    //     }
-
-    //     Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
-    //     Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
-
-    //     builder->CreateStore(stoVal, casted);
-
-    //     return v;
-    // }();
-
     if (!v)
         return std::nullopt; // Error handled already.
 
     Value *corrected = builder->CreateBitCast(v.value(), i8p);
-    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
     if (!optVal)
     {
@@ -445,7 +421,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramContractNode *n)
 {
     Symbol *sym = n->sym;
-    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
     if (!optVal)
     {
@@ -463,7 +439,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramContractNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramWeakenNode *n)
 {
     Symbol *sym = n->sym;
-    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
     if (!optVal)
     {
@@ -483,7 +459,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode *n)
     // Very similar to regular loop
 
     Symbol *sym = n->sym;
-    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
     if (!optVal)
     {
@@ -535,7 +511,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
     // FIXME: Somewhat inefficient due to dequeuing
 
     Symbol *sym = n->sym;
-    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation(); 
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
     if (!optVal)
     {
@@ -1589,7 +1565,7 @@ std::optional<Value *> CodegenVisitor::visit(TBlockNode *n)
     {
         AcceptType(this, e);
     }
-    
+
     return std::nullopt;
 }
 
@@ -1629,7 +1605,7 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
         llvm::AllocaInst *v = CreateEntryBlockAlloc(type, argName);
 
         // *param->val = v;
-        param->setAllocation(v); 
+        param->setAllocation(v);
 
         builder->CreateStore(&arg, v);
     }
@@ -1640,21 +1616,20 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
         AcceptType(this, e);
     }
 
-
     // Needed to help make the branching programs work due to switches being exhaustive. Will have to do this better eventually!
-    llvm::Instruction * inst = &*(builder->GetInsertBlock()->rbegin());
-    if(!dyn_cast<llvm::ReturnInst>(inst))
+    llvm::Instruction *inst = &*(builder->GetInsertBlock()->rbegin());
+    if (!dyn_cast<llvm::ReturnInst>(inst))
     {
-        builder->CreateUnreachable(); 
+        builder->CreateUnreachable();
     }
     // if(!llvm::isa<llvm::ReturnInst>(builder->GetInsertBlock()->end()))
     // if(llvm::ReturnInst * dead = dynamic_cast<llvm::ReturnInst>(builder->GetInsertBlock()->end()))
     // {
-        
+
     // }
-    // else 
+    // else
     // {
-    //     builder->CreateUnreachable(); 
+    //     builder->CreateUnreachable();
     // }
 
     // NOTE HOW WE DONT NEED TO CREATE RET VOID EVER BC NO FN!
@@ -1663,4 +1638,32 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
     builder->SetInsertPoint(ins);
 
     return fn;
+}
+
+std::optional<Value *> CodegenVisitor::visit(TExprCopyNode *n)
+{
+    //TODO: REFACTOR W/ PROGRAM SEND?
+    std::optional<Value *> valOpt = AcceptType(this, n->expr);
+    if (!valOpt)
+    {
+        errorHandler.addError(n->getStart(), "Failed to generate code");
+        return std::nullopt;
+    }
+
+    Value *stoVal = valOpt.value();
+
+    if (n->lType->requiresDeepCopy())
+    {
+        auto opt = copyVisitor->deepCopy(builder, n->lType, stoVal);
+        if (!opt)
+            return std::nullopt;
+        stoVal = opt.value();
+    }
+
+    // Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+    // Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
+
+    // builder->CreateStore(stoVal, casted);
+
+    return stoVal;
 }

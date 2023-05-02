@@ -81,6 +81,8 @@ class TExitNode;
 class TChannelCaseStatementNode;
 class TProgramProjectNode;
 
+class TExprCopyNode;
+
 class TypedASTVisitor
 {
 public:
@@ -126,6 +128,7 @@ public:
     virtual std::optional<Value *> visit(TExitNode *n) = 0;
     virtual std::optional<Value *> visit(TChannelCaseStatementNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramProjectNode *n) = 0;
+    virtual std::optional<Value *> visit(TExprCopyNode *n) = 0; 
 
     // virtual std::optional<Value
 
@@ -170,6 +173,7 @@ public:
     std::any any_visit(TExitNode *n) { return this->visit(n); }
     std::any any_visit(TChannelCaseStatementNode *n) { return this->visit(n); }
     std::any any_visit(TProgramProjectNode *n) { return this->visit(n); }
+    std::any any_visit(TExprCopyNode *n) {return this->visit(n); }
 
     std::any visit(std::any n) { return "FIXME"; }
     std::any accept(TypedNode *n)
@@ -1176,6 +1180,43 @@ public:
     std::string toString() const override {
         return "PROJECT NODE";
     }
+};
+
+// class TExprCopyNode : public TypedNode
+// {
+// public:
+//     TypedNode *toCopy;
+
+//     TExprCopyNode(TypedNode *c, antlr4::Token *tok) : TypedNode(tok), toCopy(c)
+//     {
+//     }
+
+//     std::string toString() const override {
+//         return "COPY NODE";
+//     }
+
+//     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+// };
+
+class TExprCopyNode : public TypedNode
+{
+public:
+    TypedNode *expr;
+    const Type *lType; // Tracks type send expects. Needed for sums
+
+    TExprCopyNode(TypedNode *e, const Type *l, antlr4::Token *tok) : TypedNode(tok), expr(e),  lType(l)
+    {
+        // expr = e;
+        // lType = l;
+    }
+
+    const Type *getType() override { return lType; }
+
+    std::string toString() const override {
+        return "COPY NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
 /**************************************************

@@ -198,6 +198,9 @@ public:
     std::variant<TExitNode *, ErrorChain *> visitCtx(BismuthParser::ExitStatementContext *ctx);
     std::any visitExitStatement(BismuthParser::ExitStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
 
+    std::variant<TExprCopyNode *, ErrorChain *> TvisitCopyExpr(BismuthParser::CopyExprContext *ctx);
+    std::any visitCopyExpr(BismuthParser::CopyExprContext *ctx) override { return TNVariantCast<TExprCopyNode>(TvisitCopyExpr(ctx)); }
+
     // const Type *visitCtx(BismuthParser::VariableExprContext *ctx);
     const Type *visitCtx(BismuthParser::AssignmentContext *ctx);
 
@@ -268,7 +271,7 @@ public:
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
         {
-            (*e)->addError(ex->getStart(), "Unable to typecheck condition expression.");
+            (*e)->addError(ex->getStart(), "Unable to type check condition expression.");
             return *e;
         }
 
@@ -307,7 +310,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to typecheck statement in block.");
+                (*e)->addError(ctx->getStart(), "Failed to type check statement in block.");
                 return *e;
             }
 
@@ -522,7 +525,7 @@ public:
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                     {
-                        (*e)->addError(alt->getStart(), "Failed to typecheck code following branch."); // FIXME: SWITCH THESE BACK TO ALTCTX?
+                        (*e)->addError(alt->getStart(), "Failed to type check code following branch."); // FIXME: SWITCH THESE BACK TO ALTCTX?
                         return *e;
                     }
 
@@ -547,7 +550,7 @@ public:
 
                         if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                         {
-                            (*e)->addError(ctx->getStart(), "Failed to typecheck when no branch followed.");
+                            (*e)->addError(ctx->getStart(), "Failed to type check when no branch followed.");
                             return *e;
                         }
 
@@ -590,7 +593,7 @@ public:
                 std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                 {
-                    (*e)->addError(ctx->getStart(), "Failed to typecheck code when conditional skipped over.");
+                    (*e)->addError(ctx->getStart(), "Failed to type check code when conditional skipped over.");
                     return *e;
                 }
                 if (!ctxRest->isGenerated)
