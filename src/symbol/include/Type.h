@@ -25,7 +25,6 @@
 #include <set> // Sets
 
 #include <climits> // Max & Min
-#include <iostream> // cout fixme: remove
 
 #include "LinkedMap.h"
 #include "Protocol.h"

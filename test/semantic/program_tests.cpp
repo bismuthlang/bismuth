@@ -369,7 +369,7 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    define program :: c : Channel<-int> = {
+    define func program () : int {
 
         return 1; 
 
@@ -403,7 +403,7 @@ TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    define program :: c : Channel<-int> = {
+    define func program () : int {
 
     if true {
         return 0; 
@@ -556,6 +556,7 @@ TEST_CASE("Invoke on Non-Invokable (str)", "[semantic][program]")
     define program :: c : Channel<-int> = {
       var x := "hey there!"; 
       x();
+      c.send(0)
     }
     )"""");
   BismuthLexer lexer(&input);
@@ -588,6 +589,7 @@ TEST_CASE("Invoke on Non-Invokable (int)", "[semantic][program]")
     define program :: c : Channel<-int> = {
       var x := 10; 
       x();
+      c.send(0)
     }
     )"""");
   BismuthLexer lexer(&input);
@@ -838,7 +840,7 @@ TEST_CASE("Redeclaration of function 4", "[semantic][program]")
     }
 
     define program :: c : Channel<-int> = {
-      return 0; 
+      c.send(0)
     }
     )"""");
   BismuthLexer lexer(&input);
@@ -908,7 +910,7 @@ TEST_CASE("Redeclaration in extern", "[semantic][program]")
     extern int func foo(int a);
     
     define program :: c : Channel<-int> = {
-      return 0; 
+      c.send(0)
     }
     )"""");
   BismuthLexer lexer(&input);
@@ -1037,7 +1039,7 @@ define foo :: c : Channel<+int> = {
     int a := c.recv();
     # printf("a = %s\n", a);
     printf("a = %u\n", a);
-
+  c.send(0)
 }
 
 # str a := "hello";
@@ -1202,7 +1204,7 @@ TEST_CASE("Wrong UnaryNot", "[semantic][program][bool]")
       R""""(
 define program :: c : Channel<-int> = {
     boolean a := ~0; 
-    return 0;
+    c.send(0)
 }
     )"""");
 
@@ -1233,7 +1235,7 @@ TEST_CASE("Wrong UnaryMinus", "[semantic][program]")
       R""""(
 define program :: c : Channel<-int> = {
     int a := -"hey"; 
-    return 0;
+    c.send(0)
 }
     )"""");
 
@@ -1264,7 +1266,7 @@ TEST_CASE("Wrong RHS Arithmetic", "[semantic][program]")
       R""""(
 define program :: c : Channel<-int> = {
     int a := 0 - "hey?"; 
-    return 0;
+    c.send(0)
 }
     )"""");
 
@@ -1295,7 +1297,7 @@ TEST_CASE("Wrong LogAnd LHS", "[semantic][program]")
       R""""(
 define program :: c : Channel<-int> = {
     boolean a := 1 & false; 
-    return 0;
+    c.send(0)
 }
     )"""");
 
@@ -1326,7 +1328,7 @@ TEST_CASE("Wrong LogAnd RHS", "[semantic][program]")
       R""""(
 define program :: c : Channel<-int> = {
     boolean a := false & 1; 
-    return 0;
+    c.send(0)
 }
     )"""");
 
@@ -1357,7 +1359,7 @@ TEST_CASE("Wrong LogOr LHS", "[semantic][program]")
       R""""(
 define program :: c : Channel<-int> = {
     boolean a := 1 | false; 
-    return 0;
+    c.send(0)
 }
     )"""");
 
@@ -1388,7 +1390,7 @@ TEST_CASE("Wrong LogOr RHS", "[semantic][program]")
       R""""(
 define program :: c : Channel<-int> = {
     boolean a := false | 1; 
-    return 0;
+    c.send(0)
 }
     )"""");
 
@@ -1420,7 +1422,7 @@ TEST_CASE("Field Access - var", "[semantic][program]")
 define program :: c : Channel<-int> = {
     var a;
     var b := a.length; 
-    return 0;
+    c.send(0);
 }
     )"""");
 
@@ -1452,7 +1454,7 @@ TEST_CASE("Field Access - int", "[semantic][program]")
 define program :: c : Channel<-int> = {
     int a;
     var b := a.length; 
-    return 0;
+    c.send(0);
 }
     )"""");
 
@@ -1484,7 +1486,7 @@ TEST_CASE("ArrayAccess - Wrong Type", "[semantic][program]")
 define program :: c : Channel<-int> = {
     int [5] a;
     var b := a[true | false];
-    return 0;
+    c.send(0)
 }
     )"""");
 
@@ -1516,7 +1518,7 @@ TEST_CASE("Field Access - Unsupported/Undefined", "[semantic][program]")
 define program :: c : Channel<-int> = {
     int [5] a;
     var b := a.testing; 
-    return 0;
+    c.send(0);
 }
     )"""");
 
@@ -1547,7 +1549,7 @@ TEST_CASE("Field Access - Undefined Var", "[semantic][program]")
       R""""(
 define program :: c : Channel<-int> = {
     var b := a.testing; 
-    return 0;
+    c.send(0);
 }
     )"""");
 
@@ -1578,7 +1580,7 @@ TEST_CASE("Equals Different types", "[semantic][program]")
       R""""(
 define program :: c : Channel<-int> = {
     var a := "hello" == 1; 
-    return 0;
+    c.send(0);
 }
     )"""");
 
@@ -1609,7 +1611,7 @@ TEST_CASE("Assign to undefined", "[semantic][program]")
       R""""(
     define program :: c : Channel<-int> = {
       a := 10; 
-      return 0; 
+      c.send(0);
     }
     )"""");
   BismuthLexer lexer(&input);
@@ -1706,7 +1708,7 @@ TEST_CASE("Function return wrong type", "[semantic][program]")
   antlr4::ANTLRInputStream input(
       R""""(
     define program :: c : Channel<-int> = {
-      return "hey"; 
+      c.send("hey"); 
     }
     )"""");
   BismuthLexer lexer(&input);
@@ -1737,9 +1739,9 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program]
     define program :: c : Channel<-int> = {
       var a := 0; 
 
-      define func foo (Channel<-int> c) : Channel<-int> {
+      define func foo (Channel<-int> c) : Channel<-int> { # FIXME: ISNT A THING YET! IS IT?
         a := 2; 
-        return c;
+        return c; 
       }
 
       c.send(0)
@@ -1777,7 +1779,7 @@ TEST_CASE("Nested Local Program - Disallow Local vars 1", "[semantic][program][l
         c.send(a)
       }
 
-      return 0; 
+      c.send(0); 
     }
     )"""");
   BismuthLexer lexer(&input);
