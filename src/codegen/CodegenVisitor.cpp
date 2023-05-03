@@ -269,9 +269,9 @@ std::optional<Value *> CodegenVisitor::visit(TInvocationNode *n)
 
         if (args.size() < n->paramType.size())
         {
-            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->paramType.at(args.size()))) // argNodes.at(args.size())->getType()))
+            if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(n->paramType.at(args.size()))) // argNodes.at(args.size())->getType()))
             {
-                val = correctSumAssignment(sum, val);
+                val = correctSumAssignment(sumOpt.value(), val);
             }
         }
 
@@ -368,16 +368,15 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
     Value *stoVal = valOpt.value();
 
     // Same as return node's
-    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(n->lType))
+    if (std::optional<const TypeSum *>sumOpt = type_cast<TypeSum>(n->lType))
     {
-        stoVal = correctSumAssignment(sum, stoVal);
+        stoVal = correctSumAssignment(sumOpt.value(), stoVal);
     }
 
-        Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
-        Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
+    Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+    Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
 
-        builder->CreateStore(stoVal, casted);
-
+    builder->CreateStore(stoVal, casted);
 
     Value *corrected = builder->CreateBitCast(v, i8p);
     std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
@@ -576,9 +575,9 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode *n)
 
         for (Value *a : args)
         {
-            if (const TypeSum *sum = dynamic_cast<const TypeSum *>(elements.at(i).second))
+            if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(elements.at(i).second))
             {
-                a = correctSumAssignment(sum, a);
+                a = correctSumAssignment(sumOpt.value(), a);
             }
 
             Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
@@ -606,9 +605,9 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode *n)
 
     const TypeBox *box = n->boxType;
 
-    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(box->getInnerType()))
+    if (std::optional<const TypeSum *>sumOpt = type_cast<TypeSum>(box->getInnerType()))
     {
-        stoVal = correctSumAssignment(sum, stoVal);
+        stoVal = correctSumAssignment(sumOpt.value(), stoVal);
     }
 
     Value *v = builder->CreateCall(getGCMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
@@ -925,12 +924,10 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
     if (n->accesses.size() > 0 && n->accesses.at(n->accesses.size() - 1).first == "length")
     {
         const Type *modOpt = (n->accesses.size() > 1) ? n->accesses.at(n->accesses.size() - 2).second : sym->type;
-        if (const TypeArray *ar = dynamic_cast<const TypeArray *>(modOpt))
+        if (std::optional<const TypeArray *> arOpt = type_cast<TypeArray>(modOpt))
         {
             // If it is, correctly, an array type, then we can get the array's length (this is the only operation currently, so we can just do thus)
-            Value *v = builder->getInt32(ar->getLength());
-
-            return v;
+            return builder->getInt32(arOpt.value()->getLength());
         }
 
         // Can't throw error b/c length could be field of struct
@@ -956,10 +953,10 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 
     for (unsigned int i = 0; i < n->accesses.size(); i++)
     {
-        if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
+        if (std::optional<const TypeStruct *>sOpt = type_cast<TypeStruct>(ty))
         {
             std::string field = n->accesses.at(i).first;
-            std::optional<unsigned int> indexOpt = s->getIndex(field);
+            std::optional<unsigned int> indexOpt = sOpt.value()->getIndex(field);
 
             if (!indexOpt)
             {
@@ -1146,9 +1143,9 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
     Value *v = val.value();
     Value *stoVal = exprVal.value();
     const Type *varSymType = n->var->getType();
-    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymType)) // FIXME: WILL THIS WORK IF USING TYPE INF?
+    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymType)) // FIXME: WILL THIS WORK IF USING TYPE INF?
     {
-        unsigned int index = sum->getIndex(module, stoVal->getType());
+        unsigned int index = sumOpt.value()->getIndex(module, stoVal->getType());
 
         if (index == 0)
         {
@@ -1239,9 +1236,9 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
                 if (e->val)
                 {
                     Value *stoVal = exVal.value();
-                    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(varSymbol->type)) // FIXME: WILL THIS WORK IF USING TYPE INF? - ONLY WORKS BC TYPEINF CANT INFER A -> A + B.
+                    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol->type)) // FIXME: WILL THIS WORK IF USING TYPE INF? - ONLY WORKS BC TYPEINF CANT INFER A -> A + B.
                     {
-                        unsigned int index = sum->getIndex(module, stoVal->getType());
+                        unsigned int index = sumOpt.value()->getIndex(module, stoVal->getType());
 
                         if (index == 0)
                         {
@@ -1510,9 +1507,9 @@ std::optional<Value *> CodegenVisitor::visit(TReturnNode *n)
 
         Value *inner = innerOpt.value();
 
-        if (const TypeSum *sum = dynamic_cast<const TypeSum *>(expr.first))
+        if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(expr.first))
         {
-            inner = correctSumAssignment(sum, inner);
+            inner = correctSumAssignment(sumOpt.value(), inner);
         }
 
         // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.
