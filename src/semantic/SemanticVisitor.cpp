@@ -390,8 +390,10 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     // TODO: METHODIZE WITH INVOKE?
 
-    if (const TypeStruct *product = dynamic_cast<const TypeStruct *>(sym->type))
+    std::optional<const TypeStruct *> productOpt = type_cast<TypeStruct>(sym->type);
+    if (productOpt)
     {
+        const TypeStruct *product = productOpt.value(); 
         std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
         if (elements.size() != ctx->exprs.size())
         {
@@ -520,7 +522,7 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
      */
     TFieldAccessNode *field = std::get<TFieldAccessNode *>(opt);
 
-    if (const TypeArray *arr = dynamic_cast<const TypeArray *>(field->getType()))
+    if (type_cast<TypeArray>(field->getType()))
     {
         return new TArrayAccessNode(field, expr, is_rvalue, ctx->getStart());
     }
@@ -710,7 +712,7 @@ std::variant<TEqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     }
 
     // Note: As per C spec, arrays cannot be compared
-    if (dynamic_cast<const TypeArray *>(lhs->getType()) || dynamic_cast<const TypeArray *>(rhs->getType()))
+    if (type_cast<TypeArray>(lhs->getType()) || type_cast<TypeArray>(rhs->getType()))
     {
         errorHandler.addError(ctx->getStart(), "Cannot perform equality operation on arrays; they are always seen as unequal!");
     }
@@ -863,9 +865,11 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     for (unsigned int i = 1; i < ctx->fields.size(); i++)
     {
         std::string fieldName = ctx->fields.at(i)->getText();
-
-        if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
+        
+        std::optional<const TypeStruct*> sOpt = type_cast<TypeStruct>(ty); 
+        if (sOpt)
         {
+            const TypeStruct *s = sOpt.value(); 
             std::optional<const Type *> eleOpt = s->get(fieldName);
             if (eleOpt)
             {
@@ -878,7 +882,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
                 return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
             }
         }
-        else if (i + 1 == ctx->fields.size() && dynamic_cast<const TypeArray *>(ty) && ctx->fields.at(i)->getText() == "length")
+        else if (i + 1 == ctx->fields.size() && type_cast<TypeArray>(ty) && ctx->fields.at(i)->getText() == "length")
         {
             a.push_back({"length",
                          Types::INT});
@@ -887,8 +891,10 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
         else if (i + 1 == ctx->fields.size() && ctx->fields.at(i)->getText() == "is_present")
         {
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
+            std::optional<const TypeChannel*> channelOpt = type_cast<TypeChannel>(ty);
+            if (channelOpt)
             {
+                const TypeChannel *channel = channelOpt.value(); 
                 if (channel->getProtocol()->isOCorGuarded())
                 {
                     a.push_back({"is_present",
@@ -920,9 +926,10 @@ std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
     TypedNode *expr = std::get<TypedNode *>(exprOpt);
 
     const Type *exprType = expr->getType();
-    if (const TypeBox *box = dynamic_cast<const TypeBox *>(exprType))
+    std::optional<const TypeBox*> boxOpt = type_cast<TypeBox>(exprType);
+    if (boxOpt)
     {
-        return new TDerefBoxNode(box, expr, is_rvalue, ctx->getStart());
+        return new TDerefBoxNode(boxOpt.value(), expr, is_rvalue, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Dereference expected Box<T> but got " + exprType->toString());
@@ -1204,8 +1211,10 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
     TypedNode *cond = std::get<TypedNode *>(condOpt);
 
-    if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(cond->getType()))
+    std::optional<const TypeSum *> sumTypeOpt = type_cast<TypeSum>(cond->getType());
+    if (sumTypeOpt)
     {
+        const TypeSum *sumType = sumTypeOpt.value(); 
         std::vector<std::pair<Symbol *, TypedNode *>> cases;
 
         std::set<const Type *> foundCaseTypes = {};
@@ -1498,7 +1507,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         const Type *valType = val->getType();
 
         // If the type of the return symbol is a BOT, then we must be in a PROC and, thus, we cannot return anything
-        if (const TypeUnit *b = dynamic_cast<const TypeUnit *>(sym->type))
+        if (sym->type->isSubtype(Types::UNIT))
         {
             return errorHandler.addError(ctx->getStart(), "PROC cannot return value, yet it was given a " + valType->toString() + " to return!");
         }
@@ -1516,7 +1525,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     }
 
     // We do not have an expression to return, so make sure that the return type is also a BOT.
-    if (dynamic_cast<const TypeUnit *>(sym->type))
+    if (sym->type->isSubtype(Types::UNIT))
     {
         return new TReturnNode(ctx->getStart());
     }
@@ -1654,8 +1663,10 @@ std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     Symbol *sym = opt.value_or(
         new Symbol(id, new TypeSum(id), true, true));
 
-    if (const TypeSum *sumTy = dynamic_cast<const TypeSum *>(sym->type))
+    std::optional<const TypeSum*> sumTyOpt = type_cast<TypeSum>(sym->type);
+    if (sumTyOpt)
     {
+        const TypeSum *sumTy = sumTyOpt.value(); 
         if (!sumTy->isDefined())
         {
             std::set<const Type *, TypeCompare> cases = {};
@@ -1700,8 +1711,10 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
     Symbol *sym = opt.value_or(
         new Symbol(id, new TypeStruct(id), true, true));
 
-    if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(sym->type))
+    std::optional<const TypeStruct*> structTypeOpt = type_cast<TypeStruct>(sym->type);
+    if (structTypeOpt)
     {
+        const TypeStruct *structType = structTypeOpt.value(); 
         if (!structType->isDefined())
         {
             LinkedMap<std::string, const Type *> el;
