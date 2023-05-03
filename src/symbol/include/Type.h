@@ -1732,3 +1732,21 @@ inline const Type *copyType(const Type *ty)
 
     return ty;
 }
+
+template <typename T>
+inline std::optional<const T*> type_cast(const Type * ty) 
+{
+    if(const T* ans = dynamic_cast<const T*>(ty))
+    {
+        return ans; 
+    }
+
+    if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(ty))
+    {
+        std::optional<const Type *> opt = inf->getValueType(); 
+        if(!opt) return std::nullopt; //TODO: Handle better? Challenging for things like Struct... (ie, multiplicities), but may be less of a problem, perhaps, when we disable nulls.
+        return type_cast<T>(opt.value()); 
+    }
+
+    return std::nullopt; 
+}

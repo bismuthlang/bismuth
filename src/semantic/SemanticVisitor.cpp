@@ -199,9 +199,10 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         else
         {
             Symbol *sym = opt.value().second;
-
-            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
+            std::optional<const TypeProgram*> progOpt = type_cast<TypeProgram>(sym->type);
+            if (progOpt)
             {
+                const TypeProgram * inv = progOpt.value(); 
                 if (!inv->getChannelType()->isSubtype(new TypeChannel(new ProtocolSequence({new ProtocolSend(Types::INT)}))))
                 {
                     errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString());
@@ -249,9 +250,10 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     {
 
         std::string name = (ctx->lam) ? "lambda " : ctx->field->getText();
-
-        if (const TypeInvoke *invokeable = dynamic_cast<const TypeInvoke *>(tn->getType()))
+        std::optional<const TypeInvoke*> invokeableOpt = type_cast<TypeInvoke>(tn->getType());
+        if (invokeableOpt)
         {
+            const TypeInvoke *invokeable = invokeableOpt.value(); 
             /*
              * The symbol is something we can invoke, so check that we provide it with valid parameters
              */
@@ -305,7 +307,9 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
                 // skip over subsequent checks--we just needed to run type checking on each parameter.
                 if (invokeable->isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
                 {
-                    if (dynamic_cast<const TypeBottom *>(providedType) || dynamic_cast<const TypeAbsurd *>(providedType) || dynamic_cast<const TypeUnit *>(providedType))
+                    if (type_cast<TypeBottom>(providedType) 
+                        || type_cast<TypeAbsurd>(providedType) 
+                        || type_cast<TypeUnit >(providedType))
                     {
                         errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType->toString() + " to a function.");
                     }
@@ -1124,7 +1128,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 errorHandler.addError(e->a->getStart(), "Global variables must be assigned explicit constants or initialized at runtime!");
             }
 
-            if (dynamic_cast<const TypeSum *>(assignType))
+            if (type_cast<TypeSum >(assignType))
             {
                 errorHandler.addError(e->a->getStart(), "Sums cannot be initialized at a global level");
             }
@@ -1432,7 +1436,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             TypedNode *check = std::get<TypedNode *>(checkOpt);
             const Type *checkType = check->getType();
 
-            if (!dynamic_cast<const TypeBool *>(checkType))
+            if (checkType->isNotSubtype(Types::BOOL))
             {
                 return errorHandler.addError(ctx->getStart(), "Select alternative expected BOOL but got " + checkType->toString());
             }
@@ -1831,8 +1835,10 @@ std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSen
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel*> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value(); 
         std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
         if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
         {
@@ -1867,9 +1873,11 @@ std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
-    {
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
 
+    if (channelOpt)
+    {
+        const TypeChannel * channel = channelOpt.value();
         std::optional<const Type *> ty = channel->getProtocol()->recv();
         if (!ty)
         {
@@ -1895,8 +1903,10 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
     Symbol *sym = opt.value().second;
     // stmgr->removeSymbol(sym);
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel*> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value(); 
         std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
         std::set<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
 
@@ -1954,9 +1964,10 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
                 Symbol *sym = opt.value().second;
                 // stmgr->removeSymbol(sym);
-
-                if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+                std::optional<const TypeChannel*> channelOpt = type_cast<TypeChannel>(sym->type);
+                if (channelOpt)
                 {
+                    const TypeChannel *channel = channelOpt.value(); 
                     channel->setProtocol(proto);
                     std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
                     return optEval;
@@ -1990,8 +2001,10 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel*> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value(); 
         const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
         unsigned int projectIndex = channel->getProtocol()->project(ps);
 
@@ -2017,8 +2030,10 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel*> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value(); 
         if (!channel->getProtocol()->contract())
         {
             return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id);
@@ -2056,8 +2071,10 @@ std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramW
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel*> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value(); 
         if (!channel->getProtocol()->weaken())
         {
             return errorHandler.addError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString());
@@ -2078,8 +2095,10 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel*> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value(); 
         std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptLoop();
         if (!acceptOpt)
         {
@@ -2140,8 +2159,10 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel*> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value(); 
         std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCondition(ctx->ex);
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
@@ -2212,8 +2233,10 @@ std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
     // Symbol *sym = opt.value().second;
     TypedNode *prog = std::get<TypedNode *>(opt);
 
-    if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(prog->getType()))
+    std::optional<const TypeProgram*> invOpt = type_cast<TypeProgram>(prog->getType());
+    if (invOpt)
     {
+        const TypeProgram *inv = invOpt.value(); 
         return new TProgramExecNode(
             prog,
             new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse())),
