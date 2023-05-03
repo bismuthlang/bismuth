@@ -1143,7 +1143,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
     Value *v = val.value();
     Value *stoVal = exprVal.value();
     const Type *varSymType = n->var->getType();
-    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymType)) // FIXME: WILL THIS WORK IF USING TYPE INF?
+    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymType))
     {
         unsigned int index = sumOpt.value()->getIndex(module, stoVal->getType());
 
@@ -1236,7 +1236,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
                 if (e->val)
                 {
                     Value *stoVal = exVal.value();
-                    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol->type)) // FIXME: WILL THIS WORK IF USING TYPE INF? - ONLY WORKS BC TYPEINF CANT INFER A -> A + B.
+                    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol->type))
                     {
                         unsigned int index = sumOpt.value()->getIndex(module, stoVal->getType());
 

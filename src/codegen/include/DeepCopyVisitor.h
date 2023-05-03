@@ -278,6 +278,14 @@ private:
             return stoVal;//builder->CreateLoad(stoVal->getType(), stoVal);
         }
 
+        if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(type))
+        {
+            if(infType->hasBeenInferred()) {
+                return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, addrMap, GC_MALLOC);
+            }
+            return std::nullopt; //FIXME: ADD ERROR 
+        }
+
         Function *testFn = module->getFunction("_clone_" + type->toString());
         if (testFn)
         {
@@ -490,15 +498,6 @@ private:
             builder->SetInsertPoint(restBlk);
             v = builder->CreateLoad(llvmType, v);
 
-        }
-        else if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(type))
-        {
-            if(infType->hasBeenInferred()) {
-                return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, builder->CreateLoad(i8p, m), GC_MALLOC);
-
-                // return deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap, DeepCopyType copyType) 
-            }
-            return std::nullopt; //FIXME: ADD ERROR 
         }
         else
         {

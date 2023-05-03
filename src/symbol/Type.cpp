@@ -6,6 +6,7 @@ bool Type::isSubtype(const Type *other) const
     {
         // return false;
         // return inf->isSupertype(this);
+        std::cout << "9 " << inf->toString() << " :> " << other->toString() << std::endl; 
         return inf->isSupertype(other);
     }
     return other->isSupertypeFor(this);
@@ -82,6 +83,7 @@ optional<const Type*> ProtocolSequence::canSend(const Type *ty) const
 
     if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(proto))
     {
+        std::cout << ty->toString() << " <: " << send->getSendType()->toString() << std::endl; 
         if(ty->isSubtype(send->getSendType()))
             return send->getSendType(); 
         return std::nullopt;

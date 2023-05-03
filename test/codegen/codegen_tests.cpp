@@ -501,6 +501,13 @@ TEST_CASE("programs/TStructEnum - Parody + Clone w/ Enum Struct Boxes ", "[codeg
         "a9952ebc97f9353a291d7eec7f0dd3105c61bd3c1d6a5d43e72e653c2f50e676");
 }
 
+TEST_CASE("programs/TStructEnumGC - Parody + Clone w/ Enum Struct Boxes + GC ", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnumGC.bismuth"))),
+        "d08d20479b4ec36f5c5f0633cb21e09141a44bf9d3a2bb947ff70ef57a67e875");
+}
+
 TEST_CASE("programs/TArray - Parody + Clone w/ Array", "[codegen][enum]")
 {
     EnsureCompilesTo(

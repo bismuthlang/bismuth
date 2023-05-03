@@ -25,6 +25,7 @@
 #include <set> // Sets
 
 #include <climits> // Max & Min
+#include <iostream> // cout fixme: remove
 
 #include "LinkedMap.h"
 #include "Protocol.h"
@@ -1335,7 +1336,8 @@ protected:
         // If we already have an inferred type, we can simply
         // check if that type is a subtype of other.
         if (valueType->has_value())
-            return other->isSubtype(valueType->value());
+            // return other->isSubtype(valueType->value());
+            return valueType->value()->isSubtype(other);
 
         /*
          * If the other type is also an inference type...
