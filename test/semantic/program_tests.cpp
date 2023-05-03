@@ -398,7 +398,7 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
 }
-
+//FIXME: DO THESE TESTS DO ANYTHING? DONT HAVE SENDS!!
 TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
 {
   antlr4::ANTLRInputStream input(
@@ -647,6 +647,37 @@ TEST_CASE("Redeclaration of function 1", "[semantic][program]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
 }
+
+TEST_CASE("Copy linear resources", "[semantic][program]")
+{
+  antlr4::ANTLRInputStream input(
+      R""""(
+    define program :: c : Channel<-int> = {
+      var a := copy c; 
+      c.send(0)
+    }
+    )"""");
+  BismuthLexer lexer(&input);
+  // lexer.removeErrorListeners();
+  // lexer.addErrorListener(new TestErrorListener());
+  antlr4::CommonTokenStream tokens(&lexer);
+  BismuthParser parser(&tokens);
+  parser.removeErrorListeners();
+  parser.addErrorListener(new TestErrorListener());
+
+  BismuthParser::CompilationUnitContext *tree = NULL;
+  REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  REQUIRE(tree != NULL);
+  REQUIRE(tree->getText() != "");
+
+  STManager *stmgr = new STManager();
+
+  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+
+  sv->visitCompilationUnit(tree);
+  REQUIRE(sv->hasErrors(ERROR));
+}
+
 
 TEST_CASE("Redeclaration of program 1", "[semantic][program]")
 {

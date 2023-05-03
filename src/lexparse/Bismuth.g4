@@ -76,7 +76,7 @@ expression          : LPAR ex=expression RPAR                                   
                     | lambdaConstExpr                               # LambdaExpr
                     | channel=VARIABLE '.recv' '(' ')'              # AssignableRecv
                     | 'exec' prog=expression                        # AssignableExec
-                    | 'copy' '(' expr=expression ')'                # CopyExpr   //FIXME: IMPLEMENT
+                    | 'copy' '(' expr=expression ')'                # CopyExpr
                     | 'copy'  expr=expression                       # CopyExpr
                     ;
 
