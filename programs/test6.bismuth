@@ -1,4 +1,4 @@
-extern int func printf(...);
+extern func printf(...) : int;
 
 # str func selReturnOne(int a) {
 # PLAN: USE TRAITS TO ELIM IMPOSSIBLE CASE?

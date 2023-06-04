@@ -1,4 +1,4 @@
-extern int func printf(...);
+extern func printf(...);
 
 define func fib(int n, int[5] a) : int {
   if(n == 0 | n == 1) {

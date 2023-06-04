@@ -105,30 +105,7 @@ public:
      */
     std::string toString() const;
 
-    // /**
-    //  * @brief Get the Uninferred objects in the current scope
-    //  *
-    //  * @return std::vector<const Symbol*> A vector of all the uninferred symbols in the scope
-    //  */
-    // std::vector<const Symbol *> getUninferred()
-    // {
-    //     // Create an answer vector
-    //     std::vector<const Symbol *> ans;
-
-    //     // Iterate through the symbols looking for TypeInfers which have not been inferred
-    //     for (auto item : symbols)
-    //     {
-    //         if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->type))
-    //         {
-    //             if (!inf->hasBeenInferred())
-    //                 ans.push_back(item.second);
-    //         }
-    //     }
-
-    //     return ans;
-    // }
-
-    // FIXME: DO BETTER
+    
     std::vector<Symbol *> getSymbols(int flags)
     {
         // Create an answer vector

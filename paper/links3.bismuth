@@ -1,4 +1,4 @@
-extern int func printf(str s, ...);
+extern func printf(str s, ...) : int; 
 
 define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
     Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 

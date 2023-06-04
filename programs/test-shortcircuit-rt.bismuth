@@ -1,6 +1,6 @@
-extern int func printf(str a, ...);
-extern int func getArgCount();
-extern int func getIntArg(int i);
+extern func printf(str a, ...) : int;
+extern func getArgCount() : int;
+extern func getIntArg(int i) : int;
 
 define program :: c : Channel<-int> = {
   var i := 1;

@@ -1,4 +1,4 @@
-extern int func printf(str s, ...);
+extern func printf(str s, ...) : int; 
 
 # proc test ((int + boolean) sum)
 define test :: c : Channel<+(int + boolean)> = {

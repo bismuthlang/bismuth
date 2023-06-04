@@ -1,11 +1,4 @@
-# extern int func getArgCount();
-# define program :: c : Channel<-int> = {
-#   int i;
-#   i := getArgCount();
-#   return i;
-# }
-
-extern int func getArgCount();
+extern func getArgCount() : int;
 
 define program :: c : Channel<-int> = {
   int i;

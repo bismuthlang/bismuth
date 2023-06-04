@@ -7,8 +7,8 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     std::vector<TExternNode *> externs;
 
-    std::vector<std::pair<BismuthParser::DefineProcContext *, TypeProgram *>> progs;
-    std::vector<std::pair<BismuthParser::DefineFuncContext *, TypeInvoke *>> funcs;
+    std::vector<std::pair<BismuthParser::DefineProgramContext *, TypeProgram *>> progs;
+    std::vector<std::pair<BismuthParser::DefineFunctionContext *, TypeInvoke *>> funcs;
     std::vector<std::pair<BismuthParser::DefineStructContext *, TypeStruct *>> structs;
     std::vector<std::pair<BismuthParser::DefineEnumContext *, TypeSum *>> enums;
 
@@ -18,7 +18,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     {
         if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
-            std::string id = progCtx->defineProc()->name->getText();
+            std::string id = progCtx->name->getText();
 
             std::optional<SymbolContext> opt = stmgr->lookup(id);
 
@@ -29,14 +29,14 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             TypeProgram *progType = new TypeProgram();
             Symbol *progSym = new Symbol(id, progType, true, true);
-            symBindings->bind(progCtx->defineProc(), progSym);
+            symBindings->bind(progCtx, progSym);
             stmgr->addSymbol(progSym);
 
-            progs.push_back({progCtx->defineProc(), progType});
+            progs.push_back({progCtx, progType});
         }
         else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
-            std::string id = fnCtx->defineFunc()->name->getText();
+            std::string id = fnCtx->name->getText();
 
             std::optional<SymbolContext> opt = stmgr->lookup(id);
 
@@ -47,10 +47,10 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             TypeInvoke *funcType = new TypeInvoke();
             Symbol *sym = new Symbol(id, funcType, true, true);
-            symBindings->bind(fnCtx->defineFunc(), sym);
+            symBindings->bind(fnCtx, sym);
             stmgr->addSymbol(sym);
 
-            funcs.push_back({fnCtx->defineFunc(), funcType});
+            funcs.push_back({fnCtx, funcType});
         }
         else if (BismuthParser::DefineStructContext *prodCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
         {
@@ -149,9 +149,9 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     // Visit the statements contained in the unit
     for (auto e : ctx->defs)
     {
-        if (BismuthParser::DefineProgramContext *fnCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
+        if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
-            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitInvokeable(fnCtx->defineProc()); // e->accept(this);
+            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(progCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
@@ -163,7 +163,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
         else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
-            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx->defineFunc());
+            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
@@ -346,7 +346,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     return (TInvocationNode *)tn;
 }
 
-std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFuncContext *ctx)
+std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
     std::variant<Symbol *, ErrorChain *> funcSymOpt = getFunctionSymbol(ctx);
 
@@ -1062,7 +1062,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         return errorHandler.addError(ctx->getStart(), "Failed to generate parameters for extern!");
     }
 
-    const Type *retType = ctx->ty ? any2Type(ctx->ty->accept(this))
+    const Type *retType = ctx->ret ? any2Type(ctx->ret->accept(this))
                                   : Types::UNIT;
 
     TExternNode *node = new TExternNode(id, tyOpt.value(), retType, variadic, ctx->getStart());
@@ -1264,9 +1264,8 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
                     return *e;
                 }
 
-                if (dynamic_cast<BismuthParser::ProgDefContext *>(altCtx->eval) ||
-                    dynamic_cast<BismuthParser::VarDeclStatementContext *>(altCtx->eval) ||
-                    dynamic_cast<BismuthParser::FuncDefContext *>(altCtx->eval))
+                if (dynamic_cast<BismuthParser::TypeDefContext *>(altCtx->eval) ||
+                    dynamic_cast<BismuthParser::VarDeclStatementContext *>(altCtx->eval))
                 {
                     return errorHandler.addError(altCtx->getStart(), "Dead code: definition as select alternative.");
                 }
@@ -1414,9 +1413,8 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             /*
              *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
              */
-            if (dynamic_cast<BismuthParser::ProgDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
-                dynamic_cast<BismuthParser::VarDeclStatementContext *>(e->eval) ||
-                dynamic_cast<BismuthParser::FuncDefContext *>(e->eval))
+            if (dynamic_cast<BismuthParser::TypeDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
+                dynamic_cast<BismuthParser::VarDeclStatementContext *>(e->eval))
             {
                 return errorHandler.addError(e->getStart(), "Dead code: definition as select alternative.");
             }

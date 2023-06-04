@@ -1,4 +1,4 @@
-extern int func printf(str s, ...);
+extern func printf(str s, ...) : int;
 
 # Defines a struct that holds no value; used to simulate optionals
 define struct Empty {}

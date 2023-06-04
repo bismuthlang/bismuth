@@ -1,4 +1,4 @@
-extern int func getIntArg(int i);
+extern func getIntArg(int i) : int;
 
 define program :: c : Channel<-int> = {
   var i;

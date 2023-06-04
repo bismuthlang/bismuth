@@ -1,6 +1,4 @@
-#extern int func test(str a,...);
-extern int func printf(...);
-#extern int func testtwo(...);
+extern func printf(...) : int;
 
 # int func chayos() {
 define chayos :: c : Channel<-int> = {

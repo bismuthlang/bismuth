@@ -1,0 +1,11 @@
+define program :: c : Channel<-int> {
+    define struct A{
+        int r; 
+        int g; 
+        int b; 
+    }
+
+    var a := A::init(1, 2, 3);
+
+    c.send(0)
+}

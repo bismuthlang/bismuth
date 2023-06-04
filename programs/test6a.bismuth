@@ -1,4 +1,4 @@
-extern int func printf(...);
+extern func printf(...) : int;
 
 # proc sel1(int a) {
 define sel1 :: io : Channel<+int> = {

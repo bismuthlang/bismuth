@@ -28,7 +28,7 @@ bool Scope::addSymbol(Symbol *symbol)
   return ret->second;
 }
 
-bool Scope::removeSymbol(const Symbol * symbol)
+bool Scope::removeSymbol(const Symbol *symbol)
 {
   std::string id = symbol->identifier;
   if (symbols.find(id) != symbols.end())
@@ -37,7 +37,7 @@ bool Scope::removeSymbol(const Symbol * symbol)
     return true;
   }
 
-  return false; 
+  return false;
 }
 
 /**

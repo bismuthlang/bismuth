@@ -1,4 +1,4 @@
-extern int func printf(str s, ...);
+extern func printf(str s, ...) : int;
 
 define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> = {
     var i1 := c.recv(), i2 := c.recv();

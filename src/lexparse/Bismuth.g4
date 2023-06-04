@@ -9,17 +9,15 @@ compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ;
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
 
-defineProc        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block  ;
-
-defineFunc        : DEFINE FUNC name=VARIABLE lam=lambdaConstExpr ;
-
-defineType        : DEFINE 'enum' name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB # DefineEnum
-                  | DEFINE 'struct' name=VARIABLE LSQB (cases+=structCase)*  RSQB        # DefineStruct
-                  | defineProc                                                           # DefineProgram
-                  | defineFunc                                                           # DefineFunction
+defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
+                  | DEFINE STRUCT name=VARIABLE LSQB (cases+=structCase)*  RSQB             # DefineStruct
+                  | DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block   # DefineProgram
+                  | DEFINE FUNC name=VARIABLE lam=lambdaConstExpr                           # DefineFunction
                   ; 
+
 //FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
-externStatement : EXTERN (ty=type FUNC | PROC) name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR ';';
+// externStatement : EXTERN ty=type FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR ';';
+externStatement : EXTERN FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR (COLON ret=type)? ';'; 
 
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
 invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr)  inv_args+;
@@ -85,7 +83,7 @@ lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
 
 /* 
  * Keeping block as its own rule so that way we can re-use it as
- * its own statement as well as as parts of functions, procedures, 
+ * its own statement as well as as parts of functions, programs, 
  * conditions, loops, etc. 
  */
 block      : LSQB (stmts+=statement)* RSQB ;
@@ -122,46 +120,24 @@ VariadicParam       : ',' [ \t]* '...'; //For some reason, need to match the whi
 // assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=assignable)? ;
 assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
 
-// assignable : ex=expression                          # AssignableExpr
-//            | channel=VARIABLE '.recv' '(' ')'       # AssignableRecv
-//            | 'exec' prog=expression                 # AssignableExec
-//            ;
-           
 
-
-/* 
- * Statements do not return values but are still necessary to the language. 
- * The statements are: 
- * 1. Definition of external functions/procedures. 
- * 2. Definition of functions
- * 3. Definition of procedures
- * 4. Assignments (updates to existing variables) such as: a := 2; 
- * 5. Variable definitions such as: var a; int [5] b; var a, b; var a, b := 1; var a, b := 1, c, d, e := 2; etc.
- * 6. Looping statements (while loops)
- * 7. Conditional statements (if with optional else)
- * 8. Select statements (which require at least one select alternative)
- * 9. Calls to Procedures (as they do not return a value)
- * 10. Return statements
- * 11. Block statements. 
- */
-statement           : defineProc                                              # ProgDef 
-                    | defineFunc                                              # FuncDef
-                    | <assoc=right> to=lValue ASSIGN a=expression ';'         # AssignStatement 
-                    | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'     # VarDeclStatement
-                    | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                # ConditionalStatement
-                    | SELECT LSQB (cases+=selectAlternative)* RSQB (rest+=statement)*                            # SelectStatement     
-                    | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                    # MatchStatement   
-                    | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*                       # MatchStatement   
-                    | call=invocation  ';'?                                                                     # CallStatement 
-                    | RETURN expression? ';'                                                                    # ReturnStatement 
-                    | EXIT                                                                                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
-                    | 'skip'                                                                                    # SkipStatement //FIXME: ENABLE
-                    | block                                                                                     # BlockStatement
-                    | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                     # ProgramSend
-                    | WHILE check=condition block                                                                               # ProgramLoop
-                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*      # ProgramCase  
-                    | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                              # ProgramCase   
-                    | channel=VARIABLE LBRC sel=protocol RBRC                                                                   # ProgramProject
+statement           : defineType                                                                                            # TypeDef
+                    | <assoc=right> to=lValue ASSIGN a=expression ';'                                                       # AssignStatement 
+                    | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'                 # VarDeclStatement
+                    | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                            # ConditionalStatement
+                    | SELECT LSQB (cases+=selectAlternative)* RSQB (rest+=statement)*                                       # SelectStatement     
+                    | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                                # MatchStatement   
+                    | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*                                   # MatchStatement   
+                    | call=invocation  ';'?                                                                                 # CallStatement 
+                    | RETURN expression? ';'                                                                                # ReturnStatement 
+                    | EXIT                                                                                                  # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
+                    | 'skip'                                                                                                # SkipStatement //FIXME: ENABLE
+                    | block                                                                                                 # BlockStatement
+                    | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                 # ProgramSend
+                    | WHILE check=condition block                                                                           # ProgramLoop
+                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*  # ProgramCase  
+                    | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                          # ProgramCase   
+                    | channel=VARIABLE LBRC sel=protocol RBRC                                                               # ProgramProject
                     | 'more' '(' channel=VARIABLE ')'   ';'?                                # ProgramContract 
                     | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
@@ -245,7 +221,8 @@ TYPE_VAR        :   'var'       ;
 
 //Others
 FUNC            :   'func'  ;
-PROC            :   'proc'  ;
+ENUM            :   'enum'  ;
+STRUCT          :   'struct';
 IF              :   'if'    ;
 ELSE            :   'else'  ;
 WHILE           :   'while' ;

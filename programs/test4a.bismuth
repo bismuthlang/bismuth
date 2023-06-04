@@ -1,4 +1,4 @@
-extern int func printf(...);
+extern func printf(...) : int;
 
 # int func mutArgsOne(int i) {
 define mutArgsOne :: io : Channel<+int;-int> = {
