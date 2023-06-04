@@ -7,7 +7,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     std::vector<TExternNode *> externs;
 
-    std::vector<std::pair<BismuthParser::DefineProgContext *, TypeProgram *>> progs;
+    std::vector<std::pair<BismuthParser::DefineProgramContext *, TypeProgram *>> progs;
     std::vector<std::pair<BismuthParser::DefineFuncContext *, TypeInvoke *>> funcs;
     std::vector<std::pair<BismuthParser::DefineStructContext *, TypeStruct *>> structs;
     std::vector<std::pair<BismuthParser::DefineEnumContext *, TypeSum *>> enums;
@@ -18,7 +18,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     {
         if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
-            std::string id = progCtx->defineProg()->name->getText();
+            std::string id = progCtx->name->getText();
 
             std::optional<SymbolContext> opt = stmgr->lookup(id);
 
@@ -29,10 +29,10 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             TypeProgram *progType = new TypeProgram();
             Symbol *progSym = new Symbol(id, progType, true, true);
-            symBindings->bind(progCtx->defineProg(), progSym);
+            symBindings->bind(progCtx, progSym);
             stmgr->addSymbol(progSym);
 
-            progs.push_back({progCtx->defineProg(), progType});
+            progs.push_back({progCtx, progType});
         }
         else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
@@ -151,7 +151,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     {
         if (BismuthParser::DefineProgramContext *fnCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
-            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitInvokeable(fnCtx->defineProg()); // e->accept(this);
+            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitInvokeable(fnCtx); // e->accept(this);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {

@@ -133,21 +133,13 @@ public:
     std::variant<TSelectAlternativeNode *, ErrorChain *> visitCtx(BismuthParser::SelectAlternativeContext *ctx);
     std::any visitSelectAlternative(BismuthParser::SelectAlternativeContext *ctx) override { return TNVariantCast<TSelectAlternativeNode>(visitCtx(ctx)); }
 
-    // std::any visitProgDef(BismuthParser::ProgDefContext *ctx) override { return TNVariantCast<TProgramDefNode>(this->visitInvokeable(ctx->defineProg())); }
-    
-
     std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::DefineFuncContext *ctx);
     std::any visitDefineFunc(BismuthParser::DefineFuncContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx)); }
-    // std::any visitFuncDef(BismuthParser::FuncDefContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx->defineFunc())); }
     
     std::any visitTypeDef(BismuthParser::TypeDefContext *ctx) override { return ctx->defineType()->accept(this); }
 
-    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { 
-        std::cout << ctx->getText() << " PROG " << std::endl; 
-        
-        return TNVariantCast<TProgramDefNode>(visitInvokeable(ctx->defineProg())); }
+    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitInvokeable(ctx)); }
     std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx->defineFunc())); }
-    // std::any visitTypeDef()
 
     std::variant<TSelectStatementNode *, ErrorChain *> visitCtx(BismuthParser::SelectStatementContext *ctx);
     std::any visitSelectStatement(BismuthParser::SelectStatementContext *ctx) override { return TNVariantCast<TSelectStatementNode>(visitCtx(ctx)); }
@@ -347,7 +339,7 @@ public:
         return new TBlockNode(nodes, ctx->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
 
-    std::variant<Symbol *, ErrorChain *> getProgramSymbol(BismuthParser::DefineProgContext *ctx)
+    std::variant<Symbol *, ErrorChain *> getProgramSymbol(BismuthParser::DefineProgramContext *ctx)
     {
         std::optional<Symbol *> symOpt = symBindings->getBinding(ctx);
 
@@ -394,7 +386,7 @@ public:
      * @param block The PROC/FUNC block
      * @return const Type* TypeInvoke if successful, empty if error
      */
-    std::variant<TProgramDefNode *, ErrorChain *> visitInvokeable(BismuthParser::DefineProgContext *ctx)
+    std::variant<TProgramDefNode *, ErrorChain *> visitInvokeable(BismuthParser::DefineProgramContext *ctx)
     {
         std::variant<Symbol *, ErrorChain *> symOpt = getProgramSymbol(ctx);
 
