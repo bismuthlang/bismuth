@@ -3,6 +3,7 @@
 #include <queue>
 #include <mutex>
 #include <condition_variable>
+#include <optional> 
 
 // A threadsafe-queue from https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
 template <class T>
@@ -57,6 +58,16 @@ public:
         return val;
     }
 
+    std::optional<T> peakNow(void)
+    {
+        std::unique_lock<std::mutex> lock(m);
+        if (q.empty())
+        {
+            return std::nullopt; 
+        }
+        return q.front();
+    }
+
     void pop(void)
     {
         std::unique_lock<std::mutex> lock(m);
@@ -71,12 +82,14 @@ public:
         return;
     }
 
-    bool empty() {
-        return q.empty(); 
+    bool empty()
+    {
+        return q.empty();
     }
 
-    std::queue<T> copy() {
-        return q; 
+    std::queue<T> copy()
+    {
+        return q;
     }
 
 private:

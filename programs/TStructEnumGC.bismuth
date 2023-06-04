@@ -1,4 +1,5 @@
 extern Unit func printf(str s, ...);
+extern int func GC_get_heap_size();  # FIXME: NOT GARBAGE COLLECTING HEAP PROPERLY!
 
 # Two Int Box Box
 define struct TIBB {
@@ -35,45 +36,30 @@ define foo :: c : Channel<+ETIBBOB;-int;+int> = {
 }
 
 define program :: c : Channel<-int> = {
-  # int ctr := 0; 
-  # while true {
-  {
+  int ctr := 0; 
+  var shared;
+  var tibb; 
+
+  while true {
     var a := exec foo; 
 
-    var shared := Box<Box<int>>::init(Box<int>::init(5));
-    var tibb := TIBB::init(shared, Box<Box<int>>::init(Box<int>::init(6)));
+    shared := Box<Box<int>>::init(Box<int>::init(5));
+    tibb := TIBB::init(shared, Box<Box<int>>::init(Box<int>::init(6)));
 
-    ETIBBOB toSend := tibb;
+    tibb.b1 := shared;
     # printf("");
     printTIBB("b (orig/5;6)", tibb);
-    a.send(toSend)
+    a.send(tibb)
     var u := a.recv(); 
     printTIBB("b (orig/5;6)", tibb);
     # **shared = 9; 
     *shared := Box<int>::init(9); 
     printTIBB("b (orig/9;6)", tibb);
-    a.send(-1);
+    a.send(-1)
+    ctr := ctr + 1; 
+    printf("%u\n", GC_get_heap_size());
   }
-  printf("------\n");
-  {
-    var a := exec foo; 
 
-    var shared := Box<Box<int>>::init(Box<int>::init(5));
-    var tibb := TIBB::init(shared, shared);
 
-    ETIBBOB toSend := tibb;
-    # printf("");
-    printTIBB("b (orig/5;5)", tibb);
-    a.send(toSend)
-    var u := a.recv(); 
-    printTIBB("b (orig/5;5)", tibb);
-    # **shared = 9; 
-    *shared := Box<int>::init(9); 
-    printTIBB("b (orig/9;9)", tibb);
-    a.send(-1);
-  }
-    # ctr := ctr + 1; 
-    # printf("%u\n", GC_get_heap_size());
-  # }
   c.send(0);
 }

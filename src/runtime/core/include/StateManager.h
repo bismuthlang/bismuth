@@ -285,9 +285,24 @@ extern "C" bool ShouldLoop(unsigned int aId)
     throw "Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!";
 }
 
-extern "C" bool ShouldAcceptWhileLoop(unsigned int aId)
+extern "C" bool _OC_isPresent(unsigned int aId)
 {
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
+    std::optional<Message> mOpt = readQueue->peakNow();
+
+    if(!mOpt) return false; 
+    
+    Message m = mOpt.value(); 
+
+    if (std::holds_alternative<START_LOOP>(m)) return true; 
+    else if(std::holds_alternative<END_LOOP>(m)) return false; 
+
+    throw "Preservation Error: _OC_isPresent got something besides START_LOOP or END_LOOP!";
+}
+
+extern "C" bool ShouldAcceptWhileLoop(unsigned int aId)
+{
+    IPCBuffer<Message> *readQueue = getReadQueue(aId); 
     Message m = readQueue->peak();
 
     if (std::holds_alternative<START_LOOP>(m))

@@ -3,7 +3,6 @@
 #include <map>
 #include <cstdint>
 
-
 typedef std::map<uint8_t *, uint8_t *> Map;
 
 //https://stackoverflow.com/questions/32926176/what-data-type-is-an-address

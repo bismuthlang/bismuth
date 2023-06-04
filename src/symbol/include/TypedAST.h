@@ -47,11 +47,13 @@ class TConditionalStatementNode;
 class TReturnNode;
 class TProgramSendNode;
 class TProgramRecvNode;
+class TProgramIsPresetNode; 
 class TProgramContractNode;
 class TProgramWeakenNode;
 class TProgramExecNode;
 class TProgramAcceptNode;
 class TProgramAcceptWhileNode; 
+class TProgramAcceptIfNode; 
 class TDefineEnumNode;
 class TDefineStructNode;
 class TInitProductNode;
@@ -81,6 +83,8 @@ class TExitNode;
 class TChannelCaseStatementNode;
 class TProgramProjectNode;
 
+class TExprCopyNode;
+
 class TypedASTVisitor
 {
 public:
@@ -95,11 +99,13 @@ public:
     virtual std::optional<Value *> visit(TReturnNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramSendNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramRecvNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramIsPresetNode *n) = 0; 
     virtual std::optional<Value *> visit(TProgramContractNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramWeakenNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramExecNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramAcceptNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramAcceptWhileNode *n) = 0; 
+    virtual std::optional<Value *> visit(TProgramAcceptIfNode *n) = 0; 
     // virtual std::optional<Value *> visit(TDefineEnumNode *n) = 0;
     // virtual std::optional<Value *> visit(TDefineStructNode *n) = 0;
     virtual std::optional<Value *> visit(TInitProductNode *n) = 0;
@@ -126,6 +132,7 @@ public:
     virtual std::optional<Value *> visit(TExitNode *n) = 0;
     virtual std::optional<Value *> visit(TChannelCaseStatementNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramProjectNode *n) = 0;
+    virtual std::optional<Value *> visit(TExprCopyNode *n) = 0; 
 
     // virtual std::optional<Value
 
@@ -139,11 +146,13 @@ public:
     std::any any_visit(TReturnNode *n) { return this->visit(n); }
     std::any any_visit(TProgramSendNode *n) { return this->visit(n); }
     std::any any_visit(TProgramRecvNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramIsPresetNode *n) { return this->visit(n); }
     std::any any_visit(TProgramContractNode *n) { return this->visit(n); }
     std::any any_visit(TProgramWeakenNode *n) { return this->visit(n); }
     std::any any_visit(TProgramExecNode *n) { return this->visit(n); }
     std::any any_visit(TProgramAcceptNode *n) { return this->visit(n); }
     std::any any_visit(TProgramAcceptWhileNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramAcceptIfNode *n) { return this->visit(n); }
     std::any any_visit(TDefineEnumNode *n) { return this->visit(n); }
     std::any any_visit(TDefineStructNode *n) { return this->visit(n); }
     std::any any_visit(TInitProductNode *n) { return this->visit(n); }
@@ -170,6 +179,7 @@ public:
     std::any any_visit(TExitNode *n) { return this->visit(n); }
     std::any any_visit(TChannelCaseStatementNode *n) { return this->visit(n); }
     std::any any_visit(TProgramProjectNode *n) { return this->visit(n); }
+    std::any any_visit(TExprCopyNode *n) {return this->visit(n); }
 
     std::any visit(std::any n) { return "FIXME"; }
     std::any accept(TypedNode *n)
@@ -442,6 +452,25 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
+
+class TProgramIsPresetNode : public TypedNode
+{
+public:
+    Symbol *sym;
+
+    TProgramIsPresetNode(Symbol *s,  antlr4::Token *tok) : TypedNode(tok)
+    {
+        sym = s;
+    }
+
+    const Type *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "IS PRESENT NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
 class TProgramContractNode : public TypedNode
 {
 public:
@@ -540,6 +569,34 @@ public:
 
     std::string toString() const override {
         return "ACCEPT WHILE NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+
+class TProgramAcceptIfNode : public TypedNode
+{
+public:
+    Symbol *sym;
+    TypedNode *cond;
+    TBlockNode *trueBlk;
+    std::optional<TBlockNode *> falseOpt;
+    std::vector<TypedNode *> post;
+
+    TProgramAcceptIfNode(antlr4::Token *tok, Symbol *s, TypedNode *c, TBlockNode *t, std::vector<TypedNode *> p, std::optional<TBlockNode *> f = {}) : TypedNode(tok)
+    {
+        sym = s;
+        cond = c; 
+        trueBlk = t;
+        post = p; 
+        falseOpt = f; 
+    }
+
+    const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "ACCEPT IF NODE";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
@@ -731,7 +788,7 @@ public:
     }
 
     std::string toString() const override {
-        return "INVOKE NODE";
+        return "INVOKE NODE " + fn->toString();
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
@@ -769,7 +826,7 @@ public:
     }
 
     std::string toString() const override {
-        return "FIELD ACCESS NODE";
+        return "FIELD ACCESS NODE " + symbol->toString();
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
@@ -1178,6 +1235,42 @@ public:
     }
 };
 
+// class TExprCopyNode : public TypedNode
+// {
+// public:
+//     TypedNode *toCopy;
+
+//     TExprCopyNode(TypedNode *c, antlr4::Token *tok) : TypedNode(tok), toCopy(c)
+//     {
+//     }
+
+//     std::string toString() const override {
+//         return "COPY NODE";
+//     }
+
+//     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+// };
+
+class TExprCopyNode : public TypedNode
+{
+public:
+    TypedNode *expr;
+
+    TExprCopyNode(TypedNode *e, antlr4::Token *tok) : TypedNode(tok), expr(e)
+    {
+        // expr = e;
+        // lType = l;
+    }
+
+    const Type *getType() override { return expr->getType(); }
+
+    std::string toString() const override {
+        return "COPY NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
 /**************************************************
  *
  * UTILITIES
@@ -1205,36 +1298,46 @@ inline bool endsInReturn(TypedNode *n)
         return endsInReturn(bn->exprs);
     }
 
-    // FIXME: DO THESE BETTER!
     if (TConditionalStatementNode *cn = dynamic_cast<TConditionalStatementNode *>(n))
     {
-        // if(cn->post.size())
-        return endsInReturn(cn->post);
+        if(cn->post.size())
+            return endsInReturn(cn->post);
+        
+        if(cn->falseOpt) 
+        {
+            return endsInReturn(cn->falseOpt.value()) && endsInReturn(cn->trueBlk);
+        }
+
+        return false; 
     }
 
     if (TMatchStatementNode *cn = dynamic_cast<TMatchStatementNode *>(n))
     {
-        // if(cn->post.size())
-        return endsInReturn(cn->post);
+        if(cn->post.size())
+            return endsInReturn(cn->post);
+        
+        for(auto branch : cn->cases)
+            if(!endsInReturn(branch.second))
+                return false; 
+        return true; 
     }
 
     if (TSelectStatementNode *cn = dynamic_cast<TSelectStatementNode *>(n))
     {
-        // if(cn->post.size())
-        return endsInReturn(cn->post);
+        if(cn->post.size())
+            return endsInReturn(cn->post);
+        
+        for(auto branch : cn->nodes)
+            if(!endsInReturn(branch))
+                return false; 
+        return true; 
     }
 
     if(TSelectAlternativeNode * cn = dynamic_cast<TSelectAlternativeNode*>(n))
     {
         return endsInReturn(cn->eval);
     }
-
-    // if(TMatchStatementNode * cn = dynamic_cast<TMatchStatementNode *>(n))
-    // {
-    //     // if(cn->post.size())
-    //     return endsInReturn(cn->post);
-    // }
-
+    
     return false;
 }
 
@@ -1281,12 +1384,6 @@ inline bool endsInBranch(TypedNode *n)
     {
         return true; 
     }
-
-    // if(TMatchStatementNode * cn = dynamic_cast<TMatchStatementNode *>(n))
-    // {
-    //     // if(cn->post.size())
-    //     return endsInReturn(cn->post);
-    // }
 
     return false;
 }

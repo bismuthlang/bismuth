@@ -4,9 +4,9 @@
  * @brief Shared functions used by various codegen components
  * @version 0.1
  * @date 2023-04-16
- * 
+ *
  * @copyright Copyright (c) 2023
- * 
+ *
  */
 #pragma once
 
@@ -250,36 +250,11 @@ public:
     }
 
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
-    llvm::AllocaInst * CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
+    llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
-        llvm::Function* fn = builder->GetInsertBlock()->getParent();
-        // // for(auto B = fn->begin(), e = fn->end(); B != e; ++B)
-        // for(auto& B : *fn) 
-        // {
-        //     // for(llvm::BasicBlock::iterator it = B->begin(); it != B->end(); ++it)
-        //     for(auto& I : B) 
-        //     {
-        //         // llvm::Instruction * I = &*it;
-
-        //         std::cout << "----\n" << I.getOpcodeName() << "\n";
-        //         I.print(llvm::outs(), true);
-        //         std::cout << "\n----\n\n";
-        //     }
-        // }
-
-
-        // if (fn != nullptr)
-        // {
-            // if (llvm::isa<llvm::Function>(insPoint))
-            // {
-                // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
-                IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-                return tempBuilder.CreateAlloca(ty, 0, identifier); 
-            // }
-
-            // insPoint = insPoint->getParent();
-        // }
-        // return std::nullopt; 
+        llvm::Function *fn = builder->GetInsertBlock()->getParent();
+        IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+        return tempBuilder.CreateAlloca(ty, 0, identifier);
     }
 
 private:

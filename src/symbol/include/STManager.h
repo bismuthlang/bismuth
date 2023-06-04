@@ -68,7 +68,7 @@ public:
   bool addSymbol(Symbol *symbol)
   {
     if (isLinear(symbol->type) &&
-        symbol->getIdentifier() != "@RETURN") //Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elim.
+        symbol->getIdentifier() != "@RETURN") // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elim.
       return linearContext.addSymbol(symbol);
     return dangerContext.addSymbol(symbol);
   }
@@ -125,7 +125,34 @@ public:
     return dangerContext.getCurrentScope();
   }
 
-  std::vector<Symbol *> getAvailableLinears(bool include_complete=false) { return linearContext.getAvailableLinears(include_complete); }
+  std::vector<Symbol *> getLinears(int flags) { return linearContext.getSymbols(flags); }
+
+  void guard()
+  {
+    for (Symbol *sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))
+    {
+      if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+      {
+        channel->getProtocol()->guard();
+      }
+    }
+  }
+
+  bool unguard() 
+  {
+    for (Symbol *sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))
+    {
+      if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+      {
+        if(!channel->getProtocol()->unguard())
+        {
+          std::cout << "Failed to unguard " << sym->toString() << std::endl; 
+          return false; 
+        }
+      }
+    }
+    return true; 
+  }
 
   /**
    * @brief Gets the number of scopes
@@ -137,7 +164,7 @@ public:
   std::string toString() const
   {
     std::ostringstream desc;
-    desc << "{danger=" << dangerContext.toString() << "; linear" << linearContext.toString() << "}";
+    desc << "{danger=" << dangerContext.toString() << "; linear=" << linearContext.toString() << "}";
 
     return desc.str();
   }
@@ -158,7 +185,22 @@ public:
     return dangerContext.getCurrentStop();
   }
 
+  std::optional<STManager *> getCopy()
+  {
+    std::optional<Context> lC = linearContext.getCopy();
+    if (!lC)
+      return std::nullopt;
+
+    std::optional<Context> dC = dangerContext.getCopy();
+    if (!dC)
+      return std::nullopt;
+
+    return new STManager(lC.value(), dC.value());
+  }
+
 private:
   Context linearContext;
   Context dangerContext;
+
+  STManager(Context linear, Context danger) : linearContext(linear), dangerContext(danger) {}
 };

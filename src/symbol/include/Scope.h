@@ -15,6 +15,15 @@
 #include <optional>
 // #include <assert.h>
 
+enum SymbolLookupFlags
+{
+    NON_LINEAR = 1,
+    PENDING_LINEAR = 2,
+    GUARDED_LINEAR = 4,
+    COMPLETE_LINEAR = 8,
+    UNINFERRED_TYPE = 16,
+};
+
 class Scope
 {
 public:
@@ -31,6 +40,12 @@ public:
     Scope(std::optional<Scope *> p)
     {
         parent = p;
+    }
+
+    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms)
+    {
+        parent = p;
+        symbols = syms;
     }
 
     /**
@@ -90,43 +105,80 @@ public:
      */
     std::string toString() const;
 
-    /**
-     * @brief Get the Uninferred objects in the current scope
-     *
-     * @return std::vector<const Symbol*> A vector of all the uninferred symbols in the scope
-     */
-    std::vector<const Symbol *> getUninferred()
+    // /**
+    //  * @brief Get the Uninferred objects in the current scope
+    //  *
+    //  * @return std::vector<const Symbol*> A vector of all the uninferred symbols in the scope
+    //  */
+    // std::vector<const Symbol *> getUninferred()
+    // {
+    //     // Create an answer vector
+    //     std::vector<const Symbol *> ans;
+
+    //     // Iterate through the symbols looking for TypeInfers which have not been inferred
+    //     for (auto item : symbols)
+    //     {
+    //         if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->type))
+    //         {
+    //             if (!inf->hasBeenInferred())
+    //                 ans.push_back(item.second);
+    //         }
+    //     }
+
+    //     return ans;
+    // }
+
+    // FIXME: DO BETTER
+    std::vector<Symbol *> getSymbols(int flags)
     {
         // Create an answer vector
-        std::vector<const Symbol *> ans;
+        std::vector<Symbol *> ans;
 
+        // if(flags & SymbolLookupFlags::NON_LINEAR)
+        // {
+        //     ans.insert(ans.end(),)
+        // }
+        bool include_complete = flags & SymbolLookupFlags::COMPLETE_LINEAR;
+        bool include_guarded = flags & SymbolLookupFlags::GUARDED_LINEAR;
+        bool include_pending = flags & SymbolLookupFlags::PENDING_LINEAR;
+
+        bool include_linear = include_complete || include_guarded || include_pending;
+
+        bool include_uninferred = flags & SymbolLookupFlags::UNINFERRED_TYPE;
         // Iterate through the symbols looking for TypeInfers which have not been inferred
         for (auto item : symbols)
         {
-            if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->type))
+            if (include_uninferred)
             {
-                if (!inf->hasBeenInferred())
-                    ans.push_back(item.second);
+                if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->type))
+                {
+                    if (!inf->hasBeenInferred())
+                        ans.push_back(item.second);
+                }
+            }
+
+            if (include_linear)
+            {
+                if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
+                {
+                    if (
+                        (include_complete || !inf->getProtocol()->isComplete()) &&
+                        (include_guarded || !inf->getProtocol()->isGuarded()))
+                        ans.push_back(item.second);
+                }
             }
         }
 
         return ans;
     }
 
-    // FIXME: DO BETTER
-    std::vector<Symbol *> getRemainingLinearTypes(bool include_complete=false)
+    std::map<std::string, Symbol *> copySymbols()
     {
-        // Create an answer vector
-        std::vector<Symbol *> ans;
+        std::map<std::string, Symbol *> ans;
 
-        // Iterate through the symbols looking for TypeInfers which have not been inferred
-        for (auto item : symbols)
+        for (auto itr : symbols)
         {
-            if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
-            {
-                if ((include_complete || !inf->getProtocol()->isComplete()) && !inf->getProtocol()->isGuarded())
-                    ans.push_back(item.second);
-            }
+            ans.insert({itr.first, new Symbol(*itr.second)});
         }
 
         return ans;

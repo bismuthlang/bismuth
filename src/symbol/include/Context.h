@@ -61,7 +61,7 @@ class Context {
      */
     std::optional<Symbol*> lookup(std::string id);
 
-    std::vector<Symbol *> getAvailableLinears(bool include_complete=false); 
+    std::vector<Symbol *> getSymbols(int flags);
 
     /**
      * @brief Lookup a symbol only in the current scope. 
@@ -109,6 +109,46 @@ class Context {
 
     int getCurrentStop() {
       return getCurrentStop(stops);
+    }
+
+    std::optional<Context> getCopy() {
+      std::map<Scope*, Scope*> copies; 
+      std::vector<Scope*> newScopes; 
+
+      for(Scope * orig : scopes)
+      {
+        std::optional<Scope *> optParent = orig->getParent();
+
+        if(!optParent)
+        {
+          Scope * ans = new Scope({}, orig->copySymbols());
+          ans->setId(orig->getId());
+          copies.insert({orig, ans});
+          newScopes.push_back(ans); 
+        }
+        else if(copies.find(optParent.value()) != copies.end())
+        {
+          Scope * ans = new Scope(copies[optParent.value()], orig->copySymbols());
+          ans->setId(orig->getId());
+          copies.insert({orig, ans});
+          newScopes.push_back(ans); 
+        }
+        else 
+        {
+          return std::nullopt; 
+        }
+      }
+
+      Context c; 
+      c.scopes = newScopes; 
+      if(currentScope)
+      {
+        c.currentScope = copies[currentScope.value()];
+      }
+      // c.currentScope = currentScope ? copies[currentScope.value()] : std::nullopt; 
+      c.scopeNumber = scopeNumber;
+      c.stops = stops; 
+      return c; 
     }
 
   private:

@@ -93,7 +93,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to typecheck definition.");
+                (*e)->addError(ctx->getStart(), "Failed to type check definition.");
                 return *e;
             }
 
@@ -137,12 +137,12 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     }
     for (auto e : structs)
     {
-        // std::variant<TypedNode *, ErrorChain *> opt = 
+        // std::variant<TypedNode *, ErrorChain *> opt =
         anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
     }
     for (auto e : enums)
     {
-        // std::variant<TypedNode *, ErrorChain *> opt = 
+        // std::variant<TypedNode *, ErrorChain *> opt =
         anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
     }
 
@@ -155,7 +155,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to typecheck program.");
+                (*e)->addError(ctx->getStart(), "Failed to type check program.");
                 return *e;
             }
 
@@ -167,7 +167,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to typecheck function.");
+                (*e)->addError(ctx->getStart(), "Failed to type check function.");
                 return *e;
             }
 
@@ -199,9 +199,10 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         else
         {
             Symbol *sym = opt.value().second;
-
-            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
+            std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->type);
+            if (progOpt)
             {
+                const TypeProgram *inv = progOpt.value();
                 if (!inv->getChannelType()->isSubtype(new TypeChannel(new ProtocolSequence({new ProtocolSend(Types::INT)}))))
                 {
                     errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString());
@@ -214,7 +215,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
     }
 
-    std::vector<const Symbol *> uninf = stmgr->getCurrentScope().value()->getUninferred(); // TODO: shouldn't ever be an issue, but still.
+    std::vector<Symbol *> uninf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
 
     // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
     // due to the var leaving the scope
@@ -227,7 +228,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             details << e->toString() << "; ";
         }
 
-        errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
+        errorHandler.addError(ctx->getStart(), "230 Uninferred types in context: " + details.str());
     }
     // Return UNDEFINED as this should be viewed as a statement and not something assignable
     return new TCompilationUnitNode(externs, defs);
@@ -249,9 +250,10 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     {
 
         std::string name = (ctx->lam) ? "lambda " : ctx->field->getText();
-
-        if (const TypeInvoke *invokeable = dynamic_cast<const TypeInvoke *>(tn->getType()))
+        std::optional<const TypeInvoke *> invokeableOpt = type_cast<TypeInvoke>(tn->getType());
+        if (invokeableOpt)
         {
+            const TypeInvoke *invokeable = invokeableOpt.value();
             /*
              * The symbol is something we can invoke, so check that we provide it with valid parameters
              */
@@ -305,7 +307,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
                 // skip over subsequent checks--we just needed to run type checking on each parameter.
                 if (invokeable->isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
                 {
-                    if (dynamic_cast<const TypeBottom *>(providedType) || dynamic_cast<const TypeAbsurd *>(providedType) || dynamic_cast<const TypeUnit *>(providedType))
+                    if (type_cast<TypeBottom>(providedType) || type_cast<TypeAbsurd>(providedType) || type_cast<TypeUnit>(providedType))
                     {
                         errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType->toString() + " to a function.");
                     }
@@ -386,8 +388,10 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     // TODO: METHODIZE WITH INVOKE?
 
-    if (const TypeStruct *product = dynamic_cast<const TypeStruct *>(sym->type))
+    std::optional<const TypeStruct *> productOpt = type_cast<TypeStruct>(sym->type);
+    if (productOpt)
     {
+        const TypeStruct *product = productOpt.value();
         std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
         if (elements.size() != ctx->exprs.size())
         {
@@ -488,7 +492,7 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->index->getStart(), "Unable to typecheck array access index.");
+        (*e)->addError(ctx->index->getStart(), "Unable to type check array access index.");
         return *e;
     }
 
@@ -516,7 +520,7 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
      */
     TFieldAccessNode *field = std::get<TFieldAccessNode *>(opt);
 
-    if (const TypeArray *arr = dynamic_cast<const TypeArray *>(field->getType()))
+    if (type_cast<TypeArray>(field->getType()))
     {
         return new TArrayAccessNode(field, expr, is_rvalue, ctx->getStart());
     }
@@ -670,7 +674,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     return new TBinaryArithNode(
         ctx->MULTIPLY() ? BINARY_ARITH_MULT : ctx->DIVIDE() ? BINARY_ARITH_DIV
-                                          : ctx->MOD()      ? BINARY_ARITH_MOD 
+                                          : ctx->MOD()      ? BINARY_ARITH_MOD
                                           : ctx->PLUS()     ? BINARY_ARITH_PLUS
                                                             : BINARY_ARITH_MINUS,
         left,
@@ -706,7 +710,7 @@ std::variant<TEqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     }
 
     // Note: As per C spec, arrays cannot be compared
-    if (dynamic_cast<const TypeArray *>(lhs->getType()) || dynamic_cast<const TypeArray *>(rhs->getType()))
+    if (type_cast<TypeArray>(lhs->getType()) || type_cast<TypeArray>(rhs->getType()))
     {
         errorHandler.addError(ctx->getStart(), "Cannot perform equality operation on arrays; they are always seen as unequal!");
     }
@@ -860,8 +864,10 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     {
         std::string fieldName = ctx->fields.at(i)->getText();
 
-        if (const TypeStruct *s = dynamic_cast<const TypeStruct *>(ty))
+        std::optional<const TypeStruct *> sOpt = type_cast<TypeStruct>(ty);
+        if (sOpt)
         {
+            const TypeStruct *s = sOpt.value();
             std::optional<const Type *> eleOpt = s->get(fieldName);
             if (eleOpt)
             {
@@ -874,13 +880,28 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
                 return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
             }
         }
-        else if (i + 1 == ctx->fields.size() && dynamic_cast<const TypeArray *>(ty) && ctx->fields.at(i)->getText() == "length")
+        else if (i + 1 == ctx->fields.size() && type_cast<TypeArray>(ty) && ctx->fields.at(i)->getText() == "length")
         {
             a.push_back({"length",
                          Types::INT});
 
             break; // Shouldn't be needed, but is here anyways
         }
+        // else if (i + 1 == ctx->fields.size() && ctx->fields.at(i)->getText() == "is_present")
+        // {
+        //     std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(ty);
+        //     if (channelOpt)
+        //     {
+        //         const TypeChannel *channel = channelOpt.value();
+        //         if (channel->getProtocol()->isOCorGuarded())
+        //         {
+        //             a.push_back({"is_present",
+        //                          Types::BOOL}); // TODO: would be a linear fn, but then cant require we use it... maybe should be functional style? idk
+        //             break;                      // Shouldn't be needed, but is here anyways
+        //         }
+        //     }
+        //     return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
+        // }
         else
         {
             return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
@@ -896,16 +917,17 @@ std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
     // Determine the type of the expression we are visiting
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to typecheck dereference expression.");
+        (*e)->addError(ctx->getStart(), "Unable to type check dereference expression.");
         return *e;
     }
 
     TypedNode *expr = std::get<TypedNode *>(exprOpt);
 
     const Type *exprType = expr->getType();
-    if (const TypeBox *box = dynamic_cast<const TypeBox *>(exprType))
+    std::optional<const TypeBox *> boxOpt = type_cast<TypeBox>(exprType);
+    if (boxOpt)
     {
-        return new TDerefBoxNode(box, expr, is_rvalue, ctx->getStart());
+        return new TDerefBoxNode(boxOpt.value(), expr, is_rvalue, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Dereference expected Box<T> but got " + exprType->toString());
@@ -950,7 +972,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&rightOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to typecheck RHS of binary relation expression.");
+        (*e)->addError(ctx->getStart(), "Unable to type check RHS of binary relation expression.");
         return *e;
     }
 
@@ -1010,7 +1032,7 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::Parame
 
 ParameterNode SemanticVisitor::visitCtx(BismuthParser::ParameterContext *ctx)
 {
-    return ParameterNode(any2Type(ctx->ty->accept(this)), ctx->name->getText()); 
+    return ParameterNode(any2Type(ctx->ty->accept(this)), ctx->name->getText());
 }
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::AssignmentContext *ctx)
@@ -1059,7 +1081,7 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to typecheck assignment.");
+        (*e)->addError(ctx->getStart(), "Unable to type check assignment.");
         return *e;
     }
 
@@ -1111,7 +1133,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 errorHandler.addError(e->a->getStart(), "Global variables must be assigned explicit constants or initialized at runtime!");
             }
 
-            if (dynamic_cast<const TypeSum *>(assignType))
+            if (type_cast<TypeSum>(assignType))
             {
                 errorHandler.addError(e->a->getStart(), "Sums cannot be initialized at a global level");
             }
@@ -1139,7 +1161,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOptO))
                     {
-                        (*e)->addError(ctx->getStart(), "Unable to typecheck assignment.");
+                        (*e)->addError(ctx->getStart(), "Unable to type check assignment.");
                         return *e;
                     }
 
@@ -1187,8 +1209,10 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
     TypedNode *cond = std::get<TypedNode *>(condOpt);
 
-    if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(cond->getType()))
+    std::optional<const TypeSum *> sumTypeOpt = type_cast<TypeSum>(cond->getType());
+    if (sumTypeOpt)
     {
+        const TypeSum *sumType = sumTypeOpt.value();
         std::vector<std::pair<Symbol *, TypedNode *>> cases;
 
         std::set<const Type *> foundCaseTypes = {};
@@ -1261,7 +1285,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            (*e)->addError(ctx->getStart(), "Failed to typecheck match statement.");
+            (*e)->addError(ctx->getStart(), "Failed to type check match statement.");
             return *e;
         }
 
@@ -1289,18 +1313,7 @@ std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return *e;
     }
 
-    std::vector<Symbol *> syms = stmgr->getAvailableLinears();
-
-    std::vector<const TypeChannel *> to_fix;
-
-    for (Symbol *orig : syms)
-    {
-        if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-        {
-            channel->getProtocol()->guard();
-            to_fix.push_back(channel);
-        }
-    }
+    stmgr->guard();
 
     std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
 
@@ -1310,9 +1323,9 @@ std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return *e;
     }
 
-    for (auto c : to_fix) // This shouldn't break anything...
+    if (!stmgr->unguard())
     {
-        c->getProtocol()->unguard();
+        return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
     }
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
@@ -1353,7 +1366,7 @@ std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCt
         blksCtx.size() == 1,
         [this](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
         {
-            // Scopes automatically handled, have to use false bc we can't have the block autoscope otherwise we might throw an error before we get the chance to realize that we use all linears. 
+            // Scopes automatically handled, have to use false bc we can't have the block autoscope otherwise we might throw an error before we get the chance to realize that we use all linears.
             return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
         });
 
@@ -1430,7 +1443,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             TypedNode *check = std::get<TypedNode *>(checkOpt);
             const Type *checkType = check->getType();
 
-            if (!dynamic_cast<const TypeBool *>(checkType))
+            if (checkType->isNotSubtype(Types::BOOL))
             {
                 return errorHandler.addError(ctx->getStart(), "Select alternative expected BOOL but got " + checkType->toString());
             }
@@ -1452,7 +1465,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
     {
-        (*e)->addError(ctx->getStart(), "Failed to typecheck select statement.");
+        (*e)->addError(ctx->getStart(), "Failed to type check select statement.");
         return *e;
     }
 
@@ -1492,7 +1505,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         const Type *valType = val->getType();
 
         // If the type of the return symbol is a BOT, then we must be in a PROC and, thus, we cannot return anything
-        if (const TypeUnit *b = dynamic_cast<const TypeUnit *>(sym->type))
+        if (sym->type->isSubtype(Types::UNIT))
         {
             return errorHandler.addError(ctx->getStart(), "PROC cannot return value, yet it was given a " + valType->toString() + " to return!");
         }
@@ -1510,7 +1523,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     }
 
     // We do not have an expression to return, so make sure that the return type is also a BOT.
-    if (dynamic_cast<const TypeUnit *>(sym->type))
+    if (sym->type->isSubtype(Types::UNIT))
     {
         return new TReturnNode(ctx->getStart());
     }
@@ -1648,8 +1661,10 @@ std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     Symbol *sym = opt.value_or(
         new Symbol(id, new TypeSum(id), true, true));
 
-    if (const TypeSum *sumTy = dynamic_cast<const TypeSum *>(sym->type))
+    std::optional<const TypeSum *> sumTyOpt = type_cast<TypeSum>(sym->type);
+    if (sumTyOpt)
     {
+        const TypeSum *sumTy = sumTyOpt.value();
         if (!sumTy->isDefined())
         {
             std::set<const Type *, TypeCompare> cases = {};
@@ -1694,8 +1709,10 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
     Symbol *sym = opt.value_or(
         new Symbol(id, new TypeStruct(id), true, true));
 
-    if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(sym->type))
+    std::optional<const TypeStruct *> structTypeOpt = type_cast<TypeStruct>(sym->type);
+    if (structTypeOpt)
     {
+        const TypeStruct *structType = structTypeOpt.value();
         if (!structType->isDefined())
         {
             LinkedMap<std::string, const Type *> el;
@@ -1718,7 +1735,7 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
             }
             structType->define(el);
             stmgr->addSymbol(sym);
-        } // FIXME: ERROR HANDLE IF DEFINED?
+        }
         return new TDefineStructNode(id, structType, ctx->getStart());
     }
 
@@ -1829,8 +1846,10 @@ std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSen
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value();
         std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
         if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
         {
@@ -1865,9 +1884,11 @@ std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
-    {
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
 
+    if (channelOpt)
+    {
+        const TypeChannel *channel = channelOpt.value();
         std::optional<const Type *> ty = channel->getProtocol()->recv();
         if (!ty)
         {
@@ -1875,6 +1896,34 @@ std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
         }
 
         return new TProgramRecvNode(sym, ty.value(), ctx->getStart());
+    }
+
+    return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);
+}
+
+std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx)
+{
+    std::string id = ctx->channel->getText();
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
+
+    if (!opt)
+    {
+        return errorHandler.addError(ctx->getStart(), "Could not find channel :-( ): " + id);
+    }
+
+    Symbol *sym = opt.value().second;
+
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+
+    if (channelOpt)
+    {
+        const TypeChannel *channel = channelOpt.value();
+        if (!channel->getProtocol()->isOC(true))
+        {
+            return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym->toString() + " as it is not a ! loop.");
+        }
+
+        return new TProgramIsPresetNode(sym, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);
@@ -1893,22 +1942,25 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
     Symbol *sym = opt.value().second;
     // stmgr->removeSymbol(sym);
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value();
         std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
         std::set<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
 
         for (auto alt : ctx->protoAlternative())
         {
-            auto a = toSequence(any2Protocol(alt->check->accept(this))); 
+            auto a = toSequence(any2Protocol(alt->check->accept(this)));
             opts.insert(a);
             optsI.insert({a->getInverse(), alt->eval});
         }
 
         std::vector<const ProtocolSequence *> sequences = {};
         std::vector<BismuthParser::StatementContext *> alternatives = {};
-        
-        for(auto itr : optsI) {
+
+        for (auto itr : optsI)
+        {
             sequences.push_back(itr.first->getInverse());
             alternatives.push_back(itr.second);
         }
@@ -1929,26 +1981,41 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
-        unsigned int branch = 0; 
+        unsigned int branch = 0;
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::StatementContext>(
             ctx,
             alternatives,
             restDat,
             false,
-            [this, savedRest, channel, sequences, &branch](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+            [this, savedRest, sequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
-                const ProtocolSequence *proto = sequences.at(branch++); 
+                const ProtocolSequence *proto = sequences.at(branch++);
 
                 proto->append(savedRest->getCopy());
-                channel->setProtocol(proto);
 
-                std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
-                return optEval;
+                std::optional<SymbolContext> opt = stmgr->lookup(id);
+
+                if (!opt)
+                {
+                    return errorHandler.addError(alt->getStart(), "Could not find channel: " + id);
+                }
+
+                Symbol *sym = opt.value().second;
+                std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+                if (channelOpt)
+                {
+                    const TypeChannel *channel = channelOpt.value();
+                    channel->setProtocol(proto);
+                    std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
+                    return optEval;
+                }
+
+                return errorHandler.addError(alt->getStart(), "FAILED; COMPILER ERROR");
             });
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            (*e)->addError(ctx->getStart(), "Failed to typecheck external choice.");
+            (*e)->addError(ctx->getStart(), "Failed to type check external choice.");
             return *e;
         }
 
@@ -1971,11 +2038,13 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value();
         const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
         unsigned int projectIndex = channel->getProtocol()->project(ps);
-        
+
         if (!projectIndex)
         {
             return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString());
@@ -1998,13 +2067,15 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value();
         if (!channel->getProtocol()->contract())
         {
             return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id);
         }
-        stmgr->addSymbol(sym); // Makes sure we enforce weakening rules...
+        // stmgr->addSymbol(sym); // Makes sure we enforce weakening rules...
 
         /*
         c : |?-int|
@@ -2037,8 +2108,10 @@ std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramW
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value();
         if (!channel->getProtocol()->weaken())
         {
             return errorHandler.addError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString());
@@ -2059,32 +2132,26 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value();
         std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptLoop();
         if (!acceptOpt)
         {
             return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
         }
         const ProtocolSequence *postC = channel->getProtocolCopy();
+        postC->guard();
 
-        std::vector<Symbol *> syms = stmgr->getAvailableLinears();
+        stmgr->guard();
 
-        std::vector<const TypeChannel *> to_fix;
-        for (Symbol *orig : syms)
-        {
-            if (const TypeChannel *c2 = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                c2->getProtocol()->guard();
-                to_fix.push_back(c2);
-            }
-        }
         channel->setProtocol(acceptOpt.value());
 
         // stmgr->addSymbol(sym);
 
         std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-        std::vector<Symbol *> lins = stmgr->getAvailableLinears();
+        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
         // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
         // due to the var leaving the scope
@@ -2097,13 +2164,13 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
                 details << e->toString() << "; ";
             }
 
-            errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
+            errorHandler.addError(ctx->getStart(), "2114 Unused linear types in context: " + details.str());
         }
 
         channel->setProtocol(postC);
-        for (auto c : to_fix)
+        if (!stmgr->unguard())
         {
-            c->getProtocol()->unguard();
+            return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
         }
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
@@ -2129,8 +2196,10 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
 
     Symbol *sym = opt.value().second;
 
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
     {
+        const TypeChannel *channel = channelOpt.value();
         std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCondition(ctx->ex);
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
@@ -2145,19 +2214,9 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
             return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
         }
         const ProtocolSequence *postC = channel->getProtocolCopy();
+        postC->guard();
 
-        std::vector<Symbol *> syms = stmgr->getAvailableLinears();
-
-        std::vector<const TypeChannel *> to_fix;
-
-        for (Symbol *orig : syms)
-        {
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                channel->getProtocol()->guard();
-                to_fix.push_back(channel);
-            }
-        }
+        stmgr->guard();
         channel->setProtocol(acceptOpt.value());
 
         // const ProtocolSequence *restProto = channel->getProtocol();
@@ -2166,7 +2225,7 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
         // stmgr->addSymbol(sym);
 
         std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-        std::vector<Symbol *> lins = stmgr->getAvailableLinears();
+        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
         // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
         // due to the var leaving the scope
@@ -2179,13 +2238,13 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
                 details << e->toString() << "; ";
             }
 
-            errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
+            errorHandler.addError(ctx->getStart(), "2196 Unused linear types in context: " + details.str());
         }
 
         channel->setProtocol(postC);
-        for (auto c : to_fix)
+        if (!stmgr->unguard())
         {
-            c->getProtocol()->unguard();
+            return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
         }
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
@@ -2200,19 +2259,153 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
 }
 
+std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx)
+{
+    std::string id = ctx->VARIABLE()->getText();
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
+    if (!opt)
+    {
+        return errorHandler.addError(ctx->getStart(), "Unbound identifier: " + id);
+    }
+
+    Symbol *sym = opt.value().second;
+
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
+    {
+        const TypeChannel *channel = channelOpt.value();
+        std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCondition(ctx->check);
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
+        {
+            (*e)->addError(ctx->getStart(), "1350");
+            return *e;
+        }
+
+        std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptIf();
+        if (!acceptOpt)
+        {
+            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
+        }
+        std::cout << "2249 " << acceptOpt.value()->toString() << std::endl;
+
+        std::vector<BismuthParser::BlockContext *> blksCtx = {ctx->trueBlk};
+        if (ctx->falseBlk)
+            blksCtx.push_back(ctx->falseBlk);
+
+        DeepRestData *restDat = new DeepRestData(ctx->rest);
+        std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+        rest->push_front(restDat);
+
+        for (auto b : blksCtx) // TODO: Methodize this w/ other conditions?
+        {
+            for (auto c : b->stmts)
+            {
+                bindRestData(c, rest);
+            }
+        }
+
+        unsigned int idx = 0;
+
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::BlockContext>(
+            ctx,
+            blksCtx,
+            restDat,
+            blksCtx.size() == 1, // TODO: VERIFY
+            [this, &idx, id, acceptOpt](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
+            {
+                if (idx == 0)
+                {
+                    idx++;
+                    std::optional<SymbolContext> opt = stmgr->lookup(id);
+
+                    if (!opt) // FIXME: FIND BETTER WAY TO MAP AND CHANGE CHANNEL VALUES IN SPECIFIC BRANCHES
+                    {
+                        return errorHandler.addError(blk->getStart(), "Could not find channel: " + id);
+                    }
+
+                    Symbol *sym = opt.value().second;
+                    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+                    if (channelOpt)
+                    {
+                        const TypeChannel *channel = channelOpt.value();
+                        channel->setProtocol(acceptOpt.value());
+                        return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
+                    }
+
+                    return errorHandler.addError(blk->getStart(), "FAILED; COMPILER ERROR");
+                }
+                return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
+            });
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
+            return errorHandler.addError(ctx->getStart(), "Failed to generate one or more branches in acceptIf.");
+
+        ConditionalData dat = std::get<ConditionalData>(branchOpt);
+        if (ctx->falseBlk)
+        {
+            return new TProgramAcceptIfNode(ctx->getStart(), sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), restDat->post, (TBlockNode *)dat.cases.at(1));
+        }
+
+        return new TProgramAcceptIfNode(ctx->getStart(), sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), restDat->post);
+        /*
+        const ProtocolSequence *postC = channel->getProtocolCopy();
+        postC->guard();
+
+        stmgr->guard();
+        channel->setProtocol(acceptOpt.value());
+
+        std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
+        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
+
+        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+        // due to the var leaving the scope
+        if (lins.size() > 0)
+        {
+            std::ostringstream details;
+
+            for (auto e : lins)
+            {
+                details << e->toString() << "; ";
+            }
+
+            errorHandler.addError(ctx->getStart(), "2196 Unused linear types in context: " + details.str());
+        }
+
+        channel->setProtocol(postC);
+        if (!stmgr->unguard())
+        {
+            return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
+        }
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
+        {
+            (*e)->addError(ctx->getStart(), "2255");
+            return *e;
+        }
+
+        return new TProgramAcceptIfNode(sym, std::get<TypedNode *>(condOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
+        */
+    }
+
+    return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
+}
+
 std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableExec(BismuthParser::AssignableExecContext *ctx)
 {
     std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->prog->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
     {
-        (*e)->addError(ctx->getStart(), "Failed to typecheck exec");
+        (*e)->addError(ctx->getStart(), "Failed to type check exec");
         return *e;
     }
     // Symbol *sym = opt.value().second;
     TypedNode *prog = std::get<TypedNode *>(opt);
 
-    if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(prog->getType()))
+    std::optional<const TypeProgram *> invOpt = type_cast<TypeProgram>(prog->getType());
+    if (invOpt)
     {
+        const TypeProgram *inv = invOpt.value();
         return new TProgramExecNode(
             prog,
             new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse())),
@@ -2220,6 +2413,26 @@ std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot exec: " + prog->getType()->toString());
+}
+
+std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(BismuthParser::CopyExprContext *ctx)
+{
+    std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to type check copy expression");
+        return *e;
+    }
+
+    TypedNode *tn = std::get<TypedNode *>(tnOpt);
+    const Type *ty = tn->getType();
+
+    if (isLinear(ty))
+    {
+        return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty->toString());
+    }
+
+    return new TExprCopyNode(tn, ctx->getStart());
 }
 
 /*************************************************************

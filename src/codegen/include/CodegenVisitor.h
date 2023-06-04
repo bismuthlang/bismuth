@@ -100,11 +100,13 @@ public:
     std::optional<Value *> visit(TReturnNode *n) override;
     std::optional<Value *> visit(TProgramSendNode *n) override;
     std::optional<Value *> visit(TProgramRecvNode *n) override;
+    std::optional<Value *> visit(TProgramIsPresetNode *n) override; 
     std::optional<Value *> visit(TProgramContractNode *n) override;
     std::optional<Value *> visit(TProgramWeakenNode *n) override;
     std::optional<Value *> visit(TProgramExecNode *n) override;
     std::optional<Value *> visit(TProgramAcceptNode *n) override;
     std::optional<Value *> visit(TProgramAcceptWhileNode *n) override;
+    std::optional<Value *> visit(TProgramAcceptIfNode *n) override; 
     // std::optional<Value *> visit(TDefineEnumNode *n) override;
     // std::optional<Value *> visit(TDefineStructNode *n) override;
     std::optional<Value *> visit(TInitProductNode *n) override;
@@ -130,8 +132,8 @@ public:
     std::optional<Value *> visit(TExitNode *n) override;
     std::optional<Value *> visit(TChannelCaseStatementNode *n) override;
     std::optional<Value *> visit(TProgramProjectNode *n) override;
-
     std::optional<Value *> visit(TInitBoxNode *n) override;
+    std::optional<Value *> visit(TExprCopyNode *n) override; 
 
     std::optional<Value *> visitCompilationUnit(TCompilationUnitNode *n) { return visit(n); }
 
@@ -161,7 +163,7 @@ public:
         Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);
         ; // Lookup the function first
         inv->setName(fn->getName().str());
-
+        
         // Get the parameter list context for the invokable
         // BismuthParser::ParameterListContext *paramList = ctx->paramList;
         // Create basic block
@@ -170,10 +172,9 @@ public:
 
         // Bind all of the arguments
         llvm::AllocaInst *v = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
-        n->channelSymbol->val = v;
-
+        // n->channelSymbol->val = v;
+        n->channelSymbol->setAllocation(v);
         builder->CreateStore((fn->args()).begin(), v);
-
         /*
         for (auto &arg : fn->args())
         {
@@ -207,7 +208,6 @@ public:
 
         // Get the codeblock for the PROC/FUNC
         // BismuthParser::BlockContext *block = ctx->block();
-
         // Generate code for the block
         for (auto e : n->block->exprs)
         {
@@ -215,14 +215,14 @@ public:
             this->accept(e);
             // module->dump();
         }
-
+        
         // If we are a PROC, make sure to add a return type (if we don't already have one)
         // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
         if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE
         {
             builder->CreateRetVoid();
         }
-
+        
         builder->SetInsertPoint(ins);
         return std::nullopt;
     }
@@ -236,9 +236,10 @@ public:
             errorHandler.addError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
             return std::nullopt;
         }
-
+        
         // Make sure the variable has an allocation (or that we can find it due to it being a global var)
-        if (!sym->val)
+        std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
+        if (!optVal)
         {
             // If the symbol is a global var
             if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
@@ -287,11 +288,10 @@ public:
         }
 
         if (!is_rvalue)
-            return sym->val.value();
+            return optVal.value();
 
         // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
-        Value *v = builder->CreateLoad(type, sym->val.value(), sym->getIdentifier());
-
+        Value *v = builder->CreateLoad(type, optVal.value(), sym->getIdentifier());
         // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
         // builder->CreateStore(v, alloc);
         // return alloc;
@@ -419,6 +419,16 @@ public:
                 false));
     }
 
+    llvm::FunctionCallee get_OC_isPresent()
+    {
+        return module->getOrInsertFunction(
+            "_OC_isPresent",
+            llvm::FunctionType::get(
+                Int1Ty,
+                {Int32Ty},
+                false));
+    }
+
     llvm::FunctionCallee getPopEndLoop()
     {
         return module->getOrInsertFunction(
@@ -492,43 +502,18 @@ public:
     }
 
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
-    llvm::AllocaInst * CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
+    llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
-        llvm::Function* fn = builder->GetInsertBlock()->getParent();
-        // // for(auto B = fn->begin(), e = fn->end(); B != e; ++B)
-        // for(auto& B : *fn) 
-        // {
-        //     // for(llvm::BasicBlock::iterator it = B->begin(); it != B->end(); ++it)
-        //     for(auto& I : B) 
-        //     {
-        //         // llvm::Instruction * I = &*it;
-
-        //         std::cout << "----\n" << I.getOpcodeName() << "\n";
-        //         I.print(llvm::outs(), true);
-        //         std::cout << "\n----\n\n";
-        //     }
-        // }
-
-
-        // if (fn != nullptr)
-        // {
-            // if (llvm::isa<llvm::Function>(insPoint))
-            // {
-                // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
-                IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-                return tempBuilder.CreateAlloca(ty, 0, identifier); 
-            // }
-
-            // insPoint = insPoint->getParent();
-        // }
-        // return std::nullopt; 
+        llvm::Function *fn = builder->GetInsertBlock()->getParent();
+        IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+        return tempBuilder.CreateAlloca(ty, 0, identifier);
     }
 
 private:
     int flags;
 
     BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN);
-    DeepCopyVisitor * copyVisitor; 
+    DeepCopyVisitor *copyVisitor;
     // LLVM
     LLVMContext *context;
     Module *module;

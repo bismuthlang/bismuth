@@ -79,6 +79,9 @@ public:
 
     virtual bool requiresDeepCopy() const { return false; } // FIXME: WHAT TO DO?
 
+    virtual const Type * getCopy() const { return this; }
+
+
 protected:
     /**
      * @brief Internal tool used to determine if this type is a supertype for another type. NOTE: THIS SHOULD NEVER BE CALLED DIRECTLY OUTSIDE OF THE TYPE DEFINITIONS. DOING SO MAY LEAD TO UNUSUAL BEHAVIOR!
@@ -125,17 +128,17 @@ public:
 
     virtual void guard() const // FIXME: DO BETTER
     {
-        Protocol *mthis = const_cast<Protocol *>(this);
-        mthis->guardCount = mthis->guardCount + 1;
+        Protocol *u_this = const_cast<Protocol *>(this);
+        u_this->guardCount = u_this->guardCount + 1;
     }
 
     virtual bool unguard() const // FIXME: DO BETTER
     {
         if (guardCount == 0)
             return false;
-        Protocol *mthis = const_cast<Protocol *>(this);
+        Protocol *u_this = const_cast<Protocol *>(this);
 
-        mthis->guardCount = mthis->guardCount - 1;
+        u_this->guardCount = u_this->guardCount - 1;
         return true;
     }
 };
@@ -213,12 +216,11 @@ public:
 
     bool weaken() const;
 
-    bool isOC() const;
-
-    bool isOCorGuarded() const;
+    bool isOC(bool includeGuarded=false) const;
 
     optional<const ProtocolSequence *> acceptLoop() const;
     optional<const ProtocolSequence *> acceptWhileLoop() const;
+    optional<const ProtocolSequence *> acceptIf() const; 
 
     bool isIntChoice() const;
 
@@ -228,9 +230,9 @@ public:
 
     void append(const ProtocolSequence *proto) const
     {
-        ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
+        ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = proto->steps;
-        mthis->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
+        u_this->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
     }
 
     bool isGuarded() const override // FIXME: DO BETTER
@@ -246,8 +248,8 @@ public:
     {
         if (steps.size() == 0)
         {
-            ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-            mthis->guardCount = mthis->guardCount + 1;
+            ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+            u_this->guardCount = u_this->guardCount + 1;
         }
         else
         {
@@ -261,9 +263,9 @@ public:
         {
             if (guardCount == 0)
                 return false;
-            ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
+            ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
 
-            mthis->guardCount = mthis->guardCount - 1;
+            u_this->guardCount = u_this->guardCount - 1;
             return true;
         }
 
@@ -499,6 +501,8 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
+    const TypeInt * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -520,6 +524,8 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
+    const TypeBool * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -538,6 +544,8 @@ public:
 
     bool requiresDeepCopy() const override { return false; }
 
+    const TypeStr * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -553,6 +561,8 @@ class TypeBottom : public Type
 public:
     std::string toString() const override { return "\u22A5"; }
 
+    const TypeBottom * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -567,6 +577,8 @@ class TypeUnit : public Type
 public:
     std::string toString() const override { return "1"; }
 
+    const TypeUnit * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -580,6 +592,8 @@ class TypeAbsurd : public Type
 {
 public:
     std::string toString() const override { return "0"; }
+
+    const TypeAbsurd * getCopy() const override { return this; };
 
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
@@ -685,6 +699,8 @@ public:
 
     bool requiresDeepCopy() const override { return valueType->requiresDeepCopy(); }
 
+    const TypeArray * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
@@ -757,15 +773,15 @@ public:
         return toSequence(protocol->getCopy());
     }
 
-    const TypeChannel *getCopy() const
+    const TypeChannel *getCopy() const override
     {
         return new TypeChannel(getProtocolCopy());
     }
 
     void setProtocol(const ProtocolSequence *p) const // FIXME: DO BETTER
     {
-        TypeChannel *mthis = const_cast<TypeChannel *>(this);
-        mthis->protocol = p;
+        TypeChannel *u_this = const_cast<TypeChannel *>(this);
+        u_this->protocol = p;
     }
 
 protected:
@@ -834,6 +850,8 @@ public:
 
     bool requiresDeepCopy() const override { return true; }
 
+    const TypeBox * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
@@ -892,9 +910,9 @@ public:
         if (defined)
             return false;
 
-        TypeProgram *mthis = const_cast<TypeProgram *>(this);
-        mthis->defined = true;
-        mthis->channel = c;
+        TypeProgram *u_this = const_cast<TypeProgram *>(this);
+        u_this->defined = true;
+        u_this->channel = c;
 
         return true;
     }
@@ -934,8 +952,8 @@ public:
     {
         if (name)
             return false;
-        TypeProgram *mthis = const_cast<TypeProgram *>(this);
-        mthis->name = n;
+        TypeProgram *u_this = const_cast<TypeProgram *>(this);
+        u_this->name = n;
         // name = n;
         return true;
     }
@@ -952,6 +970,8 @@ public:
     {
         return channel;
     }
+
+    const TypeProgram * getCopy() const override { return this; };
 
 protected:
     bool isSupertypeFor(const Type *other) const override
@@ -1048,11 +1068,11 @@ public:
         if (defined)
             return false;
 
-        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
-        mthis->defined = true;
-        mthis->paramTypes = p;
-        mthis->retType = r;
-        mthis->variadic = v;
+        TypeInvoke *u_this = const_cast<TypeInvoke *>(this);
+        u_this->defined = true;
+        u_this->paramTypes = p;
+        u_this->retType = r;
+        u_this->variadic = v;
 
         return true;
     }
@@ -1120,8 +1140,8 @@ public:
     {
         if (name)
             return false;
-        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
-        mthis->name = n;
+        TypeInvoke *u_this = const_cast<TypeInvoke *>(this);
+        u_this->name = n;
         // name = n;
         return true;
     }
@@ -1155,6 +1175,8 @@ public:
      * @return false
      */
     bool isDefined() const { return defined; }
+
+    const TypeInvoke * getCopy() const override { return this; };
 
 protected:
     bool isSupertypeFor(const Type *other) const override
@@ -1257,6 +1279,8 @@ public:
     // FIXME: BAD OPT ACCESS
     bool requiresDeepCopy() const override { return valueType->value()->requiresDeepCopy(); }
 
+    const TypeInfer * getCopy() const override { return this; };
+
 protected:
     /**
      * @brief Internal helper function used to try updating the type that this inference represents
@@ -1280,8 +1304,8 @@ protected:
         }
 
         // Set our valueType to be the provided type to see if anything breaks...
-        TypeInfer *mthis = const_cast<TypeInfer *>(this);
-        *mthis->valueType = other;
+        TypeInfer *u_this = const_cast<TypeInfer *>(this);
+        *u_this->valueType = other;
 
         // Run through our dependencies making sure they can all also
         // be compatible with having a type of other.
@@ -1310,7 +1334,8 @@ protected:
         // If we already have an inferred type, we can simply
         // check if that type is a subtype of other.
         if (valueType->has_value())
-            return other->isSubtype(valueType->value());
+            // return other->isSubtype(valueType->value());
+            return valueType->value()->isSubtype(other);
 
         /*
          * If the other type is also an inference type...
@@ -1324,8 +1349,8 @@ protected:
             }
 
             // Otherwise, add the types to be dependencies of each other, and return true.
-            TypeInfer *mthis = const_cast<TypeInfer *>(this);
-            mthis->infTypes.push_back(oinf);
+            TypeInfer *u_this = const_cast<TypeInfer *>(this);
+            u_this->infTypes.push_back(oinf);
 
             TypeInfer *moth = const_cast<TypeInfer *>(oinf);
             moth->infTypes.push_back(this);
@@ -1374,10 +1399,10 @@ public:
         if (isDefined())
             return false;
 
-        TypeSum *mthis = const_cast<TypeSum *>(this);
-        mthis->defined = true;
+        TypeSum *u_this = const_cast<TypeSum *>(this);
+        u_this->defined = true;
 
-        mthis->cases = c;
+        u_this->cases = c;
 
         return true;
     }
@@ -1445,7 +1470,6 @@ public:
     llvm::StructType *getLLVMType(llvm::Module *M) const override
     {
         llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-
         if (ty)
             return ty;
 
@@ -1471,6 +1495,12 @@ public:
             }
         }
 
+        // Probably not needed in struct, but might be. 
+        // Needed in the case that we generate the type while generating one of the subtypes...
+        ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+        if (ty)
+            return ty;
+
         // FIXME: DO BETTER
         uint64_t len = (uint64_t)max;
         llvm::Type *inner = llvm::Type::getInt8Ty(M->getContext());
@@ -1479,8 +1509,9 @@ public:
         std::vector<llvm::Type *> typeVec = {llvm::Type::getInt32Ty(M->getContext()), arr};
 
         llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-
-        return llvm::StructType::create(M->getContext(), ref, toString());
+        auto ans = llvm::StructType::create(M->getContext(), ref, toString());
+        
+        return ans;
     }
 
     bool requiresDeepCopy() const override
@@ -1491,6 +1522,8 @@ public:
 
         return false;
     }
+
+    const TypeSum * getCopy() const override { return this; };
 
 protected:
     bool isSupertypeFor(const Type *other) const override
@@ -1577,11 +1610,11 @@ public:
         if (isDefined())
             return false;
 
-        TypeStruct *mthis = const_cast<TypeStruct *>(this);
-        mthis->defined = true;
+        TypeStruct *u_this = const_cast<TypeStruct *>(this);
+        u_this->defined = true;
 
-        mthis->elements = e;
-        // mthis->name = n;
+        u_this->elements = e;
+        // u_this->name = n;
 
         return true;
     }
@@ -1655,6 +1688,8 @@ public:
         return false;
     }
 
+    const TypeStruct * getCopy() const override { return this; };
+
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
@@ -1696,4 +1731,22 @@ inline const Type *copyType(const Type *ty)
     }
 
     return ty;
+}
+
+template <typename T>
+inline std::optional<const T*> type_cast(const Type * ty) 
+{
+    if(const T* ans = dynamic_cast<const T*>(ty))
+    {
+        return ans; 
+    }
+
+    if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(ty))
+    {
+        std::optional<const Type *> opt = inf->getValueType(); 
+        if(!opt) return std::nullopt; //TODO: Handle better? Challenging for things like Struct... (ie, multiplicities), but may be less of a problem, perhaps, when we disable nulls.
+        return type_cast<T>(opt.value()); 
+    }
+
+    return std::nullopt; 
 }

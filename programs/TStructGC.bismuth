@@ -34,7 +34,7 @@ define program :: c : Channel<-int> = {
     shared := Box<Box<int>>::init(Box<int>::init(5));
     tibb := TIBB::init(shared, Box<Box<int>>::init(Box<int>::init(6)));
 
-    tibb.b1 := shared; # FIXME: THIS DOESNT WORK WHEN TIBB IS VAR
+    tibb.b1 := shared;
     
     printTIBB("b (orig/5;6)", tibb);
     a.send(tibb)

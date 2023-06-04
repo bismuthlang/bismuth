@@ -278,6 +278,14 @@ private:
             return stoVal;//builder->CreateLoad(stoVal->getType(), stoVal);
         }
 
+        if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(type))
+        {
+            if(infType->hasBeenInferred()) {
+                return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, addrMap, GC_MALLOC);
+            }
+            return std::nullopt; //FIXME: ADD ERROR 
+        }
+
         Function *testFn = module->getFunction("_clone_" + type->toString());
         if (testFn)
         {
@@ -308,12 +316,13 @@ private:
 
         if (const TypeBox *boxType = dynamic_cast<const TypeBox *>(type))
         {
+            Value * loaded_i8p_v = builder->CreateBitCast(builder->CreateLoad(llvmType, v), i8p);
             const Type *innerType = boxType->getInnerType();
 
             Value *hasValPtr = builder->CreateCall(
                 get_address_map_has(),
                 {builder->CreateLoad(i8p, m),
-                 builder->CreateBitCast(v, i8p)});
+                 loaded_i8p_v}); // NEEDS TO BE LOADED
 
             auto parentFn = builder->GetInsertBlock()->getParent();
             BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "then", parentFn);
@@ -346,7 +355,11 @@ private:
             builder->SetInsertPoint(elseBlk);
 
             // // Generate the code for the else block; follows the same logic as the then block.
-            optional<Value *> clonedOpt = deepCopyHelper(builder, innerType, builder->CreateLoad(innerType->getLLVMType(module), builder->CreateLoad(llvmType, v)), builder->CreateLoad(i8p, m), GC_MALLOC);
+            optional<Value *> clonedOpt = deepCopyHelper(builder, 
+                                                         innerType, 
+                                                         builder->CreateLoad(innerType->getLLVMType(module), builder->CreateLoad(llvmType, v)), 
+                                                         builder->CreateLoad(i8p, m), 
+                                                         GC_MALLOC);
             if (!clonedOpt)
                 return std::nullopt;
             // Value *cloned = clonedOpt.value();
@@ -356,7 +369,7 @@ private:
             builder->CreateCall(
                 get_address_map_put(),
                 {builder->CreateLoad(i8p, m),
-                 builder->CreateBitCast(v, i8p),
+                 loaded_i8p_v,
                  alloc});
 
             builder->CreateBr(restBlk);
@@ -485,15 +498,6 @@ private:
             builder->SetInsertPoint(restBlk);
             v = builder->CreateLoad(llvmType, v);
 
-        }
-        else if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(type))
-        {
-            if(infType->hasBeenInferred()) {
-                return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, builder->CreateLoad(i8p, m), GC_MALLOC);
-
-                // return deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap, DeepCopyType copyType) 
-            }
-            return std::nullopt; //FIXME: ADD ERROR 
         }
         else
         {

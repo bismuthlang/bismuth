@@ -171,6 +171,9 @@ public:
     std::variant<TProgramRecvNode *, ErrorChain *> TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx);
     std::any visitAssignableRecv(BismuthParser::AssignableRecvContext *ctx) override { return TNVariantCast<TProgramRecvNode>(TvisitAssignableRecv(ctx)); }
 
+    std::variant<TProgramIsPresetNode *, ErrorChain *> TvisitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx);
+    std::any visitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx) override { return TNVariantCast<TProgramIsPresetNode>(TvisitAssignableIsPresent(ctx)); }
+
     std::variant<TProgramContractNode *, ErrorChain *> TvisitProgramContract(BismuthParser::ProgramContractContext *ctx);
     std::any visitProgramContract(BismuthParser::ProgramContractContext *ctx) override { return TNVariantCast<TProgramContractNode>(TvisitProgramContract(ctx)); }
 
@@ -186,6 +189,9 @@ public:
     std::variant<TProgramAcceptWhileNode *, ErrorChain *> TvisitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx);
     std::any visitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx) override { return TNVariantCast<TProgramAcceptWhileNode>(TvisitProgramAcceptWhile(ctx)); }
 
+    std::variant<TProgramAcceptIfNode *, ErrorChain *> TvisitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx);
+    std::any visitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx) override { return TNVariantCast<TProgramAcceptIfNode>(TvisitProgramAcceptIf(ctx)); }
+
     std::variant<TCompilationUnitNode *, ErrorChain *> visitCtx(BismuthParser::CompilationUnitContext *ctx);
     std::any visitCompilationUnit(BismuthParser::CompilationUnitContext *ctx) override { return visitCtx(ctx); }
 
@@ -197,6 +203,9 @@ public:
 
     std::variant<TExitNode *, ErrorChain *> visitCtx(BismuthParser::ExitStatementContext *ctx);
     std::any visitExitStatement(BismuthParser::ExitStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
+
+    std::variant<TExprCopyNode *, ErrorChain *> TvisitCopyExpr(BismuthParser::CopyExprContext *ctx);
+    std::any visitCopyExpr(BismuthParser::CopyExprContext *ctx) override { return TNVariantCast<TExprCopyNode>(TvisitCopyExpr(ctx)); }
 
     // const Type *visitCtx(BismuthParser::VariableExprContext *ctx);
     const Type *visitCtx(BismuthParser::AssignmentContext *ctx);
@@ -268,7 +277,7 @@ public:
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
         {
-            (*e)->addError(ex->getStart(), "Unable to typecheck condition expression.");
+            (*e)->addError(ex->getStart(), "Unable to type check condition expression.");
             return *e;
         }
 
@@ -307,7 +316,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to typecheck statement in block.");
+                (*e)->addError(ctx->getStart(), "Failed to type check statement in block.");
                 return *e;
             }
 
@@ -443,10 +452,10 @@ public:
 
     struct ProtocolCompareInv
     {
-        bool operator()(std::pair<const Protocol *, BismuthParser::StatementContext *> a, 
+        bool operator()(std::pair<const Protocol *, BismuthParser::StatementContext *> a,
                         std::pair<const Protocol *, BismuthParser::StatementContext *> b) const
         {
-            std::cout << a.first->toString() << " < " << b.first->toString() << " = " << (a.first->toString() < b.second->toString()) << std::endl; 
+            std::cout << a.first->toString() << " < " << b.first->toString() << " = " << (a.first->toString() < b.second->toString()) << std::endl;
             return a.first->toString() < b.first->toString();
         }
     };
@@ -460,7 +469,7 @@ public:
         {
         }
     };
-
+    //FIXME: WHAT AB Ext<A,B>;!P;Ext<A,B>?
     struct DeepRestData
     {
         vector<BismuthParser::StatementContext *> ctxRest;
@@ -483,28 +492,22 @@ public:
 
         std::vector<TypedNode *> cases;
 
-        std::vector<Symbol *> syms = stmgr->getAvailableLinears(true);                // FIXME: WILL TRY TO REBIND VAR WE JUST BOUND TO NEW CHAN VALUE!
-        std::vector<std::pair<const TypeChannel *, const ProtocolSequence *>> to_fix; // FIXME: DO BETTER!
-        for (Symbol *orig : syms)
-        {
-            // FIXME: DO BETTER, WONT WORK WITH VALUES!
-            if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(orig->type))
-            {
-                to_fix.push_back({channel, channel->getProtocolCopy()});
-            }
-        }
+        STManager *origStmgr = this->stmgr;
 
-        // const ProtocolSequence *savedRest = channel->getProtocolCopy();
-
-        for (auto alt : ctxCases)
+        for (unsigned int i = 0; i < ctxCases.size(); i++)
         {
-            for (Symbol *s : syms)
+            auto alt = ctxCases.at(i);
+
+            if (checkRestIndependently || i + 1 < ctxCases.size())
             {
-                stmgr->addSymbol(s);
+                std::optional<STManager *> optSTCopy = origStmgr->getCopy();
+                if (!optSTCopy)
+                    return errorHandler.addError(alt->getStart(), "Failed to copy symbol table; this is likely a compiler error.");
+                this->stmgr = optSTCopy.value(); // TODO: DELETE RESOURCE?
             }
-            for (auto pair : to_fix)
+            else 
             {
-                pair.first->setProtocol(pair.second->getCopy());
+                this->stmgr = origStmgr; 
             }
 
             stmgr->enterScope(StopType::NONE);
@@ -526,9 +529,9 @@ public:
                 {
                     std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
+                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                     {
-                        (*e)->addError(alt->getStart(), "Failed to typecheck code following branch."); //FIXME: SWITCH THESE BACK TO ALTCTX?
+                        (*e)->addError(alt->getStart(), "Failed to type check code following branch."); // FIXME: SWITCH THESE BACK TO ALTCTX?
                         return *e;
                     }
 
@@ -551,13 +554,13 @@ public:
                     {
                         std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                         {
-                            (*e)->addError(ctx->getStart(), "2097");
+                            (*e)->addError(ctx->getStart(), "Failed to type check when no branch followed.");
                             return *e;
                         }
 
-                        if (!r->isGenerated) // FIXME: MAY CAUSE DOUBLE FILL ISSUES IF PRIOR BRANCH ERRORS (WHEN WE CHANGE TO GET ALL ERRORS)
+                        if (!r->isGenerated)
                         {
                             r->post.push_back(std::get<TypedNode *>(rOpt));
                         }
@@ -568,7 +571,7 @@ public:
 
             safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
 
-            std::vector<Symbol *> lins = stmgr->getAvailableLinears();
+            std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -587,23 +590,16 @@ public:
 
         if (checkRestIndependently)
         {
-            for (Symbol *s : syms)
-            {
-                stmgr->addSymbol(s);
-            }
-            for (auto pair : to_fix)
-            {
-                pair.first->setProtocol(pair.second->getCopy());
-            }
+            this->stmgr = origStmgr;
 
-            stmgr->enterScope(StopType::NONE);
+            stmgr->enterScope(StopType::NONE); // Why? This doesnt make sense..
 
             for (auto s : ctxRest->ctxRest)
             {
                 std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                 {
-                    (*e)->addError(ctx->getStart(), "Failed to typecheck code when conditional skipped over.");
+                    (*e)->addError(ctx->getStart(), "Failed to type check code when conditional skipped over.");
                     return *e;
                 }
                 if (!ctxRest->isGenerated)
@@ -620,13 +616,13 @@ public:
                     {
                         std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt)) // FIXME: SHOULD THIS BE MOVED OUT OF IF?
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                         {
                             (*e)->addError(ctx->getStart(), "2097");
                             return *e;
                         }
 
-                        if (!r->isGenerated) // FIXME: MAY CAUSE DOUBLE FILL ISSUES IF PRIOR BRANCH ERRORS (WHEN WE CHANGE TO GET ALL ERRORS)
+                        if (!r->isGenerated)
                         {
                             r->post.push_back(std::get<TypedNode *>(rOpt));
                         }
@@ -638,7 +634,7 @@ public:
             ctxRest->isGenerated = true;
             safeExitScope(ctx);
 
-            std::vector<Symbol *> lins = stmgr->getAvailableLinears();
+            std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -654,7 +650,7 @@ public:
                 errorHandler.addError(ctx->getStart(), "608 Unused linear types in context: " + details.str());
             }
         }
-
+        
         return ConditionalData(cases);
     }
 
@@ -701,7 +697,7 @@ private:
         {
             // Get the Scope* and check for any uninferred symbols
             Scope *scope = res.first.value();
-            std::vector<const Symbol *> uninf = scope->getUninferred();
+            std::vector<Symbol *> uninf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -714,14 +710,14 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "711 Uninferred types in context: " + details.str());
             }
         }
 
         if (res.second)
         {
             Scope *scope = res.second.value();
-            std::vector<Symbol *> lins = scope->getRemainingLinearTypes();
+            std::vector<Symbol *> lins = scope->getSymbols(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -733,7 +729,8 @@ private:
                 {
                     details << e->toString() << "; ";
                 }
-                errorHandler.addError(ctx->getStart(), "694 Unused linear types in context: " + details.str());
+
+                errorHandler.addError(ctx->getStart(), "736 Unused linear types in context: " + details.str());
             }
         }
         // return res;

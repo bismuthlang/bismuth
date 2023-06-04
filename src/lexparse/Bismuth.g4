@@ -11,7 +11,7 @@ structCase        :  (ty=type name=VARIABLE) ';' ;
 
 defineProc        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block  ;
 
-defineFunc        : DEFINE 'func' name=VARIABLE lam=lambdaConstExpr ;
+defineFunc        : DEFINE FUNC name=VARIABLE lam=lambdaConstExpr ;
 
 defineType        : DEFINE 'enum' name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB # DefineEnum
                   | DEFINE 'struct' name=VARIABLE LSQB (cases+=structCase)*  RSQB        # DefineStruct
@@ -59,7 +59,7 @@ lValue              : deref=dereferenceExpr
 expression          : LPAR ex=expression RPAR                                                       # ParenExpr
                     | fieldAccessExpr                                                               # FieldAccess
                     | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 
-                    | left=expression op=(MULTIPLY | DIVIDE | MOD) right=expression                       # BinaryArithExpr
+                    | left=expression op=(MULTIPLY | DIVIDE | MOD) right=expression                 # BinaryArithExpr
                     | left=expression op=(PLUS | MINUS) right=expression                            # BinaryArithExpr
                     | left=expression op=(LESS | LESS_EQ | GREATER | GREATER_EQ) right=expression   # BinaryRelExpr 
                     | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression         # EqExpr
@@ -74,8 +74,11 @@ expression          : LPAR ex=expression RPAR                                   
                     | i=INTEGER                                     # IConstExpr
                     | s=STRING                                      # SConstExpr 
                     | lambdaConstExpr                               # LambdaExpr
-                    | channel=VARIABLE '.recv' '(' ')'              # AssignableRecv
-                    | 'exec' prog=expression                        # AssignableExec
+                    | channel=VARIABLE '.recv' LPAR RPAR            # AssignableRecv
+                    | channel=VARIABLE '.is_present' LPAR RPAR      # AssignableIsPresent
+                    | EXEC prog=expression                        # AssignableExec
+                    | COPY LPAR expr=expression RPAR              # CopyExpr
+                    | COPY expr=expression                        # CopyExpr
                     ;
 
 lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
@@ -146,12 +149,13 @@ statement           : defineProc                                              # 
                     | <assoc=right> to=lValue ASSIGN a=expression ';'         # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'     # VarDeclStatement
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                # ConditionalStatement
-                    | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                            # SelectStatement     
+                    | SELECT LSQB (cases+=selectAlternative)* RSQB (rest+=statement)*                            # SelectStatement     
                     | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                    # MatchStatement   
                     | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*                       # MatchStatement   
                     | call=invocation  ';'?                                                                     # CallStatement 
                     | RETURN expression? ';'                                                                    # ReturnStatement 
                     | EXIT                                                                                      # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
+                    | 'skip'                                                                                    # SkipStatement //FIXME: ENABLE
                     | block                                                                                     # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                     # ProgramSend
                     | WHILE check=condition block                                                                               # ProgramLoop
@@ -162,8 +166,9 @@ statement           : defineProc                                              # 
                     | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                               # ProgramAccept
-                    | 'accept' '(' channel=VARIABLE ',' ex=expression ')' block             # ProgramAcceptWhile
                     | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block        # ProgramAcceptWhile
+                    | 'acceptIf' '(' channel=VARIABLE ',' check=expression ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf
+                    | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  //FIXME: ENABLE
                     ; 
                     
 
@@ -204,7 +209,7 @@ ELLIPSIS    :     '...'   ;
  */
 
 //Used for when we can either provide a type or a variable (needed bc var arrays are not allowed).
-typeOrVar       : type | 'var'  ;
+typeOrVar       : type | TYPE_VAR  ;
 
 protocol        : <assoc=right> protos+=subProtocol (';' protos+=subProtocol)*?
                 | '(' protos+=subProtocol (';' protos+=subProtocol)*? ')'
@@ -236,6 +241,7 @@ TYPE_INT        :   'int'       ;
 TYPE_BOOL       :   'boolean'   ;
 TYPE_STR        :   'str'       ; 
 TYPE_UNIT       :   'Unit'      ;
+TYPE_VAR        :   'var'       ;
 
 //Others
 FUNC            :   'func'  ;
@@ -249,6 +255,9 @@ EXTERN          :   'extern';
 MATCH           :   'match' ;
 DEFINE          :   'define';
 EXIT            :   'exit'  ;
+EXEC            :   'exec'  ;
+COPY            :   'copy'  ;
+
 
 
 //Booleans
