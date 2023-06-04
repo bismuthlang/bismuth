@@ -549,6 +549,13 @@ TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]"
         "c70b27336a5c097ad5a958ad4122221ce49cab0b4a4c0d74ded21725ce034179");
 }
 
+TEST_CASE("programs/TStructCopy - Basic test of copy", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructCopy.bismuth"))),
+        "e625e3bd92bbc42a528a511c7300c17a6cdc744e948ff3768fe67fc51d5f7f34");
+}
+
 TEST_CASE("programs/db/db - Basic DB 1", "[codegen][enum]")
 {
     EnsureCompilesTo(

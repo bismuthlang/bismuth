@@ -1,0 +1,29 @@
+extern Unit func printf(str s, ...);
+
+define struct IB {
+  Box<int> a; 
+}
+
+# Two Int Box Box
+define struct TIBB {
+  Box<Box<int>> b1; 
+  Box<Box<int>> b2; 
+  IB ib; 
+}
+
+define func printTIBB(str name, TIBB b) {
+  printf("%s = {b1 : %u@%p, b2 : %u@%p}\n", name, **b.b1, b.b1, **b.b2, b.b2);
+  return; 
+}
+
+define program :: c : Channel<-int> = {
+  
+  var shared := Box<Box<int>>::init(Box<int>::init(5));
+  var tibb := TIBB::init(shared, Box<Box<int>>::init(Box<int>::init(6)), IB::init(Box<int>::init(1)));
+  var tibb2 := copy tibb; 
+  *shared := Box<int>::init(9); 
+  printTIBB("b (orig/5;6)", tibb2);
+  printTIBB("b (orig/9;6)", tibb);
+  
+  c.send(0);
+}
