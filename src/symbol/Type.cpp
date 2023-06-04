@@ -69,21 +69,21 @@ bool TypeAbsurd::isSupertypeFor(const Type *other) const
  *************************************/
 
 // bool ProtocolSequence::canSend(const Type *ty) const
-optional<const Type*> ProtocolSequence::canSend(const Type *ty) const
+optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
 {
     if (isComplete())
-        return std::nullopt; 
-        // return false;
+        return std::nullopt;
+    // return false;
 
     const Protocol *proto = steps.front();
 
-    if(proto->isGuarded() || this->isGuarded())
-        return std::nullopt; 
+    if (proto->isGuarded() || this->isGuarded())
+        return std::nullopt;
 
     if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(proto))
     {
-        if(ty->isSubtype(send->getSendType()))
-            return send->getSendType(); 
+        if (ty->isSubtype(send->getSendType()))
+            return send->getSendType();
         return std::nullopt;
     }
 
@@ -91,22 +91,17 @@ optional<const Type*> ProtocolSequence::canSend(const Type *ty) const
     return std::nullopt;
 }
 
-// bool ProtocolSequence::send(const Type *ty) const
-optional<const Type*> ProtocolSequence::send(const Type *ty) const
+optional<const Type *> ProtocolSequence::send(const Type *ty) const
 {
     // FIXME: BETTER ERROR HANDLING
-    optional<const Type *> ans = canSend(ty); 
-    if (ans)
-    {
-        ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-        // const Type * ans = steps.front(); 
-        mthis->steps.erase(steps.begin());
-        // return true;
-        return ans; 
-    }
+    optional<const Type *> ans = canSend(ty);
+    if (!ans)
+        return std::nullopt;
 
-    // return false;
-    return std::nullopt;
+    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+    u_this->steps.erase(steps.begin());
+
+    return ans;
 }
 
 bool ProtocolSequence::canRecv() const
@@ -116,8 +111,8 @@ bool ProtocolSequence::canRecv() const
 
     const Protocol *proto = steps.front();
 
-    if(proto->isGuarded() || this->isGuarded())
-        return false; 
+    if (proto->isGuarded() || this->isGuarded())
+        return false;
 
     if (const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto))
     {
@@ -130,17 +125,15 @@ bool ProtocolSequence::canRecv() const
 optional<const Type *> ProtocolSequence::recv() const
 {
     // FIXME: BETTER ERROR HANDLING
-    if (canRecv())
-    {
-        const Protocol *proto = steps.front();
-        const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto);
+    if (!canRecv())
+        return std::nullopt;
 
-        ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-        mthis->steps.erase(steps.begin());
-        return recv->getRecvType();
-    }
+    const Protocol *proto = steps.front();
+    const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto);
 
-    return std::nullopt;
+    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+    u_this->steps.erase(steps.begin());
+    return recv->getRecvType();
 }
 
 bool ProtocolSequence::isWN() const
@@ -158,34 +151,30 @@ bool ProtocolSequence::isWN() const
 
 bool ProtocolSequence::contract() const
 {
-    if (isWN())
-    {
-        const Protocol *proto = steps.front(); // TODO: Handle more efficiently
-        const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto);
+    if (!isWN())
+        return false;
 
-        ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-        vector<const Protocol *> other = wn->getInnerProtocol()->steps;
-        
-        mthis->steps.insert(steps.begin(), other.begin(), other.end());
-        return true;
-    }
+    const Protocol *proto = steps.front(); // TODO: Handle more efficiently
+    const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto);
 
-    return false;
+    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+    vector<const Protocol *> other = wn->getInnerProtocol()->steps;
+
+    u_this->steps.insert(steps.begin(), other.begin(), other.end());
+    return true;
 }
 
 bool ProtocolSequence::weaken() const
 {
-    if (isWN())
-    {
-        if(steps.front()->isGuarded() || this->isGuarded())
-            return false; 
+    if (!isWN())
+        return false;
 
-        ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-        mthis->steps.erase(steps.begin());
-        return true;
-    }
+    if (steps.front()->isGuarded() || this->isGuarded())
+        return false;
 
-    return false;
+    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+    u_this->steps.erase(steps.begin());
+    return true;
 }
 
 bool ProtocolSequence::isOC(bool includeGuarded) const
@@ -194,9 +183,9 @@ bool ProtocolSequence::isOC(bool includeGuarded) const
         return false;
     const Protocol *proto = steps.front();
 
-    if(!includeGuarded && 
+    if (!includeGuarded &&
         (steps.front()->isGuarded() || this->isGuarded()))
-            return false; 
+        return false;
 
     if (const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto))
     {
@@ -208,49 +197,39 @@ bool ProtocolSequence::isOC(bool includeGuarded) const
 
 optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
 {
-    if (isOC())
-    {
-        const Protocol *proto = steps.front();
-        const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
-        const ProtocolSequence *ans = toSequence(wn->getInnerProtocol()->getCopy());
+    if (!isOC())
+        return std::nullopt;
 
-        ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-        mthis->steps.erase(steps.begin());
+    const Protocol *proto = steps.front();
+    const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
+    const ProtocolSequence *ans = toSequence(wn->getInnerProtocol()->getCopy());
 
-        return ans;
-    }
+    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+    u_this->steps.erase(steps.begin());
 
-    return std::nullopt;
+    return ans;
 }
 
 optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
 {
-    if (isOC(true))
-    {
-        const Protocol *proto = steps.front();
-        const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
-        const ProtocolSequence *ans = toSequence(wn->getInnerProtocol()->getCopy());
+    if (!isOC(true))
+        return std::nullopt;
 
-        // ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-        // mthis->steps.erase(steps.begin());
-
-        return ans;
-    }
-
-    return std::nullopt;
+    const Protocol *proto = steps.front();
+    const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
+    return toSequence(wn->getInnerProtocol()->getCopy());
 }
 
-optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const 
+optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const
 {
-    if(!isOC(true))
-        return std::nullopt; 
-    
-    const Protocol* proto = steps.front(); 
+    if (!isOC(true))
+        return std::nullopt;
+
+    const Protocol *proto = steps.front();
     const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(proto);
     const ProtocolSequence *ans = toSequence(oc->getInnerProtocol()->getCopy());
 
-
-    ProtocolSequence *mthis = const_cast<ProtocolSequence *>(ans); 
+    ProtocolSequence *mthis = const_cast<ProtocolSequence *>(ans);
     mthis->steps.insert(ans->steps.end(), this->steps.begin(), this->steps.end());
 
     return ans;
@@ -263,8 +242,8 @@ bool ProtocolSequence::isIntChoice() const
         return false;
     const Protocol *proto = steps.front();
 
-    if(steps.front()->isGuarded() || this->isGuarded())
-            return false; 
+    if (steps.front()->isGuarded() || this->isGuarded())
+        return false;
 
     if (const ProtocolIChoice *wn = dynamic_cast<const ProtocolIChoice *>(proto))
     {
@@ -278,7 +257,7 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 {
     if (isIntChoice())
     {
-        unsigned int ans = 1; 
+        unsigned int ans = 1;
         const Protocol *proto = steps.front();
         const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(proto);
 
@@ -293,7 +272,7 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 
                 return ans;
             }
-            ans++; 
+            ans++;
         }
 
         return 0;
@@ -309,8 +288,8 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
 
     const Protocol *proto = steps.front();
 
-    if(steps.front()->isGuarded() || this->isGuarded())
-            return false; 
+    if (steps.front()->isGuarded() || this->isGuarded())
+        return false;
 
     if (const ProtocolEChoice *eChoice = dynamic_cast<const ProtocolEChoice *>(proto))
     {
@@ -344,7 +323,7 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         mthis->steps.erase(steps.begin());
 
-        return true; 
+        return true;
     }
 
     return false;
