@@ -91,10 +91,13 @@ int main(int argc, const char *argv[])
 =========================================================================
 Bismuth Process Calculus Compiler - Created by Alex Friedman (https://ahfriedman.com)
 Website: https://bismuth-lang.org
-Version: Pre-Alpha 1.3.2 @ )"""" << GIT_COMMIT_HASH <<  R""""(
+Version: Pre-Alpha 1.3.3 @ )"""" << GIT_COMMIT_HASH <<  R""""(
 
 ChangeLog
 =========
+1.3.3 - 2023-06-04:
+  - Added ability to nest all type defs (struct, enum) in addition to programs and functions. 
+  - Improved syntax, particularly of externs.
 1.3.2 - 2023-06-04:
   - Added is_present function on ! protocols 
   - Added acceptIf to allow for better control over ! loops. 

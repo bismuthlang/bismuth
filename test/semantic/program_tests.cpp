@@ -1700,7 +1700,7 @@ TEST_CASE("Function return nothing", "[semantic][program]")
   sv->visitCompilationUnit(tree);
   REQUIRE(sv->hasErrors(ERROR));
 }
-// FIXME: DUPLICATE ALL TESTS WITH FUNCS AND PROCS!
+
 TEST_CASE("Function return wrong type", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
@@ -1737,7 +1737,7 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program]
     define program :: c : Channel<-int> = {
       var a := 0; 
 
-      define func foo (Channel<-int> c) : Channel<-int> { # FIXME: ISNT A THING YET! IS IT?
+      define func foo (Channel<-int> c) : Channel<-int> {
         a := 2; 
         return c; 
       }
