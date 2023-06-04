@@ -13,8 +13,8 @@ defineProc        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '
 
 defineFunc        : DEFINE FUNC name=VARIABLE lam=lambdaConstExpr ;
 
-defineType        : DEFINE 'enum' name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB # DefineEnum
-                  | DEFINE 'struct' name=VARIABLE LSQB (cases+=structCase)*  RSQB        # DefineStruct
+defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB   # DefineEnum
+                  | DEFINE STRUCT name=VARIABLE LSQB (cases+=structCase)*  RSQB          # DefineStruct
                   | defineProc                                                           # DefineProgram
                   | defineFunc                                                           # DefineFunction
                   ; 
@@ -246,7 +246,8 @@ TYPE_VAR        :   'var'       ;
 
 //Others
 FUNC            :   'func'  ;
-PROC            :   'proc'  ;
+ENUM            :   'enum'  ;
+STRUCT          :   'struct';
 IF              :   'if'    ;
 ELSE            :   'else'  ;
 WHILE           :   'while' ;
