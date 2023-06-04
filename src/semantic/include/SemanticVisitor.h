@@ -48,7 +48,6 @@ public:
     overloaded(Ts...) -> overloaded<Ts...>;
 
     std::variant<TIntConstExprNode *, ErrorChain *> visitCtx(BismuthParser::IConstExprContext *ctx);
-    // std::variant<TypedNode*, ErrorChain*> visitCtx(BismuthParser::IConstExprContext *ctx) { return  }
     std::any visitIConstExpr(BismuthParser::IConstExprContext *ctx) override { return TNVariantCast<TIntConstExprNode>(visitCtx(ctx)); }
 
     std::variant<TBooleanConstNode *, ErrorChain *> visitCtx(BismuthParser::BConstExprContext *ctx) { return visitCtx(ctx->booleanConst()); }
@@ -84,7 +83,6 @@ public:
     std::variant<TDerefBoxNode *, ErrorChain *> visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue);
     std::any visitDereferenceExpr(BismuthParser::DereferenceExprContext *ctx) override { return TNVariantCast<TDerefBoxNode>(visitCtx(ctx, true)); }
 
-    // std::optional<TArrayAccessNode*> visitCtx(BismuthParser::ArrayAccessContext *ctx);
     std::variant<TArrayAccessNode *, ErrorChain *> visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue);
     std::any visitArrayAccess(BismuthParser::ArrayAccessContext *ctx) override { return TNVariantCast<TArrayAccessNode>(visitCtx(ctx, true)); }
 
@@ -138,7 +136,8 @@ public:
     
     std::any visitTypeDef(BismuthParser::TypeDefContext *ctx) override { return ctx->defineType()->accept(this); }
 
-    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitInvokeable(ctx)); }
+    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitCtx(ctx)); }
+
     std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx->defineFunc())); }
 
     std::variant<TSelectStatementNode *, ErrorChain *> visitCtx(BismuthParser::SelectStatementContext *ctx);
@@ -207,7 +206,6 @@ public:
     std::variant<TExprCopyNode *, ErrorChain *> TvisitCopyExpr(BismuthParser::CopyExprContext *ctx);
     std::any visitCopyExpr(BismuthParser::CopyExprContext *ctx) override { return TNVariantCast<TExprCopyNode>(TvisitCopyExpr(ctx)); }
 
-    // const Type *visitCtx(BismuthParser::VariableExprContext *ctx);
     const Type *visitCtx(BismuthParser::AssignmentContext *ctx);
 
     /*
@@ -386,7 +384,7 @@ public:
      * @param block The PROC/FUNC block
      * @return const Type* TypeInvoke if successful, empty if error
      */
-    std::variant<TProgramDefNode *, ErrorChain *> visitInvokeable(BismuthParser::DefineProgramContext *ctx)
+    std::variant<TProgramDefNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx)
     {
         std::variant<Symbol *, ErrorChain *> symOpt = getProgramSymbol(ctx);
 

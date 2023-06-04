@@ -5,7 +5,7 @@ define program :: c : Channel<-int> {
         int b; 
     }
 
-    var a := A::init(1, 2, 3); # FIXME: ADD TEST CASE
+    var a := A::init(1, 2, 3);
 
     c.send(0)
 }

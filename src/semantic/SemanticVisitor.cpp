@@ -149,9 +149,9 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     // Visit the statements contained in the unit
     for (auto e : ctx->defs)
     {
-        if (BismuthParser::DefineProgramContext *fnCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
+        if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
-            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitInvokeable(fnCtx); // e->accept(this);
+            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(progCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
