@@ -222,6 +222,7 @@ public:
 
     optional<const ProtocolSequence *> acceptLoop() const;
     optional<const ProtocolSequence *> acceptWhileLoop() const;
+    optional<const ProtocolSequence *> acceptIf() const; 
 
     bool isIntChoice() const;
 

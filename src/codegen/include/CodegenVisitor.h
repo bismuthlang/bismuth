@@ -105,6 +105,7 @@ public:
     std::optional<Value *> visit(TProgramExecNode *n) override;
     std::optional<Value *> visit(TProgramAcceptNode *n) override;
     std::optional<Value *> visit(TProgramAcceptWhileNode *n) override;
+    std::optional<Value *> visit(TProgramAcceptIfNode *n) override; 
     // std::optional<Value *> visit(TDefineEnumNode *n) override;
     // std::optional<Value *> visit(TDefineStructNode *n) override;
     std::optional<Value *> visit(TInitProductNode *n) override;
@@ -416,6 +417,16 @@ public:
                 {Int32Ty},
                 false));
     }
+
+    // llvm::FunctionCallee get_OC_isPresent()
+    // {
+    //     return module->getOrInsertFunction(
+    //         "_OC_isPresent",
+    //         llvm::FunctionType::get(
+    //             Int1Ty,
+    //             {Int32Ty},
+    //             false));
+    // }
 
     llvm::FunctionCallee getPopEndLoop()
     {

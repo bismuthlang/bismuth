@@ -547,6 +547,93 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
     return std::nullopt;
 }
 
+std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode *n)
+{
+    // Very similar to regular loop & Accept while
+    // FIXME: Somewhat inefficient due to dequeuing
+    std::optional<Value *> condOpt = AcceptType(this, n->cond);
+
+    if (!condOpt)
+    {
+        errorHandler.addError(n->getStart(), "558 - Failed to generate code for: " + n->cond->toString());
+        return std::nullopt;
+    }
+
+    Symbol *sym = n->sym;
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
+
+    if (!optVal)
+    {
+        errorHandler.addError(n->getStart(), "Could not find value for channel in acceptIf: " + n->sym->getIdentifier());
+        return std::nullopt;
+    }
+
+    Value *chanVal = optVal.value();
+
+    auto parent = builder->GetInsertBlock()->getParent();
+    BasicBlock *condBlk = BasicBlock::Create(module->getContext(), "ai-cond", parent);
+    BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "ai-then");
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
+
+    BasicBlock *elseBlk = n->falseOpt ? BasicBlock::Create(module->getContext(), "ai-else") : restBlk;
+    
+
+    builder->CreateCondBr(condOpt.value(), condBlk, elseBlk);
+    
+
+
+    builder->SetInsertPoint(condBlk);
+    builder->CreateCondBr(
+        builder->CreateCall(getShouldAcceptWhileLoop(), {builder->CreateLoad(Int32Ty, chanVal)}),
+        thenBlk,
+        elseBlk
+    );
+    condBlk = builder->GetInsertBlock();
+
+
+
+    parent->getBasicBlockList().push_back(thenBlk);
+    builder->SetInsertPoint(thenBlk);
+    // Value *check = builder->CreateCall(getShouldAcceptWhileLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
+    for(auto e : n->trueBlk->exprs)
+    {
+        AcceptType(this, e);
+    }
+    if(!endsInReturn(n->trueBlk))
+    {
+        builder->CreateBr(restBlk);
+    }
+    thenBlk = builder->GetInsertBlock();
+
+
+
+
+    if(n->falseOpt)
+    {
+        parent->getBasicBlockList().push_back(elseBlk);
+        builder->SetInsertPoint(elseBlk);
+        for(auto e : n->falseOpt.value()->exprs)
+        {
+            AcceptType(this, e);
+        }
+        if(!endsInReturn(n->falseOpt.value()))
+        {
+            builder->CreateBr(restBlk);
+        }
+    }
+
+
+    parent->getBasicBlockList().push_back(restBlk);
+    builder->SetInsertPoint(restBlk);
+    for (auto e : n->post)
+    {
+        AcceptType(this, e);
+    }
+    // builder->CreateCall(getPopEndLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
+
+    return std::nullopt;
+}
+
 std::optional<Value *> CodegenVisitor::visit(TInitProductNode *n)
 {
     std::vector<Value *> args;

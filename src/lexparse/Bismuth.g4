@@ -167,7 +167,7 @@ statement           : defineProc                                              # 
                     | 'accept' '(' channel=VARIABLE ')' block                               # ProgramAccept
                     // | 'accept' '(' channel=VARIABLE ',' ex=expression ')' block             # ProgramAcceptWhile
                     | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block        # ProgramAcceptWhile
-                    | 'acceptIf' '(' channel=VARIABLE ',' check=condition ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf //FIXME: ENABLE
+                    | 'acceptIf' '(' channel=VARIABLE ',' check=expression ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf //FIXME: ENABLE
                     | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  //FIXME: ENABLE
                     ; 
                     

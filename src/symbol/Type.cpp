@@ -253,6 +253,25 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
     return std::nullopt;
 }
 
+//FIXME: this isnt right, currently same as acceptWhile....
+optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const 
+{
+    if(!isOCorGuarded())
+        return std::nullopt; 
+    
+    const Protocol* proto = steps.front(); 
+    const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(proto); //FIXME: methodize with isOCorGuarded?
+    const ProtocolSequence *ans = toSequence(oc->getInnerProtocol()->getCopy());
+
+    // ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this); 
+    // mthis->steps.insert(steps.begin(), ans->steps.begin(), ans->steps.end());
+
+    ProtocolSequence *mthis = const_cast<ProtocolSequence *>(ans); 
+    mthis->steps.insert(ans->steps.end(), this->steps.begin(), this->steps.end());
+
+    return ans; //FIXME: DO BETTER! 
+}
+
 // FIXME: METHODIZE A LOT OF THESE
 bool ProtocolSequence::isIntChoice() const
 {

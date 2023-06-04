@@ -52,6 +52,7 @@ class TProgramWeakenNode;
 class TProgramExecNode;
 class TProgramAcceptNode;
 class TProgramAcceptWhileNode; 
+class TProgramAcceptIfNode; 
 class TDefineEnumNode;
 class TDefineStructNode;
 class TInitProductNode;
@@ -102,6 +103,7 @@ public:
     virtual std::optional<Value *> visit(TProgramExecNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramAcceptNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramAcceptWhileNode *n) = 0; 
+    virtual std::optional<Value *> visit(TProgramAcceptIfNode *n) = 0; 
     // virtual std::optional<Value *> visit(TDefineEnumNode *n) = 0;
     // virtual std::optional<Value *> visit(TDefineStructNode *n) = 0;
     virtual std::optional<Value *> visit(TInitProductNode *n) = 0;
@@ -147,6 +149,7 @@ public:
     std::any any_visit(TProgramExecNode *n) { return this->visit(n); }
     std::any any_visit(TProgramAcceptNode *n) { return this->visit(n); }
     std::any any_visit(TProgramAcceptWhileNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramAcceptIfNode *n) { return this->visit(n); }
     std::any any_visit(TDefineEnumNode *n) { return this->visit(n); }
     std::any any_visit(TDefineStructNode *n) { return this->visit(n); }
     std::any any_visit(TInitProductNode *n) { return this->visit(n); }
@@ -544,6 +547,34 @@ public:
 
     std::string toString() const override {
         return "ACCEPT WHILE NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+
+class TProgramAcceptIfNode : public TypedNode
+{
+public:
+    Symbol *sym;
+    TypedNode *cond;
+    TBlockNode *trueBlk;
+    std::optional<TBlockNode *> falseOpt;
+    std::vector<TypedNode *> post;
+
+    TProgramAcceptIfNode(antlr4::Token *tok, Symbol *s, TypedNode *c, TBlockNode *t, std::vector<TypedNode *> p, std::optional<TBlockNode *> f = {}) : TypedNode(tok)
+    {
+        sym = s;
+        cond = c; 
+        trueBlk = t;
+        post = p; 
+        falseOpt = f; 
+    }
+
+    const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "ACCEPT IF NODE";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
