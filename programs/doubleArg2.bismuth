@@ -1,5 +1,5 @@
-extern int func printf(...);
-extern Unit func foo (int a, int b, int a);
+extern func printf(...);
+extern func foo (int a, int b, int a) : Unit;
 
 define program :: c : Channel<-int> = {
  var current := 1;        

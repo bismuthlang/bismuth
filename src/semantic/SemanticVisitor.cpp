@@ -1062,7 +1062,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         return errorHandler.addError(ctx->getStart(), "Failed to generate parameters for extern!");
     }
 
-    const Type *retType = ctx->ty ? any2Type(ctx->ty->accept(this))
+    const Type *retType = ctx->ret ? any2Type(ctx->ret->accept(this))
                                   : Types::UNIT;
 
     TExternNode *node = new TExternNode(id, tyOpt.value(), retType, variadic, ctx->getStart());

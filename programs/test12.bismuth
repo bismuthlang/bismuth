@@ -1,4 +1,4 @@
-extern int func printf(...);
+extern func printf(...) : int;
 
 # TODO: Params named by what they are, ret named by fn name...
 # boolean func isPrime(int n) {

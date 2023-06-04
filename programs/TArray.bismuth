@@ -1,4 +1,4 @@
-extern Unit func printf(str s, ...);
+extern func printf(str s, ...) : Unit; 
 
 define func print(str name, Box<int>[2] b) {
   printf("%s = {b1 : %u, b2 : %u}\n", name, *b[0], *b[1]);

@@ -1,4 +1,4 @@
-extern int func printf(str s, ...);
+extern func printf(str s, ...) : int; 
 
 # Unit -> int func getMain1() {
 define getMain1 :: c : Channel<-Program<-int>> = {

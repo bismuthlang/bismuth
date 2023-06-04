@@ -1,5 +1,5 @@
-extern int func printf(str s, ...);
-extern int func getArgCount();
+extern func printf(str s, ...) : int; 
+extern func getArgCount() : int;
 
 
 define program :: c : Channel<-int> = {

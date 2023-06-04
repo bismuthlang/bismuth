@@ -906,8 +906,8 @@ TEST_CASE("Redeclaration in extern", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    extern int func foo();
-    extern int func foo(int a);
+    extern func foo() : int;
+    extern func foo(int a) : int;
     
     define program :: c : Channel<-int> = {
       c.send(0)
@@ -938,9 +938,9 @@ TEST_CASE("Out of order function w/ forward declaration", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-extern int func printf(...);
+extern func printf(...) : int;
 
-extern int func foo(str a); # FIXME CHANGE SYNTAX OF THIS/FUNC TO MATCH?
+extern func foo(str a) : int;
 
 # str a := "hello";
 
@@ -1022,9 +1022,9 @@ TEST_CASE("Forward Decl with Variadic", "[semantic][program][function][forward-d
 {
   antlr4::ANTLRInputStream input(
       R""""(
-extern int func printf(...);
+extern func printf(...) : int;
 
-extern Unit func foo(int a, ...); 
+extern func foo(int a, ...) : Unit; 
 
 
 
@@ -1071,9 +1071,9 @@ TEST_CASE("Forward Decl with wrong num args", "[semantic][program][function][for
 {
   antlr4::ANTLRInputStream input(
       R""""(
-extern int func printf(...);
+extern func printf(...) : int;
 
-extern int func foo(str a);
+extern func foo(str a) : int;
 
 
 
@@ -2307,7 +2307,7 @@ TEST_CASE("Nested Enums - Disallow Local Assign", "[semantic][program][enum]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    extern int func printf(str s, ...);
+    extern func printf(str s, ...);
 
 define enum Inner {
     int, 
@@ -2361,7 +2361,7 @@ TEST_CASE("Nested Enums - Disallow Local Assign with mismatch", "[semantic][prog
 {
   antlr4::ANTLRInputStream input(
       R""""(
-    extern int func printf(str s, ...);
+    extern func printf(str s, ...);
 
 define enum Inner {
     int, 
@@ -2600,7 +2600,7 @@ TEST_CASE("Bad Enum pass", "[semantic][program][lambda][enum]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-extern int func printf(str s, ...);
+extern func printf(str s, ...) : int;
 
 define func test ((int + boolean + (str + boolean)) sum) : int {
     match sum {

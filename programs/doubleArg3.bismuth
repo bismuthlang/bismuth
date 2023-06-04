@@ -1,4 +1,4 @@
-extern int func printf(...);
+extern func printf(...);
 
 # proc foo(int a, str a, int b) {
 define func foo (int a, str a, int b) : int {

@@ -1,4 +1,4 @@
-extern int func printf(...);
+extern func printf(...) : int;
 
 # str func nestedIf(int a) {
 define nestedIf :: c : Channel<+int;-str> = {

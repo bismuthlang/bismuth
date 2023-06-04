@@ -1,4 +1,4 @@
-extern int func printf(str s, ...);
+extern func printf(str s, ...) : int; 
 
 define struct RGBData {
     int[3] rgb; 

@@ -1,4 +1,5 @@
-extern int func printf(str s, ...); 
+extern func printf(str s, ...) : int; 
+
 define sender :: c : Channel<?-str> = {
     int i := 0; 
     while true {

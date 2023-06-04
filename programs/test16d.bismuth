@@ -1,4 +1,4 @@
-extern int func printf(...);
+extern func printf(...);
 
 define program :: c : Channel<-int> = {
     var a, b, c, d; 

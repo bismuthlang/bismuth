@@ -1,6 +1,6 @@
 # Out of order function call
 
-extern int func printf(...);
+extern func printf(...) : int; 
 
 define program :: c : Channel<-int> = {
     Channel<-str> c2 := exec foo; 

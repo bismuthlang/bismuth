@@ -1,5 +1,5 @@
-extern Unit func printf(str s, ...);
-extern int func GC_get_heap_size(); 
+extern func printf(str s, ...) : Unit;
+extern func GC_get_heap_size() : int; 
 
 # Two Int Box Box
 define struct TIBB {

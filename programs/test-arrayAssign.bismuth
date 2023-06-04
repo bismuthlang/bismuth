@@ -1,4 +1,4 @@
-extern int func printf(...);
+extern func printf(...) : int;
 
 # Note: The issue w/ lack of channel names is that of secondary notation
 
