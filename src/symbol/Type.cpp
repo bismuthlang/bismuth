@@ -229,8 +229,8 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const
     const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(proto);
     const ProtocolSequence *ans = toSequence(oc->getInnerProtocol()->getCopy());
 
-    ProtocolSequence *mthis = const_cast<ProtocolSequence *>(ans);
-    mthis->steps.insert(ans->steps.end(), this->steps.begin(), this->steps.end());
+    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(ans);
+    u_this->steps.insert(ans->steps.end(), this->steps.begin(), this->steps.end());
 
     return ans;
 }
@@ -255,27 +255,25 @@ bool ProtocolSequence::isIntChoice() const
 
 unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 {
-    if (isIntChoice())
-    {
-        unsigned int ans = 1;
-        const Protocol *proto = steps.front();
-        const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(proto);
-
-        for (const ProtocolSequence *p : ic->getOptions())
-        {
-            if (ps->toString() == p->toString()) // FIXME: DO BETTER
-            {
-                ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-                mthis->steps.erase(steps.begin());
-                vector<const Protocol *> other = p->steps;
-                mthis->steps.insert(steps.begin(), other.begin(), other.end());
-
-                return ans;
-            }
-            ans++;
-        }
-
+    if (!isIntChoice())
         return 0;
+
+    unsigned int ans = 1;
+    const Protocol *proto = steps.front();
+    const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(proto);
+
+    for (const ProtocolSequence *p : ic->getOptions())
+    {
+        if (ps->toString() == p->toString()) // FIXME: DO BETTER
+        {
+            ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+            u_this->steps.erase(steps.begin());
+            vector<const Protocol *> other = p->steps;
+            u_this->steps.insert(steps.begin(), other.begin(), other.end());
+
+            return ans;
+        }
+        ans++;
     }
 
     return 0;
@@ -320,8 +318,8 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
             // errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
         }
 
-        ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-        mthis->steps.erase(steps.begin());
+        ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+        u_this->steps.erase(steps.begin());
 
         return true;
     }

@@ -128,17 +128,17 @@ public:
 
     virtual void guard() const // FIXME: DO BETTER
     {
-        Protocol *mthis = const_cast<Protocol *>(this);
-        mthis->guardCount = mthis->guardCount + 1;
+        Protocol *u_this = const_cast<Protocol *>(this);
+        u_this->guardCount = u_this->guardCount + 1;
     }
 
     virtual bool unguard() const // FIXME: DO BETTER
     {
         if (guardCount == 0)
             return false;
-        Protocol *mthis = const_cast<Protocol *>(this);
+        Protocol *u_this = const_cast<Protocol *>(this);
 
-        mthis->guardCount = mthis->guardCount - 1;
+        u_this->guardCount = u_this->guardCount - 1;
         return true;
     }
 };
@@ -230,9 +230,9 @@ public:
 
     void append(const ProtocolSequence *proto) const
     {
-        ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
+        ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = proto->steps;
-        mthis->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
+        u_this->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
     }
 
     bool isGuarded() const override // FIXME: DO BETTER
@@ -248,8 +248,8 @@ public:
     {
         if (steps.size() == 0)
         {
-            ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
-            mthis->guardCount = mthis->guardCount + 1;
+            ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+            u_this->guardCount = u_this->guardCount + 1;
         }
         else
         {
@@ -263,9 +263,9 @@ public:
         {
             if (guardCount == 0)
                 return false;
-            ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
+            ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
 
-            mthis->guardCount = mthis->guardCount - 1;
+            u_this->guardCount = u_this->guardCount - 1;
             return true;
         }
 
@@ -780,8 +780,8 @@ public:
 
     void setProtocol(const ProtocolSequence *p) const // FIXME: DO BETTER
     {
-        TypeChannel *mthis = const_cast<TypeChannel *>(this);
-        mthis->protocol = p;
+        TypeChannel *u_this = const_cast<TypeChannel *>(this);
+        u_this->protocol = p;
     }
 
 protected:
@@ -910,9 +910,9 @@ public:
         if (defined)
             return false;
 
-        TypeProgram *mthis = const_cast<TypeProgram *>(this);
-        mthis->defined = true;
-        mthis->channel = c;
+        TypeProgram *u_this = const_cast<TypeProgram *>(this);
+        u_this->defined = true;
+        u_this->channel = c;
 
         return true;
     }
@@ -952,8 +952,8 @@ public:
     {
         if (name)
             return false;
-        TypeProgram *mthis = const_cast<TypeProgram *>(this);
-        mthis->name = n;
+        TypeProgram *u_this = const_cast<TypeProgram *>(this);
+        u_this->name = n;
         // name = n;
         return true;
     }
@@ -1068,11 +1068,11 @@ public:
         if (defined)
             return false;
 
-        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
-        mthis->defined = true;
-        mthis->paramTypes = p;
-        mthis->retType = r;
-        mthis->variadic = v;
+        TypeInvoke *u_this = const_cast<TypeInvoke *>(this);
+        u_this->defined = true;
+        u_this->paramTypes = p;
+        u_this->retType = r;
+        u_this->variadic = v;
 
         return true;
     }
@@ -1140,8 +1140,8 @@ public:
     {
         if (name)
             return false;
-        TypeInvoke *mthis = const_cast<TypeInvoke *>(this);
-        mthis->name = n;
+        TypeInvoke *u_this = const_cast<TypeInvoke *>(this);
+        u_this->name = n;
         // name = n;
         return true;
     }
@@ -1304,8 +1304,8 @@ protected:
         }
 
         // Set our valueType to be the provided type to see if anything breaks...
-        TypeInfer *mthis = const_cast<TypeInfer *>(this);
-        *mthis->valueType = other;
+        TypeInfer *u_this = const_cast<TypeInfer *>(this);
+        *u_this->valueType = other;
 
         // Run through our dependencies making sure they can all also
         // be compatible with having a type of other.
@@ -1349,8 +1349,8 @@ protected:
             }
 
             // Otherwise, add the types to be dependencies of each other, and return true.
-            TypeInfer *mthis = const_cast<TypeInfer *>(this);
-            mthis->infTypes.push_back(oinf);
+            TypeInfer *u_this = const_cast<TypeInfer *>(this);
+            u_this->infTypes.push_back(oinf);
 
             TypeInfer *moth = const_cast<TypeInfer *>(oinf);
             moth->infTypes.push_back(this);
@@ -1399,10 +1399,10 @@ public:
         if (isDefined())
             return false;
 
-        TypeSum *mthis = const_cast<TypeSum *>(this);
-        mthis->defined = true;
+        TypeSum *u_this = const_cast<TypeSum *>(this);
+        u_this->defined = true;
 
-        mthis->cases = c;
+        u_this->cases = c;
 
         return true;
     }
@@ -1610,11 +1610,11 @@ public:
         if (isDefined())
             return false;
 
-        TypeStruct *mthis = const_cast<TypeStruct *>(this);
-        mthis->defined = true;
+        TypeStruct *u_this = const_cast<TypeStruct *>(this);
+        u_this->defined = true;
 
-        mthis->elements = e;
-        // mthis->name = n;
+        u_this->elements = e;
+        // u_this->name = n;
 
         return true;
     }
