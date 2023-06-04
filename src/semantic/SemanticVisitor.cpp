@@ -8,7 +8,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     std::vector<TExternNode *> externs;
 
     std::vector<std::pair<BismuthParser::DefineProgramContext *, TypeProgram *>> progs;
-    std::vector<std::pair<BismuthParser::DefineFuncContext *, TypeInvoke *>> funcs;
+    std::vector<std::pair<BismuthParser::DefineFunctionContext *, TypeInvoke *>> funcs;
     std::vector<std::pair<BismuthParser::DefineStructContext *, TypeStruct *>> structs;
     std::vector<std::pair<BismuthParser::DefineEnumContext *, TypeSum *>> enums;
 
@@ -36,7 +36,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
         else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
-            std::string id = fnCtx->defineFunc()->name->getText();
+            std::string id = fnCtx->name->getText();
 
             std::optional<SymbolContext> opt = stmgr->lookup(id);
 
@@ -47,10 +47,10 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             TypeInvoke *funcType = new TypeInvoke();
             Symbol *sym = new Symbol(id, funcType, true, true);
-            symBindings->bind(fnCtx->defineFunc(), sym);
+            symBindings->bind(fnCtx, sym);
             stmgr->addSymbol(sym);
 
-            funcs.push_back({fnCtx->defineFunc(), funcType});
+            funcs.push_back({fnCtx, funcType});
         }
         else if (BismuthParser::DefineStructContext *prodCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
         {
@@ -163,7 +163,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
         else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
-            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx->defineFunc());
+            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
@@ -346,7 +346,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     return (TInvocationNode *)tn;
 }
 
-std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFuncContext *ctx)
+std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
     std::variant<Symbol *, ErrorChain *> funcSymOpt = getFunctionSymbol(ctx);
 

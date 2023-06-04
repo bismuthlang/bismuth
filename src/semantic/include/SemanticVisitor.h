@@ -131,14 +131,12 @@ public:
     std::variant<TSelectAlternativeNode *, ErrorChain *> visitCtx(BismuthParser::SelectAlternativeContext *ctx);
     std::any visitSelectAlternative(BismuthParser::SelectAlternativeContext *ctx) override { return TNVariantCast<TSelectAlternativeNode>(visitCtx(ctx)); }
 
-    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::DefineFuncContext *ctx);
-    std::any visitDefineFunc(BismuthParser::DefineFuncContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx)); }
-    
     std::any visitTypeDef(BismuthParser::TypeDefContext *ctx) override { return ctx->defineType()->accept(this); }
 
     std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitCtx(ctx)); }
 
-    std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx->defineFunc())); }
+    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::DefineFunctionContext *ctx);
+    std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx)); }
 
     std::variant<TSelectStatementNode *, ErrorChain *> visitCtx(BismuthParser::SelectStatementContext *ctx);
     std::any visitSelectStatement(BismuthParser::SelectStatementContext *ctx) override { return TNVariantCast<TSelectStatementNode>(visitCtx(ctx)); }
@@ -736,7 +734,7 @@ private:
 
     // NOTE: IS THERE A WAY FOR ME TO PROVIDE ONE OF TWO TYPES TO A FN, AND THEN HAVE THAT BE RET TYPE? (BUT ONLY ONE OF TWO...)
 
-    std::variant<Symbol *, ErrorChain *> getFunctionSymbol(BismuthParser::DefineFuncContext *ctx)
+    std::variant<Symbol *, ErrorChain *> getFunctionSymbol(BismuthParser::DefineFunctionContext *ctx)
     {
         std::optional<Symbol *> opt = symBindings->getBinding(ctx);
 

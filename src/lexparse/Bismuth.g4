@@ -9,13 +9,12 @@ compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ;
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
 
-defineFunc        : DEFINE FUNC name=VARIABLE lam=lambdaConstExpr ;
-
-defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB   # DefineEnum
-                  | DEFINE STRUCT name=VARIABLE LSQB (cases+=structCase)*  RSQB          # DefineStruct
+defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
+                  | DEFINE STRUCT name=VARIABLE LSQB (cases+=structCase)*  RSQB             # DefineStruct
                   | DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block   # DefineProgram
-                  | defineFunc                                                           # DefineFunction
+                  | DEFINE FUNC name=VARIABLE lam=lambdaConstExpr                           # DefineFunction
                   ; 
+                  
 //FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
 // externStatement : EXTERN ty=type FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR ';';
 externStatement : EXTERN FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR (COLON ret=type)? ';'; 
