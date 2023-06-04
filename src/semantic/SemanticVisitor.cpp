@@ -887,21 +887,21 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
             break; // Shouldn't be needed, but is here anyways
         }
-        else if (i + 1 == ctx->fields.size() && ctx->fields.at(i)->getText() == "is_present")
-        {
-            std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(ty);
-            if (channelOpt)
-            {
-                const TypeChannel *channel = channelOpt.value();
-                if (channel->getProtocol()->isOCorGuarded())
-                {
-                    a.push_back({"is_present",
-                                 Types::BOOL}); // TODO: would be a linear fn, but then cant require we use it... maybe should be functional style? idk
-                    break;                      // Shouldn't be needed, but is here anyways
-                }
-            }
-            return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
-        }
+        // else if (i + 1 == ctx->fields.size() && ctx->fields.at(i)->getText() == "is_present")
+        // {
+        //     std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(ty);
+        //     if (channelOpt)
+        //     {
+        //         const TypeChannel *channel = channelOpt.value();
+        //         if (channel->getProtocol()->isOCorGuarded())
+        //         {
+        //             a.push_back({"is_present",
+        //                          Types::BOOL}); // TODO: would be a linear fn, but then cant require we use it... maybe should be functional style? idk
+        //             break;                      // Shouldn't be needed, but is here anyways
+        //         }
+        //     }
+        //     return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
+        // }
         else
         {
             return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());

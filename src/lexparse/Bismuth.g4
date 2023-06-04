@@ -11,7 +11,7 @@ structCase        :  (ty=type name=VARIABLE) ';' ;
 
 defineProc        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block  ;
 
-defineFunc        : DEFINE 'func' name=VARIABLE lam=lambdaConstExpr ;
+defineFunc        : DEFINE FUNC name=VARIABLE lam=lambdaConstExpr ;
 
 defineType        : DEFINE 'enum' name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB # DefineEnum
                   | DEFINE 'struct' name=VARIABLE LSQB (cases+=structCase)*  RSQB        # DefineStruct
@@ -74,10 +74,11 @@ expression          : LPAR ex=expression RPAR                                   
                     | i=INTEGER                                     # IConstExpr
                     | s=STRING                                      # SConstExpr 
                     | lambdaConstExpr                               # LambdaExpr
-                    | channel=VARIABLE '.recv' '(' ')'              # AssignableRecv
-                    | 'exec' prog=expression                        # AssignableExec
-                    | 'copy' '(' expr=expression ')'                # CopyExpr
-                    | 'copy'  expr=expression                       # CopyExpr
+                    | channel=VARIABLE '.recv' LPAR RPAR            # AssignableRecv
+                    | channel=VARIABLE '.is_present' LPAR RPAR      # AssignableIsPresent
+                    | EXEC prog=expression                        # AssignableExec
+                    | COPY LPAR expr=expression RPAR              # CopyExpr
+                    | COPY expr=expression                        # CopyExpr
                     ;
 
 lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
@@ -165,9 +166,8 @@ statement           : defineProc                                              # 
                     | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
                     | 'accept' '(' channel=VARIABLE ')' block                               # ProgramAccept
-                    // | 'accept' '(' channel=VARIABLE ',' ex=expression ')' block             # ProgramAcceptWhile
                     | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block        # ProgramAcceptWhile
-                    | 'acceptIf' '(' channel=VARIABLE ',' check=expression ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf //FIXME: ENABLE
+                    | 'acceptIf' '(' channel=VARIABLE ',' check=expression ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf
                     | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  //FIXME: ENABLE
                     ; 
                     
@@ -254,6 +254,8 @@ EXTERN          :   'extern';
 MATCH           :   'match' ;
 DEFINE          :   'define';
 EXIT            :   'exit'  ;
+EXEC            :   'exec'  ;
+COPY            :   'copy'  ;
 
 
 
