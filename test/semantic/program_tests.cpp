@@ -1024,7 +1024,7 @@ TEST_CASE("Forward Decl with Variadic", "[semantic][program][function][forward-d
       R""""(
 extern int func printf(...);
 
-extern proc foo(int a, ...); 
+extern Unit func foo(int a, ...); 
 
 
 
@@ -1073,7 +1073,6 @@ TEST_CASE("Forward Decl with wrong num args", "[semantic][program][function][for
       R""""(
 extern int func printf(...);
 
-# extern proc foo(int a);
 extern int func foo(str a);
 
 
@@ -1084,7 +1083,6 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
 
-# proc foo(int a, int b) {
 define func foo (str a, int b) : int {
     printf("a = %s\n", a);
     return 0;

@@ -1,6 +1,6 @@
 extern int func printf(...);
 
-extern proc foo(int z);
+extern Unit func foo(int z);
 
 
 define program :: c : Channel<-int> = {
