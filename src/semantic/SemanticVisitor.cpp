@@ -1264,9 +1264,8 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
                     return *e;
                 }
 
-                if (dynamic_cast<BismuthParser::ProgDefContext *>(altCtx->eval) ||
-                    dynamic_cast<BismuthParser::VarDeclStatementContext *>(altCtx->eval) ||
-                    dynamic_cast<BismuthParser::FuncDefContext *>(altCtx->eval))
+                if (dynamic_cast<BismuthParser::TypeDefContext *>(altCtx->eval) ||
+                    dynamic_cast<BismuthParser::VarDeclStatementContext *>(altCtx->eval))
                 {
                     return errorHandler.addError(altCtx->getStart(), "Dead code: definition as select alternative.");
                 }
@@ -1414,9 +1413,8 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             /*
              *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
              */
-            if (dynamic_cast<BismuthParser::ProgDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
-                dynamic_cast<BismuthParser::VarDeclStatementContext *>(e->eval) ||
-                dynamic_cast<BismuthParser::FuncDefContext *>(e->eval))
+            if (dynamic_cast<BismuthParser::TypeDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
+                dynamic_cast<BismuthParser::VarDeclStatementContext *>(e->eval))
             {
                 return errorHandler.addError(e->getStart(), "Dead code: definition as select alternative.");
             }

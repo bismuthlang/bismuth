@@ -145,8 +145,9 @@ assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
  * 10. Return statements
  * 11. Block statements. 
  */
-statement           : defineProg                                              # ProgDef 
-                    | defineFunc                                              # FuncDef
+statement           //: defineProg                                              # ProgDef 
+                    //| defineFunc                                              # FuncDef
+                    : defineType                                              # TypeDef
                     | <assoc=right> to=lValue ASSIGN a=expression ';'         # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'     # VarDeclStatement
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                # ConditionalStatement

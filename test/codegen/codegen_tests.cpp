@@ -683,6 +683,13 @@ TEST_CASE("programs/adder5 - Add Stream 4 but using fn that returns linear varia
         "62a90a5edfd2a52b6c87d717ae2db8a758f0127e55f9359eb36bcb0d48c80780");
 }
 
+TEST_CASE("programs/nested_struct - Definitions within definitions", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/nested_struct.bismuth"))),
+        "7096b582ccdc4740adb3b31da6bc99776d7cbf04016db96c289184fbf7ca5ce5");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/

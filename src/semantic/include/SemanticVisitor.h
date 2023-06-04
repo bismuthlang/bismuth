@@ -133,13 +133,21 @@ public:
     std::variant<TSelectAlternativeNode *, ErrorChain *> visitCtx(BismuthParser::SelectAlternativeContext *ctx);
     std::any visitSelectAlternative(BismuthParser::SelectAlternativeContext *ctx) override { return TNVariantCast<TSelectAlternativeNode>(visitCtx(ctx)); }
 
-    std::any visitProgDef(BismuthParser::ProgDefContext *ctx) override { return TNVariantCast<TProgramDefNode>(this->visitInvokeable(ctx->defineProg())); }
-    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitInvokeable(ctx->defineProg())); }
+    // std::any visitProgDef(BismuthParser::ProgDefContext *ctx) override { return TNVariantCast<TProgramDefNode>(this->visitInvokeable(ctx->defineProg())); }
+    
 
     std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::DefineFuncContext *ctx);
     std::any visitDefineFunc(BismuthParser::DefineFuncContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx)); }
-    std::any visitFuncDef(BismuthParser::FuncDefContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx->defineFunc())); }
+    // std::any visitFuncDef(BismuthParser::FuncDefContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx->defineFunc())); }
+    
+    std::any visitTypeDef(BismuthParser::TypeDefContext *ctx) override { return ctx->defineType()->accept(this); }
+
+    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { 
+        std::cout << ctx->getText() << " PROG " << std::endl; 
+        
+        return TNVariantCast<TProgramDefNode>(visitInvokeable(ctx->defineProg())); }
     std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx->defineFunc())); }
+    // std::any visitTypeDef()
 
     std::variant<TSelectStatementNode *, ErrorChain *> visitCtx(BismuthParser::SelectStatementContext *ctx);
     std::any visitSelectStatement(BismuthParser::SelectStatementContext *ctx) override { return TNVariantCast<TSelectStatementNode>(visitCtx(ctx)); }
