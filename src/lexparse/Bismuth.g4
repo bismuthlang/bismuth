@@ -9,13 +9,13 @@ compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ;
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
 
-defineProc        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block  ;
+defineProg        : DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block  ;
 
 defineFunc        : DEFINE FUNC name=VARIABLE lam=lambdaConstExpr ;
 
 defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB   # DefineEnum
                   | DEFINE STRUCT name=VARIABLE LSQB (cases+=structCase)*  RSQB          # DefineStruct
-                  | defineProc                                                           # DefineProgram
+                  | defineProg                                                           # DefineProgram
                   | defineFunc                                                           # DefineFunction
                   ; 
 //FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
@@ -145,7 +145,7 @@ assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
  * 10. Return statements
  * 11. Block statements. 
  */
-statement           : defineProc                                              # ProgDef 
+statement           : defineProg                                              # ProgDef 
                     | defineFunc                                              # FuncDef
                     | <assoc=right> to=lValue ASSIGN a=expression ';'         # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'     # VarDeclStatement

@@ -133,8 +133,8 @@ public:
     std::variant<TSelectAlternativeNode *, ErrorChain *> visitCtx(BismuthParser::SelectAlternativeContext *ctx);
     std::any visitSelectAlternative(BismuthParser::SelectAlternativeContext *ctx) override { return TNVariantCast<TSelectAlternativeNode>(visitCtx(ctx)); }
 
-    std::any visitProgDef(BismuthParser::ProgDefContext *ctx) override { return TNVariantCast<TProgramDefNode>(this->visitInvokeable(ctx->defineProc())); }
-    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitInvokeable(ctx->defineProc())); }
+    std::any visitProgDef(BismuthParser::ProgDefContext *ctx) override { return TNVariantCast<TProgramDefNode>(this->visitInvokeable(ctx->defineProg())); }
+    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitInvokeable(ctx->defineProg())); }
 
     std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::DefineFuncContext *ctx);
     std::any visitDefineFunc(BismuthParser::DefineFuncContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx)); }
@@ -339,7 +339,7 @@ public:
         return new TBlockNode(nodes, ctx->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
 
-    std::variant<Symbol *, ErrorChain *> getProgramSymbol(BismuthParser::DefineProcContext *ctx)
+    std::variant<Symbol *, ErrorChain *> getProgramSymbol(BismuthParser::DefineProgContext *ctx)
     {
         std::optional<Symbol *> symOpt = symBindings->getBinding(ctx);
 
@@ -386,7 +386,7 @@ public:
      * @param block The PROC/FUNC block
      * @return const Type* TypeInvoke if successful, empty if error
      */
-    std::variant<TProgramDefNode *, ErrorChain *> visitInvokeable(BismuthParser::DefineProcContext *ctx)
+    std::variant<TProgramDefNode *, ErrorChain *> visitInvokeable(BismuthParser::DefineProgContext *ctx)
     {
         std::variant<Symbol *, ErrorChain *> symOpt = getProgramSymbol(ctx);
 
