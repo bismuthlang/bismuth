@@ -1918,7 +1918,7 @@ std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssign
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
-        if (!channel->getProtocol()->isOCorGuarded())
+        if (!channel->getProtocol()->isOC(true))
         {
             return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym->toString() + " as it is not a ! loop.");
         }

@@ -216,9 +216,7 @@ public:
 
     bool weaken() const;
 
-    bool isOC() const;
-
-    bool isOCorGuarded() const;
+    bool isOC(bool includeGuarded=false) const;
 
     optional<const ProtocolSequence *> acceptLoop() const;
     optional<const ProtocolSequence *> acceptWhileLoop() const;

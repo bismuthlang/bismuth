@@ -166,7 +166,7 @@ bool ProtocolSequence::contract() const
         ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this);
         vector<const Protocol *> other = wn->getInnerProtocol()->steps;
         
-        mthis->steps.insert(steps.begin(), other.begin(), other.end()); //FIXME: WE PROBABLY NEED TO DO BETTER FLATTENING!
+        mthis->steps.insert(steps.begin(), other.begin(), other.end());
         return true;
     }
 
@@ -188,13 +188,14 @@ bool ProtocolSequence::weaken() const
     return false;
 }
 
-bool ProtocolSequence::isOC() const
+bool ProtocolSequence::isOC(bool includeGuarded) const
 {
     if (isComplete())
         return false;
     const Protocol *proto = steps.front();
 
-    if(steps.front()->isGuarded() || this->isGuarded())
+    if(!includeGuarded && 
+        (steps.front()->isGuarded() || this->isGuarded()))
             return false; 
 
     if (const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto))
@@ -222,23 +223,9 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
     return std::nullopt;
 }
 
-bool ProtocolSequence::isOCorGuarded() const //FIXME: RENAME TO CLARIFY?
-{
-    if (isComplete())
-        return false;
-    const Protocol *proto = steps.front();
-
-    if (const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto))
-    {
-        return true;
-    }
-
-    return false;
-}
-
 optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
 {
-    if (isOCorGuarded())
+    if (isOC(true))
     {
         const Protocol *proto = steps.front();
         const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
@@ -253,23 +240,20 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
     return std::nullopt;
 }
 
-//FIXME: this isnt right, currently same as acceptWhile....
 optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const 
 {
-    if(!isOCorGuarded())
+    if(!isOC(true))
         return std::nullopt; 
     
     const Protocol* proto = steps.front(); 
-    const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(proto); //FIXME: methodize with isOCorGuarded?
+    const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(proto);
     const ProtocolSequence *ans = toSequence(oc->getInnerProtocol()->getCopy());
 
-    // ProtocolSequence *mthis = const_cast<ProtocolSequence *>(this); 
-    // mthis->steps.insert(steps.begin(), ans->steps.begin(), ans->steps.end());
 
     ProtocolSequence *mthis = const_cast<ProtocolSequence *>(ans); 
     mthis->steps.insert(ans->steps.end(), this->steps.begin(), this->steps.end());
 
-    return ans; //FIXME: DO BETTER! 
+    return ans;
 }
 
 // FIXME: METHODIZE A LOT OF THESE
