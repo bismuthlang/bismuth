@@ -1901,6 +1901,34 @@ std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
     return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);
 }
 
+std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx)
+{
+    std::string id = ctx->channel->getText();
+    std::optional<SymbolContext> opt = stmgr->lookup(id);
+
+    if (!opt)
+    {
+        return errorHandler.addError(ctx->getStart(), "Could not find channel :-( ): " + id);
+    }
+
+    Symbol *sym = opt.value().second;
+
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+
+    if (channelOpt)
+    {
+        const TypeChannel *channel = channelOpt.value();
+        if (!channel->getProtocol()->isOCorGuarded())
+        {
+            return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym->toString() + " as it is not a ! loop.");
+        }
+
+        return new TProgramIsPresetNode(sym, ctx->getStart());
+    }
+
+    return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);
+}
+
 std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(BismuthParser::ProgramCaseContext *ctx)
 {
     std::string id = ctx->channel->getText();

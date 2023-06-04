@@ -149,7 +149,7 @@ statement           : defineProc                                              # 
                     | <assoc=right> to=lValue ASSIGN a=expression ';'         # AssignStatement 
                     | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'     # VarDeclStatement
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                # ConditionalStatement
-                    | SELECT LSQB (cases+=selectAlternative)* '}' (rest+=statement)*                            # SelectStatement     
+                    | SELECT LSQB (cases+=selectAlternative)* RSQB (rest+=statement)*                            # SelectStatement     
                     | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                    # MatchStatement   
                     | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*                       # MatchStatement   
                     | call=invocation  ';'?                                                                     # CallStatement 
@@ -209,7 +209,7 @@ ELLIPSIS    :     '...'   ;
  */
 
 //Used for when we can either provide a type or a variable (needed bc var arrays are not allowed).
-typeOrVar       : type | 'var'  ;
+typeOrVar       : type | TYPE_VAR  ;
 
 protocol        : <assoc=right> protos+=subProtocol (';' protos+=subProtocol)*?
                 | '(' protos+=subProtocol (';' protos+=subProtocol)*? ')'
@@ -241,6 +241,7 @@ TYPE_INT        :   'int'       ;
 TYPE_BOOL       :   'boolean'   ;
 TYPE_STR        :   'str'       ; 
 TYPE_UNIT       :   'Unit'      ;
+TYPE_VAR        :   'var'       ;
 
 //Others
 FUNC            :   'func'  ;

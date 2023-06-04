@@ -171,6 +171,9 @@ public:
     std::variant<TProgramRecvNode *, ErrorChain *> TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx);
     std::any visitAssignableRecv(BismuthParser::AssignableRecvContext *ctx) override { return TNVariantCast<TProgramRecvNode>(TvisitAssignableRecv(ctx)); }
 
+    std::variant<TProgramIsPresetNode *, ErrorChain *> TvisitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx);
+    std::any visitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx) override { return TNVariantCast<TProgramIsPresetNode>(TvisitAssignableIsPresent(ctx)); }
+
     std::variant<TProgramContractNode *, ErrorChain *> TvisitProgramContract(BismuthParser::ProgramContractContext *ctx);
     std::any visitProgramContract(BismuthParser::ProgramContractContext *ctx) override { return TNVariantCast<TProgramContractNode>(TvisitProgramContract(ctx)); }
 

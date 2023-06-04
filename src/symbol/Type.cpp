@@ -222,7 +222,7 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
     return std::nullopt;
 }
 
-bool ProtocolSequence::isOCorGuarded() const
+bool ProtocolSequence::isOCorGuarded() const //FIXME: RENAME TO CLARIFY?
 {
     if (isComplete())
         return false;

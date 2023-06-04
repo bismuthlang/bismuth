@@ -47,6 +47,7 @@ class TConditionalStatementNode;
 class TReturnNode;
 class TProgramSendNode;
 class TProgramRecvNode;
+class TProgramIsPresetNode; 
 class TProgramContractNode;
 class TProgramWeakenNode;
 class TProgramExecNode;
@@ -98,6 +99,7 @@ public:
     virtual std::optional<Value *> visit(TReturnNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramSendNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramRecvNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramIsPresetNode *n) = 0; 
     virtual std::optional<Value *> visit(TProgramContractNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramWeakenNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramExecNode *n) = 0;
@@ -144,6 +146,7 @@ public:
     std::any any_visit(TReturnNode *n) { return this->visit(n); }
     std::any any_visit(TProgramSendNode *n) { return this->visit(n); }
     std::any any_visit(TProgramRecvNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramIsPresetNode *n) { return this->visit(n); }
     std::any any_visit(TProgramContractNode *n) { return this->visit(n); }
     std::any any_visit(TProgramWeakenNode *n) { return this->visit(n); }
     std::any any_visit(TProgramExecNode *n) { return this->visit(n); }
@@ -449,6 +452,25 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
+
+class TProgramIsPresetNode : public TypedNode
+{
+public:
+    Symbol *sym;
+
+    TProgramIsPresetNode(Symbol *s,  antlr4::Token *tok) : TypedNode(tok)
+    {
+        sym = s;
+    }
+
+    const Type *getType() override { return Types::BOOL; }
+
+    std::string toString() const override {
+        return "IS PRESENT NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
 class TProgramContractNode : public TypedNode
 {
 public:

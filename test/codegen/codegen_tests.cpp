@@ -584,6 +584,34 @@ TEST_CASE("programs/db/db4 - Basic DB 4", "[codegen][enum]")
         "16aab7fadbe6ef659bb6edbd94fc5bae10de6a14d18e1eb67712bc2b940b980e");
 }
 
+TEST_CASE("programs/db/db5-if - Basic DB 5 - AcceptIf", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if.bismuth"))),
+        "da55a553dae011096b61ab3f1cba7cdc65225a06d15be659760edcd76f4885b3");
+}
+
+TEST_CASE("programs/db/db5-if-present - Basic DB 5 - AcceptIf and is_present", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if-present.bismuth"))),
+        "464d9559c57a4dedff8ebea4d7ebfd608d666713f347f2208cce7e6534a33b18");
+}
+
+TEST_CASE("programs/db/db5-if-present-else - Basic DB 5 - AcceptIf with else and is_present", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if-present-else.bismuth"))),
+        "c8184f3c15f4363d32d497885c14c7687f9f928fcef65851da45b23e90f67210");
+}
+
+TEST_CASE("programs/db/db5-while-present - Basic DB 5 - AcceptWhile and is_present", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-while-present.bismuth"))),
+        "b4363996e5d6cfa761903511d022f19a4ea20f8d18420b38ef892042d0b7cf31");
+}
+
 TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
 {
     EnsureCompilesTo(

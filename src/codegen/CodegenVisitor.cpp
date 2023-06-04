@@ -330,6 +330,22 @@ std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode *n)
     return ans;
 }
 
+std::optional<Value *> CodegenVisitor::visit(TProgramIsPresetNode *n)
+{
+    Symbol *sym = n->sym;
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
+
+    if (!optVal)
+    {
+    errorHandler.addError(n->getStart(), "Could not find value for channel in recv: " + n->sym->getIdentifier());
+        return std::nullopt;
+    }
+
+    Value *chanVal = optVal.value();
+
+    return builder->CreateCall(get_OC_isPresent(), {builder->CreateLoad(Int32Ty, chanVal)});
+}
+
 std::optional<Value *> CodegenVisitor::visit(TProgramExecNode *n)
 {
     std::optional<Value *> fnOpt = AcceptType(this, n->prog);
