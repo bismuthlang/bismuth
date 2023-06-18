@@ -280,7 +280,7 @@ public:
         TypedNode *cond = std::get<TypedNode *>(condOpt);
         const Type *conditionType = cond->getType();
 
-        if (conditionType->isNotSubtype(Types::BOOL))
+        if (conditionType->isNotSubtype(Types::DYN_BOOL))
         {
             return errorHandler.addError(ex->getStart(), "Condition expected BOOL, but was given " + conditionType->toString());
         }

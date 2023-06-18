@@ -26,7 +26,7 @@
 
 TEST_CASE("Find existing element", "[symbol") {
   Scope* scope = new Scope();
-  Symbol* s = new Symbol("a", Types::BOOL, false, false);
+  Symbol* s = new Symbol("a", Types::DYN_BOOL, false, false);
   CHECK(scope->addSymbol(s));
 
   auto s1 = scope->lookup("a");
@@ -38,12 +38,12 @@ TEST_CASE("Find existing element", "[symbol") {
 
 TEST_CASE("Look for non-existent element", "[symbol]") {
   Scope* scope = new Scope();
-  CHECK(scope->addSymbol(new Symbol("a", Types::BOOL, false, false)));
+  CHECK(scope->addSymbol(new Symbol("a", Types::DYN_BOOL, false, false)));
   CHECK(!(scope->lookup("b").has_value()));
 }
 
 TEST_CASE("Duplicate symbol", "[symbol]") {
   Scope* scope = new Scope();
-  CHECK(scope->addSymbol(new Symbol("a", Types::BOOL, false, false)));
-  CHECK(!(scope->addSymbol(new Symbol("a", Types::INT, false, false))));
+  CHECK(scope->addSymbol(new Symbol("a", Types::DYN_BOOL, false, false)));
+  CHECK(!(scope->addSymbol(new Symbol("a", Types::DYN_INT, false, false))));
 }

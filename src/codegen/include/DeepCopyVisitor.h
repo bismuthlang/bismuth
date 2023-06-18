@@ -261,7 +261,7 @@ private:
     // FIXME: DONT DUPLICATE THESE ACROSS FILES
     optional<Value *> deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap, DeepCopyType copyType)
     {
-        if (isLinear(type))
+        if (type->isLinear())
         {
             errorHandler->addError(nullptr, "Cannot make a copy of a linear type: " + type->toString());
             return std::nullopt;

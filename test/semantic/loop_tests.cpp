@@ -137,14 +137,14 @@
 //   {
 //     std::optional<SymbolContext> opt = stmgr->lookup("i"); //FIXME: CHECK CONTEXT
 //     CHECK(opt.has_value());
-//     CHECK(opt.value().second->type->isSubtype(Types::INT));
+//     CHECK(opt.value().second->type->isSubtype(Types::DYN_INT));
 //   }
 
 
 //   {
 //     std::optional<SymbolContext> opt = stmgr->lookup("sum");
 //     CHECK(opt.has_value());
-//     CHECK(opt.value().second->type->isSubtype(Types::INT));
+//     CHECK(opt.value().second->type->isSubtype(Types::DYN_INT));
 //   }
 
 //   {

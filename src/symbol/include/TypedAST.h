@@ -463,7 +463,7 @@ public:
         sym = s;
     }
 
-    const Type *getType() override { return Types::BOOL; }
+    const Type *getType() override { return Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "IS PRESENT NODE";
@@ -901,7 +901,7 @@ public:
         rhs = r;
     }
 
-    const TypeBool *getType() override { return Types::BOOL; }
+    const TypeBool *getType() override { return Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "BINARY REL ";
@@ -937,7 +937,7 @@ public:
         return "BINARY ARITH";
     }
 
-    const TypeInt *getType() override { return Types::INT; }
+    const TypeInt *getType() override { return Types::DYN_INT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -961,7 +961,7 @@ public:
         rhs = r;
     }
 
-    const TypeBool *getType() override { return Types::BOOL; }
+    const TypeBool *getType() override { return Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "EQEXPR";
@@ -993,9 +993,9 @@ public:
         switch (op)
         {
         case UNARY_MINUS:
-            return Types::INT;
+            return Types::DYN_INT;
         case UNARY_NOT:
-            return Types::BOOL;
+            return Types::DYN_BOOL;
         }
     }
 
@@ -1018,7 +1018,7 @@ public:
 
     vector<TypedNode *> getExprs() { return exprs; }
 
-    const TypeBool *getType() override { return Types::BOOL; }
+    const TypeBool *getType() override { return Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "LOG AND";
@@ -1039,7 +1039,7 @@ public:
 
     vector<TypedNode *> getExprs() { return exprs; }
 
-    const TypeBool *getType() override { return Types::BOOL; }
+    const TypeBool *getType() override { return Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "LOG OR";
@@ -1058,7 +1058,7 @@ public:
         value = s;
     }
 
-    const TypeStr *getType() override { return Types::STR; }
+    const TypeStr *getType() override { return Types::DYN_STR; }
 
     std::string toString() const override {
         return "StrConst";
@@ -1077,7 +1077,7 @@ public:
         value = b;
     }
 
-    const TypeBool *getType() override { return Types::BOOL; }
+    const TypeBool *getType() override { return Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "BOOL CONST";
@@ -1096,7 +1096,7 @@ public:
         value = v;
     }
 
-    const TypeInt *getType() override { return Types::INT; }
+    const TypeInt *getType() override { return Types::DYN_INT; }
 
     std::string toString() const override {
         return "I CONST";

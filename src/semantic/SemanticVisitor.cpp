@@ -115,7 +115,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
         if (flags & CompilerFlags::DEMO_MODE)
         {
-            if (!(node->getSymbol()->getIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::STR) && node->getType()->getReturnType()->isSubtype(Types::INT) && node->getType()->isVariadic()))
+            if (!(node->getSymbol()->getIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::DYN_STR) && node->getType()->getReturnType()->isSubtype(Types::DYN_INT) && node->getType()->isVariadic()))
             {
                 errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode.");
             }
@@ -203,7 +203,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             if (progOpt)
             {
                 const TypeProgram *inv = progOpt.value();
-                if (!inv->getChannelType()->isSubtype(new TypeChannel(new ProtocolSequence({new ProtocolSend(Types::INT)}))))
+                if (!inv->getChannelType()->isSubtype(new TypeChannel(new ProtocolSequence({new ProtocolSend(Types::DYN_INT)}))))
                 {
                     errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString());
                 }
@@ -449,7 +449,7 @@ std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 {
     const Type *storeType = any2Type(ctx->ty->accept(this));
 
-    if (isLinear(storeType))
+    if (storeType->isLinear())
     {
         return errorHandler.addError(ctx->ty->getStart(), "Cannot create a box with a linear type!");
     }
@@ -467,7 +467,7 @@ std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
     const Type *providedType = tn->getType();
 
-    if (isLinear(providedType))
+    if (providedType->isLinear())
     {
         return errorHandler.addError(ctx->expr->getStart(), "Cannot create a box with a linear type!");
     }
@@ -499,7 +499,7 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     TypedNode *expr = std::get<TypedNode *>(exprOpt);
 
     const Type *exprType = expr->getType();
-    if (exprType->isNotSubtype(Types::INT))
+    if (exprType->isNotSubtype(Types::DYN_INT))
     {
         return errorHandler.addError(ctx->getStart(), "Array access index expected type INT but got " + exprType->toString());
     }
@@ -620,13 +620,13 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     switch (ctx->op->getType())
     {
     case BismuthParser::MINUS:
-        if (innerType->isNotSubtype(Types::INT))
+        if (innerType->isNotSubtype(Types::DYN_INT))
         {
             return errorHandler.addError(ctx->getStart(), "INT expected in unary minus, but got " + innerType->toString());
         }
         return new TUnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
     case BismuthParser::NOT:
-        if (innerType->isNotSubtype(Types::BOOL))
+        if (innerType->isNotSubtype(Types::DYN_BOOL))
         {
             return errorHandler.addError(ctx->getStart(), "BOOL expected in unary not, but got " + innerType->toString());
         }
@@ -653,7 +653,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     auto left = std::get<TypedNode *>(leftOpt);
 
-    if (left->getType()->isNotSubtype(Types::INT))
+    if (left->getType()->isNotSubtype(Types::DYN_INT))
     {
         return errorHandler.addError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString());
     }
@@ -667,7 +667,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     auto right = std::get<TypedNode *>(rightOpt);
 
-    if (right->getType()->isNotSubtype(Types::INT))
+    if (right->getType()->isNotSubtype(Types::DYN_INT))
     {
         return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
     }
@@ -761,7 +761,7 @@ std::variant<TLogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         TypedNode *node = std::get<TypedNode *>(nodeOpt);
         const Type *type = node->getType();
 
-        if (type->isNotSubtype(Types::BOOL))
+        if (type->isNotSubtype(Types::DYN_BOOL))
         {
             errorHandler.addError(e->getStart(), "BOOL expression expected, but was " + type->toString());
         }
@@ -815,7 +815,7 @@ std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         TypedNode *node = std::get<TypedNode *>(nodeOpt);
         const Type *type = node->getType();
 
-        if (type->isNotSubtype(Types::BOOL))
+        if (type->isNotSubtype(Types::DYN_BOOL))
         {
             errorHandler.addError(e->getStart(), "BOOL expression expected, but was " + type->toString());
         }
@@ -883,7 +883,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         else if (i + 1 == ctx->fields.size() && type_cast<TypeArray>(ty) && ctx->fields.at(i)->getText() == "length")
         {
             a.push_back({"length",
-                         Types::INT});
+                         Types::DYN_INT});
 
             break; // Shouldn't be needed, but is here anyways
         }
@@ -896,7 +896,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         //         if (channel->getProtocol()->isOCorGuarded())
         //         {
         //             a.push_back({"is_present",
-        //                          Types::BOOL}); // TODO: would be a linear fn, but then cant require we use it... maybe should be functional style? idk
+        //                          Types::DYN_BOOL}); // TODO: would be a linear fn, but then cant require we use it... maybe should be functional style? idk
         //             break;                      // Shouldn't be needed, but is here anyways
         //         }
         //     }
@@ -964,7 +964,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     auto left = std::get<TypedNode *>(leftOpt);
 
-    if (left->getType()->isNotSubtype(Types::INT))
+    if (left->getType()->isNotSubtype(Types::DYN_INT))
     {
         return errorHandler.addError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString());
     }
@@ -978,7 +978,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     auto right = std::get<TypedNode *>(rightOpt);
 
-    if (right->getType()->isNotSubtype(Types::INT))
+    if (right->getType()->isNotSubtype(Types::DYN_INT))
     {
         return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
     }
@@ -1088,7 +1088,7 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     TypedNode *expr = std::get<TypedNode *>(exprOpt);
     const Type *exprType = expr->getType();
 
-    if (isGuarded(exprType))
+    if (exprType->isGuarded())
     {
         return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier!");
     }
@@ -1173,7 +1173,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
                 const Type *exprType = exprOpt ? exprOpt.value()->getType() : newAssignType;
 
-                if (isGuarded(exprType)) // TODO: Use syntactic sugar to separate out declarations from assignments. Also could use it to make select statements work better!
+                if (exprType->isGuarded()) // TODO: Use syntactic sugar to separate out declarations from assignments. Also could use it to make select statements work better!
                 {
                     return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier!");
                 }
@@ -1441,7 +1441,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             TypedNode *check = std::get<TypedNode *>(checkOpt);
             const Type *checkType = check->getType();
 
-            if (checkType->isNotSubtype(Types::BOOL))
+            if (checkType->isNotSubtype(Types::DYN_BOOL))
             {
                 return errorHandler.addError(ctx->getStart(), "Select alternative expected BOOL but got " + checkType->toString());
             }
@@ -1626,7 +1626,7 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
     {
         const Type *caseType = any2Type(e->accept(this));
 
-        if (isLinear(caseType))
+        if (caseType->isLinear())
         {
             errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
             return Types::ABSURD;
@@ -1671,7 +1671,7 @@ std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
             {
                 const Type *caseType = any2Type(e->accept(this));
 
-                if (isLinear(caseType))
+                if (caseType->isLinear())
                 {
                     return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
                 }
@@ -1724,7 +1724,7 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
                 }
                 const Type *caseTy = any2Type(caseCtx->ty->accept(this));
 
-                if (isLinear(caseTy))
+                if (caseTy->isLinear())
                 {
                     return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString() + ", in non-linear container.");
                 }
@@ -1782,15 +1782,15 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::BaseTypeContext *ctx)
 {
     if (ctx->TYPE_INT())
     {
-        return Types::INT;
+        return Types::DYN_INT;
     }
     else if (ctx->TYPE_BOOL())
     {
-        return Types::BOOL;
+        return Types::DYN_BOOL;
     }
     else if (ctx->TYPE_STR())
     {
-        return Types::STR;
+        return Types::DYN_STR;
     }
     else if (ctx->TYPE_UNIT())
     {
@@ -1817,7 +1817,7 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::BoxTypeContext *ctx)
 {
     const Type *inner = any2Type(ctx->ty->accept(this));
 
-    if (isLinear(inner))
+    if (inner->isLinear())
     {
         errorHandler.addError(ctx->ty->getStart(), "Cannot box a linear resource.");
         return Types::ABSURD;
@@ -2217,10 +2217,6 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
         stmgr->guard();
         channel->setProtocol(acceptOpt.value());
 
-        // const ProtocolSequence *restProto = channel->getProtocol();
-
-        // channel->setProtocol(acceptOpt.value());
-        // stmgr->addSymbol(sym);
 
         std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
         std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
@@ -2425,7 +2421,7 @@ std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(Bism
     TypedNode *tn = std::get<TypedNode *>(tnOpt);
     const Type *ty = tn->getType();
 
-    if (isLinear(ty))
+    if (ty->isLinear())
     {
         return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty->toString());
     }

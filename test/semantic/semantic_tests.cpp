@@ -9,13 +9,13 @@
 
 TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 {
-  Type *TOP = new Type();
-  Type *INT = new TypeInt();
-  Type *BOOL = new TypeBool();
-  Type *STR = new TypeStr();
-  Type *BOT = new TypeBottom();
-  Type* UNIT = new TypeUnit(); 
-  Type* ABSD = new TypeAbsurd(); 
+  Type *TOP = new Type(false);
+  Type *INT = new TypeInt(false);
+  Type *BOOL = new TypeBool(false);
+  Type *STR = new TypeStr(false);
+  Type *BOT = new TypeBottom(false);
+  Type* UNIT = new TypeUnit(false); 
+  Type* ABSD = new TypeAbsurd(false); 
 
   SECTION("Top Type tests")
   {
@@ -112,13 +112,13 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 
 TEST_CASE("Test Type Equality - Supertype", "[semantic]")
 {
-  Type *TOP = new Type();
-  Type *INT = new TypeInt();
-  Type *BOOL = new TypeBool();
-  Type *STR = new TypeStr();
-  Type *BOT = new TypeBottom();
-  Type* UNIT = new TypeUnit(); 
-  Type* ABSD = new TypeAbsurd(); 
+  Type *TOP = new Type(false);
+  Type *INT = new TypeInt(false);
+  Type *BOOL = new TypeBool(false);
+  Type *STR = new TypeStr(false);
+  Type *BOT = new TypeBottom(false);
+  Type* UNIT = new TypeUnit(false); 
+  Type* ABSD = new TypeAbsurd(false); 
 
   SECTION("Top Type tests")
   {
@@ -213,3 +213,5 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
   }
   // Why is PL easier to read in mono fonts?
 }
+
+// FIXME: MAKE LINEAR SUPERTYPE OF NON-LINEAR

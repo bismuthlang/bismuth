@@ -37,6 +37,7 @@
 class Type
 {
 public:
+    Type(bool linear) : linear(linear) {};
     virtual ~Type() = default;
 
     /**
@@ -81,8 +82,33 @@ public:
 
     virtual const Type * getCopy() const { return this; }
 
+    virtual bool isGuarded() const { return linear && guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
+
+    virtual void guard() const // FIXME: DO BETTER
+    {
+        if(!linear) return; 
+
+        Type *u_this = const_cast<Type *>(this);
+        u_this->guardCount = u_this->guardCount + 1;
+    }
+
+    virtual bool unguard() const // FIXME: DO BETTER
+    {
+        if(!linear) return true; 
+
+        if (guardCount == 0)
+            return false;
+        Type *u_this = const_cast<Type *>(this);
+
+        u_this->guardCount = u_this->guardCount - 1;
+        return true;
+    }
+
+    bool isLinear() const { return linear; }
 
 protected:
+    unsigned int guardCount = 0;
+
     /**
      * @brief Internal tool used to determine if this type is a supertype for another type. NOTE: THIS SHOULD NEVER BE CALLED DIRECTLY OUTSIDE OF THE TYPE DEFINITIONS. DOING SO MAY LEAD TO UNUSUAL BEHAVIOR!
      *
@@ -91,15 +117,19 @@ protected:
      * @return false if this is not a supertype of other.
      */
     virtual bool isSupertypeFor(const Type *other) const { return true; } // The top type is the universal supertype
+
+private: 
+    const bool linear; 
 };
 
-class Protocol
+class Protocol : public Type
 {
 protected:
-    unsigned int guardCount = 0;
     virtual std::string as_str() const = 0;
 
 public:
+    Protocol() : Type(true) {}; 
+
     virtual ~Protocol() = default;
 
     /**
@@ -107,10 +137,10 @@ public:
      *
      * @return std::string The string name of the Protocol
      */
-    std::string toString() const
+    std::string toString() const override
     {
         std::ostringstream description;
-        for (unsigned int i = 0; i < guardCount; i++)
+        for (unsigned int i = 0; i < guardCount; i++) //FIXME: ADD TO OTHERS
         {
             description << "*";
         }
@@ -122,25 +152,7 @@ public:
 
     virtual const Protocol *getInverse() const = 0;
 
-    virtual const Protocol *getCopy() const = 0;
-
-    virtual bool isGuarded() const { return guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
-
-    virtual void guard() const // FIXME: DO BETTER
-    {
-        Protocol *u_this = const_cast<Protocol *>(this);
-        u_this->guardCount = u_this->guardCount + 1;
-    }
-
-    virtual bool unguard() const // FIXME: DO BETTER
-    {
-        if (guardCount == 0)
-            return false;
-        Protocol *u_this = const_cast<Protocol *>(this);
-
-        u_this->guardCount = u_this->guardCount - 1;
-        return true;
-    }
+    virtual const Protocol *getCopy() const override = 0;
 };
 
 // FIXME: DO BETTER
@@ -151,14 +163,6 @@ struct ProtocolCompare
         return a->toString() < b->toString();
     }
 };
-
-// struct ProtocolCompareInt
-// {
-//     bool operator()(const Protocol *a, const Protocol *b) const
-//     {
-//         return a->getInverse()->toString() < b->getInverse()->toString();
-//     }
-// };
 
 /*******************************************
  *
@@ -271,10 +275,6 @@ public:
 
         return steps.front()->unguard();
     }
-
-    // optional<vector<const Protocol *>> extChoice()
-    // {
-    // }
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)
@@ -493,6 +493,8 @@ public:
 class TypeInt : public Type
 {
 public:
+    TypeInt(bool isLinear) : Type(isLinear){}; 
+
     std::string toString() const override { return "INT"; }
     llvm::IntegerType *getLLVMType(llvm::Module *M) const override
     {
@@ -516,6 +518,8 @@ protected:
 class TypeBool : public Type
 {
 public:
+    TypeBool(bool isLinear) : Type(isLinear) {}; 
+
     std::string toString() const override { return "BOOL"; }
     llvm::Type *getLLVMType(llvm::Module *M) const override
     {
@@ -539,6 +543,7 @@ protected:
 class TypeStr : public Type
 {
 public:
+    TypeStr(bool isLinear) : Type(isLinear) {}; 
     std::string toString() const override { return "STR"; }
     llvm::Type *getLLVMType(llvm::Module *M) const override { return llvm::Type::getInt8PtrTy(M->getContext()); }
 
@@ -559,6 +564,8 @@ protected:
 class TypeBottom : public Type
 {
 public:
+    TypeBottom(bool isLinear) : Type(isLinear) {}; 
+
     std::string toString() const override { return "\u22A5"; }
 
     const TypeBottom * getCopy() const override { return this; };
@@ -575,6 +582,7 @@ protected:
 class TypeUnit : public Type
 {
 public:
+    TypeUnit(bool isLinear) : Type(isLinear) {};
     std::string toString() const override { return "1"; }
 
     const TypeUnit * getCopy() const override { return this; };
@@ -591,6 +599,7 @@ protected:
 class TypeAbsurd : public Type
 {
 public:
+    TypeAbsurd(bool isLinear) : Type(isLinear) {}; 
     std::string toString() const override { return "0"; }
 
     const TypeAbsurd * getCopy() const override { return this; };
@@ -615,11 +624,14 @@ struct TypeCompare
 
 namespace Types
 {
-    inline const TypeInt *INT = new TypeInt();
-    inline const TypeBool *BOOL = new TypeBool();
-    inline const TypeStr *STR = new TypeStr();
-    inline const TypeUnit *UNIT = new TypeUnit();
-    inline const TypeAbsurd *ABSURD = new TypeAbsurd();
+    inline const TypeInt *DYN_INT = new TypeInt(false);
+    inline const TypeInt *LIN_INT = new TypeInt(true);
+    inline const TypeBool *DYN_BOOL = new TypeBool(false);
+    inline const TypeBool *LIN_BOOL = new TypeBool(true);
+    inline const TypeStr *DYN_STR = new TypeStr(false);
+    inline const TypeStr *LIN_STR = new TypeStr(true);
+    inline const TypeUnit *UNIT = new TypeUnit(false);
+    inline const TypeAbsurd *ABSURD = new TypeAbsurd(false);
 };
 
 /*******************************************
@@ -649,11 +661,7 @@ public:
      * @param v The type of the array elements
      * @param l The length of the array. NOTE: THIS SHOULD ALWAYS BE AT LEAST ONE!
      */
-    TypeArray(const Type *v, int l)
-    {
-        valueType = v;
-        length = l;
-    }
+    TypeArray(const Type *valTy, int len) : Type(false), valueType(valTy), length(len) {}
 
     /**
      * @brief Returns the name of the string in form of <valueType name>[<array length>].
@@ -742,10 +750,7 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeChannel(const ProtocolSequence *p)
-    {
-        protocol = p;
-    }
+    TypeChannel(const ProtocolSequence *proto) : Type(true), protocol(proto) {}
 
     std::string toString() const override
     {
@@ -784,13 +789,24 @@ public:
         u_this->protocol = p;
     }
 
+    void guard() const override // FIXME: DO BETTER
+    {
+        return protocol->guard();
+    }
+
+    bool unguard() const override // FIXME: DO BETTER
+    {
+        return protocol->unguard();
+    }
+
 protected:
     bool isSupertypeFor(const Type *other) const override
     {
-        return toString() == other->toString(); // FIXME: DO BETTER
-        // // Checks that the other type is also invokable
-        // if (const TypeInvoke *p = dynamic_cast<const TypeInvoke *>(other))
-        // {
+
+        if (const TypeChannel *p = dynamic_cast<const TypeChannel *>(other))
+        {
+            // return p->isSubtype(protocol);
+            return toString() == other->toString(); // FIXME: DO BETTER
         //     // Makes sure that both functions have the same number of parameters
         //     if (p->paramTypes.size() != this->paramTypes.size())
         //         return false;
@@ -807,8 +823,8 @@ protected:
         //     }
         //     // Makes sure that the return type of this function is a subtype of the other
         //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
-        // }
-        // return false;
+        }
+        return false;
     }
 };
 
@@ -828,9 +844,7 @@ private:
     const Type *innerType;
 
 public:
-    TypeBox(const Type *t) : innerType(t)
-    {
-    }
+    TypeBox(const Type *t) : Type(false), innerType(t) {}
 
     std::string toString() const override
     {
@@ -891,7 +905,7 @@ private:
     std::optional<std::string> name = {}; // NOT FOR SEMANTIC NAMES!!! THIS ONE IS FOR LLVM ONLY
 
 public:
-    TypeProgram() : defined(false)
+    TypeProgram() : Type(false), defined(false)
     {
     }
     /**
@@ -901,7 +915,7 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeProgram(const TypeChannel *c) : channel(c), defined(true)
+    TypeProgram(const TypeChannel *c) : Type(false), channel(c), defined(true)
     {
     }
 
@@ -1048,7 +1062,7 @@ public:
      * @brief Construct a new Type Invoke object that has no return and no arguments
      *
      */
-    TypeInvoke() : defined(false)
+    TypeInvoke() : Type(false), defined(false)
     {
     }
 
@@ -1059,7 +1073,7 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) : paramTypes(p), retType(r), variadic(v), defined(true)
+    TypeInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) : Type(false), paramTypes(p), retType(r), variadic(v), defined(true)
     {
     }
 
@@ -1228,7 +1242,7 @@ private:
     std::vector<const TypeInfer *> infTypes;
 
 public:
-    TypeInfer()
+    TypeInfer() : Type(false) // FIXME: IS IT Non linear?
     {
         valueType = new std::optional<const Type *>;
     }
@@ -1386,11 +1400,11 @@ private:
     bool defined;
 
 public:
-    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) : cases(c), name(n), defined(true)
+    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) : Type(false), cases(c), name(n), defined(true)
     {
     }
 
-    TypeSum(std::string n) : name(n), defined(false)
+    TypeSum(std::string n) : Type(false), name(n), defined(false)
     {
     }
 
@@ -1587,11 +1601,11 @@ private:
     bool defined;
 
 public:
-    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) : elements(e), name(n), defined(true)
+    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) : Type(false), elements(e), name(n), defined(true)
     {
     }
 
-    TypeStruct(std::string n) : name(n), defined(false)
+    TypeStruct(std::string n) : Type(false), name(n), defined(false)
     {
     }
 
@@ -1698,26 +1712,11 @@ protected:
     }
 };
 
+
 /****************************************
  * Utility Functions
  ****************************************/
 
-inline bool isGuarded(const Type *ty)
-{
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
-    {
-        return channel->getProtocol()->isGuarded();
-    }
-
-    return false;
-}
-
-inline bool isLinear(const Type *ty)
-{
-    if (dynamic_cast<const TypeChannel *>(ty))
-        return true; // FIXME: DO BETTER LINEAR CHECK! Maybe separate symbol and value, then we can have linear values and ensure they are used?
-    return false;
-}
 
 // Needed so that way we can make a copy of the channel type during send/receive protocols.
 // If we don't then type checking processes w/ higher order channels break

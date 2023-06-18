@@ -143,6 +143,10 @@ public:
                         (include_guarded || !inf->getProtocol()->isGuarded()))
                         ans.push_back(item.second);
                 }
+                else
+                {
+                    ans.push_back(item.second);
+                }
             }
         }
 

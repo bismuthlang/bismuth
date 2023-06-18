@@ -67,7 +67,7 @@ public:
    */
   bool addSymbol(Symbol *symbol)
   {
-    if (isLinear(symbol->type) &&
+    if (symbol->type->isLinear() &&
         symbol->getIdentifier() != "@RETURN") // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elim.
       return linearContext.addSymbol(symbol);
     return dangerContext.addSymbol(symbol);
@@ -131,10 +131,8 @@ public:
   {
     for (Symbol *sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))
     {
-      if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
-      {
-        channel->getProtocol()->guard();
-      }
+      if(sym->type->isLinear())
+        sym->type->guard(); 
     }
   }
 
@@ -142,14 +140,11 @@ public:
   {
     for (Symbol *sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))
     {
-      if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(sym->type))
-      {
-        if(!channel->getProtocol()->unguard())
+        if(sym->type->isLinear() && !sym->type->unguard())
         {
           std::cout << "Failed to unguard " << sym->toString() << std::endl; 
           return false; 
         }
-      }
     }
     return true; 
   }
