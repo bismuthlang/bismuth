@@ -16,7 +16,6 @@ defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)
                   ; 
 
 //FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
-// externStatement : EXTERN ty=type FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR ';';
 externStatement : EXTERN FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR (COLON ret=type)? ';'; 
 
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;

@@ -527,7 +527,7 @@ public:
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                     {
-                        (*e)->addError(alt->getStart(), "Failed to type check code following branch."); // FIXME: SWITCH THESE BACK TO ALTCTX?
+                        (*e)->addError(alt->getStart(), "Failed to type check code following branch.");
                         return *e;
                     }
 
