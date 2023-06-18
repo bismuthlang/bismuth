@@ -12,7 +12,7 @@ const Protocol *ProtocolRecv::getInverse() const //FIXME: ADD GUARD?
 
 const Protocol *ProtocolRecv::getCopy() const
 {
-    auto ans = new ProtocolRecv(copyType(this->recvType)); 
+    auto ans = new ProtocolRecv(this->recvType->getCopy()); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -30,7 +30,7 @@ const Protocol *ProtocolSend::getInverse() const
 
 const Protocol *ProtocolSend::getCopy() const
 {
-    auto ans = new ProtocolSend(copyType(this->sendType));; 
+    auto ans = new ProtocolSend(this->sendType->getCopy());; 
     ans->guardCount = this->guardCount;
     return ans;
 }

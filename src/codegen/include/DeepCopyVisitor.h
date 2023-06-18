@@ -54,12 +54,12 @@ using std::optional;
 class DeepCopyVisitor
 {
 
-    enum DeepCopyType
-    {
-        GC_MALLOC,
-        MIXED_MALLOC, // Uses Malloc at top level, then GC MALLOC
-        NORM_MALLOC,
-    };
+    // enum DeepCopyType
+    // {
+    //     GC_MALLOC,
+    //     MIXED_MALLOC, // Uses Malloc at top level, then GC MALLOC
+    //     NORM_MALLOC,
+    // };
 
 public:
     DeepCopyVisitor(Module *m, BismuthErrorHandler *e)
@@ -225,7 +225,7 @@ public:
     optional<Value *> deepCopy(IRBuilder<NoFolder> *builder, const Type *type, Value *to_copy)
     {
         Value *addrMap = getNewAddressMap(builder);
-        optional<Value *> ans = deepCopyHelper(builder, type, to_copy, addrMap, MIXED_MALLOC);
+        optional<Value *> ans = deepCopyHelper(builder, type, to_copy, addrMap);// , MIXED_MALLOC);
         deleteAddressMap(builder, addrMap);
         return ans;
     }
@@ -259,7 +259,7 @@ private:
     }
 
     // FIXME: DONT DUPLICATE THESE ACROSS FILES
-    optional<Value *> deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap, DeepCopyType copyType)
+    optional<Value *> deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap)//, DeepCopyType copyType)
     {
         if (type->isLinear())
         {
@@ -269,19 +269,13 @@ private:
 
         if (!type->requiresDeepCopy())
         {
-            // Value *v = (copyType == GC_MALLOC) ? runGCMalloc(builder, getSizeForValue(stoVal))
-            //                                    : runMalloc(builder, getSizeForValue(stoVal));
-            // Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
-            // builder->CreateStore(stoVal, casted);
-            // // return casted;
-            // return builder->CreateLoad(stoVal->getType(), casted);
-            return stoVal;//builder->CreateLoad(stoVal->getType(), stoVal);
+            return stoVal;
         }
 
         if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(type))
         {
             if(infType->hasBeenInferred()) {
-                return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, addrMap, GC_MALLOC);
+                return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, addrMap);// , GC_MALLOC);
             }
             return std::nullopt; //FIXME: ADD ERROR 
         }
@@ -358,8 +352,8 @@ private:
             optional<Value *> clonedOpt = deepCopyHelper(builder, 
                                                          innerType, 
                                                          builder->CreateLoad(innerType->getLLVMType(module), builder->CreateLoad(llvmType, v)), 
-                                                         builder->CreateLoad(i8p, m), 
-                                                         GC_MALLOC);
+                                                         builder->CreateLoad(i8p, m));//, 
+                                                        //  GC_MALLOC);
             if (!clonedOpt)
                 return std::nullopt;
             // Value *cloned = clonedOpt.value();
@@ -399,7 +393,7 @@ private:
                                                                             true)});
                     Value *loaded = builder->CreateLoad(eleItr.second->getLLVMType(module), memLoc);
 
-                    optional<Value *> valOpt = deepCopyHelper(builder, eleItr.second, loaded, builder->CreateLoad(i8p, m), GC_MALLOC);
+                    optional<Value *> valOpt = deepCopyHelper(builder, eleItr.second, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
                         return std::nullopt;
                     builder->CreateStore(valOpt.value(), memLoc);
@@ -431,7 +425,7 @@ private:
                 Value *corrected = builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
                 Value *loaded = builder->CreateLoad(caseNode->getLLVMType(module), corrected);
 
-                optional<Value *> valOpt = deepCopyHelper(builder, caseNode, loaded, builder->CreateLoad(i8p, m), GC_MALLOC);
+                optional<Value *> valOpt = deepCopyHelper(builder, caseNode, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
                         return std::nullopt;
                                                                                                  // builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m)});
@@ -478,7 +472,7 @@ private:
 
                 Value *loaded = builder->CreateLoad(valueType->getLLVMType(module), memLoc);
 
-                optional<Value *> valOpt = deepCopyHelper(builder, valueType, loaded, builder->CreateLoad(i8p, m), GC_MALLOC);
+                optional<Value *> valOpt = deepCopyHelper(builder, valueType, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
                         return std::nullopt;
                 builder->CreateStore(valOpt.value(), memLoc);

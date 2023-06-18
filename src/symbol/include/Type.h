@@ -1717,21 +1717,6 @@ protected:
  * Utility Functions
  ****************************************/
 
-
-// Needed so that way we can make a copy of the channel type during send/receive protocols.
-// If we don't then type checking processes w/ higher order channels break
-// when defined before their use as the channel in the protocol gets messed up.
-// See program/adder4
-inline const Type *copyType(const Type *ty)
-{
-    if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
-    {
-        return new TypeChannel(channel->getProtocolCopy());
-    }
-
-    return ty;
-}
-
 template <typename T>
 inline std::optional<const T*> type_cast(const Type * ty) 
 {
