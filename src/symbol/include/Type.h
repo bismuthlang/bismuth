@@ -587,6 +587,22 @@ public:
 
     const TypeUnit * getCopy() const override { return this; };
 
+    llvm::Type *getLLVMType(llvm::Module *M) const override
+    {
+        llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+        if (ty)
+            return ty;
+
+        ty = llvm::StructType::create(M->getContext(), toString());
+
+        std::vector<llvm::Type *> typeVec;
+        
+        llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
+        ty->setBody(ref); // Done like this to enable recursive types
+
+        return ty;
+    }
+
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
 };
@@ -696,13 +712,11 @@ public:
      * @param C LLVM Context
      * @return llvm::Type*
      */
-    llvm::Type *getLLVMType(llvm::Module *M) const override
+    llvm::ArrayType *getLLVMType(llvm::Module *M) const override
     {
         uint64_t len = (uint64_t)length;
         llvm::Type *inner = valueType->getLLVMType(M);
-        llvm::Type *arr = llvm::ArrayType::get(inner, len);
-
-        return arr;
+        return llvm::ArrayType::get(inner, len);
     }
 
     bool requiresDeepCopy() const override { return valueType->requiresDeepCopy(); }
@@ -945,7 +959,7 @@ public:
         // std::vector<llvm::Type *> typeVec;
         // llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
 
-        llvm::Type *ret = llvm::Type::getVoidTy(M->getContext());
+        llvm::Type *ret = Types::UNIT->getLLVMType(M);//llvm::Type::getVoidTy(M->getContext());
 
         return llvm::FunctionType::get(
             ret,
@@ -1493,12 +1507,12 @@ public:
         for (auto e : cases)
         {
             // Note: This is why one has to use pointers in order to nest a type into itself
-            unsigned int t = M->getDataLayout().getTypeAllocSize(e->getLLVMType(M));
+            llvm::Type* caseType = e->getLLVMType(M);
+
+            unsigned int t = caseType->isSized() ? M->getDataLayout().getTypeAllocSize(caseType) : 0;
             // FIXME: DO BETTER - ALSO WILL NOT WORK ON VARS! (there are actually a LOT of places where using a var may break things bc we only check for TypeSum)
 
-            // M->getDataLayout().getTypeAllocSize(e->getLLVMType(M));
-
-            if (t < min)
+            if (t < min && t != 0 )
             {
                 min = t;
             }

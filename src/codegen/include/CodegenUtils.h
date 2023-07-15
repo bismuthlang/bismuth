@@ -70,7 +70,7 @@ public:
         builder = new IRBuilder<NoFolder>(module->getContext());
 
         // LLVM Types
-        VoidTy = llvm::Type::getVoidTy(module->getContext());
+        VoidTy = Types::UNIT->getLLVMType(module);//llvm::Type::getVoidTy(module->getContext());
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
         Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());

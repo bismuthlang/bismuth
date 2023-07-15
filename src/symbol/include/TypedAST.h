@@ -846,9 +846,22 @@ public:
         is_rvalue = r;
     }
 
+    // TODO: allow for modulo get so that way we can access fields more directly?
     const Type *getType() override
     {
-        return dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * arrayType = dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+
+        if(!is_rvalue)
+        {
+            return arrayType;
+        }
+
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        return new TypeSum(cases);
+    }
+
+    int length() const {
+        return dynamic_cast<const TypeArray *>(field->getType())->getLength();
     }
 
     std::string toString() const override {

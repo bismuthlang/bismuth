@@ -77,7 +77,7 @@ public:
         copyVisitor = new DeepCopyVisitor(module, &errorHandler);
 
         // LLVM Types
-        VoidTy = llvm::Type::getVoidTy(module->getContext());
+        VoidTy = Types::UNIT->getLLVMType(module);//llvm::Type::getVoidTy(module->getContext());
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
         Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
@@ -171,8 +171,14 @@ public:
         builder->SetInsertPoint(bBlk);
 
         // Bind all of the arguments
-        llvm::AllocaInst *v = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
-        // n->channelSymbol->val = v;
+        std::optional<llvm::AllocaInst *> vOpt = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
+        if(!vOpt)
+        {
+            errorHandler.addError(nullptr, "Failed to generate alloc for channel value, is it somehow void?"); // Should never occur bc int32Ty
+            return std::nullopt; 
+        }
+        llvm::AllocaInst * v = vOpt.value(); 
+
         n->channelSymbol->setAllocation(v);
         builder->CreateStore((fn->args()).begin(), v);
         /*
@@ -218,9 +224,11 @@ public:
         
         // If we are a PROC, make sure to add a return type (if we don't already have one)
         // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
-        if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE
+        if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE, OR IS IT GIVEN EXIT?
         {
-            builder->CreateRetVoid();
+            builder->CreateRet(Constant::getNullValue(Types::UNIT->getLLVMType(module)));
+            // Value * val = llvm::UndefValue::get(llvm::Type::getVoidTy(module->getContext()));
+            // builder->CreateRet(val);
         }
         
         builder->SetInsertPoint(ins);
@@ -476,7 +484,7 @@ public:
             val);
     }
 
-    Value *correctSumAssignment(const TypeSum *sum, Value *original)
+    std::optional<Value *> correctSumAssignment(const TypeSum *sum, Value *original)
     {
         unsigned int index = sum->getIndex(module, original->getType());
 
@@ -484,8 +492,10 @@ public:
         {
             llvm::Type *sumTy = sum->getLLVMType(module);
 
-            llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
+            std::optional<llvm::AllocaInst *> allocOpt = CreateEntryBlockAlloc(sumTy, "");
+            if(!allocOpt) return std::nullopt;
 
+            llvm::AllocaInst * alloc = allocOpt.value(); 
             Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
 
             builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);

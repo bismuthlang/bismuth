@@ -71,7 +71,7 @@ public:
         // builder = new IRBuilder<NoFolder>(module->getContext());
 
         // LLVM Types
-        VoidTy = llvm::Type::getVoidTy(module->getContext());
+        VoidTy = Types::UNIT->getLLVMType(module);// llvm::Type::getVoidTy(module->getContext());
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
         Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
@@ -191,8 +191,9 @@ public:
 
     // TODO: REFACTOR W IMPL IN CODEGEN VISITOR
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
-    llvm::AllocaInst *CreateEntryBlockAlloc(IRBuilder<NoFolder> *builder, llvm::Type *ty, std::string identifier)
+    std::optional<llvm::AllocaInst *> CreateEntryBlockAlloc(IRBuilder<NoFolder> *builder, llvm::Type *ty, std::string identifier)
     {
+        // if(!ty->isSized()) return std::nullopt; // FIXME: REM OPT?
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
         // // for(auto B = fn->begin(), e = fn->end(); B != e; ++B)
         // for(auto& B : *fn)
@@ -301,11 +302,11 @@ private:
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
 
-        Value *v = CreateEntryBlockAlloc(builder, llvmType, "v");
+        Value *v = CreateEntryBlockAlloc(builder, llvmType, "v").value(); //FIXME: DO BETTER, THOUGH ERROR SHOULDNT BE POSSIBLE
         builder->CreateStore((fn->args()).begin(), v);
         // Value *loaded = builder->CreateLoad(llvmType, v);
 
-        AllocaInst *m = CreateEntryBlockAlloc(builder, i8p, "m");
+        AllocaInst *m = CreateEntryBlockAlloc(builder, i8p, "m").value(); //FIXME: DO BETTER
         builder->CreateStore(fn->getArg(1), m);
 
         if (const TypeBox *boxType = dynamic_cast<const TypeBox *>(type))
@@ -441,8 +442,8 @@ private:
         {
             const Type * valueType = arrayType->getValueType(); 
             
-            AllocaInst *loop_index = CreateEntryBlockAlloc(builder,Int32Ty, "idx");
-            AllocaInst *loop_len = CreateEntryBlockAlloc(builder, Int32Ty, "len");
+            AllocaInst *loop_index = CreateEntryBlockAlloc(builder,Int32Ty, "idx").value(); //FIXME: DO BETTER, ERROR CHECK ALTHOGH SHOULDNT BE POSSIBLE
+            AllocaInst *loop_len = CreateEntryBlockAlloc(builder, Int32Ty, "len").value();
             builder->CreateStore(Int32Zero, loop_index);
             builder->CreateStore(ConstantInt::get(Int32Ty, arrayType->getLength(), true), loop_len);
 
