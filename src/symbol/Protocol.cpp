@@ -5,6 +5,15 @@
  *  ProtocolRecv
  * 
  * ********************************************/
+
+std::string ProtocolRecv::as_str() const
+{
+    std::ostringstream description;
+    description << "+" << recvType->toString();
+
+    return description.str();
+}
+
 const Protocol *ProtocolRecv::getInverse() const //FIXME: ADD GUARD?
 {
     return new ProtocolSend(this->recvType);
@@ -23,6 +32,15 @@ const Protocol *ProtocolRecv::getCopy() const
  *  ProtocolSend
  * 
  * ********************************************/
+
+std::string ProtocolSend::as_str() const
+{
+    std::ostringstream description;
+    description << "-" << sendType->toString();
+
+    return description.str();
+}
+    
 const Protocol *ProtocolSend::getInverse() const
 {
     return new ProtocolRecv(this->sendType);
@@ -41,6 +59,14 @@ const Protocol *ProtocolSend::getCopy() const
  *  ProtocolWN
  * 
  * ********************************************/
+
+std::string ProtocolWN::as_str() const
+{
+    std::ostringstream description;
+    description << "?(" << proto->toString() << ")";
+
+    return description.str();
+}
 const Protocol *ProtocolWN::getInverse() const
 {
     return new ProtocolOC(toSequence(this->proto->getInverse()));
@@ -59,6 +85,13 @@ const Protocol *ProtocolWN::getCopy() const
  *  ProtocolOC
  * 
  * ********************************************/
+std::string ProtocolOC::as_str() const
+{
+    std::ostringstream description;
+    description << "!(" << proto->toString() << ")";
+
+    return description.str();
+}
 const Protocol *ProtocolOC::getInverse() const
 {
     return new ProtocolWN(toSequence(this->proto->getInverse()));
@@ -77,6 +110,21 @@ const Protocol *ProtocolOC::getCopy() const
  *  ProtocolIChoice
  * 
  * ********************************************/
+std::string ProtocolIChoice::as_str() const
+{
+    std::ostringstream description;
+
+    unsigned int i = 0;
+    for (auto p : opts)
+    {
+        if (i != 0)
+            description << "&";
+        description << p->toString();
+        i++;
+    }
+
+    return description.str();
+}
 
 const ProtocolEChoice *ProtocolIChoice::getInverse() const
 {
@@ -110,6 +158,20 @@ const Protocol *ProtocolIChoice::getCopy() const
  *  ProtocolEChoice
  * 
  * ********************************************/
+std::string ProtocolEChoice::as_str() const
+{
+    std::ostringstream description;
+    unsigned int i = 0;
+    for (auto p : opts)
+    {
+        if (i != 0)
+            description << "\u2295";
+        description << p->toString();
+        i++;
+    }
+
+    return description.str();
+}
 
 const Protocol *ProtocolEChoice::getInverse() const
 {
@@ -146,6 +208,20 @@ const Protocol *ProtocolEChoice::getCopy() const
  *  ProtocolSequence
  * 
  * ********************************************/
+std::string ProtocolSequence::as_str() const
+{
+    std::ostringstream description;
+    // for (auto p : steps)
+    for (unsigned int i = 0; i < steps.size(); i++)
+    {
+        if (i != 0)
+            description << ";";
+        description << steps.at(i)->toString();
+    }
+
+    return description.str();
+}
+
 const ProtocolSequence *ProtocolSequence::getInverse() const
 {
     vector<const Protocol *> invs;
@@ -170,6 +246,11 @@ const ProtocolSequence *ProtocolSequence::getCopy() const
     auto ans = new ProtocolSequence(invs); 
     ans->guardCount = this->guardCount;
     return ans;
+}
+
+bool ProtocolSequence::isComplete() const
+{
+    return steps.size() == 0;
 }
 
 optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
@@ -428,4 +509,48 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
     }
 
     return false;
+}
+
+void ProtocolSequence::append(const ProtocolSequence *proto) const
+{
+    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+    vector<const Protocol *> other = proto->steps;
+    u_this->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
+}
+
+bool ProtocolSequence::isGuarded() const // FIXME: DO BETTER
+{
+    if (steps.size() == 0)
+    {
+        return guardCount > 0;
+    }
+    return steps.front()->isGuarded();
+}
+
+void ProtocolSequence::guard() const // FIXME: DO BETTER
+{
+    if (steps.size() == 0)
+    {
+        ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+        u_this->guardCount = u_this->guardCount + 1;
+    }
+    else
+    {
+        steps.front()->guard();
+    }
+}
+
+bool ProtocolSequence::unguard() const // FIXME: DO BETTER
+{
+    if (steps.size() == 0)
+    {
+        if (guardCount == 0)
+            return false;
+        ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+
+        u_this->guardCount = u_this->guardCount - 1;
+        return true;
+    }
+
+    return steps.front()->unguard();
 }

@@ -712,7 +712,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode *n)
     return casted;
 }
 
-std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n)
+std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) //TODO: COnsider refactoring/ improving generated IR
 {
     std::optional<Value *> indexOpt = AcceptType(this, n->indexExpr);
 
