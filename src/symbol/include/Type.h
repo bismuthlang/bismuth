@@ -495,18 +495,16 @@ class TypeInt : public Type
 public:
     TypeInt(bool isLinear) : Type(isLinear){}; 
 
-    std::string toString() const override { return "INT"; }
-    llvm::IntegerType *getLLVMType(llvm::Module *M) const override
-    {
-        return llvm::Type::getInt32Ty(M->getContext());
-    }
+    std::string toString() const override;
+
+    llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override { return false; }
 
     const TypeInt * getCopy() const override { return this; };
 
 protected:
-    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -520,11 +518,9 @@ class TypeBool : public Type
 public:
     TypeBool(bool isLinear) : Type(isLinear) {}; 
 
-    std::string toString() const override { return "BOOL"; }
-    llvm::Type *getLLVMType(llvm::Module *M) const override
-    {
-        return llvm::Type::getInt1Ty(M->getContext());
-    }
+    std::string toString() const override;
+
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override { return false; }
 
@@ -544,8 +540,10 @@ class TypeStr : public Type
 {
 public:
     TypeStr(bool isLinear) : Type(isLinear) {}; 
-    std::string toString() const override { return "STR"; }
-    llvm::Type *getLLVMType(llvm::Module *M) const override { return llvm::Type::getInt8PtrTy(M->getContext()); }
+
+    std::string toString() const override;
+
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override { return false; }
 
@@ -566,12 +564,12 @@ class TypeBottom : public Type
 public:
     TypeBottom(bool isLinear) : Type(isLinear) {}; 
 
-    std::string toString() const override { return "\u22A5"; }
+    std::string toString() const override;
 
-    const TypeBottom * getCopy() const override { return this; };
+    const TypeBottom * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -583,28 +581,15 @@ class TypeUnit : public Type
 {
 public:
     TypeUnit(bool isLinear) : Type(isLinear) {};
-    std::string toString() const override { return "Unit"; } // Used to be 1 pre July 15 2023
 
-    const TypeUnit * getCopy() const override { return this; };
+    std::string toString() const override;
 
-    llvm::Type *getLLVMType(llvm::Module *M) const override
-    {
-        llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-        if (ty)
-            return ty;
+    const TypeUnit * getCopy() const override;
 
-        ty = llvm::StructType::create(M->getContext(), toString());
-
-        std::vector<llvm::Type *> typeVec;
-        
-        llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-        ty->setBody(ref); // Done like this to enable recursive types
-
-        return ty;
-    }
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -616,9 +601,10 @@ class TypeAbsurd : public Type
 {
 public:
     TypeAbsurd(bool isLinear) : Type(isLinear) {}; 
-    std::string toString() const override { return "0"; }
+    
+    std::string toString() const override;
 
-    const TypeAbsurd * getCopy() const override { return this; };
+    const TypeAbsurd * getCopy() const override;
 
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
