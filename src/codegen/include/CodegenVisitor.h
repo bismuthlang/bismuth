@@ -226,7 +226,7 @@ public:
         // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
         if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE, OR IS IT GIVEN EXIT?
         {
-            builder->CreateRet(Constant::getNullValue(Types::UNIT->getLLVMType(module)));
+            builder->CreateRet(getUnitValue());
             // Value * val = llvm::UndefValue::get(llvm::Type::getVoidTy(module->getContext()));
             // builder->CreateRet(val);
         }
@@ -472,6 +472,10 @@ public:
         return builder->CreateCall(get_address_map_create(), {});
     }
 
+    llvm::Value *getUnitValue() {
+        return Constant::getNullValue(Types::UNIT->getLLVMType(module));
+    }
+
     void deleteAddressMap(llvm::Value *val)
     {
         builder->CreateCall(
@@ -484,18 +488,15 @@ public:
             val);
     }
 
-    std::optional<Value *> correctSumAssignment(const TypeSum *sum, Value *original)
+    Value * correctSumAssignment(const TypeSum *sum, Value *original)
     {
         unsigned int index = sum->getIndex(module, original->getType());
 
         if (index != 0)
         {
             llvm::Type *sumTy = sum->getLLVMType(module);
+            llvm::AllocaInst * alloc = CreateEntryBlockAlloc(sumTy, "");
 
-            std::optional<llvm::AllocaInst *> allocOpt = CreateEntryBlockAlloc(sumTy, "");
-            if(!allocOpt) return std::nullopt;
-
-            llvm::AllocaInst * alloc = allocOpt.value(); 
             Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
 
             builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
@@ -511,6 +512,8 @@ public:
         return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cases...
     }
 
+    // TODO: void elimination? Should be somewhat handled by llvm
+    // FIXME: BLOCK UNIT FROM BEING IN STRUCT? OR AT LEAST TEST IF ITS BREAKING
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {

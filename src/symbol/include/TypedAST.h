@@ -860,6 +860,12 @@ public:
         return new TypeSum(cases);
     }
 
+    const TypeSum* getRValueType() {
+        const Type * arrayType = dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        return new TypeSum(cases);
+    }
+
     int length() const {
         return dynamic_cast<const TypeArray *>(field->getType())->getLength();
     }

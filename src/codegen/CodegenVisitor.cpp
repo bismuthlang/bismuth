@@ -271,13 +271,7 @@ std::optional<Value *> CodegenVisitor::visit(TInvocationNode *n)
         {
             if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(n->paramType.at(args.size()))) // argNodes.at(args.size())->getType()))
             {
-                std::optional<Value *> correctedOpt = correctSumAssignment(sumOpt.value(), val);
-                if (!correctedOpt)
-                {
-                    errorHandler.addError(nullptr, "Failed to correct sum in invocation. Was a unit somehow passed?");
-                    return std::nullopt;
-                }
-                val = correctedOpt.value();
+                val = correctSumAssignment(sumOpt.value(), val);
             }
         }
 
@@ -392,13 +386,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
     // Same as return node's
     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(n->lType))
     {
-        std::optional<Value *> correctedOpt = correctSumAssignment(sumOpt.value(), stoVal);
-        if (!correctedOpt)
-        {
-            errorHandler.addError(nullptr, "Failed to correct sum in send. Was a unit somehow passed?"); // TODO: might we want to be able to do such signals?
-            return std::nullopt;
-        }
-        stoVal = correctedOpt.value();
+        stoVal = correctSumAssignment(sumOpt.value(), stoVal);
     }
 
     Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
@@ -682,13 +670,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode *n)
         {
             if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(elements.at(i).second))
             {
-                std::optional<Value *> correctedOpt = correctSumAssignment(sumOpt.value(), a);
-                if (!correctedOpt)
-                {
-                    errorHandler.addError(nullptr, "Failed to correct sum in init product. Was a unit somehow passed?");
-                    return std::nullopt;
-                }
-                a = correctedOpt.value();
+                a = correctSumAssignment(sumOpt.value(), a);
             }
 
             Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
@@ -718,13 +700,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode *n)
 
     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(box->getInnerType()))
     {
-        std::optional<Value *> valOpt = correctSumAssignment(sumOpt.value(), stoVal);
-        if (!valOpt)
-        {
-            errorHandler.addError(nullptr, "Failed to correct sum assignment. Is stored box type a unit?");
-            return std::nullopt;
-        }
-        stoVal = valOpt.value();
+        stoVal = correctSumAssignment(sumOpt.value(), stoVal);
     }
 
     Value *v = builder->CreateCall(getGCMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
@@ -758,14 +734,11 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n)
 
     if (!n->is_rvalue)
     {
-        Value *ptr = builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
-        return ptr;
-        // return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
+        // If its an lvalue,need the pointer!
+        return builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
     }
 
-    // Value *ptr = builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
-    // Value *loaded = builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
-    // return correctSumAssignment(dynamic_cast<const TypeSum *>(n->getType()), loaded); // FIXME: DONT CALCULATE GETTYPE TWIICE!!
+
     Value * idxBoundsCheckValue =  builder->CreateICmpSLT(
         indexValue,
         builder->getInt32(n->length())//arrayPtr->getType()->getNumElements())
@@ -773,60 +746,59 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n)
 
     auto parentFn = builder->GetInsertBlock()->getParent();
 
-    BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "then", parentFn);
-    BasicBlock *elseBlk = BasicBlock::Create(module->getContext(), "else");
+    BasicBlock *ltlBlk = BasicBlock::Create(module->getContext(), "accessLTL", parentFn);
+    BasicBlock *gtzBlk = BasicBlock::Create(module->getContext(), "accessGTZ");
+    BasicBlock *elseBlk = BasicBlock::Create(module->getContext(), "accessBad");
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "accessAfter");
 
-    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "ifcont");
-
-    builder->CreateCondBr(builder->CreateZExtOrTrunc(idxBoundsCheckValue, Int1Ty), thenBlk, elseBlk);
+    builder->CreateCondBr(builder->CreateZExtOrTrunc(idxBoundsCheckValue, Int1Ty), ltlBlk, elseBlk);
 
     /*
-     * Then block
+     * We knw its less than the length, but need to ensure greater than zero
      */
-    builder->SetInsertPoint(thenBlk);
-    //FIXME: DYNAMIC UNSAFE-ISH
-    Value *ptr0 = builder->CreateGEP(arrayPtr, {Int32Zero, indexValue}); // =FIXME: NAME BETTER, HANDLE NEGATIVE!
-    Value *loaded = builder->CreateLoad(ptr0->getType()->getPointerElementType(), ptr0);
-    auto ptr = correctSumAssignment(dynamic_cast<const TypeSum*>(n->getType()), loaded); //FIXME: DONT CALCULATE GETTYPE TWIICE!!
-    builder->CreateBr(restBlk);
-    thenBlk = builder->GetInsertBlock();
+    builder->SetInsertPoint(ltlBlk);
+
+    builder->CreateCondBr(
+        builder->CreateZExtOrTrunc(
+            builder->CreateICmpSGE(indexValue, Int32Zero), // PLAN: Add slices which could loop!
+            Int1Ty
+        ),
+        gtzBlk,
+        elseBlk
+    );
+    ltlBlk = builder->GetInsertBlock();
+
 
     /*
-     * Insert the else block (same as rest if no else branch)
+     * Passed Bounds Check Blk
+     */
+    parentFn->getBasicBlockList().push_back(gtzBlk);
+    builder->SetInsertPoint(gtzBlk);
+    Value *valuePtr = builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
+    Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    auto ptr = correctSumAssignment(n->getRValueType(), value); //FIXME: DONT CALCULATE getRValueType TWIICE!!
+    builder->CreateBr(restBlk);
+    gtzBlk = builder->GetInsertBlock();
+
+    /*
+     * Out of bounds, so set unit
      */
     parentFn->getBasicBlockList().push_back(elseBlk);
     builder->SetInsertPoint(elseBlk);
 
-    // Generate the code for the else block; follows the same logic as the then block.
-    //FIXME:DYNAMIC CAST UNSAFE-ISH
-    auto unitPtr = correctSumAssignment(dynamic_cast<const TypeSum*>(n->getType()), Constant::getNullValue(Types::UNIT->getLLVMType(module)));
+    auto unitPtr = correctSumAssignment(n->getRValueType(), getUnitValue());
     builder->CreateBr(restBlk);
     elseBlk = builder->GetInsertBlock();
 
-    // As we have an else block, rest and else are different, so we have to merge back in.
+    /*
+     * Return to computation
+     */
     parentFn->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-    
-
-    std::string type_str0;
-    llvm::raw_string_ostream rso0(type_str0);
-    n->getType()->getLLVMType(module)->print(rso0);
-    std::cout<<"812         ----- " <<  rso0.str() << std::endl;
-
-    std::string type_str1;
-    llvm::raw_string_ostream rso1(type_str1);
-    ptr.value()->getType()->print(rso1);
-    std::cout<<"812         ----- " <<  rso1.str() << std::endl;
-
-
-
-
-
-
 
     PHINode *phi = builder->CreatePHI(n->getType()->getLLVMType(module), 2, "arrayAccess");
-    phi->addIncoming(ptr.value(), thenBlk); //FIXME: UNSAFE-ISH
-    phi->addIncoming(unitPtr.value(), elseBlk);
+    phi->addIncoming(ptr, gtzBlk); 
+    phi->addIncoming(unitPtr, elseBlk);
 
     return phi;
 }
@@ -1695,10 +1667,7 @@ std::optional<Value *> CodegenVisitor::visit(TReturnNode *n)
 
         if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(expr.first))
         {
-            std::optional<Value *> valueOpt = correctSumAssignment(sumOpt.value(), inner);
-            if (valueOpt)
-                return builder->CreateRet(Constant::getNullValue(Types::UNIT->getLLVMType(module)));
-            inner = valueOpt.value();
+            inner = correctSumAssignment(sumOpt.value(), inner);
         }
 
         // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.
@@ -1706,13 +1675,13 @@ std::optional<Value *> CodegenVisitor::visit(TReturnNode *n)
     }
 
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
-    return builder->CreateRet(Constant::getNullValue(Types::UNIT->getLLVMType(module)));
+    return builder->CreateRet(getUnitValue());
 }
 
 std::optional<Value *> CodegenVisitor::visit(TExitNode *n)
 {
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
-    return builder->CreateRet(Constant::getNullValue(Types::UNIT->getLLVMType(module)));
+    return builder->CreateRet(getUnitValue());
 }
 
 std::optional<Value *> CodegenVisitor::visit(TBooleanConstNode *n)
