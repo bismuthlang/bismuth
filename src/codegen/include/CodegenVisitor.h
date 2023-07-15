@@ -77,7 +77,7 @@ public:
         copyVisitor = new DeepCopyVisitor(module, &errorHandler);
 
         // LLVM Types
-        VoidTy = Types::UNIT->getLLVMType(module);//llvm::Type::getVoidTy(module->getContext());
+        UnitTy = Types::UNIT->getLLVMType(module);
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
         Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
@@ -311,7 +311,7 @@ public:
     {
         return module->getOrInsertFunction("WriteProjection",
                                            llvm::FunctionType::get(
-                                               VoidTy,
+                                               UnitTy,
                                                {Int32Ty,
                                                 Int32Ty},
                                                false));
@@ -341,20 +341,13 @@ public:
         return module->getOrInsertFunction(
             "free",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {i8p},
                 false));
     }
 
     llvm::FunctionCallee getGCMalloc()
     {
-        // return module->getOrInsertFunction(
-        //     "malloc",
-        //     llvm::FunctionType::get(
-        //         i8p,
-        //         {Int32Ty},
-        //         false));
-
         return module->getOrInsertFunction(
             "GC_malloc",
             llvm::FunctionType::get(
@@ -368,7 +361,7 @@ public:
         return module->getOrInsertFunction(
             "WeakenChannel",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {Int32Ty},
                 false));
     }
@@ -378,7 +371,7 @@ public:
         return module->getOrInsertFunction(
             "WriteChannel",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {Int32Ty,
                  i8p},
                 false));
@@ -401,7 +394,7 @@ public:
             llvm::FunctionType::get(
                 Int32Ty,
                 {llvm::FunctionType::get(
-                     VoidTy,
+                     UnitTy,
                      {Int32Ty},
                      false)
                      ->getPointerTo()},
@@ -442,7 +435,7 @@ public:
         return module->getOrInsertFunction(
             "PopEndLoop",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {Int32Ty},
                 false));
     }
@@ -452,7 +445,7 @@ public:
         return module->getOrInsertFunction(
             "ContractChannel",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {Int32Ty},
                 false));
     }
@@ -482,7 +475,7 @@ public:
             module->getOrInsertFunction(
                 "_address_map_delete",
                 llvm::FunctionType::get(
-                    VoidTy,
+                    UnitTy,
                     {i8p},
                     false)),
             val);
@@ -533,7 +526,7 @@ private:
     IRBuilder<NoFolder> *builder;
 
     // Commonly used types
-    llvm::Type *VoidTy;
+    llvm::Type *UnitTy;
     llvm::Type *Int1Ty;
     llvm::IntegerType *Int8Ty;
     llvm::IntegerType *Int32Ty; // Things like 32 bit integers

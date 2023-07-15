@@ -583,7 +583,7 @@ class TypeUnit : public Type
 {
 public:
     TypeUnit(bool isLinear) : Type(isLinear) {};
-    std::string toString() const override { return "1"; }
+    std::string toString() const override { return "Unit"; } // Used to be 1 pre July 15 2023
 
     const TypeUnit * getCopy() const override { return this; };
 
@@ -955,11 +955,7 @@ public:
 
     llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const
     {
-        // Create a vector for our argument types
-        // std::vector<llvm::Type *> typeVec;
-        // llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
-
-        llvm::Type *ret = Types::UNIT->getLLVMType(M);//llvm::Type::getVoidTy(M->getContext());
+        llvm::Type *ret = Types::UNIT->getLLVMType(M);
 
         return llvm::FunctionType::get(
             ret,

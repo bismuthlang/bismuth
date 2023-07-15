@@ -71,7 +71,7 @@ public:
         // builder = new IRBuilder<NoFolder>(module->getContext());
 
         // LLVM Types
-        VoidTy = Types::UNIT->getLLVMType(module);// llvm::Type::getVoidTy(module->getContext());
+        UnitTy = Types::UNIT->getLLVMType(module);
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
         Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
@@ -110,20 +110,13 @@ public:
         return module->getOrInsertFunction(
             "free",
             FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {i8p},
                 false));
     }
 
     llvm::FunctionCallee getGCMalloc()
     {
-        // return module->getOrInsertFunction(
-        //     "malloc",
-        //     FunctionType::get(
-        //         i8p,
-        //         {Int32Ty},
-        //         false));
-
         return module->getOrInsertFunction(
             "GC_malloc",
             FunctionType::get(
@@ -161,7 +154,7 @@ public:
             module->getOrInsertFunction(
                 "_address_map_delete",
                 FunctionType::get(
-                    VoidTy,
+                    UnitTy,
                     {i8p},
                     false)),
             val);
@@ -182,7 +175,7 @@ public:
         return module->getOrInsertFunction(
             "_address_map_put",
             FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {i8p,
                  i8p,
                  i8p},
@@ -238,7 +231,7 @@ private:
     // IRBuilder<NoFolder> *builder;
 
     // Commonly used types
-    llvm::Type *VoidTy;
+    llvm::Type *UnitTy;
     llvm::Type *Int1Ty;
     llvm::IntegerType *Int8Ty;
     llvm::IntegerType *Int32Ty; // Things like 32 bit integers
