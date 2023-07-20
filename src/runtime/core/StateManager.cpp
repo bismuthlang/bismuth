@@ -313,3 +313,35 @@ extern "C" void WeakenChannel(unsigned int aId)
     END_LOOP v;
     WriteHelper(aId, v);
 }
+
+
+
+
+
+
+extern "C" unsigned int _ArrayToChannel(uint8_t * array[], unsigned int len)
+{
+    exec_mutex.lock();
+    IPCBuffer<Message> *aRead = new IPCBuffer<Message>(); 
+    unsigned int id = State.size();
+
+    State.insert({id, aRead});
+
+
+    for(unsigned int i = 0; i < len; i++)
+    {
+        START_LOOP s;
+        Value v;
+        v.v = array[i];
+
+        aRead->enqueue(s);
+        aRead->enqueue(v); 
+    }
+    
+    END_LOOP end; 
+    aRead->enqueue(end); 
+
+    exec_mutex.unlock();
+
+    return id; 
+}
