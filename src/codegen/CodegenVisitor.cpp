@@ -1835,8 +1835,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n)
     llvm::ArrayType * arrayPtrTy = llvm::ArrayType::get(i8p, arrayType->getLength());
     AllocaInst *saveBlock = CreateEntryBlockAlloc(arrayPtrTy, "save_blk");
 
-    // FIXME: SIMILAR TO DEEP COPY VISITOR!
-    const Type * valueType = arrayType->getValueType(); 
+    // FIXME: SIMILAR TO DEEP COPY VISITOR
         
     AllocaInst *loop_index = CreateEntryBlockAlloc(Int32Ty, "idx");
     AllocaInst *loop_len = CreateEntryBlockAlloc(Int32Ty, "len");
@@ -1866,7 +1865,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n)
     {
         Value *stoLoc = builder->CreateGEP(saveBlock, {Int32Zero,
                                                         builder->CreateLoad(Int32Ty, loop_index)});
-                                                        
+
         Value *readLoc = builder->CreateGEP(loadedVal, {Int32Zero,
                                                         builder->CreateLoad(Int32Ty, loop_index)});
 

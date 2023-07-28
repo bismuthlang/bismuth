@@ -95,6 +95,11 @@ Version: Pre-Alpha 1.3.3 @ )"""" << GIT_COMMIT_HASH <<  R""""(
 
 ChangeLog
 =========
+1.3.4 - XXX: 
+  - Added toChannel function to convert ty -> Channel<!+ty>
+
+  - Refactored code internals to promote compile speed (of Bismuth, not the Bismuth compiler)
+
 1.3.3 - 2023-06-04:
   - Added ability to nest all type defs (struct, enum) in addition to programs and functions. 
   - Improved syntax, particularly of externs.
