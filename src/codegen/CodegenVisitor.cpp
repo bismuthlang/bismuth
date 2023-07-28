@@ -1793,105 +1793,116 @@ std::optional<Value *> CodegenVisitor::visit(TExprCopyNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n)
 {
-    if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(n->expr->getType()))
+    std::optional<Value *> valOpt = AcceptType(this, n->expr);//new TExprCopyNode(n->expr, n->token)); // FIXME: WILL THIS LEAK THE TOPLEVEL ARRAY? CANT DEEP COPY EACH INDEPENDELTY OR ELSE WE WOULD BREAK REFERENCES!
+        
+    if (!valOpt)
     {
-        // TODO: TURN INTO FN?
-        //FIXME: VERY SIMILAR TO TSEND
-        std::optional<Value *> valOpt = AcceptType(this, n->expr);//new TExprCopyNode(n->expr, n->token)); // FIXME: WILL THIS LEAK THE TOPLEVEL ARRAY? CANT DEEP COPY EACH INDEPENDELTY OR ELSE WE WOULD BREAK REFERENCES!
-        
-        if (!valOpt)
+        errorHandler.addError(n->getStart(), "Failed to generate code");
+        return std::nullopt;
+    }
+
+    Value *loadedVal = valOpt.value();
+    // TODO: SWITCH TO TUPLE INSTEAD OF MUTABLE!
+    const TypeArray * arrayType = [this, n, &loadedVal]() mutable -> const TypeArray *{
+        const Type * ty = n->expr->getType();
+        if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(ty))
         {
-            errorHandler.addError(n->getStart(), "Failed to generate code");
-            return std::nullopt;
+            // FIXME: ONLY NEEDED BC CANT SPECIFY THAT THIS IS AN LVALUE!!!
+            AllocaInst *stoVal = CreateEntryBlockAlloc(loadedVal->getType(), "cast_arr");
+            builder->CreateStore(loadedVal, stoVal); 
+            loadedVal = stoVal;
+            return arrayType; 
         }
-
-        Value *loadedVal = valOpt.value();
-        // FIXME: ONLY NEEDED BC CANT SPECIFY THAT THIS IS AN LVALUE!!!
-        AllocaInst *stoVal = CreateEntryBlockAlloc(loadedVal->getType(), "cast_arr");
-        builder->CreateStore(loadedVal, stoVal); 
-
-        // Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
-        // Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
-
-        // builder->CreateStore(stoVal, casted);
-        // Value *corrected = builder->CreateBitCast(v, i8p);
-
-
-
-        llvm::ArrayType * arrayPtrTy = llvm::ArrayType::get(i8p, arrayType->getLength());
-        AllocaInst *saveBlock = CreateEntryBlockAlloc(arrayPtrTy, "cast_arr");
-
-        // FIXME: SIMILAR TO DEEP COPY VISITOR!
-        const Type * valueType = arrayType->getValueType(); 
-            
-        AllocaInst *loop_index = CreateEntryBlockAlloc(Int32Ty, "idx");
-        AllocaInst *loop_len = CreateEntryBlockAlloc(Int32Ty, "len");
-        builder->CreateStore(Int32Zero, loop_index);
-        builder->CreateStore(ConstantInt::get(Int32Ty, arrayType->getLength(), true), loop_len);
-
-        auto parent = builder->GetInsertBlock()->getParent();
-        BasicBlock *condBlk = BasicBlock::Create(module->getContext(), "loop-cond", parent);
-
-        BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop");
-        BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
-
-        builder->CreateBr(condBlk);
-        builder->SetInsertPoint(condBlk);
-
-        builder->CreateCondBr(builder->CreateICmpSLT(builder->CreateLoad(Int32Ty, loop_index), builder->CreateLoad(Int32Ty, loop_len)), loopBlk, restBlk);
-        condBlk = builder->GetInsertBlock();
-
-        parent->getBasicBlockList().push_back(loopBlk);
-        builder->SetInsertPoint(loopBlk);
-
-        /******************Loop Body********************/
-        /**     Note: This may Have to be improved depending on **/
-        /**           how inheritance & such ends up working.   **/
-        /**/
-        /**/
-        {
-            Value *stoLoc = builder->CreateGEP(saveBlock, {Int32Zero,
-                                                            builder->CreateLoad(Int32Ty, loop_index)});
-
-            Value *readLoc = builder->CreateGEP(stoVal, {Int32Zero,
-                                                            builder->CreateLoad(Int32Ty, loop_index)});
-
-            // Value *corrected = builder->CreateBitCast(readLoc, i8p);
-            Value *read = builder->CreateLoad(readLoc->getType()->getPointerElementType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
-
-            Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(read->getType()))});
-            Value *casted = builder->CreateBitCast(v, read->getType()->getPointerTo());
-
-            builder->CreateStore(read, casted);
-            Value *corrected = builder->CreateBitCast(v, i8p);
-
-
-
-            builder->CreateStore(corrected, stoLoc);
-        }
-
-        /**/
-        /**/
-        /***********************************************/
-        builder->CreateStore(
-            builder->CreateNSWAdd(builder->CreateLoad(Int32Ty, loop_index),
-                                    Int32One),
-            loop_index);
-        builder->CreateBr(condBlk);
-        loopBlk = builder->GetInsertBlock();
-
-        parent->getBasicBlockList().push_back(restBlk);
-        builder->SetInsertPoint(restBlk);
-
-
-        //Convert [n x i8*] to i8**
-        Value *arrayStart = builder->CreateBitCast(
-            builder->CreateGEP(saveBlock, {Int32Zero, Int32Zero}), 
-            Int8PtrPtrTy);
         
-        // return saveBlock;
-        return builder->CreateCall(get_arrayToChannel(), {arrayStart, builder->CreateLoad(Int32Ty, loop_len)});
-    } 
-    errorHandler.addError(n->getStart(), "1875 Failed to generate code");
-    return std::nullopt;
+        // FIXME: NEEDED BC NO LVALUE
+        const TypeArray * arrTy = new TypeArray(ty, 1);
+
+        // TODO: Remove Array and make things use pointers?
+        AllocaInst *saveBlock = CreateEntryBlockAlloc(arrTy->getLLVMType(module), "createdArray");
+        
+        Value *stoLoc = builder->CreateGEP(saveBlock, {Int32Zero,Int32Zero});
+        builder->CreateStore(loadedVal, stoLoc);
+
+        loadedVal = saveBlock; //builder->CreateLoad(saveBlock->getType(), saveBlock); 
+
+        return arrTy;
+    }();
+
+    // TODO: TURN INTO FN?
+    //FIXME: VERY SIMILAR TO TSEND
+
+
+    llvm::ArrayType * arrayPtrTy = llvm::ArrayType::get(i8p, arrayType->getLength());
+    AllocaInst *saveBlock = CreateEntryBlockAlloc(arrayPtrTy, "save_blk");
+
+    // FIXME: SIMILAR TO DEEP COPY VISITOR!
+    const Type * valueType = arrayType->getValueType(); 
+        
+    AllocaInst *loop_index = CreateEntryBlockAlloc(Int32Ty, "idx");
+    AllocaInst *loop_len = CreateEntryBlockAlloc(Int32Ty, "len");
+    builder->CreateStore(Int32Zero, loop_index);
+    builder->CreateStore(ConstantInt::get(Int32Ty, arrayType->getLength(), true), loop_len);
+
+    auto parent = builder->GetInsertBlock()->getParent();
+    BasicBlock *condBlk = BasicBlock::Create(module->getContext(), "loop-cond", parent);
+
+    BasicBlock *loopBlk = BasicBlock::Create(module->getContext(), "loop");
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
+
+    builder->CreateBr(condBlk);
+    builder->SetInsertPoint(condBlk);
+
+    builder->CreateCondBr(builder->CreateICmpSLT(builder->CreateLoad(Int32Ty, loop_index), builder->CreateLoad(Int32Ty, loop_len)), loopBlk, restBlk);
+    condBlk = builder->GetInsertBlock();
+
+    parent->getBasicBlockList().push_back(loopBlk);
+    builder->SetInsertPoint(loopBlk);
+
+    /******************Loop Body********************/
+    /**     Note: This may Have to be improved depending on **/
+    /**           how inheritance & such ends up working.   **/
+    /**/
+    /**/
+    {
+        Value *stoLoc = builder->CreateGEP(saveBlock, {Int32Zero,
+                                                        builder->CreateLoad(Int32Ty, loop_index)});
+                                                        
+        Value *readLoc = builder->CreateGEP(loadedVal, {Int32Zero,
+                                                        builder->CreateLoad(Int32Ty, loop_index)});
+
+        
+        Value *read = builder->CreateLoad(readLoc->getType()->getPointerElementType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
+
+        Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(read->getType()))});
+        Value *casted = builder->CreateBitCast(v, read->getType()->getPointerTo());
+
+        builder->CreateStore(read, casted);
+        Value *corrected = builder->CreateBitCast(v, i8p);
+
+
+
+        builder->CreateStore(corrected, stoLoc);
+    }
+
+    /**/
+    /**/
+    /***********************************************/
+    builder->CreateStore(
+        builder->CreateNSWAdd(builder->CreateLoad(Int32Ty, loop_index),
+                                Int32One),
+        loop_index);
+    builder->CreateBr(condBlk);
+    loopBlk = builder->GetInsertBlock();
+
+    parent->getBasicBlockList().push_back(restBlk);
+    builder->SetInsertPoint(restBlk);
+
+
+    //Convert [n x i8*] to i8**
+    Value *arrayStart = builder->CreateBitCast(
+        builder->CreateGEP(saveBlock, {Int32Zero, Int32Zero}), 
+        Int8PtrPtrTy);
+    
+    // return saveBlock;
+    return builder->CreateCall(get_arrayToChannel(), {arrayStart, builder->CreateLoad(Int32Ty, loop_len)});
 } 
