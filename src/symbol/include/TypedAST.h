@@ -85,6 +85,8 @@ class TProgramProjectNode;
 
 class TExprCopyNode;
 
+class TAsChannelNode; 
+
 class TypedASTVisitor
 {
 public:
@@ -133,6 +135,7 @@ public:
     virtual std::optional<Value *> visit(TChannelCaseStatementNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramProjectNode *n) = 0;
     virtual std::optional<Value *> visit(TExprCopyNode *n) = 0; 
+    virtual std::optional<Value *> visit(TAsChannelNode *n) = 0; 
 
     // virtual std::optional<Value
 
@@ -180,6 +183,7 @@ public:
     std::any any_visit(TChannelCaseStatementNode *n) { return this->visit(n); }
     std::any any_visit(TProgramProjectNode *n) { return this->visit(n); }
     std::any any_visit(TExprCopyNode *n) {return this->visit(n); }
+    std::any any_visit(TAsChannelNode *n) { return this->visit(n); }
 
     std::any visit(std::any n) { return "FIXME"; }
     std::any accept(TypedNode *n)
@@ -1254,22 +1258,6 @@ public:
     }
 };
 
-// class TExprCopyNode : public TypedNode
-// {
-// public:
-//     TypedNode *toCopy;
-
-//     TExprCopyNode(TypedNode *c, antlr4::Token *tok) : TypedNode(tok), toCopy(c)
-//     {
-//     }
-
-//     std::string toString() const override {
-//         return "COPY NODE";
-//     }
-
-//     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-// };
-
 class TExprCopyNode : public TypedNode
 {
 public:
@@ -1288,6 +1276,35 @@ public:
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+class TAsChannelNode : public TypedNode 
+{
+private: 
+    const Type* nodeType;
+
+public: 
+    TypedNode *expr; 
+
+    TAsChannelNode(TypedNode *e, antlr4::Token *tok) : TypedNode(tok), expr(e) 
+    {
+        nodeType = new TypeChannel(new ProtocolSequence({
+            new ProtocolOC(new ProtocolSequence({
+                new ProtocolRecv([](TypedNode * expr){
+                    const Type * ty = expr->getType(); 
+                    if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(ty))
+                    {
+                        return arrayType->getValueType();
+                    }
+                    return ty; 
+                }(expr))
+            })) 
+        })); 
+    }
+
+    const Type* getType() override { return nodeType; } 
+    std::string toString() const override { return "AsChannel(" + expr->toString() + ")"; } 
+    virtual std::any accept(TypedASTVisitor * a) override { return a ->any_visit(this); }
 };
 
 /**************************************************

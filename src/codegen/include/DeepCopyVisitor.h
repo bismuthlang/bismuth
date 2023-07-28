@@ -468,7 +468,7 @@ private:
                 optional<Value *> valOpt = deepCopyHelper(builder, valueType, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
                         return std::nullopt;
-                builder->CreateStore(valOpt.value(), memLoc);
+                builder->CreateStore(valOpt.value(), memLoc); // Verify this doesnt over-write the thing. I think it should be fine, but still...
             }
 
             /**/

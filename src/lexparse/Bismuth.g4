@@ -73,9 +73,10 @@ expression          : LPAR ex=expression RPAR                                   
                     | lambdaConstExpr                               # LambdaExpr
                     | channel=VARIABLE '.recv' LPAR RPAR            # AssignableRecv
                     | channel=VARIABLE '.is_present' LPAR RPAR      # AssignableIsPresent
-                    | EXEC prog=expression                        # AssignableExec
-                    | COPY LPAR expr=expression RPAR              # CopyExpr
-                    | COPY expr=expression                        # CopyExpr
+                    | EXEC prog=expression                          # AssignableExec
+                    | COPY LPAR expr=expression RPAR                # CopyExpr
+                    | COPY expr=expression                          # CopyExpr
+                    | 'asChannel' LPAR expr=expression RPAR         # AsChannelExpr
                     ;
 
 lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;

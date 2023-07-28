@@ -134,6 +134,7 @@ public:
     std::optional<Value *> visit(TProgramProjectNode *n) override;
     std::optional<Value *> visit(TInitBoxNode *n) override;
     std::optional<Value *> visit(TExprCopyNode *n) override; 
+    std::optional<Value *> visit(TAsChannelNode *n) override;  
 
     std::optional<Value *> visitCompilationUnit(TCompilationUnitNode *n) { return visit(n); }
 
@@ -457,6 +458,16 @@ public:
             llvm::FunctionType::get(
                 i8p,
                 {},
+                false));
+    }
+
+    llvm::FunctionCallee get_arrayToChannel()
+    {
+        return module->getOrInsertFunction(
+            "_ArrayToChannel",
+            llvm::FunctionType::get(
+                Int32Ty,
+                {Int8PtrPtrTy, Int32Ty},
                 false));
     }
 

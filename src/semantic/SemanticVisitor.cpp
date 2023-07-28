@@ -2429,6 +2429,27 @@ std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(Bism
     return new TExprCopyNode(tn, ctx->getStart());
 }
 
+std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx)
+{
+    std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to type check copy expression");
+        return *e;
+    }
+
+    TypedNode *tn = std::get<TypedNode *>(tnOpt);
+    // FIXME: VERIFY WORKS WITH LINEAR
+    // const Type *ty = tn->getType();
+
+    // if (ty->isLinear()) 
+    // {
+    //     return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty->toString());
+    // }
+
+    return new TAsChannelNode(tn, ctx->getStart());
+}
+
 /*************************************************************
  *
  * Protocols
