@@ -2510,6 +2510,7 @@ const Protocol *SemanticVisitor::visitProto(BismuthParser::ExtChoiceProtoContext
     // return new Protocol(steps);
     return new ProtocolEChoice(opts);
 }
+
 const Protocol *SemanticVisitor::visitProto(BismuthParser::IntChoiceProtoContext *ctx)
 {
     // std::vector<const ProtocolSequence *> opts;
@@ -2527,4 +2528,16 @@ const Protocol *SemanticVisitor::visitProto(BismuthParser::IntChoiceProtoContext
     }
 
     return new ProtocolIChoice(opts);
+}
+
+const Protocol *SemanticVisitor::visitProto(BismuthParser::CloseableProtoContext * ctx)
+{
+    const Protocol *proto = any2Protocol(ctx->proto->accept(this));
+    if(proto->containsLoop())
+    {
+        errorHandler.addError(ctx->getStart(), "Currently cannot include looping protocol within closeable block. Instead, move loop outside block or use higher-order channels.");
+        // FIXME: WE NEED TO DO ERRORS BETTER!
+    }
+
+    return new ProtocolClose(toSequence(proto)); 
 }

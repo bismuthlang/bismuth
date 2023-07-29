@@ -26,6 +26,8 @@ const Protocol *ProtocolRecv::getCopy() const
     return ans;
 }
 
+bool ProtocolRecv::containsLoop() const { return false; }
+
 
 /*********************************************
  *
@@ -53,6 +55,7 @@ const Protocol *ProtocolSend::getCopy() const
     return ans;
 }
 
+bool ProtocolSend::containsLoop() const { return false; }
 
 /*********************************************
  *
@@ -79,6 +82,7 @@ const Protocol *ProtocolWN::getCopy() const
     return ans;
 }
 
+bool ProtocolWN::containsLoop() const { return true; }
 
 /*********************************************
  *
@@ -104,6 +108,7 @@ const Protocol *ProtocolOC::getCopy() const
     return ans;
 }
 
+bool ProtocolOC::containsLoop() const { return true; }
 
 /*********************************************
  *
@@ -150,6 +155,13 @@ const Protocol *ProtocolIChoice::getCopy() const
     auto ans = new ProtocolIChoice(opts); 
     ans->guardCount = this->guardCount;
     return ans;
+}
+
+bool ProtocolIChoice::containsLoop() const 
+{ 
+    for(auto itr : opts)
+        if(itr->containsLoop()) return true; 
+    return false; 
 }
 
 
@@ -199,6 +211,12 @@ const Protocol *ProtocolEChoice::getCopy() const
     return ans;
 }
 
+bool ProtocolEChoice::containsLoop() const 
+{ 
+    for(auto itr : opts)
+        if(itr->containsLoop()) return true; 
+    return false; 
+}
 
 
 
@@ -554,3 +572,38 @@ bool ProtocolSequence::unguard() const // FIXME: DO BETTER
 
     return steps.front()->unguard();
 }
+
+bool ProtocolSequence::containsLoop() const 
+{ 
+    for(const Protocol * proto : steps)
+        if(proto->containsLoop()) return true;
+    return false; 
+}
+
+
+/*********************************************
+ *
+ *  ProtocolClose
+ * 
+ * *******************************************/
+std::string ProtocolClose::as_str() const
+{
+    // TODO: CHANGE SYMBOLS?
+    std::ostringstream description;
+    description << "Closeable<" << proto->toString() << ">";
+
+    return description.str();
+}
+const Protocol *ProtocolClose::getInverse() const
+{
+    return new ProtocolClose(toSequence(this->proto->getInverse()));
+}
+
+const Protocol *ProtocolClose::getCopy() const
+{
+    auto ans = new ProtocolClose(toSequence(this->proto->getCopy())); 
+    ans->guardCount = this->guardCount;
+    return ans;
+}
+
+bool ProtocolClose::containsLoop() const { return false; } // TODO: DO BETTER?

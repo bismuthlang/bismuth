@@ -153,6 +153,8 @@ public:
     virtual const Protocol *getInverse() const = 0;
 
     virtual const Protocol *getCopy() const override = 0;
+
+    virtual bool containsLoop() const = 0; 
 };
 
 // FIXME: DO BETTER
@@ -219,6 +221,8 @@ public:
     bool isGuarded() const override;
     void guard() const override;
     bool unguard() const override;
+
+    bool containsLoop() const override; 
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)
@@ -256,6 +260,7 @@ public:
     const Protocol *getCopy() const override;
 
     const Type *getRecvType() const { return recvType; }
+    bool containsLoop() const override; 
 };
 
 /*******************************************
@@ -280,6 +285,7 @@ public:
     const Protocol *getCopy() const override;
 
     const Type *getSendType() const { return sendType; }
+    bool containsLoop() const override; 
 };
 
 /*******************************************
@@ -304,6 +310,7 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
+    bool containsLoop() const override; 
 };
 
 /*******************************************
@@ -328,6 +335,7 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
+    bool containsLoop() const override; 
 };
 
 /*******************************************
@@ -352,6 +360,7 @@ public:
     const Protocol *getCopy() const override;
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
+    bool containsLoop() const override; 
 };
 
 /*******************************************
@@ -376,6 +385,30 @@ public:
     const Protocol *getCopy() const override;
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
+    bool containsLoop() const override; 
+};
+
+
+/*******************************************
+ *
+ * Closeable Protocol
+ *
+ *******************************************/
+class ProtocolClose : public Protocol
+{
+private:
+    const ProtocolSequence *proto;
+
+public:
+    ProtocolClose(const ProtocolSequence *p) : proto(p) {}
+
+    std::string as_str() const override;
+
+    const Protocol *getInverse() const override;
+    const Protocol *getCopy() const override;
+
+    const ProtocolSequence *getInnerProtocol() const { return proto; }
+    bool containsLoop() const override; 
 };
 
 /*******************************************

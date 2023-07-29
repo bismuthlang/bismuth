@@ -249,6 +249,7 @@ public:
     const Protocol *visitProto(BismuthParser::OcProtoContext *ctx);
     const Protocol *visitProto(BismuthParser::ExtChoiceProtoContext *ctx);
     const Protocol *visitProto(BismuthParser::IntChoiceProtoContext *ctx);
+    const Protocol *visitProto(BismuthParser::CloseableProtoContext *ctx);
 
     std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return visitProto(ctx); }
     std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { return visitProto(ctx); }
@@ -257,6 +258,7 @@ public:
     std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { return visitProto(ctx); }
     std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { return visitProto(ctx); }
     std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return visitProto(ctx); }
+    std::any visitCloseableProto(BismuthParser::CloseableProtoContext *ctx) override { return visitProto(ctx); }
 
     /*
      * Traditional visitor methods all overridden with our typed versions
