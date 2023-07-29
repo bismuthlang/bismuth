@@ -155,6 +155,7 @@ public:
     virtual const Protocol *getCopy() const override = 0;
 
     virtual bool containsLoop() const = 0; 
+    // virtual bool isClosable() const = 0; 
 };
 
 // FIXME: DO BETTER
@@ -261,6 +262,7 @@ public:
 
     const Type *getRecvType() const { return recvType; }
     bool containsLoop() const override; 
+    // bool areHigherOrderChannelsClosable()
 };
 
 /*******************************************
