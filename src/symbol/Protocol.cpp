@@ -28,6 +28,22 @@ const Protocol *ProtocolRecv::getCopy() const
 
 bool ProtocolRecv::containsLoop() const { return false; }
 
+bool ProtocolRecv::areHigherOrderChannelsClosable() const 
+{
+    // FIXME: METHODIZE WITH CODE FOR SEND AS THEYRE THE SAME!!
+    if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(this->recvType))
+    {
+        const std::vector<const Protocol*> steps = channelTy->getProtocol()->getSteps(); 
+        if(steps.size() != 1) return false; 
+
+        if(dynamic_cast<const ProtocolClose*>(steps.at(0)))
+            return true; 
+        return false; 
+    }
+
+    return true;
+}
+
 
 /*********************************************
  *
@@ -57,6 +73,22 @@ const Protocol *ProtocolSend::getCopy() const
 
 bool ProtocolSend::containsLoop() const { return false; }
 
+bool ProtocolSend::areHigherOrderChannelsClosable() const 
+{
+    // FIXME: METHODIZE WITH CODE FOR RECV AS THEYRE THE SAME!!
+    if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(this->recvType))
+    {
+        const std::vector<const Protocol*> steps = channelTy->getProtocol()->getSteps(); 
+        if(steps.size() != 1) return false; 
+
+        if(dynamic_cast<const ProtocolClose*>(steps.at(0)))
+            return true; 
+        return false; 
+    }
+
+    return true;
+}
+
 /*********************************************
  *
  *  ProtocolWN
@@ -84,6 +116,11 @@ const Protocol *ProtocolWN::getCopy() const
 
 bool ProtocolWN::containsLoop() const { return true; }
 
+bool ProtocolWN::areHigherOrderChannelsClosable() const 
+{
+    return false; // AS TECHNICALLY INVALID
+}
+
 /*********************************************
  *
  *  ProtocolOC
@@ -109,6 +146,8 @@ const Protocol *ProtocolOC::getCopy() const
 }
 
 bool ProtocolOC::containsLoop() const { return true; }
+
+bool ProtocolOC::areHigherOrderChannelsClosable() const { return false; }
 
 /*********************************************
  *
@@ -580,6 +619,13 @@ bool ProtocolSequence::containsLoop() const
     return false; 
 }
 
+bool ProtocolSequence::areHigherOrderChannelsClosable() const 
+{
+    for(const Protocol * proto : steps)
+        if(!proto->areHigherOrderChannelsClosable())
+            return false; 
+    return true; 
+}
 
 /*********************************************
  *
@@ -607,3 +653,8 @@ const Protocol *ProtocolClose::getCopy() const
 }
 
 bool ProtocolClose::containsLoop() const { return false; } // TODO: DO BETTER?
+
+bool ProtocolClose::areHigherOrderChannelsClosable() const
+{
+    return proto->areHigherOrderChannelsClosable();
+}

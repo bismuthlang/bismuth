@@ -156,6 +156,7 @@ public:
 
     virtual bool containsLoop() const = 0; 
     // virtual bool isClosable() const = 0; 
+    virtual bool areHigherOrderChannelsClosable() const = 0; // TODO: DO BETTER W/ VISITORS AS ONLY MATTERS AT TYPE CHECK TIME?
 };
 
 // FIXME: DO BETTER
@@ -182,6 +183,9 @@ public:
     {
         steps = p;
     }
+
+    // FIXME: DO BETTER!
+    const vector<const Protocol*> getSteps() const { return steps; }
 
     std::string as_str() const override;
 
@@ -224,6 +228,7 @@ public:
     bool unguard() const override;
 
     bool containsLoop() const override; 
+    bool areHigherOrderChannelsClosable() const override;
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)
@@ -261,8 +266,9 @@ public:
     const Protocol *getCopy() const override;
 
     const Type *getRecvType() const { return recvType; }
-    bool containsLoop() const override; 
-    // bool areHigherOrderChannelsClosable()
+    bool containsLoop() const override;
+    bool areHigherOrderChannelsClosable() const override;
+
 };
 
 /*******************************************
@@ -288,6 +294,7 @@ public:
 
     const Type *getSendType() const { return sendType; }
     bool containsLoop() const override; 
+    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
@@ -313,6 +320,7 @@ public:
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
     bool containsLoop() const override; 
+    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
@@ -338,6 +346,7 @@ public:
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
     bool containsLoop() const override; 
+    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
@@ -411,6 +420,7 @@ public:
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
     bool containsLoop() const override; 
+    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
