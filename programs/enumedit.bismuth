@@ -1,3 +1,4 @@
+# FIXME: DOES THIS ACTUALLY TEST EDITING AN ENUM???
 extern func printf(str s, ...) : int; 
 
 define func PrintEnum ((int + str) e) {

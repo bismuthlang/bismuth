@@ -12,11 +12,7 @@ define struct RGBColor {
     RGBData rgb; 
     RGBData -> int getRed; 
     RGBData -> int getGreen; 
-    RGBData -> int getBlue; 
-    # Program<+RGBData;-int> getRed;  
-    # Program<+RGBData;-int> getGreen; 
-    # Program<+RGBData;-int> getBlue; 
-    
+    RGBData -> int getBlue;     
 }
 
 define struct HSVColor {
@@ -24,9 +20,6 @@ define struct HSVColor {
     HSVData -> int getHue; 
     HSVData -> int getSat; 
     HSVData -> int getVal;
-    # Program<+HSVData;-int> getHue;
-    # Program<+HSVData;-int> getSat;
-    # Program<+HSVData;-int> getVal;
 }
 
 define enum ColorType {
@@ -49,11 +42,13 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
 
     RGBData rgbDat := RGBData::init(data);
 
-    # int func getChannel(RGBData d, int c) {
     define getChannel :: c : Channel<+RGBData;+int;-int> = {
         RGBData d := c.recv();
         int[3] channels := d.rgb; 
-        c.send(channels[c.recv()])
+        
+        match channels[c.recv()]
+            | Unit u => c.send(-1);
+            | int i => c.send(i); 
     }
 
     var c := Color::init(
@@ -80,8 +75,7 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
         ),
         (ColorType c) : str { return "rgb"; }
     );
-
-    # lamePrint(c); 
+ 
     {
         Channel<-Color> io := exec lamePrint; 
         io.send(c)
@@ -116,7 +110,6 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
 }
 
 
-# int func lamePrint(Color c) {
 define lamePrint :: io : Channel<+Color> = {
     Color c := io.recv(); 
 
@@ -154,11 +147,6 @@ define program :: c : Channel<-int> = {
     HSVColor hsv; 
     RGBColor rgb; 
 
-    #Color z := getColor(58, 166, 63);
-
-    #printf("Color: %u, %u, %u\n", z.red, z.green, z.blue);
-
-    # Color col := getRGBColor(58, 166, 63);
     Channel<-int;-int;-int;+Color> io := exec getRGBColor; 
     io.send(58)
     io.send(166)
@@ -168,9 +156,6 @@ define program :: c : Channel<-int> = {
 
     Channel<-Color> io2 := exec lamePrint;
     io2.send(col)
-
-
-    # lamePrint(col); 
 
     c.send(0)
 }
