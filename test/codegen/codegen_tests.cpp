@@ -560,91 +560,91 @@ TEST_CASE("programs/db/db - Basic DB 1", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db.bismuth"))),
-        "21d00b39996638de397985e5b446b89106d05b159d4030d67dda69119584e557");
+        "16b9c7b147b3ee3aa8c084dfd210925319a15468497b67733da05dd0353c2656");
 }
 
 TEST_CASE("programs/db/db2 - Basic DB 2", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db2.bismuth"))),
-        "a5d61f336666fffc261697e7a730076ecfc3f09c14c971d7013129169f3ac57d");
+        "b11773c6986564bcc7f782cfce7f9492f9568359423595cef11f8271cf64420a");
 }
 
 TEST_CASE("programs/db/db3 - Basic DB 3", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db3.bismuth"))),
-        "62033b04aabdb9f20a05ab0c3cec1fbb100eb0d874a14321c22f2b4fac6ff317");
+        "4e7b73797a694ba6a334b626aefdb39c5725165ebecb46875ba0886c8ea33aed");
 }
 
 TEST_CASE("programs/db/db4 - Basic DB 4", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db4.bismuth"))),
-        "16aab7fadbe6ef659bb6edbd94fc5bae10de6a14d18e1eb67712bc2b940b980e");
+        "0d55d8ffb578d77f818b518cfc3861345b170186a3bc47f4b907651e33a381bf");
 }
 
 TEST_CASE("programs/db/db5-if - Basic DB 5 - AcceptIf", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if.bismuth"))),
-        "da55a553dae011096b61ab3f1cba7cdc65225a06d15be659760edcd76f4885b3");
+        "002a510c42e113419bb4bdb16dc57a6fc4e0cbbb436b737707f26c8dbcf022d2");
 }
 
 TEST_CASE("programs/db/db5-if-present - Basic DB 5 - AcceptIf and is_present", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if-present.bismuth"))),
-        "464d9559c57a4dedff8ebea4d7ebfd608d666713f347f2208cce7e6534a33b18");
+        "f2e071f24ebc1f81a0be1e4350f8e0d50231886d203e55c67944a1c175f89181");
 }
 
 TEST_CASE("programs/db/db5-if-present-else - Basic DB 5 - AcceptIf with else and is_present", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if-present-else.bismuth"))),
-        "c8184f3c15f4363d32d497885c14c7687f9f928fcef65851da45b23e90f67210");
+        "82b0e01a510caff830d4eb96f79180f0e3755694e24710a40c2c53b2a1d81fda");
 }
 
 TEST_CASE("programs/db/db5-while-present - Basic DB 5 - AcceptWhile and is_present", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-while-present.bismuth"))),
-        "b4363996e5d6cfa761903511d022f19a4ea20f8d18420b38ef892042d0b7cf31");
+        "ec647dcaea639ea7db636790cd4c5b897c2ee6cb5781a3b909421dff1113d102");
 }
 
 TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/bt.bismuth"))),
-        "0ba04bd66d4c3a5779ce9cae39c204dd84f658a9ebca85f6318aa250d5c905a5");
+        "9a2a2ef101e836c1ad9f06e55924e2cf355d874f9fc5e53dfa41c96f842b58eb");
 }
 
 TEST_CASE("programs/bt-walker1 - Basic Binary Tree w/ walker", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/bt-walker1.bismuth"))),
-        "a716556a7f3f0802a83a2fcbabd094f828969419f707a3bc91cb1b6cadd7ffa7");
+        "5a79067569aa30698c14dae7e72f71e00dae8a17d7642eb21e956935167c5cf6");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 1", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/parity-check.bismuth"))),
-        "4fbd9999e6e13b2a4a1b4b037d25b53d9a7f464e21bf30071959b761846730f6");
+        "ef0252eee1d37ed28524c61e9476311d0c06664a4c3c44cc3c6d982dedab764f");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 2", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/parity-check2.bismuth"))),
-        "902f69add9c4e58afe13ef307f3dc5a803f59aa197cf02cea92e39bf39fed47b");
+        "1e9d023732849f65af9438ac76e7b144e485d9480cf7521f2fbe1729b14ba2fd");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 2a", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/parity-check2a.bismuth"))),
-        "9aa5a075cde50a16ecf15236dd4a75bd0530eb7ecd025b86a2d30ff7b48fdfcc");
+        "1e729f74c241fea286bd1d10e56cead332afcd3007ae2e58a5adbea31c1744cf");
 }
 
 

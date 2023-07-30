@@ -1,12 +1,10 @@
 extern func printf(str s, ...) : int;
 
-define struct Empty {}
 define struct Value {int v;}
-define enum OptVal {Empty, Value}
 
 define Database :: c : Channel<
                         !ExternalChoice<
-                              +int;-OptVal,
+                              +int;-(Unit + Value),
                               +int;+Value,
                               +int;InternalChoice<
                                        -Value;+Value,
@@ -14,16 +12,12 @@ define Database :: c : Channel<
 
   Value[10] data; 
 
-  define func Lookup(Value[10] d, int k) : OptVal {
-     if k < 0 | k >= 10 { return Empty::init(); }
-     return d[k]; 
-  }
-
   define func PrintDatabase(Value[10] data) {
       var i := 0; 
       while i < data.length {
-        var v := data[i]; 
-        printf("%u, ", v.v);
+        match data[i]
+          | Value v => printf("%u, ", v.v);
+          | Unit u => printf("*, ");
         i := i + 1; 
       }
       printf("\n");
@@ -35,8 +29,8 @@ define Database :: c : Channel<
 
   accept(c) {
     offer c 
-      | +int;-OptVal => { 
-            c.send(Lookup(data, c.recv()))
+      | +int;-(Unit + Value) => { 
+            c.send(data[c.recv()]);
         }
       | +int;+Value => {
             var key := c.recv(); 
@@ -69,8 +63,8 @@ define program :: c : Channel<-int> = {
    
       more(db)
       offer rqs 
-        | +int;-OptVal => { 
-            db[-int;+OptVal] 
+        | +int;-(Unit + Value) => { 
+            db[-int;+(Unit + Value)] 
             db.send(rqs.recv())  
             var a := db.recv();
             rqs.send(a) 
@@ -102,7 +96,7 @@ define program :: c : Channel<-int> = {
 
 define requests :: c : Channel<
                         ?InternalChoice<
-                              -int;+OptVal,
+                              -int;+(Unit + Value),
                               -int;-Value,
                               -int;ExternalChoice<
                                        +Value;-Value,
@@ -110,25 +104,25 @@ define requests :: c : Channel<
 
     
     more(c)
-    c[-int;+OptVal]
+    c[-int;+(Unit + Value)]
     c.send(4)
     var opt := c.recv(); 
 
     printf("Read Request for 4 got: ");
 
     match opt
-      | Empty e => { printf("empty\n"); }
+      | Unit e => { printf("empty\n"); }
       | Value v => { printf("%u\n", v.v); }
 
     more(c)
-    c[-int;+OptVal]
+    c[-int;+(Unit + Value)]
     c.send(20)
     opt := c.recv(); 
 
     printf("Read Request for 20 got: ");
 
     match opt
-      | Empty e => { printf("empty\n"); }
+      | Unit e => { printf("empty\n"); }
       | Value v => { printf("%u\n", v.v); }
 
     weaken(c)

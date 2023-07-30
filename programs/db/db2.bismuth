@@ -1,12 +1,10 @@
 extern func printf(str s, ...) : int;
 
-define struct Empty {}
 define struct Value {int v;}
-define enum OptVal {Empty, Value}
 
 define Database :: c : Channel<
                         !ExternalChoice<
-                              +int;-OptVal,
+                              +int;-(Unit + Value),
                               +int;+Value,
                               +int>> = {
 
@@ -15,7 +13,7 @@ define Database :: c : Channel<
   accept(c) {
     #printf("36\n");
     offer c 
-      | +int;-OptVal => { 
+      | +int;-(Unit + Value) => { 
             #printf("39\n");
             c.send(data[c.recv()])
             #printf("41\n");
@@ -52,9 +50,9 @@ define program :: c : Channel<-int> = {
    
       more(db)
       offer rqs 
-        | +int;-OptVal => { 
+        | +int;-(Unit + Value) => { 
             #printf("72\n"); 
-            db[-int;+OptVal] 
+            db[-int;+(Unit + Value)] 
             #printf("72a\n"); 
             db.send(rqs.recv()) 
             #printf("72b\n"); 
@@ -79,13 +77,13 @@ define program :: c : Channel<-int> = {
 
 define requests :: c : Channel<
                         ?InternalChoice<
-                              -int;+OptVal,
+                              -int;+(Unit + Value),
                               -int;-Value,
                               -int>> = {
 
     
     more(c)
-    c[-int;+OptVal]
+    c[-int;+(Unit + Value)]
     c.send(0)
     var opt := c.recv(); 
 

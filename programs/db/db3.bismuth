@@ -10,7 +10,6 @@ define Database :: c : Channel<
 
 
   accept(c) {
-    #printf("36\n");
     offer c 
       | +int;-int => { 
             printf("16\n");
