@@ -652,42 +652,42 @@ TEST_CASE("programs/adder - Add Stream", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder.bismuth"))),
-        "b35904d3c75206e755ec6ac9a19fe731a7bf547d946f4e499d311a7f992a3ef9");
+        "5b197be58b320967d601d8aeb5ef6b544c4e69b1f371a46ed9c49fb4f3062a6a");
 }
 
 TEST_CASE("programs/adder2 - Add Stream 2", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder2.bismuth"))),
-        "2a2d322b3733c6977f136ac6b10379fc672f63b80894cfed5a947c2d7bfea436");
+        "7ce6e8ee62e90176cec9ad6b2504adc7cc6949535ea4cd1c0514340c27174352");
 }
 
 TEST_CASE("programs/adder3 - Add Stream 3", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder3.bismuth"))),
-        "b2b9e850fed9c84c0f5bfa2e7c47ea0ca71d177ac6477ac82a13dc21679fb7b8");
+        "2afda1f4ac120325c69981c93a3a0e5f47085e1d03c20348bd75e45e20652383");
 }
 
 TEST_CASE("programs/adder4 - Add Stream 3 but out of order and higher-order channel", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder4.bismuth"))),
-        "ad58a85b3ebc6de127ad50e3a5b49611df5c1092e1ef6f9328bb111628d6e661");
+        "7e5ef2cba7f9905e43de9c236e50be2695478345142e851f19a419bbfb6e8293");
 }
 
 TEST_CASE("programs/adder5 - Add Stream 4 but using fn that returns linear variable", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder5.bismuth"))),
-        "62a90a5edfd2a52b6c87d717ae2db8a758f0127e55f9359eb36bcb0d48c80780");
+        "1574f9660cfbe9b5338e3f1bc4d1c45cdbbd7b05661c74599696dfd5de0c4d12");
 }
 
 TEST_CASE("programs/nested_struct - Definitions within definitions", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/nested_struct.bismuth"))),
-        "7096b582ccdc4740adb3b31da6bc99776d7cbf04016db96c289184fbf7ca5ce5");
+        "8c0207b60fd885331411b85d6c1ca6191d05ab14f01f925b8fe2830df7619244");
 }
 
 /************************************
@@ -697,7 +697,7 @@ TEST_CASE("C Level Positive Test #2", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/CLevel/CPositive2.bismuth"))),
-        "7d58301030c4f328b84753f57acfe0cdb94b4abae63088327c653ad3859d6cf7");
+        "1f21906d3e151e00040a5de7da0bc29bdf0260014da982496486a421771f3900");
 }
 
 /************************************
@@ -707,14 +707,14 @@ TEST_CASE("B Level Positive Test #1", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BPositive1.bismuth"))),
-        "351de154d74d97942665f3005a6fb2b55418c5d9086986d441d4ff1f31911864");
+        "396fbbfad2e409c23dbf864e32a23e208b838912acc0ca71a5231d62200fc9a1");
 }
 
 TEST_CASE("B Level Positive Test #2", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BPositive2.bismuth"))),
-        "22a43a88c13da41b2b7f6a863fe84823feb453e5f93f91bf50d6c6f84bb71a2c");
+        "8814d7a37c545656c217992b522212aaac064cf9a7bd9c1fcd689adb57124675");
 }
 
 /************************************
@@ -724,19 +724,19 @@ TEST_CASE("A Level Positive Test #1", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive1.bismuth"))),
-        "516859c91ce4af7e04ffcd78e5a0d2b1c7b247d7cc13f2bde5a197f4b6b564e0");
+        "62addf4c9014d15a31a06c8fc9583f1b65b568516753f90517fdd8845a90975c");
 }
 
 TEST_CASE("A Level Positive Test #2 - If", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive2.bismuth"))),
-        "52a548a0f9a6e652a26ee7a8abc3c07d531a0bef14141707f92a9717fa359c05");
+        "508ff0731da2a615cb8012cb884cd4c6077cfd2da32ebb84c5b33650712d3d84");
 }
 
 TEST_CASE("A Level Positive Test #3 - Select", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/APositive3.bismuth"))),
-        "72bb25c93d65ff774af3d84c1dfac8eaaaa382779143ae29ce2149c675d6c9d4");
+        "8dc469b5a311ec97a28324d628c43e0fc5d13810355637a148f957e6d4386eb7");
 }
