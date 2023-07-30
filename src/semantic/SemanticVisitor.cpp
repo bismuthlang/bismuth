@@ -2538,6 +2538,10 @@ const Protocol *SemanticVisitor::visitProto(BismuthParser::CloseableProtoContext
         errorHandler.addError(ctx->getStart(), "Currently cannot include looping protocol within closeable block. Instead, move loop outside block or use higher-order channels.");
         // FIXME: WE NEED TO DO ERRORS BETTER!
     }
+    else if(!proto->areHigherOrderChannelsClosable())
+    {
+        errorHandler.addError(ctx->getStart(), "All higher-order channels within closeable must be of form Channel<Closable<P>>");
+    }
     // FIXME: NEED TO ALSO CHECK higher-order sends. 
 
     return new ProtocolClose(toSequence(proto)); 

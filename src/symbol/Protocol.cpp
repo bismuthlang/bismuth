@@ -76,7 +76,7 @@ bool ProtocolSend::containsLoop() const { return false; }
 bool ProtocolSend::areHigherOrderChannelsClosable() const 
 {
     // FIXME: METHODIZE WITH CODE FOR RECV AS THEYRE THE SAME!!
-    if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(this->recvType))
+    if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(this->sendType))
     {
         const std::vector<const Protocol*> steps = channelTy->getProtocol()->getSteps(); 
         if(steps.size() != 1) return false; 
@@ -203,6 +203,13 @@ bool ProtocolIChoice::containsLoop() const
     return false; 
 }
 
+bool ProtocolIChoice::areHigherOrderChannelsClosable() const 
+{
+    for(auto itr : opts)
+        if(!itr->areHigherOrderChannelsClosable()) return false; 
+    return true; 
+}
+
 
 /*********************************************
  *
@@ -257,7 +264,12 @@ bool ProtocolEChoice::containsLoop() const
     return false; 
 }
 
-
+bool ProtocolEChoice::areHigherOrderChannelsClosable() const 
+{
+    for(auto itr : opts)
+        if(!itr->areHigherOrderChannelsClosable()) return false; 
+    return true; 
+}
 
 
 /*********************************************

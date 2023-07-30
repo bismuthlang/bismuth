@@ -372,6 +372,7 @@ public:
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
     bool containsLoop() const override; 
+    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
@@ -397,6 +398,7 @@ public:
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
     bool containsLoop() const override; 
+    bool areHigherOrderChannelsClosable() const override;
 };
 
 
