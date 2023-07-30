@@ -232,6 +232,7 @@ public:
 
 private: 
     std::optional<const Protocol*> getFirst() const;
+    std::optional<const Protocol*> popFirst() const; 
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)

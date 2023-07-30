@@ -327,11 +327,7 @@ optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
     if (isComplete())
         return std::nullopt;
 
-    // const Protocol * protoTemp = steps.front();
-    // const Protocol ** protoPtr = &protoTemp; 
-
     if(steps.front()->isGuarded() || this->isGuarded())// FIXME: VERIFY WORKS W CLOSE PROTOS!
-    // if ((*protoPtr)->isGuarded() || this->isGuarded()) 
         return std::nullopt;
 
     optional<const Protocol *> protoOpt = this->getFirst(); 
@@ -356,9 +352,7 @@ optional<const Type *> ProtocolSequence::send(const Type *ty) const
     if (!ans)
         return std::nullopt;
 
-    // FIXME: ALL THE ERASES WILL HAVE TO CHANGE AS PER CLOSE TO WORK!!!
-    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-    u_this->steps.erase(steps.begin());
+    this->popFirst(); // TODO: HANDLE BETTER!
 
     return ans;
 }
@@ -393,9 +387,8 @@ optional<const Type *> ProtocolSequence::recv() const
     const Protocol *proto = steps.front();
     const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto);
 
-    // FIXME: NEEDS TO CHANGE PER CLOSE!!
-    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-    u_this->steps.erase(steps.begin());
+    this->popFirst();
+
     return recv->getRecvType();
 }
 
@@ -420,6 +413,7 @@ bool ProtocolSequence::contract() const
     const Protocol *proto = steps.front(); // TODO: Handle more efficiently
     const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto);
 
+    // FIXME: NEEDS UPDATE PER CLOSABLE?
     ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
     vector<const Protocol *> other = wn->getInnerProtocol()->steps;
 
@@ -435,8 +429,8 @@ bool ProtocolSequence::weaken() const
     if (steps.front()->isGuarded() || this->isGuarded())
         return false;
 
-    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-    u_this->steps.erase(steps.begin());
+    this->popFirst(); 
+
     return true;
 }
 
@@ -450,6 +444,7 @@ bool ProtocolSequence::isOC(bool includeGuarded) const
         (steps.front()->isGuarded() || this->isGuarded()))
         return false;
 
+    // FIXME: CLOSEABLE?
     if (const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto))
     {
         return true;
@@ -675,6 +670,31 @@ optional<const Protocol *> ProtocolSequence::getFirst() const
     }
 
     return *protoPtr;
+}
+
+optional<const Protocol *> ProtocolSequence::popFirst() const
+{
+    if (isComplete())
+        return std::nullopt;
+
+    const ProtocolSequence * tempSeq = this; 
+    const ProtocolSequence ** seqPtr = & tempSeq; 
+
+    while(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
+    {
+        const ProtocolSequence * seq = protoClose->getInnerProtocol();
+
+        if(seq->isComplete())
+            break;
+        
+        seqPtr = &seq; 
+    }
+
+    const Protocol * ans = (*seqPtr)->steps.front(); 
+    ProtocolSequence * m_seq = const_cast<ProtocolSequence *>(*seqPtr); 
+    m_seq->steps.erase(m_seq->steps.begin());
+
+    return ans;
 }
 
 /*********************************************
