@@ -1,3 +1,30 @@
+/*
+Output:
+    Int equality test I: 1, 0, 1
+    a = 10, b = 10, c = 10
+    a := 95
+    a = 95, b = 10, c = 10
+    b := -37 * (12-2) = -370
+    a = 95, b = -185, c = 10
+    c := 95/-185
+    a = 95, b = -185, c = 0
+    Int equality test II: 0, 1, 0
+    a = 1, b = 1, c = 0
+    bool equality test I: 1, 0, 0
+    a := !(b | c)
+    a = 0, b = 1, c = 0
+    b := b | c
+    a = 0, b = 1, c = 0
+    c := !a & !b
+    a = 0, b = 1, c = 0
+    bool equality test II: 0, 1, 1
+    a = String One, b = String One, c = String Two
+    str equality test I: 1, 0, 0
+    a = String 3 now, b = String One, c = String Two
+    str equality test II: 0, 1, 0
+    Ints still are: a = 95, b = -185, c = 0
+*/
+
 extern func printf(...) : int;
 
 # int func program () {

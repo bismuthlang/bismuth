@@ -60,7 +60,7 @@ TEST_CASE("programs/test1 - General Overview", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test1.bismuth"))),
-        "e924aba0c9dc1aec315058b1cc5d9cbb1ec6f4690281d1295a55a1fb0413cc7d");
+        "cd7b2e97d3985da2b7b5c1f6710a693ebe3bf398750aff372404fffcaf4f0a59");
 }
 
 TEST_CASE("programs/test1a", "[codegen]")
@@ -73,56 +73,56 @@ TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)"
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test2.bismuth"))),
-        "d960ec3adaf7e3db41b7af853208c3bc794c3143658ab959bf2d4c62746db9b0");
+        "1e77cdbb2c8b341f564705c632588e2912ae53f65e4d95270056677a05c0dbb4");
 }
 
 TEST_CASE("programs/test3 - If w/o else", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test3.bismuth"))),
-        "4c9b159d3f7157d535dd2c93da7d2d1aa93f1413888c382a889bcb5515ad4aca");
+        "dcdb52c5e81bdea66c9d8f39f887ad31fd3bdfc9a00debae58351cbd4df0288b");
 }
 
 TEST_CASE("programs/test4a - Use and redeclaration of parameters", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test4a.bismuth"))),
-        "c035a02790b32548d08cecd14ab26943085a733bf5d9bd7236d77b69a999fc0a");
+        "016e3d4b2a2e7ba2a856f7559baf2288ec1cdff8cd2ec68a84f7e8b44c0bb736");
 }
 
 TEST_CASE("programs/test5 - Nested ifs and if equality", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test5.bismuth"))),
-        "69f48883f0bb3f09285e00ab330bdd9e203019c1cbe7bd2f3e163dd66715f0ec");
+        "17122f11e5d63a0fe090055e6c97699ac5a948a4c0fb1dfdc7ad304c36d9d249");
 }
 
 TEST_CASE("programs/test6 - Basic Select with Return", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test6.bismuth"))),
-        "b3aa939b881a8c46b6b10e646e1fb7ee85dd4cd1b2fd3ff5dad07bfaa6b6baa4");
+        "8113827ef3d63bbb9fd419f5e2173afe1d53e825dcbbb37e17b2f25eb335475b");
 }
 
 TEST_CASE("programs/testSelectBlock1 - Basic Select with Blocks that Return", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock1.bismuth"))),
-        "b9d5d3ce4b52b1ac0981b2414b97621e090f1e6c442ce91420003f6deb21833b");
+        "49ba002df2043abd15c217bcaede0dc07042a813f2cde61cb13fa33d75c6a128");
 }
 
 TEST_CASE("programs/testSelectBlock1-fn - Basic Select with Blocks that Return", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock1-fn.bismuth"))),
-        "d092ab0d012ffb3cacb7838d13cc446e65d6c341bc2acca15eff743f9cc7c7fb");
+        "5a4ca460a84b69d6256e325239dec7fbbbd1d9f4fb1d5370b04400a57e4a9c3a");
 }
 
 TEST_CASE("programs/test6a (CAFE!) - Basic Nested Selects, LEQ, GEQ", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test6a.bismuth"))),
-        "da043d54ee98593b9ba89dde35bda6ab8fbd8a5b0e01d773fcb1fd456bde32cb");//"cafe2b3e17335a03444e7c3e1be095eaea8cb901741e8c0d8f1f79a17a8fe6c4");
+        "1d7253d6c544a805f8cebf3641f2af585c46160bde1cf8247ba027d848214cb8");//"cafe2b3e17335a03444e7c3e1be095eaea8cb901741e8c0d8f1f79a17a8fe6c4");
 }
 
 TEST_CASE("programs/testSelectBlock2 - Select with blocks that don't return", "[codegen]")
@@ -130,7 +130,7 @@ TEST_CASE("programs/testSelectBlock2 - Select with blocks that don't return", "[
     // NOTE: Should be same as test6a
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/testSelectBlock2.bismuth"))),
-        "8c63b79f3ef7bda116711af51992e9cbe1a579b7a6ca5732f9b86e4d0c3601a1");
+        "f464bb890dd2bf60cfdda17dd184df622fa9c3aa5f78f24423b222b1943fd2aa");
 }
 
 TEST_CASE("programs/test7 - Test String equality + Nested Loops", "[codegen]")
@@ -144,49 +144,49 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test8.bismuth"))),
-        "3c1e166ca647c9c1311088cd0f931689e36ae351f0f15298b63f53018bbf6f38");
+        "ba5c7395a9ccdf6d70e7dd3ec38e48790a564f72cd29ba3fecc4e26a90232e15");
 }
 
 TEST_CASE("programs/test11 - Expressions in decl (let*) ", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test11.bismuth"))),
-        "d5dc54d24e1bb556df93cbc6e0d060da4c6af21ebcf6a4169273ebf1af65da50");
+        "41c62713e8d6b46c6e96fdb5fa91c1f0227ac0f93475d4f1398e577088d87f83");
 }
 
 TEST_CASE("programs/test12 - Scopes & Prime Finder Example! ", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test12.bismuth"))),
-        "64a93c0bfa70e443ec19004017d43d083402d27f43c52f74e7119fd27ab9fe7e");
+        "c68e036b92b535b5c8b7fa63b208d3330eaa7a7e8d01e26f841ed308c0f6fbcd");
 }
 
 TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test13.bismuth"))),
-        "a339a2f3d23ad90b9adf4e19e52781756b9a6118fd8337a4f38ba08d1eeab7ed");
+        "7b47fb0b7ec3726205c1cfb0c5518b6523e5f2d35d14be5b7d479fd27465e244");
 }
 
 TEST_CASE("programs/adv/LambdaDef", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/LambdaDef.bismuth"))),
-        "cdde3db3c5cbfd66c15cca74c06451458547ef82cdd3246492b845be25391ea0");
+        "330558013ea1186dad36a1876d768407526f01b957680c87e477dc61698e0a03");
 }
 
 TEST_CASE("programs/test-shortcircuit - Basic Short Circuit (and)", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-shortcircuit.bismuth"))),
-        "d3a11c1824ca7f5a4edb5b41b9897c70b3e489b1439f14b93a7726e135ee97ac");
+        "31085f579d72a15b9e2b549d0d945f7dff4c9b1cb4e3f93381133a27ce3ad0c1");
 }
 
 TEST_CASE("programs/test-shortcircuit-rt - Basic Short Circuit (and + or) w/ Runtime", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-shortcircuit-rt.bismuth"))),
-        "b8dc56fa5b1811eeeb81a1909aca8753d474561d106be03a950715d461bf51e1");
+        "1cdf395315514e34f8298b676bdfa0be9571ece5d501a75816f682f5b334bac7");
 }
 
 TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editing arrays in functions", "[codegen]")
@@ -196,32 +196,33 @@ TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editin
         "b5e681a9802a301b11cc2b033ec9774fef8762c9203f95aeffeb5dc176afdad6");
 }
 
+// FIXME: RENAME AS WE DONT HAVE PROC ANYMORE!
 TEST_CASE("programs/externProc - Declaring an external proc", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/externProc.bismuth"))),
-        "544ab1ac6c968c7c98f8487c687b737dbd56bf1929da47ccfcff31bf5394feb2");
+        "88ae3894d80a15b80b1047a7a08a2954b655c1aef2f5488390db16771cb4e013");
 }
 
 TEST_CASE("programs/test14a - Test nested/more complex shorting", "[codegen]")
 {
     EnsureCompilesTo(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test14a.bismuth"))),
-        "7b82d83c0fefb224d3a97f1971835f186232671e1d40331d40febfba0d34de41");
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test14a.bismuth"))), 
+        "acdd50a217489539546e04a6c977c86e185e070e5a1a97672846b256ca860b2c");
 }
 
 TEST_CASE("programs/17 - var inf in decl", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test17.bismuth"))),
-        "fac65e4acc03e57dbee1a12b0a0cdb207cae39bbd48962bdc2fe0fd6878da4ac");
+        "8dc8b9ced3851e1a3f3f72c107ca6d85e1c0a2bb110bc9288400ceb2ca94577d");
 }
 
 TEST_CASE("programs/test18 - Parody", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test18.bismuth"))),
-        "c0119e03e335bdb87d7360333ec7da01ab55890802c8820033066bec88788fa5");
+        "2df855f46312c7740e97cfe3955f6954db1912cb04eb50851a7aeb2d767bc883");
 }
 
 TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[codegen]")
@@ -532,28 +533,28 @@ TEST_CASE("programs/loop - Basic GC with boxes in loops based on example", "[cod
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/loop.bismuth"))),
-        "c01529e2f8f5540e2e25ae47e8a9f784d94d2446ce60244902fe1da964f713e9");
+        "7727655235f992144ba2241c8f2b815af840a37a295574a2592ef272b82e6620");
 }
 
 TEST_CASE("programs/GC-test - Basic GC w/ Send", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/GC-test.bismuth"))),
-        "4961a24485194590afaa69fb222b662881a1a79eb97a27a78dd78890c639c9af");
+        "e5f5cfa7638e2c611c403746d9f4e19711c87a1bcd58fbbec2b7ae2bf9d0f234");
 }
 
 TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructGC.bismuth"))),
-        "c70b27336a5c097ad5a958ad4122221ce49cab0b4a4c0d74ded21725ce034179");
+        "257eeacb12f851a80e7b416943177ee427daf0f752b31a0de5a628296733fe7d");
 }
 
 TEST_CASE("programs/TStructCopy - Basic test of copy", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructCopy.bismuth"))),
-        "e625e3bd92bbc42a528a511c7300c17a6cdc744e948ff3768fe67fc51d5f7f34");
+        "039170bd7be999a994cc6d11d61811181880f3a036943e49e9b248b94015b501");
 }
 
 TEST_CASE("programs/db/db - Basic DB 1", "[codegen][enum]")

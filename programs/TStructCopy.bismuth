@@ -1,3 +1,7 @@
+# Output (A, B, C, D are memory addresses):
+# b (orig/5;6) = {b1 : 5@A, b2 : 6@B}
+# b (orig/9;6) = {b1 : 9@C, b2 : 6@D}
+
 extern func printf(str s, ...) : Unit;
 
 define struct IB {

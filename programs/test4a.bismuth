@@ -1,3 +1,13 @@
+/*
+Output (order may differ due to threads):
+    GOT: 20
+    GOT: 50
+    GOT: 20
+    GOT: 50
+    ANS: 50
+    ANS: 20
+*/
+
 extern func printf(...) : int;
 
 # int func mutArgsOne(int i) {
