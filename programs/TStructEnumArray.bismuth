@@ -14,12 +14,15 @@ define func printTIBB(str name, TIBB b) {
   # printf("%s = {b[0] : %u, b[1] : %u}\n", name, **b.b[0], **b.b[1]);
 
   printf("%s = {b[0] : ", name); 
+  
   match b.b[0]
     | Unit u => printf("(), b[1] : ");
     | Box<Box<int>> i => printf("%u, b[1] : ", **i);
+
   match b.b[1]
     | Unit u => printf("()}\n");
-    | Box<Box<int>> i => printf("%u}\n", **i)
+    | Box<Box<int>> i => printf("%u}\n", **i);
+
   return; 
 }
 
@@ -31,8 +34,15 @@ define foo :: c : Channel<+ETIBBOB;-int;+int> = {
         # **iPtr.b[0] := 7; # FIXME: SHOULD THIS BE ALLOWED?
       
         match iPtr.b[0]
-          | Unit u => printf("ERROR!!!!\n");
-          | Box<Box<int>> box => **box := 7; 
+          | Unit u => {} # printf("ERROR!!!!\n");
+          | Box<Box<int>> box => {} #**box := 7; 
+
+        # if true {
+
+        # } else 
+        # {
+
+        # }
 
         printTIBB("iPtr (mod/7)", iPtr);
         c.send(-1);

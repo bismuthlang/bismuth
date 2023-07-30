@@ -1219,11 +1219,21 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
         // TODO: Maybe make so these can return values?
 
         DeepRestData *restDat = new DeepRestData(ctx->rest);
-        std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+        std::deque<DeepRestData *> * rest = new std::deque<DeepRestData *>();
+        std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
+        if(bindings.has_value())
+        {
+            for(auto a : *bindings.value())
+                rest->push_back(a); 
+        }
+
         rest->push_front(restDat);
 
         for (auto b : ctx->matchAlternative())
         {
+            std::cout << "1227 " << ctx->getText() << " SETTING " << b->eval->getText() << " = " << std::endl;
+            for(auto a : ctx->rest)
+                std::cout << "\t " << a->getText() << std::endl;  
             bindRestData(b->eval, rest);
         }
 
@@ -1347,7 +1357,13 @@ std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCt
         blksCtx.push_back(ctx->falseBlk);
 
     DeepRestData *restDat = new DeepRestData(ctx->rest);
-    std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+    std::deque<DeepRestData *> * rest = new std::deque<DeepRestData *>();
+    std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
+    if(bindings.has_value())
+    {
+        for(auto a : *bindings.value())
+            rest->push_back(a); 
+    }
     rest->push_front(restDat); // Is deque so that way we keep things reversed
 
     for (auto b : blksCtx)
@@ -1391,7 +1407,14 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     }
 
     DeepRestData *restDat = new DeepRestData(ctx->rest);
-    std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+    std::deque<DeepRestData *> * rest = new std::deque<DeepRestData *>();
+    std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
+    if(bindings.has_value())
+    {
+        for(auto a : *bindings.value())
+            rest->push_back(a); 
+    }
+
     rest->push_front(restDat); // Is deque so that way we keep things reversed
 
     for (auto b : ctx->cases)
@@ -1969,7 +1992,14 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         }
 
         DeepRestData *restDat = new DeepRestData(ctx->rest);
-        std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+        std::deque<DeepRestData *> * rest = new std::deque<DeepRestData *>();
+        std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
+        if(bindings.has_value())
+        {
+            for(auto a : *bindings.value())
+                rest->push_back(a); 
+        }
+
         rest->push_front(restDat); // Is deque so that way we keep things reversed
 
         for (auto b : ctx->protoAlternative())
@@ -2288,7 +2318,14 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
             blksCtx.push_back(ctx->falseBlk);
 
         DeepRestData *restDat = new DeepRestData(ctx->rest);
-        std::deque<DeepRestData *> *rest = restBindings->getBinding(ctx).value_or(new std::deque<DeepRestData *>());
+        std::deque<DeepRestData *> * rest = new std::deque<DeepRestData *>();
+        std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
+        if(bindings.has_value())
+        {
+            for(auto a : *bindings.value())
+                rest->push_back(a); 
+        }
+        
         rest->push_front(restDat);
 
         for (auto b : blksCtx) // TODO: Methodize this w/ other conditions?

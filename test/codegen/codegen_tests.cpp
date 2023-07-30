@@ -526,7 +526,7 @@ TEST_CASE("programs/TStructEnumArray - Parody + Clone w/ Struct Enum Array", "[c
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnumArray.bismuth"))),
-        "9c729f42f3dd01148258a24c930253a40293b8eff3f09ee68a3bed91272d1bea");
+        "3637b60364b8bd1a591e5b85bc52fd755e3bb2bf2d1c121c40eb409e836ef5b8");
 }
 
 TEST_CASE("programs/loop - Basic GC with boxes in loops based on example", "[codegen][enum]")
