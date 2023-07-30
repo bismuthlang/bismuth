@@ -71,7 +71,7 @@ define program :: c : Channel<-int> = {
     int i := 0;
     while i < samples.length {
         # toString(samples[i]);
-        Channel<-(Color + int + boolean + str)> io := exec toString; 
+        Channel<-(Unit + Color + int + boolean + str)> io := exec toString; 
         io.send(samples[i])
 
         i := i + 1; 
@@ -132,10 +132,11 @@ define func printPrimitive ((int + boolean + str) toPrint) {
 }
 
 # Unit func toString((Color + int + boolean + str) obj) {
-define toString :: io : Channel<+(Color + int + boolean + str)> = {
-    (Color + int + boolean + str) obj := io.recv(); 
+define toString :: io : Channel<+(Unit + Color + int + boolean + str)> = {
+    (Unit + Color + int + boolean + str) obj := io.recv(); 
 
     match obj {
+        Unit u => printf("()\n");
         int i => printPrimitive(i); 
         boolean b => printPrimitive(b);
         str s => printPrimitive(s);

@@ -1,14 +1,26 @@
 extern func printf(str s, ...) : Unit; 
 
 define func print(str name, Box<Box<int>>[2] b) {
-  printf("%s = {b1 : %u, b2 : %u}\n", name, **b[0], **b[1]);
+  # printf("%s = {b1 : %u, b2 : %u}\n", name, **b[0], **b[1]);
+
+  printf("%s = {b1 : ", name); 
+  match b[0]
+    | Unit u => printf("(), b2 : ");
+    | Box<Box<int>> i => printf("%u, b2 : ", **i);
+  match b[1]
+    | Unit u => printf("()}\n");
+    | Box<Box<int>> i => printf("%u}\n", **i)
   return; 
 }
 
 define foo :: c : Channel<+Box<Box<int>>[2];-int;+int> = {
   var iPtr := c.recv(); 
   print("iPtr (orig/5)", iPtr);
-  **iPtr[0] := 7;
+  # **iPtr[0] := 7; # FIXME: SHOULD THIS BE ALLOWED?
+  match iPtr[0]
+    | Unit u => printf("ERROR!!!!\n");
+    | Box<Box<int>> box => **box := 7; 
+
   print("iPtr (mod/7)", iPtr);
   c.send(-1);
   var t := c.recv(); 

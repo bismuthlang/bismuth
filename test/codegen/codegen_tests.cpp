@@ -513,13 +513,13 @@ TEST_CASE("programs/TArray - Parody + Clone w/ Array", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TArray.bismuth"))),
-        "e3fac3c8656e5cec6b141f017bbacb014549603db92f558fe7cc47a113358d42");
+        "0a1fe285dd1a1f30f2f89f46dec078a8208b42d6a7ad6d9ab105bfda46b4942f");
 }
 TEST_CASE("programs/TArray2 - Parody + Clone w/ Array Double box", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TArray2.bismuth"))),
-        "ff4615ebe1e4421c46b075f9446badced90d0ee3be4410597588552443c69082");
+        "7d19af270c56cd4007d3549f093c4e24a76a9a15daece6599ecc06d006303f42");
 }
 
 TEST_CASE("programs/TStructEnumArray - Parody + Clone w/ Struct Enum Array", "[codegen][enum]")
