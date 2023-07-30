@@ -326,21 +326,26 @@ optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
 {
     if (isComplete())
         return std::nullopt;
-    // return false;
 
-    const Protocol *proto = steps.front();
+    // const Protocol * protoTemp = steps.front();
+    // const Protocol ** protoPtr = &protoTemp; 
 
-    if (proto->isGuarded() || this->isGuarded())
+    if(steps.front()->isGuarded() || this->isGuarded())// FIXME: VERIFY WORKS W CLOSE PROTOS!
+    // if ((*protoPtr)->isGuarded() || this->isGuarded()) 
         return std::nullopt;
 
-    if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(proto))
+    optional<const Protocol *> protoOpt = this->getFirst(); 
+    if(!protoOpt)
+        return std::nullopt; 
+
+
+    if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(protoOpt.value()))
     {
         if (ty->isSubtype(send->getSendType()))
             return send->getSendType();
         return std::nullopt;
     }
 
-    // return false;
     return std::nullopt;
 }
 
@@ -351,6 +356,7 @@ optional<const Type *> ProtocolSequence::send(const Type *ty) const
     if (!ans)
         return std::nullopt;
 
+    // FIXME: ALL THE ERASES WILL HAVE TO CHANGE AS PER CLOSE TO WORK!!!
     ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
     u_this->steps.erase(steps.begin());
 
@@ -362,12 +368,15 @@ bool ProtocolSequence::canRecv() const
     if (isComplete())
         return false;
 
-    const Protocol *proto = steps.front();
-
-    if (proto->isGuarded() || this->isGuarded())
+    if (steps.front()->isGuarded() || this->isGuarded())
         return false;
 
-    if (const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto))
+    optional<const Protocol*> protoOpt = this->getFirst();
+
+    if(!protoOpt)
+        return false; 
+
+    if (const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(protoOpt.value()))
     {
         return true; // ty->isSubtype(recv->getRecvType());
     }
@@ -384,6 +393,7 @@ optional<const Type *> ProtocolSequence::recv() const
     const Protocol *proto = steps.front();
     const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto);
 
+    // FIXME: NEEDS TO CHANGE PER CLOSE!!
     ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
     u_this->steps.erase(steps.begin());
     return recv->getRecvType();
@@ -493,12 +503,16 @@ bool ProtocolSequence::isIntChoice() const
 {
     if (isComplete())
         return false;
-    const Protocol *proto = steps.front();
 
     if (steps.front()->isGuarded() || this->isGuarded())
         return false;
 
-    if (const ProtocolIChoice *wn = dynamic_cast<const ProtocolIChoice *>(proto))
+    optional<const Protocol*> protoOpt = this->getFirst(); 
+
+    if(!protoOpt)
+        return false; 
+
+    if (const ProtocolIChoice *wn = dynamic_cast<const ProtocolIChoice *>(protoOpt.value()))
     {
         return true;
     }
@@ -511,6 +525,7 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
     if (!isIntChoice())
         return 0;
 
+    // FIXME: NEEDS UPDATE PER CLOSE!
     unsigned int ans = 1;
     const Protocol *proto = steps.front();
     const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(proto);
@@ -534,6 +549,7 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 
 bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const
 {
+    //FIXME: NEEDS UPDATE PER CLOSE!!
     if (isComplete())
         return false;
 
@@ -637,6 +653,28 @@ bool ProtocolSequence::areHigherOrderChannelsClosable() const
         if(!proto->areHigherOrderChannelsClosable())
             return false; 
     return true; 
+}
+
+optional<const Protocol *> ProtocolSequence::getFirst() const
+{
+    if (isComplete())
+        return std::nullopt;
+
+    const Protocol * protoTemp = steps.front();
+    const Protocol ** protoPtr = &protoTemp; 
+
+    while(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(*protoPtr))
+    {
+        const ProtocolSequence * seq = protoClose->getInnerProtocol();
+
+        if(seq->isComplete())
+            return protoClose; 
+        
+        const Protocol * tmp = seq->steps.front();
+        protoPtr = &tmp; 
+    }
+
+    return *protoPtr;
 }
 
 /*********************************************

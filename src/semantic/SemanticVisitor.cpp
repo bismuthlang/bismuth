@@ -2542,7 +2542,7 @@ const Protocol *SemanticVisitor::visitProto(BismuthParser::CloseableProtoContext
     {
         errorHandler.addError(ctx->getStart(), "All higher-order channels within closeable must be of form Channel<Closable<P>>");
     }
-    // FIXME: NEED TO ALSO CHECK higher-order sends. 
+    // FIXME: NEED TO ALSO CHECK AGAINST LINEAR RESOURCES IN GENERAL!!  AND NEED TO ADD TEST CASES!!!
 
     return new ProtocolClose(toSequence(proto)); 
 }

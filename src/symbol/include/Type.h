@@ -229,6 +229,9 @@ public:
 
     bool containsLoop() const override; 
     bool areHigherOrderChannelsClosable() const override;
+
+private: 
+    std::optional<const Protocol*> getFirst() const;
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)
