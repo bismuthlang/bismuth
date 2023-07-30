@@ -98,6 +98,8 @@ ChangeLog
 1.3.4 - XXX: 
   - Added toChannel function to convert ty -> Channel<!+ty>
 
+  - Fixed bug where nested control flow would incorrectly process use of linear resources
+
   - Refactored code internals to promote compile speed (of Bismuth, not the Bismuth compiler)
 
 1.3.3 - 2023-06-04:

@@ -137,7 +137,7 @@ TEST_CASE("programs/test7 - Test String equality + Nested Loops", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test7.bismuth"))),
-        "00079ce6f50b837d383f1ea96807142a65ece9b0dffe747e8c81419b13e944bd");
+        "652512823a618370fecd8947b9de8588dea9122a65d42bbf7b90c674a49e44d3");
 }
 
 TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
@@ -193,7 +193,7 @@ TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editin
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-arrayAssign.bismuth"))),
-        "b5e681a9802a301b11cc2b033ec9774fef8762c9203f95aeffeb5dc176afdad6");
+        "73c378408c405a30d43c70badf7850eeb3a98c75e7e907209d1f2c348ceea623");
 }
 
 // FIXME: RENAME AS WE DONT HAVE PROC ANYMORE!

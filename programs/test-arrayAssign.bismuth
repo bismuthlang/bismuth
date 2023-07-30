@@ -37,7 +37,13 @@ define addOneToInt5 :: c : Channel<+str; +int[5]> = {
     var i := 0; 
 
     while i < array.length {
-      array[i] := array[i] + 1; 
+      # array[i] := array[i] + 1; # FIXME: SEEMS OFF NOT BEING ABLE TO DO THIS!
+      array[i] := (int[5] a, int idx) : int {
+                      match a[idx]
+                        | Unit u => return -1; 
+                        | int i => return i + 1; 
+                  }(array, i);
+
       i := i + 1; 
     }
   }
