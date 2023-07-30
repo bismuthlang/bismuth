@@ -396,7 +396,12 @@ bool ProtocolSequence::isWN() const
 {
     if (isComplete())
         return false;
-    const Protocol *proto = steps.front();
+
+    optional<const Protocol *> protoOpt = this->getFirst(); 
+    if(!protoOpt)
+        return false; 
+    
+    const Protocol *proto = protoOpt.value();
     if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto))
     {
         return true;
@@ -438,13 +443,17 @@ bool ProtocolSequence::isOC(bool includeGuarded) const
 {
     if (isComplete())
         return false;
-    const Protocol *proto = steps.front();
+    // const Protocol *proto = steps.front();
 
     if (!includeGuarded &&
-        (steps.front()->isGuarded() || this->isGuarded()))
+        (steps.front()->isGuarded() || this->isGuarded())) //TODO: WHY DOESN'T ISWN HAVE THIS?
         return false;
 
-    // FIXME: CLOSEABLE?
+    optional<const Protocol *> protoOpt = this->getFirst(); 
+    if(!protoOpt)
+        return false; 
+    
+    const Protocol *proto = protoOpt.value();
     if (const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto))
     {
         return true;
@@ -461,7 +470,7 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
     const Protocol *proto = steps.front();
     const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
     const ProtocolSequence *ans = toSequence(wn->getInnerProtocol()->getCopy());
-
+    // FIXME: UPDATE
     ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
     u_this->steps.erase(steps.begin());
 
@@ -548,10 +557,16 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
     if (isComplete())
         return false;
 
-    const Protocol *proto = steps.front();
 
     if (steps.front()->isGuarded() || this->isGuarded())
         return false;
+
+    optional<const Protocol*> protoOpt = this->getFirst();
+
+    if(!protoOpt)
+        return false; 
+
+    const Protocol* proto = protoOpt.value(); 
 
     if (const ProtocolEChoice *eChoice = dynamic_cast<const ProtocolEChoice *>(proto))
     {
