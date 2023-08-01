@@ -230,9 +230,12 @@ public:
     bool containsLoop() const override; 
     bool areHigherOrderChannelsClosable() const override;
 
+    void numberCloseBlocks() const { numberCloseBlocks(0); } // FIXME: HANDLE THIS BETTER WITH VISITORS ON AST?
+
 private: 
     std::optional<const Protocol*> getFirst() const;
     std::optional<const Protocol*> popFirst() const; 
+    unsigned int numberCloseBlocks(unsigned int n) const; 
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)
@@ -415,9 +418,10 @@ class ProtocolClose : public Protocol
 {
 private:
     const ProtocolSequence *proto;
+    const unsigned int closeNumber; 
 
 public:
-    ProtocolClose(const ProtocolSequence *p) : proto(p) {}
+    ProtocolClose(const ProtocolSequence *p) : proto(p), closeNumber(0) {}
 
     std::string as_str() const override;
 

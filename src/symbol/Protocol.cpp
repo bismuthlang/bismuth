@@ -712,6 +712,11 @@ optional<const Protocol *> ProtocolSequence::popFirst() const
     return ans;
 }
 
+unsigned int ProtocolSequence::numberCloseBlocks(unsigned int n) const
+{
+    return 0; // FIXME: IMPLEMENT!!!
+}
+
 /*********************************************
  *
  *  ProtocolClose
