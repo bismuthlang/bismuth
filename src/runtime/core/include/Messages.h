@@ -22,4 +22,14 @@ struct SEL {
     unsigned int i; //TODO: Will have to be handled better
 };
 
-typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message; 
+struct SKIP 
+{
+    unsigned int i;
+}; 
+
+struct CLOSE 
+{
+    unsigned int i; 
+};
+
+typedef std::variant<Value, START_LOOP, END_LOOP, SEL, SKIP, CLOSE> Message; 
