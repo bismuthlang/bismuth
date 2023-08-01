@@ -35,6 +35,59 @@ public:
     const BismuthParser::CompilationUnitContext * getContext() const override { return context; } 
 };
 
+// FIXME: NEED EXTERN!
+
+/**************************************************
+ *
+ * Definitions
+ *
+ **************************************************/
+
+class RawDefineType : public RawNode 
+{
+public: 
+    virtual const BismuthParser::DefineTypeContext * getContext() const override = 0; 
+};
+
+class RawDefineEnum : public RawDefineType
+{
+private: 
+    BismuthParser::DefineEnumContext * context;
+public: 
+    RawDefineEnum(BismuthParser::DefineEnumContext * ctx) : context(ctx) {}
+
+    const BismuthParser::DefineEnumContext * getContext() const override { return context; }
+};
+
+class RawDefineStruct : public RawDefineType
+{
+private: 
+    BismuthParser::DefineStructContext * context;
+public: 
+    RawDefineStruct(BismuthParser::DefineStructContext * ctx) : context(ctx) {}
+
+    const BismuthParser::DefineStructContext * getContext() const override { return context; }
+};
+
+class RawDefineProgram : public RawDefineType
+{
+private: 
+    BismuthParser::DefineProgramContext * context;
+public: 
+    RawDefineProgram(BismuthParser::DefineProgramContext * ctx) : context(ctx) {}
+
+    const BismuthParser::DefineProgramContext * getContext() const override { return context; }
+};
+
+class RawDefineFunction : public RawDefineType
+{
+private: 
+    BismuthParser::DefineFunctionContext * context;
+public: 
+    RawDefineFunction(BismuthParser::DefineFunctionContext * ctx) : context(ctx) {}
+
+    const BismuthParser::DefineFunctionContext * getContext() const override { return context; }
+};
 
 /*
 
