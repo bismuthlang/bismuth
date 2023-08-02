@@ -35,7 +35,20 @@ public:
     const BismuthParser::CompilationUnitContext * getContext() const override { return context; } 
 };
 
-// FIXME: NEED EXTERN!
+
+/**************************************************
+ *
+ * Extern
+ *
+ **************************************************/
+
+class RawExtern : public RawNode 
+{
+private: 
+    BismuthParser::ExternStatementContext * context; 
+public:
+    RawExtern(BismuthParser::ExternStatementContext * ctx) : context(ctx) {}
+};
 
 /**************************************************
  *
@@ -88,6 +101,19 @@ public:
 
     const BismuthParser::DefineFunctionContext * getContext() const override { return context; }
 };
+
+
+/**************************************************
+ *
+ * Definitions
+ *
+ **************************************************/
+
+class RawExpression : public RawNode 
+{
+    virtual BismuthParser::ExpressionContext * getContext() const override = 0; 
+};
+
 
 /*
 
