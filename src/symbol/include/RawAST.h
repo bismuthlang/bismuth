@@ -219,6 +219,107 @@ public:
 
     const BismuthParser::DereferenceExprContext * getContext() const override { return context; }
 };
+
+class RawArrayAccessExpression : public RawExpression
+{
+private: 
+    BismuthParser::ArrayAccessContext * context; 
+public: 
+    RawArrayAccessExpression(BismuthParser::ArrayAccessContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ArrayAccessContext * getContext() const override { return context; }
+};
+
+class RawBooleanConstExpression : public RawExpression
+{
+private: 
+    BismuthParser::BooleanConstContext * context; 
+public: 
+    RawBooleanConstExpression(BismuthParser::BooleanConstContext * ctx) : context(ctx) {}
+
+    const BismuthParser::BooleanConstContext * getContext() const override { return context; }
+};
+
+class RawIntConstExpression : public RawExpression
+{
+private: 
+    BismuthParser::IConstExprContext * context; 
+public: 
+    RawIntConstExpression(BismuthParser::IConstExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::IConstExprContext * getContext() const override { return context; }
+};
+
+class RawStringConstExpression : public RawExpression
+{
+private: 
+    BismuthParser::SConstExprContext * context; 
+public: 
+    RawStringConstExpression(BismuthParser::SConstExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::SConstExprContext * getContext() const override { return context; }
+};
+
+class RawLambdaExpression : public RawExpression
+{
+private: 
+    BismuthParser::LambdaConstExprContext * context; 
+public: 
+    RawLambdaExpression(BismuthParser::LambdaConstExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::LambdaConstExprContext * getContext() const override { return context; }
+};
+
+// TODO: ASSIGNABLE BC HAS TO BE USED? ALTHO I GUESS TRUE W ALL EXPRS
+class RawRecvExpression : public RawExpression
+{
+private: 
+    BismuthParser::AssignableRecvContext * context; 
+public: 
+    RawRecvExpression(BismuthParser::AssignableRecvContext * ctx) : context(ctx) {}
+
+    const BismuthParser::AssignableRecvContext * getContext() const override { return context; }
+};
+
+class RawIsPresentExpression : public RawExpression
+{
+private: 
+    BismuthParser::AssignableIsPresentContext * context; 
+public: 
+    RawIsPresentExpression(BismuthParser::AssignableIsPresentContext * ctx) : context(ctx) {}
+
+    const BismuthParser::AssignableIsPresentContext * getContext() const override { return context; }
+};
+
+class RawExecExpression : public RawExpression
+{
+private: 
+    BismuthParser::AssignableExecContext * context; 
+public: 
+    RawExecExpression(BismuthParser::AssignableExecContext * ctx) : context(ctx) {}
+
+    const BismuthParser::AssignableExecContext * getContext() const override { return context; }
+};
+
+class RawCopyExpression : public RawExpression
+{
+private: 
+    BismuthParser::CopyExprContext * context; 
+public: 
+    RawCopyExpression(BismuthParser::CopyExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::CopyExprContext * getContext() const override { return context; }
+};
+
+class RawAsChannelExpression : public RawExpression
+{
+private: 
+    BismuthParser::AsChannelExprContext * context; 
+public: 
+    RawAsChannelExpression(BismuthParser::AsChannelExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::AsChannelExprContext * getContext() const override { return context; }
+};
 /*
 
 // From C++ Documentation for visitors
