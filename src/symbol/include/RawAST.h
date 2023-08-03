@@ -48,6 +48,8 @@ private:
     BismuthParser::ExternStatementContext * context; 
 public:
     RawExtern(BismuthParser::ExternStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ExternStatementContext * getContext() const override { return context; }
 };
 
 /**************************************************
@@ -133,6 +135,18 @@ private:
     BismuthParser::UnaryExprContext * context; 
 public: 
     RawUnaryExpression(BismuthParser::UnaryExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::UnaryExprContext * getContext() const override { return context; }
+};
+
+class RawBinaryArithExpr : public RawExpression
+{
+private: 
+    BismuthParser::BinaryArithExprContext * context; 
+public: 
+    RawBinaryArithExpr(BismuthParser::BinaryArithExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::BinaryArithExprContext * getContext() const override { return context; }
 };
 /*
 
