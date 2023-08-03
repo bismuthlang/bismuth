@@ -139,14 +139,85 @@ public:
     const BismuthParser::UnaryExprContext * getContext() const override { return context; }
 };
 
-class RawBinaryArithExpr : public RawExpression
+class RawBinaryArithExpression : public RawExpression
 {
 private: 
     BismuthParser::BinaryArithExprContext * context; 
 public: 
-    RawBinaryArithExpr(BismuthParser::BinaryArithExprContext * ctx) : context(ctx) {}
+    RawBinaryArithExpression(BismuthParser::BinaryArithExprContext * ctx) : context(ctx) {}
 
     const BismuthParser::BinaryArithExprContext * getContext() const override { return context; }
+};
+
+class RawBinaryRelExpression : public RawExpression
+{
+private: 
+    BismuthParser::BinaryRelExprContext * context; 
+public: 
+    RawBinaryRelExpression(BismuthParser::BinaryRelExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::BinaryRelExprContext * getContext() const override { return context; }
+};
+
+class RawEqExpression : public RawExpression
+{
+private: 
+    BismuthParser::EqExprContext * context; 
+public: 
+    RawEqExpression(BismuthParser::EqExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::EqExprContext * getContext() const override { return context; }
+};
+
+class RawLogAndExpression : public RawExpression
+{
+private: 
+    BismuthParser::LogAndExprContext * context; 
+public: 
+    RawLogAndExpression(BismuthParser::LogAndExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::LogAndExprContext * getContext() const override { return context; }
+};
+
+class RawLogOrExpression : public RawExpression
+{
+private: 
+    BismuthParser::LogOrExprContext * context; 
+public: 
+    RawLogOrExpression(BismuthParser::LogOrExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::LogOrExprContext * getContext() const override { return context; }
+};
+
+class RawInvocationExpression : public RawExpression
+{
+private: 
+    BismuthParser::InvocationContext * context; 
+public: 
+    RawInvocationExpression(BismuthParser::InvocationContext * ctx) : context(ctx) {}
+
+    const BismuthParser::InvocationContext * getContext() const override { return context; }
+};
+
+
+class RawInitBoxExpression : public RawExpression
+{
+private: 
+    BismuthParser::InitBoxContext * context; 
+public: 
+    RawInitBoxExpression(BismuthParser::InitBoxContext * ctx) : context(ctx) {}
+
+    const BismuthParser::InitBoxContext * getContext() const override { return context; }
+};
+
+class RawDereferenceExpression : public RawExpression
+{
+private: 
+    BismuthParser::DereferenceExprContext * context; 
+public: 
+    RawDereferenceExpression(BismuthParser::DereferenceExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::DereferenceExprContext * getContext() const override { return context; }
 };
 /*
 
