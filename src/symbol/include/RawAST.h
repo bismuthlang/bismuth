@@ -111,9 +111,20 @@ public:
 
 class RawExpression : public RawNode 
 {
-    virtual BismuthParser::ExpressionContext * getContext() const override = 0; 
+    // virtual BismuthParser::ExpressionContext * getContext() const override = 0; 
 };
 
+// ParenExpr
+
+class RawFieldAccess : public RawExpression
+{
+private: 
+    BismuthParser::FieldAccessExprContext * context; 
+public: 
+    RawFieldAccess(BismuthParser::FieldAccessExprContext * ctx) : context(ctx) {}
+
+    const BismuthParser::FieldAccessExprContext * getContext() const override {return context; }
+};
 
 /*
 
