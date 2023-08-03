@@ -111,6 +111,7 @@ public:
 
 class RawExpression : public RawNode 
 {
+
     // virtual BismuthParser::ExpressionContext * getContext() const override = 0; 
 };
 
@@ -126,6 +127,13 @@ public:
     const BismuthParser::FieldAccessExprContext * getContext() const override {return context; }
 };
 
+class RawUnaryExpression : public RawExpression
+{
+private:
+    BismuthParser::UnaryExprContext * context; 
+public: 
+    RawUnaryExpression(BismuthParser::UnaryExprContext * ctx) : context(ctx) {}
+};
 /*
 
 // From C++ Documentation for visitors
