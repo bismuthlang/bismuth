@@ -25,7 +25,7 @@ class ProtocolVisitor : public BismuthBaseVisitor
 
 public:
 
-    ProtocolVisitor(BismuthErrorHandler& eh, SemanticVisitor *sv) : errorHandler(eh), sematicVisitor(sv) // inLoop(inL)
+    ProtocolVisitor(BismuthErrorHandler& eh, SemanticVisitor *sv) : errorHandler(eh), semanticVisitor(sv) // inLoop(inL)
     {
     }
 
@@ -64,17 +64,9 @@ public:
     std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return ProtoVariantCast<ProtocolIChoice>(visitProto(ctx)); } //{ return visitProto(ctx); }
     std::any visitCloseableProto(BismuthParser::CloseableProtoContext *ctx) override { return ProtoVariantCast<ProtocolClose>(visitProto(ctx)); } //{ return visitProto(ctx); }
 
-    // FIXME: REM AND METHODIZE W SV!
-    const Type *any2Type(std::any any)
-    {
-        std::optional<const Type *> valOpt = any2Opt<const Type *>(any);
-
-        return valOpt.value_or(Types::ABSURD);
-    }
-
 private:
     BismuthErrorHandler& errorHandler;
-    SemanticVisitor * sematicVisitor; 
+    SemanticVisitor * semanticVisitor; 
     bool inLoop = false; 
     bool inClose = false; 
     unsigned int closeNumber = 0; // Used for numbering close blocks

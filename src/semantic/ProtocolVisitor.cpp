@@ -29,7 +29,17 @@ std::variant<const ProtocolSequence *, ErrorChain *> ProtocolVisitor::visitProto
 
 std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::RecvTypeContext *ctx)
 {
-    const Type *ty = any2Type(sematicVisitor->visit(ctx->ty));
+    std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(semanticVisitor));
+    
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to generate receive type");
+        return *e;
+    }
+
+    const Type * ty = std::get<const Type*>(tyOpt);
+    
+    // const Type *ty = any2Type(semanticVisitor->visit(ctx->ty));
 
     if(this->inClose && !ty->isLossy())
     {
@@ -43,7 +53,17 @@ std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(Bis
 // FIXME: ADD TEST CASES WITH BRANCHES, LOOPS, SEQ, ETC TO VERIFY THISLL CATCH, POTENTIALLY METHODIZE THESE ALL
 std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::SendTypeContext *ctx)
 {
-    const Type *ty = any2Type(ctx->ty->accept(sematicVisitor));
+    std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(semanticVisitor));
+    
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to generate send type");
+        return *e;
+    }
+
+    const Type * ty = std::get<const Type*>(tyOpt);
+    
+    // const Type *ty = any2Type(ctx->ty->accept(semanticVisitor));
 
     if(this->inClose && !ty->isLossy())
     {

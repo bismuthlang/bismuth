@@ -447,7 +447,16 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
 std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitBoxContext *ctx)
 {
-    const Type *storeType = any2Type(ctx->ty->accept(this));
+    std::variant<const Type *, ErrorChain *> storeTypeOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+    
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&storeTypeOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to generate the type to store in the box");
+        return *e;
+    }
+
+    const Type * storeType = std::get<const Type*>(storeTypeOpt);
+    
 
     if (storeType->isLinear())
     {
@@ -1022,16 +1031,35 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::Parame
             map.insert({name, param});
         }
 
-        ParameterNode pn = this->visitCtx(param);
+        // ParameterNode pn = this->visitCtx(param);
+        std::variant<ParameterNode, ErrorChain *> pnOpt = this->visitCtx(param);
+
+         if (ErrorChain **e = std::get_if<ErrorChain *>(&pnOpt))
+        {
+            (*e)->addError(ctx->getStart(), "Failed to generate case type");
+            return std::nullopt;
+        }
+
+        ParameterNode pn = std::get<ParameterNode>(pnOpt);
+
         paramList.push_back(pn);
     }
 
     return paramList;
 }
 
-ParameterNode SemanticVisitor::visitCtx(BismuthParser::ParameterContext *ctx)
+std::variant<ParameterNode, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ParameterContext *ctx)
 {
-    return ParameterNode(any2Type(ctx->ty->accept(this)), ctx->name->getText());
+    std::variant<const Type *, ErrorChain *> paramTypeOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+    
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&paramTypeOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to generate case type");
+        return *e;
+    }
+
+    const Type * paramType = std::get<const Type*>(paramTypeOpt);
+    return ParameterNode(paramType, ctx->name->getText());
 }
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::AssignmentContext *ctx)
@@ -1061,8 +1089,17 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         return errorHandler.addError(ctx->getStart(), "Failed to generate parameters for extern!");
     }
 
-    const Type *retType = ctx->ret ? any2Type(ctx->ret->accept(this))
-                                  : Types::UNIT;
+    std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->ret->accept(this))
+                                  : (const Type*) Types::UNIT;
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&retTypeOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Error generating return type");
+        return *e;
+    }
+
+    const Type *retType = std::get<const Type *>(retTypeOpt);
+    
 
     TExternNode *node = new TExternNode(id, tyOpt.value(), retType, variadic, ctx->getStart());
 
@@ -1121,7 +1158,18 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     for (auto e : ctx->assignments)
     {
         // Needs to happen in case we have vars
-        const Type *assignType = this->visitCtx(ctx->typeOrVar());
+        // const Type *assignType = this->visitCtx(ctx->typeOrVar());
+
+        std::variant<const Type *, ErrorChain *> assignTypeOpt = this->visitCtx(ctx->typeOrVar());
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&assignTypeOpt))
+        {
+            (*e)->addError(ctx->getStart(), "Error generating assign type");
+            return *e;
+        }
+
+        const Type *assignType = std::get<const Type *>(assignTypeOpt);
+        const Type * origType = assignType->getCopy(); 
 
         if (e->a && stmgr->isGlobalScope())
         {
@@ -1168,7 +1216,9 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 }
                 // std::variant<TypedNode *, ErrorChain *> exprOpt = (e->a) ? anyOpt2VarError<TypedNode>(e->a->accept(this)) : std::nullopt;
 
-                const Type *newAssignType = this->visitCtx(ctx->typeOrVar()); // Needed to ensure vars get their own inf type
+                const Type *newAssignType = origType->getCopy();//this->visitCtx(ctx->typeOrVar()); // Needed to ensure vars get their own inf type
+
+
 
                 const Type *exprType = exprOpt ? exprOpt.value()->getType() : newAssignType;
 
@@ -1243,7 +1293,15 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
             false,
             [this, ctx, &cases, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
             {
-                const Type *caseType = any2Type(altCtx->type()->accept(this));
+                std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, altCtx->type()->accept(this));
+    
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
+                {
+                    (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                    return *e;
+                }
+
+                const Type * caseType = std::get<const Type*>(caseTypeOpt);
 
                 if (!sumType->contains(caseType))
                 {
@@ -1564,7 +1622,8 @@ std::variant<TExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     return new TExitNode(ctx->getStart());
 }
 
-const Type *SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
+std::variant<const Type *, ErrorChain *>
+SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
 {
     // If we don't have a type context, then we know that we must be doing inference
     if (!(ctx->type()))
@@ -1576,8 +1635,7 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
     // If we do have a type, then visit that context.
     // std::any temp = this->visit(ctx->type());
 
-    const Type *type = any2Type(ctx->type()->accept(this));
-    return type;
+    return anyOpt2VarError<const Type>(errorHandler, ctx->type()->accept(this));
 }
 
 std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx)
@@ -1590,8 +1648,16 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     ParameterListNode params = paramTypeOpt.value();
     std::vector<Symbol *> ps;
 
-    const Type *retType = ctx->ret ? any2Type(ctx->ret->accept(this))
-                                   : Types::UNIT;
+    std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->ret->accept(this))
+                                  : (const Type*) Types::UNIT;
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&retTypeOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Error generating return type");
+        return *e;
+    }
+
+    const Type *retType = std::get<const Type *>(retTypeOpt);
 
     stmgr->enterScope(StopType::GLOBAL);
     stmgr->addSymbol(new Symbol("@RETURN", retType, false, false));
@@ -1622,36 +1688,60 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     return new TLambdaConstNode(ctx->getStart(), ps, retType, blk);
 }
 
-const Type *SemanticVisitor::visitCtx(BismuthParser::LambdaTypeContext *ctx)
+std::variant<const TypeInvoke *, ErrorChain *>
+SemanticVisitor::visitCtx(BismuthParser::LambdaTypeContext *ctx)
 {
     std::vector<const Type *> params;
 
     for (auto param : ctx->paramTypes)
     {
-        // const Type *type = this->visitCtx(param);
-        const Type *type = any2Type(param->accept(this));
+        std::variant<const Type *, ErrorChain *> typeOpt = anyOpt2VarError<const Type>(errorHandler, param->accept(this));
+    
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
+        {
+            (*e)->addError(ctx->getStart(), "Failed to generate parameter type");
+            return *e; // TODO: ALLOW MULTIPLE ERRORS/BRANCHING?
+        }
+
+        const Type * type = std::get<const Type*>(typeOpt);
+
         params.push_back(type);
     }
 
-    const Type *returnType = any2Type(ctx->returnType->accept(this));
+    std::variant<const Type *, ErrorChain *> returnTypeOpt = anyOpt2VarError<const Type>(errorHandler, ctx->returnType->accept(this));
+    
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&returnTypeOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to generate return type");
+        return *e;
+    }
 
-    const Type *lamType = new TypeInvoke(params, returnType);
+    const Type * returnType = std::get<const Type*>(returnTypeOpt);
 
-    return lamType;
+    return new TypeInvoke(params, returnType);
 }
 
-const Type *SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
+
+std::variant<const TypeSum *, ErrorChain *> 
+SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
 {
     std::set<const Type *, TypeCompare> cases = {};
 
     for (auto e : ctx->type()) // FIXME: ADD TEST CASES LIKE THIS FOR STRUCT + ENUM!! (LINEAR CHECK?)
     {
-        const Type *caseType = any2Type(e->accept(this));
+        std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, e->accept(this));
+    
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
+        {
+            (*e)->addError(ctx->getStart(), "Failed to generate case type");
+            return *e;
+        }
+
+        const Type * caseType = std::get<const Type*>(caseTypeOpt);
 
         if (caseType->isLinear())
         {
-            errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
-            return Types::ABSURD;
+            return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
         }
 
         cases.insert(caseType);
@@ -1659,13 +1749,10 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
 
     if (cases.size() != ctx->type().size())
     {
-        errorHandler.addError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
-        return Types::ABSURD;
+        return errorHandler.addError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
     }
 
-    const TypeSum *sum = new TypeSum(cases);
-
-    return sum;
+    return new TypeSum(cases);
 }
 
 std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
@@ -1691,7 +1778,15 @@ std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
             for (auto e : ctx->cases)
             {
-                const Type *caseType = any2Type(e->accept(this));
+                std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, e->accept(this));
+    
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
+                {
+                    (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                    return *e;
+                }
+
+                const Type * caseType = std::get<const Type*>(caseTypeOpt);
 
                 if (caseType->isLinear())
                 {
@@ -1744,7 +1839,16 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
                 {
                     return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
                 }
-                const Type *caseTy = any2Type(caseCtx->ty->accept(this));
+
+                std::variant<const Type *, ErrorChain *> caseTyOpt = anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this));
+    
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTyOpt))
+                {
+                    (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                    return *e;
+                }
+
+                const Type * caseTy = std::get<const Type*>(caseTyOpt);
 
                 if (caseTy->isLinear())
                 {
@@ -1762,31 +1866,40 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
     return errorHandler.addError(ctx->getStart(), "Expected struct/product, but got: " + sym->type->toString());
 }
 
-const Type *SemanticVisitor::visitCtx(BismuthParser::CustomTypeContext *ctx)
+std::variant<const Type *, ErrorChain *>
+SemanticVisitor::visitCtx(BismuthParser::CustomTypeContext *ctx)
 {
     std::string name = ctx->VARIABLE()->getText();
 
     std::optional<SymbolContext> opt = stmgr->lookup(name);
     if (!opt)
     {
-        errorHandler.addError(ctx->getStart(), "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
-        return Types::ABSURD;
+        return errorHandler.addError(ctx->getStart(), "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
     }
 
     Symbol *sym = opt.value().second;
 
     if (!sym->type || !sym->isDefinition)
     {
-        errorHandler.addError(ctx->getStart(), "Cannot use: " + name + " as a type.");
-        return Types::ABSURD;
+        return errorHandler.addError(ctx->getStart(), "Cannot use: " + name + " as a type.");
     }
 
     return sym->type;
 }
 
-const Type *SemanticVisitor::visitCtx(BismuthParser::ArrayTypeContext *ctx)
+
+std::variant<const TypeArray *, ErrorChain *>
+SemanticVisitor::visitCtx(BismuthParser::ArrayTypeContext *ctx)
 {
-    const Type *subType = any2Type(ctx->ty->accept(this));
+    std::variant<const Type *, ErrorChain *> innerOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+    
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&innerOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to generate array type");
+        return *e;
+    }
+
+    const Type * inner = std::get<const Type*>(innerOpt);
 
     // Undefined type errors handled below
 
@@ -1797,30 +1910,30 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::ArrayTypeContext *ctx)
         errorHandler.addError(ctx->getStart(), "Cannot initialize array with a size of less than 1!");
     }
 
-    const Type *arr = new TypeArray(subType, len);
-    return arr;
+    return new TypeArray(inner, len);
 }
-const Type *SemanticVisitor::visitCtx(BismuthParser::BaseTypeContext *ctx)
+
+std::variant<const Type *, ErrorChain *>
+SemanticVisitor::visitCtx(BismuthParser::BaseTypeContext *ctx)
 {
     if (ctx->TYPE_INT())
     {
-        return Types::DYN_INT;
+        return (const Type*) Types::DYN_INT;
     }
     else if (ctx->TYPE_BOOL())
     {
-        return Types::DYN_BOOL;
+        return (const Type*) Types::DYN_BOOL;
     }
     else if (ctx->TYPE_STR())
     {
-        return Types::DYN_STR;
+        return (const Type*) Types::DYN_STR;
     }
     else if (ctx->TYPE_UNIT())
     {
-        return Types::UNIT;
+        return (const Type*) Types::UNIT;
     }
 
-    errorHandler.addError(ctx->getStart(), "Unknown type: " + ctx->getText());
-    return Types::ABSURD;
+    return errorHandler.addError(ctx->getStart(), "Unknown type: " + ctx->getText());
 }
 
 std::variant<TBooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BooleanConstContext *ctx)
@@ -1828,7 +1941,8 @@ std::variant<TBooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
     return new TBooleanConstNode(ctx->TRUE() ? true : false, ctx->getStart());
 }
 
-const Type *SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
+std::variant<const TypeChannel *, ErrorChain *>
+SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
 {
     ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this);
     std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
@@ -1836,9 +1950,8 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        return Types::ABSURD; // FIXME: DO BETTER!
-        // (*e)->addError(ctx->getStart(), "FIXME: 21");
-        // return *e;
+        (*e)->addError(ctx->getStart(), "Failed to generate channel protocol!");
+        return *e;
     }
 
     const ProtocolSequence *proto = std::get<const ProtocolSequence *>(protoOpt);
@@ -1846,20 +1959,29 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
     return new TypeChannel(proto);
 }
 
-const Type *SemanticVisitor::visitCtx(BismuthParser::BoxTypeContext *ctx)
+std::variant<const TypeBox *, ErrorChain *>
+SemanticVisitor::visitCtx(BismuthParser::BoxTypeContext *ctx)
 {
-    const Type *inner = any2Type(ctx->ty->accept(this));
+    std::variant<const Type *, ErrorChain *> innerOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+    
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&innerOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to generate type inside box");
+        return *e;
+    }
+
+    const Type * inner = std::get<const Type*>(innerOpt);
 
     if (inner->isLinear())
     {
-        errorHandler.addError(ctx->ty->getStart(), "Cannot box a linear resource.");
-        return Types::ABSURD;
+        return errorHandler.addError(ctx->ty->getStart(), "Cannot box a linear resource.");
     }
 
     return new TypeBox(inner);
 }
 
-const Type *SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
+std::variant<const TypeProgram *, ErrorChain *>
+SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 {
     ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this); // TODO: methodize?
     std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
@@ -1867,9 +1989,8 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        return Types::ABSURD; // FIXME: DO BETTER!
-        // (*e)->addError(ctx->getStart(), "FIXME: 21");
-        // return *e;
+        (*e)->addError(ctx->getStart(), "Failed to generate protocol type for program");
+        return *e;
     }
 
     // TODO: perhaps change these to smart pointers? 

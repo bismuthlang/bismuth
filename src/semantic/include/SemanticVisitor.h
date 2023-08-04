@@ -111,7 +111,7 @@ public:
     std::variant<TExternNode *, ErrorChain *> visitCtx(BismuthParser::ExternStatementContext *ctx);
     std::any visitExternStatement(BismuthParser::ExternStatementContext *ctx) override { return TNVariantCast<TExternNode>(visitCtx(ctx)); }
 
-    ParameterNode visitCtx(BismuthParser::ParameterContext *ctx);
+    std::variant<ParameterNode, ErrorChain *> visitCtx(BismuthParser::ParameterContext *ctx);
     std::any visitParameter(BismuthParser::ParameterContext *ctx) override { return visitCtx(ctx); }
 
     std::variant<TInvocationNode *, ErrorChain *> visitCtx(BismuthParser::InvocationContext *ctx);
@@ -213,32 +213,32 @@ public:
     /*
      *  Types
      */
-    const Type *visitCtx(BismuthParser::BaseTypeContext *ctx);
-    std::any visitBaseType(BismuthParser::BaseTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::BaseTypeContext *ctx);
+    std::any visitBaseType(BismuthParser::BaseTypeContext *ctx) override { return visitCtx(ctx); } // casting done in the function
 
-    const Type *visitCtx(BismuthParser::ArrayTypeContext *ctx);
-    std::any visitArrayType(BismuthParser::ArrayTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeArray *, ErrorChain *> visitCtx(BismuthParser::ArrayTypeContext *ctx);
+    std::any visitArrayType(BismuthParser::ArrayTypeContext *ctx) override { return TypeVariantCast<TypeArray>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::LambdaTypeContext *ctx);
-    std::any visitLambdaType(BismuthParser::LambdaTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeInvoke *, ErrorChain *> visitCtx(BismuthParser::LambdaTypeContext *ctx);
+    std::any visitLambdaType(BismuthParser::LambdaTypeContext *ctx) override { return TypeVariantCast<TypeInvoke>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::ChannelTypeContext *ctx);
-    std::any visitChannelType(BismuthParser::ChannelTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeChannel *, ErrorChain *> visitCtx(BismuthParser::ChannelTypeContext *ctx);
+    std::any visitChannelType(BismuthParser::ChannelTypeContext *ctx) override { return TypeVariantCast<TypeChannel>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::BoxTypeContext *ctx);
-    std::any visitBoxType(BismuthParser::BoxTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeBox *, ErrorChain *> visitCtx(BismuthParser::BoxTypeContext *ctx);
+    std::any visitBoxType(BismuthParser::BoxTypeContext *ctx) override { return TypeVariantCast<TypeBox>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::ProgramTypeContext *ctx);
-    std::any visitProgramType(BismuthParser::ProgramTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeProgram *, ErrorChain *> visitCtx(BismuthParser::ProgramTypeContext *ctx);
+    std::any visitProgramType(BismuthParser::ProgramTypeContext *ctx) override { return TypeVariantCast<TypeProgram>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::CustomTypeContext *ctx);
-    std::any visitCustomType(BismuthParser::CustomTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::CustomTypeContext *ctx); 
+    std::any visitCustomType(BismuthParser::CustomTypeContext *ctx) override { return visitCtx(ctx); } // Casting done by lower level call
 
-    const Type *visitCtx(BismuthParser::TypeOrVarContext *ctx);
+    std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::TypeOrVarContext *ctx);
     std::any visitTypeOrVar(BismuthParser::TypeOrVarContext *ctx) override { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::SumTypeContext *ctx);
-    std::any visitSumType(BismuthParser::SumTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeSum *, ErrorChain *>  visitCtx(BismuthParser::SumTypeContext *ctx);
+    std::any visitSumType(BismuthParser::SumTypeContext *ctx) override { return TypeVariantCast<TypeSum>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
     /*
      *  Protocols
@@ -352,7 +352,15 @@ public:
 
             if (!progType->isDefined())
             {
-                const Type *ty = any2Type(ctx->ty->accept(this));
+                std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+    
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
+                {
+                    (*e)->addError(ctx->getStart(), "Failed to generate channel type for program");
+                    return *e;
+                }
+
+                const Type * ty = std::get<const Type*>(tyOpt);
 
                 if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
                 {
@@ -659,13 +667,6 @@ public:
         return ans;
     }
 
-    const Type *any2Type(std::any any)
-    {
-        std::optional<const Type *> valOpt = any2Opt<const Type *>(any);
-
-        return valOpt.value_or(Types::ABSURD);
-    }
-
 private:
     STManager *stmgr;
     PropertyManager<Symbol> *symBindings = new PropertyManager<Symbol>();
@@ -758,9 +759,18 @@ private:
                     ps.push_back(param.type);
                 }
 
-                const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this))
-                                                    : Types::UNIT;
 
+                std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->lam->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->lam->ret->accept(this))
+                                  : (const Type*) Types::UNIT;
+
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&retTypeOpt))
+                {
+                    (*e)->addError(ctx->getStart(), "Error generating return type");
+                    return *e;
+                }
+
+                const Type *retType = std::get<const Type *>(retTypeOpt);
+        
                 funcType->setInvoke(ps, retType);
 
                 // stmgr->addSymbol(sym); //Maybe do this here instead? would be more similar to how others are managed...
