@@ -270,7 +270,7 @@ public:
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
         {
-            (*e)->addError(ex->getStart(), "Unable to type check condition expression.");
+            (*e)->addError(ex->getStart(), "Unable to type check condition expression");
             return *e;
         }
 
@@ -309,7 +309,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to type check statement in block.");
+                (*e)->addError(ctx->getStart(), "Failed to type check statement in block");
                 return *e;
             }
 
@@ -317,7 +317,7 @@ public:
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
             {
-                errorHandler.addError(ctx->getStart(), "Dead code.");
+                errorHandler.addError(ctx->getStart(), "Dead code");
                 break;
             }
 
@@ -431,7 +431,7 @@ public:
             std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
             if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to safe visit block.");
+                (*e)->addError(ctx->getStart(), "Failed to safe visit block");
                 return *e;
             }
 
@@ -503,7 +503,7 @@ public:
             {
                 std::optional<STManager *> optSTCopy = origStmgr->getCopy();
                 if (!optSTCopy)
-                    return errorHandler.addError(alt->getStart(), "Failed to copy symbol table; this is likely a compiler error.");
+                    return errorHandler.addError(alt->getStart(), "Failed to copy symbol table; this is likely a compiler error");
                 this->stmgr = optSTCopy.value(); // TODO: DELETE RESOURCE?
             }
             else 
@@ -533,7 +533,7 @@ public:
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                     {
-                        (*e)->addError(alt->getStart(), "Failed to type check code following branch.");
+                        (*e)->addError(alt->getStart(), "Failed to type check code following branch");
                         return *e;
                     }
 
@@ -559,7 +559,7 @@ public:
 
                         if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                         {
-                            (*e)->addError(ctx->getStart(), "Failed to type check when no branch followed.");
+                            (*e)->addError(ctx->getStart(), "Failed to type check when no branch followed");
                             return *e;
                         }
 
@@ -587,7 +587,7 @@ public:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(alt->getStart(), "537 Unused linear types in context: " + details.str());
+                errorHandler.addError(alt->getStart(), "Unused linear types in context: " + details.str());
             }
         }
 
@@ -602,7 +602,7 @@ public:
                 std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                 {
-                    (*e)->addError(ctx->getStart(), "Failed to type check code when conditional skipped over.");
+                    (*e)->addError(ctx->getStart(), "Failed to type check code when conditional skipped over");
                     return *e;
                 }
                 if (!ctxRest->isGenerated)
@@ -698,7 +698,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "711 Uninferred types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
             }
         }
 
@@ -718,7 +718,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "736 Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
             }
         }
         // return res;

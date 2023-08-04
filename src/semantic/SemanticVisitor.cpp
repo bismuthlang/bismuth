@@ -93,7 +93,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to type check definition.");
+                (*e)->addError(ctx->getStart(), "Failed to type check definition");
                 return *e;
             }
 
@@ -108,7 +108,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&extOpt))
         {
-            (*e)->addError(ctx->getStart(), "108");
+            (*e)->addError(ctx->getStart(), "Error in definition of extern");
             return *e;
         }
         TExternNode *node = std::get<TExternNode *>(extOpt);
@@ -117,7 +117,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         {
             if (!(node->getSymbol()->getIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::DYN_STR) && node->getType()->getReturnType()->isSubtype(Types::DYN_INT) && node->getType()->isVariadic()))
             {
-                errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode.");
+                errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
             }
         }
 
@@ -155,7 +155,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to type check program.");
+                (*e)->addError(ctx->getStart(), "Failed to type check program");
                 return *e;
             }
 
@@ -167,7 +167,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to type check function.");
+                (*e)->addError(ctx->getStart(), "Failed to type check function");
                 return *e;
             }
 
@@ -194,7 +194,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         std::optional<SymbolContext> opt = stmgr->lookup("program");
         if (!opt)
         {
-            errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, 'program :: * : Channel<-int>' must be defined.");
+            errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, 'program :: * : Channel<-int>' must be defined");
         }
         else
         {
@@ -211,7 +211,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             }
             else
             {
-                errorHandler.addError(ctx->getStart(), "When compiling in demo, 'program :: * : Channel<-int>' is required.");
+                errorHandler.addError(ctx->getStart(), "When compiling in demo, 'program :: * : Channel<-int>' is required");
             }
         }
     }
@@ -240,7 +240,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) ? TNVariantCast<TLambdaConstNode>(visitCtx(ctx->lam)) : TNVariantCast<TFieldAccessNode>(visitCtx(ctx->field, true));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to generate expression to invoke.");
+        (*e)->addError(ctx->getStart(), "Unable to generate expression to invoke");
         return *e;
     }
 
@@ -293,7 +293,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&providedOpt))
                 {
-                    (*e)->addError(iArgs->args.at(i)->getStart(), "Unable to generate argument.");
+                    (*e)->addError(iArgs->args.at(i)->getStart(), "Unable to generate argument");
                     return *e;
                 }
 
@@ -309,7 +309,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
                 {
                     if (type_cast<TypeBottom>(providedType) || type_cast<TypeAbsurd>(providedType) || type_cast<TypeUnit>(providedType))
                     {
-                        errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType->toString() + " to a function.");
+                        errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType->toString() + " to a function");
                     }
                     continue;
                 }
@@ -362,7 +362,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&lamOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to generate lambda.");
+        (*e)->addError(ctx->getStart(), "Unable to generate lambda");
         return *e;
     }
 
@@ -412,7 +412,7 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
                 {
-                    (*e)->addError(ctx->exprs.at(i)->getStart(), "Unable to generate expression.");
+                    (*e)->addError(ctx->exprs.at(i)->getStart(), "Unable to generate expression");
                     return *e;
                 }
 
@@ -436,7 +436,7 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
         if (!isValid)
         {
-            return errorHandler.addError(ctx->getStart(), "Invalid parameters passed to product init.");
+            return errorHandler.addError(ctx->getStart(), "Invalid parameters passed to product init");
         }
 
         return new TInitProductNode(product, n, ctx->getStart());
@@ -468,7 +468,7 @@ std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
     {
-        (*e)->addError(ctx->expr->getStart(), "Unable to generate expression in init box.");
+        (*e)->addError(ctx->expr->getStart(), "Unable to generate expression in init box");
         return *e;
     }
 
@@ -484,7 +484,7 @@ std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     if (providedType->isNotSubtype(storeType))
     {
         std::ostringstream errorMsg;
-        errorMsg << "Initialize box expected " << storeType->toString() << ", but got " << providedType->toString() << ".";
+        errorMsg << "Initialize box expected " << storeType->toString() << ", but got " << providedType->toString() << "";
 
         return errorHandler.addError(ctx->getStart(), errorMsg.str());
     }
@@ -501,7 +501,7 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->index->getStart(), "Unable to type check array access index.");
+        (*e)->addError(ctx->index->getStart(), "Unable to type check array access index");
         return *e;
     }
 
@@ -617,7 +617,7 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&innerNodeOpt))
     {
-        (*e)->addError(ctx->ex->getStart(), "Failed to generate unary expression.");
+        (*e)->addError(ctx->ex->getStart(), "Failed to generate unary expression");
         return *e;
     }
 
@@ -656,7 +656,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to generate LHS of Binary Arithmetic Expression.");
+        (*e)->addError(ctx->getStart(), "Unable to generate LHS of Binary Arithmetic Expression");
         return *e;
     }
 
@@ -670,7 +670,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&rightOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to generate RHS of binary arithmetic expression.");
+        (*e)->addError(ctx->getStart(), "Unable to generate RHS of binary arithmetic expression");
         return *e;
     }
 
@@ -700,13 +700,13 @@ std::variant<TEqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&rhsOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to generate RHS.");
+        (*e)->addError(ctx->getStart(), "Unable to generate RHS");
         return *e;
     }
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&lhsOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to generate LHS.");
+        (*e)->addError(ctx->getStart(), "Unable to generate LHS");
         return *e;
     }
 
@@ -925,7 +925,7 @@ std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
     // Determine the type of the expression we are visiting
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to type check dereference expression.");
+        (*e)->addError(ctx->getStart(), "Unable to type check dereference expression");
         return *e;
     }
 
@@ -980,7 +980,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&rightOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to type check RHS of binary relation expression.");
+        (*e)->addError(ctx->getStart(), "Unable to type check RHS of binary relation expression");
         return *e;
     }
 
@@ -1024,7 +1024,7 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::Parame
         auto prevUse = map.find(name);
         if (prevUse != map.end())
         {
-            errorHandler.addError(param->getStart(), "Re-use of previously defined parameter " + name + ".");
+            errorHandler.addError(param->getStart(), "Re-use of previously defined parameter " + name);
         }
         else
         {
@@ -1117,7 +1117,7 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
     {
-        (*e)->addError(ctx->getStart(), "Unable to type check assignment.");
+        (*e)->addError(ctx->getStart(), "Unable to type check assignment");
         return *e;
     }
 
@@ -1126,7 +1126,7 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     if (exprType->isGuarded())
     {
-        return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier!");
+        return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier");
     }
 
     // Determine the expected type
@@ -1208,7 +1208,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOptO))
                     {
-                        (*e)->addError(ctx->getStart(), "Unable to type check assignment.");
+                        (*e)->addError(ctx->getStart(), "Unable to type check assignment");
                         return *e;
                     }
 
@@ -1224,7 +1224,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
                 if (exprType->isGuarded()) // TODO: Use syntactic sugar to separate out declarations from assignments. Also could use it to make select statements work better!
                 {
-                    return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier!");
+                    return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier");
                 }
 
                 // Note: This automatically performs checks to prevent issues with setting VAR = VAR
@@ -1334,7 +1334,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
                 if (dynamic_cast<BismuthParser::TypeDefContext *>(altCtx->eval) ||
                     dynamic_cast<BismuthParser::VarDeclStatementContext *>(altCtx->eval))
                 {
-                    return errorHandler.addError(altCtx->getStart(), "Dead code: definition as select alternative.");
+                    return errorHandler.addError(altCtx->getStart(), "Dead code: definition as select alternative");
                 }
 
                 TypedNode *ans = std::get<TypedNode *>(tnOpt);
@@ -1351,7 +1351,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            (*e)->addError(ctx->getStart(), "Failed to type check match statement.");
+            (*e)->addError(ctx->getStart(), "Failed to type check match statement");
             return *e;
         }
 
@@ -1443,7 +1443,7 @@ std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCt
         });
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
-        return errorHandler.addError(ctx->getStart(), "Failed to generate one or more cases in if statement.");
+        return errorHandler.addError(ctx->getStart(), "Failed to generate one or more cases in if statement");
 
     ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
@@ -1496,7 +1496,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             if (dynamic_cast<BismuthParser::TypeDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
                 dynamic_cast<BismuthParser::VarDeclStatementContext *>(e->eval))
             {
-                return errorHandler.addError(e->getStart(), "Dead code: definition as select alternative.");
+                return errorHandler.addError(e->getStart(), "Dead code: definition as select alternative");
             }
 
             for (unsigned int i = 0; i < case_count; i++)
@@ -1543,7 +1543,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
     {
-        (*e)->addError(ctx->getStart(), "Failed to type check select statement.");
+        (*e)->addError(ctx->getStart(), "Failed to type check select statement");
         return *e;
     }
 
@@ -1606,7 +1606,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         return new TReturnNode(ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but received nothing.");
+    return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but received nothing");
 }
 
 std::variant<TExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExitStatementContext *ctx)
@@ -1741,7 +1741,7 @@ SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
 
         if (caseType->isLinear())
         {
-            return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
+            return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container");
         }
 
         cases.insert(caseType);
@@ -1790,7 +1790,7 @@ std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
                 if (caseType->isLinear())
                 {
-                    return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container.");
+                    return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container");
                 }
 
                 cases.insert(caseType);
@@ -1852,7 +1852,7 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
 
                 if (caseTy->isLinear())
                 {
-                    return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString() + ", in non-linear container.");
+                    return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString() + ", in non-linear container");
                 }
 
                 el.insert({caseName, caseTy});
@@ -1881,7 +1881,7 @@ SemanticVisitor::visitCtx(BismuthParser::CustomTypeContext *ctx)
 
     if (!sym->type || !sym->isDefinition)
     {
-        return errorHandler.addError(ctx->getStart(), "Cannot use: " + name + " as a type.");
+        return errorHandler.addError(ctx->getStart(), "Cannot use: " + name + " as a type");
     }
 
     return sym->type;
@@ -1950,7 +1950,7 @@ SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        (*e)->addError(ctx->getStart(), "Failed to generate channel protocol!");
+        (*e)->addError(ctx->getStart(), "Failed to generate channel protocol");
         return *e;
     }
 
@@ -1974,7 +1974,7 @@ SemanticVisitor::visitCtx(BismuthParser::BoxTypeContext *ctx)
 
     if (inner->isLinear())
     {
-        return errorHandler.addError(ctx->ty->getStart(), "Cannot box a linear resource.");
+        return errorHandler.addError(ctx->ty->getStart(), "Cannot box a linear resource");
     }
 
     return new TypeBox(inner);
@@ -2085,7 +2085,7 @@ std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssign
         const TypeChannel *channel = channelOpt.value();
         if (!channel->getProtocol()->isOC(true))
         {
-            return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym->toString() + " as it is not a ! loop.");
+            return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym->toString() + " as it is not a ! loop");
         }
 
         return new TProgramIsPresetNode(sym, ctx->getStart());
@@ -2200,7 +2200,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         {
-            (*e)->addError(ctx->getStart(), "Failed to type check external choice.");
+            (*e)->addError(ctx->getStart(), "Failed to type check external choice");
             return *e;
         }
 
@@ -2540,7 +2540,7 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
             });
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
-            return errorHandler.addError(ctx->getStart(), "Failed to generate one or more branches in acceptIf.");
+            return errorHandler.addError(ctx->getStart(), "Failed to generate one or more branches in acceptIf");
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
         if (ctx->falseBlk)
