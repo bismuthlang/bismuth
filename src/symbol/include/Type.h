@@ -90,8 +90,7 @@ public:
     {
         if(!linear) return; 
 
-        Type *u_this = const_cast<Type *>(this);
-        u_this->guardCount = u_this->guardCount + 1;
+        guardCount = guardCount + 1;
     }
 
     virtual bool unguard() const
@@ -100,9 +99,8 @@ public:
 
         if (guardCount == 0)
             return false;
-        Type *u_this = const_cast<Type *>(this);
 
-        u_this->guardCount = u_this->guardCount - 1;
+        guardCount = guardCount - 1;
         return true;
     }
 
@@ -111,7 +109,7 @@ public:
     virtual bool isLossy() const { return !linear; }
 
 protected:
-    unsigned int guardCount = 0;
+    mutable unsigned int guardCount = 0;
 
     /**
      * @brief Internal tool used to determine if this type is a supertype for another type. NOTE: THIS SHOULD NEVER BE CALLED DIRECTLY OUTSIDE OF THE TYPE DEFINITIONS. DOING SO MAY LEAD TO UNUSUAL BEHAVIOR!

@@ -289,7 +289,6 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
             for (unsigned int i = 0; i < iArgs->args.size(); i++)
             {
                 // Get the type of the current argument
-                // const Type *providedType = any2Type(iArgs->args.at(i)->accept(this));
                 std::variant<TypedNode *, ErrorChain *> providedOpt = anyOpt2VarError<TypedNode>(errorHandler, iArgs->args.at(i)->accept(this));
 
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&providedOpt))
@@ -804,7 +803,6 @@ std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     for (BismuthParser::ExpressionContext *e : toGen)
     {
-        // const Type *type = any2Type(e->accept(this));
         std::variant<TypedNode *, ErrorChain *> nodeOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&nodeOpt))

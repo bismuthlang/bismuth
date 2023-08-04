@@ -30,7 +30,7 @@ class Protocol
 {
 protected:
     virtual std::string as_str() const = 0;
-    unsigned int guardCount = 0;
+    mutable unsigned int guardCount = 0;
 
 public:
     Protocol() {}; 
@@ -64,19 +64,17 @@ public:
     // FIXME: ALMOST SAME AS TO TYPE!
     virtual bool isGuarded() const { return guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
 
-    virtual void guard() const // FIXME: DO BETTER
+    virtual void guard() const
     {
-        Protocol *u_this = const_cast<Protocol *>(this);
-        u_this->guardCount = u_this->guardCount + 1;
+        guardCount = guardCount + 1;
     }
 
-    virtual bool unguard() const // FIXME: DO BETTER
+    virtual bool unguard() const
     {
         if (guardCount == 0)
             return false;
-        Protocol *u_this = const_cast<Protocol *>(this);
 
-        u_this->guardCount = u_this->guardCount - 1;
+        guardCount = guardCount - 1;
         return true;
     }
 
