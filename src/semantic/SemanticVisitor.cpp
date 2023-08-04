@@ -1831,7 +1831,18 @@ std::variant<TBooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
 {
-    const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
+    ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this, false);
+    std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
+    delete protoVisitor; 
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
+    {
+        return Types::ABSURD; // FIXME: DO BETTER!
+        // (*e)->addError(ctx->getStart(), "FIXME: 21");
+        // return *e;
+    }
+
+    const ProtocolSequence *proto = std::get<const ProtocolSequence *>(protoOpt);
 
     return new TypeChannel(proto);
 }
@@ -1851,7 +1862,19 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::BoxTypeContext *ctx)
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 {
-    const ProtocolSequence *proto = dynamic_cast<const ProtocolSequence *>(any2Protocol(ctx->proto->accept(this)));
+    ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this, false);
+    std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
+    delete protoVisitor; 
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
+    {
+        return Types::ABSURD; // FIXME: DO BETTER!
+        // (*e)->addError(ctx->getStart(), "FIXME: 21");
+        // return *e;
+    }
+
+    const ProtocolSequence *proto = std::get<const ProtocolSequence *>(protoOpt);
+
     return new TypeProgram(new TypeChannel(proto)); // FIXME: SEEMS A BIT ODD TO INC CHANNEL IN PROGRAM?
 }
 
@@ -1929,7 +1952,7 @@ std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssign
 
     if (!opt)
     {
-        return errorHandler.addError(ctx->getStart(), "Could not find channel :-( ): " + id);
+        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
     }
 
     Symbol *sym = opt.value().second;
@@ -1972,7 +1995,20 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
         for (auto alt : ctx->protoAlternative())
         {
-            auto a = toSequence(any2Protocol(alt->check->accept(this)));
+            // TODO: SEEMS WRONG TO PERFORM ERROR CHECKS HERE AS, BY DEF, COULD ONLY ERROR SHOULD HIGHER-LEVEL PROTO FAIL, BUT I GUESS MAYBE USEFUL IF WE LATER ADD INF!
+            ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this, false);
+            std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(alt->check); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
+            delete protoVisitor; 
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
+            {
+                (*e)->addError(ctx->getStart(), "FIXME: 21");
+                return *e;
+            }
+
+            const ProtocolSequence *a = std::get<const ProtocolSequence *>(protoOpt);
+            
+            // auto a = toSequence(any2Protocol(alt->check->accept(this)));
             opts.insert(a);
             optsI.insert({a->getInverse(), alt->eval});
         }
@@ -2070,7 +2106,20 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
-        const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
+
+        ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this, false);
+        std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(ctx->sel); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
+        delete protoVisitor; 
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
+        {
+            (*e)->addError(ctx->getStart(), "FIXME: 21");
+            return *e;
+        }
+
+        const ProtocolSequence *ps = std::get<const ProtocolSequence *>(protoOpt);
+        
+        // const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
         unsigned int projectIndex = channel->getProtocol()->project(ps);
 
         if (!projectIndex)
@@ -2485,103 +2534,4 @@ std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExp
     // }
 
     return new TAsChannelNode(tn, ctx->getStart());
-}
-
-
-/*************************************************************
- *
- * Protocols
- *
- *************************************************************/
-
-// const Protocol *
-std::variant<const ProtocolSequence *, ErrorChain *> SemanticVisitor::visitProto(BismuthParser::ProtocolContext *ctx)
-{
-    std::vector<const Protocol *> steps;
-
-    for (auto e : ctx->protos)
-    {
-        steps.push_back(any2Protocol(e->accept(this)));
-    }
-
-    return new ProtocolSequence(steps);
-}
-
-const Protocol *SemanticVisitor::visitProto(BismuthParser::RecvTypeContext *ctx)
-{
-    const Type *ty = any2Type(ctx->ty->accept(this));
-    return new ProtocolRecv(ty);
-}
-
-const Protocol *SemanticVisitor::visitProto(BismuthParser::SendTypeContext *ctx)
-{
-    const Type *ty = any2Type(ctx->ty->accept(this));
-    return new ProtocolSend(ty);
-}
-
-const Protocol *SemanticVisitor::visitProto(BismuthParser::WnProtoContext *ctx)
-{
-    const Protocol *proto = any2Protocol(ctx->proto->accept(this));
-    return new ProtocolWN(toSequence(proto));
-}
-
-const Protocol *SemanticVisitor::visitProto(BismuthParser::OcProtoContext *ctx)
-{
-    const Protocol *proto = any2Protocol(ctx->proto->accept(this));
-    return new ProtocolOC(toSequence(proto));
-}
-
-const Protocol *SemanticVisitor::visitProto(BismuthParser::ExtChoiceProtoContext *ctx)
-{
-    std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
-
-    for (auto e : ctx->protoOpts)
-    {
-        opts.insert(toSequence(any2Protocol(e->accept(this))));
-    }
-
-    if (ctx->protoOpts.size() != opts.size())
-    {
-        errorHandler.addError(ctx->getStart(), "Duplicate protocols in choice");
-        // FIXME: RETURN ERROR??
-    }
-
-    // return new Protocol(steps);
-    return new ProtocolEChoice(opts);
-}
-
-const Protocol *SemanticVisitor::visitProto(BismuthParser::IntChoiceProtoContext *ctx)
-{
-    // std::vector<const ProtocolSequence *> opts;
-    std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
-
-    for (auto e : ctx->protoOpts)
-    {
-        opts.insert(toSequence(any2Protocol(e->accept(this))));
-    }
-
-    if (ctx->protoOpts.size() != opts.size())
-    {
-        errorHandler.addError(ctx->getStart(), "Duplicate protocols in choice");
-        // FIXME: RETURN ERROR??
-    }
-
-    return new ProtocolIChoice(opts);
-}
-
-const Protocol *SemanticVisitor::visitProto(BismuthParser::CloseableProtoContext * ctx)
-{
-    const Protocol *proto = any2Protocol(ctx->proto->accept(this));
-    if(proto->containsLoop())
-    {
-        errorHandler.addError(ctx->getStart(), "Currently cannot include looping protocol within closeable block. Instead, move loop outside block or use higher-order channels.");
-        // FIXME: WE NEED TO DO ERRORS BETTER!
-    }
-    else if(!proto->areHigherOrderChannelsClosable())
-    {
-        errorHandler.addError(ctx->getStart(), "All higher-order channels within closeable must be of form Channel<Closable<P>>");
-    }
-    // FIXME: NEED TO ALSO CHECK AGAINST LINEAR RESOURCES IN GENERAL!!  AND NEED TO ADD TEST CASES!!!
-
-    return new ProtocolClose(toSequence(proto)); 
 }

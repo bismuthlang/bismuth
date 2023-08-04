@@ -1,3 +1,13 @@
+/**
+ * @file ProtocolVisitor.h
+ * @author Alex Friedman (ahfriedman.com)
+ * @brief Visitor for protocols. Each protocol should be visited by a unique ProtocolVisitor
+ * @version 1.3.4
+ * @date 2023-08-04
+ * 
+ * @copyright Copyright (c) 2023
+ * 
+ */
 #pragma once
 #include "antlr4-runtime.h"
 #include "BismuthBaseVisitor.h"
@@ -11,13 +21,14 @@
 #include <variant>
 // typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message;
 // typedef
+class SemanticVisitor; 
 
 class ProtocolVisitor : public BismuthBaseVisitor
 {
 
 public:
 
-    ProtocolVisitor(BismuthErrorHandler eh, SemanticVisitor *sv, bool inL) : errorHandler(eh), sematicVisitor(sv), inLoop(inL)
+    ProtocolVisitor(BismuthErrorHandler& eh, SemanticVisitor *sv, bool inL) : errorHandler(eh), sematicVisitor(sv), inLoop(inL)
     {
     }
 
@@ -65,7 +76,7 @@ public:
     }
 
 private:
-    BismuthErrorHandler errorHandler;// = BismuthErrorHandler(SEMANTIC);
+    BismuthErrorHandler& errorHandler;// = BismuthErrorHandler(SEMANTIC);
     SemanticVisitor * sematicVisitor; 
     bool inLoop;  // TODO: can only go -> true but not false -> true
 };

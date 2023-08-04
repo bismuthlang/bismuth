@@ -224,7 +224,7 @@ public:
     }
 
 private:
-    BismuthErrorHandler *errorHandler;
+    BismuthErrorHandler *errorHandler; // TODO: VERIFY ERRORS GET REPORTED, WHY * INSTEAD OF &?
 
     // LLVM
     Module *module;

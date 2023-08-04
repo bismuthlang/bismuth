@@ -7,6 +7,7 @@
 #include "CompilerFlags.h"
 #include "TypedAST.h"
 #include "CastUtils.h"
+#include "ProtocolVisitor.h"
 
 // #include "TypeVisitor.h"
 
@@ -242,25 +243,14 @@ public:
     /*
      *  Protocols
      */
-    // std::variant<TAsChannelNode *, ErrorChain *> TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx);
-    // std::any visitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx) override { return TNVariantCast<TAsChannelNode>(TvisitAsChannelExpr(ctx)); }
-    std::variant<const ProtocolSequence *, ErrorChain *> visitProto(BismuthParser::ProtocolContext *ctx);
-    const Protocol *visitProto(BismuthParser::RecvTypeContext *ctx);
-    const Protocol *visitProto(BismuthParser::SendTypeContext *ctx);
-    const Protocol *visitProto(BismuthParser::WnProtoContext *ctx);
-    const Protocol *visitProto(BismuthParser::OcProtoContext *ctx);
-    const Protocol *visitProto(BismuthParser::ExtChoiceProtoContext *ctx);
-    const Protocol *visitProto(BismuthParser::IntChoiceProtoContext *ctx);
-    const Protocol *visitProto(BismuthParser::CloseableProtoContext *ctx);
-
-    std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return ProtoVariantCast<ProtocolSequence>(visitProto(ctx)); } //{ return visitProto(ctx); }
-    std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { return visitProto(ctx); }
-    std::any visitSendType(BismuthParser::SendTypeContext *ctx) override { return visitProto(ctx); }
-    std::any visitWnProto(BismuthParser::WnProtoContext *ctx) override { return visitProto(ctx); }
-    std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { return visitProto(ctx); }
-    std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { return visitProto(ctx); }
-    std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return visitProto(ctx); }
-    std::any visitCloseableProto(BismuthParser::CloseableProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return ProtoVariantCast<ProtocolSequence>(visitProto(ctx)); } //{ return visitProto(ctx); }
+    // std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { return visitProto(ctx); }
+    // std::any visitSendType(BismuthParser::SendTypeContext *ctx) override { return visitProto(ctx); }
+    // std::any visitWnProto(BismuthParser::WnProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitCloseableProto(BismuthParser::CloseableProtoContext *ctx) override { return visitProto(ctx); }
 
     /*
      * Traditional visitor methods all overridden with our typed versions
@@ -676,14 +666,6 @@ public:
         return valOpt.value_or(Types::ABSURD);
     }
 
-    const Protocol *any2Protocol(std::any any)
-    {
-        if (const Protocol *valOpt = std::any_cast<const Protocol *>(any))
-            return valOpt;
-
-        return nullptr; // FIXME: DO BETTER
-    }
-
 private:
     STManager *stmgr;
     PropertyManager<Symbol> *symBindings = new PropertyManager<Symbol>();
@@ -847,4 +829,8 @@ private:
         std::vector<const Type *> toVisit = {inner};
         std::set<const Type *> visited = {def};
     }
+
+    // std::any reportBadVisit(antlr4::ParserRuleContext * ctx) {
+    //     return errorHandler.addError(ctx->getStart(), "Bad visit from semantic visitor to context!");
+    // }
 };

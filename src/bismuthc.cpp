@@ -101,6 +101,7 @@ ChangeLog
   - Fixed bug where nested control flow would incorrectly process use of linear resources
 
   - Refactored code internals to promote compile speed (of Bismuth, not the Bismuth compiler)
+  - Added ProtocolVisitor.cpp/.h and moved code relating to visiting protocols to there from SemanticVisitor.cpp/.h
 
 1.3.3 - 2023-06-04:
   - Added ability to nest all type defs (struct, enum) in addition to programs and functions. 

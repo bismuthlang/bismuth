@@ -35,7 +35,7 @@ std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(Bis
 
 std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::SendTypeContext *ctx)
 {
-    const Type *ty = any2Type(ctx->ty->accept(this));
+    const Type *ty = any2Type(ctx->ty->accept(sematicVisitor));
     return new ProtocolSend(ty);
 }
 

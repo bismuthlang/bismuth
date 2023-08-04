@@ -251,7 +251,7 @@ public:
     }
 
 private:
-    BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN);
+    BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN); // FIXME: WILL THIS EVER GET REPORTED?
 
     // LLVM
     LLVMContext *context;
