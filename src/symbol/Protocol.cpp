@@ -551,8 +551,7 @@ void ProtocolSequence::guard() const // FIXME: DO BETTER
 {
     if (steps.size() == 0)
     {
-        ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-        u_this->guardCount = u_this->guardCount + 1;
+        guardCount = guardCount + 1;
     }
     else
     {
@@ -566,9 +565,8 @@ bool ProtocolSequence::unguard() const // FIXME: DO BETTER
     {
         if (guardCount == 0)
             return false;
-        ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
 
-        u_this->guardCount = u_this->guardCount - 1;
+        guardCount = guardCount - 1;
         return true;
     }
 
