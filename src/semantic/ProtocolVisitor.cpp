@@ -39,8 +39,6 @@ std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(Bis
 
     const Type * ty = std::get<const Type*>(tyOpt);
     
-    // const Type *ty = any2Type(semanticVisitor->visit(ctx->ty));
-
     if(this->inClose && !ty->isLossy())
     {
         return errorHandler.addError(ctx->getStart(), "Cannot receive non-lossy type " + ty->toString() + " in a closeable protocol"); 
@@ -63,8 +61,6 @@ std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(Bis
 
     const Type * ty = std::get<const Type*>(tyOpt);
     
-    // const Type *ty = any2Type(ctx->ty->accept(semanticVisitor));
-
     if(this->inClose && !ty->isLossy())
     {
         return errorHandler.addError(ctx->getStart(), "Cannot send non-lossy type " + ty->toString() + " in a closeable protocol"); 
