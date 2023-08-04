@@ -1831,7 +1831,7 @@ std::variant<TBooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
 {
-    ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this, false);
+    ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this);
     std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
     delete protoVisitor; 
 
@@ -1862,7 +1862,7 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::BoxTypeContext *ctx)
 
 const Type *SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 {
-    ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this, false);
+    ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this); // TODO: methodize?
     std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
     delete protoVisitor; 
 
@@ -1996,7 +1996,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         for (auto alt : ctx->protoAlternative())
         {
             // TODO: SEEMS WRONG TO PERFORM ERROR CHECKS HERE AS, BY DEF, COULD ONLY ERROR SHOULD HIGHER-LEVEL PROTO FAIL, BUT I GUESS MAYBE USEFUL IF WE LATER ADD INF!
-            ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this, false);
+            ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this);
             std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(alt->check); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
             delete protoVisitor; 
 
@@ -2107,7 +2107,7 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
     {
         const TypeChannel *channel = channelOpt.value();
 
-        ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this, false);
+        ProtocolVisitor * protoVisitor = new ProtocolVisitor(errorHandler, this);
         std::variant<const ProtocolSequence*, ErrorChain*> protoOpt = protoVisitor->visitProto(ctx->sel); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
         delete protoVisitor; 
 

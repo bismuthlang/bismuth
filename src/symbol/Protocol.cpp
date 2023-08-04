@@ -26,22 +26,6 @@ const Protocol *ProtocolRecv::getCopy() const
     return ans;
 }
 
-bool ProtocolRecv::areHigherOrderChannelsClosable() const 
-{
-    // FIXME: METHODIZE WITH CODE FOR SEND AS THEYRE THE SAME!!
-    if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(this->recvType))
-    {
-        const std::vector<const Protocol*> steps = channelTy->getProtocol()->getSteps(); 
-        if(steps.size() != 1) return false; 
-
-        if(dynamic_cast<const ProtocolClose*>(steps.at(0)))
-            return true; 
-        return false; 
-    }
-
-    return true;
-}
-
 
 /*********************************************
  *
@@ -69,22 +53,6 @@ const Protocol *ProtocolSend::getCopy() const
     return ans;
 }
 
-bool ProtocolSend::areHigherOrderChannelsClosable() const 
-{
-    // FIXME: METHODIZE WITH CODE FOR RECV AS THEYRE THE SAME!!
-    if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(this->sendType))
-    {
-        const std::vector<const Protocol*> steps = channelTy->getProtocol()->getSteps(); 
-        if(steps.size() != 1) return false; 
-
-        if(dynamic_cast<const ProtocolClose*>(steps.at(0)))
-            return true; 
-        return false; 
-    }
-
-    return true;
-}
-
 /*********************************************
  *
  *  ProtocolWN
@@ -108,11 +76,6 @@ const Protocol *ProtocolWN::getCopy() const
     auto ans = new ProtocolWN(toSequence(this->proto->getCopy())); 
     ans->guardCount = this->guardCount;
     return ans;
-}
-
-bool ProtocolWN::areHigherOrderChannelsClosable() const 
-{
-    return false; // AS TECHNICALLY INVALID
 }
 
 /*********************************************
@@ -139,7 +102,6 @@ const Protocol *ProtocolOC::getCopy() const
     return ans;
 }
 
-bool ProtocolOC::areHigherOrderChannelsClosable() const { return false; }
 
 /*********************************************
  *
@@ -189,14 +151,6 @@ const Protocol *ProtocolIChoice::getCopy() const
 }
 
 
-bool ProtocolIChoice::areHigherOrderChannelsClosable() const 
-{
-    for(auto itr : opts)
-        if(!itr->areHigherOrderChannelsClosable()) return false; 
-    return true; 
-}
-
-
 /*********************************************
  *
  *  ProtocolEChoice
@@ -242,14 +196,6 @@ const Protocol *ProtocolEChoice::getCopy() const
     ans->guardCount = this->guardCount;
     return ans;
 }
-
-bool ProtocolEChoice::areHigherOrderChannelsClosable() const 
-{
-    for(auto itr : opts)
-        if(!itr->areHigherOrderChannelsClosable()) return false; 
-    return true; 
-}
-
 
 /*********************************************
  *
@@ -629,14 +575,6 @@ bool ProtocolSequence::unguard() const // FIXME: DO BETTER
     return steps.front()->unguard();
 }
 
-bool ProtocolSequence::areHigherOrderChannelsClosable() const 
-{
-    for(const Protocol * proto : steps)
-        if(!proto->areHigherOrderChannelsClosable())
-            return false; 
-    return true; 
-}
-
 optional<const Protocol *> ProtocolSequence::getFirst() const
 {
     if (isComplete())
@@ -712,9 +650,4 @@ const Protocol *ProtocolClose::getCopy() const
     auto ans = new ProtocolClose(toSequence(this->proto->getCopy())); 
     ans->guardCount = this->guardCount;
     return ans;
-}
-
-bool ProtocolClose::areHigherOrderChannelsClosable() const
-{
-    return proto->areHigherOrderChannelsClosable();
 }

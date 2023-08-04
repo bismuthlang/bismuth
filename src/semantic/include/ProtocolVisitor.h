@@ -28,7 +28,7 @@ class ProtocolVisitor : public BismuthBaseVisitor
 
 public:
 
-    ProtocolVisitor(BismuthErrorHandler& eh, SemanticVisitor *sv, bool inL) : errorHandler(eh), sematicVisitor(sv), inLoop(inL)
+    ProtocolVisitor(BismuthErrorHandler& eh, SemanticVisitor *sv) : errorHandler(eh), sematicVisitor(sv) // inLoop(inL)
     {
     }
 
@@ -78,5 +78,7 @@ public:
 private:
     BismuthErrorHandler& errorHandler;// = BismuthErrorHandler(SEMANTIC);
     SemanticVisitor * sematicVisitor; 
-    bool inLoop;  // TODO: can only go -> true but not false -> true
+    bool inLoop = false; 
+    bool inClose = false; 
+
 };

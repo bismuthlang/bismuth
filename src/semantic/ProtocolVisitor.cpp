@@ -30,12 +30,41 @@ std::variant<const ProtocolSequence *, ErrorChain *> ProtocolVisitor::visitProto
 std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::RecvTypeContext *ctx)
 {
     const Type *ty = any2Type(sematicVisitor->visit(ctx->ty));
+
+     // FIXME: METHODIZE WITH CODE FOR SEND AS THEYRE THE SAME!! AND CHANGE TO MORE GENERAL LOSSY TYPE CHECK?
+    if(this->inClose)
+    {
+        if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(ty))
+        {
+            const std::vector<const Protocol*> steps = channelTy->getProtocol()->getSteps(); 
+            if(steps.size() != 1) return errorHandler.addError(ctx->getStart(), "Cannot receive non-lossy type " + ty->toString() + " in a closeable protocol"); 
+
+            if(!dynamic_cast<const ProtocolClose*>(steps.at(0)))
+                return errorHandler.addError(ctx->getStart(), "Cannot receive non-lossy type " + ty->toString() + " in a closeable protocol"); 
+        }
+    }
+
+
     return new ProtocolRecv(ty);
 }
 
+// FIXME: ADD TEST CASES WITH BRANCHES, LOOPS, SEQ, ETC TO VERIFY THISLL CATCH
 std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::SendTypeContext *ctx)
 {
     const Type *ty = any2Type(ctx->ty->accept(sematicVisitor));
+
+    if(this->inClose)
+    {
+        if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(ty))
+        {
+            const std::vector<const Protocol*> steps = channelTy->getProtocol()->getSteps(); 
+            if(steps.size() != 1) return errorHandler.addError(ctx->getStart(), "Cannot send non-lossy type " + ty->toString() + " in a closeable protocol"); 
+
+            if(!dynamic_cast<const ProtocolClose*>(steps.at(0)))
+                return errorHandler.addError(ctx->getStart(), "Cannot send non-lossy type " + ty->toString() + " in a closeable protocol"); 
+        }
+    }
+
     return new ProtocolSend(ty);
 }
 
@@ -71,9 +100,6 @@ std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);
     return new ProtocolOC(toSequence(proto));
-
-    // const Protocol *proto = any2Protocol(ctx->proto->accept(this));
-    // return new ProtocolOC(toSequence(proto));
 }
 
 std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::ExtChoiceProtoContext *ctx)
@@ -131,7 +157,16 @@ std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 
 std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::CloseableProtoContext *ctx)
 {
+    if(this->inLoop) // PLAN: Potentially report this and lower down proto errors?
+    {
+        return errorHandler.addError(ctx->getStart(), "Currently cannot include looping protocol within closeable block. Instead, move loop outside block or use higher-order channels.");
+    }
+     
+    bool origStatus = this->inClose; 
+    this->inClose = true; 
     std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, ctx->proto->accept(this));
+    this->inClose = origStatus; 
+
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
         (*e)->addError(ctx->getStart(), "Error in close protocol");
@@ -139,15 +174,7 @@ std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(Bi
     }
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);
-    if(this->inLoop)
-    {
-        return errorHandler.addError(ctx->getStart(), "Currently cannot include looping protocol within closeable block. Instead, move loop outside block or use higher-order channels.");
-    }
 
-    if(!proto->areHigherOrderChannelsClosable())
-    {
-        return errorHandler.addError(ctx->getStart(), "All higher-order channels within closeable must be of form Channel<Closable<P>>");
-    }
     // FIXME: NEED TO ALSO CHECK AGAINST LINEAR RESOURCES IN GENERAL!!  AND NEED TO ADD TEST CASES!!!
 
     return new ProtocolClose(toSequence(proto));

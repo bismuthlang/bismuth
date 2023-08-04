@@ -155,7 +155,6 @@ public:
     virtual const Protocol *getCopy() const override = 0;
 
     // virtual bool isClosable() const = 0; 
-    virtual bool areHigherOrderChannelsClosable() const = 0; // TODO: DO BETTER W/ VISITORS AS ONLY MATTERS AT TYPE CHECK TIME?
 };
 
 // FIXME: DO BETTER
@@ -226,8 +225,6 @@ public:
     void guard() const override;
     bool unguard() const override;
 
-    bool areHigherOrderChannelsClosable() const override; // FIXME: REFACTOR OUT!
-
     void numberCloseBlocks() const { numberCloseBlocks(0); } // FIXME: HANDLE THIS BETTER WITH VISITORS ON AST?
 
 private: 
@@ -271,9 +268,6 @@ public:
     const Protocol *getCopy() const override;
 
     const Type *getRecvType() const { return recvType; }
-
-    bool areHigherOrderChannelsClosable() const override;
-
 };
 
 /*******************************************
@@ -298,8 +292,6 @@ public:
     const Protocol *getCopy() const override;
 
     const Type *getSendType() const { return sendType; }
-
-    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
@@ -324,8 +316,6 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
-
-    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
@@ -350,8 +340,6 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
-
-    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
@@ -376,8 +364,6 @@ public:
     const Protocol *getCopy() const override;
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
-
-    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
@@ -402,8 +388,6 @@ public:
     const Protocol *getCopy() const override;
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
-
-    bool areHigherOrderChannelsClosable() const override;
 };
 
 
@@ -427,8 +411,6 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
-    
-    bool areHigherOrderChannelsClosable() const override;
 };
 
 /*******************************************
