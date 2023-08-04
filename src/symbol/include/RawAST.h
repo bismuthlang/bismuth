@@ -320,6 +320,220 @@ public:
 
     const BismuthParser::AsChannelExprContext * getContext() const override { return context; }
 };
+
+
+/**************************************************
+ *
+ * Statements
+ *
+ **************************************************/
+
+class RawStatement : public RawNode 
+{
+
+    // virtual BismuthParser::ExpressionContext * getContext() const override = 0; 
+};
+
+// FIXME: Define Type
+
+
+class RawAssignStatement : public RawStatement
+{
+private: 
+    BismuthParser::AssignStatementContext * context; 
+public: 
+    RawAssignStatement(BismuthParser::AssignStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::AssignStatementContext * getContext() const override { return context; }
+};
+
+class RawVarDeclStatement : public RawStatement
+{
+private: 
+    BismuthParser::VarDeclStatementContext * context; 
+public: 
+    RawVarDeclStatement(BismuthParser::VarDeclStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::VarDeclStatementContext * getContext() const override { return context; }
+};
+
+class RawConditionalStatement : public RawStatement
+{
+private: 
+    BismuthParser::ConditionalStatementContext * context; 
+public: 
+    RawConditionalStatement(BismuthParser::ConditionalStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ConditionalStatementContext * getContext() const override { return context; }
+};
+
+
+class RawSelectStatement : public RawStatement
+{
+private: 
+    BismuthParser::SelectStatementContext * context; 
+public: 
+    RawSelectStatement(BismuthParser::SelectStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::SelectStatementContext * getContext() const override { return context; }
+};
+
+class RawMatchStatement : public RawStatement
+{
+private: 
+    BismuthParser::MatchStatementContext * context; 
+public: 
+    RawMatchStatement(BismuthParser::MatchStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::MatchStatementContext * getContext() const override { return context; }
+};
+
+// FIXME: CALL STATEMENT
+
+class RawReturnStatement : public RawStatement
+{
+private: 
+    BismuthParser::ReturnStatementContext * context; 
+public: 
+    RawReturnStatement(BismuthParser::ReturnStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ReturnStatementContext * getContext() const override { return context; }
+};
+
+class RawExitStatement : public RawStatement
+{
+private: 
+    BismuthParser::ExitStatementContext * context; 
+public: 
+    RawExitStatement(BismuthParser::ExitStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ExitStatementContext * getContext() const override { return context; }
+};
+
+class RawSkipStatement : public RawStatement
+{
+private: 
+    BismuthParser::SkipStatementContext * context; 
+public: 
+    RawSkipStatement(BismuthParser::SkipStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::SkipStatementContext * getContext() const override { return context; }
+};
+
+class RawBlockStatement : public RawStatement
+{
+private: 
+    BismuthParser::BlockStatementContext * context; 
+public: 
+    RawBlockStatement(BismuthParser::BlockStatementContext * ctx) : context(ctx) {}
+
+    const BismuthParser::BlockStatementContext * getContext() const override { return context; }
+};
+
+class RawSendStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramSendContext * context; 
+public: 
+    RawSendStatement(BismuthParser::ProgramSendContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramSendContext * getContext() const override { return context; }
+};
+
+class RawWhileStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramLoopContext * context; 
+public: 
+    RawWhileStatement(BismuthParser::ProgramLoopContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramLoopContext * getContext() const override { return context; }
+};
+
+class RawProgramCaseStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramCaseContext * context; 
+public: 
+    RawProgramCaseStatement(BismuthParser::ProgramCaseContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramCaseContext * getContext() const override { return context; }
+};
+
+class RawProjectStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramProjectContext * context; 
+public: 
+    RawProjectStatement(BismuthParser::ProgramProjectContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramProjectContext * getContext() const override { return context; }
+};
+
+class RawContractStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramContractContext * context; 
+public: 
+    RawContractStatement(BismuthParser::ProgramContractContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramContractContext * getContext() const override { return context; }
+};
+
+class RawWeakenStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramWeakenContext * context; 
+public: 
+    RawWeakenStatement(BismuthParser::ProgramWeakenContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramWeakenContext * getContext() const override { return context; }
+};
+
+
+class RawAcceptStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramAcceptContext * context; 
+public: 
+    RawAcceptStatement(BismuthParser::ProgramAcceptContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramAcceptContext * getContext() const override { return context; }
+};
+
+
+class RawAcceptWhileStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramAcceptWhileContext * context; 
+public: 
+    RawAcceptWhileStatement(BismuthParser::ProgramAcceptWhileContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramAcceptWhileContext * getContext() const override { return context; }
+};
+
+
+class RawAcceptIfStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramAcceptIfContext * context; 
+public: 
+    RawAcceptIfStatement(BismuthParser::ProgramAcceptIfContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramAcceptIfContext * getContext() const override { return context; }
+};
+
+
+class RawCloseStatement : public RawStatement
+{
+private: 
+    BismuthParser::ProgramCloseContext * context; 
+public: 
+    RawCloseStatement(BismuthParser::ProgramCloseContext * ctx) : context(ctx) {}
+
+    const BismuthParser::ProgramCloseContext * getContext() const override { return context; }
+};
+
 /*
 
 // From C++ Documentation for visitors
