@@ -528,7 +528,6 @@ public:
             {
                 for (auto s : ctxRest->ctxRest)
                 {
-                    std::cout << "BRANCH " << s->getText() << std::endl; 
                     std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
                     if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
@@ -554,7 +553,6 @@ public:
                 {
                     for (auto s : r->ctxRest)
                     {
-                        std::cout << "DR " << ctx->getText() << " IS " << s->getText() << std::endl; 
                         std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
                         if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))

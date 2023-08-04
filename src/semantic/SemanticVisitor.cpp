@@ -1280,9 +1280,6 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
         for (auto b : ctx->matchAlternative())
         {
-            std::cout << "1227 " << ctx->getText() << " SETTING " << b->eval->getText() << " = " << std::endl;
-            for(auto a : ctx->rest)
-                std::cout << "\t " << a->getText() << std::endl;  
             bindRestData(b->eval, rest);
         }
 
@@ -2481,7 +2478,6 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         {
             return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
         }
-        std::cout << "2249 " << acceptOpt.value()->toString() << std::endl;
 
         std::vector<BismuthParser::BlockContext *> blksCtx = {ctx->trueBlk};
         if (ctx->falseBlk)
