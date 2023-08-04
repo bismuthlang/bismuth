@@ -691,6 +691,13 @@ TEST_CASE("programs/nested_struct - Definitions within definitions", "[codegen]"
         "8c0207b60fd885331411b85d6c1ca6191d05ab14f01f925b8fe2830df7619244");
 }
 
+TEST_CASE("programs/asChannel-channel - Convert regular channel into stream", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/asChannel-channel.bismuth"))),
+        "b9dc91ff94405612881c8601b57c9f7fba027d07ae813d62132eca1b7ef5246b");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/

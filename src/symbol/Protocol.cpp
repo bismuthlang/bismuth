@@ -26,8 +26,6 @@ const Protocol *ProtocolRecv::getCopy() const
     return ans;
 }
 
-bool ProtocolRecv::containsLoop() const { return false; }
-
 bool ProtocolRecv::areHigherOrderChannelsClosable() const 
 {
     // FIXME: METHODIZE WITH CODE FOR SEND AS THEYRE THE SAME!!
@@ -71,8 +69,6 @@ const Protocol *ProtocolSend::getCopy() const
     return ans;
 }
 
-bool ProtocolSend::containsLoop() const { return false; }
-
 bool ProtocolSend::areHigherOrderChannelsClosable() const 
 {
     // FIXME: METHODIZE WITH CODE FOR RECV AS THEYRE THE SAME!!
@@ -114,8 +110,6 @@ const Protocol *ProtocolWN::getCopy() const
     return ans;
 }
 
-bool ProtocolWN::containsLoop() const { return true; }
-
 bool ProtocolWN::areHigherOrderChannelsClosable() const 
 {
     return false; // AS TECHNICALLY INVALID
@@ -144,8 +138,6 @@ const Protocol *ProtocolOC::getCopy() const
     ans->guardCount = this->guardCount;
     return ans;
 }
-
-bool ProtocolOC::containsLoop() const { return true; }
 
 bool ProtocolOC::areHigherOrderChannelsClosable() const { return false; }
 
@@ -196,12 +188,6 @@ const Protocol *ProtocolIChoice::getCopy() const
     return ans;
 }
 
-bool ProtocolIChoice::containsLoop() const 
-{ 
-    for(auto itr : opts)
-        if(itr->containsLoop()) return true; 
-    return false; 
-}
 
 bool ProtocolIChoice::areHigherOrderChannelsClosable() const 
 {
@@ -255,13 +241,6 @@ const Protocol *ProtocolEChoice::getCopy() const
     auto ans = new ProtocolEChoice(opts); 
     ans->guardCount = this->guardCount;
     return ans;
-}
-
-bool ProtocolEChoice::containsLoop() const 
-{ 
-    for(auto itr : opts)
-        if(itr->containsLoop()) return true; 
-    return false; 
 }
 
 bool ProtocolEChoice::areHigherOrderChannelsClosable() const 
@@ -650,13 +629,6 @@ bool ProtocolSequence::unguard() const // FIXME: DO BETTER
     return steps.front()->unguard();
 }
 
-bool ProtocolSequence::containsLoop() const 
-{ 
-    for(const Protocol * proto : steps)
-        if(proto->containsLoop()) return true;
-    return false; 
-}
-
 bool ProtocolSequence::areHigherOrderChannelsClosable() const 
 {
     for(const Protocol * proto : steps)
@@ -741,8 +713,6 @@ const Protocol *ProtocolClose::getCopy() const
     ans->guardCount = this->guardCount;
     return ans;
 }
-
-bool ProtocolClose::containsLoop() const { return false; } // TODO: DO BETTER?
 
 bool ProtocolClose::areHigherOrderChannelsClosable() const
 {

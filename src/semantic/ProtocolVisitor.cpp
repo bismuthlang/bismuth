@@ -16,7 +16,7 @@ std::variant<const ProtocolSequence *, ErrorChain *> ProtocolVisitor::visitProto
         std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, e->accept(this));
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
-            (*e)->addError(ctx->getStart(), "FIXME: 21");
+            (*e)->addError(ctx->getStart(), "Error in protocol sequence");
             return *e;
         }
 
@@ -48,7 +48,7 @@ std::variant<const ProtocolWN *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        (*e)->addError(ctx->getStart(), "FIXME: 49");
+        (*e)->addError(ctx->getStart(), "Error in ? loop protocol");  // PLAN: refactor symbols into constants/pull from parser rule?
         return *e;
     }
 
@@ -65,7 +65,7 @@ std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        (*e)->addError(ctx->getStart(), "FIXME: 68");
+        (*e)->addError(ctx->getStart(), "Error in ! loop protocol");
         return *e;
     }
 
@@ -85,7 +85,7 @@ std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(
         std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, e->accept(this));
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
-            (*e)->addError(ctx->getStart(), "FIXME: 88");
+            (*e)->addError(ctx->getStart(), "Error in external choice branch");
             return *e;
         }
 
@@ -111,14 +111,13 @@ std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(
         std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, e->accept(this));
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
-            (*e)->addError(ctx->getStart(), "FIXME: 114");
+            (*e)->addError(ctx->getStart(), "Error in internal choice branch");
             return *e;
         }
 
         const Protocol *proto = std::get<const Protocol *>(protoOpt);
 
         opts.insert(toSequence(proto));
-        // opts.insert(toSequence(any2Protocol(e->accept(this))));
     }
 
     if (ctx->protoOpts.size() != opts.size())
@@ -135,17 +134,17 @@ std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(Bi
     std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, ctx->proto->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        (*e)->addError(ctx->getStart(), "FIXME: 138");
+        (*e)->addError(ctx->getStart(), "Error in close protocol");
         return *e;
     }
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);
-    // if(proto->containsLoop()) // FIXME: DELETE FN?
     if(this->inLoop)
     {
         return errorHandler.addError(ctx->getStart(), "Currently cannot include looping protocol within closeable block. Instead, move loop outside block or use higher-order channels.");
     }
-    else if(!proto->areHigherOrderChannelsClosable())
+
+    if(!proto->areHigherOrderChannelsClosable())
     {
         return errorHandler.addError(ctx->getStart(), "All higher-order channels within closeable must be of form Channel<Closable<P>>");
     }
