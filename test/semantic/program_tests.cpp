@@ -235,7 +235,7 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
     )"""", 
     "Dead code");
 }
-// FIXME: DO THESE TESTS DO ANYTHING? DONT HAVE SENDS!!
+
 TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
 {
   EnsureErrorsWithMessage(
@@ -312,7 +312,6 @@ define program :: c : Channel<-int> = {
   REQUIRE_FALSE(sv->hasErrors(ERROR));
 }
 
-// FIXME: TEST THAT WHEN HAS ERRORS TREE EMPTY?
 TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
@@ -1655,7 +1654,6 @@ define foo :: c : Channel<+int> = {
     "Could not find channel: c");
 }
 
-// FIXME: MAKE POSITIVE TEST CASE, THIS ONE IS GOOD!
 TEST_CASE("Channel Assignment 2", "[semantic]")
 {
     antlr4::ANTLRInputStream input(
