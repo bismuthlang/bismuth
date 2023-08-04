@@ -2487,13 +2487,15 @@ std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExp
     return new TAsChannelNode(tn, ctx->getStart());
 }
 
+
 /*************************************************************
  *
  * Protocols
  *
  *************************************************************/
 
-const Protocol *SemanticVisitor::visitProto(BismuthParser::ProtocolContext *ctx)
+// const Protocol *
+std::variant<const ProtocolSequence *, ErrorChain *> SemanticVisitor::visitProto(BismuthParser::ProtocolContext *ctx)
 {
     std::vector<const Protocol *> steps;
 

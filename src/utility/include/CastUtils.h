@@ -45,3 +45,13 @@ std::variant<TypedNode *, ErrorChain*> TNVariantCast(std::variant<T*, ErrorChain
 
     return std::get<ErrorChain*>(base);
 }
+
+template<typename T, typename std::enable_if<std::is_base_of<Protocol, T>::value>::type* = nullptr>
+std::variant<const Protocol *, ErrorChain*> ProtoVariantCast(std::variant<const T*, ErrorChain*> base) {
+    // if(std::variant<T*, ErrorChain*>)
+    if(std::holds_alternative<const T*>(base)) {
+        return (const Protocol*) std::get<const T*>(base);
+    }
+
+    return std::get<ErrorChain*>(base);
+}

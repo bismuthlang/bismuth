@@ -17,7 +17,7 @@
 // typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message;
 // typedef
 
-class SemanticVisitor : BismuthBaseVisitor
+class SemanticVisitor : public BismuthBaseVisitor
 {
 
 public:
@@ -242,7 +242,9 @@ public:
     /*
      *  Protocols
      */
-    const Protocol *visitProto(BismuthParser::ProtocolContext *ctx);
+    // std::variant<TAsChannelNode *, ErrorChain *> TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx);
+    // std::any visitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx) override { return TNVariantCast<TAsChannelNode>(TvisitAsChannelExpr(ctx)); }
+    std::variant<const ProtocolSequence *, ErrorChain *> visitProto(BismuthParser::ProtocolContext *ctx);
     const Protocol *visitProto(BismuthParser::RecvTypeContext *ctx);
     const Protocol *visitProto(BismuthParser::SendTypeContext *ctx);
     const Protocol *visitProto(BismuthParser::WnProtoContext *ctx);
@@ -251,7 +253,7 @@ public:
     const Protocol *visitProto(BismuthParser::IntChoiceProtoContext *ctx);
     const Protocol *visitProto(BismuthParser::CloseableProtoContext *ctx);
 
-    std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return visitProto(ctx); }
+    std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return ProtoVariantCast<ProtocolSequence>(visitProto(ctx)); } //{ return visitProto(ctx); }
     std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { return visitProto(ctx); }
     std::any visitSendType(BismuthParser::SendTypeContext *ctx) override { return visitProto(ctx); }
     std::any visitWnProto(BismuthParser::WnProtoContext *ctx) override { return visitProto(ctx); }
