@@ -203,7 +203,8 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             if (progOpt)
             {
                 const TypeProgram *inv = progOpt.value();
-                if (!inv->getChannelType()->isSubtype(new TypeChannel(new ProtocolSequence({new ProtocolSend(Types::DYN_INT)}))))
+                // FIXME: DO SUBTYPING BETTER!
+                if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence({new ProtocolSend(Types::DYN_INT)}))))
                 {
                     errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString());
                 }
@@ -1873,9 +1874,10 @@ const Type *SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
         // return *e;
     }
 
+    // TODO: perhaps change these to smart pointers? 
     const ProtocolSequence *proto = std::get<const ProtocolSequence *>(protoOpt);
 
-    return new TypeProgram(new TypeChannel(proto)); // FIXME: SEEMS A BIT ODD TO INC CHANNEL IN PROGRAM?
+    return new TypeProgram(proto);
 }
 
 std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(BismuthParser::ProgramSendContext *ctx)
@@ -2488,7 +2490,7 @@ std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
         const TypeProgram *inv = invOpt.value();
         return new TProgramExecNode(
             prog,
-            new TypeChannel(toSequence(inv->getChannelType()->getProtocol()->getInverse())),
+            new TypeChannel(inv->getProtocol()->getInverse()),
             ctx->getStart());
     }
 

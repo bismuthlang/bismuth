@@ -723,7 +723,7 @@ private:
      * @brief Represents the types of the function's arguments
      *
      */
-    const TypeChannel *channel;
+    const ProtocolSequence *protocol;
 
     /**
      * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
@@ -748,11 +748,11 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeProgram(const TypeChannel *c) : Type(false), channel(c), defined(true)
+    TypeProgram(const ProtocolSequence *p) : Type(false), protocol(p), defined(true)
     {
     }
 
-    bool setChannel(const TypeChannel *c) const;
+    bool setProtocol(const ProtocolSequence * p) const; 
 
     std::string toString() const override;
 
@@ -774,7 +774,7 @@ public:
      */
     bool isDefined() const;
 
-    const TypeChannel *getChannelType() const;
+    const ProtocolSequence * getProtocol() const; 
 
     const TypeProgram * getCopy() const override;
 

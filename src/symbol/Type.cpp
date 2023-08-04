@@ -294,14 +294,14 @@ bool TypeBox::isSupertypeFor(const Type *other) const
  * Program Type Definition
  *
  *******************************************/
-bool TypeProgram::setChannel(const TypeChannel *c) const
+bool TypeProgram::setProtocol(const ProtocolSequence * p) const
 {
     if (defined)
         return false;
 
     TypeProgram *u_this = const_cast<TypeProgram *>(this);
     u_this->defined = true;
-    u_this->channel = c;
+    u_this->protocol = p;
 
     return true;
 }
@@ -309,7 +309,7 @@ bool TypeProgram::setChannel(const TypeChannel *c) const
 std::string TypeProgram::toString() const
 {
     std::ostringstream description;
-    description << "PROGRAM : " << (channel ? channel->toString() : "PARTIAL DEFINITION");
+    description << "PROGRAM : " << (protocol ? protocol->toString() : "PARTIAL DEFINITION");
 
     return description.str();
 }
@@ -346,9 +346,9 @@ bool TypeProgram::setName(std::string n) const
 bool TypeProgram::isDefined() const { return defined; }
 
 // Note how the class is kinda obscured
-const TypeChannel * TypeProgram::getChannelType() const
+const ProtocolSequence * TypeProgram::getProtocol() const
 {
-    return channel;
+    return protocol;
 }
 
 const TypeProgram * TypeProgram::getCopy() const { return this; };
@@ -377,7 +377,7 @@ bool TypeProgram::isSupertypeFor(const Type *other) const
     // }
     if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
     {
-        return channel->isSubtype(p->channel); // FIXME: DO BETTER/VERIFY!
+        return protocol->isSubtype(p->protocol); // FIXME: DO BETTER/VERIFY!
     }
     return false;
 }
