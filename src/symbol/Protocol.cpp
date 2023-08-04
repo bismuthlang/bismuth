@@ -622,11 +622,6 @@ optional<const Protocol *> ProtocolSequence::popFirst() const
     return ans;
 }
 
-unsigned int ProtocolSequence::numberCloseBlocks(unsigned int n) const
-{
-    return 0; // FIXME: IMPLEMENT!!!
-}
-
 /*********************************************
  *
  *  ProtocolClose
@@ -642,12 +637,12 @@ std::string ProtocolClose::as_str() const
 }
 const Protocol *ProtocolClose::getInverse() const
 {
-    return new ProtocolClose(toSequence(this->proto->getInverse()));
+    return new ProtocolClose(toSequence(this->proto->getInverse()), this->getCloseNumber());
 }
 
 const Protocol *ProtocolClose::getCopy() const
 {
-    auto ans = new ProtocolClose(toSequence(this->proto->getCopy())); 
+    auto ans = new ProtocolClose(toSequence(this->proto->getCopy()), this->getCloseNumber()); 
     ans->guardCount = this->guardCount;
     return ans;
 }

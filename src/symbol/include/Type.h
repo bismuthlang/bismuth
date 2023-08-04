@@ -225,12 +225,9 @@ public:
     void guard() const override;
     bool unguard() const override;
 
-    void numberCloseBlocks() const { numberCloseBlocks(0); } // FIXME: HANDLE THIS BETTER WITH VISITORS ON AST?
-
 private: 
     std::optional<const Protocol*> getFirst() const;
     std::optional<const Protocol*> popFirst() const; 
-    unsigned int numberCloseBlocks(unsigned int n) const; 
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)
@@ -403,7 +400,7 @@ private:
     const unsigned int closeNumber; 
 
 public:
-    ProtocolClose(const ProtocolSequence *p) : proto(p), closeNumber(0) {}
+    ProtocolClose(const ProtocolSequence *p, unsigned int num) : proto(p), closeNumber(num) {}
 
     std::string as_str() const override;
 
@@ -411,6 +408,8 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
+
+    unsigned int getCloseNumber() const { return closeNumber; }
 };
 
 /*******************************************

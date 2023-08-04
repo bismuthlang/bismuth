@@ -105,10 +105,15 @@ std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
 std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::ExtChoiceProtoContext *ctx)
 {
     std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
+    unsigned int origCloseNumber = this->closeNumber; 
+    unsigned int maxCloseNumber = this->closeNumber; 
 
     for (auto e : ctx->protoOpts)
     {
+        this->closeNumber = origCloseNumber; 
         std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, e->accept(this));
+        maxCloseNumber = this->closeNumber > maxCloseNumber ? this->closeNumber : maxCloseNumber;
+
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
             (*e)->addError(ctx->getStart(), "Error in external choice branch");
@@ -124,6 +129,8 @@ std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(
     {
         return errorHandler.addError(ctx->getStart(), "Duplicate protocols in choice");
     }
+    
+    this->closeNumber = maxCloseNumber; 
 
     return new ProtocolEChoice(opts);
 }
@@ -131,10 +138,15 @@ std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::IntChoiceProtoContext *ctx)
 {
     std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
+    unsigned int origCloseNumber = this->closeNumber;  // We do this logic regardless as probably faster to not branch, and will remain zero in the case that were not in a close block
+    unsigned int maxCloseNumber = this->closeNumber; 
 
     for (auto e : ctx->protoOpts)
     {
+        this->closeNumber = origCloseNumber;
         std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, e->accept(this));
+        maxCloseNumber = this->closeNumber > maxCloseNumber ? this->closeNumber : maxCloseNumber;
+
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
             (*e)->addError(ctx->getStart(), "Error in internal choice branch");
@@ -151,8 +163,9 @@ std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(
         return errorHandler.addError(ctx->getStart(), "Duplicate protocols in choice");
     }
 
-    return new ProtocolIChoice(opts);
+    this->closeNumber = maxCloseNumber; 
 
+    return new ProtocolIChoice(opts);
 }
 
 std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::CloseableProtoContext *ctx)
@@ -177,5 +190,5 @@ std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(Bi
 
     // FIXME: NEED TO ALSO CHECK AGAINST LINEAR RESOURCES IN GENERAL!!  AND NEED TO ADD TEST CASES!!!
 
-    return new ProtocolClose(toSequence(proto));
+    return new ProtocolClose(toSequence(proto), ++closeNumber); // NOTE, must be ++i otherwise first would be zero, which could potentially be a problem?
 }

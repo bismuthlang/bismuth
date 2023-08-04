@@ -76,9 +76,10 @@ public:
     }
 
 private:
-    BismuthErrorHandler& errorHandler;// = BismuthErrorHandler(SEMANTIC);
+    BismuthErrorHandler& errorHandler;
     SemanticVisitor * sematicVisitor; 
     bool inLoop = false; 
     bool inClose = false; 
+    unsigned int closeNumber = 0; // Used for numbering close blocks
 
 };

@@ -2525,13 +2525,6 @@ std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExp
     }
 
     TypedNode *tn = std::get<TypedNode *>(tnOpt);
-    // FIXME: VERIFY WORKS WITH LINEAR
-    // const Type *ty = tn->getType();
-
-    // if (ty->isLinear()) 
-    // {
-    //     return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty->toString());
-    // }
 
     return new TAsChannelNode(tn, ctx->getStart());
 }
