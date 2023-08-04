@@ -2,7 +2,7 @@
  * Alex Friedman (ahfriedman@wpi.edu)
  * Grammar file for Bismuth
  */
-grammar Bismuth; //FIXME: IF WE UPDATE THE SYNTAX, THEN OUR PROGRAM TESTS WILL INCORRECTLY FAIL/PASS DUE TO SYNTAX ERROR
+grammar Bismuth;
 
 // Parser rules
 compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ; 

@@ -117,7 +117,7 @@ define func traversePreOrder(int padding, str prefix, BinaryTree node) {
   return;
 }
 
-define program :: c : Channel<-int> = {
+define program :: c : Channel<-int> {
   Box<BinaryTree> node := Box<BinaryTree>::init(BinaryTree::init(5, Empty::init(), Empty::init()));
   printBT( *node);
   insertBT(node, 6);

@@ -10,7 +10,7 @@ define func linkRecvBool (Channel<+boolean> a, Channel<-boolean> b) {
     return; 
 }
 
-define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>>;+Channel<InternalChoice<-int, -boolean>>> = {
+define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>>;+Channel<InternalChoice<-int, -boolean>>> {
     Channel<ExternalChoice<+int, + boolean>> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
     
@@ -28,12 +28,12 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>>;+Channel<Inte
             }
 }
 
-define bar1 :: c : Channel<InternalChoice<-int, -boolean>> = {
+define bar1 :: c : Channel<InternalChoice<-int, -boolean>> {
     c[-boolean]
     c.send(false)
 }
 
-define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> {
     c.case(
         +boolean => {
             boolean b := c.recv(); 
@@ -44,7 +44,7 @@ define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
     )
 }
 
-define program :: c : Channel<-int> = {
+define program :: c : Channel<-int> {
     Channel<ExternalChoice<+int, +boolean>> l1 := exec bar1; 
     Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
 
