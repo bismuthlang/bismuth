@@ -108,6 +108,8 @@ public:
 
     bool isLinear() const { return linear; }
 
+    virtual bool isLossy() const { return !linear; }
+
 protected:
     unsigned int guardCount = 0;
 
@@ -381,9 +383,13 @@ public:
 
     void setProtocol(const ProtocolSequence *p) const;
 
+    bool isGuarded() const override; 
+
     void guard() const override;
 
     bool unguard() const override;
+
+    bool isLossy() const override; 
 
 protected:
     bool isSupertypeFor(const Type *other) const override;

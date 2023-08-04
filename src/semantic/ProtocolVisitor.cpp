@@ -31,38 +31,23 @@ std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(Bis
 {
     const Type *ty = any2Type(sematicVisitor->visit(ctx->ty));
 
-     // FIXME: METHODIZE WITH CODE FOR SEND AS THEYRE THE SAME!! AND CHANGE TO MORE GENERAL LOSSY TYPE CHECK?
-    if(this->inClose)
+    if(this->inClose && !ty->isLossy())
     {
-        if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(ty))
-        {
-            const std::vector<const Protocol*> steps = channelTy->getProtocol()->getSteps(); 
-            if(steps.size() != 1) return errorHandler.addError(ctx->getStart(), "Cannot receive non-lossy type " + ty->toString() + " in a closeable protocol"); 
-
-            if(!dynamic_cast<const ProtocolClose*>(steps.at(0)))
-                return errorHandler.addError(ctx->getStart(), "Cannot receive non-lossy type " + ty->toString() + " in a closeable protocol"); 
-        }
+        return errorHandler.addError(ctx->getStart(), "Cannot receive non-lossy type " + ty->toString() + " in a closeable protocol"); 
     }
 
 
     return new ProtocolRecv(ty);
 }
 
-// FIXME: ADD TEST CASES WITH BRANCHES, LOOPS, SEQ, ETC TO VERIFY THISLL CATCH
+// FIXME: ADD TEST CASES WITH BRANCHES, LOOPS, SEQ, ETC TO VERIFY THISLL CATCH, POTENTIALLY METHODIZE THESE ALL
 std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::SendTypeContext *ctx)
 {
     const Type *ty = any2Type(ctx->ty->accept(sematicVisitor));
 
-    if(this->inClose)
+    if(this->inClose && !ty->isLossy())
     {
-        if(const TypeChannel * channelTy = dynamic_cast<const TypeChannel *>(ty))
-        {
-            const std::vector<const Protocol*> steps = channelTy->getProtocol()->getSteps(); 
-            if(steps.size() != 1) return errorHandler.addError(ctx->getStart(), "Cannot send non-lossy type " + ty->toString() + " in a closeable protocol"); 
-
-            if(!dynamic_cast<const ProtocolClose*>(steps.at(0)))
-                return errorHandler.addError(ctx->getStart(), "Cannot send non-lossy type " + ty->toString() + " in a closeable protocol"); 
-        }
+        return errorHandler.addError(ctx->getStart(), "Cannot send non-lossy type " + ty->toString() + " in a closeable protocol"); 
     }
 
     return new ProtocolSend(ty);
@@ -187,8 +172,6 @@ std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(Bi
     }
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);
-
-    // FIXME: NEED TO ALSO CHECK AGAINST LINEAR RESOURCES IN GENERAL!!  AND NEED TO ADD TEST CASES!!!
 
     return new ProtocolClose(toSequence(proto), ++closeNumber); // NOTE, must be ++i otherwise first would be zero, which could potentially be a problem?
 }

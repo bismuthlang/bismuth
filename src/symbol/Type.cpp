@@ -193,7 +193,7 @@ llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
     return llvm::Type::getInt32Ty(M->getContext());
 }
 
-// Note rhetoric of how we could group each type by fn. ie keep th edeep copies together
+// Note rhetoric of how we could group each type by fn. ie keep the deep copies together
 bool TypeChannel::requiresDeepCopy() const { return false; }
 
 const ProtocolSequence *TypeChannel::getProtocol() const
@@ -217,14 +217,30 @@ void TypeChannel::setProtocol(const ProtocolSequence *p) const // FIXME: DO BETT
     u_this->protocol = p;
 }
 
-void TypeChannel::guard() const // FIXME: DO BETTER
+bool TypeChannel::isGuarded() const // FIXME: DO BETTER, NEED TO ALSO REDIRECT ISGUARDED!? FOR THIS AND FOR TYPE PROGRAM? NO PROBS JUST THIS?
+{
+    return protocol->isGuarded();
+}
+
+void TypeChannel::guard() const 
 {
     return protocol->guard();
 }
 
-bool TypeChannel::unguard() const // FIXME: DO BETTER
+bool TypeChannel::unguard() const
 {
     return protocol->unguard();
+}
+
+bool TypeChannel::isLossy() const 
+{
+    const std::vector<const Protocol*> steps = this->getProtocol()->getSteps(); 
+    if(steps.size() != 1) 
+        return false; 
+
+    if(dynamic_cast<const ProtocolClose*>(steps.at(0)))
+        return true; 
+    return false; 
 }
 
 bool TypeChannel::isSupertypeFor(const Type *other) const
@@ -377,7 +393,8 @@ bool TypeProgram::isSupertypeFor(const Type *other) const
     // }
     if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
     {
-        // return protocol->isSubtype(p->protocol); // FIXME: DO BETTER/VERIFY!
+        return toString() == other->toString(); // FIXME: DO BETTER
+        // return protocol->isSubtype(p->protocol);
     }
     return false;
 }
