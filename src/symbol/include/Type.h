@@ -122,13 +122,14 @@ private:
     const bool linear; 
 };
 
-class Protocol : public Type
+class Protocol // : public Type
 {
 protected:
     virtual std::string as_str() const = 0;
+    unsigned int guardCount = 0;
 
 public:
-    Protocol() : Type(true) {}; 
+    Protocol() {}; 
 
     virtual ~Protocol() = default;
 
@@ -137,7 +138,7 @@ public:
      *
      * @return std::string The string name of the Protocol
      */
-    std::string toString() const override
+    std::string toString() const
     {
         std::ostringstream description;
         for (unsigned int i = 0; i < guardCount; i++) //FIXME: ADD TO OTHERS
@@ -152,9 +153,29 @@ public:
 
     virtual const Protocol *getInverse() const = 0;
 
-    virtual const Protocol *getCopy() const override = 0;
+    virtual const Protocol *getCopy() const = 0;
 
     // virtual bool isClosable() const = 0; 
+
+    // FIXME: ALMOST SAME AS TO TYPE!
+    virtual bool isGuarded() const { return guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
+
+    virtual void guard() const // FIXME: DO BETTER
+    {
+        Protocol *u_this = const_cast<Protocol *>(this);
+        u_this->guardCount = u_this->guardCount + 1;
+    }
+
+    virtual bool unguard() const // FIXME: DO BETTER
+    {
+        if (guardCount == 0)
+            return false;
+        Protocol *u_this = const_cast<Protocol *>(this);
+
+        u_this->guardCount = u_this->guardCount - 1;
+        return true;
+    }
+
 };
 
 // FIXME: DO BETTER

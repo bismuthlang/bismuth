@@ -377,7 +377,7 @@ bool TypeProgram::isSupertypeFor(const Type *other) const
     // }
     if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
     {
-        return protocol->isSubtype(p->protocol); // FIXME: DO BETTER/VERIFY!
+        // return protocol->isSubtype(p->protocol); // FIXME: DO BETTER/VERIFY!
     }
     return false;
 }
