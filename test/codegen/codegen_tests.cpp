@@ -691,6 +691,20 @@ TEST_CASE("programs/nested_struct - Definitions within definitions", "[codegen]"
         "8c0207b60fd885331411b85d6c1ca6191d05ab14f01f925b8fe2830df7619244");
 }
 
+TEST_CASE("programs/asChannel-int - Convert an int into stream", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/asChannel-int.bismuth"))),
+        "b1c56efe4a81d2e0af27e2b304d1ff434631cf32418c41aa32e963e6e4e5bead");
+}
+
+TEST_CASE("programs/asChannel-array - Convert an array into stream", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/asChannel-array.bismuth"))),
+        "48a955cb0abaf3d36c6ddefd816b1b806adcf5613eb70aea75d6a1a79baca7cf");
+}
+
 TEST_CASE("programs/asChannel-channel - Convert regular channel into stream", "[codegen]")
 {
     EnsureCompilesTo(
