@@ -584,8 +584,13 @@ public:
                 {
                     details << e->toString() << "; ";
                 }
+                // details << std::endl; 
+                // details << stmgr->toString(); 
 
-                errorHandler.addError(alt->getStart(), "Unused linear types in context: " + details.str());
+                // SUM TYPE: ALLOW OPS THAT COULD BE POSSIBLE BOTH WAYS?
+                // But problem here is that we need the whole environment to converge.... and not just subtypes, but exactly the same.... but then why would the channels be allowed to be sums>
+
+                errorHandler.addError(alt->getStart(), "588 Unused linear types in context: " + details.str());
             }
         }
 
@@ -696,7 +701,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "700 Uninferred types in context: " + details.str());
             }
         }
 

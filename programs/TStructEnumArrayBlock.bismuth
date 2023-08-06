@@ -1,0 +1,103 @@
+extern func printf(str s, ...) : Unit;
+
+# Two Int Box Box
+define struct TIBB {
+  Box<Box<int>>[2] b;
+}
+
+define enum ETIBBOB {
+  TIBB, 
+  int
+}
+
+define func printTIBB(str name, TIBB b) {
+  # printf("%s = {b[0] : %u, b[1] : %u}\n", name, **b.b[0], **b.b[1]);
+
+  printf("%s = {b[0] : ", name); 
+  
+  match b.b[0]
+    | Unit u => printf("(), b[1] : ");
+    | Box<Box<int>> i => printf("%u, b[1] : ", **i);
+
+  match b.b[1]
+    | Unit u => printf("()}\n");
+    | Box<Box<int>> i => printf("%u}\n", **i);
+
+  return; 
+}
+
+define foo :: c : Channel<+ETIBBOB;-int;+int> = {
+  match c.recv() {
+    TIBB iPtr => {
+        # var iPtr := c.recv(); 
+        printTIBB("iPtr (orig/5)", iPtr);
+
+        { # FIXME: BREAKS!
+          match iPtr.b[0]
+            | Unit u => printf("ERROR!!!!\n");
+            | Box<Box<int>> box => **box := 7; 
+        }
+
+        printTIBB("iPtr (mod/7)", iPtr);
+        c.send(-1);
+        var t := c.recv(); 
+        printTIBB("iPtr (mod/7)", iPtr);
+    }
+    int i => {
+      c.send(-1); 
+      var t := c.recv(); 
+    }
+  }
+}
+
+define program :: c : Channel<-int> = {
+  # int ctr := 0; 
+  # while true {
+  {
+    var a := exec foo; 
+
+    var shared := Box<Box<int>>::init(Box<int>::init(5));
+    Box<Box<int>>[2] array;          # TODO: Fix type inference on var
+    array[0] := shared; 
+    array[1] := Box<Box<int>>::init(Box<int>::init(6));
+    var tibb := TIBB::init(array);
+
+    tibb.b[0] := shared;
+    ETIBBOB toSend := tibb;
+    # printf("");
+    printTIBB("b (orig/5;6)", tibb);
+    a.send(toSend)
+    var u := a.recv(); 
+    printTIBB("b (orig/5;6)", tibb);
+    # **shared = 9; 
+    *shared := Box<int>::init(9); 
+    printTIBB("b (orig/9;6)", tibb);
+    a.send(-1);
+  }
+  printf("------\n");
+  {
+    var a := exec foo; 
+
+    var shared := Box<Box<int>>::init(Box<int>::init(5));
+    Box<Box<int>>[2] array;
+    array[0] := shared; 
+    array[1] := shared; 
+    var tibb := TIBB::init(array);
+
+    tibb.b[0] := shared;
+    ETIBBOB toSend := tibb;
+    # printf("");
+    printTIBB("b (orig/5;5)", tibb);
+    a.send(toSend)
+    var u := a.recv(); 
+    printTIBB("b (orig/5;5)", tibb);
+    # **shared = 9; 
+    *shared := Box<int>::init(9); 
+    printTIBB("b (orig/9;9)", tibb);
+    a.send(-1);
+  }
+    # ctr := ctr + 1; 
+    # printf("%u\n", GC_get_heap_size());
+  # }
+  c.send(0);
+}
