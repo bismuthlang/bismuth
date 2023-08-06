@@ -225,31 +225,6 @@ TEST_CASE("programs/test18 - Parody", "[codegen]")
         "2df855f46312c7740e97cfe3955f6954db1912cb04eb50851a7aeb2d767bc883");
 }
 
-TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[codegen]")
-{
-    EnsureErrors(
-        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg.bismuth"))));
-}
-
-TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[codegen]")
-{
-    std::fstream *inStream = new std::fstream("/home/shared/programs/forwardWrongArg2.bismuth");
-    antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
-
-    BismuthLexer lexer(input);
-    antlr4::CommonTokenStream tokens(&lexer);
-    BismuthParser parser(&tokens);
-    parser.removeErrorListeners();
-    BismuthParser::CompilationUnitContext *tree = NULL;
-    REQUIRE_NOTHROW(tree = parser.compilationUnit());
-    REQUIRE(tree != NULL);
-    STManager *stm = new STManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, 0);
-    auto cuOpt = sv->visitCtx(tree);
-
-    REQUIRE(sv->hasErrors(0));
-}
-
 TEST_CASE("programs/Lambda1 - Basic lambda Test", "[codegen][lambda]")
 {
     EnsureCompilesTo(

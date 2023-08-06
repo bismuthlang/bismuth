@@ -2065,6 +2065,18 @@ define program :: c : Channel<?Closeable<-int>> {
       "cannot include looping protocol within closeable");
 }
 
+TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[semantic]")
+{
+  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg.bismuth"))),
+      "Unsupported redeclaration of foo");
+}
+
+TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[semantic]")
+{
+    EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg2.bismuth"))),
+      "Can only invoke PROC and FUNC, not foo : PROGRAM : +INT");
+}
+
 /*********************************
  * B-Level Example tests
  *********************************/
