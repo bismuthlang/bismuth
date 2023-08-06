@@ -504,6 +504,13 @@ TEST_CASE("programs/TStructEnumArray - Parody + Clone w/ Struct Enum Array", "[c
         "c85d7a2abf1cda05652145962a9726294897f757b1332b44aee7f88b3b823d7f");
 }
 
+TEST_CASE("programs/TStructEnumArrayBlock - TStructEnumArray with blocks to mess with control flow", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnumArrayBlock.bismuth"))),
+        "c85d7a2abf1cda05652145962a9726294897f757b1332b44aee7f88b3b823d7f");
+}
+
 TEST_CASE("programs/loop - Basic GC with boxes in loops based on example", "[codegen][enum]")
 {
     EnsureCompilesTo(
