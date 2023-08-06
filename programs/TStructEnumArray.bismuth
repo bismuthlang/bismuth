@@ -34,15 +34,8 @@ define foo :: c : Channel<+ETIBBOB;-int;+int> = {
         # **iPtr.b[0] := 7; # FIXME: SHOULD THIS BE ALLOWED?
       
         match iPtr.b[0]
-          | Unit u => {} # printf("ERROR!!!!\n");
-          | Box<Box<int>> box => {} #**box := 7; 
-
-        # if true {
-
-        # } else 
-        # {
-
-        # }
+          | Unit u => printf("ERROR!!!!\n");
+          | Box<Box<int>> box => **box := 7; 
 
         printTIBB("iPtr (mod/7)", iPtr);
         c.send(-1);
