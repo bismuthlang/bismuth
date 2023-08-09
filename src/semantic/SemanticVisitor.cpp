@@ -8,7 +8,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     std::vector<TExternNode *> externs;
 
     std::vector<std::pair<BismuthParser::DefineProgramContext *, TypeProgram *>> progs;
-    std::vector<std::pair<BismuthParser::DefineFunctionContext *, TypeInvoke *>> funcs;
+    std::vector<std::pair<BismuthParser::DefineFunctionContext *, TypeFunc *>> funcs;
     std::vector<std::pair<BismuthParser::DefineStructContext *, TypeStruct *>> structs;
     std::vector<std::pair<BismuthParser::DefineEnumContext *, TypeSum *>> enums;
 
@@ -45,7 +45,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of function " + id);
             }
 
-            TypeInvoke *funcType = new TypeInvoke();
+            TypeFunc *funcType = new TypeFunc();
             Symbol *sym = new Symbol(id, funcType, true, true);
             symBindings->bind(fnCtx, sym);
             stmgr->addSymbol(sym);
@@ -251,26 +251,26 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     {
 
         std::string name = (ctx->lam) ? "lambda " : ctx->field->getText();
-        std::optional<const TypeInvoke *> invokeableOpt = type_cast<TypeInvoke>(tn->getType());
-        if (invokeableOpt)
+        std::optional<const TypeFunc *> funcTyOpt = type_cast<TypeFunc>(tn->getType());
+        if (funcTyOpt)
         {
-            const TypeInvoke *invokeable = invokeableOpt.value();
+            const TypeFunc *funcTy = funcTyOpt.value();
             /*
              * The symbol is something we can invoke, so check that we provide it with valid parameters
              */
-            std::vector<const Type *> fnParams = invokeable->getParamTypes();
+            std::vector<const Type *> fnParams = funcTy->getParamTypes();
 
             /*
              *  If the symbol is NOT a variadic and the number of arguments we provide
-             *      are not the same as the number in the invokable's definition
+             *      are not the same as the number in the function's definition
              *  OR the symbol IS a variadic and the number of arguments in the
-             *      invokable's definition is greater than the number we provide,
+             *      function's definition is greater than the number we provide,
              *
              * THEN we have an error as we do not provide a valid number of arguments
              * to allow for this invocation.
              */
             if (
-                (!invokeable->isVariadic() && fnParams.size() != iArgs->args.size()) || (invokeable->isVariadic() && fnParams.size() > iArgs->args.size()))
+                (!funcTy->isVariadic() && fnParams.size() != iArgs->args.size()) || (funcTy->isVariadic() && fnParams.size() > iArgs->args.size()))
             {
                 std::ostringstream errorMsg;
                 errorMsg << "Invocation of " << name << " expected " << fnParams.size() << " argument(s), but got " << iArgs->args.size();
@@ -303,9 +303,9 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
                 const Type *providedType = provided->getType();
 
-                // If the invokable is variadic and has no specified type parameters, then we can
+                // If the function is variadic and has no specified type parameters, then we can
                 // skip over subsequent checks--we just needed to run type checking on each parameter.
-                if (invokeable->isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
+                if (funcTy->isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
                 {
                     if (type_cast<TypeBottom>(providedType) || type_cast<TypeAbsurd>(providedType) || type_cast<TypeUnit>(providedType))
                     {
@@ -338,8 +338,8 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         }
         else
         {
-            // Symbol was not an invokeable type, so report an error & return UNDEFINED.
-            return errorHandler.addError(ctx->getStart(), "Can only invoke PROC and FUNC, not " + name + " : " + tn->getType()->toString());
+            // Symbol was not an function type, so report an error & return UNDEFINED.
+            return errorHandler.addError(ctx->getStart(), "Can only invoke functions, not " + name + " : " + tn->getType()->toString());
         }
     }
     // return new TInvocationNode(tn, args, actualTypes, ctx->getStart());
@@ -368,7 +368,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
 
-    lam->type = const_cast<TypeInvoke *>(dynamic_cast<const TypeInvoke *>(funcSym->type)); // FIXME: DO BETTER! NEEDED B/C OF NAME RES!
+    lam->type = const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->type)); // FIXME: DO BETTER! NEEDED B/C OF NAME RES!
 
     lam->name = funcSym->getIdentifier(); // Not really needed.
     return lam;
@@ -1005,10 +1005,10 @@ std::variant<TSelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(B
 }
 
 /**
- * @brief Constructs a TypeInvoke based on the parameter types and assumes a return type of BOT.
+ * @brief Constructs a TypeFunc based on the parameter types and assumes a return type of BOT.
  *
  * @param ctx The ParameterListContext to process.
- * @return const Type* TypeInvoke representing the parameter types.
+ * @return const Type* TypeFunc representing the parameter types.
  */
 std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::ParameterListContext *ctx)
 {
@@ -1649,7 +1649,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     return new TLambdaConstNode(ctx->getStart(), ps, retType, blk);
 }
 
-std::variant<const TypeInvoke *, ErrorChain *>
+std::variant<const TypeFunc *, ErrorChain *>
 SemanticVisitor::visitCtx(BismuthParser::LambdaTypeContext *ctx)
 {
     std::vector<const Type *> params;
@@ -1679,7 +1679,7 @@ SemanticVisitor::visitCtx(BismuthParser::LambdaTypeContext *ctx)
 
     const Type *returnType = std::get<const Type *>(returnTypeOpt);
 
-    return new TypeInvoke(params, returnType);
+    return new TypeFunc(params, returnType);
 }
 
 std::variant<const TypeSum *, ErrorChain *>

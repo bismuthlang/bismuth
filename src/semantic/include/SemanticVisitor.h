@@ -225,8 +225,8 @@ public:
     std::variant<const TypeArray *, ErrorChain *> visitCtx(BismuthParser::ArrayTypeContext *ctx);
     std::any visitArrayType(BismuthParser::ArrayTypeContext *ctx) override { return TypeVariantCast<TypeArray>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    std::variant<const TypeInvoke *, ErrorChain *> visitCtx(BismuthParser::LambdaTypeContext *ctx);
-    std::any visitLambdaType(BismuthParser::LambdaTypeContext *ctx) override { return TypeVariantCast<TypeInvoke>(visitCtx(ctx)); } // { return visitCtx(ctx); }
+    std::variant<const TypeFunc *, ErrorChain *> visitCtx(BismuthParser::LambdaTypeContext *ctx);
+    std::any visitLambdaType(BismuthParser::LambdaTypeContext *ctx) override { return TypeVariantCast<TypeFunc>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
     std::variant<const TypeChannel *, ErrorChain *> visitCtx(BismuthParser::ChannelTypeContext *ctx);
     std::any visitChannelType(BismuthParser::ChannelTypeContext *ctx) override { return TypeVariantCast<TypeChannel>(visitCtx(ctx)); } // { return visitCtx(ctx); }
@@ -384,14 +384,10 @@ public:
     }
 
     /**
-     * @brief Visits an invokable definition (PROC or FUNC)
+     * @brief Visits a program definition
      *
      * @param ctx The parser rule context
-     * @param funcId The name of the PROC/FUNC
-     * @param paramList The parameter list for the PROC/FUNC
-     * @param ty The return type (Type::UNDEFINED for PROC)
-     * @param block The PROC/FUNC block
-     * @return const Type* TypeInvoke if successful, empty if error
+     * @return TProgramDefNode * if successful, ErrorChain * if error
      */
     std::variant<TProgramDefNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx)
     {
@@ -576,10 +572,10 @@ private:
 
         Symbol *sym = opt.value_or(
             new Symbol(
-                ctx->name->getText(), new TypeInvoke(),
+                ctx->name->getText(), new TypeFunc(),
                 true, false));
 
-        if (const TypeInvoke *funcType = dynamic_cast<const TypeInvoke *>(sym->type))
+        if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(sym->type))
         {
             if (!funcType->isDefined())
             {

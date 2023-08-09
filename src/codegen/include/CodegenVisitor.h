@@ -171,7 +171,7 @@ public:
 
                 return fn;
             }
-            else if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type)) // This is annoying that we have to have duplicate code despite both APIs being the same
+            else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->type)) // This is annoying that we have to have duplicate code despite both APIs being the same
             {
                 if (!inv->getLLVMName())
                 {

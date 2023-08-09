@@ -798,7 +798,7 @@ public:
     vector<Symbol *> paramSymbols;
     const Type *retType;
     TBlockNode *block;
-    TypeInvoke *type;
+    TypeFunc *type;
 
     TLambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, TBlockNode *b, string n = "LAM") : TypedNode(tok)
     {
@@ -816,10 +816,10 @@ public:
             paramTypes.push_back(p->type);
         }
 
-        type = new TypeInvoke(paramTypes, retType);
+        type = new TypeFunc(paramTypes, retType);
     }
 
-    const TypeInvoke *getType() override
+    const TypeFunc *getType() override
     {
         return type;
     }
@@ -849,7 +849,7 @@ public:
         // channelType = ct;
         block = b;
         type = ty;
-        // type = new TypeInvoke(paramTypes, retType);
+        // type = new TypeFunc(paramTypes, retType);
     }
 
     const TypeProgram *getType() override
@@ -1256,7 +1256,7 @@ class TExternNode : public TypedNode
 {
 private:
     Symbol *sym;
-    const TypeInvoke *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
+    const TypeFunc *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
     TExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
@@ -1268,11 +1268,11 @@ public:
             paramTypes.push_back(param.type);
         }
 
-        ty = new TypeInvoke(paramTypes, r, v);
+        ty = new TypeFunc(paramTypes, r, v);
         sym = new Symbol(id, ty, true, true);
     }
 
-    const TypeInvoke *getType() override
+    const TypeFunc *getType() override
     {
         return ty;
     }
@@ -1302,7 +1302,7 @@ public:
 
     const Type *getType() override
     {
-        return dynamic_cast<const TypeInvoke *>(fn->getType())->getReturnType();
+        return dynamic_cast<const TypeFunc *>(fn->getType())->getReturnType();
     }
 
     std::string toString() const override {

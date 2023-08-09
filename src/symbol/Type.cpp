@@ -371,8 +371,8 @@ const TypeProgram * TypeProgram::getCopy() const { return this; };
 
 bool TypeProgram::isSupertypeFor(const Type *other) const
 {
-    // // Checks that the other type is also invokable
-    // if (const TypeInvoke *p = dynamic_cast<const TypeInvoke *>(other))
+    // // Checks that the other type is also a function
+    // if (const TypeFunc *p = dynamic_cast<const TypeFunc *>(other))
     // {
     //     // Makes sure that both functions have the same number of parameters
     //     if (p->paramTypes.size() != this->paramTypes.size())
@@ -401,15 +401,15 @@ bool TypeProgram::isSupertypeFor(const Type *other) const
 
 /*******************************************
  *
- * Invokable (FUNC/PROC) Type Definition // TODO: CHANGE NAME, AFTER ALL, DOENST MATCH GRAMMER AND IN FACT PROGRAMS ARE INVOKES IN SOME PLACES
+ * Function
  *
  *******************************************/
-bool TypeInvoke::setInvoke(std::vector<const Type *> p, const Type *r, bool v) const //Note defaults!! and rhetoric!
+bool TypeFunc::setInvoke(std::vector<const Type *> p, const Type *r, bool v) const //Note defaults!! and rhetoric!
 {
     if (defined)
         return false;
 
-    TypeInvoke *u_this = const_cast<TypeInvoke *>(this);
+    TypeFunc *u_this = const_cast<TypeFunc *>(this);
     u_this->defined = true;
     u_this->paramTypes = p;
     u_this->retType = r;
@@ -418,7 +418,7 @@ bool TypeInvoke::setInvoke(std::vector<const Type *> p, const Type *r, bool v) c
     return true;
 }
 
-std::string TypeInvoke::toString() const
+std::string TypeFunc::toString() const
 {
     std::ostringstream description;
 
@@ -444,7 +444,7 @@ std::string TypeInvoke::toString() const
     return description.str();
 }
 
-llvm::FunctionType *TypeInvoke::getLLVMFunctionType(llvm::Module *M) const
+llvm::FunctionType *TypeFunc::getLLVMFunctionType(llvm::Module *M) const
 {
     // Create a vector for our argument types
     std::vector<llvm::Type *> typeVec;
@@ -464,38 +464,38 @@ llvm::FunctionType *TypeInvoke::getLLVMFunctionType(llvm::Module *M) const
         variadic);
 }
 // TODO: Build LLVM Type here instead of in codegen!
-llvm::PointerType *TypeInvoke::getLLVMType(llvm::Module *M) const
+llvm::PointerType *TypeFunc::getLLVMType(llvm::Module *M) const
 {
     return getLLVMFunctionType(M)->getPointerTo();
 }
 
-bool TypeInvoke::requiresDeepCopy() const { return false; }
+bool TypeFunc::requiresDeepCopy() const { return false; }
 
-std::optional<std::string> TypeInvoke::getLLVMName() const { return name; }
-bool TypeInvoke::setName(std::string n) const
+std::optional<std::string> TypeFunc::getLLVMName() const { return name; }
+bool TypeFunc::setName(std::string n) const
 {
     if (name)
         return false;
-    TypeInvoke *u_this = const_cast<TypeInvoke *>(this);
+    TypeFunc *u_this = const_cast<TypeFunc *>(this);
     u_this->name = n;
     // name = n;
     return true;
 }
 
-std::vector<const Type *> TypeInvoke::getParamTypes() const { return paramTypes; }
+std::vector<const Type *> TypeFunc::getParamTypes() const { return paramTypes; }
 
-const Type *TypeInvoke::getReturnType() const { return retType; }
+const Type *TypeFunc::getReturnType() const { return retType; }
 
-bool TypeInvoke::isVariadic() const { return variadic; }
+bool TypeFunc::isVariadic() const { return variadic; }
 
-bool TypeInvoke::isDefined() const { return defined; }
+bool TypeFunc::isDefined() const { return defined; }
 
-const TypeInvoke * TypeInvoke::getCopy() const { return this; };
+const TypeFunc * TypeFunc::getCopy() const { return this; };
 
-bool TypeInvoke::isSupertypeFor(const Type *other) const
+bool TypeFunc::isSupertypeFor(const Type *other) const
 {
-    // Checks that the other type is also invokable
-    if (const TypeInvoke *p = dynamic_cast<const TypeInvoke *>(other))
+    // Checks that the other type is also a function
+    if (const TypeFunc *p = dynamic_cast<const TypeFunc *>(other))
     {
         // Makes sure that both functions have the same number of parameters
         if (p->paramTypes.size() != this->paramTypes.size())

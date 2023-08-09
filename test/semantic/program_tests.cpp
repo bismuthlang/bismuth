@@ -330,7 +330,7 @@ define program :: c : Channel<-int> = {
     "Argument 0 provided to foo expected INT but got STR");
 }
 
-TEST_CASE("Invoke on Non-Invokable (str)", "[semantic][program]")
+TEST_CASE("Invoke on Non-Function (str)", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
@@ -340,12 +340,12 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Can only invoke PROC and FUNC, not x : STR");
+    "Can only invoke functions, not x : STR");
 }
 
 // FIXME: TYPE INFERENCE ON FUNCTIONS? AND TEST FUNCTION SUBTYPER!
 
-TEST_CASE("Invoke on Non-Invokable (int)", "[semantic][program]")
+TEST_CASE("Invoke on Non-Function (int)", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
@@ -355,7 +355,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""",
-    "Can only invoke PROC and FUNC, not x : INT");
+    "Can only invoke functions, not x : INT");
 }
 
 TEST_CASE("Redeclaration of function 1", "[semantic][program]")
@@ -2074,7 +2074,7 @@ TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[
 TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[semantic]")
 {
     EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg2.bismuth"))),
-      "Can only invoke PROC and FUNC, not foo : PROGRAM : +INT");
+      "Can only invoke functions, not foo : PROGRAM : +INT");
 }
 
 /*********************************

@@ -32,7 +32,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
         {
             TLambdaConstNode *octx = std::get<TLambdaConstNode *>(e);
 
-            const TypeInvoke *type = octx->getType();
+            const TypeFunc *type = octx->getType();
 
             Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->name, module);
             type->setName(fn->getName().str());
@@ -1212,7 +1212,7 @@ std::optional<Value *> CodegenVisitor::visit(TExternNode *n)
         return std::nullopt;
     }
 
-    const TypeInvoke *type = n->getType();
+    const TypeFunc *type = n->getType();
 
     Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, symbol->getIdentifier(), module);
     type->setName(fn->getName().str());
@@ -1699,7 +1699,7 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
     // Get the current insertion point
     BasicBlock *ins = builder->GetInsertBlock();
 
-    const TypeInvoke *type = n->getType();
+    const TypeFunc *type = n->getType();
 
     llvm::FunctionType *fnType = type->getLLVMFunctionType(module);
 

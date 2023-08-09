@@ -358,11 +358,9 @@ private:
 
 public:
     /**
-     * @brief Construct a new Type Invoke object
-     *
-     * @param p List of type parameters
-     * @param v Determines if this should be a variadic
-     * @param d Determines if this has been fully defined
+     * @brief Construct a new Type Channel object
+     * 
+     * @param proto The protocol sequence for the channel to follow
      */
     TypeChannel(const ProtocolSequence *proto) : Type(true), protocol(proto) {}
 
@@ -458,11 +456,9 @@ public:
     {
     }
     /**
-     * @brief Construct a new Type Invoke object
-     *
-     * @param p List of type parameters
-     * @param v Determines if this should be a variadic
-     * @param d Determines if this has been fully defined
+     * @brief Construct a new Type Program object
+     * 
+     * @param p The protocol sequence for the program's main channel to follow
      */
     TypeProgram(const ProtocolSequence *p) : Type(false), protocol(p), defined(true)
     {
@@ -500,11 +496,11 @@ protected:
 
 /*******************************************
  *
- * Invokable (FUNC/PROC) Type Definition
+ * Function Type Definition
  *
  *******************************************/
 
-class TypeInvoke : public Type
+class TypeFunc : public Type
 {
 private:
     /**
@@ -538,22 +534,18 @@ private:
     std::optional<std::string> name = {}; // NOT FOR SEMANTIC NAMES!!! THIS ONE IS FOR LLVM ONLY
 
 public:
-    /**
-     * @brief Construct a new Type Invoke object that has no return and no arguments
-     *
-     */
-    TypeInvoke() : Type(false), defined(false)
+    TypeFunc() : Type(false), defined(false)
     {
     }
 
     /**
-     * @brief Construct a new Type Invoke object
+     * @brief Construct a new TypeFunc object
      *
      * @param p List of type parameters
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) : Type(false), paramTypes(p), retType(r), variadic(v), defined(true)
+    TypeFunc(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) : Type(false), paramTypes(p), retType(r), variadic(v), defined(true)
     {
     }
 
@@ -606,7 +598,7 @@ public:
      */
     bool isDefined() const;
 
-    const TypeInvoke * getCopy() const override;
+    const TypeFunc * getCopy() const override;
 
 protected:
     bool isSupertypeFor(const Type *other) const override;
