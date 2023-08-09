@@ -11,6 +11,10 @@ using llvm::Value;
 
 class RawASTVisitor;
 
+class RawNode; 
+class RawExtern; 
+class RawDefineType;
+
 class RawNode
 {
 public:
@@ -28,9 +32,11 @@ class RawCompilationUnit : public RawNode
 {
 private: 
     BismuthParser::CompilationUnitContext * context; 
+    std::vector<RawExtern *> externs;
+    std::vector<RawDefineType *> defs;
 
 public:
-    RawCompilationUnit(BismuthParser::CompilationUnitContext * ctx) : context(ctx) {}
+    RawCompilationUnit(BismuthParser::CompilationUnitContext * ctx, std::vector<RawExtern *> e, std::vector<RawDefineType *> d) : context(ctx), externs(e), defs(d) {}
 
     const BismuthParser::CompilationUnitContext * getContext() const override { return context; } 
 };
