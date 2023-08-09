@@ -2653,6 +2653,77 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
 
     STManager *origStmgr = this->stmgr;
 
+    const auto checkCase = [&](antlr4::Token * branchToken, bool checkRest, std::string branchErrorMessage, std::string subsequentErrorMessage) -> std::optional<ErrorChain *>{
+        // if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
+        if(checkRest)
+        {
+            for (auto s : ctxRest->ctxRest)
+            {
+                std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
+                {
+                    (*e)->addError(branchToken, branchErrorMessage); // "Failed to type check code following branch");
+                    return *e;
+                }
+
+                if (!ctxRest->isGenerated)
+                {
+                    ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
+                }
+            }
+
+            // restVecFilled = true;
+            ctxRest->isGenerated = true;
+        }
+
+        // FIXME: WILL NEED TO RUN THIS CHECK ON EACH ITERATION!
+        if (deepRest && !endsInReturn(ctxRest->post) && !endsInBranch(ctxRest->post))
+        {
+            for (auto r : *(deepRest.value()))
+            {
+                for (auto s : r->ctxRest)
+                {
+                    std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
+
+                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
+                    {
+                        (*e)->addError(ctx->getStart(), subsequentErrorMessage); // "Failed to type check when no branch followed"
+                        return *e;
+                    }
+
+                    if (!r->isGenerated)
+                    {
+                        r->post.push_back(std::get<TypedNode *>(rOpt));
+                    }
+                }
+                r->isGenerated = true;
+            }
+        }
+
+        safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
+
+        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
+
+        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+        // due to the var leaving the scope
+        if (lins.size() > 0)
+        {
+            std::ostringstream details;
+
+            for (auto e : lins)
+            {
+                details << e->toString() << "; ";
+            }
+            // SUM TYPE: ALLOW OPS THAT COULD BE POSSIBLE BOTH WAYS?
+            // But problem here is that we need the whole environment to converge.... and not just subtypes, but exactly the same.... but then why would the channels be allowed to be sums>
+
+            errorHandler.addError(branchToken, "588 Unused linear types in context: " + details.str());
+        }
+
+        return std::nullopt; 
+    };
+
     for (unsigned int i = 0; i < ctxCases.size(); i++)
     {
         auto alt = ctxCases.at(i);
@@ -2681,138 +2752,18 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
         TypedNode *caseNode = std::get<TypedNode *>(optEval);
         cases.push_back(caseNode);
 
-        // safeExitScope(ctx);
-        if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
-        {
-            for (auto s : ctxRest->ctxRest)
-            {
-                std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                {
-                    (*e)->addError(alt->getStart(), "Failed to type check code following branch");
-                    return *e;
-                }
-
-                if (!ctxRest->isGenerated)
-                {
-                    ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
-                }
-            }
-
-            // restVecFilled = true;
-            ctxRest->isGenerated = true;
-        }
-
-        // FIXME: WILL NEED TO RUN THIS CHECK ON EACH ITERATION!
-        if (deepRest && !endsInReturn(ctxRest->post) && !endsInBranch(ctxRest->post))
-        {
-            for (auto r : *(deepRest.value()))
-            {
-                for (auto s : r->ctxRest)
-                {
-                    std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                    {
-                        (*e)->addError(ctx->getStart(), "Failed to type check when no branch followed");
-                        return *e;
-                    }
-
-                    if (!r->isGenerated)
-                    {
-                        r->post.push_back(std::get<TypedNode *>(rOpt));
-                    }
-                }
-                r->isGenerated = true;
-            }
-        }
-
-        safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
-
-        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
-
-        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
-        // due to the var leaving the scope
-        if (lins.size() > 0)
-        {
-            std::ostringstream details;
-
-            for (auto e : lins)
-            {
-                details << e->toString() << "; ";
-            }
-            // details << std::endl;
-            // details << stmgr->toString();
-
-            // SUM TYPE: ALLOW OPS THAT COULD BE POSSIBLE BOTH WAYS?
-            // But problem here is that we need the whole environment to converge.... and not just subtypes, but exactly the same.... but then why would the channels be allowed to be sums>
-
-            errorHandler.addError(alt->getStart(), "588 Unused linear types in context: " + details.str());
-        }
+        std::optional<ErrorChain *> errorOpt = checkCase(alt->getStart(), !endsInReturn(caseNode) && !endsInBranch(caseNode), "Failed to type check code following branch", "Failed to type check when no branch followed");
+        if(errorOpt) return errorOpt.value();
     }
 
     if (checkRestIndependently)
     {
         this->stmgr = origStmgr;
 
-        stmgr->enterScope(StopType::NONE); // Why? This doesnt make sense..
+        stmgr->enterScope(StopType::NONE); // Why? This doesnt make sense.. oh it does, but should ideally refactor!
 
-        for (auto s : ctxRest->ctxRest)
-        {
-            std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-            {
-                (*e)->addError(ctx->getStart(), "Failed to type check code when conditional skipped over");
-                return *e;
-            }
-            if (!ctxRest->isGenerated)
-            {
-                ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
-            }
-        }
-
-        if (deepRest && !endsInReturn(ctxRest->post))
-        {
-            for (auto r : *(deepRest.value())) // FIXME: NEED TO REVERSE?
-            {
-                for (auto s : r->ctxRest)
-                {
-                    std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                    {
-                        (*e)->addError(ctx->getStart(), "2097");
-                        return *e;
-                    }
-
-                    if (!r->isGenerated)
-                    {
-                        r->post.push_back(std::get<TypedNode *>(rOpt));
-                    }
-                }
-                r->isGenerated = true;
-            }
-        }
-
-        ctxRest->isGenerated = true;
-        safeExitScope(ctx);
-
-        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
-
-        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
-        // due to the var leaving the scope
-        if (lins.size() > 0)
-        {
-            std::ostringstream details;
-
-            for (auto e : lins)
-            {
-                details << e->toString() << "; ";
-            }
-
-            errorHandler.addError(ctx->getStart(), "608 Unused linear types in context: " + details.str());
-        }
+        std::optional<ErrorChain *> errorOpt = checkCase(ctx->getStart(), true, "Failed to type check code when conditional skipped over", "Failed to type check when skipped over and no branch followed");
+        if(errorOpt) return errorOpt.value();
     }
 
     return ConditionalData(cases);
