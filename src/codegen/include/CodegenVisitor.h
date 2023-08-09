@@ -95,7 +95,7 @@ public:
     std::optional<Value *> visit(TSelectStatementNode *n) override;
     std::optional<Value *> visit(TBlockNode *n) override;
     std::optional<Value *> visit(TLambdaConstNode *n) override;
-    std::optional<Value *> visit(TProgramDefNode *n) override { return visitInvokeable(n); };
+    std::optional<Value *> visit(TProgramDefNode *n) override;
     std::optional<Value *> visit(TConditionalStatementNode *n) override;
     std::optional<Value *> visit(TReturnNode *n) override;
     std::optional<Value *> visit(TProgramSendNode *n) override;
@@ -143,98 +143,6 @@ public:
 
     Module *getModule() { return module; }
     void modPrint() { module->print(llvm::outs(), nullptr); }
-
-    /**
-     * @brief Generates the code for an InvokeableType (PROC/FUNC)
-     *
-     * @param sum The FuncDefContext to build the function from
-     * @return std::optional<Value *> Empty as this shouldn't be seen as a value
-     */
-    std::optional<Value *> visitInvokeable(TProgramDefNode *n)
-    {
-        BasicBlock *ins = builder->GetInsertBlock();
-
-        // Get the function name. Done separately from sym in case the symbol isn't found
-        std::string funcId = n->name;
-
-        const TypeProgram *inv = n->getType();
-
-        llvm::FunctionType *fnType = inv->getLLVMFunctionType(module);
-
-        Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);
-        ; // Lookup the function first
-        inv->setName(fn->getName().str());
-        
-        // Get the parameter list context for the invokable
-        // BismuthParser::ParameterListContext *paramList = ctx->paramList;
-        // Create basic block
-        BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
-        builder->SetInsertPoint(bBlk);
-
-        // Bind all of the arguments
-        std::optional<llvm::AllocaInst *> vOpt = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
-        if(!vOpt)
-        {
-            errorHandler.addError(nullptr, "Failed to generate alloc for channel value, is it somehow void?"); // Should never occur bc int32Ty
-            return std::nullopt; 
-        }
-        llvm::AllocaInst * v = vOpt.value(); 
-
-        n->channelSymbol->setAllocation(v);
-        builder->CreateStore((fn->args()).begin(), v);
-        /*
-        for (auto &arg : fn->args())
-        {
-            // Get the argument number (just seems easier than making my own counter)
-            int argNumber = arg.getArgNo();
-
-            // Get the argument's type
-            llvm::Type *type = fnType->params()[argNumber];
-
-            // Get the argument name (This even works for arrays!)
-            std::string argName = paramList->params.at(argNumber)->getText();
-
-            // Create an allocation for the argument
-            llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
-
-            // Try to find the parameter's binding to determine what value to bind to it.
-            std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber));
-
-            if (!symOpt)
-            {
-                errorHandler.addError(nullptr, "Unable to generate parameter for function: " + argName);
-            }
-            else
-            {
-                symOpt.value()->val = v;
-
-                builder->CreateStore(&arg, v);
-            }
-        }
-        */
-
-        // Get the codeblock for the PROC/FUNC
-        // BismuthParser::BlockContext *block = ctx->block();
-        // Generate code for the block
-        for (auto e : n->block->exprs)
-        {
-            // e->accept(this);
-            this->accept(e);
-            // module->dump();
-        }
-        
-        // If we are a PROC, make sure to add a return type (if we don't already have one)
-        // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
-        if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE, OR IS IT GIVEN EXIT?
-        {
-            builder->CreateRet(getUnitValue());
-            // Value * val = llvm::UndefValue::get(llvm::Type::getVoidTy(module->getContext()));
-            // builder->CreateRet(val);
-        }
-        
-        builder->SetInsertPoint(ins);
-        return std::nullopt;
-    }
 
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {

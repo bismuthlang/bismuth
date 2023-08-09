@@ -2082,7 +2082,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
             {
-                (*e)->addError(ctx->getStart(), "FIXME: 21");
+                (*e)->addError(ctx->getStart(), "Failed to generate protocol type in channel case statement");
                 return *e;
             }
 
@@ -2182,7 +2182,7 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
-            (*e)->addError(ctx->getStart(), "FIXME: 21");
+            (*e)->addError(ctx->getStart(), "Failed to generate protocol type in project statement");
             return *e;
         }
 
@@ -2485,44 +2485,6 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         }
 
         return new TProgramAcceptIfNode(ctx->getStart(), sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post);
-        /*
-        const ProtocolSequence *postC = channel->getProtocolCopy();
-        postC->guard();
-
-        stmgr->guard();
-        channel->setProtocol(acceptOpt.value());
-
-        std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
-
-        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
-        // due to the var leaving the scope
-        if (lins.size() > 0)
-        {
-            std::ostringstream details;
-
-            for (auto e : lins)
-            {
-                details << e->toString() << "; ";
-            }
-
-            errorHandler.addError(ctx->getStart(), "2196 Unused linear types in context: " + details.str());
-        }
-
-        channel->setProtocol(postC);
-        if (!stmgr->unguard())
-        {
-            return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
-        }
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
-        {
-            (*e)->addError(ctx->getStart(), "2255");
-            return *e;
-        }
-
-        return new TProgramAcceptIfNode(sym, std::get<TypedNode *>(condOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
-        */
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());

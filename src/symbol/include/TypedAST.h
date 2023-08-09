@@ -266,11 +266,7 @@ public:
     const Type *type;
     string name;
 
-    ParameterNode(const Type *t, string n)
-    {
-        type = t;
-        name = n; // FIXME: DO WE NEED A CLASS HERE OR JUST STRUCT? OR EVEN A TYPEDEF
-    }
+    ParameterNode(const Type *t, string n) : type(t), name(n) {}
 };
 
 typedef vector<ParameterNode> ParameterListNode;

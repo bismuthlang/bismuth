@@ -711,7 +711,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode *n)
     return casted;
 }
 
-std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) //TODO: COnsider refactoring/ improving generated IR
+std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) // TODO: COnsider refactoring/ improving generated IR
 {
     std::optional<Value *> indexOpt = AcceptType(this, n->indexExpr);
 
@@ -737,11 +737,10 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) //TODO: COnsid
         return builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
     }
 
-
-    Value * idxBoundsCheckValue =  builder->CreateICmpSLT(
+    Value *idxBoundsCheckValue = builder->CreateICmpSLT(
         indexValue,
-        builder->getInt32(n->length())//arrayPtr->getType()->getNumElements())
-    ); // TODO: SIGNED VS UNSIGNED? AND LENGTH! NUM ELES IS 64!!
+        builder->getInt32(n->length()) // arrayPtr->getType()->getNumElements())
+    );                                 // TODO: SIGNED VS UNSIGNED? AND LENGTH! NUM ELEMENTS IS 64!!
 
     auto parentFn = builder->GetInsertBlock()->getParent();
 
@@ -760,13 +759,10 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) //TODO: COnsid
     builder->CreateCondBr(
         builder->CreateZExtOrTrunc(
             builder->CreateICmpSGE(indexValue, Int32Zero), // PLAN: Add slices which could loop!
-            Int1Ty
-        ),
+            Int1Ty),
         gtzBlk,
-        elseBlk
-    );
+        elseBlk);
     ltlBlk = builder->GetInsertBlock();
-
 
     /*
      * Passed Bounds Check Blk
@@ -775,7 +771,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) //TODO: COnsid
     builder->SetInsertPoint(gtzBlk);
     Value *valuePtr = builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
     Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
-    auto ptr = correctSumAssignment(n->getRValueType(), value); //FIXME: DONT CALCULATE getRValueType TWIICE!!
+    auto ptr = correctSumAssignment(n->getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWIICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();
 
@@ -796,7 +792,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) //TODO: COnsid
     builder->SetInsertPoint(restBlk);
 
     PHINode *phi = builder->CreatePHI(n->getType()->getLLVMType(module), 2, "arrayAccess");
-    phi->addIncoming(ptr, gtzBlk); 
+    phi->addIncoming(ptr, gtzBlk);
     phi->addIncoming(unitPtr, elseBlk);
 
     return phi;
@@ -1769,6 +1765,49 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
     return fn;
 }
 
+std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
+{
+    BasicBlock *ins = builder->GetInsertBlock();
+
+    const TypeProgram *prog = n->getType();
+
+    llvm::FunctionType *fnType = prog->getLLVMFunctionType(module);
+
+    Function *fn = prog->getLLVMName() ? module->getFunction(prog->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
+    prog->setName(fn->getName().str());
+
+    
+    // Create basic block
+    BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
+    builder->SetInsertPoint(bBlk);
+
+    // Bind all of the arguments
+    std::optional<llvm::AllocaInst *> vOpt = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
+    if (!vOpt)
+    {
+        errorHandler.addError(nullptr, "Failed to generate alloc for channel value, is it somehow void?"); // Should never occur bc int32Ty
+        return std::nullopt;
+    }
+    llvm::AllocaInst *v = vOpt.value();
+
+    n->channelSymbol->setAllocation(v);
+    builder->CreateStore((fn->args()).begin(), v);
+    
+    // Generate code for the block
+    for (auto e : n->block->exprs)
+    {
+        this->accept(e);
+    }
+
+    if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE, OR IS IT GIVEN EXIT?
+    {
+        builder->CreateRet(getUnitValue());
+    }
+
+    builder->SetInsertPoint(ins);
+    return std::nullopt;
+}
+
 std::optional<Value *> CodegenVisitor::visit(TExprCopyNode *n)
 {
     std::optional<Value *> valOpt = AcceptType(this, n->expr);
@@ -1791,10 +1830,10 @@ std::optional<Value *> CodegenVisitor::visit(TExprCopyNode *n)
     return stoVal;
 }
 
-std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n)
+std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n) // TODO: POSSIBLE PROBLEM AS THIS DUPLICATES THE LENGTH OF AN ARRAY!
 {
-    std::optional<Value *> valOpt = AcceptType(this, n->expr);//new TExprCopyNode(n->expr, n->token)); // FIXME: WILL THIS LEAK THE TOPLEVEL ARRAY? CANT DEEP COPY EACH INDEPENDELTY OR ELSE WE WOULD BREAK REFERENCES!
-        
+    std::optional<Value *> valOpt = AcceptType(this, n->expr); // new TExprCopyNode(n->expr, n->token)); // FIXME: WILL THIS LEAK THE TOPLEVEL ARRAY? CANT DEEP COPY EACH INDEPENDELTY OR ELSE WE WOULD BREAK REFERENCES!
+
     if (!valOpt)
     {
         errorHandler.addError(n->getStart(), "Failed to generate code");
@@ -1803,40 +1842,40 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n)
 
     Value *loadedVal = valOpt.value();
     // TODO: SWITCH TO TUPLE INSTEAD OF MUTABLE!
-    const TypeArray * arrayType = [this, n, &loadedVal]() mutable -> const TypeArray *{
-        const Type * ty = n->expr->getType();
-        if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(ty))
+    const TypeArray *arrayType = [this, n, &loadedVal]() mutable -> const TypeArray *
+    {
+        const Type *ty = n->expr->getType();
+        if (const TypeArray *arrayType = dynamic_cast<const TypeArray *>(ty))
         {
             // FIXME: ONLY NEEDED BC CANT SPECIFY THAT THIS IS AN LVALUE!!!
             AllocaInst *stoVal = CreateEntryBlockAlloc(loadedVal->getType(), "cast_arr");
-            builder->CreateStore(loadedVal, stoVal); 
+            builder->CreateStore(loadedVal, stoVal);
             loadedVal = stoVal;
-            return arrayType; 
+            return arrayType;
         }
-        
+
         // FIXME: NEEDED BC NO LVALUE
-        const TypeArray * arrTy = new TypeArray(ty, 1);
+        const TypeArray *arrTy = new TypeArray(ty, 1);
 
         // TODO: Remove Array and make things use pointers?
         AllocaInst *saveBlock = CreateEntryBlockAlloc(arrTy->getLLVMType(module), "createdArray");
-        
-        Value *stoLoc = builder->CreateGEP(saveBlock, {Int32Zero,Int32Zero});
+
+        Value *stoLoc = builder->CreateGEP(saveBlock, {Int32Zero, Int32Zero});
         builder->CreateStore(loadedVal, stoLoc);
 
-        loadedVal = saveBlock; //builder->CreateLoad(saveBlock->getType(), saveBlock); 
+        loadedVal = saveBlock; // builder->CreateLoad(saveBlock->getType(), saveBlock);
 
         return arrTy;
     }();
 
     // TODO: TURN INTO FN?
-    //FIXME: VERY SIMILAR TO TSEND
+    // FIXME: VERY SIMILAR TO TSEND
 
-
-    llvm::ArrayType * arrayPtrTy = llvm::ArrayType::get(i8p, arrayType->getLength());
+    llvm::ArrayType *arrayPtrTy = llvm::ArrayType::get(i8p, arrayType->getLength());
     AllocaInst *saveBlock = CreateEntryBlockAlloc(arrayPtrTy, "save_blk");
 
     // FIXME: SIMILAR TO DEEP COPY VISITOR
-        
+
     AllocaInst *loop_index = CreateEntryBlockAlloc(Int32Ty, "idx");
     AllocaInst *loop_len = CreateEntryBlockAlloc(Int32Ty, "len");
     builder->CreateStore(Int32Zero, loop_index);
@@ -1864,12 +1903,11 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n)
     /**/
     {
         Value *stoLoc = builder->CreateGEP(saveBlock, {Int32Zero,
-                                                        builder->CreateLoad(Int32Ty, loop_index)});
+                                                       builder->CreateLoad(Int32Ty, loop_index)});
 
         Value *readLoc = builder->CreateGEP(loadedVal, {Int32Zero,
                                                         builder->CreateLoad(Int32Ty, loop_index)});
 
-        
         Value *read = builder->CreateLoad(readLoc->getType()->getPointerElementType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
 
         Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(read->getType()))});
@@ -1877,8 +1915,6 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n)
 
         builder->CreateStore(read, casted);
         Value *corrected = builder->CreateBitCast(v, i8p);
-
-
 
         builder->CreateStore(corrected, stoLoc);
     }
@@ -1888,7 +1924,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n)
     /***********************************************/
     builder->CreateStore(
         builder->CreateNSWAdd(builder->CreateLoad(Int32Ty, loop_index),
-                                Int32One),
+                              Int32One),
         loop_index);
     builder->CreateBr(condBlk);
     loopBlk = builder->GetInsertBlock();
@@ -1896,12 +1932,11 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n)
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
 
-
-    //Convert [n x i8*] to i8**
+    // Convert [n x i8*] to i8**
     Value *arrayStart = builder->CreateBitCast(
-        builder->CreateGEP(saveBlock, {Int32Zero, Int32Zero}), 
+        builder->CreateGEP(saveBlock, {Int32Zero, Int32Zero}),
         Int8PtrPtrTy);
-    
+
     // return saveBlock;
     return builder->CreateCall(get_arrayToChannel(), {arrayStart, builder->CreateLoad(Int32Ty, loop_len)});
-} 
+}
