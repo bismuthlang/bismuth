@@ -187,7 +187,6 @@ std::string TypeChannel::toString() const
     return description.str();
 }
 
-// TODO: Build LLVM Type here instead of in codegen!
 llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
 {
     return llvm::Type::getInt32Ty(M->getContext());
@@ -285,7 +284,6 @@ std::string TypeBox::toString() const
 
 const Type *TypeBox::getInnerType() const { return innerType; }
 
-// TODO: Build LLVM Type here instead of in codegen!
 llvm::Type *TypeBox::getLLVMType(llvm::Module *M) const
 {
     return innerType->getLLVMType(M)->getPointerTo();
@@ -340,7 +338,7 @@ llvm::FunctionType *TypeProgram::getLLVMFunctionType(llvm::Module *M) const
         false);
 }
 
-// TODO: Build LLVM Type here instead of in codegen!
+
 llvm::PointerType *TypeProgram::getLLVMType(llvm::Module *M) const
 {
     return getLLVMFunctionType(M)->getPointerTo();
@@ -463,7 +461,7 @@ llvm::FunctionType *TypeFunc::getLLVMFunctionType(llvm::Module *M) const
         paramRef,
         variadic);
 }
-// TODO: Build LLVM Type here instead of in codegen!
+
 llvm::PointerType *TypeFunc::getLLVMType(llvm::Module *M) const
 {
     return getLLVMFunctionType(M)->getPointerTo();

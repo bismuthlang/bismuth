@@ -366,7 +366,6 @@ public:
 
     std::string toString() const override;
 
-    // TODO: Build LLVM Type here instead of in codegen!
     llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
@@ -413,7 +412,6 @@ public:
 
     const Type *getInnerType() const;
 
-    // TODO: Build LLVM Type here instead of in codegen!
     llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
