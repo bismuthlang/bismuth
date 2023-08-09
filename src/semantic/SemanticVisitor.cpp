@@ -1263,26 +1263,15 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
         std::set<const Type *> foundCaseTypes = {};
         // TODO: Maybe make so these can return values?
 
-        DeepRestData *restDat = new DeepRestData(ctx->rest);
-        std::deque<DeepRestData *> *rest = new std::deque<DeepRestData *>();
-        std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
-        if (bindings.has_value())
-        {
-            for (auto a : *bindings.value())
-                rest->push_back(a);
-        }
-
-        rest->push_front(restDat);
-
-        for (auto b : ctx->matchAlternative())
-        {
-            bindRestData(b->eval, rest);
-        }
-
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::MatchAlternativeContext>(
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::MatchStatementContext, BismuthParser::MatchAlternativeContext>(
             ctx,
+            [this, ctx](std::deque<DeepRestData *> *rest) {
+                for (auto b : ctx->matchAlternative())
+                {
+                    bindRestData(b->eval, rest);
+                }
+            },
             ctx->matchAlternative(),
-            restDat,
             false,
             [this, ctx, &cases, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
             {
@@ -1350,7 +1339,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
-        return new TMatchStatementNode(sumType, cond, cases, restDat->post, ctx->getStart());
+        return new TMatchStatementNode(sumType, cond, cases, dat.post, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString());
@@ -1406,28 +1395,18 @@ std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCt
     if (ctx->falseBlk)
         blksCtx.push_back(ctx->falseBlk);
 
-    DeepRestData *restDat = new DeepRestData(ctx->rest);
-    std::deque<DeepRestData *> *rest = new std::deque<DeepRestData *>();
-    std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
-    if (bindings.has_value())
-    {
-        for (auto a : *bindings.value())
-            rest->push_back(a);
-    }
-    rest->push_front(restDat); // Is deque so that way we keep things reversed
-
-    for (auto b : blksCtx)
-    {
-        for (auto c : b->stmts)
-        {
-            bindRestData(c, rest);
-        }
-    }
-
-    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::BlockContext>(
+    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ConditionalStatementContext, BismuthParser::BlockContext>(
         ctx,
+        [this, blksCtx](std::deque<DeepRestData *> *rest) {
+            for (auto b : blksCtx)
+            {
+                for (auto c : b->stmts)
+                {
+                    bindRestData(c, rest);
+                }
+            }
+        },
         blksCtx,
-        restDat, // ctx->rest,
         blksCtx.size() == 1,
         [this](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
         {
@@ -1442,10 +1421,10 @@ std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCt
 
     if (ctx->falseBlk)
     {
-        return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), restDat->post, (TBlockNode *)dat.cases.at(1));
+        return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post, (TBlockNode *)dat.cases.at(1));
     }
 
-    return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), restDat->post);
+    return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post);
 }
 
 std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SelectStatementContext *ctx)
@@ -1456,30 +1435,19 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         return errorHandler.addError(ctx->getStart(), "Select statement expected at least one alternative, but was given 0!");
     }
 
-    DeepRestData *restDat = new DeepRestData(ctx->rest);
-    std::deque<DeepRestData *> *rest = new std::deque<DeepRestData *>();
-    std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
-    if (bindings.has_value())
-    {
-        for (auto a : *bindings.value())
-            rest->push_back(a);
-    }
-
-    rest->push_front(restDat); // Is deque so that way we keep things reversed
-
-    for (auto b : ctx->cases)
-    {
-        bindRestData(b->eval, rest);
-    }
-
     unsigned int case_count = 0;
 
     std::vector<TSelectAlternativeNode *> alts;
 
-    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::SelectAlternativeContext>(
+    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::SelectStatementContext, BismuthParser::SelectAlternativeContext>(
         ctx,
+        [this, ctx](std::deque<DeepRestData *> *rest) {
+            for (auto b : ctx->cases)
+            {
+                bindRestData(b->eval, rest);
+            }
+        },
         ctx->cases,
-        restDat, // ctx->rest,
         true,
         [this, ctx, &case_count, &alts](BismuthParser::SelectAlternativeContext *e) -> std::variant<TypedNode *, ErrorChain *>
         {
@@ -1541,7 +1509,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     }
 
     ConditionalData dat = std::get<ConditionalData>(branchOpt);
-    return new TSelectStatementNode(ctx->getStart(), alts, restDat->post);
+    return new TSelectStatementNode(ctx->getStart(), alts, dat.post);
 }
 
 std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ReturnStatementContext *ctx)
@@ -2139,29 +2107,18 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             return errorHandler.addError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
         }
 
-        DeepRestData *restDat = new DeepRestData(ctx->rest);
-        std::deque<DeepRestData *> *rest = new std::deque<DeepRestData *>();
-        std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
-        if (bindings.has_value())
-        {
-            for (auto a : *bindings.value())
-                rest->push_back(a);
-        }
-
-        rest->push_front(restDat); // Is deque so that way we keep things reversed
-
-        for (auto b : ctx->protoAlternative())
-        {
-            bindRestData(b->eval, rest);
-        }
-
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
 
         unsigned int branch = 0;
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::StatementContext>(
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ProgramCaseContext, BismuthParser::StatementContext>(
             ctx,
+            [this, ctx](std::deque<DeepRestData *> *rest) {
+                for (auto b : ctx->protoAlternative())
+                {
+                    bindRestData(b->eval, rest);
+                }
+            },
             alternatives,
-            restDat,
             false,
             [this, savedRest, sequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
@@ -2197,7 +2154,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
-        return new TChannelCaseStatementNode(sym, dat.cases, restDat->post, ctx->getStart());
+        return new TChannelCaseStatementNode(sym, dat.cases, dat.post, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot case on non-channel: " + id);
@@ -2476,31 +2433,21 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         if (ctx->falseBlk)
             blksCtx.push_back(ctx->falseBlk);
 
-        DeepRestData *restDat = new DeepRestData(ctx->rest);
-        std::deque<DeepRestData *> *rest = new std::deque<DeepRestData *>();
-        std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
-        if (bindings.has_value())
-        {
-            for (auto a : *bindings.value())
-                rest->push_back(a);
-        }
-
-        rest->push_front(restDat);
-
-        for (auto b : blksCtx) // TODO: Methodize this w/ other conditions?
-        {
-            for (auto c : b->stmts)
-            {
-                bindRestData(c, rest);
-            }
-        }
 
         unsigned int idx = 0;
 
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::BlockContext>(
+        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ProgramAcceptIfContext, BismuthParser::BlockContext>(
             ctx,
+            [this, blksCtx](std::deque<DeepRestData *> *rest) {
+                for (auto b : blksCtx) // TODO: Methodize this w/ other conditions?
+                {
+                    for (auto c : b->stmts)
+                    {
+                        bindRestData(c, rest);
+                    }
+                }
+            },
             blksCtx,
-            restDat,
             blksCtx.size() == 1, // TODO: VERIFY
             [this, &idx, id, acceptOpt](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
             {
@@ -2534,10 +2481,10 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
         if (ctx->falseBlk)
         {
-            return new TProgramAcceptIfNode(ctx->getStart(), sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), restDat->post, (TBlockNode *)dat.cases.at(1));
+            return new TProgramAcceptIfNode(ctx->getStart(), sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post, (TBlockNode *)dat.cases.at(1));
         }
 
-        return new TProgramAcceptIfNode(ctx->getStart(), sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), restDat->post);
+        return new TProgramAcceptIfNode(ctx->getStart(), sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post);
         /*
         const ProtocolSequence *postC = channel->getProtocolCopy();
         postC->guard();
@@ -2639,14 +2586,32 @@ std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExp
     return new TAsChannelNode(tn, ctx->getStart());
 }
 
-template <typename T>
+
+template <RestRuleContext R, typename T>
 inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisitor::checkBranch(
-    antlr4::ParserRuleContext *ctx,
+    R *ctx,
+    std::function<void(std::deque<DeepRestData *> *)> forwardBindings, 
     std::vector<T *> ctxCases,
-    DeepRestData *ctxRest,
     bool checkRestIndependently,
     std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
 {
+
+    DeepRestData *restDat = new DeepRestData(ctx->rest);
+    std::deque<DeepRestData *> *rest = new std::deque<DeepRestData *>();
+    std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
+    if (bindings.has_value())
+    {
+        for (auto a : *bindings.value())
+            rest->push_back(a);
+    }
+
+    
+    rest->push_front(restDat);
+
+    forwardBindings(rest); 
+
+
+
     std::optional<std::deque<DeepRestData *> *> deepRest = restBindings->getBinding(ctx);
 
     std::vector<TypedNode *> cases;
@@ -2654,31 +2619,29 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
     STManager *origStmgr = this->stmgr;
 
     const auto checkCase = [&](antlr4::Token * branchToken, bool checkRest, std::string branchErrorMessage, std::string subsequentErrorMessage) -> std::optional<ErrorChain *>{
-        // if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
         if(checkRest)
         {
-            for (auto s : ctxRest->ctxRest)
+            for (auto s : restDat->ctxRest)
             {
                 std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
 
                 if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
                 {
-                    (*e)->addError(branchToken, branchErrorMessage); // "Failed to type check code following branch");
+                    (*e)->addError(branchToken, branchErrorMessage);
                     return *e;
                 }
 
-                if (!ctxRest->isGenerated)
+                if (!restDat->isGenerated)
                 {
-                    ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
+                    restDat->post.push_back(std::get<TypedNode *>(rOpt));
                 }
             }
 
-            // restVecFilled = true;
-            ctxRest->isGenerated = true;
+            restDat->isGenerated = true;
         }
 
         // FIXME: WILL NEED TO RUN THIS CHECK ON EACH ITERATION!
-        if (deepRest && !endsInReturn(ctxRest->post) && !endsInBranch(ctxRest->post))
+        if (deepRest && !endsInReturn(restDat->post) && !endsInBranch(restDat->post))
         {
             for (auto r : *(deepRest.value()))
             {
@@ -2766,5 +2729,5 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
         if(errorOpt) return errorOpt.value();
     }
 
-    return ConditionalData(cases);
+    return ConditionalData(cases, restDat->post);
 }

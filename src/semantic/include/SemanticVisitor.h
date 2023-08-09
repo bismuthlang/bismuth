@@ -13,11 +13,17 @@
 
 #include "LinkedMap.h"
 
+#include <concepts>
 #include <regex>
 #include <variant>
 // typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message;
 // typedef
 
+template<typename T>                             
+concept RestRuleContext = requires(T a) {
+    std::is_base_of<antlr4::ParserRuleContext, T>::value;
+    { a.rest };
+};
 class SemanticVisitor : public BismuthBaseVisitor
 {
 
@@ -464,9 +470,9 @@ public:
     struct ConditionalData
     {
         vector<TypedNode *> cases;
-        // vector<TypedNode *> post;
+        vector<TypedNode *> post;
 
-        ConditionalData(vector<TypedNode *> cases) : cases(cases)
+        ConditionalData(vector<TypedNode *> cases, vector<TypedNode *> post) : cases(cases), post(post)
         {
         }
     };
@@ -481,11 +487,12 @@ public:
         DeepRestData(vector<BismuthParser::StatementContext *> ctx) : ctxRest(ctx), isGenerated(false) {}
     };
 
-    template <typename T>
+
+    template <RestRuleContext R, typename T>
     inline std::variant<ConditionalData, ErrorChain *> checkBranch(
-        antlr4::ParserRuleContext *ctx,
+        R *ctx,
+        std::function<void(std::deque<DeepRestData *> *)> forwardBindings, 
         std::vector<T *> ctxCases,
-        DeepRestData *ctxRest,
         bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck);
         
