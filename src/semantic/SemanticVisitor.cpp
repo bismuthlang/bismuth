@@ -377,7 +377,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitProductContext *ctx)
 {
     std::string name = ctx->v->getText();
-    std::optional<Symbol> opt = stmgr->lookup(name);
+    std::optional<Symbol *> opt = stmgr->lookup(name);
 
     if (!opt)
     {
@@ -2006,7 +2006,7 @@ std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
         return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
     }
 
-    Symbol *sym = opt.value().second;
+    Symbol *sym = opt.value();
 
     std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
 
@@ -2035,7 +2035,7 @@ std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssign
         return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
     }
 
-    Symbol *sym = opt.value().second;
+    Symbol *sym = opt.value();
 
     std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
 
@@ -2063,7 +2063,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
     }
 
-    Symbol *sym = opt.value().second;
+    Symbol *sym = opt.value();
     // stmgr->removeSymbol(sym);
 
     std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
@@ -2536,7 +2536,7 @@ std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
         (*e)->addError(ctx->getStart(), "Failed to type check exec");
         return *e;
     }
-    // Symbol *sym = opt.value().second;
+    // Symbol *sym = opt.value();
     TypedNode *prog = std::get<TypedNode *>(opt);
 
     std::optional<const TypeProgram *> invOpt = type_cast<TypeProgram>(prog->getType());

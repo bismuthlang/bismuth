@@ -39,7 +39,6 @@ If you made changes for your platform to any of the .cmake files or CMakeLists.t
 - `/src/lexparse` - The language's grammar 
 - `/src/runtime` - The language's runtime library
 - `/src/semantic` - The language's semantic analysis phase (type checking, type inference, etc).
-- `/src/astgen` - Phase for converting parse tree into the untyped AST.
 - `/src/symbol` - Files related to the symbol table and type definitions
 - `/src/utility` - Misc. files required for the compiler--primarily relating to test cases and error handling
 - `/test` - Compiler test cases primarily broken down based on corresponding file in `/src`.
