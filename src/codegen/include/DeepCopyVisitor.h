@@ -270,7 +270,8 @@ private:
             if(infType->hasBeenInferred()) {
                 return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, addrMap);// , GC_MALLOC);
             }
-            return std::nullopt; //FIXME: ADD ERROR 
+            errorHandler->addError(nullptr, "Cannot make a copy of a variable that has yet to be inferred");
+            return std::nullopt; // TODO: Probably add a compiler pass to make this impossible. After all, such an error message is hardly useful. 
         }
 
         Function *testFn = module->getFunction("_clone_" + type->toString());
