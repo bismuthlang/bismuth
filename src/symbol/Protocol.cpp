@@ -345,7 +345,8 @@ bool ProtocolSequence::contract() const
 
     const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto.value());
 
-    return this->insertSteps(wn->getInnerProtocol()->steps);
+    this->insertSteps(wn->getInnerProtocol()->steps);
+    return true; 
 }
 
 bool ProtocolSequence::weaken() const
@@ -451,18 +452,17 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 
     // FIXME: NEEDS UPDATE PER CLOSE!
     unsigned int ans = 1;
-    const Protocol *proto = steps.front();
-    const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(proto);
+    optional<const Protocol *>protoOpt = this->getFirst(); // Is it safe to pop here vs in the check for proto equality?
+    if(!protoOpt) return 0; 
+
+    const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(protoOpt.value());
 
     for (const ProtocolSequence *p : ic->getOptions())
     {
         if (ps->toString() == p->toString()) // FIXME: DO BETTER
         {
-            ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-            u_this->steps.erase(steps.begin());
-            vector<const Protocol *> other = p->steps;
-            u_this->steps.insert(steps.begin(), other.begin(), other.end());
-
+            if(!this->popFirst().has_value()) return 0;  
+            this->insertSteps(p->steps); 
             return ans;
         }
         ans++;
@@ -615,10 +615,15 @@ optional<const Protocol *> ProtocolSequence::popFirst() const
     return ans;
 }
 
-bool ProtocolSequence::insertSteps(vector<const Protocol *> ins) const 
+void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const 
 {
     if (isComplete())
-        return false; 
+    {
+        ProtocolSequence * m_seq = const_cast<ProtocolSequence *>(this); 
+        m_seq->steps.insert(m_seq->steps.begin(), ins.begin(), ins.end());
+        return;// true;
+    }
+    //     return false; 
 
     const ProtocolSequence * tempSeq = this; 
     const ProtocolSequence ** seqPtr = & tempSeq; 
@@ -633,10 +638,10 @@ bool ProtocolSequence::insertSteps(vector<const Protocol *> ins) const
         seqPtr = &seq; 
     }
 
-    const Protocol * ans = (*seqPtr)->steps.front(); 
+
     ProtocolSequence * m_seq = const_cast<ProtocolSequence *>(*seqPtr); 
     m_seq->steps.insert(m_seq->steps.begin(), ins.begin(), ins.end());
-    return true;
+    return;// true;
 }
 
 /*********************************************
