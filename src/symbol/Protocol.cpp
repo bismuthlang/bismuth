@@ -360,27 +360,31 @@ bool ProtocolSequence::weaken() const
     return this->popFirst().has_value(); // should always be true 
 }
 
-bool ProtocolSequence::isOC(bool includeGuarded) const
+
+optional<const ProtocolOC*> ProtocolSequence::getOC(bool includeGuarded) const
 {
     if (isComplete())
-        return false;
-    // const Protocol *proto = steps.front();
+        return std::nullopt;
 
     if (!includeGuarded &&
         (steps.front()->isGuarded() || this->isGuarded())) //TODO: WHY DOESN'T ISWN HAVE THIS?
-        return false;
+        return std::nullopt; 
 
     optional<const Protocol *> protoOpt = this->getFirst(); 
     if(!protoOpt)
-        return false; 
+        return std::nullopt; 
     
-    const Protocol *proto = protoOpt.value();
-    if (const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto))
+    if (const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(protoOpt.value()))
     {
-        return true;
+        return oc;
     }
 
-    return false;
+    return std::nullopt;
+}
+
+bool ProtocolSequence::isOC(bool includeGuarded) const
+{
+    return getOC(includeGuarded).has_value(); 
 }
 
 optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
@@ -398,14 +402,17 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
     return ans;
 }
 
+// Odd how this one isn't really a modifier to the proto... huh...
 optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
 {
     if (!isOC(true))
         return std::nullopt;
 
-    const Protocol *proto = steps.front();
-    const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
-    return toSequence(wn->getInnerProtocol()->getCopy());
+    optional<const Protocol *> protoOpt = this->getFirst();
+    if(!protoOpt) return std::nullopt; //Should never happen due to isOC check
+
+    const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(protoOpt.value());
+    return toSequence(oc->getInnerProtocol()->getCopy());
 }
 
 optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const

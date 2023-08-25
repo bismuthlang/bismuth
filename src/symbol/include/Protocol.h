@@ -26,6 +26,8 @@
 
 class Type; 
 
+class ProtocolOC; 
+
 class Protocol
 {
 protected:
@@ -152,6 +154,9 @@ private:
     std::optional<const Protocol*> getFirst() const;
     std::optional<const Protocol*> popFirst() const; 
     void insertSteps(vector<const Protocol*> ins) const; 
+
+
+    optional<const ProtocolOC*> getOC(bool includeGuarded=false) const;
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)
