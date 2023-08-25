@@ -26,6 +26,8 @@
 
 class Type; 
 
+class ProtocolSend; 
+class ProtocolRecv; 
 class ProtocolOC; 
 class ProtocolWN; 
 class ProtocolIChoice; 
@@ -124,8 +126,6 @@ public:
 
     optional<const Type *> send(const Type *ty) const;
 
-    bool canRecv() const;
-
     optional<const Type *> recv() const;
 
     // bool isWN() const;
@@ -155,7 +155,8 @@ private:
     std::optional<const Protocol*> popFirst() const; 
     void insertSteps(vector<const Protocol*> ins) const; 
 
-
+    optional<const ProtocolSend*> getSend() const;
+    optional<const ProtocolRecv*> getRecv() const;
     optional<const ProtocolOC*> getOC(bool includeGuarded=false) const;
     optional<const ProtocolWN*> getWN() const; 
     optional<const ProtocolIChoice*> getIntChoice() const; 

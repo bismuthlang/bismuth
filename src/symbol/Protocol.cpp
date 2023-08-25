@@ -247,7 +247,7 @@ bool ProtocolSequence::isComplete() const
     return steps.size() == 0;
 }
 
-optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
+optional<const ProtocolSend *> ProtocolSequence::getSend() const
 {
     if (isComplete())
         return std::nullopt;
@@ -262,10 +262,22 @@ optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
 
     if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(protoOpt.value()))
     {
-        if (ty->isSubtype(send->getSendType()))
-            return send->getSendType();
-        return std::nullopt;
+        return send; 
     }
+
+    return std::nullopt;
+}
+
+optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
+{
+    optional<const ProtocolSend *> sendOpt = this->getSend(); 
+    if(!sendOpt) return std::nullopt;  
+
+    const Type * sendTy = sendOpt.value()->getSendType();
+    
+    if (ty->isSubtype(sendTy))
+        return sendTy;
+
 
     return std::nullopt;
 }
@@ -282,39 +294,37 @@ optional<const Type *> ProtocolSequence::send(const Type *ty) const
     return ans;
 }
 
-bool ProtocolSequence::canRecv() const
+optional<const ProtocolRecv*> ProtocolSequence::getRecv() const
 {
     if (isComplete())
-        return false;
+        return std::nullopt;
 
     if (steps.front()->isGuarded() || this->isGuarded())
-        return false;
+        return std::nullopt;
 
     optional<const Protocol*> protoOpt = this->getFirst();
 
     if(!protoOpt)
-        return false; 
+        return std::nullopt; 
 
     if (const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(protoOpt.value()))
     {
-        return true; // ty->isSubtype(recv->getRecvType());
+        return recv; 
     }
 
-    return false;
+    return std::nullopt;
 }
 
 optional<const Type *> ProtocolSequence::recv() const
 {
     // FIXME: BETTER ERROR HANDLING
-    if (!canRecv())
-        return std::nullopt;
+    optional<const ProtocolRecv *> recv = this->getRecv(); 
 
-    const Protocol *proto = steps.front();
-    const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto);
+    if (!recv) return std::nullopt;
 
-    this->popFirst();
+    this->popFirst(); //TODO: ENSURE SAME AS getRecv value?
 
-    return recv->getRecvType();
+    return recv.value()->getRecvType();
 }
 
 bool ProtocolSequence::contract() const
