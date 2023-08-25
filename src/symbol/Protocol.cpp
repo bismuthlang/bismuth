@@ -354,7 +354,7 @@ optional<const ProtocolOC*> ProtocolSequence::getOC(bool includeGuarded) const
         return std::nullopt;
 
     if (!includeGuarded &&
-        (steps.front()->isGuarded() || this->isGuarded())) //TODO: WHY DOESN'T ISWN HAVE THIS?
+        (steps.front()->isGuarded() || this->isGuarded()))
         return std::nullopt; 
 
     optional<const Protocol *> protoOpt = this->getFirst(); 

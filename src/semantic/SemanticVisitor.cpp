@@ -1234,7 +1234,8 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later type inference purposes
                 stmgr->addSymbol(symbol);
 
-                a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Inefficient but needed for linears
+                // This is somewhat inefficient to have to repeat this for every single value, but needed if for linears and if we aren't purely FP.  
+                a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Does assignment node need to be list?
             }
         }
         // a.push_back(new AssignmentNode(s, exprOpt));
