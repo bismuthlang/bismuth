@@ -450,7 +450,6 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
     if (!isIntChoice())
         return 0;
 
-    // FIXME: NEEDS UPDATE PER CLOSE!
     unsigned int ans = 1;
     optional<const Protocol *>protoOpt = this->getFirst(); // Is it safe to pop here vs in the check for proto equality?
     if(!protoOpt) return 0; 
@@ -473,7 +472,6 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 
 bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const
 {
-    //FIXME: NEEDS UPDATE PER CLOSE!!
     if (isComplete())
         return false;
 
@@ -481,7 +479,7 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
     if (steps.front()->isGuarded() || this->isGuarded())
         return false;
 
-    optional<const Protocol*> protoOpt = this->getFirst();
+    optional<const Protocol*> protoOpt = this->popFirst();
 
     if(!protoOpt)
         return false; 
@@ -517,8 +515,8 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
             // errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
         }
 
-        ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-        u_this->steps.erase(steps.begin());
+        // ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+        // u_this->steps.erase(steps.begin());
 
         return true;
     }
