@@ -413,14 +413,15 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const
     if (!isOC(true))
         return std::nullopt;
 
-    const Protocol *proto = steps.front();
-    const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(proto);
+    optional<const Protocol *> protoOpt = this->getFirst();
+    if(!protoOpt) return std::nullopt; //Should never happen due to isOC check
+
+    const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(protoOpt.value());
     const ProtocolSequence *ans = toSequence(oc->getInnerProtocol()->getCopy());
 
-    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(ans);
-    u_this->steps.insert(ans->steps.end(), this->steps.begin(), this->steps.end());
+    insertSteps(ans->steps);
 
-    return ans;
+    return this;
 }
 
 // FIXME: METHODIZE A LOT OF THESE
