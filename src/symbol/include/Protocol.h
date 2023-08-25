@@ -27,6 +27,7 @@
 class Type; 
 
 class ProtocolOC; 
+class ProtocolIChoice; 
 
 class Protocol
 {
@@ -138,8 +139,6 @@ public:
     optional<const ProtocolSequence *> acceptWhileLoop() const;
     optional<const ProtocolSequence *> acceptIf() const; 
 
-    bool isIntChoice() const;
-
     unsigned int project(const ProtocolSequence *ps) const;
 
     bool isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const;
@@ -157,6 +156,8 @@ private:
 
 
     optional<const ProtocolOC*> getOC(bool includeGuarded=false) const;
+    optional<const ProtocolIChoice*> getIntChoice() const; 
+
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)

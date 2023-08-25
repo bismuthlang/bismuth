@@ -420,39 +420,35 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const
 }
 
 // FIXME: METHODIZE A LOT OF THESE
-bool ProtocolSequence::isIntChoice() const
+optional<const ProtocolIChoice*> ProtocolSequence::getIntChoice() const
 {
     if (isComplete())
-        return false;
+        return std::nullopt;
 
     if (steps.front()->isGuarded() || this->isGuarded())
-        return false;
+        return std::nullopt;
 
     optional<const Protocol*> protoOpt = this->getFirst(); 
 
     if(!protoOpt)
-        return false; 
+        return std::nullopt; 
 
-    if (const ProtocolIChoice *wn = dynamic_cast<const ProtocolIChoice *>(protoOpt.value()))
+    if (const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(protoOpt.value()))
     {
-        return true;
+        return ic;
     }
 
-    return false;
+    return std::nullopt;
 }
 
 unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 {
-    if (!isIntChoice())
-        return 0;
+    optional<const ProtocolIChoice *> ic = this->getIntChoice();
+    if(!ic) return 0; 
+
 
     unsigned int ans = 1;
-    optional<const Protocol *>protoOpt = this->getFirst(); // Is it safe to pop here vs in the check for proto equality?
-    if(!protoOpt) return 0; 
-
-    const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(protoOpt.value());
-
-    for (const ProtocolSequence *p : ic->getOptions())
+    for (const ProtocolSequence *p : ic.value()->getOptions())
     {
         if (ps->toString() == p->toString()) // FIXME: DO BETTER
         {
