@@ -317,41 +317,18 @@ optional<const Type *> ProtocolSequence::recv() const
     return recv->getRecvType();
 }
 
-bool ProtocolSequence::isWN() const
-{
-    if (isComplete())
-        return false;
-
-    optional<const Protocol *> protoOpt = this->getFirst(); 
-    if(!protoOpt)
-        return false; 
-    
-    const Protocol *proto = protoOpt.value();
-    if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto))
-    {
-        return true;
-    }
-
-    return false;
-}
-
 bool ProtocolSequence::contract() const
 {
-    if (!isWN())
-        return false;
+    optional<const ProtocolWN *> proto = this->getWN();
+    if(!proto) return false;
 
-    optional<const Protocol *> proto = this->getFirst(); // TODO: Handle more efficiently
-    if(!proto) return false; // Lots of these checks are basically redundant
-
-    const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto.value());
-
-    this->insertSteps(wn->getInnerProtocol()->steps);
+    this->insertSteps(proto.value()->getInnerProtocol()->steps);
     return true; 
 }
 
 bool ProtocolSequence::weaken() const
 {
-    if (!isWN())
+    if (!getWN())
         return false;
 
     if (steps.front()->isGuarded() || this->isGuarded())
@@ -381,6 +358,28 @@ optional<const ProtocolOC*> ProtocolSequence::getOC(bool includeGuarded) const
 
     return std::nullopt;
 }
+
+optional<const ProtocolWN*> ProtocolSequence::getWN() const
+{
+    if (isComplete())
+        return std::nullopt;
+
+    optional<const Protocol *> protoOpt = this->getFirst(); 
+    if(!protoOpt)
+        return std::nullopt; 
+    
+    if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(protoOpt.value()))
+    {
+        return wn;
+    }
+
+    return std::nullopt;
+}
+
+// bool ProtocolSequence::isWN() const
+// {
+//     return getWN().has_value();
+// }
 
 bool ProtocolSequence::isOC(bool includeGuarded) const
 {

@@ -27,6 +27,7 @@
 class Type; 
 
 class ProtocolOC; 
+class ProtocolWN; 
 class ProtocolIChoice; 
 
 class Protocol
@@ -127,7 +128,7 @@ public:
 
     optional<const Type *> recv() const;
 
-    bool isWN() const;
+    // bool isWN() const;
 
     bool contract() const;
 
@@ -156,6 +157,7 @@ private:
 
 
     optional<const ProtocolOC*> getOC(bool includeGuarded=false) const;
+    optional<const ProtocolWN*> getWN() const; 
     optional<const ProtocolIChoice*> getIntChoice() const; 
 
 };
