@@ -389,15 +389,11 @@ bool ProtocolSequence::isOC(bool includeGuarded) const
 
 optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
 {
-    if (!isOC())
-        return std::nullopt;
+    optional<const ProtocolOC *>oc = this->getOC(); 
+    if(!oc) return std::nullopt; 
 
-    const Protocol *proto = steps.front();
-    const ProtocolOC *wn = dynamic_cast<const ProtocolOC *>(proto);
-    const ProtocolSequence *ans = toSequence(wn->getInnerProtocol()->getCopy());
-    // FIXME: UPDATE
-    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-    u_this->steps.erase(steps.begin());
+    const ProtocolSequence *ans = toSequence(oc.value()->getInnerProtocol()->getCopy());
+    this->popFirst(); 
 
     return ans;
 }
@@ -405,26 +401,18 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
 // Odd how this one isn't really a modifier to the proto... huh...
 optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
 {
-    if (!isOC(true))
-        return std::nullopt;
+    optional<const ProtocolOC *> oc = this->getOC(true);
+    if(!oc) return std::nullopt; 
 
-    optional<const Protocol *> protoOpt = this->getFirst();
-    if(!protoOpt) return std::nullopt; //Should never happen due to isOC check
-
-    const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(protoOpt.value());
-    return toSequence(oc->getInnerProtocol()->getCopy());
+    return toSequence(oc.value()->getInnerProtocol()->getCopy());
 }
 
 optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const
 {
-    if (!isOC(true))
-        return std::nullopt;
+    optional<const ProtocolOC *> oc = this->getOC(true); 
+    if(!oc) return std::nullopt; 
 
-    optional<const Protocol *> protoOpt = this->getFirst();
-    if(!protoOpt) return std::nullopt; //Should never happen due to isOC check
-
-    const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(protoOpt.value());
-    const ProtocolSequence *ans = toSequence(oc->getInnerProtocol()->getCopy());
+    const ProtocolSequence *ans = toSequence(oc.value()->getInnerProtocol()->getCopy());
 
     insertSteps(ans->steps);
 
