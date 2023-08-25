@@ -340,15 +340,12 @@ bool ProtocolSequence::contract() const
     if (!isWN())
         return false;
 
-    const Protocol *proto = steps.front(); // TODO: Handle more efficiently
-    const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto);
+    optional<const Protocol *> proto = this->getFirst(); // TODO: Handle more efficiently
+    if(!proto) return false; // Lots of these checks are basically redundant
 
-    // FIXME: NEEDS UPDATE PER CLOSABLE?
-    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-    vector<const Protocol *> other = wn->getInnerProtocol()->steps;
+    const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto.value());
 
-    u_this->steps.insert(steps.begin(), other.begin(), other.end());
-    return true;
+    return this->insertSteps(wn->getInnerProtocol()->steps);
 }
 
 bool ProtocolSequence::weaken() const
@@ -359,9 +356,7 @@ bool ProtocolSequence::weaken() const
     if (steps.front()->isGuarded() || this->isGuarded())
         return false;
 
-    this->popFirst(); 
-
-    return true;
+    return this->popFirst().has_value(); // should always be true 
 }
 
 bool ProtocolSequence::isOC(bool includeGuarded) const
@@ -618,6 +613,30 @@ optional<const Protocol *> ProtocolSequence::popFirst() const
     m_seq->steps.erase(m_seq->steps.begin());
 
     return ans;
+}
+
+bool ProtocolSequence::insertSteps(vector<const Protocol *> ins) const 
+{
+    if (isComplete())
+        return false; 
+
+    const ProtocolSequence * tempSeq = this; 
+    const ProtocolSequence ** seqPtr = & tempSeq; 
+
+    while(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
+    {
+        const ProtocolSequence * seq = protoClose->getInnerProtocol();
+
+        if(seq->isComplete())
+            break;
+        
+        seqPtr = &seq; 
+    }
+
+    const Protocol * ans = (*seqPtr)->steps.front(); 
+    ProtocolSequence * m_seq = const_cast<ProtocolSequence *>(*seqPtr); 
+    m_seq->steps.insert(m_seq->steps.begin(), ins.begin(), ins.end());
+    return true;
 }
 
 /*********************************************

@@ -151,6 +151,7 @@ public:
 private: 
     std::optional<const Protocol*> getFirst() const;
     std::optional<const Protocol*> popFirst() const; 
+    bool insertSteps(vector<const Protocol*> ins) const; 
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)
