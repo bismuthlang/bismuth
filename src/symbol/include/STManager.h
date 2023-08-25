@@ -16,6 +16,7 @@
 #include <optional>
 
 #include <stack>
+#include <iostream>
 
 enum StopType
 {
