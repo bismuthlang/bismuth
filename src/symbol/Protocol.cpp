@@ -16,12 +16,12 @@ std::string ProtocolRecv::as_str() const
 
 const Protocol *ProtocolRecv::getInverse() const //FIXME: ADD GUARD?
 {
-    return new ProtocolSend(this->recvType);
+    return new ProtocolSend(this->inCloseable, this->recvType);
 }
 
 const Protocol *ProtocolRecv::getCopy() const
 {
-    auto ans = new ProtocolRecv(this->recvType->getCopy()); 
+    auto ans = new ProtocolRecv(this->inCloseable, this->recvType->getCopy()); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -43,12 +43,12 @@ std::string ProtocolSend::as_str() const
     
 const Protocol *ProtocolSend::getInverse() const
 {
-    return new ProtocolRecv(this->sendType);
+    return new ProtocolRecv(this->inCloseable, this->sendType);
 }
 
 const Protocol *ProtocolSend::getCopy() const
 {
-    auto ans = new ProtocolSend(this->sendType->getCopy());; 
+    auto ans = new ProtocolSend(this->inCloseable, this->sendType->getCopy());; 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -68,12 +68,12 @@ std::string ProtocolWN::as_str() const
 }
 const Protocol *ProtocolWN::getInverse() const
 {
-    return new ProtocolOC(toSequence(this->proto->getInverse()));
+    return new ProtocolOC(this->inCloseable, this->proto->getInverse());
 }
 
 const Protocol *ProtocolWN::getCopy() const
 {
-    auto ans = new ProtocolWN(toSequence(this->proto->getCopy())); 
+    auto ans = new ProtocolWN(this->inCloseable, this->proto->getCopy());
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -92,12 +92,12 @@ std::string ProtocolOC::as_str() const
 }
 const Protocol *ProtocolOC::getInverse() const
 {
-    return new ProtocolWN(toSequence(this->proto->getInverse()));
+    return new ProtocolWN(this->inCloseable, this->proto->getInverse());
 }
 
 const Protocol *ProtocolOC::getCopy() const
 {
-    auto ans = new ProtocolOC(toSequence(this->proto->getCopy())); 
+    auto ans = new ProtocolOC(this->inCloseable, this->proto->getCopy()); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -130,10 +130,10 @@ const ProtocolEChoice *ProtocolIChoice::getInverse() const
 
     for (auto p : this->opts)
     {
-        opts.insert(toSequence(p->getInverse()));
+        opts.insert(p->getInverse());
     }
 
-    return new ProtocolEChoice(opts);
+    return new ProtocolEChoice(this->inCloseable, opts);
 }
 
 const Protocol *ProtocolIChoice::getCopy() const
@@ -142,10 +142,10 @@ const Protocol *ProtocolIChoice::getCopy() const
 
     for (auto p : this->opts)
     {
-        opts.insert(toSequence(p->getCopy()));
+        opts.insert(p->getCopy());
     }
 
-    auto ans = new ProtocolIChoice(opts); 
+    auto ans = new ProtocolIChoice(this->inCloseable, opts); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -177,10 +177,10 @@ const Protocol *ProtocolEChoice::getInverse() const
 
     for (auto p : this->opts)
     {
-        opts.insert(toSequence(p->getInverse()));
+        opts.insert(p->getInverse());
     }
 
-    return new ProtocolIChoice(opts);
+    return new ProtocolIChoice(this->inCloseable, opts);
 }
 
 const Protocol *ProtocolEChoice::getCopy() const
@@ -189,10 +189,10 @@ const Protocol *ProtocolEChoice::getCopy() const
 
     for (auto p : this->opts)
     {
-        opts.insert(toSequence(p->getCopy()));
+        opts.insert(p->getCopy());
     }
 
-    auto ans = new ProtocolEChoice(opts); 
+    auto ans = new ProtocolEChoice(this->inCloseable, opts); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -225,7 +225,7 @@ const ProtocolSequence *ProtocolSequence::getInverse() const
         invs.push_back(p->getInverse());
     }
 
-    return new ProtocolSequence(invs);
+    return new ProtocolSequence(this->inCloseable, invs);
 }
 
 const ProtocolSequence *ProtocolSequence::getCopy() const
@@ -237,7 +237,7 @@ const ProtocolSequence *ProtocolSequence::getCopy() const
         invs.push_back(p->getCopy());
     }
 
-    auto ans = new ProtocolSequence(invs); 
+    auto ans = new ProtocolSequence(this->inCloseable, invs); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -402,7 +402,7 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
     optional<const ProtocolOC *>oc = this->getOC(); 
     if(!oc) return std::nullopt; 
 
-    const ProtocolSequence *ans = toSequence(oc.value()->getInnerProtocol()->getCopy());
+    const ProtocolSequence *ans = oc.value()->getInnerProtocol()->getCopy();
     this->popFirst(); 
 
     return ans;
@@ -414,7 +414,7 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
     optional<const ProtocolOC *> oc = this->getOC(true);
     if(!oc) return std::nullopt; 
 
-    return toSequence(oc.value()->getInnerProtocol()->getCopy());
+    return oc.value()->getInnerProtocol()->getCopy();
 }
 
 optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const
@@ -422,7 +422,7 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const
     optional<const ProtocolOC *> oc = this->getOC(true); 
     if(!oc) return std::nullopt; 
 
-    const ProtocolSequence *ans = toSequence(oc.value()->getInnerProtocol()->getCopy());
+    const ProtocolSequence *ans = oc.value()->getInnerProtocol()->getCopy();
 
     insertSteps(ans->steps);
 
@@ -659,12 +659,12 @@ std::string ProtocolClose::as_str() const
 }
 const Protocol *ProtocolClose::getInverse() const
 {
-    return new ProtocolClose(toSequence(this->proto->getInverse()), this->getCloseNumber());
+    return new ProtocolClose(this->inCloseable, this->proto->getInverse(), this->getCloseNumber());
 }
 
 const Protocol *ProtocolClose::getCopy() const
 {
-    auto ans = new ProtocolClose(toSequence(this->proto->getCopy()), this->getCloseNumber()); 
+    auto ans = new ProtocolClose(this->inCloseable, this->proto->getCopy(), this->getCloseNumber()); 
     ans->guardCount = this->guardCount;
     return ans;
 }

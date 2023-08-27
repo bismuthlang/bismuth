@@ -204,7 +204,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             {
                 const TypeProgram *inv = progOpt.value();
                 // FIXME: DO SUBTYPING BETTER!
-                if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence({new ProtocolSend(Types::DYN_INT)}))))
+                if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
                 {
                     errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString());
                 }
@@ -1121,7 +1121,7 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     TypedNode *var = std::get<TypedNode *>(varOpt);
 
-    
+
 
     // Determine the expression type
     std::variant<TypedNode *, ErrorChain *> exprOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->a->accept(this));
@@ -2091,7 +2091,6 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
             const ProtocolSequence *a = std::get<const ProtocolSequence *>(protoOpt);
 
-            // auto a = toSequence(any2Protocol(alt->check->accept(this)));
             opts.insert(a);
             optsI.insert({a->getInverse(), alt->eval});
         }
@@ -2191,7 +2190,6 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
         const ProtocolSequence *ps = std::get<const ProtocolSequence *>(protoOpt);
 
-        // const ProtocolSequence *ps = toSequence(any2Protocol(ctx->sel->accept(this)));
         unsigned int projectIndex = channel->getProtocol()->project(ps);
 
         if (!projectIndex)

@@ -24,7 +24,7 @@ std::variant<const ProtocolSequence *, ErrorChain *> ProtocolVisitor::visitProto
         steps.push_back(proto);
     }
 
-    return new ProtocolSequence(steps);
+    return new ProtocolSequence(this->inClose, steps);
 }
 
 std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::RecvTypeContext *ctx)
@@ -45,10 +45,10 @@ std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(Bis
     }
 
 
-    return new ProtocolRecv(ty);
+    return new ProtocolRecv(this->inClose, ty);
 }
 
-// FIXME: ADD TEST CASES WITH BRANCHES, LOOPS, SEQ, ETC TO VERIFY THISLL CATCH, POTENTIALLY METHODIZE THESE ALL
+// FIXME: ADD TEST CASES WITH BRANCHES, LOOPS, SEQ, ETC TO VERIFY THIS'LL CATCH, POTENTIALLY METHODIZE THESE ALL
 std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::SendTypeContext *ctx)
 {
     std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(semanticVisitor));
@@ -66,7 +66,7 @@ std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(Bis
         return errorHandler.addError(ctx->getStart(), "Cannot send non-lossy type " + ty->toString() + " in a closeable protocol"); 
     }
 
-    return new ProtocolSend(ty);
+    return new ProtocolSend(this->inClose, ty);
 }
 
 std::variant<const ProtocolWN *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::WnProtoContext *ctx)
@@ -83,7 +83,7 @@ std::variant<const ProtocolWN *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
     }
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);
-    return new ProtocolWN(toSequence(proto));
+    return new ProtocolWN(this->inClose, toSequence(proto));
 }
 
 std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::OcProtoContext *ctx)
@@ -100,7 +100,7 @@ std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
     }
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);
-    return new ProtocolOC(toSequence(proto));
+    return new ProtocolOC(this->inClose, toSequence(proto));
 }
 
 std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::ExtChoiceProtoContext *ctx)
@@ -133,7 +133,7 @@ std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(
     
     this->closeNumber = maxCloseNumber; 
 
-    return new ProtocolEChoice(opts);
+    return new ProtocolEChoice(this->inClose, opts);
 }
 
 std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::IntChoiceProtoContext *ctx)
@@ -166,7 +166,7 @@ std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 
     this->closeNumber = maxCloseNumber; 
 
-    return new ProtocolIChoice(opts);
+    return new ProtocolIChoice(this->inClose, opts);
 }
 
 std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::CloseableProtoContext *ctx)
@@ -189,5 +189,5 @@ std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(Bi
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);
 
-    return new ProtocolClose(toSequence(proto), ++closeNumber); // NOTE, must be ++i otherwise first would be zero, which could potentially be a problem?
+    return new ProtocolClose(origStatus, toSequence(proto), ++closeNumber); // NOTE, must be ++i otherwise first would be zero, which could potentially be a problem?
 }

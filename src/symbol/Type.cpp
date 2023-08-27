@@ -202,7 +202,7 @@ const ProtocolSequence *TypeChannel::getProtocol() const
 
 const ProtocolSequence *TypeChannel::getProtocolCopy() const
 {
-    return toSequence(protocol->getCopy());
+    return protocol->getCopy();
 }
 
 const TypeChannel *TypeChannel::getCopy() const

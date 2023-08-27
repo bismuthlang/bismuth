@@ -3,12 +3,12 @@
 /**
  * @file Protocol.h
  * @author Alex Friedman (ahfriedman.com)
- * @brief 
+ * @brief
  * @version 1.3.4
  * @date 2023-08-04
- * 
+ *
  * @copyright Copyright (c) 2023
- * 
+ *
  */
 #include <string>  //Includes strings
 #include <sstream> //Used for string streams
@@ -24,22 +24,23 @@
 
 #include "Type.h"
 
-class Type; 
+class Type;
 
-class ProtocolSend; 
-class ProtocolRecv; 
-class ProtocolOC; 
-class ProtocolWN; 
-class ProtocolIChoice; 
+class ProtocolSend;
+class ProtocolRecv;
+class ProtocolOC;
+class ProtocolWN;
+class ProtocolIChoice;
 
 class Protocol
 {
 protected:
     virtual std::string as_str() const = 0;
     mutable unsigned int guardCount = 0;
+    const bool inCloseable = false;
 
 public:
-    Protocol() {}; 
+    Protocol(bool _inCloseable) : inCloseable(_inCloseable){};
 
     virtual ~Protocol() = default;
 
@@ -51,7 +52,7 @@ public:
     std::string toString() const
     {
         std::ostringstream description;
-        for (unsigned int i = 0; i < guardCount; i++) //FIXME: ADD TO OTHERS
+        for (unsigned int i = 0; i < guardCount; i++) // FIXME: ADD TO OTHERS
         {
             description << "*";
         }
@@ -61,11 +62,13 @@ public:
         return description.str();
     }
 
+    bool isInCloseable() const { return inCloseable; }
+
     virtual const Protocol *getInverse() const = 0;
 
     virtual const Protocol *getCopy() const = 0;
 
-    // virtual bool isClosable() const = 0; 
+    // virtual bool isClosable() const = 0;
 
     // FIXME: ALMOST SAME AS TO TYPE!
     virtual bool isGuarded() const { return guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
@@ -83,7 +86,6 @@ public:
         guardCount = guardCount - 1;
         return true;
     }
-
 };
 
 // FIXME: DO BETTER
@@ -106,13 +108,13 @@ private:
     vector<const Protocol *> steps;
 
 public:
-    ProtocolSequence(vector<const Protocol *> p)
-    {
-        steps = p;
-    }
+    ProtocolSequence(bool inCloseable, vector<const Protocol *> p)
+        : Protocol(inCloseable), steps(p)
+
+    {}
 
     // FIXME: DO BETTER!
-    const vector<const Protocol*> getSteps() const { return steps; }
+    const vector<const Protocol *> getSteps() const { return steps; }
 
     std::string as_str() const override;
 
@@ -134,11 +136,11 @@ public:
 
     bool weaken() const;
 
-    bool isOC(bool includeGuarded=false) const;
+    bool isOC(bool includeGuarded = false) const;
 
     optional<const ProtocolSequence *> acceptLoop() const;
     optional<const ProtocolSequence *> acceptWhileLoop() const;
-    optional<const ProtocolSequence *> acceptIf() const; 
+    optional<const ProtocolSequence *> acceptIf() const;
 
     unsigned int project(const ProtocolSequence *ps) const;
 
@@ -150,17 +152,16 @@ public:
     void guard() const override;
     bool unguard() const override;
 
-private: 
-    std::optional<const Protocol*> getFirst() const;
-    std::optional<const Protocol*> popFirst() const; 
-    void insertSteps(vector<const Protocol*> ins) const; 
+private:
+    std::optional<const Protocol *> getFirst() const;
+    std::optional<const Protocol *> popFirst() const;
+    void insertSteps(vector<const Protocol *> ins) const;
 
-    optional<const ProtocolSend*> getSend() const;
-    optional<const ProtocolRecv*> getRecv() const;
-    optional<const ProtocolOC*> getOC(bool includeGuarded=false) const;
-    optional<const ProtocolWN*> getWN() const; 
-    optional<const ProtocolIChoice*> getIntChoice() const; 
-
+    optional<const ProtocolSend *> getSend() const;
+    optional<const ProtocolRecv *> getRecv() const;
+    optional<const ProtocolOC *> getOC(bool includeGuarded = false) const;
+    optional<const ProtocolWN *> getWN() const;
+    optional<const ProtocolIChoice *> getIntChoice() const;
 };
 
 inline const ProtocolSequence *toSequence(const Protocol *proto)
@@ -173,7 +174,7 @@ inline const ProtocolSequence *toSequence(const Protocol *proto)
     vector<const Protocol *> a;
     a.push_back(proto);
 
-    return new ProtocolSequence(a);
+    return new ProtocolSequence(proto->isInCloseable(), a);
 }
 
 /*******************************************
@@ -187,10 +188,9 @@ private:
     const Type *recvType;
 
 public:
-    ProtocolRecv(const Type *v)
-    {
-        recvType = v;
-    }
+    ProtocolRecv(bool inCloseable, const Type *v)
+        : Protocol(inCloseable), recvType(v)
+    {}
 
     std::string as_str() const override;
 
@@ -211,10 +211,9 @@ private:
     const Type *sendType;
 
 public:
-    ProtocolSend(const Type *v)
-    {
-        sendType = v;
-    }
+    ProtocolSend(bool inCloseable, const Type *v)
+        : Protocol(inCloseable), sendType(v)
+    {}
 
     std::string as_str() const override;
 
@@ -235,10 +234,9 @@ private:
     const ProtocolSequence *proto;
 
 public:
-    ProtocolWN(const ProtocolSequence *p)
-    {
-        proto = p;
-    }
+    ProtocolWN(bool inCloseable, const ProtocolSequence *p)
+        : Protocol(inCloseable), proto(p)
+    {}
 
     std::string as_str() const override;
 
@@ -259,10 +257,9 @@ private:
     const ProtocolSequence *proto;
 
 public:
-    ProtocolOC(const ProtocolSequence *p)
-    {
-        proto = p;
-    }
+    ProtocolOC(bool inCloseable, const ProtocolSequence *p)
+        : Protocol(inCloseable), proto(p)
+    {}
 
     std::string as_str() const override;
 
@@ -283,10 +280,9 @@ private:
     std::set<const ProtocolSequence *, ProtocolCompare> opts;
 
 public:
-    ProtocolEChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
-    {
-        opts = o;
-    }
+    ProtocolEChoice(bool inCloseable, std::set<const ProtocolSequence *, ProtocolCompare> o)
+        : Protocol(inCloseable), opts(o)
+    {}
 
     std::string as_str() const override;
 
@@ -307,10 +303,9 @@ private:
     std::set<const ProtocolSequence *, ProtocolCompare> opts;
 
 public:
-    ProtocolIChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
-    {
-        opts = o;
-    }
+    ProtocolIChoice(bool inCloseable, std::set<const ProtocolSequence *, ProtocolCompare> o)
+        : Protocol(inCloseable), opts(o)
+    {}
 
     std::string as_str() const override;
 
@@ -319,7 +314,6 @@ public:
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
 };
-
 
 /*******************************************
  *
@@ -330,10 +324,10 @@ class ProtocolClose : public Protocol
 {
 private:
     const ProtocolSequence *proto;
-    const unsigned int closeNumber; 
+    const unsigned int closeNumber;
 
 public:
-    ProtocolClose(const ProtocolSequence *p, unsigned int num) : proto(p), closeNumber(num) {}
+    ProtocolClose(bool inCloseable, const ProtocolSequence *p, unsigned int num) : Protocol(inCloseable), proto(p), closeNumber(num) {}
 
     std::string as_str() const override;
 

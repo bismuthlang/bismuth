@@ -1284,9 +1284,9 @@ public:
 
     TAsChannelNode(TypedNode *e, antlr4::Token *tok) : TypedNode(tok), expr(e) 
     {
-        nodeType = new TypeChannel(new ProtocolSequence({
-            new ProtocolOC(new ProtocolSequence({
-                new ProtocolRecv([](TypedNode * expr){
+        nodeType = new TypeChannel(new ProtocolSequence(false, {
+            new ProtocolOC(false, new ProtocolSequence(false, {
+                new ProtocolRecv(false, [](TypedNode * expr){
                     const Type * ty = expr->getType(); 
                     if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(ty))
                     {
