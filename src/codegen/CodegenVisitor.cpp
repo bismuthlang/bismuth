@@ -771,7 +771,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) // TODO: COnsi
     builder->SetInsertPoint(gtzBlk);
     Value *valuePtr = builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
     Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
-    auto ptr = correctSumAssignment(n->getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWIICE!!
+    auto ptr = correctSumAssignment(n->getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();
 
@@ -952,7 +952,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogAndExprNode *n)
     Value *lastValue = first.value();
 
     auto parent = current->getParent();
-    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isnt actually the entryblock anymore
+    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isn't actually the entry block anymore
 
     BasicBlock *falseBlk;
 
@@ -1024,7 +1024,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode *n)
     Value *lastValue = first.value();
 
     auto parent = current->getParent();
-    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isnt actually the entryblock anymore
+    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isn't actually the entry block anymore
 
     BasicBlock *falseBlk;
 
@@ -1230,7 +1230,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
         errorHandler.addError(n->getStart(), "1184 - Improperly initialized variable in assignment: " + n->var->toString());
         return std::nullopt;
     }
-    
+
     // Visit the expression to get the value we will assign
     std::optional<Value *> exprVal = AcceptType(this, n->val);
 
@@ -1835,7 +1835,7 @@ std::optional<Value *> CodegenVisitor::visit(TExprCopyNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n) // TODO: POSSIBLE PROBLEM AS THIS DUPLICATES THE LENGTH OF AN ARRAY!
 {
-    std::optional<Value *> valOpt = AcceptType(this, n->expr); // new TExprCopyNode(n->expr, n->token)); // FIXME: WILL THIS LEAK THE TOPLEVEL ARRAY? CANT DEEP COPY EACH INDEPENDELTY OR ELSE WE WOULD BREAK REFERENCES!
+    std::optional<Value *> valOpt = AcceptType(this, n->expr); // new TExprCopyNode(n->expr, n->token)); // FIXME: WILL THIS LEAK THE TOPLEVEL ARRAY? CANT DEEP COPY EACH INDEPENDENTLY OR ELSE WE WOULD BREAK REFERENCES!
 
     if (!valOpt)
     {
@@ -1872,7 +1872,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n) // TODO: POSSIBL
     }();
 
     // TODO: TURN INTO FN?
-    // FIXME: VERY SIMILAR TO TSEND
+    // FIXME: VERY SIMILAR TO TSend
 
     llvm::ArrayType *arrayPtrTy = llvm::ArrayType::get(i8p, arrayType->getLength());
     AllocaInst *saveBlock = CreateEntryBlockAlloc(arrayPtrTy, "save_blk");
