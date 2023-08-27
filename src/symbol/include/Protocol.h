@@ -52,7 +52,7 @@ public:
     std::string toString() const
     {
         std::ostringstream description;
-        for (unsigned int i = 0; i < guardCount; i++) // FIXME: ADD TO OTHERS
+        for (unsigned int i = 0; i < guardCount; i++)
         {
             description << "*";
         }

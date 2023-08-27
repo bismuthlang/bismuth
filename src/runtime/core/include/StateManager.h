@@ -80,3 +80,8 @@ extern "C" void ContractChannel(unsigned int aId);
 extern "C" void WeakenChannel(unsigned int aId);
 
 extern "C" unsigned int _ArrayToChannel(uint8_t * array[], unsigned int len);
+
+
+
+void _ClearChannel(unsigned int aId);
+extern "C" void _PreemptChannel(unsigned int aId, unsigned int skipTo);

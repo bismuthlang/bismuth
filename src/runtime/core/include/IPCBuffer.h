@@ -1,9 +1,12 @@
 #pragma once
 
-#include <queue>
+#include <deque> // Could be regular queue except for operateOn needs for clearing stuffs
 #include <mutex>
 #include <condition_variable>
 #include <optional> 
+#include <functional> // std::function
+#include <algorithm> // std::max
+
 
 // A threadsafe-queue from https://stackoverflow.com/questions/15278343/c11-thread-safe-queue
 template <class T>
@@ -24,7 +27,7 @@ public:
     {
         std::lock_guard<std::mutex> lock(m);
 
-        q.push(t);
+        q.push_back(t);
         c.notify_one();
     }
 
@@ -39,7 +42,7 @@ public:
             c.wait(lock);
         }
         T val = q.front();
-        q.pop();
+        q.pop_front();
 
         return val;
     }
@@ -52,10 +55,7 @@ public:
             // release lock as long as the wait and reacquire it afterwards.
             c.wait(lock);
         }
-        T val = q.front();
-        // q.pop();
-
-        return val;
+        return q.front();
     }
 
     std::optional<T> peakNow(void)
@@ -76,8 +76,7 @@ public:
             // release lock as long as the wait and reacquire it afterwards.
             c.wait(lock);
         }
-        // T val = q.front();
-        q.pop();
+        q.pop_front();
 
         return;
     }
@@ -87,13 +86,21 @@ public:
         return q.empty();
     }
 
-    std::queue<T> copy()
+    std::deque<T> copy()
     {
         return q;
     }
 
+
+    // FIXME: VERIFY WORKS!
+    void operateOn(std::function<void(std::deque<T>&)> const& func)//(void (func)(std::queue<T>& m))
+    {
+        std::unique_lock<std::mutex> lock(m);
+        func(q);
+    }
+
 private:
-    std::queue<T> q;
+    std::deque<T> q;
     mutable std::mutex m;
     std::condition_variable c;
 };

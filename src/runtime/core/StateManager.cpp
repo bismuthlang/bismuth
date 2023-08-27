@@ -3,7 +3,6 @@
 
 extern "C" void waitForAllToFinish()
 {
-    // int **p = (int **) GC_malloc(sizeof(int *));
     std::unique_lock<std::mutex> lock{running_mutex};
     running_cond.wait(lock, [&]
                       { return running == 0; });
@@ -55,23 +54,14 @@ extern "C" unsigned int Execute(void (*func)(unsigned int))
 
 std::string Message2String(Message m)
 {
-    if (std::holds_alternative<START_LOOP>(m))
-    {
-        return "START-LOOP ";
-    }
-    else if (std::holds_alternative<END_LOOP>(m))
-    {
-        return "END-LOOP ";
-    }
-    else if (std::holds_alternative<Value>(m))
-    {
-        return "Val ";
-    }
-    else if (std::holds_alternative<SEL>(m))
-    {
-        return "SEL[ ";
-    }
-    return "IDK ";
+    return std::visit(overload{
+        [](START_LOOP& )    { return std::string("START-LOOP "); },
+        [](END_LOOP& )      { return std::string("END-LOOP "); },
+        [](Value& )         { return std::string("Val "); },
+        [](SEL& s)          { return "SEL[" + std::to_string(s.i) + "] "; },
+        [](SKIP& s)         { return "SKIP[" + std::to_string(s.i) + "] "; },
+        [](CLOSE& s)        { return "CLOSE " + std::to_string(s.i) + "] "; }
+    }, m);
 }
 
 void debug()
@@ -82,32 +72,13 @@ void debug()
         std::cout << itr.first << " -> " << LookupOther.find(itr.first)->second << std::endl;
         std::cout << "\t";
 
-        std::queue<Message> copy_queue = itr.second->copy();
+        std::deque<Message> copy_queue = itr.second->copy();
 
         while (!copy_queue.empty())
         {
             Message m = copy_queue.front();
-            if (std::holds_alternative<START_LOOP>(m))
-            {
-                std::cout << "START-LOOP ";
-            }
-            else if (std::holds_alternative<END_LOOP>(m))
-            {
-                std::cout << "END-LOOP ";
-            }
-            else if (std::holds_alternative<Value>(m))
-            {
-                std::cout << "Val ";
-            }
-            else if (std::holds_alternative<SEL>(m))
-            {
-                std::cout << "SEL[ " << std::get<SEL>(m).i << "] ";
-            }
-            else
-            {
-                std::cout << "IDK ";
-            }
-            copy_queue.pop();
+            std::cout << Message2String(m); 
+            copy_queue.pop_front();
         }
         std::cout << std::endl;
     }
@@ -117,7 +88,7 @@ void debug()
 }
 
 void WriteHelper(unsigned int aId, Message m)
-{ // uint8_t * (*func)(unsigned int)) {
+{ 
     exec_mutex.lock();
     auto i_oAId = LookupOther.find(aId);
 
@@ -133,13 +104,6 @@ void WriteHelper(unsigned int aId, Message m)
 
     if (i_buffer == State.end())
     {
-        // std::cout << "E65 " << aId << "->" << oAId << std::endl;
-
-        // for (auto e : State)
-        // {
-        //     std::cout << e.first << std::endl;
-        // }
-
         throw "Preservation Error: WriteHelper could not locate buffer to write to!";
     }
 
@@ -151,6 +115,7 @@ void WriteHelper(unsigned int aId, Message m)
     }
 
     i_buffer->second->enqueue(m);
+    // _ClearChannel(oAId); // Kind of wasteful to lookup channel AGAIN
 }
 
 Message ReadHelper(unsigned int aId)
@@ -190,15 +155,13 @@ IPCBuffer<Message> *getReadQueue(unsigned int aId)
 
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value)
 {
-    Value v;
-    v.v = value;
+    Value v(value);
     WriteHelper(aId, v);
 }
 
 extern "C" void WriteProjection(unsigned int aId, unsigned int selVal)
 {
-    SEL s;
-    s.i = selVal;
+    SEL s(selVal); 
     WriteHelper(aId, s);
 }
 
@@ -331,8 +294,7 @@ extern "C" unsigned int _ArrayToChannel(uint8_t * array[], unsigned int len)
     for(unsigned int i = 0; i < len; i++)
     {
         START_LOOP s;
-        Value v;
-        v.v = array[i];
+        Value v(array[i]);
 
         aRead->enqueue(s);
         aRead->enqueue(v); 
@@ -344,4 +306,92 @@ extern "C" unsigned int _ArrayToChannel(uint8_t * array[], unsigned int len)
     exec_mutex.unlock();
 
     return id; 
+}
+
+
+
+
+
+
+
+void _ClearChannel(unsigned int aId)
+{
+    IPCBuffer<Message> *readQueue = getReadQueue(aId);
+    std::optional<Message> mOpt = readQueue->peakNow();
+
+    if(mOpt)
+    {
+        Message frontMsg = mOpt.value(); 
+
+        if(std::holds_alternative<SKIP>(frontMsg))
+        {
+            SKIP skipMsg = std::get<SKIP>(frontMsg);
+            
+            _PreemptChannel(aId, skipMsg.i);
+            // skipMsg.i = skipTo; // TODO: verify skipTo > i 
+        }
+
+        // // FIXME: how to clear out and check properly?
+    }
+}
+
+extern "C" void _PreemptChannel(unsigned int aId, unsigned int skipTo)
+{
+    IPCBuffer<Message> *readQueue = getReadQueue(aId);
+
+    readQueue->operateOn([skipTo](std::deque<Message>& q){
+        unsigned int skipAmt = skipTo; 
+
+        while(!q.empty())
+        {
+            Message frontMsg = q.front(); 
+
+            if(std::holds_alternative<SKIP>(frontMsg))
+            {
+                // If first-ish message is skip, then 
+                // update amount skipped to the max, and continue
+                q.pop_front(); 
+                SKIP skipMsg = std::get<SKIP>(frontMsg);
+                skipAmt = std::max(skipAmt, skipMsg.i);
+            }
+            else if(std::holds_alternative<CLOSE>(frontMsg))
+            {
+                CLOSE closeMsg = std::get<CLOSE>(frontMsg); 
+
+                if(skipAmt == closeMsg.i)
+                {
+                    // If close # = skip #, then we are done (both programs hit same sync point)
+                    // and we can clear out the close. 
+                    q.pop_front();
+                    return; 
+                }
+                
+                if(skipAmt > closeMsg.i)
+                {
+                    // If we skip past the close, then ignore the close
+                    q.pop_front(); 
+                }
+                else  // skipAmt < closeMessage.i
+                {
+                    // If the close is for more than we skip, then preserve the close
+                    // and return before we re-add the skip message to the front 
+                    // of the queue 
+                    return; 
+                }
+            }
+            else 
+            {
+                q.pop_front(); // FIXME: MAY HAVE TO FREE IF VALUE & DEAL WITH HIGHER-ORDER STUFF!
+            }
+        }
+
+        SKIP s(skipAmt); 
+        q.push_front(s);
+
+        // CLOSE c(skipAmt);
+        // WriteHelper(aId, c);
+
+    });
+
+
 }
