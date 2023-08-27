@@ -268,6 +268,7 @@ optional<const ProtocolSend *> ProtocolSequence::getSend() const
     return std::nullopt;
 }
 
+// FIXME: this will get complicated if we have (Unit + Closable) -- how will we know what to close?
 optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
 {
     optional<const ProtocolSend *> sendOpt = this->getSend(); 
