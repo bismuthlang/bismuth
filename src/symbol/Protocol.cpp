@@ -319,13 +319,21 @@ optional<const ProtocolRecv*> ProtocolSequence::getRecv() const
 optional<const Type *> ProtocolSequence::recv() const
 {
     // FIXME: BETTER ERROR HANDLING
-    optional<const ProtocolRecv *> recv = this->getRecv(); 
+    optional<const ProtocolRecv *> recvOpt = this->getRecv(); 
 
-    if (!recv) return std::nullopt;
+    if (!recvOpt) return std::nullopt;
 
-    this->popFirst(); //TODO: ENSURE SAME AS getRecv value?
+    this->popFirst(); //TODO: ENSURE SAME AS recvOpt value?
 
-    return recv.value()->getRecvType();
+    const ProtocolRecv * recvProto = recvOpt.value(); 
+
+    const Type * recvType = recvProto->getRecvType(); 
+    if(recvProto->isInCloseable())
+    {
+        return new TypeSum({recvType, Types::UNIT}); // FIXME: must be linear-ish SUM!!!
+    }
+
+    return recvType; 
 }
 
 bool ProtocolSequence::contract() const
