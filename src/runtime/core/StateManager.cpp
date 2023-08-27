@@ -87,8 +87,8 @@ void debug()
     exec_mutex.unlock();
 }
 
-void WriteHelper(unsigned int aId, Message m)
-{ 
+IPCBuffer<Message> *getWriteQueue(unsigned int aId)
+{
     exec_mutex.lock();
     auto i_oAId = LookupOther.find(aId);
 
@@ -107,29 +107,28 @@ void WriteHelper(unsigned int aId, Message m)
         throw "Preservation Error: WriteHelper could not locate buffer to write to!";
     }
 
-    if (DEBUG)
-    {
-        std::ostringstream p;
-        p << "ENQUEUE " << aId << " -> " << oAId << " " << Message2String(m) << std::endl;
-        std::cerr << p.str();
-    }
+    return i_buffer->second; 
+}
 
-    i_buffer->second->enqueue(m);
-    // _ClearChannel(oAId); // Kind of wasteful to lookup channel AGAIN
+void WriteHelper(unsigned int aId, Message m)
+{ 
+    IPCBuffer<Message> *writeQueue = getWriteQueue(aId);
+
+    // if (DEBUG)
+    // {
+    //     std::ostringstream p;
+    //     p << "ENQUEUE " << aId << " -> " << oAId << " " << Message2String(m) << std::endl;
+    //     std::cerr << p.str();
+    // }
+
+    writeQueue->enqueue(m);
 }
 
 Message ReadHelper(unsigned int aId)
 {
-    exec_mutex.lock();
-    auto i_buffer = State.find(aId);
-    exec_mutex.unlock();
+    IPCBuffer<Message> *readQueue = getReadQueue(aId);
 
-    if (i_buffer == State.end())
-    {
-        throw "Preservation error: failed to find read channel!";
-    }
-
-    Message m = i_buffer->second->dequeue();
+    Message m = readQueue->dequeue();
     if (DEBUG)
     {
         std::ostringstream p;
@@ -314,9 +313,9 @@ extern "C" unsigned int _ArrayToChannel(uint8_t * array[], unsigned int len)
 
 
 
-void _ClearChannel(unsigned int aId)
+void _ClearChannel(IPCBuffer<Message> * readQueue) //unsigned int aId)
 {
-    IPCBuffer<Message> *readQueue = getReadQueue(aId);
+    // IPCBuffer<Message> *readQueue = getReadQueue(aId);
     std::optional<Message> mOpt = readQueue->peakNow();
 
     if(mOpt)
@@ -326,12 +325,58 @@ void _ClearChannel(unsigned int aId)
         if(std::holds_alternative<SKIP>(frontMsg))
         {
             SKIP skipMsg = std::get<SKIP>(frontMsg);
-            
-            _PreemptChannel(aId, skipMsg.i);
-            // skipMsg.i = skipTo; // TODO: verify skipTo > i 
-        }
 
-        // // FIXME: how to clear out and check properly?
+            readQueue->operateOn([skipTo = skipMsg.i](std::deque<Message>& q){
+                unsigned int skipAmt = skipTo; 
+
+                while(!q.empty())
+                {
+                    Message frontMsg = q.front(); 
+
+                    if(std::holds_alternative<SKIP>(frontMsg))
+                    {
+                        // If first-ish message is skip, then 
+                        // update amount skipped to the max, and continue
+                        q.pop_front(); 
+                        SKIP skipMsg = std::get<SKIP>(frontMsg);
+                        skipAmt = std::max(skipAmt, skipMsg.i);
+                    }
+                    else if(std::holds_alternative<CLOSE>(frontMsg))
+                    {
+                        CLOSE closeMsg = std::get<CLOSE>(frontMsg); 
+
+                        if(skipAmt == closeMsg.i)
+                        {
+                            // If close # = skip #, then we are done (both programs hit same sync point)
+                            // and we can clear out the close. 
+                            q.pop_front();
+                            return; 
+                        }
+                        
+                        if(skipAmt > closeMsg.i)
+                        {
+                            // If we skip past the close, then ignore the close
+                            q.pop_front(); 
+                        }
+                        else  // skipAmt < closeMessage.i
+                        {
+                            // If the close is for more than we skip, then preserve the close
+                            // and return before we re-add the skip message to the front 
+                            // of the queue 
+                            return; 
+                        }
+                    }
+                    else 
+                    {
+                        q.pop_front(); // FIXME: MAY HAVE TO FREE IF VALUE & DEAL WITH HIGHER-ORDER STUFF!
+                    }
+                }
+
+                SKIP s(skipAmt); 
+                q.push_front(s);
+
+            });
+        }
     }
 }
 
@@ -340,58 +385,16 @@ extern "C" void _PreemptChannel(unsigned int aId, unsigned int skipTo)
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
 
     readQueue->operateOn([skipTo](std::deque<Message>& q){
-        unsigned int skipAmt = skipTo; 
-
-        while(!q.empty())
-        {
-            Message frontMsg = q.front(); 
-
-            if(std::holds_alternative<SKIP>(frontMsg))
-            {
-                // If first-ish message is skip, then 
-                // update amount skipped to the max, and continue
-                q.pop_front(); 
-                SKIP skipMsg = std::get<SKIP>(frontMsg);
-                skipAmt = std::max(skipAmt, skipMsg.i);
-            }
-            else if(std::holds_alternative<CLOSE>(frontMsg))
-            {
-                CLOSE closeMsg = std::get<CLOSE>(frontMsg); 
-
-                if(skipAmt == closeMsg.i)
-                {
-                    // If close # = skip #, then we are done (both programs hit same sync point)
-                    // and we can clear out the close. 
-                    q.pop_front();
-                    return; 
-                }
-                
-                if(skipAmt > closeMsg.i)
-                {
-                    // If we skip past the close, then ignore the close
-                    q.pop_front(); 
-                }
-                else  // skipAmt < closeMessage.i
-                {
-                    // If the close is for more than we skip, then preserve the close
-                    // and return before we re-add the skip message to the front 
-                    // of the queue 
-                    return; 
-                }
-            }
-            else 
-            {
-                q.pop_front(); // FIXME: MAY HAVE TO FREE IF VALUE & DEAL WITH HIGHER-ORDER STUFF!
-            }
-        }
-
-        SKIP s(skipAmt); 
-        q.push_front(s);
-
-        // CLOSE c(skipAmt);
-        // WriteHelper(aId, c);
-
+        q.push_front(SKIP(skipTo));
     });
 
+
+    IPCBuffer<Message>* writeQueue = getWriteQueue(aId); 
+    writeQueue->operateOn([skipTo](std::deque<Message>& q){
+        q.push_front(CLOSE(skipTo));
+    });
+
+    _ClearChannel(readQueue); 
+    _ClearChannel(writeQueue);
 
 }

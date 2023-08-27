@@ -58,6 +58,7 @@ Message ReadHelper(unsigned int aId);
 // }
 
 IPCBuffer<Message> *getReadQueue(unsigned int aId);
+IPCBuffer<Message> *getWriteQueue(unsigned int aId);
 
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value);
 
@@ -83,5 +84,5 @@ extern "C" unsigned int _ArrayToChannel(uint8_t * array[], unsigned int len);
 
 
 
-void _ClearChannel(unsigned int aId);
+void _ClearChannel(IPCBuffer<Message> * readQueue);// unsigned int aId);
 extern "C" void _PreemptChannel(unsigned int aId, unsigned int skipTo);
