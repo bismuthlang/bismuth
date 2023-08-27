@@ -164,19 +164,6 @@ private:
     optional<const ProtocolIChoice *> getIntChoice() const;
 };
 
-inline const ProtocolSequence *toSequence(const Protocol *proto)
-{
-    if (const ProtocolSequence *seq = dynamic_cast<const ProtocolSequence *>(proto))
-    {
-        return seq;
-    }
-
-    vector<const Protocol *> a;
-    a.push_back(proto);
-
-    return new ProtocolSequence(proto->isInCloseable(), a);
-}
-
 /*******************************************
  *
  * RecvType Protocol
