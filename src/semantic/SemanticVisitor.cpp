@@ -1110,6 +1110,19 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 {
     // This one is the update one!
 
+    // Determine the expected type
+    std::variant<TypedNode *, ErrorChain *> varOpt = this->visitCtx(ctx->to);
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&varOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Cannot assign to undefined variable: " + ctx->to->getText());
+        return *e;
+    }
+
+    TypedNode *var = std::get<TypedNode *>(varOpt);
+
+    
+
     // Determine the expression type
     std::variant<TypedNode *, ErrorChain *> exprOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->a->accept(this));
 
@@ -1126,17 +1139,6 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     {
         return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier");
     }
-
-    // Determine the expected type
-    std::variant<TypedNode *, ErrorChain *> varOpt = this->visitCtx(ctx->to);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&varOpt))
-    {
-        (*e)->addError(ctx->getStart(), "Cannot assign to undefined variable: " + ctx->to->getText());
-        return *e;
-    }
-
-    TypedNode *var = std::get<TypedNode *>(varOpt);
 
     const Type *type = var->getType();
 

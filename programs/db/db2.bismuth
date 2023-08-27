@@ -11,22 +11,15 @@ define Database :: c : Channel<
   Value[10] data; 
 
   accept(c) {
-    #printf("36\n");
     offer c 
       | +int;-(Unit + Value) => { 
-            #printf("39\n");
             c.send(data[c.recv()])
-            #printf("41\n");
         }
       | +int;+Value => {
-            #printf("44\n");
             var key := c.recv(); 
-            #printf("46\n");
             data[key] := c.recv(); 
-            #printf("48\n");
         }
       | +int => {
-          #printf("51\n");
           var k := c.recv();
         }
   }
@@ -45,25 +38,18 @@ define program :: c : Channel<-int> = {
         db.send(setRq.recv())
       }
 
-    #printf("67\n");
     accept(rqs) {
    
       more(db)
       offer rqs 
         | +int;-(Unit + Value) => { 
-            #printf("72\n"); 
             db[-int;+(Unit + Value)] 
-            #printf("72a\n"); 
             db.send(rqs.recv()) 
-            #printf("72b\n"); 
             var a := db.recv();
-            #printf("72bb\n"); 
             rqs.send(a) 
-            #printf("72c\n");
           } 
         | +int;+Value => { db[-int;-Value] db.send(rqs.recv()) db.send(rqs.recv()) }
         | +int => { 
-            printf("72\n"); 
             db[-int] 
             db.send(rqs.recv())
           }

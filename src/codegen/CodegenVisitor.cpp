@@ -1222,6 +1222,15 @@ std::optional<Value *> CodegenVisitor::visit(TExternNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
 {
+
+    std::optional<Value *> val = AcceptType(this, n->var); // varSym->val;
+    // Sanity check to ensure that we now have a value for the variable
+    if (!val)
+    {
+        errorHandler.addError(n->getStart(), "1184 - Improperly initialized variable in assignment: " + n->var->toString());
+        return std::nullopt;
+    }
+    
     // Visit the expression to get the value we will assign
     std::optional<Value *> exprVal = AcceptType(this, n->val);
 
@@ -1244,7 +1253,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
     Symbol *varSym = varSymOpt.value();
     */
     // Get the allocation instruction for the symbol
-    std::optional<Value *> val = AcceptType(this, n->var); // varSym->val;
+
 
     /*
     // If the symbol is global
@@ -1264,12 +1273,6 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
         val = builder->CreateLoad(glob)->getPointerOperand();
     }
     */
-    // Sanity check to ensure that we now have a value for the variable
-    if (!val)
-    {
-        errorHandler.addError(n->getStart(), "1184 - Improperly initialized variable in assignment: " + n->var->toString());
-        return std::nullopt;
-    }
 
     /*
     // Checks to see if we are dealing with an array

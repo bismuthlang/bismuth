@@ -33,8 +33,7 @@ define Database :: c : Channel<
             c.send(data[c.recv()]);
         }
       | +int;+Value => {
-            var key := c.recv(); 
-            data[key] := c.recv(); 
+            data[c.recv()] := c.recv(); 
         }
       | +int;InternalChoice<-Value;+Value,+Value> => {
           var k := c.recv();
