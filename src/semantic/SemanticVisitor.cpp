@@ -204,7 +204,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             {
                 const TypeProgram *inv = progOpt.value();
                 // FIXME: DO SUBTYPING BETTER!
-                if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
+                if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence({new ProtocolSend(Types::DYN_INT)}))))
                 {
                     errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString());
                 }
@@ -2533,20 +2533,6 @@ std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(Bism
     }
 
     return new TExprCopyNode(tn, ctx->getStart());
-}
-
-std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx)
-{
-    std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-    {
-        (*e)->addError(ctx->getStart(), "Failed to type check copy expression");
-        return *e;
-    }
-
-    TypedNode *tn = std::get<TypedNode *>(tnOpt);
-
-    return new TAsChannelNode(tn, ctx->getStart());
 }
 
 

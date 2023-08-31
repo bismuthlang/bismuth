@@ -62,9 +62,7 @@ std::string Message2String(Message m)
                                [](SEL &s)
                                { return "SEL[" + std::to_string(s.i) + "] "; },
                                [](SKIP &s)
-                               { return "SKIP[" + std::to_string(s.i) + "] "; },
-                               [](CLOSE &s)
-                               { return "CLOSE " + std::to_string(s.i) + "] "; }},
+                               { return "SKIP[" + std::to_string(s.i) + "] "; }},
                       m);
 }
 
@@ -306,79 +304,4 @@ extern "C" unsigned int _ArrayToChannel(uint8_t *array[], unsigned int len)
     exec_mutex.unlock();
 
     return id;
-}
-
-void _ClearChannel(IPCBuffer<Message> *readQueue) // unsigned int aId)
-{
-    readQueue->operateOn([](std::deque<Message> &q)
-        {
-            if (q.empty())
-                return;
-
-            if (!std::holds_alternative<SKIP>(q.front()))
-                return;
-
-            unsigned int skipAmt = 0; // skipTo;
-
-            while (!q.empty())
-            {
-                Message frontMsg = q.front();
-
-                if (std::holds_alternative<SKIP>(frontMsg))
-                {
-                    // If first-ish message is skip, then
-                    // update amount skipped to the max, and continue
-                    q.pop_front();
-                    SKIP skipMsg = std::get<SKIP>(frontMsg);
-                    skipAmt = std::max(skipAmt, skipMsg.i);
-                }
-                else if (std::holds_alternative<CLOSE>(frontMsg))
-                {
-                    CLOSE closeMsg = std::get<CLOSE>(frontMsg);
-
-                    if (skipAmt == closeMsg.i)
-                    {
-                        // If close # = skip #, then we are done (both programs hit same sync point)
-                        // and we can clear out the close.
-                        q.pop_front();
-                        return;
-                    }
-
-                    if (skipAmt > closeMsg.i)
-                    {
-                        // If we skip past the close, then ignore the close
-                        q.pop_front();
-                    }
-                    else // skipAmt < closeMessage.i
-                    {
-                        // If the close is for more than we skip, then preserve the close
-                        // and return before we re-add the skip message to the front
-                        // of the queue
-                        return;
-                    }
-                }
-                else
-                {
-                    q.pop_front(); // FIXME: MAY HAVE TO FREE IF VALUE & DEAL WITH HIGHER-ORDER STUFF!
-                }
-            }
-
-            SKIP s(skipAmt);
-            q.push_front(s);
-        });
-}
-
-extern "C" void _PreemptChannel(unsigned int aId, unsigned int skipTo)
-{
-    IPCBuffer<Message> *readQueue = getReadQueue(aId);
-
-    readQueue->operateOn([skipTo](std::deque<Message> &q)
-                         { q.push_front(SKIP(skipTo)); });
-
-    IPCBuffer<Message> *writeQueue = getWriteQueue(aId);
-    writeQueue->operateOn([skipTo](std::deque<Message> &q)
-                          { q.push_front(CLOSE(skipTo)); });
-
-    _ClearChannel(readQueue);
-    _ClearChannel(writeQueue);
 }

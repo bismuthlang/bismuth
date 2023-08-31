@@ -134,7 +134,6 @@ public:
     std::optional<Value *> visit(TProgramProjectNode *n) override;
     std::optional<Value *> visit(TInitBoxNode *n) override;
     std::optional<Value *> visit(TExprCopyNode *n) override; 
-    std::optional<Value *> visit(TAsChannelNode *n) override;  
 
     std::optional<Value *> visitCompilationUnit(TCompilationUnitNode *n) { return visit(n); }
 

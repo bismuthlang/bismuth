@@ -231,14 +231,13 @@ bool TypeChannel::unguard() const
     return protocol->unguard();
 }
 
+// This code may look a bit odd, its because some changes need to be made later on for closeable protocols :)
 bool TypeChannel::isLossy() const 
 {
     const std::vector<const Protocol*> steps = this->getProtocol()->getSteps(); 
     if(steps.size() != 1) 
         return false; 
 
-    if(dynamic_cast<const ProtocolClose*>(steps.at(0)))
-        return true; 
     return false; 
 }
 

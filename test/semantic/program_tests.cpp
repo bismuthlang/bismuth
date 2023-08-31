@@ -2055,16 +2055,6 @@ define program :: c : Channel<-int> = {
       "Cannot assign guarded resource to another identifier");
 }
 
-TEST_CASE("No instancing closeable", "[semantic]")
-{
-  EnsureErrorsWithMessage(
-      R""""(
-define program :: c : Channel<?Closeable<-int>> {
-}
-    )"""",
-      "cannot include looping protocol within closeable");
-}
-
 TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[semantic]")
 {
   EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg.bismuth"))),

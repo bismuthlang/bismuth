@@ -76,7 +76,6 @@ expression          : LPAR ex=expression RPAR                                   
                     | EXEC prog=expression                          # AssignableExec
                     | COPY LPAR expr=expression RPAR                # CopyExpr
                     | COPY expr=expression                          # CopyExpr
-                    | 'asChannel' LPAR expr=expression RPAR         # AsChannelExpr
                     ;
 
 lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
@@ -198,7 +197,6 @@ subProtocol     :   '+' ty=type                 # RecvType
                 |   '!' proto=protocol          # OcProto
                 |    EXTERNAL_CHOICE LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # ExtChoiceProto
                 |    INTERNAL_CHOICE LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # IntChoiceProto
-                |    CLOSEABLE LESS proto=protocol GREATER   # CloseableProto // TODO: NAME BETTER?
                 ;
 
 
@@ -242,7 +240,6 @@ COPY            :   'copy'  ;
 // Protocols   
 EXTERNAL_CHOICE :   'ExternalChoice'    ;
 INTERNAL_CHOICE :   'InternalChoice'    ;
-CLOSEABLE        :   'Closeable'         ;
 
 
 

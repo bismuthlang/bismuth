@@ -37,10 +37,9 @@ class Protocol
 protected:
     virtual std::string as_str() const = 0;
     mutable unsigned int guardCount = 0;
-    const bool inCloseable = false;
 
 public:
-    Protocol(bool _inCloseable) : inCloseable(_inCloseable){};
+    Protocol() {};
 
     virtual ~Protocol() = default;
 
@@ -61,8 +60,6 @@ public:
 
         return description.str();
     }
-
-    bool isInCloseable() const { return inCloseable; }
 
     virtual const Protocol *getInverse() const = 0;
 
@@ -108,8 +105,8 @@ private:
     vector<const Protocol *> steps;
 
 public:
-    ProtocolSequence(bool inCloseable, vector<const Protocol *> p)
-        : Protocol(inCloseable), steps(p)
+    ProtocolSequence(vector<const Protocol *> p)
+        : Protocol(), steps(p)
 
     {}
 
@@ -175,8 +172,8 @@ private:
     const Type *recvType;
 
 public:
-    ProtocolRecv(bool inCloseable, const Type *v)
-        : Protocol(inCloseable), recvType(v)
+    ProtocolRecv(const Type *v)
+        : Protocol(), recvType(v)
     {}
 
     std::string as_str() const override;
@@ -198,8 +195,8 @@ private:
     const Type *sendType;
 
 public:
-    ProtocolSend(bool inCloseable, const Type *v)
-        : Protocol(inCloseable), sendType(v)
+    ProtocolSend(const Type *v)
+        : Protocol(), sendType(v)
     {}
 
     std::string as_str() const override;
@@ -221,8 +218,8 @@ private:
     const ProtocolSequence *proto;
 
 public:
-    ProtocolWN(bool inCloseable, const ProtocolSequence *p)
-        : Protocol(inCloseable), proto(p)
+    ProtocolWN(const ProtocolSequence *p)
+        : Protocol(), proto(p)
     {}
 
     std::string as_str() const override;
@@ -244,8 +241,8 @@ private:
     const ProtocolSequence *proto;
 
 public:
-    ProtocolOC(bool inCloseable, const ProtocolSequence *p)
-        : Protocol(inCloseable), proto(p)
+    ProtocolOC(const ProtocolSequence *p)
+        : Protocol(), proto(p)
     {}
 
     std::string as_str() const override;
@@ -267,8 +264,8 @@ private:
     std::set<const ProtocolSequence *, ProtocolCompare> opts;
 
 public:
-    ProtocolEChoice(bool inCloseable, std::set<const ProtocolSequence *, ProtocolCompare> o)
-        : Protocol(inCloseable), opts(o)
+    ProtocolEChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
+        : Protocol(), opts(o)
     {}
 
     std::string as_str() const override;
@@ -290,8 +287,8 @@ private:
     std::set<const ProtocolSequence *, ProtocolCompare> opts;
 
 public:
-    ProtocolIChoice(bool inCloseable, std::set<const ProtocolSequence *, ProtocolCompare> o)
-        : Protocol(inCloseable), opts(o)
+    ProtocolIChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
+        : Protocol(), opts(o)
     {}
 
     std::string as_str() const override;
@@ -300,28 +297,4 @@ public:
     const Protocol *getCopy() const override;
 
     std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
-};
-
-/*******************************************
- *
- * Closeable Protocol
- *
- *******************************************/
-class ProtocolClose : public Protocol
-{
-private:
-    const ProtocolSequence *proto;
-    const unsigned int closeNumber;
-
-public:
-    ProtocolClose(bool inCloseable, const ProtocolSequence *p, unsigned int num) : Protocol(inCloseable), proto(p), closeNumber(num) {}
-
-    std::string as_str() const override;
-
-    const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override;
-
-    const ProtocolSequence *getInnerProtocol() const { return proto; }
-
-    unsigned int getCloseNumber() const { return closeNumber; }
 };
