@@ -42,18 +42,19 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
 
     RGBData rgbDat := RGBData::init(data);
 
-    # int func getChannel(RGBData d, int c) {
     define func getChannel (RGBData d, int c) : int {
         int[3] channels := d.rgb; 
-        return channels[c]; 
+        match channels[c]
+            | Unit u =>  return -1;
+            | int i => return i; 
     }
 
     var c := Color::init(
         RGBColor::init(
             rgbDat, 
-            (RGBData d) : int { return d.rgb[0]; },
-            (RGBData d) : int { return d.rgb[1]; },
-            (RGBData d) : int { return d.rgb[2]; }
+            (RGBData d) : int { return getChannel(d, 0); },
+            (RGBData d) : int { return getChannel(d, 1); },
+            (RGBData d) : int { return getChannel(d, 2); }
         ),
         (ColorType c) : str { return "rgb"; }
     );
@@ -63,29 +64,13 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
     io.send(Color::init(
         RGBColor::init(
             rgbDat, 
-            (RGBData d) : int { return d.rgb[0]; },
-            (RGBData d) : int { return d.rgb[1]; },
-            (RGBData d) : int { return d.rgb[2]; }
+            (RGBData d) : int { return getChannel(d, 0); },
+            (RGBData d) : int { return getChannel(d, 1); },
+            (RGBData d) : int { return getChannel(d, 2); }
         ),
         (ColorType c) : str { return "rgb"; }
     ))
 }
-
-
-/*
-Color func getColor(int r, int g, int b) {
-    int[3] rgb; 
-
-    rgb[0] := r; 
-    rgb[1] := g; 
-    rgb[2] := b; 
-
-    return Color::init(rgb, 
-                       (Color c) : int { return c[0]; },
-                       (Color c) : int { return c[1]; },
-                       (Color c) : int { return c[2]; });
-} 
-*/
 
 # int func lamePrint(Color c) {
 define func lamePrint (Color c) : int {

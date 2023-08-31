@@ -1,6 +1,6 @@
 extern func printf(str s, ...) : int;
 
-define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> = {
+define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> {
     var i1 := c.recv(), i2 := c.recv();
 
     boolean carry := false; 
@@ -32,7 +32,7 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
     weaken(c);  
 }
 
-define program :: c : Channel<-int> = {
+define program :: c : Channel<-int> {
     var addStream := exec BinaryCounter, printer := exec toDecimal;
     addStream.send(getBinaryStreamFor(120));
     addStream.send(getBinaryStreamFor(75));
@@ -51,7 +51,7 @@ define func getBinaryStreamFor(int n) : Channel<!+boolean> {
     return c; 
 }
 
-define toBinary :: c : Channel<+int;?-boolean> = {
+define toBinary :: c : Channel<+int;?-boolean> {
     int n := c.recv(); 
 
     while n > 0 {
@@ -67,7 +67,7 @@ define toBinary :: c : Channel<+int;?-boolean> = {
     weaken(c);
 }
 
-define toDecimal :: c : Channel<+Channel<!+boolean>> = {
+define toDecimal :: c : Channel<+Channel<!+boolean>> {
     var a := c.recv(), dec_val := 0, base := 1; 
  
     accept(a) { 

@@ -71,8 +71,10 @@ define program :: c : Channel<-int> = {
     int i := 0;
     while i < samples.length {
         # toString(samples[i]);
-        Channel<-(Color + int + boolean + str)> io := exec toString; 
-        io.send(samples[i])
+        Channel<-(Unit + Color + int + boolean + str)> io := exec toString; 
+        match samples[i]
+          | Color color => io.send(color); # FIXME: Make match statement not needed? also, gets buggy if you try to use c as identifier in case due to separation between linear and non-linear scopes
+          | Unit u => io.send(u);
 
         i := i + 1; 
     }
@@ -132,10 +134,11 @@ define func printPrimitive ((int + boolean + str) toPrint) {
 }
 
 # Unit func toString((Color + int + boolean + str) obj) {
-define toString :: io : Channel<+(Color + int + boolean + str)> = {
-    (Color + int + boolean + str) obj := io.recv(); 
+define toString :: io : Channel<+(Unit + Color + int + boolean + str)> = {
+    (Unit + Color + int + boolean + str) obj := io.recv(); 
 
     match obj {
+        Unit u => printf("()\n");
         int i => printPrimitive(i); 
         boolean b => printPrimitive(b);
         str s => printPrimitive(s);

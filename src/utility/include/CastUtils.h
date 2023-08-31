@@ -22,7 +22,7 @@ std::optional<T> any2Opt(const std::any &a) // https://stackoverflow.com/questio
 
 
 template <typename T>
-std::variant<T *, ErrorChain*> anyOpt2VarError(BismuthErrorHandler errorHandler, const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available
+std::variant<T *, ErrorChain*> anyOpt2VarError(BismuthErrorHandler& errorHandler, const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available
 {
     std::optional<std::variant<T *, ErrorChain*>> opt = any2Opt<std::variant<T *, ErrorChain*>>(a);
 
@@ -41,6 +41,26 @@ std::variant<TypedNode *, ErrorChain*> TNVariantCast(std::variant<T*, ErrorChain
     // if(std::variant<T*, ErrorChain*>)
     if(std::holds_alternative<T*>(base)) {
         return (TypedNode*) std::get<T*>(base);
+    }
+
+    return std::get<ErrorChain*>(base);
+}
+
+template<typename T, typename std::enable_if<std::is_base_of<Protocol, T>::value>::type* = nullptr>
+std::variant<const Protocol *, ErrorChain*> ProtoVariantCast(std::variant<const T*, ErrorChain*> base) {
+    // if(std::variant<T*, ErrorChain*>)
+    if(std::holds_alternative<const T*>(base)) {
+        return (const Protocol*) std::get<const T*>(base);
+    }
+
+    return std::get<ErrorChain*>(base);
+}
+
+template<typename T, typename std::enable_if<std::is_base_of<Type, T>::value>::type* = nullptr>
+std::variant<const Type *, ErrorChain*> TypeVariantCast(std::variant<const T*, ErrorChain*> base) {
+    // if(std::variant<T*, ErrorChain*>)
+    if(std::holds_alternative<const T*>(base)) {
+        return (const Type*) std::get<const T*>(base);
     }
 
     return std::get<ErrorChain*>(base);

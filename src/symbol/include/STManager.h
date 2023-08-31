@@ -16,6 +16,7 @@
 #include <optional>
 
 #include <stack>
+#include <iostream>
 
 enum StopType
 {
@@ -23,13 +24,6 @@ enum StopType
   GLOBAL
 };
 
-enum ScopeType
-{
-  LINEAR_SCOPE,
-  NON_LINEAR_SCOPE
-};
-
-typedef std::pair<ScopeType, Symbol *> SymbolContext;
 
 class STManager
 {
@@ -84,17 +78,13 @@ public:
    * @param id The symbol name to lookup
    * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found.
    */
-  std::optional<SymbolContext> lookup(std::string id)
+  std::optional<Symbol *> lookup(std::string id)
   {
     std::optional<Symbol *> opt = linearContext.lookup(id);
     if (opt)
-      return (SymbolContext){LINEAR_SCOPE, opt.value()};
+      return opt; 
 
-    opt = dangerContext.lookup(id);
-    if (opt)
-      return (SymbolContext){NON_LINEAR_SCOPE, opt.value()};
-
-    return std::nullopt;
+    return dangerContext.lookup(id);
   }
 
   /**

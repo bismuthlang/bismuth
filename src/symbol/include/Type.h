@@ -29,6 +29,8 @@
 #include "LinkedMap.h"
 #include "Protocol.h"
 
+class ProtocolSequence;
+
 /*******************************************
  *
  * Top Type Definition
@@ -82,32 +84,32 @@ public:
 
     virtual const Type * getCopy() const { return this; }
 
-    virtual bool isGuarded() const { return linear && guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
+    virtual bool isGuarded() const { return linear && guardCount > 0; } 
 
-    virtual void guard() const // FIXME: DO BETTER
+    virtual void guard() const
     {
         if(!linear) return; 
 
-        Type *u_this = const_cast<Type *>(this);
-        u_this->guardCount = u_this->guardCount + 1;
+        guardCount = guardCount + 1;
     }
 
-    virtual bool unguard() const // FIXME: DO BETTER
+    virtual bool unguard() const
     {
         if(!linear) return true; 
 
         if (guardCount == 0)
             return false;
-        Type *u_this = const_cast<Type *>(this);
 
-        u_this->guardCount = u_this->guardCount - 1;
+        guardCount = guardCount - 1;
         return true;
     }
 
     bool isLinear() const { return linear; }
 
+    virtual bool isLossy() const { return !linear; }
+
 protected:
-    unsigned int guardCount = 0;
+    mutable unsigned int guardCount = 0;
 
     /**
      * @brief Internal tool used to determine if this type is a supertype for another type. NOTE: THIS SHOULD NEVER BE CALLED DIRECTLY OUTSIDE OF THE TYPE DEFINITIONS. DOING SO MAY LEAD TO UNUSUAL BEHAVIOR!
@@ -122,369 +124,6 @@ private:
     const bool linear; 
 };
 
-class Protocol : public Type
-{
-protected:
-    virtual std::string as_str() const = 0;
-
-public:
-    Protocol() : Type(true) {}; 
-
-    virtual ~Protocol() = default;
-
-    /**
-     * @brief Returns a human-readable string representation of the Protocol's name.
-     *
-     * @return std::string The string name of the Protocol
-     */
-    std::string toString() const override
-    {
-        std::ostringstream description;
-        for (unsigned int i = 0; i < guardCount; i++) //FIXME: ADD TO OTHERS
-        {
-            description << "*";
-        }
-
-        description << as_str();
-
-        return description.str();
-    }
-
-    virtual const Protocol *getInverse() const = 0;
-
-    virtual const Protocol *getCopy() const override = 0;
-};
-
-// FIXME: DO BETTER
-struct ProtocolCompare
-{
-    bool operator()(const Protocol *a, const Protocol *b) const
-    {
-        return a->toString() < b->toString();
-    }
-};
-
-/*******************************************
- *
- * Sequential Protocol
- *
- *******************************************/
-class ProtocolSequence : public Protocol
-{
-private:
-    vector<const Protocol *> steps;
-    // vector<const Protocol *> prev;
-
-public:
-    ProtocolSequence(vector<const Protocol *> p)
-    {
-        steps = p;
-    }
-
-    std::string as_str() const override
-    {
-        std::ostringstream description;
-        // for (auto p : steps)
-        for (unsigned int i = 0; i < steps.size(); i++)
-        {
-            if (i != 0)
-                description << ";";
-            description << steps.at(i)->toString();
-        }
-
-        return description.str();
-    }
-
-    const ProtocolSequence *getInverse() const override;
-
-    const ProtocolSequence *getCopy() const override;
-
-    bool isComplete() const
-    {
-        return steps.size() == 0;
-    }
-
-    // bool canSend(const Type *ty) const;
-    optional<const Type *> canSend(const Type *ty) const;
-
-    // bool send(const Type *ty) const;
-    optional<const Type *> send(const Type *ty) const;
-
-    bool canRecv() const;
-
-    optional<const Type *> recv() const;
-
-    bool isWN() const;
-
-    bool contract() const;
-
-    bool weaken() const;
-
-    bool isOC(bool includeGuarded=false) const;
-
-    optional<const ProtocolSequence *> acceptLoop() const;
-    optional<const ProtocolSequence *> acceptWhileLoop() const;
-    optional<const ProtocolSequence *> acceptIf() const; 
-
-    bool isIntChoice() const;
-
-    unsigned int project(const ProtocolSequence *ps) const;
-
-    bool isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const;
-
-    void append(const ProtocolSequence *proto) const
-    {
-        ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-        vector<const Protocol *> other = proto->steps;
-        u_this->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
-    }
-
-    bool isGuarded() const override // FIXME: DO BETTER
-    {
-        if (steps.size() == 0)
-        {
-            return guardCount > 0;
-        }
-        return steps.front()->isGuarded();
-    }
-
-    void guard() const override // FIXME: DO BETTER
-    {
-        if (steps.size() == 0)
-        {
-            ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-            u_this->guardCount = u_this->guardCount + 1;
-        }
-        else
-        {
-            steps.front()->guard();
-        }
-    }
-
-    bool unguard() const override // FIXME: DO BETTER
-    {
-        if (steps.size() == 0)
-        {
-            if (guardCount == 0)
-                return false;
-            ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-
-            u_this->guardCount = u_this->guardCount - 1;
-            return true;
-        }
-
-        return steps.front()->unguard();
-    }
-};
-
-inline const ProtocolSequence *toSequence(const Protocol *proto)
-{
-    if (const ProtocolSequence *seq = dynamic_cast<const ProtocolSequence *>(proto))
-    {
-        return seq;
-    }
-
-    vector<const Protocol *> a;
-    a.push_back(proto);
-
-    return new ProtocolSequence(a);
-}
-
-/*******************************************
- *
- * RecvType Protocol
- *
- *******************************************/
-class ProtocolRecv : public Protocol
-{
-private:
-    const Type *recvType;
-
-public:
-    ProtocolRecv(const Type *v)
-    {
-        recvType = v;
-    }
-
-    std::string as_str() const override
-    {
-        std::ostringstream description;
-        description << "+" << recvType->toString();
-
-        return description.str();
-    }
-
-    const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override;
-
-    const Type *getRecvType() const { return recvType; }
-};
-
-/*******************************************
- *
- * SendType Protocol
- *
- *******************************************/
-class ProtocolSend : public Protocol
-{
-private:
-    const Type *sendType;
-
-public:
-    ProtocolSend(const Type *v)
-    {
-        sendType = v;
-    }
-
-    std::string as_str() const override
-    {
-        std::ostringstream description;
-        description << "-" << sendType->toString();
-
-        return description.str();
-    }
-
-    const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override;
-
-    const Type *getSendType() const { return sendType; }
-};
-
-/*******************************************
- *
- * Why Not Protocol
- *
- *******************************************/
-class ProtocolWN : public Protocol
-{
-private:
-    const ProtocolSequence *proto;
-
-public:
-    ProtocolWN(const ProtocolSequence *p)
-    {
-        proto = p;
-    }
-
-    std::string as_str() const override
-    {
-        std::ostringstream description;
-        description << "?(" << proto->toString() << ")";
-
-        return description.str();
-    }
-
-    const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override;
-
-    const ProtocolSequence *getInnerProtocol() const { return proto; }
-};
-
-/*******************************************
- *
- * Of Course Protocol
- *
- *******************************************/
-class ProtocolOC : public Protocol
-{
-private:
-    const ProtocolSequence *proto;
-
-public:
-    ProtocolOC(const ProtocolSequence *p)
-    {
-        proto = p;
-    }
-
-    std::string as_str() const override
-    {
-        std::ostringstream description;
-        description << "!(" << proto->toString() << ")";
-
-        return description.str();
-    }
-
-    const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override;
-
-    const ProtocolSequence *getInnerProtocol() const { return proto; }
-};
-
-/*******************************************
- *
- * External Choice Protocol
- *
- *******************************************/
-class ProtocolEChoice : public Protocol
-{
-private:
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
-
-public:
-    ProtocolEChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
-    {
-        opts = o;
-    }
-
-    std::string as_str() const override
-    {
-        std::ostringstream description;
-        unsigned int i = 0;
-        for (auto p : opts)
-        {
-            if (i != 0)
-                description << "\u2295";
-            description << p->toString();
-            i++;
-        }
-
-        return description.str();
-    }
-
-    const Protocol *getInverse() const override;
-    const Protocol *getCopy() const override;
-
-    std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
-};
-
-/*******************************************
- *
- * Internal Choice Protocol
- *
- *******************************************/
-class ProtocolIChoice : public Protocol
-{
-private:
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
-
-public:
-    ProtocolIChoice(std::set<const ProtocolSequence *, ProtocolCompare> o)
-    {
-        opts = o;
-    }
-
-    std::string as_str() const override
-    {
-        std::ostringstream description;
-
-        unsigned int i = 0;
-        for (auto p : opts)
-        {
-            if (i != 0)
-                description << "&";
-            description << p->toString();
-            i++;
-        }
-
-        return description.str();
-    }
-
-    const ProtocolEChoice *getInverse() const override;
-    const Protocol *getCopy() const override;
-
-    std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
-};
-
 /*******************************************
  *
  * Integer (32 bit, signed) Type Definition
@@ -495,18 +134,16 @@ class TypeInt : public Type
 public:
     TypeInt(bool isLinear) : Type(isLinear){}; 
 
-    std::string toString() const override { return "INT"; }
-    llvm::IntegerType *getLLVMType(llvm::Module *M) const override
-    {
-        return llvm::Type::getInt32Ty(M->getContext());
-    }
+    std::string toString() const override;
+
+    llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override { return false; }
 
     const TypeInt * getCopy() const override { return this; };
 
 protected:
-    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -520,11 +157,9 @@ class TypeBool : public Type
 public:
     TypeBool(bool isLinear) : Type(isLinear) {}; 
 
-    std::string toString() const override { return "BOOL"; }
-    llvm::Type *getLLVMType(llvm::Module *M) const override
-    {
-        return llvm::Type::getInt1Ty(M->getContext());
-    }
+    std::string toString() const override;
+
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override { return false; }
 
@@ -544,8 +179,10 @@ class TypeStr : public Type
 {
 public:
     TypeStr(bool isLinear) : Type(isLinear) {}; 
-    std::string toString() const override { return "STR"; }
-    llvm::Type *getLLVMType(llvm::Module *M) const override { return llvm::Type::getInt8PtrTy(M->getContext()); }
+
+    std::string toString() const override;
+
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override { return false; }
 
@@ -566,12 +203,12 @@ class TypeBottom : public Type
 public:
     TypeBottom(bool isLinear) : Type(isLinear) {}; 
 
-    std::string toString() const override { return "\u22A5"; }
+    std::string toString() const override;
 
-    const TypeBottom * getCopy() const override { return this; };
+    const TypeBottom * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -583,12 +220,15 @@ class TypeUnit : public Type
 {
 public:
     TypeUnit(bool isLinear) : Type(isLinear) {};
-    std::string toString() const override { return "1"; }
 
-    const TypeUnit * getCopy() const override { return this; };
+    std::string toString() const override;
+
+    const TypeUnit * getCopy() const override;
+
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -600,9 +240,10 @@ class TypeAbsurd : public Type
 {
 public:
     TypeAbsurd(bool isLinear) : Type(isLinear) {}; 
-    std::string toString() const override { return "0"; }
+    
+    std::string toString() const override;
 
-    const TypeAbsurd * getCopy() const override { return this; };
+    const TypeAbsurd * getCopy() const override;
 
 protected:
     bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
@@ -668,27 +309,21 @@ public:
      *
      * @return std::string String name representation of this type.
      */
-    std::string toString() const override
-    {
-        std::ostringstream description;
-        description << valueType->toString() << "[" << length << "]";
-
-        return description.str();
-    }
+    std::string toString() const override;
 
     /**
      * @brief Get the Value Type object
      *
      * @return const Type*
      */
-    const Type *getValueType() const { return valueType; }
+    const Type *getValueType() const;
 
     /**
      * @brief Get the Length object
      *
      * @return int
      */
-    int getLength() const { return length; }
+    int getLength() const;
 
     /**
      * @brief Gets the LLVM type for an array of the given valueType and length.
@@ -696,35 +331,14 @@ public:
      * @param C LLVM Context
      * @return llvm::Type*
      */
-    llvm::Type *getLLVMType(llvm::Module *M) const override
-    {
-        uint64_t len = (uint64_t)length;
-        llvm::Type *inner = valueType->getLLVMType(M);
-        llvm::Type *arr = llvm::ArrayType::get(inner, len);
+    llvm::ArrayType *getLLVMType(llvm::Module *M) const override;
 
-        return arr;
-    }
+    bool requiresDeepCopy() const override;
 
-    bool requiresDeepCopy() const override { return valueType->requiresDeepCopy(); }
-
-    const TypeArray * getCopy() const override { return this; };
+    const TypeArray * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override
-    {
-        // An array can only be a supertype of another array
-        if (const TypeArray *p = dynamic_cast<const TypeArray *>(other))
-        {
-            /*
-             * If the other array's value type is a subtype of the current
-             * array's type AND their lengths match, then we can consider
-             * this to be a supertype of the other array.
-             */
-            return p->valueType->isSubtype(valueType) && this->length == p->length;
-        }
-
-        return false;
-    }
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -744,88 +358,36 @@ private:
 
 public:
     /**
-     * @brief Construct a new Type Invoke object
-     *
-     * @param p List of type parameters
-     * @param v Determines if this should be a variadic
-     * @param d Determines if this has been fully defined
+     * @brief Construct a new Type Channel object
+     * 
+     * @param proto The protocol sequence for the channel to follow
      */
     TypeChannel(const ProtocolSequence *proto) : Type(true), protocol(proto) {}
 
-    std::string toString() const override
-    {
-        std::ostringstream description;
-        description << "\u21BF" << protocol->toString() << "\u21BE";
+    std::string toString() const override;
 
-        return description.str();
-    }
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
-    // TODO: Build LLVM Type here instead of in codegen!
-    llvm::Type *getLLVMType(llvm::Module *M) const override
-    {
-        return llvm::Type::getInt32Ty(M->getContext());
-    }
+    bool requiresDeepCopy() const override;
 
-    bool requiresDeepCopy() const override { return false; }
+    const ProtocolSequence *getProtocol() const;
 
-    const ProtocolSequence *getProtocol() const
-    {
-        return protocol;
-    }
+    const ProtocolSequence *getProtocolCopy() const;
 
-    const ProtocolSequence *getProtocolCopy() const
-    {
-        return toSequence(protocol->getCopy());
-    }
+    const TypeChannel *getCopy() const override;
 
-    const TypeChannel *getCopy() const override
-    {
-        return new TypeChannel(getProtocolCopy());
-    }
+    void setProtocol(const ProtocolSequence *p) const;
 
-    void setProtocol(const ProtocolSequence *p) const // FIXME: DO BETTER
-    {
-        TypeChannel *u_this = const_cast<TypeChannel *>(this);
-        u_this->protocol = p;
-    }
+    bool isGuarded() const override; 
 
-    void guard() const override // FIXME: DO BETTER
-    {
-        return protocol->guard();
-    }
+    void guard() const override;
 
-    bool unguard() const override // FIXME: DO BETTER
-    {
-        return protocol->unguard();
-    }
+    bool unguard() const override;
+
+    bool isLossy() const override; 
 
 protected:
-    bool isSupertypeFor(const Type *other) const override
-    {
-
-        if (const TypeChannel *p = dynamic_cast<const TypeChannel *>(other))
-        {
-            // return p->isSubtype(protocol);
-            return toString() == other->toString(); // FIXME: DO BETTER
-        //     // Makes sure that both functions have the same number of parameters
-        //     if (p->paramTypes.size() != this->paramTypes.size())
-        //         return false;
-
-        //     // Makes sure both functions have the same variadic status
-        //     if (this->variadic != p->variadic)
-        //         return false;
-
-        //     // Checks that the parameters of this function are all subtypes of the other
-        //     for (unsigned int i = 0; i < this->paramTypes.size(); i++)
-        //     {
-        //         if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
-        //             return false;
-        //     }
-        //     // Makes sure that the return type of this function is a subtype of the other
-        //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
-        }
-        return false;
-    }
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -846,35 +408,18 @@ private:
 public:
     TypeBox(const Type *t) : Type(false), innerType(t) {}
 
-    std::string toString() const override
-    {
-        std::ostringstream description;
-        description << "Box<" << innerType->toString() << ">";
+    std::string toString() const override;
 
-        return description.str();
-    }
+    const Type *getInnerType() const;
 
-    const Type *getInnerType() const { return innerType; }
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
-    // TODO: Build LLVM Type here instead of in codegen!
-    llvm::Type *getLLVMType(llvm::Module *M) const override
-    {
-        return innerType->getLLVMType(M)->getPointerTo();
-    }
+    bool requiresDeepCopy() const override;
 
-    bool requiresDeepCopy() const override { return true; }
-
-    const TypeBox * getCopy() const override { return this; };
+    const TypeBox * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override
-    {
-        if (const TypeBox *p = dynamic_cast<const TypeBox *>(other))
-        {
-            return innerType->isSubtype(p->innerType);
-        }
-        return false;
-    }
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -890,7 +435,7 @@ private:
      * @brief Represents the types of the function's arguments
      *
      */
-    const TypeChannel *channel;
+    const ProtocolSequence *protocol;
 
     /**
      * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
@@ -909,68 +454,27 @@ public:
     {
     }
     /**
-     * @brief Construct a new Type Invoke object
-     *
-     * @param p List of type parameters
-     * @param v Determines if this should be a variadic
-     * @param d Determines if this has been fully defined
+     * @brief Construct a new Type Program object
+     * 
+     * @param p The protocol sequence for the program's main channel to follow
      */
-    TypeProgram(const TypeChannel *c) : Type(false), channel(c), defined(true)
+    TypeProgram(const ProtocolSequence *p) : Type(false), protocol(p), defined(true)
     {
     }
 
-    bool setChannel(const TypeChannel *c) const
-    {
-        if (defined)
-            return false;
+    bool setProtocol(const ProtocolSequence * p) const; 
 
-        TypeProgram *u_this = const_cast<TypeProgram *>(this);
-        u_this->defined = true;
-        u_this->channel = c;
+    std::string toString() const override;
 
-        return true;
-    }
+    llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const;
 
-    std::string toString() const override
-    {
-        std::ostringstream description;
-        description << "PROGRAM : " << (channel ? channel->toString() : "PARTIAL DEFINITION");
+    llvm::PointerType *getLLVMType(llvm::Module *M) const override;
 
-        return description.str();
-    }
+    bool requiresDeepCopy() const override;
 
-    llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const
-    {
-        // Create a vector for our argument types
-        // std::vector<llvm::Type *> typeVec;
-        // llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
+    std::optional<std::string> getLLVMName() const;
 
-        llvm::Type *ret = llvm::Type::getVoidTy(M->getContext());
-
-        return llvm::FunctionType::get(
-            ret,
-            {llvm::Type::getInt32Ty(M->getContext())},
-            false);
-    }
-
-    // TODO: Build LLVM Type here instead of in codegen!
-    llvm::PointerType *getLLVMType(llvm::Module *M) const override
-    {
-        return getLLVMFunctionType(M)->getPointerTo();
-    }
-
-    bool requiresDeepCopy() const override { return false; }
-
-    std::optional<std::string> getLLVMName() const { return name; }
-    bool setName(std::string n) const
-    {
-        if (name)
-            return false;
-        TypeProgram *u_this = const_cast<TypeProgram *>(this);
-        u_this->name = n;
-        // name = n;
-        return true;
-    }
+    bool setName(std::string n) const;
 
     /**
      * @brief Returns if this is defined
@@ -978,53 +482,23 @@ public:
      * @return true
      * @return false
      */
-    bool isDefined() const { return defined; }
+    bool isDefined() const;
 
-    const TypeChannel *getChannelType() const
-    {
-        return channel;
-    }
+    const ProtocolSequence * getProtocol() const; 
 
-    const TypeProgram * getCopy() const override { return this; };
+    const TypeProgram * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override
-    {
-        // // Checks that the other type is also invokable
-        // if (const TypeInvoke *p = dynamic_cast<const TypeInvoke *>(other))
-        // {
-        //     // Makes sure that both functions have the same number of parameters
-        //     if (p->paramTypes.size() != this->paramTypes.size())
-        //         return false;
-
-        //     // Makes sure both functions have the same variadic status
-        //     if (this->variadic != p->variadic)
-        //         return false;
-
-        //     // Checks that the parameters of this function are all subtypes of the other
-        //     for (unsigned int i = 0; i < this->paramTypes.size(); i++)
-        //     {
-        //         if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
-        //             return false;
-        //     }
-        //     // Makes sure that the return type of this function is a subtype of the other
-        //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
-        // }
-        if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
-        {
-            return channel->isSubtype(p->channel); // FIXME: DO BETTER/VERIFY!
-        }
-        return false;
-    }
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
  *
- * Invokable (FUNC/PROC) Type Definition
+ * Function Type Definition
  *
  *******************************************/
 
-class TypeInvoke : public Type
+class TypeFunc : public Type
 {
 private:
     /**
@@ -1058,121 +532,53 @@ private:
     std::optional<std::string> name = {}; // NOT FOR SEMANTIC NAMES!!! THIS ONE IS FOR LLVM ONLY
 
 public:
-    /**
-     * @brief Construct a new Type Invoke object that has no return and no arguments
-     *
-     */
-    TypeInvoke() : Type(false), defined(false)
+    TypeFunc() : Type(false), defined(false)
     {
     }
 
     /**
-     * @brief Construct a new Type Invoke object
+     * @brief Construct a new TypeFunc object
      *
      * @param p List of type parameters
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) : Type(false), paramTypes(p), retType(r), variadic(v), defined(true)
+    TypeFunc(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) : Type(false), paramTypes(p), retType(r), variadic(v), defined(true)
     {
     }
 
-    bool setInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) const
-    {
-        if (defined)
-            return false;
-
-        TypeInvoke *u_this = const_cast<TypeInvoke *>(this);
-        u_this->defined = true;
-        u_this->paramTypes = p;
-        u_this->retType = r;
-        u_this->variadic = v;
-
-        return true;
-    }
+    bool setInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) const;
 
     /**
      * @brief Returns a string representation of the type in format: <PROC | FUNC> (param_0, param_1, ...) -> return_type.
      *
      * @return std::string
      */
-    std::string toString() const override
-    {
-        std::ostringstream description;
+    std::string toString() const override;
 
-        if (paramTypes.size() == 0)
-            description << "()"; // TODO: change whole thing to tuple to make it easier to deal with
+    llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const;
 
-        for (unsigned int i = 0; i < paramTypes.size(); i++)
-        {
-            description << paramTypes.at(i)->toString();
+    llvm::PointerType *getLLVMType(llvm::Module *M) const override;
 
-            if (i + 1 < paramTypes.size())
-            {
-                description << ", ";
-            }
-        }
+    bool requiresDeepCopy() const override;
 
-        if (variadic)
-            description << ", ... ";
+    std::optional<std::string> getLLVMName() const;
 
-        description << "-> ";
-
-        description << retType->toString();
-        return description.str();
-    }
-
-    llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const
-    {
-        // Create a vector for our argument types
-        std::vector<llvm::Type *> typeVec;
-
-        for (const Type *ty : paramTypes)
-        {
-            typeVec.push_back(ty->getLLVMType(M));
-        }
-
-        llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
-
-        llvm::Type *ret = retType->getLLVMType(M);
-
-        return llvm::FunctionType::get(
-            ret,
-            paramRef,
-            variadic);
-    }
-    // TODO: Build LLVM Type here instead of in codegen!
-    llvm::PointerType *getLLVMType(llvm::Module *M) const override
-    {
-        return getLLVMFunctionType(M)->getPointerTo();
-    }
-
-    bool requiresDeepCopy() const override { return false; }
-
-    std::optional<std::string> getLLVMName() const { return name; }
-    bool setName(std::string n) const
-    {
-        if (name)
-            return false;
-        TypeInvoke *u_this = const_cast<TypeInvoke *>(this);
-        u_this->name = n;
-        // name = n;
-        return true;
-    }
+    bool setName(std::string n) const;
 
     /**
      * @brief Get the Param Types object
      *
      * @return std::vector<const Type *>
      */
-    std::vector<const Type *> getParamTypes() const { return paramTypes; }
+    std::vector<const Type *> getParamTypes() const;
 
     /**
      * @brief Get the Return Type object
      *
      * @return const Type*
      */
-    const Type *getReturnType() const { return retType; }
+    const Type *getReturnType() const;
 
     /**
      * @brief Returns if this is a variadic
@@ -1180,7 +586,7 @@ public:
      * @return true
      * @return false
      */
-    bool isVariadic() const { return variadic; }
+    bool isVariadic() const;
 
     /**
      * @brief Returns if this is defined
@@ -1188,37 +594,12 @@ public:
      * @return true
      * @return false
      */
-    bool isDefined() const { return defined; }
+    bool isDefined() const;
 
-    const TypeInvoke * getCopy() const override { return this; };
+    const TypeFunc * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override
-    {
-        // Checks that the other type is also invokable
-        if (const TypeInvoke *p = dynamic_cast<const TypeInvoke *>(other))
-        {
-            // Makes sure that both functions have the same number of parameters
-            if (p->paramTypes.size() != this->paramTypes.size())
-                return false;
-
-            // Makes sure both functions have the same variadic status
-            if (this->variadic != p->variadic)
-                return false;
-
-            // Checks that the parameters of this function are all subtypes of the other
-            for (unsigned int i = 0; i < this->paramTypes.size(); i++)
-            {
-                if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
-                {
-                    return false;
-                }
-            }
-            // Makes sure that the return type of this function is a subtype of the other
-            return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeUnit *>(this->retType) && dynamic_cast<const TypeUnit *>(p->retType));
-        }
-        return false;
-    }
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -1253,47 +634,27 @@ public:
      * @return true
      * @return false
      */
-    bool hasBeenInferred() const { return valueType->has_value(); }
+    bool hasBeenInferred() const;
 
-    std::optional<const Type*> getValueType() const
-    { 
-        if(hasBeenInferred()) return  valueType->value(); 
-        return std::nullopt; 
-    }
+    std::optional<const Type*> getValueType() const;
 
     /**
      * @brief Returns VAR if type inference has not been completed or {VAR/<INFERRED TYPE>} if type inference has completed.
      *
      * @return std::string
      */
-    std::string toString() const override
-    {
-        if (hasBeenInferred())
-        {
-            return "{VAR/" + valueType->value()->toString() + "}";
-        }
-        return "VAR";
-    }
-
+    std::string toString() const override;
     /**
      * @brief Gets the LLVM representation of the inferred type.
      *
      * @param C LLVM Context
      * @return llvm::Type* the llvm type for the inferred type.
      */
-    llvm::Type *getLLVMType(llvm::Module *M) const override
-    {
-        if (valueType->has_value())
-            return valueType->value()->getLLVMType(M);
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
-        // This should never happen: we should have always detected such cases in our semantic analysis
-        return nullptr;
-    }
+    bool requiresDeepCopy() const override;
 
-    // FIXME: BAD OPT ACCESS
-    bool requiresDeepCopy() const override { return valueType->value()->requiresDeepCopy(); }
-
-    const TypeInfer * getCopy() const override { return this; };
+    const TypeInfer * getCopy() const override;
 
 protected:
     /**
@@ -1303,38 +664,7 @@ protected:
      * @return true If this type is already a subtype other, or this type can be updated to have the type of other
      * @return false If this type cannot be of type other.
      */
-    bool setValue(const Type *other) const
-    {
-        // Prevent us from being sent another TypeInfer. There's no reason for this to happen
-        // as it should have been added as a dependency (and doing this would break things)
-        if (dynamic_cast<const TypeInfer *>(other))
-            return false;
-
-        // If we have already inferred a type, we just need to check
-        // that that type is a subtype of other.
-        if (valueType->has_value())
-        {
-            return other->isSubtype(valueType->value()); // NOTE: CONDITION INVERSED BECAUSE WE CALL IT INVERSED IN SYMBOL.CPP!
-        }
-
-        // Set our valueType to be the provided type to see if anything breaks...
-        TypeInfer *u_this = const_cast<TypeInfer *>(this);
-        *u_this->valueType = other;
-
-        // Run through our dependencies making sure they can all also
-        // be compatible with having a type of other.
-        bool valid = true;
-        for (const TypeInfer *ty : infTypes)
-        {
-            if (!ty->setValue(other))
-            {
-                valid = false;
-            }
-        }
-
-        // Return true/false depending on if the aforementioned process was successful.
-        return valid;
-    }
+    bool setValue(const Type *other) const;
 
     /**
      * @brief Determines if this is a supertype of another type (and thus, also performs type inferencing).
@@ -1343,37 +673,7 @@ protected:
      * @return true
      * @return false
      */
-    bool isSupertypeFor(const Type *other) const override
-    {
-        // If we already have an inferred type, we can simply
-        // check if that type is a subtype of other.
-        if (valueType->has_value())
-            // return other->isSubtype(valueType->value());
-            return valueType->value()->isSubtype(other);
-
-        /*
-         * If the other type is also an inference type...
-         */
-        if (const TypeInfer *oinf = dynamic_cast<const TypeInfer *>(other))
-        {
-            // If the other inference type has a value determined, try using that
-            if (oinf->valueType->has_value())
-            {
-                return setValue(oinf->valueType->value());
-            }
-
-            // Otherwise, add the types to be dependencies of each other, and return true.
-            TypeInfer *u_this = const_cast<TypeInfer *>(this);
-            u_this->infTypes.push_back(oinf);
-
-            TypeInfer *moth = const_cast<TypeInfer *>(oinf);
-            moth->infTypes.push_back(this);
-            return true;
-        }
-
-        // Try to update this type's inferred value with the other type
-        return setValue(other);
-    }
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -1408,72 +708,23 @@ public:
     {
     }
 
-    bool define(std::set<const Type *, TypeCompare> c) const
-    {
-        if (isDefined())
-            return false;
-
-        TypeSum *u_this = const_cast<TypeSum *>(this);
-        u_this->defined = true;
-
-        u_this->cases = c;
-
-        return true;
-    }
-
-    bool isDefined() const { return defined; }
+    bool define(std::set<const Type *, TypeCompare> c) const;
+    bool isDefined() const;
 
     // auto lexical_compare = [](int a, int b) { return to_string(a) < to_string(b); };
 
-    bool contains(const Type *ty) const
-    {
-        return cases.count(ty);
-    }
+    bool contains(const Type *ty) const;
 
-    std::set<const Type *, TypeCompare> getCases() const { return cases; }
+    std::set<const Type *, TypeCompare> getCases() const;
 
-    unsigned int getIndex(llvm::Module *M, llvm::Type *toFind) const
-    {
-        unsigned i = 1;
-
-        for (auto e : getCases())
-        {
-            if (e->getLLVMType(M) == toFind)
-            {
-                return i;
-            }
-            i++;
-        }
-        return (unsigned int)0;
-    }
+    unsigned int getIndex(llvm::Module *M, llvm::Type *toFind) const;
 
     /**
      * @brief Returns the name of the string in form of <valueType name>[<array length>].
      *
      * @return std::string String name representation of this type.
      */
-    std::string toString() const override
-    {
-        if (name)
-            return name.value();
-
-        std::ostringstream description;
-
-        description << "(";
-
-        unsigned int ctr = 0;
-        unsigned int size = cases.size();
-
-        for (const Type *el : cases)
-        {
-            description << el->toString();
-            if (++ctr != size)
-                description << " + ";
-        }
-        description << ")";
-
-        return description.str();
-    }
+    std::string toString() const override;
 
     /**
      * @brief Gets the LLVM type for an array of the given valueType and length.
@@ -1481,97 +732,14 @@ public:
      * @param C LLVM Context
      * @return llvm::Type*
      */
-    llvm::StructType *getLLVMType(llvm::Module *M) const override
-    {
-        llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-        if (ty)
-            return ty;
+    llvm::StructType *getLLVMType(llvm::Module *M) const override;
 
-        unsigned int min = std::numeric_limits<unsigned int>::max();
-        unsigned int max = std::numeric_limits<unsigned int>::min();
+    bool requiresDeepCopy() const override;
 
-        for (auto e : cases)
-        {
-            // Note: This is why one has to use pointers in order to nest a type into itself
-            unsigned int t = M->getDataLayout().getTypeAllocSize(e->getLLVMType(M));
-            // FIXME: DO BETTER - ALSO WILL NOT WORK ON VARS! (there are actually a LOT of places where using a var may break things bc we only check for TypeSum)
-
-            // M->getDataLayout().getTypeAllocSize(e->getLLVMType(M));
-
-            if (t < min)
-            {
-                min = t;
-            }
-
-            if (t > max)
-            {
-                max = t;
-            }
-        }
-
-        // Probably not needed in struct, but might be. 
-        // Needed in the case that we generate the type while generating one of the subtypes...
-        ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-        if (ty)
-            return ty;
-
-        // FIXME: DO BETTER
-        uint64_t len = (uint64_t)max;
-        llvm::Type *inner = llvm::Type::getInt8Ty(M->getContext());
-        llvm::Type *arr = llvm::ArrayType::get(inner, len);
-
-        std::vector<llvm::Type *> typeVec = {llvm::Type::getInt32Ty(M->getContext()), arr};
-
-        llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-        auto ans = llvm::StructType::create(M->getContext(), ref, toString());
-        
-        return ans;
-    }
-
-    bool requiresDeepCopy() const override
-    {
-        for (auto e : cases)
-            if (e->requiresDeepCopy())
-                return true;
-
-        return false;
-    }
-
-    const TypeSum * getCopy() const override { return this; };
+    const TypeSum * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override
-    {
-        if (this->contains(other))
-            return true;
-
-        if (const TypeSum *oSum = dynamic_cast<const TypeSum *>(other))
-        {
-            if (this->cases.size() != oSum->cases.size())
-                return false;
-
-            for (const Type *t : this->cases)
-            {
-                bool found = false;
-
-                for (const Type *y : oSum->cases)
-                {
-                    if (t->isSubtype(y))
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                    return false;
-            }
-
-            return true;
-        }
-
-        return false;
-    }
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 /*******************************************
@@ -1609,62 +777,23 @@ public:
     {
     }
 
-    std::optional<const Type *> get(std::string id) const
-    {
-        return elements.lookup(id);
-    }
+    std::optional<const Type *> get(std::string id) const;
 
-    std::optional<unsigned int> getIndex(std::string id) const
-    {
-        return elements.getIndex(id);
-    }
+    std::optional<unsigned int> getIndex(std::string id) const;
 
-    bool define(LinkedMap<std::string, const Type *> e) const
-    {
-        if (isDefined())
-            return false;
+    bool define(LinkedMap<std::string, const Type *> e) const;
 
-        TypeStruct *u_this = const_cast<TypeStruct *>(this);
-        u_this->defined = true;
+    bool isDefined() const;
 
-        u_this->elements = e;
-        // u_this->name = n;
+    vector<pair<std::string, const Type *>> getElements() const;
+    optional<unsigned int> getElementIndex(std::string k) const;
 
-        return true;
-    }
-
-    bool isDefined() const { return defined; }
-
-    // std::map<std::string, const Type*> getElements() const { return elements; }
-    vector<pair<std::string, const Type *>> getElements() const { return elements.getElements(); }
-    optional<unsigned int> getElementIndex(std::string k) const { return elements.getIndex(k); }
     /**
      * @brief Returns the name of the string in form of <valueType name>[<array length>].
      *
      * @return std::string String name representation of this type.
      */
-    std::string toString() const override
-    {
-        if (name)
-            return name.value();
-
-        std::ostringstream description;
-
-        description << "(";
-
-        unsigned int ctr = 0;
-        unsigned int size = elements.getElements().size();
-
-        for (auto e : elements.getElements())
-        {
-            description << e.second->toString();
-            if (++ctr != size)
-                description << " * ";
-        }
-        description << ")";
-
-        return description.str();
-    }
+    std::string toString() const override;
 
     /**
      * @brief Gets the LLVM type for an array of the given valueType and length.
@@ -1672,44 +801,14 @@ public:
      * @param C LLVM Context
      * @return llvm::Type*
      */
-    llvm::StructType *getLLVMType(llvm::Module *M) const override
-    {
-        llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-        if (ty)
-            return ty;
+    llvm::StructType *getLLVMType(llvm::Module *M) const override;
 
-        ty = llvm::StructType::create(M->getContext(), toString());
+    bool requiresDeepCopy() const override;
 
-        std::vector<llvm::Type *> typeVec;
-
-        for (auto ty : elements.getElements())
-        {
-            typeVec.push_back(ty.second->getLLVMType(M));
-        }
-
-        llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-        ty->setBody(ref); // Done like this to enable recursive types
-
-        return ty;
-    }
-
-    bool requiresDeepCopy() const override
-    {
-        for (auto ty : elements.getElements())
-            if (ty.second->requiresDeepCopy())
-                return true;
-
-        return false;
-    }
-
-    const TypeStruct * getCopy() const override { return this; };
+    const TypeStruct * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override
-    {
-        // FIXME: How do we get types across files?
-        return this == other; // FIXME: DO BETTER
-    }
+    bool isSupertypeFor(const Type *other) const override;
 };
 
 

@@ -32,4 +32,5 @@ set (CORE_SOURCES
   ${CORE_DIR}/Messages.cpp
   ${CORE_DIR}/StateManager.cpp
   ${CORE_DIR}/CloneMapWrapper.cpp
+  ${CORE_DIR}/ArrayStream.cpp
 )

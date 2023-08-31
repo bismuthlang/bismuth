@@ -71,7 +71,7 @@ public:
         // builder = new IRBuilder<NoFolder>(module->getContext());
 
         // LLVM Types
-        VoidTy = llvm::Type::getVoidTy(module->getContext());
+        UnitTy = Types::UNIT->getLLVMType(module);
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
         Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
@@ -110,20 +110,13 @@ public:
         return module->getOrInsertFunction(
             "free",
             FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {i8p},
                 false));
     }
 
     llvm::FunctionCallee getGCMalloc()
     {
-        // return module->getOrInsertFunction(
-        //     "malloc",
-        //     FunctionType::get(
-        //         i8p,
-        //         {Int32Ty},
-        //         false));
-
         return module->getOrInsertFunction(
             "GC_malloc",
             FunctionType::get(
@@ -161,7 +154,7 @@ public:
             module->getOrInsertFunction(
                 "_address_map_delete",
                 FunctionType::get(
-                    VoidTy,
+                    UnitTy,
                     {i8p},
                     false)),
             val);
@@ -182,7 +175,7 @@ public:
         return module->getOrInsertFunction(
             "_address_map_put",
             FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {i8p,
                  i8p,
                  i8p},
@@ -191,7 +184,7 @@ public:
 
     // TODO: REFACTOR W IMPL IN CODEGEN VISITOR
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
-    llvm::AllocaInst *CreateEntryBlockAlloc(IRBuilder<NoFolder> *builder, llvm::Type *ty, std::string identifier)
+    llvm::AllocaInst * CreateEntryBlockAlloc(IRBuilder<NoFolder> *builder, llvm::Type *ty, std::string identifier)
     {
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
         // // for(auto B = fn->begin(), e = fn->end(); B != e; ++B)
@@ -231,14 +224,14 @@ public:
     }
 
 private:
-    BismuthErrorHandler *errorHandler;
+    BismuthErrorHandler *errorHandler; // TODO: VERIFY ERRORS GET REPORTED, WHY * INSTEAD OF &?
 
     // LLVM
     Module *module;
     // IRBuilder<NoFolder> *builder;
 
     // Commonly used types
-    llvm::Type *VoidTy;
+    llvm::Type *UnitTy;
     llvm::Type *Int1Ty;
     llvm::IntegerType *Int8Ty;
     llvm::IntegerType *Int32Ty; // Things like 32 bit integers
@@ -277,7 +270,8 @@ private:
             if(infType->hasBeenInferred()) {
                 return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, addrMap);// , GC_MALLOC);
             }
-            return std::nullopt; //FIXME: ADD ERROR 
+            errorHandler->addError(nullptr, "Cannot make a copy of a variable that has yet to be inferred");
+            return std::nullopt; // TODO: Probably add a compiler pass to make this impossible. After all, such an error message is hardly useful. 
         }
 
         Function *testFn = module->getFunction("_clone_" + type->toString());
@@ -327,7 +321,7 @@ private:
                 builder->CreateZExtOrTrunc(
                     builder->CreateICmpNE(
                         hasValPtr,
-                        llvm::Constant::getNullValue(hasValPtr->getType())),
+                        llvm::Constant::getNullValue(hasValPtr->getType())), //TODO: REFACTOR
                     Int1Ty),
                 thenBlk,
                 elseBlk);
@@ -475,7 +469,7 @@ private:
                 optional<Value *> valOpt = deepCopyHelper(builder, valueType, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
                         return std::nullopt;
-                builder->CreateStore(valOpt.value(), memLoc);
+                builder->CreateStore(valOpt.value(), memLoc); // Verify this doesn't over-write the thing. I think it should be fine, but still...
             }
 
             /**/

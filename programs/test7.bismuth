@@ -2,6 +2,12 @@ extern func printf(...) : int;
 
 # int a := 10; 
 
+define func accessor (str[4] array, int idx) : str {
+    match array[idx]
+        |   Unit u => return "Bounds Error";
+        |   str s => return s;
+}
+
 define program :: io : Channel<-int> = {
     printf("H\t\n\r\n\v\"\'\nokay\\")
 
@@ -20,8 +26,8 @@ define program :: io : Channel<-int> = {
         y := 0; 
 
         while y < array.length {
-            str i := array[x];
-            str j := array[y]; 
+            str i := accessor(array, x); # array[x];
+            str j := accessor(array, y); # array[y]; 
 
             #printf("%s@%d equals %s@%d = %d\n", i, x, j, y, i = j);
             printf("%d, %d, = %d\n", x, y, i == j);

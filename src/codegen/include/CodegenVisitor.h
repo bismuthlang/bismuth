@@ -77,7 +77,7 @@ public:
         copyVisitor = new DeepCopyVisitor(module, &errorHandler);
 
         // LLVM Types
-        VoidTy = llvm::Type::getVoidTy(module->getContext());
+        UnitTy = Types::UNIT->getLLVMType(module);
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
         Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
@@ -95,7 +95,7 @@ public:
     std::optional<Value *> visit(TSelectStatementNode *n) override;
     std::optional<Value *> visit(TBlockNode *n) override;
     std::optional<Value *> visit(TLambdaConstNode *n) override;
-    std::optional<Value *> visit(TProgramDefNode *n) override { return visitInvokeable(n); };
+    std::optional<Value *> visit(TProgramDefNode *n) override;
     std::optional<Value *> visit(TConditionalStatementNode *n) override;
     std::optional<Value *> visit(TReturnNode *n) override;
     std::optional<Value *> visit(TProgramSendNode *n) override;
@@ -143,90 +143,6 @@ public:
     Module *getModule() { return module; }
     void modPrint() { module->print(llvm::outs(), nullptr); }
 
-    /**
-     * @brief Generates the code for an InvokeableType (PROC/FUNC)
-     *
-     * @param sum The FuncDefContext to build the function from
-     * @return std::optional<Value *> Empty as this shouldn't be seen as a value
-     */
-    std::optional<Value *> visitInvokeable(TProgramDefNode *n)
-    {
-        BasicBlock *ins = builder->GetInsertBlock();
-
-        // Get the function name. Done separately from sym in case the symbol isn't found
-        std::string funcId = n->name;
-
-        const TypeProgram *inv = n->getType();
-
-        llvm::FunctionType *fnType = inv->getLLVMFunctionType(module);
-
-        Function *fn = inv->getLLVMName() ? module->getFunction(inv->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, funcId, module);
-        ; // Lookup the function first
-        inv->setName(fn->getName().str());
-        
-        // Get the parameter list context for the invokable
-        // BismuthParser::ParameterListContext *paramList = ctx->paramList;
-        // Create basic block
-        BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
-        builder->SetInsertPoint(bBlk);
-
-        // Bind all of the arguments
-        llvm::AllocaInst *v = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
-        // n->channelSymbol->val = v;
-        n->channelSymbol->setAllocation(v);
-        builder->CreateStore((fn->args()).begin(), v);
-        /*
-        for (auto &arg : fn->args())
-        {
-            // Get the argument number (just seems easier than making my own counter)
-            int argNumber = arg.getArgNo();
-
-            // Get the argument's type
-            llvm::Type *type = fnType->params()[argNumber];
-
-            // Get the argument name (This even works for arrays!)
-            std::string argName = paramList->params.at(argNumber)->getText();
-
-            // Create an allocation for the argument
-            llvm::AllocaInst *v = builder->CreateAlloca(type, 0, argName);
-
-            // Try to find the parameter's binding to determine what value to bind to it.
-            std::optional<Symbol *> symOpt = props->getBinding(paramList->params.at(argNumber));
-
-            if (!symOpt)
-            {
-                errorHandler.addError(nullptr, "Unable to generate parameter for function: " + argName);
-            }
-            else
-            {
-                symOpt.value()->val = v;
-
-                builder->CreateStore(&arg, v);
-            }
-        }
-        */
-
-        // Get the codeblock for the PROC/FUNC
-        // BismuthParser::BlockContext *block = ctx->block();
-        // Generate code for the block
-        for (auto e : n->block->exprs)
-        {
-            // e->accept(this);
-            this->accept(e);
-            // module->dump();
-        }
-        
-        // If we are a PROC, make sure to add a return type (if we don't already have one)
-        // if (ctx->PROC() && !CodegenVisitor::blockEndsInReturn(block))
-        if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE
-        {
-            builder->CreateRetVoid();
-        }
-        
-        builder->SetInsertPoint(ins);
-        return std::nullopt;
-    }
-
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {
         // Try getting the type for the symbol, raising an error if it could not be determined
@@ -254,7 +170,7 @@ public:
 
                 return fn;
             }
-            else if (const TypeInvoke *inv = dynamic_cast<const TypeInvoke *>(sym->type)) // This is annoying that we have to have duplicate code despite both APIs being the same
+            else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->type)) // This is annoying that we have to have duplicate code despite both APIs being the same
             {
                 if (!inv->getLLVMName())
                 {
@@ -303,7 +219,7 @@ public:
     {
         return module->getOrInsertFunction("WriteProjection",
                                            llvm::FunctionType::get(
-                                               VoidTy,
+                                               UnitTy,
                                                {Int32Ty,
                                                 Int32Ty},
                                                false));
@@ -333,20 +249,13 @@ public:
         return module->getOrInsertFunction(
             "free",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {i8p},
                 false));
     }
 
     llvm::FunctionCallee getGCMalloc()
     {
-        // return module->getOrInsertFunction(
-        //     "malloc",
-        //     llvm::FunctionType::get(
-        //         i8p,
-        //         {Int32Ty},
-        //         false));
-
         return module->getOrInsertFunction(
             "GC_malloc",
             llvm::FunctionType::get(
@@ -360,7 +269,7 @@ public:
         return module->getOrInsertFunction(
             "WeakenChannel",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {Int32Ty},
                 false));
     }
@@ -370,7 +279,7 @@ public:
         return module->getOrInsertFunction(
             "WriteChannel",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {Int32Ty,
                  i8p},
                 false));
@@ -393,7 +302,7 @@ public:
             llvm::FunctionType::get(
                 Int32Ty,
                 {llvm::FunctionType::get(
-                     VoidTy,
+                     UnitTy,
                      {Int32Ty},
                      false)
                      ->getPointerTo()},
@@ -434,7 +343,7 @@ public:
         return module->getOrInsertFunction(
             "PopEndLoop",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {Int32Ty},
                 false));
     }
@@ -444,7 +353,7 @@ public:
         return module->getOrInsertFunction(
             "ContractChannel",
             llvm::FunctionType::get(
-                VoidTy,
+                UnitTy,
                 {Int32Ty},
                 false));
     }
@@ -459,9 +368,23 @@ public:
                 false));
     }
 
+    llvm::FunctionCallee get_arrayToChannel()
+    {
+        return module->getOrInsertFunction(
+            "_ArrayToChannel",
+            llvm::FunctionType::get(
+                Int32Ty,
+                {Int8PtrPtrTy, Int32Ty},
+                false));
+    }
+
     llvm::Value *getNewAddressMap()
     {
         return builder->CreateCall(get_address_map_create(), {});
+    }
+
+    llvm::Value *getUnitValue() {
+        return Constant::getNullValue(Types::UNIT->getLLVMType(module));
     }
 
     void deleteAddressMap(llvm::Value *val)
@@ -470,21 +393,20 @@ public:
             module->getOrInsertFunction(
                 "_address_map_delete",
                 llvm::FunctionType::get(
-                    VoidTy,
+                    UnitTy,
                     {i8p},
                     false)),
             val);
     }
 
-    Value *correctSumAssignment(const TypeSum *sum, Value *original)
+    Value * correctSumAssignment(const TypeSum *sum, Value *original)
     {
         unsigned int index = sum->getIndex(module, original->getType());
 
         if (index != 0)
         {
             llvm::Type *sumTy = sum->getLLVMType(module);
-
-            llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
+            llvm::AllocaInst * alloc = CreateEntryBlockAlloc(sumTy, "");
 
             Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
 
@@ -501,6 +423,8 @@ public:
         return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cases...
     }
 
+    // TODO: void elimination? Should be somewhat handled by llvm
+    // FIXME: BLOCK UNIT FROM BEING IN STRUCT? OR AT LEAST TEST IF ITS BREAKING
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
@@ -520,7 +444,7 @@ private:
     IRBuilder<NoFolder> *builder;
 
     // Commonly used types
-    llvm::Type *VoidTy;
+    llvm::Type *UnitTy;
     llvm::Type *Int1Ty;
     llvm::IntegerType *Int8Ty;
     llvm::IntegerType *Int32Ty; // Things like 32 bit integers

@@ -14,14 +14,9 @@
 #include <string>  //Includes strings
 #include <sstream> //Used for string streams
 #include "llvm/IR/Value.h"
-#include "llvm/IR/IRBuilder.h"
 
-#include <any>      // Needed for anycasts
-#include <utility>  // Needed for anycasts
-#include <vector>   // Vectors
 #include <optional> // Optionals
 
-#include <iostream> // cout
 
 #include "Type.h"
 
@@ -66,50 +61,12 @@ struct Symbol
         val = sym.val; 
     }
 
-    std::string getIdentifier() const { return identifier; }
+    std::string getIdentifier() const; 
+    std::string toString() const;
 
-    std::string toString() const
-    {
-        std::ostringstream description;
-        std::string typeName = type->toString(); // getStringFor(type);
-        description << '[' << identifier << ", " << typeName << ']';
-        return description.str();
-    }
-
-    // Symbol * getCopy() 
-    // {
-    //     Symbol * ans = new Symbol(identifier, type->getCopy(), isDefinition, isGlobal);
-    //     ans->val = this->val; 
-    //     // ans->hasValue = true;
-    //     // if(hasValue)
-    //     // {
-    //     // }
-    //     return ans;
-    // }
-
-    std::optional<llvm::AllocaInst *> getAllocation() 
-    { 
-        // if(hasValue) return *val; 
-        // return std::nullopt; 
-        return *val; 
-    }
-
-    void setAllocation(llvm::AllocaInst * a) 
-    { 
-        // if(!hasValue) 
-        // {
-        //     val = & a; 
-        // }
-        // else 
-        // {
-        //     *val = a;
-        // }
-        // hasValue = true; 
-        *val = a; 
-    }
+    std::optional<llvm::AllocaInst *> getAllocation(); 
+    void setAllocation(llvm::AllocaInst * a); 
 
 private: 
-    // bool hasValue = false; 
-    // llvm::AllocaInst ** val;
     std::optional<llvm::AllocaInst *> * val;
 };

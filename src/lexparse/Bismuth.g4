@@ -2,7 +2,7 @@
  * Alex Friedman (ahfriedman@wpi.edu)
  * Grammar file for Bismuth
  */
-grammar Bismuth; //FIXME: IF WE UPDATE THE SYNTAX, THEN OUR PROGRAM TESTS WILL INCORRECTLY FAIL/PASS DUE TO SYNTAX ERROR
+grammar Bismuth;
 
 // Parser rules
 compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ; 
@@ -73,9 +73,9 @@ expression          : LPAR ex=expression RPAR                                   
                     | lambdaConstExpr                               # LambdaExpr
                     | channel=VARIABLE '.recv' LPAR RPAR            # AssignableRecv
                     | channel=VARIABLE '.is_present' LPAR RPAR      # AssignableIsPresent
-                    | EXEC prog=expression                        # AssignableExec
-                    | COPY LPAR expr=expression RPAR              # CopyExpr
-                    | COPY expr=expression                        # CopyExpr
+                    | EXEC prog=expression                          # AssignableExec
+                    | COPY LPAR expr=expression RPAR                # CopyExpr
+                    | COPY expr=expression                          # CopyExpr
                     ;
 
 lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
@@ -195,8 +195,8 @@ subProtocol     :   '+' ty=type                 # RecvType
                 |   '-' ty=type                 # SendType
                 |   '?' proto=protocol          # WnProto
                 |   '!' proto=protocol          # OcProto
-                |   'ExternalChoice' LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # ExtChoiceProto
-                |   'InternalChoice' LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # IntChoiceProto
+                |    EXTERNAL_CHOICE LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # ExtChoiceProto
+                |    INTERNAL_CHOICE LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # IntChoiceProto
                 ;
 
 
@@ -204,11 +204,11 @@ subProtocol     :   '+' ty=type                 # RecvType
 type            :    ty=type LBRC len=INTEGER RBRC                                          # ArrayType
                 |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT)                       # BaseType
                 |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
-                |    '(' (paramTypes+=type (COMMA paramTypes+=type)*)? ')' MAPS_TO (returnType=type | '(' ')') # LambdaType
+                |    LPAR (paramTypes+=type (COMMA paramTypes+=type)*)? RPAR MAPS_TO (returnType=type | LPAR RPAR) # LambdaType
                 |    LPAR type (PLUS type)+ RPAR                                            # SumType 
-                |    'Channel' LESS proto=protocol GREATER                                  # ChannelType
-                |    'Program' LESS proto=protocol GREATER                                  # ProgramType
-                |    'Box'     LESS ty=type GREATER                                         # BoxType
+                |    TYPE_CHANNEL LESS proto=protocol GREATER                               # ChannelType
+                |    TYPE_PROGRAM LESS proto=protocol GREATER                               # ProgramType
+                |    TYPE_BOX     LESS ty=type GREATER                                      # BoxType
                 |    VARIABLE                                                               # CustomType
                 ;
 
@@ -217,6 +217,9 @@ TYPE_BOOL       :   'boolean'   ;
 TYPE_STR        :   'str'       ; 
 TYPE_UNIT       :   'Unit'      ;
 TYPE_VAR        :   'var'       ;
+TYPE_BOX        :   'Box'       ;
+TYPE_PROGRAM    :   'Program'   ;
+TYPE_CHANNEL    :   'Channel'   ;
 
 //Others
 FUNC            :   'func'  ;
@@ -233,6 +236,10 @@ DEFINE          :   'define';
 EXIT            :   'exit'  ;
 EXEC            :   'exec'  ;
 COPY            :   'copy'  ;
+
+// Protocols   
+EXTERNAL_CHOICE :   'ExternalChoice'    ;
+INTERNAL_CHOICE :   'InternalChoice'    ;
 
 
 

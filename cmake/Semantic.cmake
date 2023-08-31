@@ -11,5 +11,6 @@ set (SEMANTIC_INCLUDE
 #################################################
 set (SEMANTIC_SOURCES
   ${SEMANTIC_DIR}/SemanticVisitor.cpp
+  ${SEMANTIC_DIR}/ProtocolVisitor.cpp
   ${SEMANTIC_DIR}/PropertyManager.cpp
 )

@@ -1,7 +1,7 @@
 extern func printf(str s, ...) : int;
 
 
-define program :: c : Channel<-int> = {
+define program :: c : Channel<-int> {
     var addStream := exec BinaryCounter;
     addStream.send(exec Num7);
     addStream.send(exec Num5);
@@ -21,7 +21,7 @@ define func XOR (boolean a, boolean b) : boolean {
     return (a & !b) | (!a & b);
 }
 
-define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> = {
+define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> {
     var i1 := c.recv(), i2 := c.recv();
 
     boolean carry := false; 
@@ -63,7 +63,7 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
     weaken(c);  
 }
 
-define Num7 :: c : Channel<?-boolean> = {
+define Num7 :: c : Channel<?-boolean> {
     more(c); 
     c.send(true); 
     more(c); 
@@ -73,7 +73,7 @@ define Num7 :: c : Channel<?-boolean> = {
     weaken(c); 
 }
 
-define Num5 :: c : Channel<?-boolean> = {
+define Num5 :: c : Channel<?-boolean> {
     more(c); 
     c.send(true); 
     more(c); 

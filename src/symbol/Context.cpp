@@ -117,28 +117,6 @@ std::optional<Symbol *> Context::lookup(std::string id)
     return std::nullopt;
 }
 
-// std::vector<Symbol *> Context::getAvailableLinears(bool include_complete) //TODO: DO BETTER
-// {
-//     std::vector<Symbol *> ans;
-
-//     std::optional<Scope *> opt = currentScope;
-
-//     int depth = scopes.size() - 1;
-//     int stop = this->getCurrentStop();
-//     while (depth >= stop)
-//     {
-//         Scope *scope = opt.value();
-
-//         auto toAdd = scope->getRemainingLinearTypes(include_complete);
-//         ans.insert(ans.end(), toAdd.begin(), toAdd.end());
-
-//         depth--;
-//         opt = scope->getParent();
-//     }
-
-//     return ans;
-// }
-
 std::vector<Symbol *> Context::getSymbols(int flags) //TODO: DO BETTER
 {
     std::vector<Symbol *> ans;

@@ -262,11 +262,7 @@ public:
     const Type *type;
     string name;
 
-    ParameterNode(const Type *t, string n)
-    {
-        type = t;
-        name = n; // FIXME: DO WE NEED A CLASS HERE OR JUST STRUCT? OR EVEN A TYPEDEF
-    }
+    ParameterNode(const Type *t, string n) : type(t), name(n) {}
 };
 
 typedef vector<ParameterNode> ParameterListNode;
@@ -280,7 +276,7 @@ public:
     vector<Symbol *> paramSymbols;
     const Type *retType;
     TBlockNode *block;
-    TypeInvoke *type;
+    TypeFunc *type;
 
     TLambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, TBlockNode *b, string n = "LAM") : TypedNode(tok)
     {
@@ -298,10 +294,10 @@ public:
             paramTypes.push_back(p->type);
         }
 
-        type = new TypeInvoke(paramTypes, retType);
+        type = new TypeFunc(paramTypes, retType);
     }
 
-    const TypeInvoke *getType() override
+    const TypeFunc *getType() override
     {
         return type;
     }
@@ -331,7 +327,7 @@ public:
         // channelType = ct;
         block = b;
         type = ty;
-        // type = new TypeInvoke(paramTypes, retType);
+        // type = new TypeFunc(paramTypes, retType);
     }
 
     const TypeProgram *getType() override
@@ -738,7 +734,7 @@ class TExternNode : public TypedNode
 {
 private:
     Symbol *sym;
-    const TypeInvoke *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
+    const TypeFunc *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
     TExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
@@ -750,11 +746,11 @@ public:
             paramTypes.push_back(param.type);
         }
 
-        ty = new TypeInvoke(paramTypes, r, v);
+        ty = new TypeFunc(paramTypes, r, v);
         sym = new Symbol(id, ty, true, true);
     }
 
-    const TypeInvoke *getType() override
+    const TypeFunc *getType() override
     {
         return ty;
     }
@@ -784,7 +780,7 @@ public:
 
     const Type *getType() override
     {
-        return dynamic_cast<const TypeInvoke *>(fn->getType())->getReturnType();
+        return dynamic_cast<const TypeFunc *>(fn->getType())->getReturnType();
     }
 
     std::string toString() const override {
@@ -846,9 +842,28 @@ public:
         is_rvalue = r;
     }
 
+    // TODO: allow for modulo get so that way we can access fields more directly?
     const Type *getType() override
     {
-        return dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * arrayType = dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+
+        if(!is_rvalue)
+        {
+            return arrayType;
+        }
+
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        return new TypeSum(cases);
+    }
+
+    const TypeSum* getRValueType() {
+        const Type * arrayType = dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        return new TypeSum(cases);
+    }
+
+    int length() const {
+        return dynamic_cast<const TypeArray *>(field->getType())->getLength();
     }
 
     std::string toString() const override {
@@ -1234,22 +1249,6 @@ public:
         return "PROJECT NODE";
     }
 };
-
-// class TExprCopyNode : public TypedNode
-// {
-// public:
-//     TypedNode *toCopy;
-
-//     TExprCopyNode(TypedNode *c, antlr4::Token *tok) : TypedNode(tok), toCopy(c)
-//     {
-//     }
-
-//     std::string toString() const override {
-//         return "COPY NODE";
-//     }
-
-//     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-// };
 
 class TExprCopyNode : public TypedNode
 {

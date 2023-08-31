@@ -11,7 +11,13 @@ define printInt5Array :: c : Channel<+str; +int[5]> = {
 
   while i < array.length {
 
-    printf("%s[%d] = %d", name, i, array[i]);
+
+    printf("%s[%d] = %d", name, i, ((int + Unit) a) : int {
+      match a 
+        | int i => return i; 
+        | Unit u => return -1; 
+      }(array[i])
+    );
 
     if(i + 1 < array.length) {
       printf(", ");
@@ -37,7 +43,13 @@ define addOneToInt5 :: c : Channel<+str; +int[5]> = {
     var i := 0; 
 
     while i < array.length {
-      array[i] := array[i] + 1; 
+      # array[i] := array[i] + 1; # FIXME: SEEMS OFF NOT BEING ABLE TO DO THIS!
+      array[i] := (int[5] a, int idx) : int {
+                      match a[idx]
+                        | Unit u => return -1; 
+                        | int i => return i + 1; 
+                  }(array, i);
+
       i := i + 1; 
     }
   }

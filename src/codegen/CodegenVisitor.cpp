@@ -32,7 +32,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
         {
             TLambdaConstNode *octx = std::get<TLambdaConstNode *>(e);
 
-            const TypeInvoke *type = octx->getType();
+            const TypeFunc *type = octx->getType();
 
             Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->name, module);
             type->setName(fn->getName().str());
@@ -337,7 +337,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramIsPresetNode *n)
 
     if (!optVal)
     {
-    errorHandler.addError(n->getStart(), "Could not find value for channel in recv: " + n->sym->getIdentifier());
+        errorHandler.addError(n->getStart(), "Could not find value for channel in recv: " + n->sym->getIdentifier());
         return std::nullopt;
     }
 
@@ -384,7 +384,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
     Value *stoVal = valOpt.value();
 
     // Same as return node's
-    if (std::optional<const TypeSum *>sumOpt = type_cast<TypeSum>(n->lType))
+    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(n->lType))
     {
         stoVal = correctSumAssignment(sumOpt.value(), stoVal);
     }
@@ -393,10 +393,9 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
     Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
 
     builder->CreateStore(stoVal, casted);
-
     Value *corrected = builder->CreateBitCast(v, i8p);
-    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
+    std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
     if (!optVal)
     {
         errorHandler.addError(n->getStart(), "Could not find value for channel in send: " + n->sym->getIdentifier());
@@ -592,52 +591,42 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode *n)
     BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
 
     BasicBlock *elseBlk = n->falseOpt ? BasicBlock::Create(module->getContext(), "ai-else") : restBlk;
-    
 
     builder->CreateCondBr(condOpt.value(), condBlk, elseBlk);
-    
-
 
     builder->SetInsertPoint(condBlk);
     builder->CreateCondBr(
         builder->CreateCall(getShouldAcceptWhileLoop(), {builder->CreateLoad(Int32Ty, chanVal)}),
         thenBlk,
-        elseBlk
-    );
+        elseBlk);
     condBlk = builder->GetInsertBlock();
-
-
 
     parent->getBasicBlockList().push_back(thenBlk);
     builder->SetInsertPoint(thenBlk);
     // Value *check = builder->CreateCall(getShouldAcceptWhileLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
-    for(auto e : n->trueBlk->exprs)
+    for (auto e : n->trueBlk->exprs)
     {
         AcceptType(this, e);
     }
-    if(!endsInReturn(n->trueBlk))
+    if (!endsInReturn(n->trueBlk))
     {
         builder->CreateBr(restBlk);
     }
     thenBlk = builder->GetInsertBlock();
 
-
-
-
-    if(n->falseOpt)
+    if (n->falseOpt)
     {
         parent->getBasicBlockList().push_back(elseBlk);
         builder->SetInsertPoint(elseBlk);
-        for(auto e : n->falseOpt.value()->exprs)
+        for (auto e : n->falseOpt.value()->exprs)
         {
             AcceptType(this, e);
         }
-        if(!endsInReturn(n->falseOpt.value()))
+        if (!endsInReturn(n->falseOpt.value()))
         {
             builder->CreateBr(restBlk);
         }
     }
-
 
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
@@ -708,7 +697,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode *n)
 
     const TypeBox *box = n->boxType;
 
-    if (std::optional<const TypeSum *>sumOpt = type_cast<TypeSum>(box->getInnerType()))
+    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(box->getInnerType()))
     {
         stoVal = correctSumAssignment(sumOpt.value(), stoVal);
     }
@@ -722,30 +711,91 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode *n)
     return casted;
 }
 
-std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n)
+std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) // TODO: COnsider refactoring/ improving generated IR
 {
-    std::optional<Value *> index = AcceptType(this, n->indexExpr);
+    std::optional<Value *> indexOpt = AcceptType(this, n->indexExpr);
 
-    if (!index)
+    if (!indexOpt)
     {
         errorHandler.addError(n->getStart(), "Failed to generate code in TvisitArrayAccess for index!");
         return std::nullopt;
     }
 
-    std::optional<Value *> arrayPtr = AcceptType(this, n->field);
-    if (!arrayPtr)
+    std::optional<Value *> arrayPtrOpt = AcceptType(this, n->field);
+    if (!arrayPtrOpt)
     {
         errorHandler.addError(n->getStart(), "Failed to locate array in access");
         return std::nullopt;
     }
 
-    Value *v = arrayPtr.value();
+    Value *indexValue = indexOpt.value();
+    Value *arrayPtr = arrayPtrOpt.value();
 
-    auto ptr = builder->CreateGEP(v, {Int32Zero, index.value()});
+    if (!n->is_rvalue)
+    {
+        // If its an lvalue,need the pointer!
+        return builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
+    }
 
-    if (n->is_rvalue)
-        return builder->CreateLoad(ptr->getType()->getPointerElementType(), ptr);
-    return ptr;
+    Value *idxBoundsCheckValue = builder->CreateICmpSLT(
+        indexValue,
+        builder->getInt32(n->length()) // arrayPtr->getType()->getNumElements())
+    );                                 // TODO: SIGNED VS UNSIGNED? AND LENGTH! NUM ELEMENTS IS 64!!
+
+    auto parentFn = builder->GetInsertBlock()->getParent();
+
+    BasicBlock *ltlBlk = BasicBlock::Create(module->getContext(), "accessLTL", parentFn);
+    BasicBlock *gtzBlk = BasicBlock::Create(module->getContext(), "accessGTZ");
+    BasicBlock *elseBlk = BasicBlock::Create(module->getContext(), "accessBad");
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "accessAfter");
+
+    builder->CreateCondBr(builder->CreateZExtOrTrunc(idxBoundsCheckValue, Int1Ty), ltlBlk, elseBlk);
+
+    /*
+     * We knw its less than the length, but need to ensure greater than zero
+     */
+    builder->SetInsertPoint(ltlBlk);
+
+    builder->CreateCondBr(
+        builder->CreateZExtOrTrunc(
+            builder->CreateICmpSGE(indexValue, Int32Zero), // PLAN: Add slices which could loop!
+            Int1Ty),
+        gtzBlk,
+        elseBlk);
+    ltlBlk = builder->GetInsertBlock();
+
+    /*
+     * Passed Bounds Check Blk
+     */
+    parentFn->getBasicBlockList().push_back(gtzBlk);
+    builder->SetInsertPoint(gtzBlk);
+    Value *valuePtr = builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
+    Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    auto ptr = correctSumAssignment(n->getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
+    builder->CreateBr(restBlk);
+    gtzBlk = builder->GetInsertBlock();
+
+    /*
+     * Out of bounds, so set unit
+     */
+    parentFn->getBasicBlockList().push_back(elseBlk);
+    builder->SetInsertPoint(elseBlk);
+
+    auto unitPtr = correctSumAssignment(n->getRValueType(), getUnitValue());
+    builder->CreateBr(restBlk);
+    elseBlk = builder->GetInsertBlock();
+
+    /*
+     * Return to computation
+     */
+    parentFn->getBasicBlockList().push_back(restBlk);
+    builder->SetInsertPoint(restBlk);
+
+    PHINode *phi = builder->CreatePHI(n->getType()->getLLVMType(module), 2, "arrayAccess");
+    phi->addIncoming(ptr, gtzBlk);
+    phi->addIncoming(unitPtr, elseBlk);
+
+    return phi;
 }
 
 std::optional<Value *> CodegenVisitor::visit(TIntConstExprNode *n)
@@ -902,7 +952,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogAndExprNode *n)
     Value *lastValue = first.value();
 
     auto parent = current->getParent();
-    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isnt actually the entryblock anymore
+    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isn't actually the entry block anymore
 
     BasicBlock *falseBlk;
 
@@ -974,7 +1024,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode *n)
     Value *lastValue = first.value();
 
     auto parent = current->getParent();
-    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isnt actually the entryblock anymore
+    phi->addIncoming(lastValue, builder->GetInsertBlock()); // Have to use insert block as, due to nested short circuiting, its possible that the insert block isn't actually the entry block anymore
 
     BasicBlock *falseBlk;
 
@@ -1056,7 +1106,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 
     for (unsigned int i = 0; i < n->accesses.size(); i++)
     {
-        if (std::optional<const TypeStruct *>sOpt = type_cast<TypeStruct>(ty))
+        if (std::optional<const TypeStruct *> sOpt = type_cast<TypeStruct>(ty))
         {
             std::string field = n->accesses.at(i).first;
             std::optional<unsigned int> indexOpt = sOpt.value()->getIndex(field);
@@ -1162,7 +1212,7 @@ std::optional<Value *> CodegenVisitor::visit(TExternNode *n)
         return std::nullopt;
     }
 
-    const TypeInvoke *type = n->getType();
+    const TypeFunc *type = n->getType();
 
     Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, symbol->getIdentifier(), module);
     type->setName(fn->getName().str());
@@ -1172,6 +1222,15 @@ std::optional<Value *> CodegenVisitor::visit(TExternNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
 {
+
+    std::optional<Value *> val = AcceptType(this, n->var); // varSym->val;
+    // Sanity check to ensure that we now have a value for the variable
+    if (!val)
+    {
+        errorHandler.addError(n->getStart(), "1184 - Improperly initialized variable in assignment: " + n->var->toString());
+        return std::nullopt;
+    }
+
     // Visit the expression to get the value we will assign
     std::optional<Value *> exprVal = AcceptType(this, n->val);
 
@@ -1194,7 +1253,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
     Symbol *varSym = varSymOpt.value();
     */
     // Get the allocation instruction for the symbol
-    std::optional<Value *> val = AcceptType(this, n->var); // varSym->val;
+
 
     /*
     // If the symbol is global
@@ -1214,12 +1273,6 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
         val = builder->CreateLoad(glob)->getPointerOperand();
     }
     */
-    // Sanity check to ensure that we now have a value for the variable
-    if (!val)
-    {
-        errorHandler.addError(n->getStart(), "1184 - Improperly initialized variable in assignment: " + n->var->toString());
-        return std::nullopt;
-    }
 
     /*
     // Checks to see if we are dealing with an array
@@ -1620,13 +1673,13 @@ std::optional<Value *> CodegenVisitor::visit(TReturnNode *n)
     }
 
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
-    return builder->CreateRetVoid();
+    return builder->CreateRet(getUnitValue());
 }
 
 std::optional<Value *> CodegenVisitor::visit(TExitNode *n)
 {
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
-    return builder->CreateRetVoid();
+    return builder->CreateRet(getUnitValue());
 }
 
 std::optional<Value *> CodegenVisitor::visit(TBooleanConstNode *n)
@@ -1649,7 +1702,7 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
     // Get the current insertion point
     BasicBlock *ins = builder->GetInsertBlock();
 
-    const TypeInvoke *type = n->getType();
+    const TypeFunc *type = n->getType();
 
     llvm::FunctionType *fnType = type->getLLVMFunctionType(module);
 
@@ -1713,6 +1766,49 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
     builder->SetInsertPoint(ins);
 
     return fn;
+}
+
+std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
+{
+    BasicBlock *ins = builder->GetInsertBlock();
+
+    const TypeProgram *prog = n->getType();
+
+    llvm::FunctionType *fnType = prog->getLLVMFunctionType(module);
+
+    Function *fn = prog->getLLVMName() ? module->getFunction(prog->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
+    prog->setName(fn->getName().str());
+
+    
+    // Create basic block
+    BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
+    builder->SetInsertPoint(bBlk);
+
+    // Bind all of the arguments
+    std::optional<llvm::AllocaInst *> vOpt = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
+    if (!vOpt)
+    {
+        errorHandler.addError(nullptr, "Failed to generate alloc for channel value, is it somehow void?"); // Should never occur bc int32Ty
+        return std::nullopt;
+    }
+    llvm::AllocaInst *v = vOpt.value();
+
+    n->channelSymbol->setAllocation(v);
+    builder->CreateStore((fn->args()).begin(), v);
+    
+    // Generate code for the block
+    for (auto e : n->block->exprs)
+    {
+        this->accept(e);
+    }
+
+    if (!endsInReturn(n->block)) // TODO: THIS SHOULD BECOME ALWAYS TRUE, OR IS IT GIVEN EXIT?
+    {
+        builder->CreateRet(getUnitValue());
+    }
+
+    builder->SetInsertPoint(ins);
+    return std::nullopt;
 }
 
 std::optional<Value *> CodegenVisitor::visit(TExprCopyNode *n)

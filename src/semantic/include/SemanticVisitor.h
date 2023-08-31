@@ -7,17 +7,24 @@
 #include "CompilerFlags.h"
 #include "TypedAST.h"
 #include "CastUtils.h"
+#include "ProtocolVisitor.h"
 
 // #include "TypeVisitor.h"
 
 #include "LinkedMap.h"
 
+#include <concepts>
 #include <regex>
 #include <variant>
 // typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message;
 // typedef
 
-class SemanticVisitor : BismuthBaseVisitor
+template<typename T>                             
+concept RestRuleContext = requires(T a) {
+    std::is_base_of<antlr4::ParserRuleContext, T>::value;
+    { a.rest };
+};
+class SemanticVisitor : public BismuthBaseVisitor
 {
 
 public:
@@ -110,7 +117,7 @@ public:
     std::variant<TExternNode *, ErrorChain *> visitCtx(BismuthParser::ExternStatementContext *ctx);
     std::any visitExternStatement(BismuthParser::ExternStatementContext *ctx) override { return TNVariantCast<TExternNode>(visitCtx(ctx)); }
 
-    ParameterNode visitCtx(BismuthParser::ParameterContext *ctx);
+    std::variant<ParameterNode, ErrorChain *> visitCtx(BismuthParser::ParameterContext *ctx);
     std::any visitParameter(BismuthParser::ParameterContext *ctx) override { return visitCtx(ctx); }
 
     std::variant<TInvocationNode *, ErrorChain *> visitCtx(BismuthParser::InvocationContext *ctx);
@@ -209,51 +216,43 @@ public:
     /*
      *  Types
      */
-    const Type *visitCtx(BismuthParser::BaseTypeContext *ctx);
-    std::any visitBaseType(BismuthParser::BaseTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::BaseTypeContext *ctx);
+    std::any visitBaseType(BismuthParser::BaseTypeContext *ctx) override { return visitCtx(ctx); } // casting done in the function
 
-    const Type *visitCtx(BismuthParser::ArrayTypeContext *ctx);
-    std::any visitArrayType(BismuthParser::ArrayTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeArray *, ErrorChain *> visitCtx(BismuthParser::ArrayTypeContext *ctx);
+    std::any visitArrayType(BismuthParser::ArrayTypeContext *ctx) override { return TypeVariantCast<TypeArray>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::LambdaTypeContext *ctx);
-    std::any visitLambdaType(BismuthParser::LambdaTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeFunc *, ErrorChain *> visitCtx(BismuthParser::LambdaTypeContext *ctx);
+    std::any visitLambdaType(BismuthParser::LambdaTypeContext *ctx) override { return TypeVariantCast<TypeFunc>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::ChannelTypeContext *ctx);
-    std::any visitChannelType(BismuthParser::ChannelTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeChannel *, ErrorChain *> visitCtx(BismuthParser::ChannelTypeContext *ctx);
+    std::any visitChannelType(BismuthParser::ChannelTypeContext *ctx) override { return TypeVariantCast<TypeChannel>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::BoxTypeContext *ctx);
-    std::any visitBoxType(BismuthParser::BoxTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeBox *, ErrorChain *> visitCtx(BismuthParser::BoxTypeContext *ctx);
+    std::any visitBoxType(BismuthParser::BoxTypeContext *ctx) override { return TypeVariantCast<TypeBox>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::ProgramTypeContext *ctx);
-    std::any visitProgramType(BismuthParser::ProgramTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeProgram *, ErrorChain *> visitCtx(BismuthParser::ProgramTypeContext *ctx);
+    std::any visitProgramType(BismuthParser::ProgramTypeContext *ctx) override { return TypeVariantCast<TypeProgram>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::CustomTypeContext *ctx);
-    std::any visitCustomType(BismuthParser::CustomTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::CustomTypeContext *ctx); 
+    std::any visitCustomType(BismuthParser::CustomTypeContext *ctx) override { return visitCtx(ctx); } // Casting done by lower level call
 
-    const Type *visitCtx(BismuthParser::TypeOrVarContext *ctx);
+    std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::TypeOrVarContext *ctx);
     std::any visitTypeOrVar(BismuthParser::TypeOrVarContext *ctx) override { return visitCtx(ctx); }
 
-    const Type *visitCtx(BismuthParser::SumTypeContext *ctx);
-    std::any visitSumType(BismuthParser::SumTypeContext *ctx) override { return visitCtx(ctx); }
+    std::variant<const TypeSum *, ErrorChain *>  visitCtx(BismuthParser::SumTypeContext *ctx);
+    std::any visitSumType(BismuthParser::SumTypeContext *ctx) override { return TypeVariantCast<TypeSum>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
     /*
      *  Protocols
      */
-    const Protocol *visitProto(BismuthParser::ProtocolContext *ctx);
-    const Protocol *visitProto(BismuthParser::RecvTypeContext *ctx);
-    const Protocol *visitProto(BismuthParser::SendTypeContext *ctx);
-    const Protocol *visitProto(BismuthParser::WnProtoContext *ctx);
-    const Protocol *visitProto(BismuthParser::OcProtoContext *ctx);
-    const Protocol *visitProto(BismuthParser::ExtChoiceProtoContext *ctx);
-    const Protocol *visitProto(BismuthParser::IntChoiceProtoContext *ctx);
-
-    std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return visitProto(ctx); }
-    std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { return visitProto(ctx); }
-    std::any visitSendType(BismuthParser::SendTypeContext *ctx) override { return visitProto(ctx); }
-    std::any visitWnProto(BismuthParser::WnProtoContext *ctx) override { return visitProto(ctx); }
-    std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { return visitProto(ctx); }
-    std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { return visitProto(ctx); }
-    std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return ProtoVariantCast<ProtocolSequence>(visitProto(ctx)); } //{ return visitProto(ctx); }
+    // std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { return visitProto(ctx); }
+    // std::any visitSendType(BismuthParser::SendTypeContext *ctx) override { return visitProto(ctx); }
+    // std::any visitWnProto(BismuthParser::WnProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return visitProto(ctx); }
 
     /*
      * Traditional visitor methods all overridden with our typed versions
@@ -273,7 +272,7 @@ public:
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
         {
-            (*e)->addError(ex->getStart(), "Unable to type check condition expression.");
+            (*e)->addError(ex->getStart(), "Unable to type check condition expression");
             return *e;
         }
 
@@ -312,7 +311,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to type check statement in block.");
+                (*e)->addError(ctx->getStart(), "Failed to type check statement in block");
                 return *e;
             }
 
@@ -320,7 +319,7 @@ public:
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
             {
-                errorHandler.addError(ctx->getStart(), "Dead code.");
+                errorHandler.addError(ctx->getStart(), "Dead code");
                 break;
             }
 
@@ -355,11 +354,19 @@ public:
 
             if (!progType->isDefined())
             {
-                const Type *ty = any2Type(ctx->ty->accept(this));
+                std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+    
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
+                {
+                    (*e)->addError(ctx->getStart(), "Failed to generate channel type for program");
+                    return *e;
+                }
+
+                const Type * ty = std::get<const Type*>(tyOpt);
 
                 if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
                 {
-                    progType->setChannel(channel);
+                    progType->setProtocol(channel->getProtocol());
                 }
                 else
                 {
@@ -373,14 +380,10 @@ public:
     }
 
     /**
-     * @brief Visits an invokable definition (PROC or FUNC)
+     * @brief Visits a program definition
      *
      * @param ctx The parser rule context
-     * @param funcId The name of the PROC/FUNC
-     * @param paramList The parameter list for the PROC/FUNC
-     * @param ty The return type (Type::UNDEFINED for PROC)
-     * @param block The PROC/FUNC block
-     * @return const Type* TypeInvoke if successful, empty if error
+     * @return TProgramDefNode * if successful, ErrorChain * if error
      */
     std::variant<TProgramDefNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx)
     {
@@ -417,7 +420,7 @@ public:
             stmgr->addSymbol(sym);
             stmgr->enterScope(StopType::GLOBAL); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
 
-            Symbol *channelSymbol = new Symbol(ctx->channelName->getText(), progType->getChannelType()->getCopy(), false, false);
+            Symbol *channelSymbol = new Symbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false, false);
             stmgr->addSymbol(channelSymbol);
             // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
             stmgr->addSymbol(new Symbol("@EXIT", Types::UNIT, false, false));
@@ -426,7 +429,7 @@ public:
             std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
             if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to safe visit block.");
+                (*e)->addError(ctx->getStart(), "Failed to safe visit block");
                 return *e;
             }
 
@@ -459,12 +462,13 @@ public:
     struct ConditionalData
     {
         vector<TypedNode *> cases;
-        // vector<TypedNode *> post;
+        vector<TypedNode *> post;
 
-        ConditionalData(vector<TypedNode *> cases) : cases(cases)
+        ConditionalData(vector<TypedNode *> cases, vector<TypedNode *> post) : cases(cases), post(post)
         {
         }
     };
+
     //FIXME: WHAT AB Ext<A,B>;!P;Ext<A,B>?
     struct DeepRestData
     {
@@ -475,181 +479,15 @@ public:
         DeepRestData(vector<BismuthParser::StatementContext *> ctx) : ctxRest(ctx), isGenerated(false) {}
     };
 
-    template <typename T>
+
+    template <RestRuleContext R, typename T>
     inline std::variant<ConditionalData, ErrorChain *> checkBranch(
-        antlr4::ParserRuleContext *ctx,
+        R *ctx,
+        std::function<void(std::deque<DeepRestData *> *)> forwardBindings, 
         std::vector<T *> ctxCases,
-        // std::vector<BismuthParser::StatementContext *> ctxRest,
-        DeepRestData *ctxRest,
         bool checkRestIndependently,
-        std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
-    {
-        std::optional<std::deque<DeepRestData *> *> deepRest = restBindings->getBinding(ctx);
-
-        std::vector<TypedNode *> cases;
-
-        STManager *origStmgr = this->stmgr;
-
-        for (unsigned int i = 0; i < ctxCases.size(); i++)
-        {
-            auto alt = ctxCases.at(i);
-
-            if (checkRestIndependently || i + 1 < ctxCases.size())
-            {
-                std::optional<STManager *> optSTCopy = origStmgr->getCopy();
-                if (!optSTCopy)
-                    return errorHandler.addError(alt->getStart(), "Failed to copy symbol table; this is likely a compiler error.");
-                this->stmgr = optSTCopy.value(); // TODO: DELETE RESOURCE?
-            }
-            else 
-            {
-                this->stmgr = origStmgr; 
-            }
-
-            stmgr->enterScope(StopType::NONE);
-            std::variant<TypedNode *, ErrorChain *> optEval = typeCheck(alt);
-
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
-            {
-                (*e)->addError(ctx->getStart(), "2083");
-                return *e;
-            }
-
-            TypedNode *caseNode = std::get<TypedNode *>(optEval);
-            cases.push_back(caseNode);
-
-            // safeExitScope(ctx);
-            if (!endsInReturn(caseNode) && !endsInBranch(caseNode))
-            {
-                for (auto s : ctxRest->ctxRest)
-                {
-                    std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                    {
-                        (*e)->addError(alt->getStart(), "Failed to type check code following branch.");
-                        return *e;
-                    }
-
-                    if (!ctxRest->isGenerated)
-                    {
-                        ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
-                    }
-                }
-
-                // restVecFilled = true;
-                ctxRest->isGenerated = true;
-            }
-
-            // FIXME: WILL NEED TO RUN THIS CHECK ON EACH ITERATION!
-            if (deepRest && !endsInReturn(ctxRest->post) && !endsInBranch(ctxRest->post))
-            {
-                for (auto r : *(deepRest.value()))
-                {
-                    for (auto s : r->ctxRest)
-                    {
-                        std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                        {
-                            (*e)->addError(ctx->getStart(), "Failed to type check when no branch followed.");
-                            return *e;
-                        }
-
-                        if (!r->isGenerated)
-                        {
-                            r->post.push_back(std::get<TypedNode *>(rOpt));
-                        }
-                    }
-                    r->isGenerated = true;
-                }
-            }
-
-            safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
-
-            std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
-
-            // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
-            // due to the var leaving the scope
-            if (lins.size() > 0)
-            {
-                std::ostringstream details;
-
-                for (auto e : lins)
-                {
-                    details << e->toString() << "; ";
-                }
-
-                errorHandler.addError(alt->getStart(), "537 Unused linear types in context: " + details.str());
-            }
-        }
-
-        if (checkRestIndependently)
-        {
-            this->stmgr = origStmgr;
-
-            stmgr->enterScope(StopType::NONE); // Why? This doesnt make sense..
-
-            for (auto s : ctxRest->ctxRest)
-            {
-                std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                {
-                    (*e)->addError(ctx->getStart(), "Failed to type check code when conditional skipped over.");
-                    return *e;
-                }
-                if (!ctxRest->isGenerated)
-                {
-                    ctxRest->post.push_back(std::get<TypedNode *>(rOpt));
-                }
-            }
-
-            if (deepRest && !endsInReturn(ctxRest->post))
-            {
-                for (auto r : *(deepRest.value())) // FIXME: NEED TO REVERSE?
-                {
-                    for (auto s : r->ctxRest)
-                    {
-                        std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                        {
-                            (*e)->addError(ctx->getStart(), "2097");
-                            return *e;
-                        }
-
-                        if (!r->isGenerated)
-                        {
-                            r->post.push_back(std::get<TypedNode *>(rOpt));
-                        }
-                    }
-                    r->isGenerated = true;
-                }
-            }
-
-            ctxRest->isGenerated = true;
-            safeExitScope(ctx);
-
-            std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
-
-            // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
-            // due to the var leaving the scope
-            if (lins.size() > 0)
-            {
-                std::ostringstream details;
-
-                for (auto e : lins)
-                {
-                    details << e->toString() << "; ";
-                }
-
-                errorHandler.addError(ctx->getStart(), "608 Unused linear types in context: " + details.str());
-            }
-        }
+        std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck);
         
-        return ConditionalData(cases);
-    }
-
     template <typename T>
     std::vector<T> *Append(std::vector<T> a, const std::vector<T> b)
     {
@@ -658,21 +496,6 @@ public:
         ans->insert(ans->end(), a.begin(), a.end());
         ans->insert(ans->end(), b.begin(), b.end());
         return ans;
-    }
-
-    const Type *any2Type(std::any any)
-    {
-        std::optional<const Type *> valOpt = any2Opt<const Type *>(any);
-
-        return valOpt.value_or(Types::ABSURD);
-    }
-
-    const Protocol *any2Protocol(std::any any)
-    {
-        if (const Protocol *valOpt = std::any_cast<const Protocol *>(any))
-            return valOpt;
-
-        return nullptr; // FIXME: DO BETTER
     }
 
 private:
@@ -706,7 +529,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "711 Uninferred types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "700 Uninferred types in context: " + details.str());
             }
         }
 
@@ -726,7 +549,7 @@ private:
                     details << e->toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "736 Unused linear types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
             }
         }
         // return res;
@@ -745,10 +568,10 @@ private:
 
         Symbol *sym = opt.value_or(
             new Symbol(
-                ctx->name->getText(), new TypeInvoke(),
+                ctx->name->getText(), new TypeFunc(),
                 true, false));
 
-        if (const TypeInvoke *funcType = dynamic_cast<const TypeInvoke *>(sym->type))
+        if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(sym->type))
         {
             if (!funcType->isDefined())
             {
@@ -767,9 +590,18 @@ private:
                     ps.push_back(param.type);
                 }
 
-                const Type *retType = ctx->lam->ret ? any2Type(ctx->lam->ret->accept(this))
-                                                    : Types::UNIT;
 
+                std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->lam->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->lam->ret->accept(this))
+                                  : (const Type*) Types::UNIT;
+
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&retTypeOpt))
+                {
+                    (*e)->addError(ctx->getStart(), "Error generating return type");
+                    return *e;
+                }
+
+                const Type *retType = std::get<const Type *>(retTypeOpt);
+        
                 funcType->setInvoke(ps, retType);
 
                 // stmgr->addSymbol(sym); //Maybe do this here instead? would be more similar to how others are managed...
@@ -838,4 +670,8 @@ private:
         std::vector<const Type *> toVisit = {inner};
         std::set<const Type *> visited = {def};
     }
+
+    // std::any reportBadVisit(antlr4::ParserRuleContext * ctx) {
+    //     return errorHandler.addError(ctx->getStart(), "Bad visit from semantic visitor to context!");
+    // }
 };

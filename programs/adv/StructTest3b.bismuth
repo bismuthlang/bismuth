@@ -32,6 +32,13 @@ define struct Color {
     ColorType -> str toString; 
 }
 
+define func getChannel (RGBData d, int c) : int {
+    int[3] channels := d.rgb; 
+    match channels[c]
+        | Unit u =>  return -1;
+        | int i => return i; 
+}
+
 # Color func getRGBColor(int r, int g, int b) 
 define getRGBColor :: c : Channel<+int;+int;+int;-Color> = {
     int[3] data; 
@@ -44,9 +51,9 @@ define getRGBColor :: c : Channel<+int;+int;+int;-Color> = {
     c.send(Color::init(
         RGBColor::init(
             rgbDat, 
-            (RGBData d) : int { return d.rgb[0]; },
-            (RGBData d) : int { return d.rgb[1]; },
-            (RGBData d) : int { return d.rgb[2]; }
+            (RGBData d) : int { return getChannel(d, 0); },
+            (RGBData d) : int { return getChannel(d, 1); },
+            (RGBData d) : int { return getChannel(d, 2); }
         ),
         (ColorType c) : str { return "rgb"; }
     ))

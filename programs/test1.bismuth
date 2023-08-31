@@ -1,3 +1,20 @@
+/*
+Output: 
+    Hello World!
+    C is: 2
+    C is: 2; a = [1, 2, 3, 4, 5]
+    a[0] := 0
+    a[1] := 1
+    a[2] := 2
+    a[3] := 3
+    a[4] := 4
+    TRUE
+    From test, got: -1
+    Other test, got 3
+    Other other test, Well, we fell into the first case
+    Other other other test, Second case this time!
+*/
+
 extern func printf(...) : int;
 
 # int func chayos() {

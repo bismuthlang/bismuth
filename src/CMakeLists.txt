@@ -22,11 +22,6 @@ include(AddLLVM)
 include(HandleLLVMOptions)
 
 add_subdirectory(lexparse)
-
-###############################################
-# Uncomment the following as you develop them
-# Add others as your design evolves
-#
 add_subdirectory(symbol)
 add_subdirectory(semantic)
 add_subdirectory(utility)

@@ -1,6 +1,6 @@
 extern func printf(str s, ...) : int;
 
-# define foo :: c : Channel<+int> = {
+# define foo :: c : Channel<+int> {
 #   Channel<+int> b := c; 
 #   int a := b.recv(); # C is no longer defined
 # }
@@ -100,7 +100,7 @@ define func traversePreOrder(int padding, str pointer, BinaryTree node) {
 
 
 
-define program :: c : Channel<-int> = {
+define program :: c : Channel<-int> {
 
   # BinaryTree node := BinaryTree::init(5, Empty::init(), Empty::init());
   Box<BinaryTree> node := Box<BinaryTree>::init(BinaryTree::init(5, Empty::init(), Empty::init()));
