@@ -211,6 +211,9 @@ public:
     std::variant<TExprCopyNode *, ErrorChain *> TvisitCopyExpr(BismuthParser::CopyExprContext *ctx);
     std::any visitCopyExpr(BismuthParser::CopyExprContext *ctx) override { return TNVariantCast<TExprCopyNode>(TvisitCopyExpr(ctx)); }
 
+    std::variant<TAsChannelNode *, ErrorChain *> TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx);
+    std::any visitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx) override { return TNVariantCast<TAsChannelNode>(TvisitAsChannelExpr(ctx)); }
+
     const Type *visitCtx(BismuthParser::AssignmentContext *ctx);
 
     /*
@@ -253,6 +256,7 @@ public:
     // std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { return visitProto(ctx); }
     // std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { return visitProto(ctx); }
     // std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return visitProto(ctx); }
+    // std::any visitCloseableProto(BismuthParser::CloseableProtoContext *ctx) override { return visitProto(ctx); }
 
     /*
      * Traditional visitor methods all overridden with our typed versions

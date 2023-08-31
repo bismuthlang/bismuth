@@ -72,9 +72,7 @@ define program :: c : Channel<-int> = {
     while i < samples.length {
         # toString(samples[i]);
         Channel<-(Unit + Color + int + boolean + str)> io := exec toString; 
-        match samples[i]
-          | Color color => io.send(color); # FIXME: Make match statement not needed? also, gets buggy if you try to use c as identifier in case due to separation between linear and non-linear scopes
-          | Unit u => io.send(u);
+        io.send(samples[i])
 
         i := i + 1; 
     }

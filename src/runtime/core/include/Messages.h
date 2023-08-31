@@ -33,4 +33,10 @@ struct SKIP
     SKIP(unsigned int _i) : i(_i) {}
 }; 
 
-typedef std::variant<Value, START_LOOP, END_LOOP, SEL, SKIP> Message; 
+struct CLOSE 
+{
+    unsigned int i; 
+    CLOSE(unsigned int _i) : i(_i) {}
+};
+
+typedef std::variant<Value, START_LOOP, END_LOOP, SEL, SKIP, CLOSE> Message; 

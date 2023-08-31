@@ -96,6 +96,7 @@ Version: Pre-Alpha 1.3.3 @ )"""" << GIT_COMMIT_HASH <<  R""""(
 ChangeLog
 =========
 1.3.4 - XXX: 
+  - Added toChannel function to convert ty -> Channel<!+ty>
 
   - Fixed bug where nested control flow would incorrectly process use of linear resources
 

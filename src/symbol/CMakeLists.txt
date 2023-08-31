@@ -13,5 +13,6 @@ include_directories(sym_lib
   ${LLVM_BINARY_DIR}/include
   ${LLVM_INCLUDE_DIR}
   ${UTILITY_INCLUDE} # TODO: DOES THIS MEAN WE ARE INCLUDING ALL THE OTHER UTILS THAT ARE ONLY USEFUL FOR TESTING?
-  ${ANTLR_INCLUDE} # Just for token in TypedAST
+  ${ANTLR_INCLUDE} # Just for token in TypedAST & RawAST
+  ${ANTLR_GENERATED_DIR}  # Just for RawAST
 )

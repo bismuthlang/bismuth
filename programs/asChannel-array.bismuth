@@ -1,0 +1,21 @@
+extern func printf(str s, ...);
+
+
+define program :: c : Channel<-int> {
+    int [5] a; 
+
+    a[0] := 1; 
+    a[1] := 2; 
+    a[2] := 3; 
+    a[3] := 4; 
+    a[4] := 5; 
+
+    c.send(1);
+
+    var c2 := asChannel(a); 
+    accept(c2){
+        int val := c2.recv();
+        printf("%u ", val);
+    }
+    printf("\n");
+}

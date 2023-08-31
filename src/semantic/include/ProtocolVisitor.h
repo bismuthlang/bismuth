@@ -43,6 +43,8 @@ public:
     /*
      *  Protocols
      */
+    // std::variant<TAsChannelNode *, ErrorChain *> TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx);
+    // std::any visitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx) override { return TNVariantCast<TAsChannelNode>(TvisitAsChannelExpr(ctx)); }
     std::variant<const ProtocolSequence *, ErrorChain *> visitProto(BismuthParser::ProtocolContext *ctx);
     std::variant<const ProtocolRecv *, ErrorChain *> visitProto(BismuthParser::RecvTypeContext *ctx);
     std::variant<const ProtocolSend *, ErrorChain *> visitProto(BismuthParser::SendTypeContext *ctx);
@@ -50,6 +52,7 @@ public:
     std::variant<const ProtocolOC *, ErrorChain *> visitProto(BismuthParser::OcProtoContext *ctx);
     std::variant<const ProtocolEChoice *, ErrorChain *> visitProto(BismuthParser::ExtChoiceProtoContext *ctx);
     std::variant<const ProtocolIChoice *, ErrorChain *> visitProto(BismuthParser::IntChoiceProtoContext *ctx);
+    std::variant<const ProtocolClose *, ErrorChain *> visitProto(BismuthParser::CloseableProtoContext *ctx);
 
     std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return ProtoVariantCast<ProtocolSequence>(visitProto(ctx)); }            //{ return visitProto(ctx); }
     std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { return ProtoVariantCast<ProtocolRecv>(visitProto(ctx)); }                //{ return visitProto(ctx); }
@@ -58,11 +61,14 @@ public:
     std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { return ProtoVariantCast<ProtocolOC>(visitProto(ctx)); }                    //{ return visitProto(ctx); }
     std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { return ProtoVariantCast<ProtocolEChoice>(visitProto(ctx)); } //{ return visitProto(ctx); }
     std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return ProtoVariantCast<ProtocolIChoice>(visitProto(ctx)); } //{ return visitProto(ctx); }
+    std::any visitCloseableProto(BismuthParser::CloseableProtoContext *ctx) override { return ProtoVariantCast<ProtocolClose>(visitProto(ctx)); }   //{ return visitProto(ctx); }
 
 private:
     BismuthErrorHandler &errorHandler;
     SemanticVisitor *semanticVisitor;
     bool inLoop = false;
+    bool inClose = false;
+    unsigned int closeNumber = 0; // Used for numbering close blocks
 
     inline const ProtocolSequence *toSequence(const Protocol *proto)
     {
@@ -74,6 +80,6 @@ private:
         vector<const Protocol *> a;
         a.push_back(proto);
 
-        return new ProtocolSequence(a);
+        return new ProtocolSequence(proto->isInCloseable(), a);
     }
 };

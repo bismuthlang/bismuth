@@ -16,12 +16,12 @@ std::string ProtocolRecv::as_str() const
 
 const Protocol *ProtocolRecv::getInverse() const //FIXME: ADD GUARD?
 {
-    return new ProtocolSend(this->recvType);
+    return new ProtocolSend(this->inCloseable, this->recvType);
 }
 
 const Protocol *ProtocolRecv::getCopy() const
 {
-    auto ans = new ProtocolRecv(this->recvType->getCopy()); 
+    auto ans = new ProtocolRecv(this->inCloseable, this->recvType->getCopy()); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -43,12 +43,12 @@ std::string ProtocolSend::as_str() const
     
 const Protocol *ProtocolSend::getInverse() const
 {
-    return new ProtocolRecv(this->sendType);
+    return new ProtocolRecv(this->inCloseable, this->sendType);
 }
 
 const Protocol *ProtocolSend::getCopy() const
 {
-    auto ans = new ProtocolSend(this->sendType->getCopy());; 
+    auto ans = new ProtocolSend(this->inCloseable, this->sendType->getCopy());; 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -68,12 +68,12 @@ std::string ProtocolWN::as_str() const
 }
 const Protocol *ProtocolWN::getInverse() const
 {
-    return new ProtocolOC(this->proto->getInverse());
+    return new ProtocolOC(this->inCloseable, this->proto->getInverse());
 }
 
 const Protocol *ProtocolWN::getCopy() const
 {
-    auto ans = new ProtocolWN(this->proto->getCopy());
+    auto ans = new ProtocolWN(this->inCloseable, this->proto->getCopy());
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -92,12 +92,12 @@ std::string ProtocolOC::as_str() const
 }
 const Protocol *ProtocolOC::getInverse() const
 {
-    return new ProtocolWN(this->proto->getInverse());
+    return new ProtocolWN(this->inCloseable, this->proto->getInverse());
 }
 
 const Protocol *ProtocolOC::getCopy() const
 {
-    auto ans = new ProtocolOC(this->proto->getCopy()); 
+    auto ans = new ProtocolOC(this->inCloseable, this->proto->getCopy()); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -133,7 +133,7 @@ const ProtocolEChoice *ProtocolIChoice::getInverse() const
         opts.insert(p->getInverse());
     }
 
-    return new ProtocolEChoice(opts);
+    return new ProtocolEChoice(this->inCloseable, opts);
 }
 
 const Protocol *ProtocolIChoice::getCopy() const
@@ -145,7 +145,7 @@ const Protocol *ProtocolIChoice::getCopy() const
         opts.insert(p->getCopy());
     }
 
-    auto ans = new ProtocolIChoice(opts); 
+    auto ans = new ProtocolIChoice(this->inCloseable, opts); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -180,7 +180,7 @@ const Protocol *ProtocolEChoice::getInverse() const
         opts.insert(p->getInverse());
     }
 
-    return new ProtocolIChoice(opts);
+    return new ProtocolIChoice(this->inCloseable, opts);
 }
 
 const Protocol *ProtocolEChoice::getCopy() const
@@ -192,7 +192,7 @@ const Protocol *ProtocolEChoice::getCopy() const
         opts.insert(p->getCopy());
     }
 
-    auto ans = new ProtocolEChoice(opts); 
+    auto ans = new ProtocolEChoice(this->inCloseable, opts); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -225,7 +225,7 @@ const ProtocolSequence *ProtocolSequence::getInverse() const
         invs.push_back(p->getInverse());
     }
 
-    return new ProtocolSequence(invs);
+    return new ProtocolSequence(this->inCloseable, invs);
 }
 
 const ProtocolSequence *ProtocolSequence::getCopy() const
@@ -237,7 +237,7 @@ const ProtocolSequence *ProtocolSequence::getCopy() const
         invs.push_back(p->getCopy());
     }
 
-    auto ans = new ProtocolSequence(invs); 
+    auto ans = new ProtocolSequence(this->inCloseable, invs); 
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -252,7 +252,7 @@ optional<const ProtocolSend *> ProtocolSequence::getSend() const
     if (isComplete())
         return std::nullopt;
 
-    if(steps.front()->isGuarded() || this->isGuarded())
+    if(steps.front()->isGuarded() || this->isGuarded())// FIXME: VERIFY WORKS W CLOSE PROTOS!
         return std::nullopt;
 
     optional<const Protocol *> protoOpt = this->getFirst(); 
@@ -268,6 +268,7 @@ optional<const ProtocolSend *> ProtocolSequence::getSend() const
     return std::nullopt;
 }
 
+// FIXME: this will get complicated if we have (Unit + Closable) -- how will we know what to close?
 optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
 {
     optional<const ProtocolSend *> sendOpt = this->getSend(); 
@@ -326,7 +327,11 @@ optional<const Type *> ProtocolSequence::recv() const
 
     const ProtocolRecv * recvProto = recvOpt.value(); 
 
-    const Type * recvType = recvProto->getRecvType();
+    const Type * recvType = recvProto->getRecvType(); 
+    if(recvProto->isInCloseable())
+    {
+        return new TypeSum({recvType, Types::UNIT}); // FIXME: must be linear-ish SUM!!!
+    }
 
     return recvType; 
 }
@@ -571,7 +576,6 @@ bool ProtocolSequence::unguard() const // FIXME: DO BETTER
     return steps.front()->unguard();
 }
 
-// This code may look a bit odd, its because some changes need to be made later on for closeable protocols :)
 optional<const Protocol *> ProtocolSequence::getFirst() const
 {
     if (isComplete())
@@ -580,10 +584,20 @@ optional<const Protocol *> ProtocolSequence::getFirst() const
     const Protocol * protoTemp = steps.front();
     const Protocol ** protoPtr = &protoTemp; 
 
+    while(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(*protoPtr))
+    {
+        const ProtocolSequence * seq = protoClose->getInnerProtocol();
+
+        if(seq->isComplete())
+            return protoClose; 
+        
+        const Protocol * tmp = seq->steps.front();
+        protoPtr = &tmp; 
+    }
+
     return *protoPtr;
 }
 
-// This code may look a bit odd, its because some changes need to be made later on for closeable protocols :)
 optional<const Protocol *> ProtocolSequence::popFirst() const
 {
     if (isComplete())
@@ -592,6 +606,15 @@ optional<const Protocol *> ProtocolSequence::popFirst() const
     const ProtocolSequence * tempSeq = this; 
     const ProtocolSequence ** seqPtr = & tempSeq; 
 
+    while(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
+    {
+        const ProtocolSequence * seq = protoClose->getInnerProtocol();
+
+        if(seq->isComplete())
+            break;
+        
+        seqPtr = &seq; 
+    }
 
     const Protocol * ans = (*seqPtr)->steps.front(); 
     ProtocolSequence * m_seq = const_cast<ProtocolSequence *>(*seqPtr); 
@@ -600,7 +623,6 @@ optional<const Protocol *> ProtocolSequence::popFirst() const
     return ans;
 }
 
-// This code may look a bit odd, its because some changes need to be made later on for closeable protocols :)
 void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const 
 {
     if (isComplete())
@@ -614,8 +636,43 @@ void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const
     const ProtocolSequence * tempSeq = this; 
     const ProtocolSequence ** seqPtr = & tempSeq; 
 
+    while(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
+    {
+        const ProtocolSequence * seq = protoClose->getInnerProtocol();
+
+        if(seq->isComplete())
+            break;
+        
+        seqPtr = &seq; 
+    }
+
 
     ProtocolSequence * m_seq = const_cast<ProtocolSequence *>(*seqPtr); 
     m_seq->steps.insert(m_seq->steps.begin(), ins.begin(), ins.end());
     return;// true;
+}
+
+/*********************************************
+ *
+ *  ProtocolClose
+ * 
+ * *******************************************/
+std::string ProtocolClose::as_str() const
+{
+    // TODO: CHANGE SYMBOLS?
+    std::ostringstream description;
+    description << "Closeable<" << proto->toString() << ">";
+
+    return description.str();
+}
+const Protocol *ProtocolClose::getInverse() const
+{
+    return new ProtocolClose(this->inCloseable, this->proto->getInverse(), this->getCloseNumber());
+}
+
+const Protocol *ProtocolClose::getCopy() const
+{
+    auto ans = new ProtocolClose(this->inCloseable, this->proto->getCopy(), this->getCloseNumber()); 
+    ans->guardCount = this->guardCount;
+    return ans;
 }
