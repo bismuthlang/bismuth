@@ -39,12 +39,17 @@ cd shared
 
 Once in the `/home/shared` directory (assuming that it is also the top-level directory of your project), running `./makeBuild.sh` will build the codebase. In very rare circumstances (ie, a change to the docker image's libraries) you may have to delete previously built files (`rm -rf ./build`) prior to running `./makeBuild.sh`
 
-
 ## Step 3. Running tests
 
 From the `/home/shared` directory, running `./runTests.sh` will run all the test cases. 
 
-## Step 4. Generating code coverage
+## Step 4. Running a specific file 
+
+From `/home/shared`, running `./tester.sh <.bismuth file without extension>` will compile the program and run it (if compiling was successful). 
+
+For example, to run `./programs/example.bismuth`, one could run the command `./tester.sh ./programs/example` .
+
+## Step 5. Generating code coverage
 *Note: This process may take a while to run*
 
 From the `/home/shared` directory, running `./coverage.sh` will: 

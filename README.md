@@ -9,9 +9,9 @@ Implementation of the [bismuth](https://bismuth-lang.org) programming language.
 * OR an equivalent llvm-12 environment (not recommended)
 
 
-## Setting up
+## Setting up, Running Code, Tests, & Coverage
 
-Instructions for how to set up the repository using docker can be found in [DockerSetup.md](./DockerSetup.md). While it is possible to get the code running without docker, the process is much more involved and fairly system dependent. In addition,  without docker, test cases may fail to run as they expect the `/programs` directory to be located in `/home/shared/
+Instructions for how to set up the repository using docker can be found in [DockerSetup.md](./DockerSetup.md). While it is possible to get the code running without docker, the process is much more involved and fairly system dependent. In addition,  without docker, test cases may fail to run as they expect the `/programs` directory to be located in `/home/shared/`.
 
 
 
@@ -31,6 +31,7 @@ Instructions for how to set up the repository using docker can be found in [Dock
 - `/src/semantic` - The language's semantic analysis phase (type checking, type inference, etc).
 - `/src/symbol` - Files related to the symbol table and type definitions
 - `/src/utility` - Misc. files required for the compiler--primarily relating to test cases and error handling
+- `./tester.sh` - Compiles and runs a given file
 - `/test` - Compiler test cases primarily broken down based on corresponding file in `/src`.
 - `./makeBuild.sh` - Makes a build of the project
 - `./runTests.sh` - Runs the project's test cases
