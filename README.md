@@ -1,36 +1,26 @@
 # README
 
-This programming language was created by Alex Friedman based on the process calculus theory that I created. ). 
+Implementation of the [bismuth](https://bismuth-lang.org) programming language. 
 
 
 ## Prerequisites
 
 * The project's [docker image](https://github.com/ahfriedman/cs544-cs4533-docker) 
-* OR an equivalent llvm-12 environment
+* OR an equivalent llvm-12 environment (not recommended)
 
 
 ## Setting up
 
-### With Docker
-
-With docker, most of the project setup should be automatic. Please see the the [common issues](https://github.com/ahfriedman/cs544-cs4533-docker#common-issues)
-section of that repository for any debugging steps. 
+Instructions for how to set up the repository using docker can be found in [DockerSetup.md](./DockerSetup.md). While it is possible to get the code running without docker, the process is much more involved and fairly system dependent. In addition,  without docker, test cases may fail to run as they expect the `/programs` directory to be located in `/home/shared/
 
 
-### Without Docker
-
-***NOTE: without docker, test cases may fail to run as they expect the `/programs` directory to be located in `/home/shared/`!***
-
-Assuming that you have all of the required programs at the correct versions, the only thing 
-that you should have to do after cloning this repository is to build and copy and `antlr4-runtime.a` library for your system, and then 
-copy it into the `/antlr/lib` directory. 
-
-If you made changes for your platform to any of the .cmake files or CMakeLists.txt files, you will probably need to make them in this project as well.
 
 ## Structure
 
 - `/antlr` - Contains the relevant ANTLR library.
 - `/build` - Automatically generated output files of the project.
+- `./coverage.sh` - Runs coverage based on the test cases
+- `./cov` - Automatically generated folder containing coverage information
 - `/cmake` - Contains the cmake files required to setup the project's dependencies. Each file corresponds to a separate part of the project.
 - `/programs` - Contains sample programs used for testing the compiler. ***Many test cases rely on calculating the sha256 hash of these programs. Editing them may cause test cases to break!***
 - `/src` - Contains the main project files--including bismuthc.cpp which is the main entry point for the compiler
