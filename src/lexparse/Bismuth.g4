@@ -144,7 +144,8 @@ statement           : defineType                                                
                     | 'accept' '(' channel=VARIABLE ')' block                               # ProgramAccept
                     | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block        # ProgramAcceptWhile
                     | 'acceptIf' '(' channel=VARIABLE ',' check=expression ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf
-                    | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  //FIXME: ENABLE
+                    | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  // FIXME: ENABLE
+                    | 'cancel' '('                  ')' ';'?                                # ProgramCancel // FIXME: ENABLE 
                     ; 
                     
 
@@ -242,7 +243,7 @@ COPY            :   'copy'  ;
 // Protocols   
 EXTERNAL_CHOICE :   'ExternalChoice'    ;
 INTERNAL_CHOICE :   'InternalChoice'    ;
-CLOSEABLE        :   'Closeable'         ;
+CLOSEABLE        :  'Cancelable'        ;
 
 
 

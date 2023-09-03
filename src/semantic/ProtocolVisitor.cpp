@@ -173,7 +173,7 @@ std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(Bi
 {
     if(this->inLoop) // PLAN: Potentially report this and lower down proto errors?
     {
-        return errorHandler.addError(ctx->getStart(), "Currently cannot include looping protocol within closeable block. Instead, move loop outside block or use higher-order channels.");
+        return errorHandler.addError(ctx->getStart(), "Currently cannot include looping protocol within cancelable block. Instead, move loop outside block or use higher-order channels.");
     }
      
     bool origStatus = this->inClose; 

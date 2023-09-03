@@ -661,7 +661,7 @@ std::string ProtocolClose::as_str() const
 {
     // TODO: CHANGE SYMBOLS?
     std::ostringstream description;
-    description << "Closeable<" << proto->toString() << ">";
+    description << "Cancelable<" << proto->toString() << ">";
 
     return description.str();
 }
