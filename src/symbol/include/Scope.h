@@ -134,7 +134,7 @@ public:
                 }
             }
 
-            if (include_linear)
+            if (include_linear && item.second->type->isLinear() && !(item.second->getIdentifier() == "@RETURN"))
             {
                 if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
                 {

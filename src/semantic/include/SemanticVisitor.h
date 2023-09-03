@@ -509,13 +509,13 @@ private:
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
         // First, try exiting the scope
-        std::pair<std::optional<Scope *>, std::optional<Scope *>> res = stmgr->exitScope();
+        std::optional<Scope *> res = stmgr->exitScope();
 
         // If we did so and got a value back, then we can do type inferencing.
-        if (res.first)
+        if (res)
         {
             // Get the Scope* and check for any uninferred symbols
-            Scope *scope = res.first.value();
+            Scope *scope = res.value();
             std::vector<Symbol *> uninf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
@@ -531,11 +531,7 @@ private:
 
                 errorHandler.addError(ctx->getStart(), "700 Uninferred types in context: " + details.str());
             }
-        }
 
-        if (res.second)
-        {
-            Scope *scope = res.second.value();
             std::vector<Symbol *> lins = scope->getSymbols(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them

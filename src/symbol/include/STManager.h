@@ -38,8 +38,7 @@ public:
   void enterScope(StopType stopType)
   {
 
-    linearContext.enterScope(stopType == GLOBAL);
-    dangerContext.enterScope(stopType == GLOBAL);
+    context.enterScope(stopType == GLOBAL);
   }
 
   /**
@@ -47,9 +46,9 @@ public:
    *
    * @return std::optional<Scope*> Returns empty if no parent scope to enter; otherwise returns last scope.
    */
-  std::pair<std::optional<Scope *>, std::optional<Scope *>> exitScope()
+  std::optional<Scope *> exitScope()
   {
-    return {dangerContext.exitScope(), linearContext.exitScope()};
+    return context.exitScope();
   }
 
   /**
@@ -61,15 +60,13 @@ public:
    */
   bool addSymbol(Symbol *symbol)
   {
-    if (symbol->type->isLinear() &&
-        symbol->getIdentifier() != "@RETURN") // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elim.
-      return linearContext.addSymbol(symbol);
-    return dangerContext.addSymbol(symbol);
+    // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elim.
+      return context.addSymbol(symbol);
   }
 
   bool removeSymbol(Symbol *symbol)
   {
-    return linearContext.removeSymbol(symbol);
+    return context.removeSymbol(symbol);
   }
 
   /**
@@ -80,11 +77,7 @@ public:
    */
   std::optional<Symbol *> lookup(std::string id)
   {
-    std::optional<Symbol *> opt = linearContext.lookup(id);
-    if (opt)
-      return opt; 
-
-    return dangerContext.lookup(id);
+    return context.lookup(id);
   }
 
   /**
@@ -95,10 +88,7 @@ public:
    */
   std::optional<Symbol *> lookupInCurrentScope(std::string id)
   {
-    std::optional<Symbol *> opt1 = linearContext.lookupInCurrentScope(id);
-    if (opt1)
-      return opt1;
-    return dangerContext.lookupInCurrentScope(id);
+    return context.lookupInCurrentScope(id);
   }
 
   /****************************************
@@ -112,10 +102,10 @@ public:
    */
   std::optional<Scope *> getCurrentScope()
   {
-    return dangerContext.getCurrentScope();
+    return context.getCurrentScope();
   }
 
-  std::vector<Symbol *> getLinears(int flags) { return linearContext.getSymbols(flags); }
+  std::vector<Symbol *> getLinears(int flags) { return context.getSymbols(flags); }
 
   void guard()
   {
@@ -144,12 +134,12 @@ public:
    *
    * @return int
    */
-  int scopeCount() { return dangerContext.scopeCount(); }
+  int scopeCount() { return context.scopeCount(); }
 
   std::string toString() const
   {
     std::ostringstream desc;
-    desc << "{danger=" << dangerContext.toString() << "; linear=" << linearContext.toString() << "}";
+    desc << "{context=" << context.toString() << "}";
 
     return desc.str();
   }
@@ -162,30 +152,25 @@ public:
    */
   bool isGlobalScope()
   {
-    return dangerContext.isGlobalScope();
+    return context.isGlobalScope();
   }
 
   int getCurrentStop()
   {
-    return dangerContext.getCurrentStop();
+    return context.getCurrentStop();
   }
 
   std::optional<STManager *> getCopy()
   {
-    std::optional<Context> lC = linearContext.getCopy();
+    std::optional<Context> lC = context.getCopy();
     if (!lC)
       return std::nullopt;
 
-    std::optional<Context> dC = dangerContext.getCopy();
-    if (!dC)
-      return std::nullopt;
-
-    return new STManager(lC.value(), dC.value());
+    return new STManager(lC.value());
   }
 
 private:
-  Context linearContext;
-  Context dangerContext;
+  Context context;
 
-  STManager(Context linear, Context danger) : linearContext(linear), dangerContext(danger) {}
+  STManager(Context ctx) : context(ctx) {}
 };
