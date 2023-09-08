@@ -2016,13 +2016,14 @@ std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
+        bool closeState = channel->getProtocol()->isInCloseable(); 
         std::optional<const Type *> ty = channel->getProtocol()->recv();
         if (!ty)
         {
             return errorHandler.addError(ctx->getStart(), "Failed to recv over channel: " + sym->toString());
         }
 
-        return new TProgramRecvNode(sym, ty.value(), ctx->getStart());
+        return new TProgramRecvNode(sym, ty.value(), closeState, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);

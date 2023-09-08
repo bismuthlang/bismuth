@@ -435,14 +435,18 @@ class TProgramRecvNode : public TypedNode
 public:
     Symbol *sym;
     const Type *ty;
+    bool inCloseable; 
 
-    TProgramRecvNode(Symbol *s, const Type *t, antlr4::Token *tok) : TypedNode(tok)
+    TProgramRecvNode(Symbol *s, const Type *t, bool iC, antlr4::Token *tok) : TypedNode(tok)
     {
         sym = s;
         // expr = e;
         ty = t;
+        inCloseable = iC; 
     }
 
+    bool isInCloseable() const { return inCloseable; }
+    
     const Type *getType() override { return ty; }
 
     std::string toString() const override {

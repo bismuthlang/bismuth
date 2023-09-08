@@ -323,6 +323,11 @@ std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode *n)
     Value *valPtr = builder->CreateCall(getReadChannel(), {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
     Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                       // Cast the void* to the correct type ptr
 
+    if(n->isInCloseable())
+    {
+        casted = correctNullOptionalToSum(, casted);
+    }
+
     Value *ans = builder->CreateLoad(recvType, casted);
 
     builder->CreateCall(getFree(), {valPtr}); // May leak depending on how GC works?
@@ -1254,7 +1259,6 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
     */
     // Get the allocation instruction for the symbol
 
-
     /*
     // If the symbol is global
     if (varSym->isGlobal)
@@ -1779,7 +1783,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
     Function *fn = prog->getLLVMName() ? module->getFunction(prog->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
     prog->setName(fn->getName().str());
 
-    
     // Create basic block
     BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
     builder->SetInsertPoint(bBlk);
@@ -1795,7 +1798,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
 
     n->channelSymbol->setAllocation(v);
     builder->CreateStore((fn->args()).begin(), v);
-    
+
     // Generate code for the block
     for (auto e : n->block->exprs)
     {
@@ -1942,4 +1945,60 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n) // TODO: POSSIBL
 
     // return saveBlock;
     return builder->CreateCall(get_arrayToChannel(), {arrayStart, builder->CreateLoad(Int32Ty, loop_len)});
+}
+
+Value *CodegenVisitor::correctNullOptionalToSum(const Type *ty, Value *original)
+{
+    const TypeSum *sum = new TypeSum({ty, Types::UNIT});
+
+    unsigned int index = sum->getIndex(module, original->getType());
+    llvm::Type *sumTy = sum->getLLVMType(module);
+    llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
+
+    Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+
+    builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+
+
+
+    // Get the condition that the if statement is for
+
+    Value *rawEquality = builder->CreateICmpNE(original, Constant::getNullValue(original->getType())); // llvm::ConstantPointerNull::get(original->getType()->getPointerTo()));
+    Value *cond = builder->CreateZExtOrTrunc(rawEquality, Int1Ty);
+
+    // AcceptType(this, n->cond);
+
+    /*
+     * Generate the basic blocks for then, else, and the remaining code.
+     * (NOTE: We set rest to be else if there is no else branch).
+     */
+    auto parentFn = builder->GetInsertBlock()->getParent();
+
+    BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "val-opt", parentFn);
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
+
+
+    builder->CreateCondBr(cond, thenBlk, restBlk);
+
+    /*
+     * Then block
+     */
+    builder->SetInsertPoint(thenBlk);
+    Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+
+    Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
+    builder->CreateStore(original, corrected);
+    builder->CreateBr(restBlk);
+
+    thenBlk = builder->GetInsertBlock();
+
+
+    /*
+     * Insert the else block (same as rest if no else branch)
+     */
+    parentFn->getBasicBlockList().push_back(restBlk);
+    builder->SetInsertPoint(restBlk);
+
+    delete sum; 
+    return builder->CreateLoad(sumTy, alloc);
 }
