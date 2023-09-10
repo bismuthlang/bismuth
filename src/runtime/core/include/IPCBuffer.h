@@ -97,6 +97,7 @@ public:
     {
         std::unique_lock<std::mutex> lock(m);
         func(q);
+        c.notify_one(); // Just in case people mess with the queue, notify listeners
     }
 
 private:
