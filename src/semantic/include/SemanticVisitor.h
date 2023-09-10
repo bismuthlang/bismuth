@@ -184,6 +184,9 @@ public:
     std::variant<TProgramWeakenNode *, ErrorChain *> TvisitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx);
     std::any visitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx) override { return TNVariantCast<TProgramWeakenNode>(TvisitProgramWeaken(ctx)); }
 
+    std::variant<TProgramCancelNode *, ErrorChain *> TvisitProgramCancel(BismuthParser::ProgramCancelContext *ctx);
+    std::any visitProgramCancel(BismuthParser::ProgramCancelContext *ctx) override { return TNVariantCast<TProgramCancelNode>(TvisitProgramCancel(ctx)); }
+
     std::variant<TProgramExecNode *, ErrorChain *> TvisitAssignableExec(BismuthParser::AssignableExecContext *ctx);
     std::any visitAssignableExec(BismuthParser::AssignableExecContext *ctx) override { return TNVariantCast<TProgramExecNode>(TvisitAssignableExec(ctx)); }
 

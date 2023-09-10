@@ -103,6 +103,7 @@ public:
     std::optional<Value *> visit(TProgramIsPresetNode *n) override; 
     std::optional<Value *> visit(TProgramContractNode *n) override;
     std::optional<Value *> visit(TProgramWeakenNode *n) override;
+    std::optional<Value *> visit(TProgramCancelNode *n) override;
     std::optional<Value *> visit(TProgramExecNode *n) override;
     std::optional<Value *> visit(TProgramAcceptNode *n) override;
     std::optional<Value *> visit(TProgramAcceptWhileNode *n) override;
@@ -400,6 +401,16 @@ public:
             val);
     }
 
+    llvm::FunctionCallee getCancelChannel()
+    {
+        return module->getOrInsertFunction(
+            "_PreemptChannel",
+            llvm::FunctionType::get(
+                UnitTy,
+                {Int32Ty, Int32Ty},
+                false));
+    }
+
     Value * correctSumAssignment(const TypeSum *sum, Value *original)
     {
         unsigned int index = sum->getIndex(module, original->getType());
@@ -424,7 +435,7 @@ public:
         return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cases...
     }
 
-    Value * correctNullOptionalToSum(const Type *ty, Value *original);
+    std::optional<Value *> correctNullOptionalToSum(const Type *ty, Value *original);
 
     // TODO: void elimination? Should be somewhat handled by llvm
     // FIXME: BLOCK UNIT FROM BEING IN STRUCT? OR AT LEAST TEST IF ITS BREAKING

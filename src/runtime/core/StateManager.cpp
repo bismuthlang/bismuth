@@ -1,5 +1,7 @@
 #include "StateManager.h"
 
+#include <exception>
+
 extern "C" void waitForAllToFinish()
 {
     std::unique_lock<std::mutex> lock{running_mutex};
@@ -98,7 +100,7 @@ IPCBuffer<Message> *getWriteQueue(unsigned int aId)
 
     if (i_oAId == LookupOther.end())
     {
-        throw "Preservation Error: WriteHelper could not locate channel to write to!";
+        throw std::runtime_error("Preservation Error: WriteHelper could not locate channel to write to!");
     }
 
     unsigned int oAId = i_oAId->second;
@@ -108,7 +110,7 @@ IPCBuffer<Message> *getWriteQueue(unsigned int aId)
 
     if (i_buffer == State.end())
     {
-        throw "Preservation Error: WriteHelper could not locate buffer to write to!";
+        throw std::runtime_error("Preservation Error: WriteHelper could not locate buffer to write to!");
     }
 
     return i_buffer->second;
@@ -150,7 +152,7 @@ IPCBuffer<Message> *getReadQueue(unsigned int aId)
 
     if (i_buffer == State.end())
     {
-        throw "Preservation error: failed to find read channel!";
+        throw std::runtime_error("Preservation error: failed to find read channel!");
     }
 
     return i_buffer->second;
@@ -178,8 +180,12 @@ extern "C" uint8_t *ReadChannel(unsigned int aId)
         uint8_t *v = std::get<Value>(m).v;
         return v;
     }
+    else if(std::holds_alternative<CLOSE>(m))
+    {
+        return nullptr;  // TODO: VERIFY GOOD ENOUGH!
+    }
 
-    throw "Preservation Error: ReadChannel got non-VALUE! ";
+    throw std::runtime_error("Preservation Error: ReadChannel got non-VALUE! ");
 }
 
 extern "C" unsigned int ReadProjection(unsigned int aId)
@@ -192,7 +198,7 @@ extern "C" unsigned int ReadProjection(unsigned int aId)
         return i;
     }
 
-    throw "Preservation Error: ReadProjection got non-SEL!";
+    throw std::runtime_error("Preservation Error: ReadProjection got non-SEL!");
 }
 
 extern "C" bool ShouldLoop(unsigned int aId)
@@ -204,7 +210,7 @@ extern "C" bool ShouldLoop(unsigned int aId)
     if (std::holds_alternative<END_LOOP>(m))
         return false;
 
-    throw "Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!";
+    throw std::runtime_error("Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!");
 }
 
 extern "C" bool _OC_isPresent(unsigned int aId)
@@ -222,7 +228,7 @@ extern "C" bool _OC_isPresent(unsigned int aId)
     else if (std::holds_alternative<END_LOOP>(m))
         return false;
 
-    throw "Preservation Error: _OC_isPresent got something besides START_LOOP or END_LOOP!";
+    throw std::runtime_error("Preservation Error: _OC_isPresent got something besides START_LOOP or END_LOOP!");
 }
 
 extern "C" bool ShouldAcceptWhileLoop(unsigned int aId)
@@ -248,7 +254,7 @@ extern "C" bool ShouldAcceptWhileLoop(unsigned int aId)
     // if (std::holds_alternative<END_LOOP>(m))
     //     return false;
 
-    throw "Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!";
+    throw std::runtime_error("Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!");
 }
 
 extern "C" void PopEndLoop(unsigned int aId)
@@ -260,7 +266,7 @@ extern "C" void PopEndLoop(unsigned int aId)
     if (!std::holds_alternative<END_LOOP>(m))
     {
         // return false;
-        throw "Preservation Error: PopEndLoop got something besides END_LOOP!";
+        throw std::runtime_error("Preservation Error: PopEndLoop got something besides END_LOOP!");
     }
 
     // Message m = PeakHelper(aId);

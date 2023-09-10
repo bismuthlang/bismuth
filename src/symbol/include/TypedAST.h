@@ -50,6 +50,7 @@ class TProgramRecvNode;
 class TProgramIsPresetNode; 
 class TProgramContractNode;
 class TProgramWeakenNode;
+class TProgramCancelNode;
 class TProgramExecNode;
 class TProgramAcceptNode;
 class TProgramAcceptWhileNode; 
@@ -104,6 +105,7 @@ public:
     virtual std::optional<Value *> visit(TProgramIsPresetNode *n) = 0; 
     virtual std::optional<Value *> visit(TProgramContractNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramWeakenNode *n) = 0;
+    virtual std::optional<Value *> visit(TProgramCancelNode *n) = 0; 
     virtual std::optional<Value *> visit(TProgramExecNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramAcceptNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramAcceptWhileNode *n) = 0; 
@@ -152,6 +154,7 @@ public:
     std::any any_visit(TProgramIsPresetNode *n) { return this->visit(n); }
     std::any any_visit(TProgramContractNode *n) { return this->visit(n); }
     std::any any_visit(TProgramWeakenNode *n) { return this->visit(n); }
+    std::any any_visit(TProgramCancelNode *n) { return this->visit(n); }
     std::any any_visit(TProgramExecNode *n) { return this->visit(n); }
     std::any any_visit(TProgramAcceptNode *n) { return this->visit(n); }
     std::any any_visit(TProgramAcceptWhileNode *n) { return this->visit(n); }
@@ -508,6 +511,28 @@ public:
 
     std::string toString() const override {
         return "WEAKEN NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+
+class TProgramCancelNode : public TypedNode // FIXME: COMBINE THIS WITH PREV AND USE ENUM FOR OP?
+{
+public:
+    Symbol *sym;
+    unsigned int closeNumber; 
+
+    TProgramCancelNode(Symbol *s, unsigned int cn, antlr4::Token *tok) : TypedNode(tok)
+    {
+        sym = s;
+        closeNumber = cn; 
+    }
+
+    const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "CANCEL NODE";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }

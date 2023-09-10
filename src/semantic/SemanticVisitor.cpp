@@ -2244,6 +2244,7 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
 
     return errorHandler.addError(ctx->getStart(), "Cannot contract on non-channel: " + id);
 }
+
 std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx)
 {
     std::string id = ctx->channel->getText();
@@ -2269,6 +2270,35 @@ std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramW
 
     return errorHandler.addError(ctx->getStart(), "Cannot weaken on non-channel: " + id);
 }
+
+std::variant<TProgramCancelNode *, ErrorChain *> SemanticVisitor::TvisitProgramCancel(BismuthParser::ProgramCancelContext *ctx)
+{
+    std::string id = ctx->channel->getText();
+    std::optional<Symbol *> opt = stmgr->lookup(id);
+
+    if (!opt)
+    {
+        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
+    }
+
+    Symbol *sym = opt.value();
+
+    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
+    if (channelOpt)
+    {
+        const TypeChannel *channel = channelOpt.value();
+        std::optional<const ProtocolClose *> closeOpt = channel->getProtocol()->cancel();
+
+        if (!closeOpt)
+        {
+            return errorHandler.addError(ctx->getStart(), "Failed to cancel: " + id + " : "  + channel->toString());
+        }
+        return new TProgramCancelNode(sym, closeOpt.value()->getCloseNumber(), ctx->getStart());
+    }
+
+    return errorHandler.addError(ctx->getStart(), "Cannot cancel on non-channel: " + id); // TODO : better error messages (expected type XYZ but got)
+}
+
 std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAccept(BismuthParser::ProgramAcceptContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();

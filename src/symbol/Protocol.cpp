@@ -3,7 +3,7 @@
 /*********************************************
  *
  *  ProtocolRecv
- * 
+ *
  * ********************************************/
 
 std::string ProtocolRecv::as_str() const
@@ -14,23 +14,22 @@ std::string ProtocolRecv::as_str() const
     return description.str();
 }
 
-const Protocol *ProtocolRecv::getInverse() const //FIXME: ADD GUARD?
+const Protocol *ProtocolRecv::getInverse() const // FIXME: ADD GUARD?
 {
     return new ProtocolSend(this->inCloseable, this->recvType);
 }
 
 const Protocol *ProtocolRecv::getCopy() const
 {
-    auto ans = new ProtocolRecv(this->inCloseable, this->recvType->getCopy()); 
+    auto ans = new ProtocolRecv(this->inCloseable, this->recvType->getCopy());
     ans->guardCount = this->guardCount;
     return ans;
 }
 
-
 /*********************************************
  *
  *  ProtocolSend
- * 
+ *
  * ********************************************/
 
 std::string ProtocolSend::as_str() const
@@ -40,7 +39,7 @@ std::string ProtocolSend::as_str() const
 
     return description.str();
 }
-    
+
 const Protocol *ProtocolSend::getInverse() const
 {
     return new ProtocolRecv(this->inCloseable, this->sendType);
@@ -48,7 +47,8 @@ const Protocol *ProtocolSend::getInverse() const
 
 const Protocol *ProtocolSend::getCopy() const
 {
-    auto ans = new ProtocolSend(this->inCloseable, this->sendType->getCopy());; 
+    auto ans = new ProtocolSend(this->inCloseable, this->sendType->getCopy());
+    ;
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -56,7 +56,7 @@ const Protocol *ProtocolSend::getCopy() const
 /*********************************************
  *
  *  ProtocolWN
- * 
+ *
  * ********************************************/
 
 std::string ProtocolWN::as_str() const
@@ -81,7 +81,7 @@ const Protocol *ProtocolWN::getCopy() const
 /*********************************************
  *
  *  ProtocolOC
- * 
+ *
  * ********************************************/
 std::string ProtocolOC::as_str() const
 {
@@ -97,16 +97,15 @@ const Protocol *ProtocolOC::getInverse() const
 
 const Protocol *ProtocolOC::getCopy() const
 {
-    auto ans = new ProtocolOC(this->inCloseable, this->proto->getCopy()); 
+    auto ans = new ProtocolOC(this->inCloseable, this->proto->getCopy());
     ans->guardCount = this->guardCount;
     return ans;
 }
 
-
 /*********************************************
  *
  *  ProtocolIChoice
- * 
+ *
  * ********************************************/
 std::string ProtocolIChoice::as_str() const
 {
@@ -145,16 +144,15 @@ const Protocol *ProtocolIChoice::getCopy() const
         opts.insert(p->getCopy());
     }
 
-    auto ans = new ProtocolIChoice(this->inCloseable, opts); 
+    auto ans = new ProtocolIChoice(this->inCloseable, opts);
     ans->guardCount = this->guardCount;
     return ans;
 }
 
-
 /*********************************************
  *
  *  ProtocolEChoice
- * 
+ *
  * ********************************************/
 std::string ProtocolEChoice::as_str() const
 {
@@ -192,7 +190,7 @@ const Protocol *ProtocolEChoice::getCopy() const
         opts.insert(p->getCopy());
     }
 
-    auto ans = new ProtocolEChoice(this->inCloseable, opts); 
+    auto ans = new ProtocolEChoice(this->inCloseable, opts);
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -200,7 +198,7 @@ const Protocol *ProtocolEChoice::getCopy() const
 /*********************************************
  *
  *  ProtocolSequence
- * 
+ *
  * ********************************************/
 std::string ProtocolSequence::as_str() const
 {
@@ -237,7 +235,7 @@ const ProtocolSequence *ProtocolSequence::getCopy() const
         invs.push_back(p->getCopy());
     }
 
-    auto ans = new ProtocolSequence(this->inCloseable, invs); 
+    auto ans = new ProtocolSequence(this->inCloseable, invs);
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -247,22 +245,29 @@ bool ProtocolSequence::isComplete() const
     return steps.size() == 0;
 }
 
+bool ProtocolSequence::isInCloseable() const
+{
+    optional<const Protocol *> protoOpt = this->getFirst();
+    if (!protoOpt)
+        return this->inCloseable;
+    return protoOpt.value()->isInCloseable();
+}
+
 optional<const ProtocolSend *> ProtocolSequence::getSend() const
 {
     if (isComplete())
         return std::nullopt;
 
-    if(steps.front()->isGuarded() || this->isGuarded())// FIXME: VERIFY WORKS W CLOSE PROTOS!
+    if (steps.front()->isGuarded() || this->isGuarded()) // FIXME: VERIFY WORKS W CLOSE PROTOS!
         return std::nullopt;
 
-    optional<const Protocol *> protoOpt = this->getFirst(); 
-    if(!protoOpt)
-        return std::nullopt; 
-
+    optional<const Protocol *> protoOpt = this->getFirst();
+    if (!protoOpt)
+        return std::nullopt;
 
     if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(protoOpt.value()))
     {
-        return send; 
+        return send;
     }
 
     return std::nullopt;
@@ -271,14 +276,14 @@ optional<const ProtocolSend *> ProtocolSequence::getSend() const
 // FIXME: this will get complicated if we have (Unit + Closable) -- how will we know what to close?
 optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
 {
-    optional<const ProtocolSend *> sendOpt = this->getSend(); 
-    if(!sendOpt) return std::nullopt;  
+    optional<const ProtocolSend *> sendOpt = this->getSend();
+    if (!sendOpt)
+        return std::nullopt;
 
-    const Type * sendTy = sendOpt.value()->getSendType();
-    
+    const Type *sendTy = sendOpt.value()->getSendType();
+
     if (ty->isSubtype(sendTy))
         return sendTy;
-
 
     return std::nullopt;
 }
@@ -295,7 +300,7 @@ optional<const Type *> ProtocolSequence::send(const Type *ty) const
     return ans;
 }
 
-optional<const ProtocolRecv*> ProtocolSequence::getRecv() const
+optional<const ProtocolRecv *> ProtocolSequence::getRecv() const
 {
     if (isComplete())
         return std::nullopt;
@@ -303,14 +308,14 @@ optional<const ProtocolRecv*> ProtocolSequence::getRecv() const
     if (steps.front()->isGuarded() || this->isGuarded())
         return std::nullopt;
 
-    optional<const Protocol*> protoOpt = this->getFirst();
+    optional<const Protocol *> protoOpt = this->getFirst();
 
-    if(!protoOpt)
-        return std::nullopt; 
+    if (!protoOpt)
+        return std::nullopt;
 
     if (const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(protoOpt.value()))
     {
-        return recv; 
+        return recv;
     }
 
     return std::nullopt;
@@ -319,30 +324,32 @@ optional<const ProtocolRecv*> ProtocolSequence::getRecv() const
 optional<const Type *> ProtocolSequence::recv() const
 {
     // FIXME: BETTER ERROR HANDLING
-    optional<const ProtocolRecv *> recvOpt = this->getRecv(); 
+    optional<const ProtocolRecv *> recvOpt = this->getRecv();
 
-    if (!recvOpt) return std::nullopt;
+    if (!recvOpt)
+        return std::nullopt;
 
-    this->popFirst(); //TODO: ENSURE SAME AS recvOpt value?
+    this->popFirst(); // TODO: ENSURE SAME AS recvOpt value?
 
-    const ProtocolRecv * recvProto = recvOpt.value(); 
+    const ProtocolRecv *recvProto = recvOpt.value();
 
-    const Type * recvType = recvProto->getRecvType(); 
-    if(recvProto->isInCloseable())
+    const Type *recvType = recvProto->getRecvType();
+    if (recvProto->isInCloseable())
     {
         return new TypeSum({recvType, Types::UNIT}); // FIXME: must be linear-ish SUM!!!
     }
 
-    return recvType; 
+    return recvType;
 }
 
 bool ProtocolSequence::contract() const
 {
     optional<const ProtocolWN *> proto = this->getWN();
-    if(!proto) return false;
+    if (!proto)
+        return false;
 
     this->insertSteps(proto.value()->getInnerProtocol()->steps);
-    return true; 
+    return true;
 }
 
 bool ProtocolSequence::weaken() const
@@ -353,23 +360,30 @@ bool ProtocolSequence::weaken() const
     if (steps.front()->isGuarded() || this->isGuarded())
         return false;
 
-    return this->popFirst().has_value(); // should always be true 
+    return this->popFirst().has_value(); // should always be true
 }
 
+optional<const ProtocolClose *> ProtocolSequence::cancel() const
+{
+    if (steps.front()->isGuarded() || this->isGuarded())
+        return std::nullopt;
 
-optional<const ProtocolOC*> ProtocolSequence::getOC(bool includeGuarded) const
+    return this->popFirstCancelable(); // should always be true?
+}
+
+optional<const ProtocolOC *> ProtocolSequence::getOC(bool includeGuarded) const
 {
     if (isComplete())
         return std::nullopt;
 
     if (!includeGuarded &&
         (steps.front()->isGuarded() || this->isGuarded()))
-        return std::nullopt; 
+        return std::nullopt;
 
-    optional<const Protocol *> protoOpt = this->getFirst(); 
-    if(!protoOpt)
-        return std::nullopt; 
-    
+    optional<const Protocol *> protoOpt = this->getFirst();
+    if (!protoOpt)
+        return std::nullopt;
+
     if (const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(protoOpt.value()))
     {
         return oc;
@@ -378,15 +392,15 @@ optional<const ProtocolOC*> ProtocolSequence::getOC(bool includeGuarded) const
     return std::nullopt;
 }
 
-optional<const ProtocolWN*> ProtocolSequence::getWN() const
+optional<const ProtocolWN *> ProtocolSequence::getWN() const
 {
     if (isComplete())
         return std::nullopt;
 
-    optional<const Protocol *> protoOpt = this->getFirst(); 
-    if(!protoOpt)
-        return std::nullopt; 
-    
+    optional<const Protocol *> protoOpt = this->getFirst();
+    if (!protoOpt)
+        return std::nullopt;
+
     if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(protoOpt.value()))
     {
         return wn;
@@ -402,16 +416,17 @@ optional<const ProtocolWN*> ProtocolSequence::getWN() const
 
 bool ProtocolSequence::isOC(bool includeGuarded) const
 {
-    return getOC(includeGuarded).has_value(); 
+    return getOC(includeGuarded).has_value();
 }
 
 optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
 {
-    optional<const ProtocolOC *>oc = this->getOC(); 
-    if(!oc) return std::nullopt; 
+    optional<const ProtocolOC *> oc = this->getOC();
+    if (!oc)
+        return std::nullopt;
 
     const ProtocolSequence *ans = oc.value()->getInnerProtocol()->getCopy();
-    this->popFirst(); 
+    this->popFirst();
 
     return ans;
 }
@@ -420,15 +435,17 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptLoop() const
 optional<const ProtocolSequence *> ProtocolSequence::acceptWhileLoop() const
 {
     optional<const ProtocolOC *> oc = this->getOC(true);
-    if(!oc) return std::nullopt; 
+    if (!oc)
+        return std::nullopt;
 
     return oc.value()->getInnerProtocol()->getCopy();
 }
 
 optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const
 {
-    optional<const ProtocolOC *> oc = this->getOC(true); 
-    if(!oc) return std::nullopt; 
+    optional<const ProtocolOC *> oc = this->getOC(true);
+    if (!oc)
+        return std::nullopt;
 
     const ProtocolSequence *ans = oc.value()->getInnerProtocol()->getCopy();
 
@@ -438,7 +455,7 @@ optional<const ProtocolSequence *> ProtocolSequence::acceptIf() const
 }
 
 // FIXME: METHODIZE A LOT OF THESE
-optional<const ProtocolIChoice*> ProtocolSequence::getIntChoice() const
+optional<const ProtocolIChoice *> ProtocolSequence::getIntChoice() const
 {
     if (isComplete())
         return std::nullopt;
@@ -446,10 +463,10 @@ optional<const ProtocolIChoice*> ProtocolSequence::getIntChoice() const
     if (steps.front()->isGuarded() || this->isGuarded())
         return std::nullopt;
 
-    optional<const Protocol*> protoOpt = this->getFirst(); 
+    optional<const Protocol *> protoOpt = this->getFirst();
 
-    if(!protoOpt)
-        return std::nullopt; 
+    if (!protoOpt)
+        return std::nullopt;
 
     if (const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(protoOpt.value()))
     {
@@ -462,16 +479,17 @@ optional<const ProtocolIChoice*> ProtocolSequence::getIntChoice() const
 unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 {
     optional<const ProtocolIChoice *> ic = this->getIntChoice();
-    if(!ic) return 0; 
-
+    if (!ic)
+        return 0;
 
     unsigned int ans = 1;
     for (const ProtocolSequence *p : ic.value()->getOptions())
     {
         if (ps->toString() == p->toString()) // FIXME: DO BETTER
         {
-            if(!this->popFirst().has_value()) return 0;  
-            this->insertSteps(p->steps); 
+            if (!this->popFirst().has_value())
+                return 0;
+            this->insertSteps(p->steps);
             return ans;
         }
         ans++;
@@ -485,16 +503,15 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
     if (isComplete())
         return false;
 
-
     if (steps.front()->isGuarded() || this->isGuarded())
         return false;
 
-    optional<const Protocol*> protoOpt = this->popFirst();
+    optional<const Protocol *> protoOpt = this->popFirst();
 
-    if(!protoOpt)
-        return false; 
+    if (!protoOpt)
+        return false;
 
-    const Protocol* proto = protoOpt.value(); 
+    const Protocol *proto = protoOpt.value();
 
     if (const ProtocolEChoice *eChoice = dynamic_cast<const ProtocolEChoice *>(proto))
     {
@@ -581,18 +598,18 @@ optional<const Protocol *> ProtocolSequence::getFirst() const
     if (isComplete())
         return std::nullopt;
 
-    const Protocol * protoTemp = steps.front();
-    const Protocol ** protoPtr = &protoTemp; 
+    const Protocol *protoTemp = steps.front();
+    const Protocol **protoPtr = &protoTemp;
 
-    while(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(*protoPtr))
+    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(*protoPtr))
     {
-        const ProtocolSequence * seq = protoClose->getInnerProtocol();
+        const ProtocolSequence *seq = protoClose->getInnerProtocol();
 
-        if(seq->isComplete())
-            return protoClose; 
-        
-        const Protocol * tmp = seq->steps.front();
-        protoPtr = &tmp; 
+        if (seq->isComplete())
+            return protoClose;
+
+        const Protocol *tmp = seq->steps.front();
+        protoPtr = &tmp;
     }
 
     return *protoPtr;
@@ -603,59 +620,129 @@ optional<const Protocol *> ProtocolSequence::popFirst() const
     if (isComplete())
         return std::nullopt;
 
-    const ProtocolSequence * tempSeq = this; 
-    const ProtocolSequence ** seqPtr = & tempSeq; 
+    const ProtocolSequence *tempSeq = this;
+    const ProtocolSequence **seqPtr = &tempSeq;
 
-    while(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
+    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
     {
-        const ProtocolSequence * seq = protoClose->getInnerProtocol();
+        const ProtocolSequence *seq = protoClose->getInnerProtocol();
 
-        if(seq->isComplete())
+        if (seq->isComplete())
             break;
-        
-        seqPtr = &seq; 
+
+        seqPtr = &seq;
     }
 
-    const Protocol * ans = (*seqPtr)->steps.front(); 
-    ProtocolSequence * m_seq = const_cast<ProtocolSequence *>(*seqPtr); 
+    const Protocol *ans = (*seqPtr)->steps.front();
+    ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(*seqPtr);
     m_seq->steps.erase(m_seq->steps.begin());
 
     return ans;
 }
 
-void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const 
+std::optional<const ProtocolClose *> ProtocolSequence::popFirstCancelable() const
+{
+    /*
+    if (isComplete())
+        return std::nullopt;
+
+    if (const ProtocolClose *outerClose = dynamic_cast<const ProtocolClose *>(this->steps.front()))
+    {
+        const ProtocolClose *tempSeq = outerClose;
+        const ProtocolClose **seqPtr = &tempSeq;
+
+        while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->getInnerProtocol()->steps.front()))
+        {
+            // const ProtocolSequence *seq = protoClose->getInnerProtocol();
+
+            // if (seq->isComplete())
+            //     break;
+
+           if(protoClose->getInnerProtocol()->isComplete())
+
+            seqPtr = &seq;
+        }
+
+        const Protocol *ans = (*seqPtr)->steps.front();
+        ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(*seqPtr);
+        m_seq->steps.erase(m_seq->steps.begin());
+        return ans;
+    }
+
+    return std::nullopt;
+    */
+
+    if (isComplete())
+        return std::nullopt;
+
+    if (const ProtocolClose *outerClose = dynamic_cast<const ProtocolClose *>(this->steps.front()))
+    {
+        const ProtocolSequence *tempSeq = this;
+
+
+        const ProtocolSequence **seqPtr = &tempSeq;
+        const ProtocolClose    **closePtr = &outerClose; 
+
+
+        while(!(*seqPtr)->isComplete())
+        {
+            const ProtocolSequence * tempSeq = (*closePtr)->getInnerProtocol(); 
+            
+            if(tempSeq->isComplete())
+                break; 
+            
+
+            if(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(tempSeq->steps.front()))
+            {
+                seqPtr = &tempSeq;
+                closePtr = &protoClose; 
+            }
+            else 
+            {
+                break; 
+            }
+        }
+
+        ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(*seqPtr);
+        m_seq->steps.erase(m_seq->steps.begin());
+        return *closePtr;
+    }
+    // return ans;
+    return std::nullopt;
+}
+
+void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const
 {
     if (isComplete())
     {
-        ProtocolSequence * m_seq = const_cast<ProtocolSequence *>(this); 
+        ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(this);
         m_seq->steps.insert(m_seq->steps.begin(), ins.begin(), ins.end());
-        return;// true;
+        return; // true;
     }
-    //     return false; 
+    //     return false;
 
-    const ProtocolSequence * tempSeq = this; 
-    const ProtocolSequence ** seqPtr = & tempSeq; 
+    const ProtocolSequence *tempSeq = this;
+    const ProtocolSequence **seqPtr = &tempSeq;
 
-    while(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
+    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
     {
-        const ProtocolSequence * seq = protoClose->getInnerProtocol();
+        const ProtocolSequence *seq = protoClose->getInnerProtocol();
 
-        if(seq->isComplete())
+        if (seq->isComplete())
             break;
-        
-        seqPtr = &seq; 
+
+        seqPtr = &seq;
     }
 
-
-    ProtocolSequence * m_seq = const_cast<ProtocolSequence *>(*seqPtr); 
+    ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(*seqPtr);
     m_seq->steps.insert(m_seq->steps.begin(), ins.begin(), ins.end());
-    return;// true;
+    return; // true;
 }
 
 /*********************************************
  *
  *  ProtocolClose
- * 
+ *
  * *******************************************/
 std::string ProtocolClose::as_str() const
 {
@@ -672,7 +759,7 @@ const Protocol *ProtocolClose::getInverse() const
 
 const Protocol *ProtocolClose::getCopy() const
 {
-    auto ans = new ProtocolClose(this->inCloseable, this->proto->getCopy(), this->getCloseNumber()); 
+    auto ans = new ProtocolClose(this->inCloseable, this->proto->getCopy(), this->getCloseNumber());
     ans->guardCount = this->guardCount;
     return ans;
 }

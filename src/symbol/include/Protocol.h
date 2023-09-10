@@ -32,6 +32,8 @@ class ProtocolOC;
 class ProtocolWN;
 class ProtocolIChoice;
 
+class ProtocolClose; 
+
 class Protocol
 {
 protected:
@@ -62,7 +64,7 @@ public:
         return description.str();
     }
 
-    bool isInCloseable() const { return inCloseable; }
+    virtual bool isInCloseable() const { return inCloseable; }
 
     virtual const Protocol *getInverse() const = 0;
 
@@ -118,6 +120,8 @@ public:
 
     std::string as_str() const override;
 
+    bool isInCloseable() const override; 
+
     const ProtocolSequence *getInverse() const override;
 
     const ProtocolSequence *getCopy() const override;
@@ -136,7 +140,10 @@ public:
 
     bool weaken() const;
 
+
     bool isOC(bool includeGuarded = false) const;
+
+    optional<const ProtocolClose *> cancel() const; 
 
     optional<const ProtocolSequence *> acceptLoop() const;
     optional<const ProtocolSequence *> acceptWhileLoop() const;
@@ -156,6 +163,8 @@ private:
     std::optional<const Protocol *> getFirst() const;
     std::optional<const Protocol *> popFirst() const;
     void insertSteps(vector<const Protocol *> ins) const;
+
+    std::optional<const ProtocolClose *> popFirstCancelable() const;
 
     optional<const ProtocolSend *> getSend() const;
     optional<const ProtocolRecv *> getRecv() const;

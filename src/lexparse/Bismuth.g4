@@ -145,7 +145,7 @@ statement           : defineType                                                
                     | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block        # ProgramAcceptWhile
                     | 'acceptIf' '(' channel=VARIABLE ',' check=expression ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf
                     | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  // FIXME: ENABLE
-                    | 'cancel' '('                  ')' ';'?                                # ProgramCancel // FIXME: ENABLE 
+                    | 'cancel' '(' channel=VARIABLE ')' ';'?                                # ProgramCancel
                     ; 
                     
 
