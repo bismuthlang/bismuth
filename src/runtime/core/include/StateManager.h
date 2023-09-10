@@ -84,5 +84,5 @@ extern "C" unsigned int _ArrayToChannel(uint8_t * array[], unsigned int len);
 
 
 
-void _ClearChannel(IPCBuffer<Message> * readQueue);// unsigned int aId);
+void _ClearChannel(std::deque<Message> &q);//(IPCBuffer<Message> * readQueue);// unsigned int aId);
 extern "C" void _PreemptChannel(unsigned int aId, unsigned int skipTo);

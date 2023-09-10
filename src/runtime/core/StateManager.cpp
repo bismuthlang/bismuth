@@ -70,9 +70,10 @@ std::string Message2String(Message m)
                       m);
 }
 
-void debug()
+void debug(std::string logWhere)
 {
     exec_mutex.lock();
+    std::cout << logWhere << std::endl;
     for (auto itr : State)
     {
         std::cout << itr.first << " -> " << LookupOther.find(itr.first)->second << std::endl;
@@ -135,12 +136,19 @@ Message ReadHelper(unsigned int aId)
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
 
     // TODO: ONLY DO EXTRA CHECK ON ERROR QUEUE!
-    
     Message m = readQueue->peak(); 
-    // Is SKIP possible for read? May want to move some of the close related logic to encapsulations around the queue itself 
-    if(!(std::holds_alternative<SKIP>(m) || std::holds_alternative<CLOSE>(m)))
+
+    while(std::holds_alternative<SKIP>(m)) // Happens if we haven't had a chance to clean up yet. //TODO: DO BETTER
+    {
+        m = readQueue->peak(); 
+    }
+
+    // May want to move some of the close related logic to encapsulations around the queue itself 
+    if(!(std::holds_alternative<CLOSE>(m)))
+    {
         readQueue->dequeue();
-        
+    }
+
     return m;
 }
 
@@ -172,7 +180,6 @@ extern "C" void WriteProjection(unsigned int aId, unsigned int selVal)
 
 extern "C" uint8_t *ReadChannel(unsigned int aId)
 {
-    // debug();
     Message m = ReadHelper(aId);
 
     if (std::holds_alternative<Value>(m))
@@ -185,7 +192,7 @@ extern "C" uint8_t *ReadChannel(unsigned int aId)
         return nullptr;  // TODO: VERIFY GOOD ENOUGH!
     }
 
-    throw std::runtime_error("Preservation Error: ReadChannel got non-VALUE! ");
+    throw std::runtime_error("Preservation Error: ReadChannel got non-VALUE: " + Message2String(m));
 }
 
 extern "C" unsigned int ReadProjection(unsigned int aId)
@@ -314,10 +321,10 @@ extern "C" unsigned int _ArrayToChannel(uint8_t *array[], unsigned int len)
     return id;
 }
 
-void _ClearChannel(IPCBuffer<Message> *readQueue) // unsigned int aId)
+void _ClearChannel(std::deque<Message> &q)//(IPCBuffer<Message> *readQueue) // unsigned int aId)
 {
-    readQueue->operateOn([](std::deque<Message> &q)
-        {
+    // readQueue->operateOn([](std::deque<Message> &q)
+        // {
             if (q.empty())
                 return;
 
@@ -371,7 +378,7 @@ void _ClearChannel(IPCBuffer<Message> *readQueue) // unsigned int aId)
 
             SKIP s(skipAmt);
             q.push_front(s);
-        });
+        // });
 }
 
 extern "C" void _PreemptChannel(unsigned int aId, unsigned int skipTo)
@@ -379,14 +386,14 @@ extern "C" void _PreemptChannel(unsigned int aId, unsigned int skipTo)
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
 
     readQueue->operateOn([skipTo](std::deque<Message> &q)
-                         { q.push_front(SKIP(skipTo)); });
+                         { q.push_front(SKIP(skipTo));
+                           _ClearChannel(q); });
 
     IPCBuffer<Message> *writeQueue = getWriteQueue(aId);
     writeQueue->operateOn([skipTo](std::deque<Message> &q)
-                          { q.push_back(CLOSE(skipTo)); });
+                          { q.push_back(CLOSE(skipTo));
+                            _ClearChannel(q); });
 
-    // debug();
-    _ClearChannel(readQueue);
-    _ClearChannel(writeQueue);
-    // debug(); 
+    // _ClearChannel(readQueue);
+    // _ClearChannel(writeQueue);
 }

@@ -694,6 +694,7 @@ TEST_CASE("programs/asChannel-channel - Convert regular channel into stream", "[
         "b9dc91ff94405612881c8601b57c9f7fba027d07ae813d62132eca1b7ef5246b");
 }
 
+// FIXME: TEST CASE PRINTS WRONG DATA!
 TEST_CASE("programs/cancelable/BasicCancel - Basic cancel block with two recv", "[codegen]")
 {
     EnsureCompilesTo(
