@@ -91,8 +91,6 @@ public:
         return q;
     }
 
-
-    // FIXME: VERIFY WORKS!
     void operateOn(std::function<void(std::deque<T>&)> const& func)//(void (func)(std::queue<T>& m))
     {
         std::unique_lock<std::mutex> lock(m);

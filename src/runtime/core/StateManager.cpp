@@ -66,7 +66,7 @@ std::string Message2String(Message m)
                                [](SKIP &s)
                                { return "SKIP[" + std::to_string(s.i) + "] "; },
                                [](CLOSE &s)
-                               { return "CLOSE " + std::to_string(s.i) + "] "; }},
+                               { return "CLOSE[" + std::to_string(s.i) + "] "; }},
                       m);
 }
 
@@ -134,13 +134,13 @@ Message ReadHelper(unsigned int aId)
 {
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
 
-    Message m = readQueue->dequeue();
-    if (DEBUG)
-    {
-        std::ostringstream p;
-        p << "DEQUEUE " << aId << " " << Message2String(m) << std::endl;
-        std::cerr << p.str();
-    }
+    // TODO: ONLY DO EXTRA CHECK ON ERROR QUEUE!
+    
+    Message m = readQueue->peak(); 
+    // Is SKIP possible for read? May want to move some of the close related logic to encapsulations around the queue itself 
+    if(!(std::holds_alternative<SKIP>(m) || std::holds_alternative<CLOSE>(m)))
+        readQueue->dequeue();
+        
     return m;
 }
 
@@ -383,8 +383,10 @@ extern "C" void _PreemptChannel(unsigned int aId, unsigned int skipTo)
 
     IPCBuffer<Message> *writeQueue = getWriteQueue(aId);
     writeQueue->operateOn([skipTo](std::deque<Message> &q)
-                          { q.push_front(CLOSE(skipTo)); });
+                          { q.push_back(CLOSE(skipTo)); });
 
+    // debug();
     _ClearChannel(readQueue);
     _ClearChannel(writeQueue);
+    // debug(); 
 }
