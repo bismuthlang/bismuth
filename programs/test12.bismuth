@@ -4,7 +4,7 @@ extern func printf(...) : int;
 # boolean func isPrime(int n) {
 /*
 define isPrime :: c : Channel<+int;-boolean> = {
-  int n := c.recv(); # TODO: ENABLE THIS NOTATION!
+  int n := c.recv();
   var i := 3;
   while (i < n) { 
     if (n / i * i == n) { c.send(false) } 

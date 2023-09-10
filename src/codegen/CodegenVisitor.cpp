@@ -2040,10 +2040,6 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
 
-    // Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
-    // builder->CreateStore(original, corrected);
-
-    // FIXME: NEEDS TO BE THE OTHER TYPE!
     Value *corrected = builder->CreateBitCast(valuePtr, valueType->getPointerTo());
     Value *castedValue = builder->CreateBitCast(original, valueType->getPointerTo());
     Value *loadedValue = builder->CreateLoad(castedValue);
@@ -2061,53 +2057,4 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     // return builder->CreateLoad(sumTy, alloc);
     return alloc;
-
-    // const TypeSum *sum = new TypeSum({ty, Types::UNIT});
-
-    // unsigned int index = sum->getIndex(module, original->getType());
-    // llvm::Type *sumTy = sum->getLLVMType(module);
-    // llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
-
-    // Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-
-    // builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
-
-    // // Get the condition that the if statement is for
-
-    // Value *rawEquality = builder->CreateICmpNE(original, Constant::getNullValue(original->getType())); // llvm::ConstantPointerNull::get(original->getType()->getPointerTo()));
-    // Value *cond = builder->CreateZExtOrTrunc(rawEquality, Int1Ty);
-
-    // // AcceptType(this, n->cond);
-
-    // /*
-    //  * Generate the basic blocks for then, else, and the remaining code.
-    //  * (NOTE: We set rest to be else if there is no else branch).
-    //  */
-    // auto parentFn = builder->GetInsertBlock()->getParent();
-
-    // BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "val-opt", parentFn);
-    // BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
-
-    // builder->CreateCondBr(cond, thenBlk, restBlk);
-
-    // /*
-    //  * Then block
-    //  */
-    // builder->SetInsertPoint(thenBlk);
-    // Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-
-    // Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
-    // builder->CreateStore(original, corrected);
-    // builder->CreateBr(restBlk);
-
-    // thenBlk = builder->GetInsertBlock();
-
-    // /*
-    //  * Insert the else block (same as rest if no else branch)
-    //  */
-    // parentFn->getBasicBlockList().push_back(restBlk);
-    // builder->SetInsertPoint(restBlk);
-
-    // delete sum;
-    // return builder->CreateLoad(sumTy, alloc);
 }

@@ -346,13 +346,8 @@ optional<RecvMetadata> ProtocolSequence::recv() const
     const ProtocolRecv *recvProto = recvOpt.value();
 
     const Type *recvType = recvProto->getRecvType();
-    // if (recvProto->isInCloseable())
-    // {
-    //     return new TypeSum({recvType, Types::UNIT}); // FIXME: must be linear-ish SUM!!!
-    // }
-
-    // return recvType;
-    return RecvMetadata(recvType, recvProto->isInCloseable());
+    
+    return RecvMetadata(recvType, recvProto->isInCloseable());  // FIXME: must be linear-ish SUM!!!
 }
 
 bool ProtocolSequence::contract() const

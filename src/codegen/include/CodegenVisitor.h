@@ -437,7 +437,6 @@ public:
 
     std::optional<Value *> correctNullOptionalToSum(RecvMetadata meta, Value *original);
 
-    // TODO: void elimination? Should be somewhat handled by llvm
     // FIXME: BLOCK UNIT FROM BEING IN STRUCT? OR AT LEAST TEST IF ITS BREAKING
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)

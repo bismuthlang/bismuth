@@ -36,7 +36,7 @@ extern "C" unsigned int Execute(void (*func)(unsigned int))
         func(idIn);
 
         std::unique_lock<std::mutex> lock(running_mutex);
-        while(!running) //TODO: VERIFY
+        while(!running)
         {
             running_cond.wait(lock); 
         }
