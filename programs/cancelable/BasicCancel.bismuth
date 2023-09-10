@@ -1,0 +1,22 @@
+extern func printf(str s, ...) :  int; 
+
+define program :: c : Channel<-int> 
+{
+    c.send(0);
+
+    var other := exec c2;
+    other.send(1); 
+    other.send(2); 
+    # while(true) {}
+    cancel(other); 
+}
+
+define c2 :: c : Channel<Cancelable<+int; +int>> {
+    (Unit + int) a := c.recv();
+
+    match a 
+        |   Unit u => printf("WRONG! Got unit!\n");
+        |   int i => printf("Correct! Got int!\n");
+
+    cancel(c);
+}

@@ -694,6 +694,13 @@ TEST_CASE("programs/asChannel-channel - Convert regular channel into stream", "[
         "b9dc91ff94405612881c8601b57c9f7fba027d07ae813d62132eca1b7ef5246b");
 }
 
+TEST_CASE("programs/cancelable/BasicCancel - Basic cancel block with two recv", "[codegen]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/BasicCancel.bismuth"))),
+        "184b8e70aa65e0df03f0485c0be434e3d5a74056d251550c77ce7c35ba1b53a3");
+}
+
 /************************************
  * Example C-Level Tests
  ************************************/
