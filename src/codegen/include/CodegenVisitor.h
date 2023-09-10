@@ -435,7 +435,7 @@ public:
         return original; // Already correct (ie, a sum to the same sum), but WILL Break if we start doing more fancy sum cases...
     }
 
-    std::optional<Value *> correctNullOptionalToSum(const Type *ty, Value *original);
+    std::optional<Value *> correctNullOptionalToSum(RecvMetadata meta, Value *original);
 
     // TODO: void elimination? Should be somewhat handled by llvm
     // FIXME: BLOCK UNIT FROM BEING IN STRUCT? OR AT LEAST TEST IF ITS BREAKING

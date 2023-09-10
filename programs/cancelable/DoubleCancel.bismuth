@@ -1,0 +1,45 @@
+extern func printf(str s, ...) :  int; 
+
+define program :: c : Channel<-int> 
+{
+    c.send(0);
+
+    var other := exec c2;
+    other.send(1); 
+    other.send(2); 
+    cancel(other); 
+
+    other.send(3); 
+
+    (Unit + int) res := other.recv(); 
+    match res 
+        |   Unit u => printf("Wrong! Got unit on server.\n");
+        |   int i => printf("Correct if %u = 4!\n", i);
+        
+    cancel(other); 
+}
+
+
+
+define c2 :: c : Channel<Cancelable<+int; +int>;Cancelable<+int;-int;+int>> {
+    (Unit + int) a := c.recv();
+    cancel(c);
+
+    match a 
+        |   Unit u => printf("WRONG! Got unit!\n");
+        |   int i => printf("Correct if %u = 1!\n", i);
+
+    (Unit + int) b := c.recv(); 
+    match b 
+        |   Unit u => printf("Wrong! Got unit!\n");
+        |   int i => printf("Correct if %u = 3!\n", i);
+
+
+    c.send(4);
+
+    (Unit + int) d := c.recv(); 
+    match d 
+        |   Unit u => printf("Correct! Got unit!\n");
+        |   int i => printf("Incorrect! Got int = %u\n", i);
+    cancel(c); 
+}

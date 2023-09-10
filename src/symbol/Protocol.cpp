@@ -6,6 +6,11 @@
  *
  * ********************************************/
 
+// const TypeSum *NullOptional::asSum()
+// {
+//     return new TypeSum({innerType, Types::UNIT});
+// }
+
 std::string ProtocolRecv::as_str() const
 {
     std::ostringstream description;
@@ -200,6 +205,13 @@ const Protocol *ProtocolEChoice::getCopy() const
  *  ProtocolSequence
  *
  * ********************************************/
+
+RecvMetadata::RecvMetadata(const Type* inner, bool isSum)
+{
+    protocolType = inner; 
+    actingType = isSum ? (optional<const TypeSum*>) new TypeSum({protocolType, Types::UNIT}) : std::nullopt; 
+}
+
 std::string ProtocolSequence::as_str() const
 {
     std::ostringstream description;
@@ -321,7 +333,7 @@ optional<const ProtocolRecv *> ProtocolSequence::getRecv() const
     return std::nullopt;
 }
 
-optional<const Type *> ProtocolSequence::recv() const
+optional<RecvMetadata> ProtocolSequence::recv() const
 {
     // FIXME: BETTER ERROR HANDLING
     optional<const ProtocolRecv *> recvOpt = this->getRecv();
@@ -334,12 +346,13 @@ optional<const Type *> ProtocolSequence::recv() const
     const ProtocolRecv *recvProto = recvOpt.value();
 
     const Type *recvType = recvProto->getRecvType();
-    if (recvProto->isInCloseable())
-    {
-        return new TypeSum({recvType, Types::UNIT}); // FIXME: must be linear-ish SUM!!!
-    }
+    // if (recvProto->isInCloseable())
+    // {
+    //     return new TypeSum({recvType, Types::UNIT}); // FIXME: must be linear-ish SUM!!!
+    // }
 
-    return recvType;
+    // return recvType;
+    return RecvMetadata(recvType, recvProto->isInCloseable());
 }
 
 bool ProtocolSequence::contract() const
@@ -679,27 +692,24 @@ std::optional<const ProtocolClose *> ProtocolSequence::popFirstCancelable() cons
     {
         const ProtocolSequence *tempSeq = this;
 
-
         const ProtocolSequence **seqPtr = &tempSeq;
-        const ProtocolClose    **closePtr = &outerClose; 
+        const ProtocolClose **closePtr = &outerClose;
 
-
-        while(!(*seqPtr)->isComplete())
+        while (!(*seqPtr)->isComplete())
         {
-            const ProtocolSequence * tempSeq = (*closePtr)->getInnerProtocol(); 
-            
-            if(tempSeq->isComplete())
-                break; 
-            
+            const ProtocolSequence *tempSeq = (*closePtr)->getInnerProtocol();
 
-            if(const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(tempSeq->steps.front()))
+            if (tempSeq->isComplete())
+                break;
+
+            if (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(tempSeq->steps.front()))
             {
                 seqPtr = &tempSeq;
-                closePtr = &protoClose; 
+                closePtr = &protoClose;
             }
-            else 
+            else
             {
-                break; 
+                break;
             }
         }
 

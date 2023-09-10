@@ -22,9 +22,12 @@
 
 // #include <climits> // Max & Min
 
+#include <variant>
+
 #include "Type.h"
 
 class Type;
+class TypeSum;
 
 class ProtocolSend;
 class ProtocolRecv;
@@ -99,6 +102,16 @@ struct ProtocolCompare
     }
 };
 
+struct RecvMetadata 
+{
+    const Type* protocolType; 
+    optional<const TypeSum*> actingType; 
+
+    RecvMetadata(const Type* inner, bool isSum);
+
+    // const TypeSum * asSum();// { return new TypeSum({innerType, Types::UNIT}); }
+};
+
 /*******************************************
  *
  * Sequential Protocol
@@ -132,7 +145,7 @@ public:
 
     optional<const Type *> send(const Type *ty) const;
 
-    optional<const Type *> recv() const;
+    optional<RecvMetadata> recv() const;
 
     // bool isWN() const;
 
@@ -193,7 +206,7 @@ public:
     const Protocol *getInverse() const override;
     const Protocol *getCopy() const override;
 
-    const Type *getRecvType() const { return recvType; }
+    const Type* getRecvType() const { return recvType; }
 };
 
 /*******************************************

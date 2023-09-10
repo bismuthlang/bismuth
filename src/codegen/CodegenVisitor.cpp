@@ -318,21 +318,21 @@ std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode *n)
 
     Value *chanVal = optVal.value();
 
-    llvm::Type *recvType = n->ty->getLLVMType(module);
+    const Type *allocType = n->meta.actingType ? n->meta.actingType.value() : n->meta.protocolType;
+    llvm::Type *recvType = allocType->getLLVMType(module);
 
     Value *valPtr = builder->CreateCall(getReadChannel(), {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
     Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                       // Cast the void* to the correct type ptr
 
-    std::cout << "326 " << (n->isInCloseable() ? " YES " : " NO") <<  std::endl; 
     if (n->isInCloseable())
     {
-        std::optional<Value *> castedOpt = correctNullOptionalToSum(n->getType(), casted);
-        if(!castedOpt)
+        std::optional<Value *> castedOpt = correctNullOptionalToSum(n->meta, casted);
+        if (!castedOpt)
         {
             errorHandler.addError(n->getStart(), "Failed to correct null optional for: " + n->sym->getIdentifier());
             return std::nullopt;
         }
-        casted = castedOpt.value(); 
+        casted = castedOpt.value();
         // casted = correctNullOptionalToSum(n->getType(), casted);
     }
 
@@ -1972,75 +1972,95 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n) // TODO: POSSIBL
     return builder->CreateCall(get_arrayToChannel(), {arrayStart, builder->CreateLoad(Int32Ty, loop_len)});
 }
 
-std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(const Type *ty, Value *original)
+std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata meta, Value *original)
 {
-    if (const TypeSum *sum = dynamic_cast<const TypeSum *>(ty))
+    if(!meta.actingType)
     {
-
-        unsigned int unitIndex = sum->getIndex(module, Types::UNIT->getLLVMType(module));
-        // if(!sum->contains(Types::UNIT))
-        if (unitIndex == 0)
-        {
-            errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but the sum doesn't allow for a Unit case");
-            return std::nullopt;
-        }
-
-        // TODO: DO NULL OPTIONALS BETTER!
-        if (sum->getCases().size() != 2)
-        {
-            errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but sum doesn't have exactly two cases");
-            return std::nullopt;
-        }
-
-        unsigned int valueIndex = unitIndex == 1 ? 2 : 1; //sum->getIndex(module, original->getType());
-        llvm::Type *sumTy = sum->getLLVMType(module);
-        llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
-
-        Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-
-        builder->CreateStore(ConstantInt::get(Int32Ty, unitIndex, true), tagPtr); // TODO: IS THIS WASTEFUL AS OPPOSED TO BRANCH?
-
-        // Get the condition that the if statement is for
-
-        Value *rawEquality = builder->CreateICmpNE(original, Constant::getNullValue(original->getType())); // llvm::ConstantPointerNull::get(original->getType()->getPointerTo()));
-        Value *cond = builder->CreateZExtOrTrunc(rawEquality, Int1Ty);
-
-        // AcceptType(this, n->cond);
-
-        /*
-         * Generate the basic blocks for then, else, and the remaining code.
-         * (NOTE: We set rest to be else if there is no else branch).
-         */
-        auto parentFn = builder->GetInsertBlock()->getParent();
-
-        BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "val-opt", parentFn);
-        BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
-
-        builder->CreateCondBr(cond, thenBlk, restBlk);
-
-        /*
-         * Then block
-         */
-        builder->SetInsertPoint(thenBlk);
-        builder->CreateStore(ConstantInt::get(Int32Ty, valueIndex, true), tagPtr);
-
-        Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
-
-        Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
-        builder->CreateStore(original, corrected);
-        builder->CreateBr(restBlk);
-
-        thenBlk = builder->GetInsertBlock();
-
-        /*
-         * Insert the else block (same as rest if no else branch)
-         */
-        parentFn->getBasicBlockList().push_back(restBlk);
-        builder->SetInsertPoint(restBlk);
-
-        // return builder->CreateLoad(sumTy, alloc);
-        return alloc; 
+         errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but we aren't a null optional");
+        return std::nullopt;
     }
+
+    const TypeSum * sum = meta.actingType.value(); 
+
+    unsigned int unitIndex = sum->getIndex(module, Types::UNIT->getLLVMType(module));
+    
+    if (unitIndex == 0) // Shouldn't be a problem...
+    {
+        errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but the sum doesn't allow for a Unit case");
+        return std::nullopt;
+    }
+
+    // TODO: DO NULL OPTIONALS BETTER!
+    if (sum->getCases().size() != 2)
+    {
+        errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but sum doesn't have exactly two cases");
+        return std::nullopt;
+    }
+
+    llvm::Type * valueType = meta.protocolType->getLLVMType(module);
+    unsigned int valueIndex = sum->getIndex(module, valueType);
+
+    if (valueIndex == 0)
+    {
+        errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but the sum doesn't allow for a value case");
+        return std::nullopt;
+    }
+
+
+    llvm::Type *sumTy = sum->getLLVMType(module);
+    llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
+
+    Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+
+    builder->CreateStore(ConstantInt::get(Int32Ty, unitIndex, true), tagPtr); // TODO: IS THIS WASTEFUL AS OPPOSED TO BRANCH?
+
+    // Get the condition that the if statement is for
+
+    Value *rawEquality = builder->CreateICmpNE(original, Constant::getNullValue(original->getType())); // llvm::ConstantPointerNull::get(original->getType()->getPointerTo()));
+    Value *cond = builder->CreateZExtOrTrunc(rawEquality, Int1Ty);
+
+    // AcceptType(this, n->cond);
+
+    /*
+     * Generate the basic blocks for then, else, and the remaining code.
+     * (NOTE: We set rest to be else if there is no else branch).
+     */
+    auto parentFn = builder->GetInsertBlock()->getParent();
+
+    BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "val-opt", parentFn);
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "rest");
+
+    builder->CreateCondBr(cond, thenBlk, restBlk);
+
+    /*
+     * Then block
+     */
+    builder->SetInsertPoint(thenBlk);
+    builder->CreateStore(ConstantInt::get(Int32Ty, valueIndex, true), tagPtr);
+
+    Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+
+    // Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
+    // builder->CreateStore(original, corrected);
+
+    // FIXME: NEEDS TO BE THE OTHER TYPE!
+    Value *corrected = builder->CreateBitCast(valuePtr, valueType->getPointerTo());
+    Value *castedValue = builder->CreateBitCast(original, valueType->getPointerTo());
+    Value *loadedValue = builder->CreateLoad(castedValue);
+    builder->CreateStore(loadedValue, corrected);
+
+    builder->CreateBr(restBlk);
+
+    thenBlk = builder->GetInsertBlock();
+
+    /*
+     * Insert the else block (same as rest if no else branch)
+     */
+    parentFn->getBasicBlockList().push_back(restBlk);
+    builder->SetInsertPoint(restBlk);
+
+    // return builder->CreateLoad(sumTy, alloc);
+    return alloc;
 
     // const TypeSum *sum = new TypeSum({ty, Types::UNIT});
 
@@ -2090,7 +2110,4 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(const Type *ty, 
 
     // delete sum;
     // return builder->CreateLoad(sumTy, alloc);
-
-    errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but I wasn't given a sum type?");
-    return std::nullopt;
 }

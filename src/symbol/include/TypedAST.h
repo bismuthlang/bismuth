@@ -437,20 +437,22 @@ class TProgramRecvNode : public TypedNode
 {
 public:
     Symbol *sym;
-    const Type *ty;
+    RecvMetadata meta; 
     bool inCloseable; 
 
-    TProgramRecvNode(Symbol *s, const Type *t, bool iC, antlr4::Token *tok) : TypedNode(tok)
+    TProgramRecvNode(Symbol *s, RecvMetadata m, bool iC, antlr4::Token *tok) : TypedNode(tok), meta(m)
     {
         sym = s;
-        // expr = e;
-        ty = t;
         inCloseable = iC; 
     }
 
     bool isInCloseable() const { return inCloseable; }
     
-    const Type *getType() override { return ty; }
+    const Type *getType() override { 
+        if(meta.actingType) return meta.actingType.value(); 
+        return meta.protocolType;
+        // return meta.actingType.value_or(meta.protocolType);
+     }
 
     std::string toString() const override {
         return "RECV NODE";

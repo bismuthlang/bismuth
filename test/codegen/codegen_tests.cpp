@@ -694,13 +694,21 @@ TEST_CASE("programs/asChannel-channel - Convert regular channel into stream", "[
         "b9dc91ff94405612881c8601b57c9f7fba027d07ae813d62132eca1b7ef5246b");
 }
 
-// FIXME: TEST CASE PRINTS WRONG DATA!
-TEST_CASE("programs/cancelable/BasicCancel - Basic cancel block with two recv", "[codegen]")
+TEST_CASE("programs/cancelable/BasicCancel - Basic cancel block with two recv", "[codegen][cancel]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/BasicCancel.bismuth"))),
-        "184b8e70aa65e0df03f0485c0be434e3d5a74056d251550c77ce7c35ba1b53a3");
+        "a382c3f24071358d130812498af4d2e4e0c9306e03e403a5d694c6564af6e097");
 }
+
+TEST_CASE("programs/cancelable/DoubleCancel - Basic two blocks with cancel", "[codegen][cancel]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/DoubleCancel.bismuth"))),
+        "55b6c24a78e750c651030420ec5fb5339b7fb14eec6d14fbf1b863e6031eeff8");
+}
+
+
 
 /************************************
  * Example C-Level Tests
