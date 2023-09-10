@@ -2077,6 +2077,18 @@ TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[semantic]"
       "Can only invoke functions, not foo : PROGRAM : +INT");
 }
 
+
+TEST_CASE("Cancel a non-cancelable", "[semantic]")
+{
+  EnsureErrorsWithMessage(
+      R""""(
+define program :: c : Channel<-int> {
+    cancel(c);
+}
+    )"""",
+      "Failed to cancel: c : ");
+}
+
 /*********************************
  * B-Level Example tests
  *********************************/
