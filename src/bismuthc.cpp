@@ -191,9 +191,12 @@ ChangeLog
         std::cerr << "Error loading file: " << fileName << ". Does it exist?" << std::endl;
         std::exit(-1);
       }
+      inStream->close(); 
 
+      auto a = new antlr4::ANTLRFileStream(); 
+      a->loadFromFile(fileName);
       // TODO: THIS DOESN'T WORK IF NOT GIVEN A PROPER FILE EXTENSION
-      inputs.push_back({new antlr4::ANTLRInputStream(*inStream),
+      inputs.push_back({a,
                         (!(inputFileName.size() > 1) && useOutputFileName) ? outputFileName : fileName.substr(0, fileName.find_last_of('.'))});
     }
   }

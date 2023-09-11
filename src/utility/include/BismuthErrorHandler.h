@@ -57,7 +57,8 @@ struct BismuthError
     if (!token)
       return message; // TODO: DO BETTER
     std::ostringstream e;
-    e << "[" << token->getLine() << ',' << token->getCharPositionInLine() << "]: " << message;
+    // token->getInputStream()->getSourceName()
+    e << token->getInputStream()->getSourceName() << ":" << token->getLine() << ':' << token->getCharPositionInLine() << ": " << message;
     return e.str();
   }
 };
