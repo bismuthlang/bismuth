@@ -2081,7 +2081,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         {
             // TODO: SEEMS WRONG TO PERFORM ERROR CHECKS HERE AS, BY DEF, COULD ONLY ERROR SHOULD HIGHER-LEVEL PROTO FAIL, BUT I GUESS MAYBE USEFUL IF WE LATER ADD INF!
             ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
-            std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(alt->check); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
+            std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(alt->check); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
             delete protoVisitor;
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
@@ -2180,7 +2180,7 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
         const TypeChannel *channel = channelOpt.value();
 
         ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
-        std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->sel); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
+        std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->sel); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
         delete protoVisitor;
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
