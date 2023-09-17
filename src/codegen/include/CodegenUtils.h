@@ -47,7 +47,7 @@ using llvm::PHINode;
 using llvm::StringRef;
 using llvm::Value;
 
-class CodegenVisitor
+class CodegenModule
 {
 
 public:
@@ -58,7 +58,7 @@ public:
      * @param moduleName LLVM Module name to use
      * @param f Compiler flags
      */
-    CodegenVisitor(std::string moduleName, int f = 0)
+    CodegenModule(std::string moduleName, int f = 0)
     {
         flags = f;
 
@@ -185,10 +185,21 @@ public:
                 {Int32Ty},
                 false));
     }
+
     llvm::FunctionCallee getShouldAcceptWhileLoop()
     {
         return module->getOrInsertFunction(
             "ShouldAcceptWhileLoop",
+            llvm::FunctionType::get(
+                Int1Ty,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee get_OC_isPresent()
+    {
+        return module->getOrInsertFunction(
+            "_OC_isPresent",
             llvm::FunctionType::get(
                 Int1Ty,
                 {Int32Ty},
@@ -225,9 +236,23 @@ public:
                 false));
     }
 
+    llvm::FunctionCallee get_arrayToChannel()
+    {
+        return module->getOrInsertFunction(
+            "_ArrayToChannel",
+            llvm::FunctionType::get(
+                Int32Ty,
+                {Int8PtrPtrTy, Int32Ty},
+                false));
+    }
+    
     llvm::Value *getNewAddressMap()
     {
         return builder->CreateCall(get_address_map_create(), {});
+    }
+
+    llvm::Value *getUnitValue() {
+        return Constant::getNullValue(Types::UNIT->getLLVMType(module));
     }
 
     void deleteAddressMap(llvm::Value *val)
@@ -242,6 +267,17 @@ public:
             val);
     }
 
+    llvm::FunctionCallee getCancelChannel()
+    {
+        return module->getOrInsertFunction(
+            "_PreemptChannel",
+            llvm::FunctionType::get(
+                UnitTy,
+                {Int32Ty, Int32Ty},
+                false));
+    }
+    
+
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
@@ -250,7 +286,9 @@ public:
         return tempBuilder.CreateAlloca(ty, 0, identifier);
     }
 
-private:
+protected:
+    int flags; 
+
     BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN); // FIXME: WILL THIS EVER GET REPORTED?
 
     // LLVM
