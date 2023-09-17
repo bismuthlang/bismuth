@@ -326,11 +326,8 @@ public:
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
-        std::cout << "329" << std::endl;
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
-        std::cout << "331" << std::endl;
         IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-        std::cout << "333" << std::endl;
         return tempBuilder.CreateAlloca(ty, 0, identifier);
     }
 
