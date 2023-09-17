@@ -66,7 +66,7 @@ public:
      */
     CodegenVisitor(std::string moduleName, int f = 0) : CodegenModule(moduleName, f)
     {
-        copyVisitor = new DeepCopyVisitor(module, f, &errorHandler);
+        copyVisitor = new DeepCopyVisitor(module, f, errorHandler);
     }
 
     /******************************************************************
@@ -119,9 +119,6 @@ public:
     std::optional<Value *> visit(TAsChannelNode *n) override;  
 
     std::optional<Value *> visitCompilationUnit(TCompilationUnitNode *n) { return visit(n); }
-
-    bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
-    std::string getErrors() { return errorHandler.errorList(); }
 
     Module *getModule() { return module; }
     void modPrint() { module->print(llvm::outs(), nullptr); }
@@ -224,6 +221,5 @@ public:
     std::optional<Value *> correctNullOptionalToSum(RecvMetadata meta, Value *original);
 
 private:
-    BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN);
     DeepCopyVisitor *copyVisitor;
 };

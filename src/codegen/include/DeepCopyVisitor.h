@@ -44,7 +44,7 @@ class DeepCopyVisitor : public CodegenModule
     // };
 
 public:
-    DeepCopyVisitor(Module *m, int f, BismuthErrorHandler *e) : CodegenModule(m, f)
+    DeepCopyVisitor(Module *m, int f, BismuthErrorHandler e) : CodegenModule(m, f, e)
     {
         // module = m;
         errorHandler = e;
@@ -95,12 +95,6 @@ public:
     }
 
 private:
-    BismuthErrorHandler *errorHandler; // TODO: VERIFY ERRORS GET REPORTED, WHY * INSTEAD OF &?
-
-    // LLVM
-    // Module *module;
-
-
     llvm::TypeSize getSizeForType(llvm::Type *type)
     {
         return module->getDataLayout().getTypeAllocSize(type);
@@ -116,7 +110,7 @@ private:
     {
         if (type->isLinear())
         {
-            errorHandler->addError(nullptr, "Cannot make a copy of a linear type: " + type->toString());
+            errorHandler.addError(nullptr, "Cannot make a copy of a linear type: " + type->toString());
             return std::nullopt;
         }
 
@@ -130,7 +124,7 @@ private:
             if(infType->hasBeenInferred()) {
                 return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, addrMap);// , GC_MALLOC);
             }
-            errorHandler->addError(nullptr, "Cannot make a copy of a variable that has yet to be inferred");
+            errorHandler.addError(nullptr, "Cannot make a copy of a variable that has yet to be inferred");
             return std::nullopt; // TODO: Probably add a compiler pass to make this impossible. After all, such an error message is hardly useful. 
         }
 
@@ -351,7 +345,7 @@ private:
         {
             builder->CreateRet(v);
             builder->SetInsertPoint(ins);
-            errorHandler->addError(nullptr, "Compiler Error (Please report this bug!): I don't know how to copy the following type: " + type->toString());
+            errorHandler.addError(nullptr, "Compiler Error (Please report this bug!): I don't know how to copy the following type: " + type->toString());
             return std::nullopt;
         }
 

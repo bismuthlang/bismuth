@@ -58,7 +58,7 @@ public:
      * @param moduleName LLVM Module name to use
      * @param f Compiler flags
      */
-    CodegenModule(std::string moduleName, int f = 0)
+    CodegenModule(std::string moduleName, int f = 0) : errorHandler(BismuthErrorHandler(CODEGEN))
     {
         flags = f;
 
@@ -81,7 +81,7 @@ public:
         Int8PtrPtrTy = i8p->getPointerTo();
     }
 
-    CodegenModule(Module *m, int f = 0)
+    CodegenModule(Module *m, int f, BismuthErrorHandler e) : errorHandler(e)
     {
         flags = f;
 
@@ -103,6 +103,9 @@ public:
         i8p = llvm::Type::getInt8PtrTy(module->getContext());
         Int8PtrPtrTy = i8p->getPointerTo();
     }
+
+    bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
+    std::string getErrors() { return errorHandler.errorList(); }
 
     // These should automatically have GlobalValue::ExternalLinkage per inspecting source code...
     llvm::FunctionCallee getWriteProjection()
@@ -334,7 +337,7 @@ public:
 protected:
     int flags; 
 
-    BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN); // FIXME: WILL THIS EVER GET REPORTED?
+    BismuthErrorHandler errorHandler;
 
     // LLVM
     // LLVMContext *context;
