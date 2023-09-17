@@ -66,7 +66,7 @@ public:
      */
     CodegenVisitor(std::string moduleName, int f = 0) : CodegenModule(moduleName, f)
     {
-        copyVisitor = new DeepCopyVisitor(module, &errorHandler);
+        copyVisitor = new DeepCopyVisitor(module, f, &errorHandler);
     }
 
     /******************************************************************
@@ -222,7 +222,7 @@ public:
     }
 
     std::optional<Value *> correctNullOptionalToSum(RecvMetadata meta, Value *original);
-    
+
 private:
     BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN);
     DeepCopyVisitor *copyVisitor;

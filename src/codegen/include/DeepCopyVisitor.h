@@ -10,26 +10,8 @@
  */
 #pragma once
 
-#include "BismuthErrorHandler.h"
-#include "llvm/ADT/StringRef.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/LLVMContext.h"
-#include "llvm/IR/Module.h"
-#include "llvm/Support/raw_ostream.h"
-#include "llvm/IR/NoFolder.h"
+#include "CodegenUtils.h"
 
-// #include "CastUtils.h"
-#include "Type.h"
-
-// #include <any>
-#include <string>
-
-#include <variant>
-#include <optional>
-
-// #include "TypedAST.h"
-
-// using namespace llvm;
 using llvm::AllocaInst;
 using llvm::ArrayRef;
 using llvm::ArrayType;
@@ -51,7 +33,7 @@ using llvm::SwitchInst;
 
 using std::optional;
 
-class DeepCopyVisitor
+class DeepCopyVisitor : public CodegenModule
 {
 
     // enum DeepCopyType
@@ -62,67 +44,13 @@ class DeepCopyVisitor
     // };
 
 public:
-    DeepCopyVisitor(Module *m, BismuthErrorHandler *e)
+    DeepCopyVisitor(Module *m, int f, BismuthErrorHandler *e) : CodegenModule(m, f)
     {
-        module = m;
+        // module = m;
         errorHandler = e;
 
         // Use the NoFolder to turn off constant folding
         // builder = new IRBuilder<NoFolder>(module->getContext());
-
-        // LLVM Types
-        UnitTy = Types::UNIT->getLLVMType(module);
-        Int32Ty = llvm::Type::getInt32Ty(module->getContext());
-        Int64Ty = llvm::Type::getInt64Ty(module->getContext());
-        Int1Ty = llvm::Type::getInt1Ty(module->getContext());
-        Int8Ty = llvm::Type::getInt8Ty(module->getContext());
-        Int32Zero = ConstantInt::get(Int32Ty, 0, true);
-        Int32One = ConstantInt::get(Int32Ty, 1, true);
-        i8p = llvm::Type::getInt8PtrTy(module->getContext());
-        Int8PtrPtrTy = i8p->getPointerTo();
-    }
-
-    /******************************************************************
-     * Standard visitor methods all defined to use the typed versions
-     ******************************************************************/
-    // std::optional<Value *> visit(TSelectAlternativeNode *n) override;
-
-    // These should automatically have GlobalValue::ExternalLinkage per inspecting source code...
-    llvm::FunctionCallee getMalloc()
-    {
-        return module->getOrInsertFunction(
-            "malloc",
-            FunctionType::get(
-                i8p,
-                {Int32Ty},
-                false));
-    }
-
-    Value *runMalloc(IRBuilder<NoFolder> *builder, llvm::TypeSize size)
-    {
-        return builder->CreateCall(
-            getMalloc(),
-            {builder->getInt32(size)});
-    }
-
-    llvm::FunctionCallee getFree()
-    {
-        return module->getOrInsertFunction(
-            "free",
-            FunctionType::get(
-                UnitTy,
-                {i8p},
-                false));
-    }
-
-    llvm::FunctionCallee getGCMalloc()
-    {
-        return module->getOrInsertFunction(
-            "GC_malloc",
-            FunctionType::get(
-                i8p,
-                {Int64Ty},
-                false));
     }
 
     Value *runGCMalloc(IRBuilder<NoFolder> *builder, llvm::TypeSize size)
@@ -130,17 +58,6 @@ public:
         return builder->CreateCall(
             getGCMalloc(),
             {builder->getInt64(size)});
-        // return runMalloc(builder, size);
-    }
-
-    llvm::FunctionCallee get_address_map_create()
-    {
-        return module->getOrInsertFunction(
-            "_address_map_create",
-            FunctionType::get(
-                i8p,
-                {},
-                false));
     }
 
     Value *getNewAddressMap(IRBuilder<NoFolder> *builder)
@@ -160,59 +77,13 @@ public:
             val);
     }
 
-    FunctionCallee get_address_map_has()
-    {
-        return module->getOrInsertFunction(
-            "_address_map_has",
-            FunctionType::get(
-                i8p,
-                {i8p, i8p},
-                false));
-    }
-
-    FunctionCallee get_address_map_put()
-    {
-        return module->getOrInsertFunction(
-            "_address_map_put",
-            FunctionType::get(
-                UnitTy,
-                {i8p,
-                 i8p,
-                 i8p},
-                false));
-    }
-
     // TODO: REFACTOR W IMPL IN CODEGEN VISITOR
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst * CreateEntryBlockAlloc(IRBuilder<NoFolder> *builder, llvm::Type *ty, std::string identifier)
     {
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
-        // // for(auto B = fn->begin(), e = fn->end(); B != e; ++B)
-        // for(auto& B : *fn)
-        // {
-        //     // for(llvm::BasicBlock::iterator it = B->begin(); it != B->end(); ++it)
-        //     for(auto& I : B)
-        //     {
-        //         // llvm::Instruction * I = &*it;
-
-        //         std::cout << "----\n" << I.getOpcodeName() << "\n";
-        //         I.print(llvm::outs(), true);
-        //         std::cout << "\n----\n\n";
-        //     }
-        // }
-
-        // if (fn != nullptr)
-        // {
-        // if (llvm::isa<llvm::Function>(insPoint))
-        // {
-        // llvm::Function *fn = static_cast<llvm::Function *>(insPoint);
         IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
         return tempBuilder.CreateAlloca(ty, 0, identifier);
-        // }
-
-        // insPoint = insPoint->getParent();
-        // }
-        // return std::nullopt;
     }
 
     optional<Value *> deepCopy(IRBuilder<NoFolder> *builder, const Type *type, Value *to_copy)
@@ -227,19 +98,8 @@ private:
     BismuthErrorHandler *errorHandler; // TODO: VERIFY ERRORS GET REPORTED, WHY * INSTEAD OF &?
 
     // LLVM
-    Module *module;
-    // IRBuilder<NoFolder> *builder;
+    // Module *module;
 
-    // Commonly used types
-    llvm::Type *UnitTy;
-    llvm::Type *Int1Ty;
-    llvm::IntegerType *Int8Ty;
-    llvm::IntegerType *Int32Ty; // Things like 32 bit integers
-    llvm::IntegerType *Int64Ty;
-    llvm::Type *i8p;
-    llvm::Type *Int8PtrPtrTy;
-    Constant *Int32Zero;
-    Constant *Int32One;
 
     llvm::TypeSize getSizeForType(llvm::Type *type)
     {

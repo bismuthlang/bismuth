@@ -63,8 +63,31 @@ public:
         flags = f;
 
         // LLVM Stuff
-        context = new LLVMContext();
+        auto context = new LLVMContext(); // TODO: free contexts?
         module = new Module(moduleName, *context);
+
+        // Use the NoFolder to turn off constant folding
+        builder = new IRBuilder<NoFolder>(module->getContext());
+
+        // LLVM Types
+        UnitTy = Types::UNIT->getLLVMType(module);//llvm::Type::getVoidTy(module->getContext());
+        Int32Ty = llvm::Type::getInt32Ty(module->getContext());
+        Int64Ty = llvm::Type::getInt64Ty(module->getContext());
+        Int1Ty = llvm::Type::getInt1Ty(module->getContext());
+        Int8Ty = llvm::Type::getInt8Ty(module->getContext());
+        Int32Zero = ConstantInt::get(Int32Ty, 0, true);
+        Int32One = ConstantInt::get(Int32Ty, 1, true);
+        i8p = llvm::Type::getInt8PtrTy(module->getContext());
+        Int8PtrPtrTy = i8p->getPointerTo();
+    }
+
+    CodegenModule(Module *m, int f = 0)
+    {
+        flags = f;
+
+        // LLVM Stuff
+        // context = new LLVMContext();
+        module = m; // new Module(moduleName, *context);
 
         // Use the NoFolder to turn off constant folding
         builder = new IRBuilder<NoFolder>(module->getContext());
@@ -267,6 +290,28 @@ public:
             val);
     }
 
+    FunctionCallee get_address_map_has()
+    {
+        return module->getOrInsertFunction(
+            "_address_map_has",
+            FunctionType::get(
+                i8p,
+                {i8p, i8p},
+                false));
+    }
+
+    FunctionCallee get_address_map_put()
+    {
+        return module->getOrInsertFunction(
+            "_address_map_put",
+            FunctionType::get(
+                UnitTy,
+                {i8p,
+                 i8p,
+                 i8p},
+                false));
+    }
+
     llvm::FunctionCallee getCancelChannel()
     {
         return module->getOrInsertFunction(
@@ -276,13 +321,16 @@ public:
                 {Int32Ty, Int32Ty},
                 false));
     }
-    
+
 
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
+        std::cout << "329" << std::endl;
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
+        std::cout << "331" << std::endl;
         IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
+        std::cout << "333" << std::endl;
         return tempBuilder.CreateAlloca(ty, 0, identifier);
     }
 
@@ -292,7 +340,7 @@ protected:
     BismuthErrorHandler errorHandler = BismuthErrorHandler(CODEGEN); // FIXME: WILL THIS EVER GET REPORTED?
 
     // LLVM
-    LLVMContext *context;
+    // LLVMContext *context;
     Module *module;
     IRBuilder<NoFolder> *builder;
 
