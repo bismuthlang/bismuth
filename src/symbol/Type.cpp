@@ -320,6 +320,7 @@ bool TypeProgram::setProtocol(const ProtocolSequence * p) const
     return true;
 }
 
+// FIXME: should this and function return the actual name of the type, not just the representation (like what happens with structs and such)
 std::string TypeProgram::toString() const
 {
     std::ostringstream description;
