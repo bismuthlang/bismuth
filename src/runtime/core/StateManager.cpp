@@ -145,7 +145,7 @@ Message ReadLinearMessageFrom(unsigned int aId)
     return m;
 }
 
-Message ReadExceptionalMessageFrom(unsigned int aId)
+Message ReadLossyMessageFrom(unsigned int aId)
 {
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
 
@@ -179,21 +179,32 @@ void WriteMessageTo(unsigned int aId, Message m)
     writeQueue->enqueue(m);
 }
 
+
+
+
+
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value)
 {
     Value v(value);
     WriteMessageTo(aId, v);
 }
 
-extern "C" void WriteProjection(unsigned int aId, unsigned int selVal)
-{
-    SEL s(selVal);
-    WriteMessageTo(aId, s);
-}
-
 extern "C" uint8_t *ReadChannel(unsigned int aId)
 {
-    Message m = ReadMessageFrom(aId);
+    Message m = ReadLinearMessageFrom(aId);
+
+    if (std::holds_alternative<Value>(m))
+    {
+        uint8_t *v = std::get<Value>(m).v;
+        return v;
+    }
+
+    throw std::runtime_error("Preservation Error: _ReadLinearChannel got non-VALUE: " + Message2String(m));
+}
+
+extern "C" uint8_t *_ReadLossyChannel(unsigned int aId)
+{
+    Message m = ReadLossyMessageFrom(aId);
 
     if (std::holds_alternative<Value>(m))
     {
@@ -205,8 +216,17 @@ extern "C" uint8_t *ReadChannel(unsigned int aId)
         return nullptr;  // TODO: VERIFY GOOD ENOUGH!
     }
 
-    throw std::runtime_error("Preservation Error: ReadChannel got non-VALUE: " + Message2String(m));
+    throw std::runtime_error("Preservation Error: _ReadLossyChannel got non-VALUE: " + Message2String(m));
 }
+
+
+
+extern "C" void WriteProjection(unsigned int aId, unsigned int selVal)
+{
+    SEL s(selVal);
+    WriteMessageTo(aId, s);
+}
+
 
 extern "C" unsigned int ReadProjection(unsigned int aId)
 {
