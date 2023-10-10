@@ -330,6 +330,7 @@ public:
     llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
+        // fn->front(); // Do this?
         IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
         return tempBuilder.CreateAlloca(ty, 0, identifier);
     }

@@ -131,11 +131,24 @@ IPCBuffer<Message> *getReadQueue(unsigned int aId)
     return i_buffer->second;
 }
 
-Message ReadMessageFrom(unsigned int aId)
+Message ReadLinearMessageFrom(unsigned int aId)
 {
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
 
-    // TODO: ONLY DO EXTRA CHECK ON ERROR QUEUE!
+    Message m = readQueue->dequeue();
+    // if (DEBUG)
+    // {
+    //     std::ostringstream p;
+    //     p << "DEQUEUE " << aId << " " << Message2String(m) << std::endl;
+    //     std::cerr << p.str();
+    // }
+    return m;
+}
+
+Message ReadExceptionalMessageFrom(unsigned int aId)
+{
+    IPCBuffer<Message> *readQueue = getReadQueue(aId);
+
     Message m = readQueue->peak(); 
 
     while(std::holds_alternative<SKIP>(m)) // Happens if we haven't had a chance to clean up yet. //TODO: DO BETTER
