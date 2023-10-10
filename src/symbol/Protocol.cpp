@@ -495,9 +495,8 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
     {
         if (ps->toString() == p->toString()) // FIXME: DO BETTER
         {
-            if (!this->popFirst().has_value())
+            if (!this->swapChoice(ps))
                 return 0;
-            this->insertSteps(p->steps); // FIXME: DOESN'T WORK IF WE HAVE CHOICE THEN CLOSEABLE BLOCK--NEED BETTER WAY TO SWAP! (USE NEW SWAP FN!)
             return ans;
         }
         ans++;
