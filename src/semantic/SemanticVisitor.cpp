@@ -1987,13 +1987,14 @@ std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSen
         TypedNode *tn = std::get<TypedNode *>(tnOpt);
         const Type *ty = tn->getType();
 
+        bool inCloseable = channel->getProtocol()->isInCloseable(); 
         std::optional<const Type *> canSend = channel->getProtocol()->send(ty);
 
         if (!canSend)
         {
             return errorHandler.addError(ctx->getStart(), "Failed to send " + ty->toString() + " over channel " + sym->toString());
         }
-        return new TProgramSendNode(sym, tn, canSend.value(), ctx->getStart());
+        return new TProgramSendNode(sym, inCloseable, tn, canSend.value(), ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot send on non-channel: " + id);
@@ -2046,12 +2047,13 @@ std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssign
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
+        bool isInCloseable = channel->getProtocol()->isInCloseable(); 
         if (!channel->getProtocol()->isOC(true))
         {
             return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym->toString() + " as it is not a ! loop");
         }
 
-        return new TProgramIsPresetNode(sym, ctx->getStart());
+        return new TProgramIsPresetNode(sym, isInCloseable, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);
@@ -2105,6 +2107,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             alternatives.push_back(itr.second);
         }
 
+        bool isInCloseable = channel->getProtocol()->isInCloseable(); 
         if (!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
         {
             return errorHandler.addError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
@@ -2157,7 +2160,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
-        return new TChannelCaseStatementNode(sym, dat.cases, dat.post, ctx->getStart());
+        return new TChannelCaseStatementNode(sym, isInCloseable, dat.cases, dat.post, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot case on non-channel: " + id);
@@ -2314,6 +2317,7 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
+        bool isInCloseable = channel->getProtocol()->isInCloseable(); 
         std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptLoop();
         if (!acceptOpt)
         {
@@ -2357,7 +2361,7 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
             return *e;
         }
 
-        return new TProgramAcceptNode(sym, std::get<TBlockNode *>(blkOpt), ctx->getStart());
+        return new TProgramAcceptNode(sym, isInCloseable, std::get<TBlockNode *>(blkOpt), ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
@@ -2386,6 +2390,7 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
             return *e;
         }
 
+        bool isInCloseable = channel->getProtocol()->isInCloseable(); 
         std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptWhileLoop();
         if (!acceptOpt)
         {
@@ -2426,7 +2431,7 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
             return *e;
         }
 
-        return new TProgramAcceptWhileNode(sym, std::get<TypedNode *>(condOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
+        return new TProgramAcceptWhileNode(sym, isInCloseable, std::get<TypedNode *>(condOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
@@ -2455,6 +2460,7 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
             return *e;
         }
 
+        bool isInCloseable = channel->getProtocol()->isInCloseable();
         std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptIf();
         if (!acceptOpt)
         {
@@ -2513,10 +2519,10 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
         if (ctx->falseBlk)
         {
-            return new TProgramAcceptIfNode(ctx->getStart(), sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post, (TBlockNode *)dat.cases.at(1));
+            return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post, (TBlockNode *)dat.cases.at(1));
         }
 
-        return new TProgramAcceptIfNode(ctx->getStart(), sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post);
+        return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post);
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());

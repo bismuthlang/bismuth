@@ -118,9 +118,18 @@ public:
                                                false));
     }
 
-    llvm::FunctionCallee getReadProjection()
+    llvm::FunctionCallee getReadLinearProjection()
     {
         return module->getOrInsertFunction("ReadProjection",
+                                           llvm::FunctionType::get(
+                                               Int32Ty,
+                                               {Int32Ty},
+                                               false));
+    }
+
+    llvm::FunctionCallee getReadLossyProjection()
+    {
+        return module->getOrInsertFunction("_ReadLossyProjection",
                                            llvm::FunctionType::get(
                                                Int32Ty,
                                                {Int32Ty},
@@ -178,10 +187,20 @@ public:
                 false));
     }
 
-    llvm::FunctionCallee getReadChannel()
+    llvm::FunctionCallee getReadLinearChannel()
     {
         return module->getOrInsertFunction(
             "ReadChannel",
+            llvm::FunctionType::get(
+                i8p,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getReadLossyChannel()
+    {
+        return module->getOrInsertFunction(
+            "_ReadLossyChannel",
             llvm::FunctionType::get(
                 i8p,
                 {Int32Ty},
@@ -202,7 +221,7 @@ public:
                 false));
     }
 
-    llvm::FunctionCallee getShouldLoop()
+    llvm::FunctionCallee getShouldLinearLoop()
     {
         return module->getOrInsertFunction(
             "ShouldLoop",
@@ -212,7 +231,17 @@ public:
                 false));
     }
 
-    llvm::FunctionCallee getShouldAcceptWhileLoop()
+    llvm::FunctionCallee getShouldLossyLoop()
+    {
+        return module->getOrInsertFunction(
+            "_ShouldLossyLoop",
+            llvm::FunctionType::get(
+                Int1Ty,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee getShouldLinearAcceptWhileLoop()
     {
         return module->getOrInsertFunction(
             "ShouldAcceptWhileLoop",
@@ -222,10 +251,30 @@ public:
                 false));
     }
 
-    llvm::FunctionCallee get_OC_isPresent()
+    llvm::FunctionCallee getShouldLossyAcceptWhileLoop()
+    {
+        return module->getOrInsertFunction(
+            "ShouldLossyAcceptWhileLoop",
+            llvm::FunctionType::get(
+                Int1Ty,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee get_OC_isPresentLinear()
     {
         return module->getOrInsertFunction(
             "_OC_isPresent",
+            llvm::FunctionType::get(
+                Int1Ty,
+                {Int32Ty},
+                false));
+    }
+
+    llvm::FunctionCallee get_OC_isPresentLossy()
+    {
+        return module->getOrInsertFunction(
+            "_OC_isPresentLossy",
             llvm::FunctionType::get(
                 Int1Ty,
                 {Int32Ty},

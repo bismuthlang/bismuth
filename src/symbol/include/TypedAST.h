@@ -12,6 +12,19 @@ using llvm::Value;
 
 class TypedASTVisitor;
 
+
+class ProtocolOpNode
+{
+private:
+    bool inCloseable;
+
+public:
+    ProtocolOpNode(bool _inCloseable) : inCloseable(_inCloseable) 
+    {}
+
+    bool isInCloseable() const { return inCloseable; }
+};
+
 class TypedNode
 {
 public:
@@ -410,14 +423,14 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class TProgramSendNode : public TypedNode
+class TProgramSendNode : public TypedNode, public ProtocolOpNode
 {
 public:
     Symbol *sym;
     TypedNode *expr;
     const Type *lType; // Tracks type send expects. Needed for sums
 
-    TProgramSendNode(Symbol *s, TypedNode *e, const Type *l, antlr4::Token *tok) : TypedNode(tok)
+    TProgramSendNode(Symbol *s, bool inCloseable, TypedNode *e, const Type *l, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
     {
         sym = s;
         expr = e;
@@ -433,21 +446,17 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class TProgramRecvNode : public TypedNode
+class TProgramRecvNode : public TypedNode, public ProtocolOpNode
 {
 public:
     Symbol *sym;
     RecvMetadata meta; 
-    bool inCloseable; 
 
-    TProgramRecvNode(Symbol *s, RecvMetadata m, bool iC, antlr4::Token *tok) : TypedNode(tok), meta(m)
+    TProgramRecvNode(Symbol *s, RecvMetadata m, bool iC, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(iC), meta(m)
     {
         sym = s;
-        inCloseable = iC; 
     }
 
-    bool isInCloseable() const { return inCloseable; }
-    
     const Type *getType() override { 
         if(meta.actingType) return meta.actingType.value(); 
         return meta.protocolType;
@@ -462,12 +471,12 @@ public:
 };
 
 
-class TProgramIsPresetNode : public TypedNode
+class TProgramIsPresetNode : public TypedNode, public ProtocolOpNode
 {
 public:
     Symbol *sym;
 
-    TProgramIsPresetNode(Symbol *s,  antlr4::Token *tok) : TypedNode(tok)
+    TProgramIsPresetNode(Symbol *s, bool inCloseable, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
     {
         sym = s;
     }
@@ -561,13 +570,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class TProgramAcceptNode : public TypedNode
+class TProgramAcceptNode : public TypedNode, public ProtocolOpNode
 {
 public:
     Symbol *sym;
     TBlockNode *blk;
 
-    TProgramAcceptNode(Symbol *s, TBlockNode *b, antlr4::Token *tok) : TypedNode(tok)
+    TProgramAcceptNode(Symbol *s, bool inCloseable, TBlockNode *b, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
     {
         sym = s;
         blk = b;
@@ -582,14 +591,14 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class TProgramAcceptWhileNode : public TypedNode
+class TProgramAcceptWhileNode : public TypedNode, public ProtocolOpNode
 {
 public:
     Symbol *sym;
     TypedNode *cond;
     TBlockNode *blk;
 
-    TProgramAcceptWhileNode(Symbol *s, TypedNode *c, TBlockNode *b, antlr4::Token *tok) : TypedNode(tok)
+    TProgramAcceptWhileNode(Symbol *s, bool inCloseable, TypedNode *c, TBlockNode *b, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
     {
         sym = s;
         cond = c; 
@@ -606,7 +615,7 @@ public:
 };
 
 
-class TProgramAcceptIfNode : public TypedNode
+class TProgramAcceptIfNode : public TypedNode, public ProtocolOpNode
 {
 public:
     Symbol *sym;
@@ -615,7 +624,7 @@ public:
     std::optional<TBlockNode *> falseOpt;
     std::vector<TypedNode *> post;
 
-    TProgramAcceptIfNode(antlr4::Token *tok, Symbol *s, TypedNode *c, TBlockNode *t, std::vector<TypedNode *> p, std::optional<TBlockNode *> f = {}) : TypedNode(tok)
+    TProgramAcceptIfNode(antlr4::Token *tok, bool inCloseable, Symbol *s, TypedNode *c, TBlockNode *t, std::vector<TypedNode *> p, std::optional<TBlockNode *> f = {}) : TypedNode(tok), ProtocolOpNode(inCloseable)
     {
         sym = s;
         cond = c; 
@@ -1237,7 +1246,7 @@ public:
     }
 };
 
-class TChannelCaseStatementNode : public TypedNode
+class TChannelCaseStatementNode : public TypedNode, public ProtocolOpNode
 {
 public:
     // TypedNode *checkExpr;
@@ -1245,7 +1254,7 @@ public:
     vector<TypedNode *> cases;
     vector<TypedNode *> post;
 
-    TChannelCaseStatementNode(Symbol *c, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
+    TChannelCaseStatementNode(Symbol *c, bool inCloseable, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
     {
         sym = c;
         cases = v;
