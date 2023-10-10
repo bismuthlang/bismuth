@@ -587,7 +587,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
      */
     parent->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
-    // builder->CreateCall(getPopEndLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
 
     return std::nullopt;
 }
@@ -664,7 +663,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode *n)
     {
         AcceptType(this, e);
     }
-    // builder->CreateCall(getPopEndLoop(), {builder->CreateLoad(Int32Ty, chanVal)});
 
     return std::nullopt;
 }

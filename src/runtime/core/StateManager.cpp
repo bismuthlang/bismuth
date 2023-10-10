@@ -216,8 +216,12 @@ extern "C" uint8_t *_ReadLossyChannel(unsigned int aId)
         return nullptr;  // TODO: VERIFY GOOD ENOUGH!
     }
 
+    // FIXME: instead, write closeable for reading lossy then return nullptr!
     throw std::runtime_error("Preservation Error: _ReadLossyChannel got non-VALUE: " + Message2String(m));
 }
+
+
+
 
 
 
@@ -227,10 +231,9 @@ extern "C" void WriteProjection(unsigned int aId, unsigned int selVal)
     WriteMessageTo(aId, s);
 }
 
-
 extern "C" unsigned int ReadProjection(unsigned int aId)
 {
-    Message m = ReadMessageFrom(aId);
+    Message m = ReadLinearMessageFrom(aId);
 
     if (std::holds_alternative<SEL>(m))
     {
@@ -241,9 +244,30 @@ extern "C" unsigned int ReadProjection(unsigned int aId)
     throw std::runtime_error("Preservation Error: ReadProjection got non-SEL!");
 }
 
+extern "C" unsigned int _ReadLossyProjection(unsigned int aId)
+{
+    Message m = ReadLossyMessageFrom(aId);
+
+    if (std::holds_alternative<SEL>(m))
+    {
+        unsigned int i = std::get<SEL>(m).i;
+        return i;
+    }
+    else if(std::holds_alternative<CLOSE>(m))
+    {
+        return 0; 
+    }
+
+    throw std::runtime_error("Preservation Error: _ReadLossyProjection got non-SEL!");
+}
+
+
+
+
+
 extern "C" bool ShouldLoop(unsigned int aId)
 {
-    Message m = ReadMessageFrom(aId);
+    Message m = ReadLinearMessageFrom(aId);
 
     if (std::holds_alternative<START_LOOP>(m))
         return true;
@@ -252,6 +276,23 @@ extern "C" bool ShouldLoop(unsigned int aId)
 
     throw std::runtime_error("Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!");
 }
+
+extern "C" bool _ShouldLossyLoop(unsigned int aId)
+{
+    Message m = ReadLossyMessageFrom(aId);
+
+    if (std::holds_alternative<START_LOOP>(m))
+        return true;
+    if (std::holds_alternative<END_LOOP>(m))
+        return false;
+    if(std::holds_alternative<CLOSE>(m))
+        return false; 
+
+    throw std::runtime_error("Preservation Error: _ShouldLossyLoop got something besides START_LOOP or END_LOOP!");
+}
+
+
+
 
 extern "C" bool _OC_isPresent(unsigned int aId)
 {
@@ -271,6 +312,29 @@ extern "C" bool _OC_isPresent(unsigned int aId)
     throw std::runtime_error("Preservation Error: _OC_isPresent got something besides START_LOOP or END_LOOP!");
 }
 
+extern "C" bool _OC_isPresentLossy(unsigned int aId)
+{
+    IPCBuffer<Message> *readQueue = getReadQueue(aId);
+    std::optional<Message> mOpt = readQueue->peakNow();
+
+    if (!mOpt)
+        return false;
+
+    Message m = mOpt.value();
+
+    if (std::holds_alternative<START_LOOP>(m))
+        return true;
+    else if (std::holds_alternative<END_LOOP>(m))
+        return false;
+    else if(std::holds_alternative<CLOSE>(m))
+        return false;
+
+    throw std::runtime_error("Preservation Error: _OC_isPresentLossy got something besides START_LOOP or END_LOOP!");
+}
+
+
+
+
 extern "C" bool ShouldAcceptWhileLoop(unsigned int aId)
 {
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
@@ -287,35 +351,37 @@ extern "C" bool ShouldAcceptWhileLoop(unsigned int aId)
         return false;
     }
 
-    // Message m = PeakHelper(aId);
-
-    // if (std::holds_alternative<START_LOOP>(m))
-    //     return true;
-    // if (std::holds_alternative<END_LOOP>(m))
-    //     return false;
-
     throw std::runtime_error("Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!");
 }
 
-extern "C" void PopEndLoop(unsigned int aId)
+extern "C" bool ShouldLossyAcceptWhileLoop(unsigned int aId)
 {
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
     Message m = readQueue->peak();
-    readQueue->pop();
 
-    if (!std::holds_alternative<END_LOOP>(m))
+    if (std::holds_alternative<START_LOOP>(m))
     {
-        // return false;
-        throw std::runtime_error("Preservation Error: PopEndLoop got something besides END_LOOP!");
+        readQueue->pop();
+        return true;
     }
 
-    // Message m = PeakHelper(aId);
+    if (std::holds_alternative<END_LOOP>(m))
+    {
+        return false;
+    }
 
-    // if (std::holds_alternative<START_LOOP>(m))
-    //     return true;
-    // if (std::holds_alternative<END_LOOP>(m))
-    //     return false;
+    if(std::holds_alternative<CLOSE>(m))
+    {
+        return false; 
+    }
+
+    throw std::runtime_error("Preservation Error: ShouldLossyAcceptWhileLoop got something besides START_LOOP or END_LOOP!");
 }
+
+
+
+
+
 
 extern "C" void ContractChannel(unsigned int aId)
 {

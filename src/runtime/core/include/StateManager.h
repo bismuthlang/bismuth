@@ -38,45 +38,35 @@ std::string Message2String(Message m);
 
 void debug();
 
+IPCBuffer<Message> *getReadQueue(unsigned int aId);
+IPCBuffer<Message> *getWriteQueue(unsigned int aId);
+
 // TODO: do better error handling for WriteMessageTo instead of just logging and returns!
 void WriteMessageTo(unsigned int aId, Message m);
 
 Message ReadLinearMessageFrom(unsigned int aId);
 Message ReadLossyMessageFrom(unsigned int aId);
 
-// Message PeakHelper(unsigned int aId)
-// {
-//     exec_mutex.lock();
-//     auto i_buffer = State.find(aId);
-//     exec_mutex.unlock();
-
-//     if (i_buffer == State.end())
-//     {
-//         throw  "Preservation error: failed to find read channel!";
-//     }
-
-//     return i_buffer->second->peak();
-// }
-
-IPCBuffer<Message> *getReadQueue(unsigned int aId);
-IPCBuffer<Message> *getWriteQueue(unsigned int aId);
 
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value);
+extern "C" uint8_t *ReadChannel(unsigned int aId);
+extern "C" uint8_t * _ReadLossyChannel(unsigned int aId); // FIXME: START USING
+
 
 extern "C" void WriteProjection(unsigned int aId, unsigned int selVal);
-
-extern "C" uint8_t *ReadChannel(unsigned int aId);
-extern "C" uint8_t * _ReadLossyChannel(unsigned int aId);
-
 extern "C" unsigned int ReadProjection(unsigned int aId);
+extern "C" unsigned int _ReadLossyProjection(unsigned int aId); // FIXME: START USING
+
+
 
 extern "C" bool ShouldLoop(unsigned int aId);
+extern "C" bool _ShouldLossyLoop(unsigned int aId); // FIXME: START USING!
 
 extern "C" bool _OC_isPresent(unsigned int aId);
+extern "C" bool _OC_isPresentLossy(unsigned int aId); // FIXME: START USING!
 
 extern "C" bool ShouldAcceptWhileLoop(unsigned int aId);
-
-extern "C" void PopEndLoop(unsigned int aId);
+extern "C" bool ShouldLossyAcceptWhileLoop(unsigned int aId); // FIXME: START USING!
 
 extern "C" void ContractChannel(unsigned int aId);
 

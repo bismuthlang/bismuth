@@ -232,16 +232,6 @@ public:
                 false));
     }
 
-    llvm::FunctionCallee getPopEndLoop()
-    {
-        return module->getOrInsertFunction(
-            "PopEndLoop",
-            llvm::FunctionType::get(
-                UnitTy,
-                {Int32Ty},
-                false));
-    }
-
     llvm::FunctionCallee getContractChannel()
     {
         return module->getOrInsertFunction(
