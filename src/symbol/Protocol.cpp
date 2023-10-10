@@ -506,37 +506,46 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
     return 0;
 }
 
-bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const
+// optional<vector<const ProtocolSequence *>> 
+optional<CaseMetadata> 
+ProtocolSequence::caseAnalysis(set<const ProtocolSequence *, ProtocolCompare> testOpts) const
 {
     if (isComplete())
-        return false;
+        return std::nullopt;
 
     if (steps.front()->isGuarded() || this->isGuarded())
-        return false;
+        return std::nullopt;
 
-    optional<const Protocol *> protoOpt = this->popFirst();
+    optional<const Protocol *> protoOpt = this->getFirst();
 
     if (!protoOpt)
-        return false;
+        return std::nullopt;
 
     const Protocol *proto = protoOpt.value();
 
     if (const ProtocolEChoice *eChoice = dynamic_cast<const ProtocolEChoice *>(proto))
     {
         std::set<const ProtocolSequence *, ProtocolCompare> foundCaseTypes = {};
+        std::vector<const ProtocolSequence *> ans = {}; 
 
         for (const ProtocolSequence *p : testOpts) // TODO: METHODIZE WITH MATCHSTATEMENT
         {
-            if (!eChoice->getOptions().count(p))
+            const ProtocolSequence * res = this->getCopy(); 
+            
+            if(!res->swapChoice(p)) // if (!eChoice->getOptions().count(p))
             {
                 // errorHandler.addSemanticError(ctx->getStart(), "Impossible case: " p->toString());
-                return false;
+                return std::nullopt;
+            }
+            else 
+            {
+                ans.push_back(res); 
             }
 
-            if (foundCaseTypes.count(p))
+            if (foundCaseTypes.count(p)) // Is this even possible? its a set after all. Would require messy subtyping
             {
                 // errorHandler.addSemanticError(ctx->getStart(), "Duplicate case: " + p->toString());
-                return false; // FIXME: HANDLE ERRORS BETTER IN THE SEMANTIC VISITOR SO WE CAN GET THESE ERRORS!!
+                return std::nullopt; // FIXME: HANDLE ERRORS BETTER IN THE SEMANTIC VISITOR SO WE CAN GET THESE ERRORS!!
             }
             else
             {
@@ -546,17 +555,15 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
 
         if (foundCaseTypes.size() != eChoice->getOptions().size())
         {
-            return false;
+            return std::nullopt;
             // errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
         }
 
-        // ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-        // u_this->steps.erase(steps.begin());
-
-        return true;
+        this->popFirst(); // Remove the choice
+        return CaseMetadata(ans, this); // Should be safe due to passing get first
     }
 
-    return false;
+    return std::nullopt;
 }
 
 // void ProtocolSequence::append(const ProtocolSequence *proto) const

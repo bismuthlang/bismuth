@@ -101,7 +101,6 @@ struct ProtocolCompare
         return a->toString() < b->toString();
     }
 };
-
 struct RecvMetadata 
 {
     const Type* protocolType; 
@@ -110,6 +109,19 @@ struct RecvMetadata
     RecvMetadata(const Type* inner, bool isSum);
 
     // const TypeSum * asSum();// { return new TypeSum({innerType, Types::UNIT}); }
+};
+
+
+class ProtocolSequence; 
+struct CaseMetadata 
+{
+    vector<const ProtocolSequence *> fullSequences; 
+    const ProtocolSequence * rest; 
+
+    CaseMetadata(vector<const ProtocolSequence *> s, const ProtocolSequence * r) 
+        : fullSequences(s), 
+          rest (r)
+    {}
 };
 
 /*******************************************
@@ -163,8 +175,9 @@ public:
     optional<const ProtocolSequence *> acceptIf() const;
 
     unsigned int project(const ProtocolSequence *ps) const;
-
-    bool isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const;
+    // optional<vector<const ProtocolSequence *>>  
+    optional<CaseMetadata>
+    caseAnalysis(set<const ProtocolSequence *, ProtocolCompare> testOpts) const;
 
 
     bool isGuarded() const override;

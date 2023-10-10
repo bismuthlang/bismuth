@@ -2098,13 +2098,13 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             optsI.insert({a->getInverse(), alt->eval}); // Double inverses to ensure order same for both sides (server & client)
         }
 
-        std::vector<const ProtocolSequence *> sequences = {};
+        std::vector<const ProtocolSequence *> branchSequences = {};
         std::vector<BismuthParser::StatementContext *> alternatives = {};
 
 
         for (auto itr : optsI)
         {
-            sequences.push_back(itr.first->getInverse());
+            branchSequences.push_back(itr.first->getInverse());
             alternatives.push_back(itr.second);
         }
 
@@ -2113,6 +2113,11 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         if(ctx->protoElse() && !isInCloseable)
         {
             return errorHandler.addError(ctx->protoElse()->getStart(), "Dead code - An else block can only apply to choices in a lossy protocol");
+        }
+
+        if(isInCloseable && !ctx->protoElse()) // TODO: see about removing this when we can?
+        {
+            return errorHandler.addError(ctx->getStart(), "Currently, an else block is required for cases in lossy protocols");
         }
         // if(ctx->protoElse())
         // {
@@ -2128,25 +2133,34 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         //         return errorHandler.addError(ctx->protoElse()->getStart(), "Failed to close protocol marked as closed. Please report this error as this is likely a compiler bug.");
         //     }
 
-        //     sequences.push_back(copySeq);
+        //     branchSequences.push_back(copySeq);
         //     alternatives.push_back(ctx->protoElse()->statement());
         // }
 
-        if (!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
+        optional<CaseMetadata> metaOpts = channel->getProtocol()->caseAnalysis(opts);
+
+        if (!metaOpts)//(!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
         {
             return errorHandler.addError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
         }
 
-        const ProtocolSequence *savedRest = channel->getProtocolCopy();
+        CaseMetadata meta = metaOpts.value(); 
 
-        for(auto proto : sequences)
-        {
-            proto->append(savedRest->getCopy());
-        }
+        vector<const ProtocolSequence *> fullSequences = meta.fullSequences; //fullSeqOpts.value(); 
+
+
+
+        // const ProtocolSequence *savedRest = channel->getProtocolCopy();
+
+        // for(auto proto : branchSequences)
+        // {
+        //     proto->append(savedRest->getCopy());
+        // }
 
         if(ctx->protoElse())
         {
-            sequences.push_back(savedRest->getCopy());
+            // sequences.push_back(savedRest->getCopy());
+            fullSequences.push_back(meta.rest);
             alternatives.push_back(ctx->protoElse()->statement());
         }
 
@@ -2160,11 +2174,10 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
                 }
             },
             alternatives,
-            // false,
-            (isInCloseable && !ctx->protoElse()),
-            [this, savedRest, sequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+            false, // TODO: make this (isInCloseable && !ctx->protoElse()). The challenge is making it follow the correct protocol in the case when it skips to rest as we don't currently support skipping ops like that
+            [this, fullSequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
-                const ProtocolSequence *proto = sequences.at(branch++);
+                const ProtocolSequence *proto = fullSequences.at(branch++);
 
                 std::optional<Symbol *> opt = stmgr->lookup(id);
 
