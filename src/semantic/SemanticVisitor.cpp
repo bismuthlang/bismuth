@@ -2166,8 +2166,6 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             {
                 const ProtocolSequence *proto = sequences.at(branch++);
 
-                // proto->append(savedRest->getCopy());
-
                 std::optional<Symbol *> opt = stmgr->lookup(id);
 
                 if (!opt)

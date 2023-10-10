@@ -166,15 +166,19 @@ public:
 
     bool isExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const;
 
-    void append(const ProtocolSequence *proto) const;
 
     bool isGuarded() const override;
     void guard() const override;
     bool unguard() const override;
 
 private:
+    // void append(const ProtocolSequence *proto) const;
+
     std::optional<const Protocol *> getFirst() const;
     std::optional<const Protocol *> popFirst() const;
+
+    // void swapFirst(const Protocol * toSwap) const;
+    bool swapChoice(const ProtocolSequence *) const;
     void insertSteps(vector<const Protocol *> ins) const;
 
     std::optional<const ProtocolClose *> popFirstCancelable() const;

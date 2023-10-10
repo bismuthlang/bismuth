@@ -497,7 +497,7 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
         {
             if (!this->popFirst().has_value())
                 return 0;
-            this->insertSteps(p->steps);
+            this->insertSteps(p->steps); // FIXME: DOESN'T WORK IF WE HAVE CHOICE THEN CLOSEABLE BLOCK--NEED BETTER WAY TO SWAP!
             return ans;
         }
         ans++;
@@ -559,12 +559,13 @@ bool ProtocolSequence::isExtChoice(set<const ProtocolSequence *, ProtocolCompare
     return false;
 }
 
-void ProtocolSequence::append(const ProtocolSequence *proto) const
-{
-    ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-    vector<const Protocol *> other = proto->steps;
-    u_this->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
-}
+// void ProtocolSequence::append(const ProtocolSequence *proto) const
+// {
+    // ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+    // vector<const Protocol *> other = proto->steps;
+    // u_this->steps.
+    // u_this->steps.insert(steps.end(), other.begin(), other.end()); // Flattening should be good enough for now...
+// }
 
 bool ProtocolSequence::isGuarded() const // FIXME: DO BETTER
 {
@@ -622,6 +623,148 @@ optional<const Protocol *> ProtocolSequence::getFirst() const
 
     return *protoPtr;
 }
+
+// TODO : I worry some of these inserts where we do protocol sequence -> vector of steps
+// may now erase critical information (at times) about things like closeable blocks.
+// This specific instance should be fine, but we should probably move away from returning protocol
+// sequences when its just a vector of steps. 
+//
+// FIXME: There are also likely issues should we have closeable blocks in choice branches 
+// as we won't correctly track the close block #!
+bool ProtocolSequence::swapChoice(const ProtocolSequence * swap) const
+{
+    if (isComplete())
+        return false;
+
+    // const Protocol *protoTemp = steps.front();
+    const ProtocolSequence * tempPtr = this; 
+    const ProtocolSequence ** protoSeqPtr = &tempPtr; 
+    // const Protocol **protoPtr = &protoTemp;
+
+    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*protoSeqPtr)->steps.front()))//(*protoPtr))
+    {
+        const ProtocolSequence *seq = protoClose->getInnerProtocol();
+
+        if (seq->isComplete())
+            break; 
+            // return protoClose;
+            
+
+        // const Protocol *tmp = seq->steps.front();
+        // protoPtr = &tmp;
+        protoSeqPtr = &seq; 
+    }
+
+    const ProtocolSequence * correctedPtr = *protoSeqPtr; 
+
+    if(const ProtocolEChoice * extChoice = dynamic_cast<const ProtocolEChoice *>(correctedPtr->steps.front()))
+    {
+        if(!extChoice->getOptions().count(swap))
+            return false; 
+    }
+    else if(const ProtocolIChoice * intChoice = dynamic_cast<const ProtocolIChoice *>(correctedPtr->steps.front()))
+    {
+        if(!intChoice->getOptions().count(swap))
+            return false; 
+    }
+    else 
+    {
+        return false; 
+    }
+
+    ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(correctedPtr);
+    m_seq->steps.erase(m_seq->steps.begin());
+    m_seq->steps.insert(m_seq->steps.begin(), swap->steps.begin(), swap->steps.end()); 
+
+
+    return true;
+}
+
+// void ProtocolSequence::swapFirst(const Protocol * toSwap) const
+// {
+//     if (isComplete())
+//     {
+//         ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+//         u_this->steps.insert(u_this->steps.begin(), toSwap); // FIXME: THIS BREAKS EVERYTHING!
+//         return;
+//     }
+
+//     const Protocol *protoTemp = steps.front();
+//     const Protocol **protoPtr = &protoTemp;
+
+//     while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(*protoPtr))
+//     {
+//         const ProtocolSequence *seq = protoClose->getInnerProtocol();
+
+//         const Protocol *tmp = seq->steps.front();
+//         protoPtr = &tmp;
+
+//         if (seq->isComplete())
+//             break; 
+
+//     }
+
+//     if((*protoPtr)->isComplete())
+//     {
+
+//     }
+
+//     // return *protoPtr;
+// }
+
+
+// bool ProtocolSequence::selectExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const
+// {
+//     if (isComplete())
+//         return false;
+
+//     if (steps.front()->isGuarded() || this->isGuarded())
+//         return false;
+
+//     optional<const Protocol *> protoOpt = this->popFirst();
+
+//     if (!protoOpt)
+//         return false;
+
+//     const Protocol *proto = protoOpt.value();
+
+//     if (const ProtocolEChoice *eChoice = dynamic_cast<const ProtocolEChoice *>(proto))
+//     {
+//         std::set<const ProtocolSequence *, ProtocolCompare> foundCaseTypes = {};
+
+//         for (const ProtocolSequence *p : testOpts) // TODO: METHODIZE WITH MATCHSTATEMENT
+//         {
+//             if (!eChoice->getOptions().count(p))
+//             {
+//                 // errorHandler.addSemanticError(ctx->getStart(), "Impossible case: " p->toString());
+//                 return false;
+//             }
+
+//             if (foundCaseTypes.count(p))
+//             {
+//                 // errorHandler.addSemanticError(ctx->getStart(), "Duplicate case: " + p->toString());
+//                 return false; // FIXME: HANDLE ERRORS BETTER IN THE SEMANTIC VISITOR SO WE CAN GET THESE ERRORS!!
+//             }
+//             else
+//             {
+//                 foundCaseTypes.insert(p);
+//             }
+//         }
+
+//         if (foundCaseTypes.size() != eChoice->getOptions().size())
+//         {
+//             return false;
+//             // errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
+//         }
+
+//         // ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
+//         // u_this->steps.erase(steps.begin());
+
+//         return true;
+//     }
+
+//     return false;
+// }
 
 optional<const Protocol *> ProtocolSequence::popFirst() const
 {
