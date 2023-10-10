@@ -2076,7 +2076,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
-        std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
+        std::set<const ProtocolSequence *, ProtocolCompare> opts = {}; // FIXME: REMOVE OPTS AND OPTSI?
         std::set<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
 
         for (auto alt : ctx->protoAlternative())
