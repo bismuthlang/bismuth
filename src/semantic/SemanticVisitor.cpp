@@ -2137,7 +2137,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         //     alternatives.push_back(ctx->protoElse()->statement());
         // }
 
-        optional<CaseMetadata> metaOpts = channel->getProtocol()->caseAnalysis(opts);
+        optional<CaseMetadata> metaOpts = channel->getProtocol()->caseAnalysis(branchSequences);
 
         if (!metaOpts)//(!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
         {

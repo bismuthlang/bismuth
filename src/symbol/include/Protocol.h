@@ -177,7 +177,7 @@ public:
     unsigned int project(const ProtocolSequence *ps) const;
     // optional<vector<const ProtocolSequence *>>  
     optional<CaseMetadata>
-    caseAnalysis(set<const ProtocolSequence *, ProtocolCompare> testOpts) const;
+    caseAnalysis(vector<const ProtocolSequence *> testOpts) const;
 
 
     bool isGuarded() const override;

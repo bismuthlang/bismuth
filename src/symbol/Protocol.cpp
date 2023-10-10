@@ -508,7 +508,7 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 
 // optional<vector<const ProtocolSequence *>> 
 optional<CaseMetadata> 
-ProtocolSequence::caseAnalysis(set<const ProtocolSequence *, ProtocolCompare> testOpts) const
+ProtocolSequence::caseAnalysis(vector<const ProtocolSequence *> testOpts) const // Note: using vector as otherwise duplicate cases could be too easily ignored by type checking (ie, semantic visitor dumps cases into set and thus isn't aware of duplicates) //set<const ProtocolSequence *, ProtocolCompare> testOpts) const
 {
     if (isComplete())
         return std::nullopt;
