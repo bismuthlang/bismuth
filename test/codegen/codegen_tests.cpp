@@ -698,14 +698,14 @@ TEST_CASE("programs/cancelable/BasicCancel - Basic cancel block with two recv", 
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/BasicCancel.bismuth"))),
-        "a382c3f24071358d130812498af4d2e4e0c9306e03e403a5d694c6564af6e097");
+        "802e1124ffc93512a1e35bf4c310ed85ceace0f2c3101b8ced405aeebd7caf1f");
 }
 
 TEST_CASE("programs/cancelable/DoubleCancel - Basic two blocks with cancel", "[codegen][cancel]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/DoubleCancel.bismuth"))),
-        "55b6c24a78e750c651030420ec5fb5339b7fb14eec6d14fbf1b863e6031eeff8");
+        "8f8f321feb60738d4d754befd37b8c9558e1de717eec503941eb77986d4af621");
 }
 
 
