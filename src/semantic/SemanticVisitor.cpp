@@ -2095,11 +2095,12 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             const ProtocolSequence *a = std::get<const ProtocolSequence *>(protoOpt);
 
             opts.insert(a);
-            optsI.insert({a->getInverse(), alt->eval});
+            optsI.insert({a->getInverse(), alt->eval}); // Double inverses to ensure order same for both sides (server & client)
         }
 
         std::vector<const ProtocolSequence *> sequences = {};
         std::vector<BismuthParser::StatementContext *> alternatives = {};
+
 
         for (auto itr : optsI)
         {
@@ -2108,12 +2109,46 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         }
 
         bool isInCloseable = channel->getProtocol()->isInCloseable(); 
+
+        if(ctx->protoElse() && !isInCloseable)
+        {
+            return errorHandler.addError(ctx->protoElse()->getStart(), "Dead code - An else block can only apply to choices in a lossy protocol");
+        }
+        // if(ctx->protoElse())
+        // {
+        //     if(!isInCloseable)
+        //     {
+        //         return errorHandler.addError(ctx->protoElse()->getStart(), "Dead code - An else block can only apply to choices in a lossy protocol");
+        //     }
+
+        //     const ProtocolSequence * copySeq = channel->getProtocol()->getCopy();
+
+        //     if(!copySeq->cancel())
+        //     {
+        //         return errorHandler.addError(ctx->protoElse()->getStart(), "Failed to close protocol marked as closed. Please report this error as this is likely a compiler bug.");
+        //     }
+
+        //     sequences.push_back(copySeq);
+        //     alternatives.push_back(ctx->protoElse()->statement());
+        // }
+
         if (!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
         {
             return errorHandler.addError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
         }
 
         const ProtocolSequence *savedRest = channel->getProtocolCopy();
+
+        for(auto proto : sequences)
+        {
+            proto->append(savedRest->getCopy());
+        }
+
+        if(ctx->protoElse())
+        {
+            sequences.push_back(savedRest->getCopy());
+            alternatives.push_back(ctx->protoElse()->statement());
+        }
 
         unsigned int branch = 0;
         std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ProgramCaseContext, BismuthParser::StatementContext>(
@@ -2125,12 +2160,13 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
                 }
             },
             alternatives,
-            false,
+            // false,
+            (isInCloseable && !ctx->protoElse()),
             [this, savedRest, sequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
                 const ProtocolSequence *proto = sequences.at(branch++);
 
-                proto->append(savedRest->getCopy());
+                // proto->append(savedRest->getCopy());
 
                 std::optional<Symbol *> opt = stmgr->lookup(id);
 
@@ -2160,7 +2196,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
         ConditionalData dat = std::get<ConditionalData>(branchOpt);
 
-        return new TChannelCaseStatementNode(sym, isInCloseable, dat.cases, dat.post, ctx->getStart());
+        return new TChannelCaseStatementNode(sym, isInCloseable, ctx->protoElse(), dat.cases, dat.post, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot case on non-channel: " + id);

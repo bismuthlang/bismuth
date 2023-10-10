@@ -1253,8 +1253,13 @@ public:
     Symbol *sym;
     vector<TypedNode *> cases;
     vector<TypedNode *> post;
+    bool hasElseStatement; 
 
-    TChannelCaseStatementNode(Symbol *c, bool inCloseable, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
+
+    TChannelCaseStatementNode(Symbol *c, bool inCloseable, bool hasElse, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok) 
+        : TypedNode(tok), 
+          ProtocolOpNode(inCloseable), 
+          hasElseStatement(hasElse)
     {
         sym = c;
         cases = v;

@@ -93,9 +93,10 @@ block      : LSQB (stmts+=statement)* RSQB ;
 condition           : (LPAR ex=expression RPAR) | ex=expression ; 
 
 //Used to model each alternative in a selection 
-selectAlternative   : check=expression ':' eval=statement ; 
+selectAlternative   : check=expression ':' eval=statement   ; 
 matchAlternative    : check=type name=VARIABLE '=>' eval=statement ;
-protoAlternative    : check=protocol '=>' eval=statement ;
+protoAlternative    : check=protocol '=>' eval=statement    ;
+protoElse           : ELSE '=>' eval=statement              ;
 
 
 /*
@@ -135,8 +136,8 @@ statement           : defineType                                                
                     | block                                                                                                 # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                 # ProgramSend
                     | WHILE check=condition block                                                                           # ProgramLoop
-                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ ')' (rest+=statement)*  # ProgramCase  
-                    | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ (rest+=statement)*                          # ProgramCase   
+                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ protoElse? ')' (rest+=statement)*  # ProgramCase  
+                    | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ ('|' protoElse?)? (rest+=statement)*                   # ProgramCase   
                     | channel=VARIABLE LBRC sel=protocol RBRC                                                               # ProgramProject
                     | 'more' '(' channel=VARIABLE ')'   ';'?                                # ProgramContract 
                     | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 

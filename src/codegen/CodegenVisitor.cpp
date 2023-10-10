@@ -181,7 +181,11 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
 
     Value *chanVal = optVal.value();
     // ReadProjection
-    Value *tag = builder->CreateCall(getReadProjection(), {builder->CreateLoad(Int32Ty, chanVal)});
+    Value *tag = builder->CreateCall(
+        n->isInCloseable() ? 
+            getReadLossyProjection() :  // Should be fine as will handle exact logic later
+            getReadLinearProjection(),
+        {builder->CreateLoad(Int32Ty, chanVal)});
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size());
 
@@ -193,7 +197,14 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
 
         builder->SetInsertPoint(matchBlk);
 
-        switchInst->addCase(ConstantInt::get(Int32Ty, i + 1, true), matchBlk);
+        switchInst->addCase(
+            ConstantInt::get(Int32Ty, 
+                n->hasElseStatement && (i + 1) == n->cases.size() ? 
+                    0 :  // FIXME: TEST THESE ELSE BLOCKS
+                    i + 1,
+                // i + 1, 
+                true), 
+            matchBlk);
         origParent->getBasicBlockList().push_back(matchBlk);
 
         // altCtx->eval->accept(this);
