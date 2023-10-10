@@ -708,7 +708,6 @@ std::optional<const ProtocolClose *> ProtocolSequence::popFirstCancelable() cons
 
         while (!seq->isComplete())
         {
-            std::cout << "844 " << seq->toString() << std::endl; 
             const ProtocolSequence *tempSeq = close->getInnerProtocol();
 
             if (tempSeq->isComplete())
