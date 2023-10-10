@@ -613,21 +613,19 @@ optional<const Protocol *> ProtocolSequence::getFirst() const
     if (isComplete())
         return std::nullopt;
 
-    const Protocol *protoTemp = steps.front();
-    const Protocol **protoPtr = &protoTemp;
+    Protocol *proto = const_cast<Protocol *>(steps.front());
 
-    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(*protoPtr))
+    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(proto))
     {
-        const ProtocolSequence *seq = protoClose->getInnerProtocol();
+        const ProtocolSequence *innerSeq = protoClose->getInnerProtocol();
 
-        if (seq->isComplete())
+        if (innerSeq->isComplete())
             return protoClose;
 
-        const Protocol *tmp = seq->steps.front();
-        protoPtr = &tmp;
+        proto = const_cast<Protocol *>(innerSeq->steps.front());
     }
 
-    return *protoPtr;
+    return proto;
 }
 
 // TODO : I worry some of these inserts where we do protocol sequence -> vector of steps
