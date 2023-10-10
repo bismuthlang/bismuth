@@ -640,33 +640,24 @@ bool ProtocolSequence::swapChoice(const ProtocolSequence * swap) const
     if (isComplete())
         return false;
 
-    // const Protocol *protoTemp = steps.front();
-    const ProtocolSequence * tempPtr = this; 
-    const ProtocolSequence ** protoSeqPtr = &tempPtr; 
-    // const Protocol **protoPtr = &protoTemp;
+    ProtocolSequence * seq = const_cast<ProtocolSequence *>(this); 
 
-    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*protoSeqPtr)->steps.front()))//(*protoPtr))
+    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(seq->steps.front()))
     {
-        const ProtocolSequence *seq = protoClose->getInnerProtocol();
+        const ProtocolSequence *innerSeq = protoClose->getInnerProtocol();
 
-        if (seq->isComplete())
+        if (innerSeq->isComplete())
             break; 
-            // return protoClose;
-            
 
-        // const Protocol *tmp = seq->steps.front();
-        // protoPtr = &tmp;
-        protoSeqPtr = &seq; 
+        seq = const_cast<ProtocolSequence *>(innerSeq);
     }
 
-    const ProtocolSequence * correctedPtr = *protoSeqPtr; 
-
-    if(const ProtocolEChoice * extChoice = dynamic_cast<const ProtocolEChoice *>(correctedPtr->steps.front()))
+    if(const ProtocolEChoice * extChoice = dynamic_cast<const ProtocolEChoice *>(seq->steps.front()))
     {
         if(!extChoice->getOptions().count(swap))
             return false; 
     }
-    else if(const ProtocolIChoice * intChoice = dynamic_cast<const ProtocolIChoice *>(correctedPtr->steps.front()))
+    else if(const ProtocolIChoice * intChoice = dynamic_cast<const ProtocolIChoice *>(seq->steps.front()))
     {
         if(!intChoice->getOptions().count(swap))
             return false; 
@@ -676,10 +667,8 @@ bool ProtocolSequence::swapChoice(const ProtocolSequence * swap) const
         return false; 
     }
 
-    ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(correctedPtr);
-    m_seq->steps.erase(m_seq->steps.begin());
-    m_seq->steps.insert(m_seq->steps.begin(), swap->steps.begin(), swap->steps.end()); 
-
+    seq->steps.erase(seq->steps.begin());
+    seq->steps.insert(seq->steps.begin(), swap->steps.begin(), swap->steps.end()); 
 
     return true;
 }
