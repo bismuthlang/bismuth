@@ -24,6 +24,8 @@
 
 #include <variant>
 
+#include <iostream> // cout
+
 #include "Type.h"
 
 class Type;

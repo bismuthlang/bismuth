@@ -799,97 +799,59 @@ optional<const Protocol *> ProtocolSequence::popFirst() const
 
 std::optional<const ProtocolClose *> ProtocolSequence::popFirstCancelable() const
 {
-    /*
     if (isComplete())
         return std::nullopt;
 
     if (const ProtocolClose *outerClose = dynamic_cast<const ProtocolClose *>(this->steps.front()))
     {
-        const ProtocolClose *tempSeq = outerClose;
-        const ProtocolClose **seqPtr = &tempSeq;
+        ProtocolSequence *seq = const_cast<ProtocolSequence *>(this);
+        ProtocolClose * close = const_cast<ProtocolClose *>(outerClose); 
 
-        while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->getInnerProtocol()->steps.front()))
+        while (!seq->isComplete())
         {
-            // const ProtocolSequence *seq = protoClose->getInnerProtocol();
-
-            // if (seq->isComplete())
-            //     break;
-
-           if(protoClose->getInnerProtocol()->isComplete())
-
-            seqPtr = &seq;
-        }
-
-        const Protocol *ans = (*seqPtr)->steps.front();
-        ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(*seqPtr);
-        m_seq->steps.erase(m_seq->steps.begin());
-        return ans;
-    }
-
-    return std::nullopt;
-    */
-
-    if (isComplete())
-        return std::nullopt;
-
-    if (const ProtocolClose *outerClose = dynamic_cast<const ProtocolClose *>(this->steps.front()))
-    {
-        const ProtocolSequence *tempSeq = this;
-
-        const ProtocolSequence **seqPtr = &tempSeq;
-        const ProtocolClose **closePtr = &outerClose;
-
-        while (!(*seqPtr)->isComplete())
-        {
-            const ProtocolSequence *tempSeq = (*closePtr)->getInnerProtocol();
+            std::cout << "844 " << seq->toString() << std::endl; 
+            const ProtocolSequence *tempSeq = close->getInnerProtocol();
 
             if (tempSeq->isComplete())
                 break;
 
             if (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(tempSeq->steps.front()))
             {
-                seqPtr = &tempSeq;
-                closePtr = &protoClose;
+                seq = const_cast<ProtocolSequence *>(tempSeq);
+                close = const_cast<ProtocolClose*>(protoClose); 
             }
             else
             {
                 break;
             }
         }
-
-        ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(*seqPtr);
-        m_seq->steps.erase(m_seq->steps.begin());
-        return *closePtr;
+        seq->steps.erase(seq->steps.begin());
+        return close;
     }
-    // return ans;
     return std::nullopt;
 }
 
 void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const
 {
+    ProtocolSequence *seq = const_cast<ProtocolSequence *>(this);
+
     if (isComplete())
     {
-        ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(this);
-        m_seq->steps.insert(m_seq->steps.begin(), ins.begin(), ins.end());
+        seq->steps.insert(seq->steps.begin(), ins.begin(), ins.end());
         return; // true;
     }
-    //     return false;
 
-    const ProtocolSequence *tempSeq = this;
-    const ProtocolSequence **seqPtr = &tempSeq;
-
-    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
+    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(seq->steps.front()))
     {
-        const ProtocolSequence *seq = protoClose->getInnerProtocol();
+        const ProtocolSequence *innerSeq = protoClose->getInnerProtocol();
 
-        if (seq->isComplete())
+        if (innerSeq->isComplete())
             break;
 
-        seqPtr = &seq;
+        seq = const_cast<ProtocolSequence *>(innerSeq);
     }
 
-    ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(*seqPtr);
-    m_seq->steps.insert(m_seq->steps.begin(), ins.begin(), ins.end());
+    seq->steps.insert(seq->steps.begin(), ins.begin(), ins.end());
     return; // true;
 }
 
