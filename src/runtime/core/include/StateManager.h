@@ -38,10 +38,11 @@ std::string Message2String(Message m);
 
 void debug();
 
-// TODO: do better error handling for WriteHelper instead of just logging and returns!
-void WriteHelper(unsigned int aId, Message m);
+// TODO: do better error handling for WriteMessageTo instead of just logging and returns!
+void WriteMessageTo(unsigned int aId, Message m);
 
-Message ReadHelper(unsigned int aId);
+Message ReadLinearMessageFrom(unsigned int aId);
+Message ReadExceptionalMessageFrom(unsigned int aId);
 
 // Message PeakHelper(unsigned int aId)
 // {
@@ -65,6 +66,7 @@ extern "C" void WriteChannel(unsigned int aId, uint8_t *value);
 extern "C" void WriteProjection(unsigned int aId, unsigned int selVal);
 
 extern "C" uint8_t *ReadChannel(unsigned int aId);
+extern "C" uint8_t * _ReadExceptionalChannel(unsigned int aId);
 
 extern "C" unsigned int ReadProjection(unsigned int aId);
 

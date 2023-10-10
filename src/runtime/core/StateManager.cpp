@@ -101,7 +101,7 @@ IPCBuffer<Message> *getWriteQueue(unsigned int aId)
 
     if (i_oAId == LookupOther.end())
     {
-        throw std::runtime_error("Preservation Error: WriteHelper could not locate channel to write to!");
+        throw std::runtime_error("Preservation Error: could not locate channel to write to!");
     }
 
     unsigned int oAId = i_oAId->second;
@@ -111,27 +111,27 @@ IPCBuffer<Message> *getWriteQueue(unsigned int aId)
 
     if (i_buffer == State.end())
     {
-        throw std::runtime_error("Preservation Error: WriteHelper could not locate buffer to write to!");
+        throw std::runtime_error("Preservation Error: could not locate buffer to write to!");
     }
 
     return i_buffer->second;
 }
 
-void WriteHelper(unsigned int aId, Message m)
+IPCBuffer<Message> *getReadQueue(unsigned int aId)
 {
-    IPCBuffer<Message> *writeQueue = getWriteQueue(aId);
+    exec_mutex.lock();
+    auto i_buffer = State.find(aId);
+    exec_mutex.unlock();
 
-    // if (DEBUG)
-    // {
-    //     std::ostringstream p;
-    //     p << "ENQUEUE " << aId << " -> " << oAId << " " << Message2String(m) << std::endl;
-    //     std::cerr << p.str();
-    // }
+    if (i_buffer == State.end())
+    {
+        throw std::runtime_error("Preservation error: failed to find read channel!");
+    }
 
-    writeQueue->enqueue(m);
+    return i_buffer->second;
 }
 
-Message ReadHelper(unsigned int aId)
+Message ReadMessageFrom(unsigned int aId)
 {
     IPCBuffer<Message> *readQueue = getReadQueue(aId);
 
@@ -152,35 +152,35 @@ Message ReadHelper(unsigned int aId)
     return m;
 }
 
-IPCBuffer<Message> *getReadQueue(unsigned int aId)
+void WriteMessageTo(unsigned int aId, Message m)
 {
-    exec_mutex.lock();
-    auto i_buffer = State.find(aId);
-    exec_mutex.unlock();
+    IPCBuffer<Message> *writeQueue = getWriteQueue(aId);
 
-    if (i_buffer == State.end())
-    {
-        throw std::runtime_error("Preservation error: failed to find read channel!");
-    }
+    // if (DEBUG)
+    // {
+    //     std::ostringstream p;
+    //     p << "ENQUEUE " << aId << " -> " << oAId << " " << Message2String(m) << std::endl;
+    //     std::cerr << p.str();
+    // }
 
-    return i_buffer->second;
+    writeQueue->enqueue(m);
 }
 
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value)
 {
     Value v(value);
-    WriteHelper(aId, v);
+    WriteMessageTo(aId, v);
 }
 
 extern "C" void WriteProjection(unsigned int aId, unsigned int selVal)
 {
     SEL s(selVal);
-    WriteHelper(aId, s);
+    WriteMessageTo(aId, s);
 }
 
 extern "C" uint8_t *ReadChannel(unsigned int aId)
 {
-    Message m = ReadHelper(aId);
+    Message m = ReadMessageFrom(aId);
 
     if (std::holds_alternative<Value>(m))
     {
@@ -197,7 +197,7 @@ extern "C" uint8_t *ReadChannel(unsigned int aId)
 
 extern "C" unsigned int ReadProjection(unsigned int aId)
 {
-    Message m = ReadHelper(aId);
+    Message m = ReadMessageFrom(aId);
 
     if (std::holds_alternative<SEL>(m))
     {
@@ -210,7 +210,7 @@ extern "C" unsigned int ReadProjection(unsigned int aId)
 
 extern "C" bool ShouldLoop(unsigned int aId)
 {
-    Message m = ReadHelper(aId);
+    Message m = ReadMessageFrom(aId);
 
     if (std::holds_alternative<START_LOOP>(m))
         return true;
@@ -287,13 +287,13 @@ extern "C" void PopEndLoop(unsigned int aId)
 extern "C" void ContractChannel(unsigned int aId)
 {
     START_LOOP v;
-    WriteHelper(aId, v);
+    WriteMessageTo(aId, v);
 }
 
 extern "C" void WeakenChannel(unsigned int aId)
 {
     END_LOOP v;
-    WriteHelper(aId, v);
+    WriteMessageTo(aId, v);
 }
 
 extern "C" unsigned int _ArrayToChannel(uint8_t *array[], unsigned int len)
