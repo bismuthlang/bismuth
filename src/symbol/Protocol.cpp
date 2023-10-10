@@ -673,113 +673,25 @@ bool ProtocolSequence::swapChoice(const ProtocolSequence * swap) const
     return true;
 }
 
-// void ProtocolSequence::swapFirst(const Protocol * toSwap) const
-// {
-//     if (isComplete())
-//     {
-//         ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-//         u_this->steps.insert(u_this->steps.begin(), toSwap); // FIXME: THIS BREAKS EVERYTHING!
-//         return;
-//     }
-
-//     const Protocol *protoTemp = steps.front();
-//     const Protocol **protoPtr = &protoTemp;
-
-//     while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(*protoPtr))
-//     {
-//         const ProtocolSequence *seq = protoClose->getInnerProtocol();
-
-//         const Protocol *tmp = seq->steps.front();
-//         protoPtr = &tmp;
-
-//         if (seq->isComplete())
-//             break; 
-
-//     }
-
-//     if((*protoPtr)->isComplete())
-//     {
-
-//     }
-
-//     // return *protoPtr;
-// }
-
-
-// bool ProtocolSequence::selectExtChoice(set<const ProtocolSequence *, ProtocolCompare> testOpts) const
-// {
-//     if (isComplete())
-//         return false;
-
-//     if (steps.front()->isGuarded() || this->isGuarded())
-//         return false;
-
-//     optional<const Protocol *> protoOpt = this->popFirst();
-
-//     if (!protoOpt)
-//         return false;
-
-//     const Protocol *proto = protoOpt.value();
-
-//     if (const ProtocolEChoice *eChoice = dynamic_cast<const ProtocolEChoice *>(proto))
-//     {
-//         std::set<const ProtocolSequence *, ProtocolCompare> foundCaseTypes = {};
-
-//         for (const ProtocolSequence *p : testOpts) // TODO: METHODIZE WITH MATCHSTATEMENT
-//         {
-//             if (!eChoice->getOptions().count(p))
-//             {
-//                 // errorHandler.addSemanticError(ctx->getStart(), "Impossible case: " p->toString());
-//                 return false;
-//             }
-
-//             if (foundCaseTypes.count(p))
-//             {
-//                 // errorHandler.addSemanticError(ctx->getStart(), "Duplicate case: " + p->toString());
-//                 return false; // FIXME: HANDLE ERRORS BETTER IN THE SEMANTIC VISITOR SO WE CAN GET THESE ERRORS!!
-//             }
-//             else
-//             {
-//                 foundCaseTypes.insert(p);
-//             }
-//         }
-
-//         if (foundCaseTypes.size() != eChoice->getOptions().size())
-//         {
-//             return false;
-//             // errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
-//         }
-
-//         // ProtocolSequence *u_this = const_cast<ProtocolSequence *>(this);
-//         // u_this->steps.erase(steps.begin());
-
-//         return true;
-//     }
-
-//     return false;
-// }
-
 optional<const Protocol *> ProtocolSequence::popFirst() const
 {
     if (isComplete())
         return std::nullopt;
 
-    const ProtocolSequence *tempSeq = this;
-    const ProtocolSequence **seqPtr = &tempSeq;
+    ProtocolSequence *seq = const_cast<ProtocolSequence *>(this);
 
-    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>((*seqPtr)->steps.front()))
+    while (const ProtocolClose *protoClose = dynamic_cast<const ProtocolClose *>(seq->steps.front()))
     {
-        const ProtocolSequence *seq = protoClose->getInnerProtocol();
+        const ProtocolSequence *innerSeq = protoClose->getInnerProtocol();
 
-        if (seq->isComplete())
+        if (innerSeq->isComplete())
             break;
 
-        seqPtr = &seq;
+        seq = const_cast<ProtocolSequence *>(innerSeq);
     }
 
-    const Protocol *ans = (*seqPtr)->steps.front();
-    ProtocolSequence *m_seq = const_cast<ProtocolSequence *>(*seqPtr);
-    m_seq->steps.erase(m_seq->steps.begin());
+    const Protocol *ans = seq->steps.front();
+    seq->steps.erase(seq->steps.begin());
 
     return ans;
 }
