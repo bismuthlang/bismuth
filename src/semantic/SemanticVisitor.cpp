@@ -2076,7 +2076,6 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
-        std::set<const ProtocolSequence *, ProtocolCompare> opts = {}; // FIXME: REMOVE OPTS AND OPTSI?
         std::set<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
 
         for (auto alt : ctx->protoAlternative())
@@ -2094,7 +2093,6 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
             const ProtocolSequence *a = std::get<const ProtocolSequence *>(protoOpt);
 
-            opts.insert(a);
             optsI.insert({a->getInverse(), alt->eval}); // Double inverses to ensure order same for both sides (server & client)
         }
 
@@ -2119,27 +2117,10 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         {
             return errorHandler.addError(ctx->getStart(), "Currently, an else block is required for cases in lossy protocols");
         }
-        // if(ctx->protoElse())
-        // {
-        //     if(!isInCloseable)
-        //     {
-        //         return errorHandler.addError(ctx->protoElse()->getStart(), "Dead code - An else block can only apply to choices in a lossy protocol");
-        //     }
-
-        //     const ProtocolSequence * copySeq = channel->getProtocol()->getCopy();
-
-        //     if(!copySeq->cancel())
-        //     {
-        //         return errorHandler.addError(ctx->protoElse()->getStart(), "Failed to close protocol marked as closed. Please report this error as this is likely a compiler bug.");
-        //     }
-
-        //     branchSequences.push_back(copySeq);
-        //     alternatives.push_back(ctx->protoElse()->statement());
-        // }
 
         optional<CaseMetadata> metaOpts = channel->getProtocol()->caseAnalysis(branchSequences);
 
-        if (!metaOpts)//(!channel->getProtocol()->isExtChoice(opts)) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
+        if (!metaOpts) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
         {
             return errorHandler.addError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
         }
@@ -2150,16 +2131,8 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 
 
 
-        // const ProtocolSequence *savedRest = channel->getProtocolCopy();
-
-        // for(auto proto : branchSequences)
-        // {
-        //     proto->append(savedRest->getCopy());
-        // }
-
         if(ctx->protoElse())
         {
-            // sequences.push_back(savedRest->getCopy());
             fullSequences.push_back(meta.rest);
             alternatives.push_back(ctx->protoElse()->statement());
         }
