@@ -2,6 +2,8 @@
 
 #include <iostream>
 #include <fstream>
+#include <memory> // Smart pointers 
+
 #include "antlr4-runtime.h"
 #include "BismuthLexer.h"
 #include "BismuthParser.h"
@@ -28,3 +30,7 @@
 #ifndef GIT_COMMIT_HASH
 #define GIT_COMMIT_HASH "0000000" // 0000000 means uninitialized
 #endif
+
+using std::unique_ptr; 
+using std::shared_ptr; 
+using std::fstream; 

@@ -184,7 +184,7 @@ ChangeLog
     // extension replaced with .ll
     for (auto fileName : inputFileName)
     {
-      std::fstream *inStream = new std::fstream(fileName);
+      unique_ptr<fstream> inStream(new std::fstream(fileName));
 
       if (inStream->fail())
       {
