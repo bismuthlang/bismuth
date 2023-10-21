@@ -75,7 +75,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
     const TypeSum *sumType = n->matchType;
 
     auto origParent = builder->GetInsertBlock()->getParent();
-    BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
+    BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
 
     // Attempt to cast the check; if this fails, then codegen for the check failed
     std::optional<Value *> optVal = AcceptType(this, n->checkExpr);
@@ -171,7 +171,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
 std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
 {
     auto origParent = builder->GetInsertBlock()->getParent();
-    BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
+    BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
 
     // Attempt to cast the check; if this fails, then codegen for the check failed
     Symbol *sym = n->sym;
@@ -775,7 +775,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) // TODO: COnsi
 
     if (!indexOpt)
     {
-        errorHandler.addError(n->getStart(), "Failed to generate code in TvisitArrayAccess for index!");
+        errorHandler.addError(n->getStart(), "Failed to generate code in visiting TArrayAccessNode for index!");
         return std::nullopt;
     }
 
@@ -1548,7 +1548,7 @@ std::optional<Value *> CodegenVisitor::visit(TConditionalStatementNode *n)
     BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "then", parentFn);
     BasicBlock *elseBlk = BasicBlock::Create(module->getContext(), "else");
 
-    BasicBlock *restBlk = n->falseOpt ? BasicBlock::Create(module->getContext(), "ifcont")
+    BasicBlock *restBlk = n->falseOpt ? BasicBlock::Create(module->getContext(), "if-cont")
                                       : elseBlk;
 
     builder->CreateCondBr(cond.value(), thenBlk, elseBlk);
@@ -1611,7 +1611,7 @@ std::optional<Value *> CodegenVisitor::visit(TSelectStatementNode *n)
      * Set up the merge block that all cases go to after the select statement
      */
     auto origParent = builder->GetInsertBlock()->getParent();
-    BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "ifcont");
+    BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "if-cont");
 
     // Iterate through each of the cases
     for (unsigned long i = 0; i < n->nodes.size(); i++)

@@ -169,7 +169,7 @@ private:
             auto parentFn = builder->GetInsertBlock()->getParent();
             BasicBlock *thenBlk = BasicBlock::Create(module->getContext(), "then", parentFn);
             BasicBlock *elseBlk = BasicBlock::Create(module->getContext(), "else");
-            BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "ifcont");
+            BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "if-cont");
 
             builder->CreateCondBr(
                 builder->CreateZExtOrTrunc(
@@ -253,7 +253,7 @@ private:
         {
             auto origParent = builder->GetInsertBlock()->getParent();
 
-            BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "matchcont");
+            BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
 
             Value *memLoc = builder->CreateGEP(v, {Int32Zero, Int32One});
             Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});

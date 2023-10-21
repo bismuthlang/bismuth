@@ -43,8 +43,6 @@ public:
     /*
      *  Protocols
      */
-    // std::variant<TAsChannelNode *, ErrorChain *> TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx);
-    // std::any visitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx) override { return TNVariantCast<TAsChannelNode>(TvisitAsChannelExpr(ctx)); }
     std::variant<const ProtocolSequence *, ErrorChain *> visitProto(BismuthParser::ProtocolContext *ctx);
     std::variant<const ProtocolRecv *, ErrorChain *> visitProto(BismuthParser::RecvTypeContext *ctx);
     std::variant<const ProtocolSend *, ErrorChain *> visitProto(BismuthParser::SendTypeContext *ctx);
