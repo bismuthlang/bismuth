@@ -19,17 +19,13 @@
 std::mutex running_mutex; // NOTE: A PATTERN LIKE THIS MIGHT BE CHALLENGING IN MY LANG! (SEE THIS AND WAITFORALLTOFINISH)
 std::condition_variable running_cond;
 std::atomic<int> running;
+std::atomic<unsigned int> num_exec; // Temporary debugging var used to give each channel a unique id
 
 bool DEBUG = false;
 
 extern "C" void waitForAllToFinish();
 
 // Actual state stuff
-
-std::map<unsigned int, IPCBuffer<Message> *> State;
-
-std::map<unsigned int, unsigned int> LookupOther; // Name this something better?
-
 std::mutex exec_mutex;
 
 extern "C" unsigned int Execute(void (*func)(unsigned int));
@@ -47,11 +43,13 @@ void WriteMessageTo(unsigned int aId, Message m);
 Message ReadLinearMessageFrom(unsigned int aId);
 Message ReadLossyMessageFrom(unsigned int aId);
 
+// TODO: move definition to separate file!
 extern "C" struct _Channel {
+    const unsigned int id; 
     IPCBuffer<Message> read; 
     IPCBuffer<Message> write; 
 
-    _Channel(){}
+    _Channel(unsigned int i) : id(i) {}
 };
 
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value);
