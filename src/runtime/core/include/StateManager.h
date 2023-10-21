@@ -47,6 +47,12 @@ void WriteMessageTo(unsigned int aId, Message m);
 Message ReadLinearMessageFrom(unsigned int aId);
 Message ReadLossyMessageFrom(unsigned int aId);
 
+extern "C" struct _Channel {
+    IPCBuffer<Message> read; 
+    IPCBuffer<Message> write; 
+
+    _Channel(){}
+};
 
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value);
 extern "C" uint8_t *ReadChannel(unsigned int aId);

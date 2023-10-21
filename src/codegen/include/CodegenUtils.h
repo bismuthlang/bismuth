@@ -79,6 +79,9 @@ public:
         Int32One = ConstantInt::get(Int32Ty, 1, true);
         i8p = llvm::Type::getInt8PtrTy(module->getContext());
         Int8PtrPtrTy = i8p->getPointerTo();
+
+        channelRtTy = llvm::StructType::create(module->getContext(), "_Channel");
+        channelRtPtrTy = channelRtPtrTy->getPointerTo(); 
     }
 
     CodegenModule(Module *m, int f, BismuthErrorHandler e) : errorHandler(e)
@@ -102,6 +105,9 @@ public:
         Int32One = ConstantInt::get(Int32Ty, 1, true);
         i8p = llvm::Type::getInt8PtrTy(module->getContext());
         Int8PtrPtrTy = i8p->getPointerTo();
+
+        channelRtTy = llvm::StructType::create(module->getContext(), "_Channel");
+        channelRtPtrTy = channelRtPtrTy->getPointerTo(); 
     }
 
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
@@ -392,6 +398,8 @@ protected:
     llvm::IntegerType *Int64Ty;
     llvm::Type *i8p;
     llvm::Type *Int8PtrPtrTy;
+    llvm::StructType * channelRtTy; 
+    llvm::PointerType * channelRtPtrTy; 
     Constant *Int32Zero;
     Constant *Int32One;
 };
