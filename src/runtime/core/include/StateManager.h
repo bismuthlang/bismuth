@@ -32,13 +32,8 @@ std::mutex exec_mutex;
 
 std::string Message2String(Message m);
 
-void debug();
+// void debug();
 
-// TODO: do better error handling for WriteMessageTo instead of just logging and returns!
-void WriteMessageTo(_Channel c, Message m);
-
-Message ReadLinearMessageFrom(_Channel c);
-Message ReadLossyMessageFrom(_Channel c);
 
 // TODO: move definition to separate file!
 extern "C" struct _Channel {
@@ -49,7 +44,14 @@ extern "C" struct _Channel {
     _Channel(IPCBuffer<Message> * r, IPCBuffer<Message> * w) : read(r), write(w) {}
 };
 
-extern "C" _Channel Execute(void (*func)(_Channel));
+extern "C" _Channel * Execute(void (*func)(_Channel));
+
+// TODO: do better error handling for WriteMessageTo instead of just logging and returns!
+void WriteMessageTo(_Channel c, Message m);
+
+Message ReadLinearMessageFrom(_Channel c);
+Message ReadLossyMessageFrom(_Channel c);
+
 extern "C" void WriteChannel(_Channel c, uint8_t *value);
 extern "C" uint8_t *ReadChannel(_Channel c);
 extern "C" uint8_t * _ReadLossyChannel(_Channel c); // FIXME: START USING

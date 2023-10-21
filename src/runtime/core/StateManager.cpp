@@ -9,12 +9,12 @@ extern "C" void waitForAllToFinish()
                       { return running == 0; });
 }
 
-extern "C" _Channel Execute(void (*func)(_Channel))
+extern "C" _Channel * Execute(void (*func)(_Channel))
 {
     exec_mutex.lock();
 
     _Channel a = _Channel(); 
-    _Channel b = _Channel(a.write, a.read); // Flip direction of buffers
+    _Channel * b = new _Channel(a.write, a.read); // Flip direction of buffers
 
     // unsigned int idOut = State.size();
     // State.insert({idOut, aOut});
