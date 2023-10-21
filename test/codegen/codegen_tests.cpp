@@ -708,6 +708,12 @@ TEST_CASE("programs/cancelable/DoubleCancel - Basic two blocks with cancel", "[c
         "8f8f321feb60738d4d754befd37b8c9558e1de717eec503941eb77986d4af621");
 }
 
+TEST_CASE("programs/cancelable/BranchCancel1 - Basic cancel w/ branch and repetition", "[codegen][cancel]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/BranchCancel1.bismuth"))),
+        "0"); // 
+}
 
 
 /************************************

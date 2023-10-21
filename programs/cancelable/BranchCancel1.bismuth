@@ -1,0 +1,74 @@
+extern func printf(str s, ...) :  int; 
+
+define program :: c : Channel<-int> 
+{
+    c.send(0);
+
+    # var other := exec c2;
+    # other.send(1); 
+    # other.send(2); 
+    # cancel(other); 
+
+    # other.send(3); 
+
+    # (Unit + int) res := other.recv(); 
+    # match res 
+    #     |   Unit u => printf("Wrong! Got unit on server.\n");
+    #     |   int i => printf("Correct if %u = 4!\n", i);
+        
+    # cancel(other); 
+}
+
+
+
+define c2 :: c : Channel<
+                        Cancelable<
+                            Cancelable<
+                                ExternalChoice<+int, -int>>;
+                            ?(+boolean)>;
+                        Cancelable<+int;-int;+int>> {
+
+    offer c 
+        |   +int => {
+                int a := c.recv(); 
+            }
+        |   -int => {
+                c.send(0); 
+            }
+        |   else => {}
+
+    int i := 0; 
+
+    cancel(c); 
+    
+    while(i < 10)
+    {
+        unfold(c); 
+        boolean b := c.recv(); 
+        i := i + 1; 
+    }
+
+    weaken(c); 
+
+    int a := c.recv(); 
+    c.send(2); 
+    int b := c.recv(); 
+
+    # match a 
+    #     |   Unit u => printf("WRONG! Got unit!\n");
+    #     |   int i => printf("Correct if %u = 1!\n", i);
+
+    # (Unit + int) b := c.recv(); 
+    # match b 
+    #     |   Unit u => printf("Wrong! Got unit!\n");
+    #     |   int i => printf("Correct if %u = 3!\n", i);
+
+
+    # c.send(4);
+
+    # (Unit + int) d := c.recv(); 
+    # match d 
+    #     |   Unit u => printf("Correct! Got unit!\n");
+    #     |   int i => printf("Incorrect! Got int = %u\n", i);
+    # cancel(c); 
+}
