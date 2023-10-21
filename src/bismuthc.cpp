@@ -106,9 +106,12 @@ ChangeLog
 =========
 1.3.4 - XXX: 
   - Added toChannel function to convert ty -> Channel<!+ty>
+  - Added --display-mode to enable error messages to show types as they would appear in-code instead of mathematical representation
 
   - Fixed bug where nested control flow would incorrectly process use of linear resources
+  - Fixed typos in generated IR files, error messages, and compiler internals
 
+  - Improved efficiency of IPC by removing state to eliminate additional lookup step
   - Refactored code internals to promote compile speed (of Bismuth, not the Bismuth compiler)
   - Added ProtocolVisitor.cpp/.h and moved code relating to visiting protocols to there from SemanticVisitor.cpp/.h
 
