@@ -24,7 +24,7 @@ bool TypeInt::isSupertypeFor(const Type *other) const
     return dynamic_cast<const TypeInt *>(other);
 }
 
-std::string TypeInt::toString() const { return "INT"; }
+std::string TypeInt::toString(DisplayMode) const { return "int"; }
 
 llvm::IntegerType *TypeInt::getLLVMType(llvm::Module *M) const
 {
@@ -42,7 +42,7 @@ bool TypeBool::isSupertypeFor(const Type *other) const
     return dynamic_cast<const TypeBool *>(other);
 }
 
-std::string TypeBool::toString() const { return "BOOL"; }
+std::string TypeBool::toString(DisplayMode) const { return "boolean"; }
 
 llvm::Type *TypeBool::getLLVMType(llvm::Module *M) const
 {
@@ -54,7 +54,7 @@ llvm::Type *TypeBool::getLLVMType(llvm::Module *M) const
  * String (dynamic allocation) Type Definition
  *
  *********************************************/
-std::string TypeStr::toString() const { return "STR"; }
+std::string TypeStr::toString(DisplayMode) const { return "str"; }
 llvm::Type *TypeStr::getLLVMType(llvm::Module *M) const { return llvm::Type::getInt8PtrTy(M->getContext()); }
 bool TypeStr::isSupertypeFor(const Type *other) const
 {
@@ -68,7 +68,7 @@ bool TypeStr::isSupertypeFor(const Type *other) const
  * Bottom Type
  *
  *******************************************/
-std::string TypeBottom::toString() const { return "\u22A5"; }
+std::string TypeBottom::toString(DisplayMode mode) const { return "\u22A5"; } // TODO: improve tostring?
 
 const TypeBottom * TypeBottom::getCopy() const { return this; };
 
@@ -84,17 +84,26 @@ bool TypeBottom::isSupertypeFor(const Type *other) const
  * Unit Type
  *
  *******************************************/
-std::string TypeUnit::toString() const { return "Unit"; } // Used to be 1 pre July 15 2023
+std::string TypeUnit::toString(DisplayMode mode) const 
+{
+    switch (mode)
+    {
+    case C_STYLE:
+        return "Unit";
+    case MATH_STYLE:
+        return "1"; // Used to always be 1 pre July 15 2023; Unit until Oct 21, 2023; then display mode
+    }
+} 
 
 const TypeUnit * TypeUnit::getCopy() const { return this; };
 
 llvm::Type *TypeUnit::getLLVMType(llvm::Module *M) const
 {
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString(C_STYLE));
     if (ty)
         return ty;
 
-    ty = llvm::StructType::create(M->getContext(), toString());
+    ty = llvm::StructType::create(M->getContext(), toString(C_STYLE));
 
     std::vector<llvm::Type *> typeVec;
     
@@ -117,7 +126,7 @@ bool TypeUnit::isSupertypeFor(const Type *other) const
  * Absurd Type
  *
  *******************************************/
-std::string TypeAbsurd::toString() const { return "0"; }
+std::string TypeAbsurd::toString(DisplayMode mode) const { return "0"; }
 
 const TypeAbsurd * TypeAbsurd::getCopy() const { return this; };
 
@@ -133,10 +142,10 @@ bool TypeAbsurd::isSupertypeFor(const Type *other) const
  *
  *******************************************/
 
-std::string TypeArray::toString() const
+std::string TypeArray::toString(DisplayMode mode) const
 {
     std::ostringstream description;
-    description << valueType->toString() << "[" << length << "]";
+    description << valueType->toString(mode) << "[" << length << "]";
 
     return description.str();
 }
@@ -179,12 +188,22 @@ bool TypeArray::isSupertypeFor(const Type *other) const
  * Channel Type Definition
  *
  *******************************************/
-std::string TypeChannel::toString() const
+std::string TypeChannel::toString(DisplayMode mode) const
 {
-    std::ostringstream description;
-    description << "\u21BF" << protocol->toString() << "\u21BE";
+    switch(mode)
+    {
+        case C_STYLE:
+        {
+            return "Channel<" + protocol->toString(mode) + ">";
+        }
+        case MATH_STYLE:
+            return "\u21BF" + protocol->toString(mode) + "\u21BE";
 
-    return description.str();
+    }
+    // std::ostringstream description;
+    // description << 
+
+    // return description.str();
 }
 
 llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
@@ -254,7 +273,7 @@ bool TypeChannel::isSupertypeFor(const Type *other) const
     if (const TypeChannel *p = dynamic_cast<const TypeChannel *>(other))
     {
         // return p->isSubtype(protocol);
-        return toString() == other->toString(); // FIXME: DO BETTER
+        return toString(C_STYLE) == other->toString(C_STYLE); // FIXME: DO BETTER
     //     // Makes sure that both functions have the same number of parameters
     //     if (p->paramTypes.size() != this->paramTypes.size())
     //         return false;
@@ -280,10 +299,10 @@ bool TypeChannel::isSupertypeFor(const Type *other) const
  * Box Type Definition
  *
  *******************************************/
-std::string TypeBox::toString() const
+std::string TypeBox::toString(DisplayMode mode) const
 {
     std::ostringstream description;
-    description << "Box<" << innerType->toString() << ">";
+    description << "Box<" << innerType->toString(mode) << ">"; // TODO: remove ostringstream?
 
     return description.str();
 }
@@ -327,10 +346,11 @@ bool TypeProgram::setProtocol(const ProtocolSequence * p) const
 }
 
 // FIXME: should this and function return the actual name of the type, not just the representation (like what happens with structs and such)
-std::string TypeProgram::toString() const
+// SHould also greatly improve this
+std::string TypeProgram::toString(DisplayMode mode) const
 {
     std::ostringstream description;
-    description << "PROGRAM : " << (protocol ? protocol->toString() : "PARTIAL DEFINITION");
+    description << "PROGRAM : " << (protocol ? protocol->toString(mode) : "PARTIAL DEFINITION");
 
     return description.str();
 }
@@ -404,7 +424,7 @@ bool TypeProgram::isSupertypeFor(const Type *other) const
     // }
     if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
     {
-        return toString() == other->toString(); // FIXME: DO BETTER
+        return toString(C_STYLE) == other->toString(C_STYLE); // FIXME: DO BETTER
         // return protocol->isSubtype(p->protocol);
     }
     return false;
@@ -429,7 +449,8 @@ bool TypeFunc::setInvoke(std::vector<const Type *> p, const Type *r, bool v) con
     return true;
 }
 
-std::string TypeFunc::toString() const
+// PLAN: should improve tostring, make it match syntax + math
+std::string TypeFunc::toString(DisplayMode mode) const
 {
     std::ostringstream description;
 
@@ -438,7 +459,7 @@ std::string TypeFunc::toString() const
 
     for (unsigned int i = 0; i < paramTypes.size(); i++)
     {
-        description << paramTypes.at(i)->toString();
+        description << paramTypes.at(i)->toString(mode);
 
         if (i + 1 < paramTypes.size())
         {
@@ -451,7 +472,7 @@ std::string TypeFunc::toString() const
 
     description << "-> ";
 
-    description << retType->toString();
+    description << retType->toString(mode);
     return description.str();
 }
 
@@ -549,11 +570,11 @@ std::optional<const Type*> TypeInfer::getValueType() const
  *
  * @return std::string
  */
-std::string TypeInfer::toString() const
+std::string TypeInfer::toString(DisplayMode mode) const
 {
     if (hasBeenInferred())
     {
-        return "{VAR/" + valueType->value()->toString() + "}";
+        return "{VAR/" + valueType->value()->toString(mode) + "}";
     }
     return "VAR";
 }
@@ -682,7 +703,8 @@ unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
     return (unsigned int)0;
 }
 
-std::string TypeSum::toString() const
+// TODO: Improve tostring to make it match syntax?
+std::string TypeSum::toString(DisplayMode mode) const
 {
     if (name)
         return name.value();
@@ -696,7 +718,7 @@ std::string TypeSum::toString() const
 
     for (const Type *el : cases)
     {
-        description << el->toString();
+        description << el->toString(mode);
         if (++ctr != size)
             description << " + ";
     }
@@ -707,7 +729,7 @@ std::string TypeSum::toString() const
 
 llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
 {
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString(C_STYLE));
     if (ty)
         return ty;
 
@@ -735,7 +757,7 @@ llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
 
     // Probably not needed in struct, but might be. 
     // Needed in the case that we generate the type while generating one of the subtypes...
-    ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+    ty = llvm::StructType::getTypeByName(M->getContext(), toString(C_STYLE));
     if (ty)
         return ty;
 
@@ -747,7 +769,7 @@ llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
     std::vector<llvm::Type *> typeVec = {llvm::Type::getInt32Ty(M->getContext()), arr};
 
     llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-    auto ans = llvm::StructType::create(M->getContext(), ref, toString());
+    auto ans = llvm::StructType::create(M->getContext(), ref, toString(C_STYLE));
     
     return ans;
 }
@@ -831,7 +853,7 @@ bool TypeStruct::isDefined() const { return defined; }
 vector<pair<std::string, const Type *>> TypeStruct::getElements() const { return elements.getElements(); }
 optional<unsigned int> TypeStruct::getElementIndex(std::string k) const { return elements.getIndex(k); }
 
-std::string TypeStruct::toString() const
+std::string TypeStruct::toString(DisplayMode mode=C_STYLE) const
 {
     if (name)
         return name.value();
@@ -845,7 +867,7 @@ std::string TypeStruct::toString() const
 
     for (auto e : elements.getElements())
     {
-        description << e.second->toString();
+        description << e.second->toString(mode);
         if (++ctr != size)
             description << " * ";
     }

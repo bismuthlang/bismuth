@@ -108,7 +108,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
 
         if (index == 0)
         {
-            errorHandler.addError(n->getStart(), "Unable to find key for type " + localSym->type->toString() + " in sum");
+            errorHandler.addError(n->getStart(), "Unable to find key for type " + localSym->type->toString(getToStringMode()) + " in sum"); 
             return std::nullopt;
         }
 
@@ -1183,7 +1183,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
         }
         else
         {
-            errorHandler.addError(n->getStart(), "Could not perform field access. Got type: " + ty->toString());
+            errorHandler.addError(n->getStart(), "Could not perform field access. Got type: " + ty->toString(getToStringMode()));
             return std::nullopt;
         }
     }

@@ -11,12 +11,9 @@
 //     return new TypeSum({innerType, Types::UNIT});
 // }
 
-std::string ProtocolRecv::as_str() const
+std::string ProtocolRecv::as_str(DisplayMode mode) const
 {
-    std::ostringstream description;
-    description << "+" << recvType->toString();
-
-    return description.str();
+    return "+" + recvType->toString(mode);
 }
 
 const Protocol *ProtocolRecv::getInverse() const // FIXME: ADD GUARD?
@@ -37,12 +34,9 @@ const Protocol *ProtocolRecv::getCopy() const
  *
  * ********************************************/
 
-std::string ProtocolSend::as_str() const
+std::string ProtocolSend::as_str(DisplayMode mode) const
 {
-    std::ostringstream description;
-    description << "-" << sendType->toString();
-
-    return description.str();
+    return "-" + sendType->toString(mode);
 }
 
 const Protocol *ProtocolSend::getInverse() const
@@ -64,12 +58,9 @@ const Protocol *ProtocolSend::getCopy() const
  *
  * ********************************************/
 
-std::string ProtocolWN::as_str() const
+std::string ProtocolWN::as_str(DisplayMode mode) const
 {
-    std::ostringstream description;
-    description << "?(" << proto->toString() << ")";
-
-    return description.str();
+    return "?(" + proto->toString(mode) + ")";
 }
 const Protocol *ProtocolWN::getInverse() const
 {
@@ -88,12 +79,9 @@ const Protocol *ProtocolWN::getCopy() const
  *  ProtocolOC
  *
  * ********************************************/
-std::string ProtocolOC::as_str() const
+std::string ProtocolOC::as_str(DisplayMode mode) const
 {
-    std::ostringstream description;
-    description << "!(" << proto->toString() << ")";
-
-    return description.str();
+    return "!(" + proto->toString(mode) + ")";
 }
 const Protocol *ProtocolOC::getInverse() const
 {
@@ -112,8 +100,9 @@ const Protocol *ProtocolOC::getCopy() const
  *  ProtocolIChoice
  *
  * ********************************************/
-std::string ProtocolIChoice::as_str() const
+std::string ProtocolIChoice::as_str(DisplayMode mode) const
 {
+    // FIXME: THIS IS MATH MODE: IMPLEMENT C_STYLE FOR THIS AND EXT CHOICE!
     std::ostringstream description;
 
     unsigned int i = 0;
@@ -121,7 +110,7 @@ std::string ProtocolIChoice::as_str() const
     {
         if (i != 0)
             description << "&";
-        description << p->toString();
+        description << p->toString(mode);
         i++;
     }
 
@@ -159,7 +148,7 @@ const Protocol *ProtocolIChoice::getCopy() const
  *  ProtocolEChoice
  *
  * ********************************************/
-std::string ProtocolEChoice::as_str() const
+std::string ProtocolEChoice::as_str(DisplayMode mode) const
 {
     std::ostringstream description;
     unsigned int i = 0;
@@ -167,7 +156,7 @@ std::string ProtocolEChoice::as_str() const
     {
         if (i != 0)
             description << "\u2295";
-        description << p->toString();
+        description << p->toString(mode);
         i++;
     }
 
@@ -212,7 +201,7 @@ RecvMetadata::RecvMetadata(const Type* inner, bool isSum)
     actingType = isSum ? (optional<const TypeSum*>) new TypeSum({protocolType, Types::UNIT}) : std::nullopt; 
 }
 
-std::string ProtocolSequence::as_str() const
+std::string ProtocolSequence::as_str(DisplayMode mode) const
 {
     std::ostringstream description;
     // for (auto p : steps)
@@ -220,7 +209,7 @@ std::string ProtocolSequence::as_str() const
     {
         if (i != 0)
             description << ";";
-        description << steps.at(i)->toString();
+        description << steps.at(i)->toString(mode);
     }
 
     return description.str();
@@ -493,7 +482,7 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
     unsigned int ans = 1;
     for (const ProtocolSequence *p : ic.value()->getOptions())
     {
-        if (ps->toString() == p->toString()) // FIXME: DO BETTER
+        if (ps->toString(DisplayMode::C_STYLE) == p->toString(DisplayMode::C_STYLE)) // FIXME: DO BETTER COMPARISON!
         {
             if (!this->swapChoice(ps))
                 return 0;
@@ -758,11 +747,11 @@ void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const
  *  ProtocolClose
  *
  * *******************************************/
-std::string ProtocolClose::as_str() const
+std::string ProtocolClose::as_str(DisplayMode mode) const
 {
     // TODO: CHANGE SYMBOLS?
     std::ostringstream description;
-    description << "Cancelable<" << proto->toString() << ">";
+    description << "Cancelable<" << proto->toString(mode) << ">";
 
     return description.str();
 }

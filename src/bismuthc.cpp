@@ -70,6 +70,15 @@ static llvm::cl::opt<CompileType>
                     clEnumVal(clangll, "Will generate an executable using clang++ on the .ll files (will still attempt to generate object files)")),
                 llvm::cl::init(none),
                 llvm::cl::cat(CLIOptions));
+
+static llvm::cl::opt<DisplayMode>
+    toStringMode("display-mode",
+                llvm::cl::desc("Determines how types should be rendered in compiler messages (error, warning, debug, info, etc)"),
+                llvm::cl::values(
+                    clEnumVal(C_STYLE, "Displays types as they would be written in the code"),
+                    clEnumVal(MATH_STYLE, "Renders types using mathematical notation common in theory")),
+                llvm::cl::init(C_STYLE),
+                llvm::cl::cat(CLIOptions));                
 /**
  * @brief Main compiler driver.
  */
@@ -259,7 +268,7 @@ ChangeLog
      * there are any errors we print them out and exit.
      *******************************************************************/
     STManager *stm = new STManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, flags);
+    SemanticVisitor *sv = new SemanticVisitor(stm, toStringMode, flags);
     auto TypedOpt = sv->visitCtx(tree); // FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
 
     if (sv->hasErrors(0)) // Want to see all errors
@@ -292,7 +301,7 @@ ChangeLog
      * If we have yet to receive any errors for the file, then
      * generate code for it.
      *******************************************************************/
-    CodegenVisitor *cv = new CodegenVisitor("BismuthProgram", flags);
+    CodegenVisitor *cv = new CodegenVisitor("BismuthProgram", toStringMode, flags);
     cv->visitCompilationUnit(cu);
     if (cv->hasErrors(0)) // Want to see all errors
     {

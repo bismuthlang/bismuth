@@ -35,10 +35,11 @@ public:
      * @param p Property manager to use
      * @param f Compiler flags
      */
-    SemanticVisitor(STManager *s, int f = 0)
+    SemanticVisitor(STManager *s, DisplayMode mode, int f = 0)
     {
         stmgr = s;
 
+        toStringMode = mode; 
         flags = f;
     }
 
@@ -288,7 +289,7 @@ public:
 
         if (conditionType->isNotSubtype(Types::DYN_BOOL))
         {
-            return errorHandler.addError(ex->getStart(), "Condition expected BOOL, but was given " + conditionType->toString());
+            return errorHandler.addError(ex->getStart(), "Condition expected BOOL, but was given " + conditionType->toString(toStringMode));
         }
 
         return cond;
@@ -377,13 +378,13 @@ public:
                 }
                 else
                 {
-                    return errorHandler.addError(ctx->getStart(), "Process expected channel but got " + ty->toString());
+                    return errorHandler.addError(ctx->getStart(), "Process expected channel but got " + ty->toString(toStringMode));
                 }
             }
             return sym;
         }
 
-        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString());
+        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString(toStringMode));
     }
 
     /**
@@ -461,8 +462,8 @@ public:
         bool operator()(std::pair<const Protocol *, BismuthParser::StatementContext *> a,
                         std::pair<const Protocol *, BismuthParser::StatementContext *> b) const
         {
-            std::cout << a.first->toString() << " < " << b.first->toString() << " = " << (a.first->toString() < b.second->toString()) << std::endl;
-            return a.first->toString() < b.first->toString();
+            // std::cout << a.first->toString() << " < " << b.first->toString() << " = " << (a.first->toString() < b.second->toString()) << std::endl;
+            return a.first->toString(C_STYLE) < b.first->toString(C_STYLE);
         }
     };
 
@@ -506,10 +507,17 @@ public:
     }
 
 private:
+    DisplayMode toStringMode; 
+
+public:
+    DisplayMode getToStringMode() { return toStringMode; }
+
+private:
     STManager *stmgr;
     PropertyManager<Symbol> *symBindings = new PropertyManager<Symbol>();
     PropertyManager<std::deque<DeepRestData *>> *restBindings = new PropertyManager<std::deque<DeepRestData *>>();
     BismuthErrorHandler errorHandler = BismuthErrorHandler(SEMANTIC);
+
 
     int flags; // Compiler flags
 
@@ -613,7 +621,7 @@ private:
             return sym;
         }
 
-        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString());
+        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString(toStringMode));
     }
 
     void bindRestData(antlr4::ParserRuleContext *ctx, std::deque<DeepRestData *> *rd)

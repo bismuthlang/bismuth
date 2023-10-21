@@ -29,8 +29,9 @@
 #include "LinkedMap.h"
 #include "Protocol.h"
 
-class ProtocolSequence;
+#include "SymbolUtils.h"
 
+class ProtocolSequence;
 /*******************************************
  *
  * Top Type Definition
@@ -47,7 +48,7 @@ public:
      *
      * @return std::string The string name of the type
      */
-    virtual std::string toString() const { return "TOP"; }
+    virtual std::string toString(DisplayMode mode) const { return "TOP"; }
 
     /**
      * @brief Determines if this type is a subtype of another.
@@ -134,7 +135,7 @@ class TypeInt : public Type
 public:
     TypeInt(bool isLinear) : Type(isLinear){}; 
 
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
 
@@ -157,7 +158,7 @@ class TypeBool : public Type
 public:
     TypeBool(bool isLinear) : Type(isLinear) {}; 
 
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     llvm::Type *getLLVMType(llvm::Module *M) const override;
 
@@ -180,7 +181,7 @@ class TypeStr : public Type
 public:
     TypeStr(bool isLinear) : Type(isLinear) {}; 
 
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     llvm::Type *getLLVMType(llvm::Module *M) const override;
 
@@ -203,7 +204,7 @@ class TypeBottom : public Type
 public:
     TypeBottom(bool isLinear) : Type(isLinear) {}; 
 
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     const TypeBottom * getCopy() const override;
 
@@ -221,7 +222,7 @@ class TypeUnit : public Type
 public:
     TypeUnit(bool isLinear) : Type(isLinear) {};
 
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     const TypeUnit * getCopy() const override;
 
@@ -241,7 +242,7 @@ class TypeAbsurd : public Type
 public:
     TypeAbsurd(bool isLinear) : Type(isLinear) {}; 
     
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     const TypeAbsurd * getCopy() const override;
 
@@ -259,7 +260,7 @@ struct TypeCompare
 {
     bool operator()(const Type *a, const Type *b) const
     {
-        return a->toString() < b->toString();
+        return a->toString(C_STYLE) < b->toString(C_STYLE);
     }
 };
 
@@ -309,7 +310,7 @@ public:
      *
      * @return std::string String name representation of this type.
      */
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     /**
      * @brief Get the Value Type object
@@ -364,7 +365,7 @@ public:
      */
     TypeChannel(const ProtocolSequence *proto) : Type(true), protocol(proto) {}
 
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     llvm::Type *getLLVMType(llvm::Module *M) const override;
 
@@ -408,7 +409,7 @@ private:
 public:
     TypeBox(const Type *t) : Type(false), innerType(t) {}
 
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     const Type *getInnerType() const;
 
@@ -464,7 +465,7 @@ public:
 
     bool setProtocol(const ProtocolSequence * p) const; 
 
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const;
 
@@ -554,7 +555,7 @@ public:
      *
      * @return std::string
      */
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const;
 
@@ -643,7 +644,7 @@ public:
      *
      * @return std::string
      */
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
     /**
      * @brief Gets the LLVM representation of the inferred type.
      *
@@ -724,7 +725,7 @@ public:
      *
      * @return std::string String name representation of this type.
      */
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     /**
      * @brief Gets the LLVM type for an array of the given valueType and length.
@@ -793,7 +794,7 @@ public:
      *
      * @return std::string String name representation of this type.
      */
-    std::string toString() const override;
+    std::string toString(DisplayMode mode) const override;
 
     /**
      * @brief Gets the LLVM type for an array of the given valueType and length.

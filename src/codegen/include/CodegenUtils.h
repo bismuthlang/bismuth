@@ -58,7 +58,7 @@ public:
      * @param moduleName LLVM Module name to use
      * @param f Compiler flags
      */
-    CodegenModule(std::string moduleName, int f = 0) : errorHandler(BismuthErrorHandler(CODEGEN))
+    CodegenModule(std::string moduleName, DisplayMode mode, int f = 0) : errorHandler(BismuthErrorHandler(CODEGEN)), toStringMode(mode)
     {
         flags = f;
 
@@ -81,7 +81,7 @@ public:
         Int8PtrPtrTy = i8p->getPointerTo();
     }
 
-    CodegenModule(Module *m, int f, BismuthErrorHandler e) : errorHandler(e)
+    CodegenModule(Module *m, DisplayMode mode, int f, BismuthErrorHandler e) : errorHandler(e), toStringMode(mode)
     {
         flags = f;
 
@@ -387,6 +387,13 @@ public:
         IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
         return tempBuilder.CreateAlloca(ty, 0, identifier);
     }
+
+private:
+    DisplayMode toStringMode; 
+
+public:
+    DisplayMode getToStringMode() { return toStringMode; }
+
 
 protected:
     int flags; 

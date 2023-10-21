@@ -44,7 +44,7 @@ class DeepCopyVisitor : public CodegenModule
     // };
 
 public:
-    DeepCopyVisitor(Module *m, int f, BismuthErrorHandler e) : CodegenModule(m, f, e)
+    DeepCopyVisitor(Module *m, DisplayMode mode, int f, BismuthErrorHandler e) : CodegenModule(m, mode, f, e)
     {
         // module = m;
         errorHandler = e;
@@ -110,7 +110,7 @@ private:
     {
         if (type->isLinear())
         {
-            errorHandler.addError(nullptr, "Cannot make a copy of a linear type: " + type->toString());
+            errorHandler.addError(nullptr, "Cannot make a copy of a linear type: " + type->toString(getToStringMode()));
             return std::nullopt;
         }
 
@@ -128,7 +128,7 @@ private:
             return std::nullopt; // TODO: Probably add a compiler pass to make this impossible. After all, such an error message is hardly useful. 
         }
 
-        Function *testFn = module->getFunction("_clone_" + type->toString());
+        Function *testFn = module->getFunction("_clone_" + type->toString(DisplayMode::C_STYLE));
         if (testFn)
         {
             return builder->CreateCall(testFn, {stoVal, addrMap});
@@ -145,7 +145,7 @@ private:
                                                 i8p,      // Map
                                             },
                                             false),
-                                        GlobalValue::PrivateLinkage, "_clone_" + type->toString(), module);
+                                        GlobalValue::PrivateLinkage, "_clone_" + type->toString(DisplayMode::C_STYLE), module);
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
 
@@ -345,7 +345,7 @@ private:
         {
             builder->CreateRet(v);
             builder->SetInsertPoint(ins);
-            errorHandler.addError(nullptr, "Compiler Error (Please report this bug!): I don't know how to copy the following type: " + type->toString());
+            errorHandler.addError(nullptr, "Compiler Error (Please report this bug!): I don't know how to copy the following type: " + type->toString(getToStringMode()));
             return std::nullopt;
         }
 

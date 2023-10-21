@@ -64,9 +64,9 @@ public:
      * @param moduleName LLVM Module name to use
      * @param f Compiler flags
      */
-    CodegenVisitor(std::string moduleName, int f = 0) : CodegenModule(moduleName, f)
+    CodegenVisitor(std::string moduleName, DisplayMode mode, int f = 0) : CodegenModule(moduleName, mode, f)
     {
-        copyVisitor = new DeepCopyVisitor(module, f, errorHandler);
+        copyVisitor = new DeepCopyVisitor(module, mode, f, errorHandler);
     }
 
     /******************************************************************

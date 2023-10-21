@@ -21,4 +21,5 @@ set (SYMBOL_SOURCES
   ${SYMBOL_DIR}/Context.cpp
   ${SYMBOL_DIR}/RawAST.cpp
   ${SYMBOL_DIR}/TypedAST.cpp
+  ${SYMBOL_DIR}/SymbolUtils.cpp
 )

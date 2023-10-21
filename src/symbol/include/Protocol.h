@@ -25,6 +25,7 @@
 #include <variant>
 
 #include "Type.h"
+#include "SymbolUtils.h"
 
 class Type;
 class TypeSum;
@@ -40,7 +41,7 @@ class ProtocolClose;
 class Protocol
 {
 protected:
-    virtual std::string as_str() const = 0;
+    virtual std::string as_str(DisplayMode mode) const = 0;
     mutable unsigned int guardCount = 0;
     const bool inCloseable = false;
 
@@ -54,7 +55,7 @@ public:
      *
      * @return std::string The string name of the Protocol
      */
-    std::string toString() const
+    std::string toString(DisplayMode mode) const
     {
         std::ostringstream description;
         for (unsigned int i = 0; i < guardCount; i++)
@@ -62,7 +63,7 @@ public:
             description << "*";
         }
 
-        description << as_str();
+        description << as_str(mode);
 
         return description.str();
     }
@@ -98,7 +99,7 @@ struct ProtocolCompare
 {
     bool operator()(const Protocol *a, const Protocol *b) const
     {
-        return a->toString() < b->toString();
+        return a->toString(DisplayMode::C_STYLE) < b->toString(DisplayMode::C_STYLE);
     }
 };
 struct RecvMetadata 
@@ -143,7 +144,7 @@ public:
     // FIXME: DO BETTER!
     const vector<const Protocol *> getSteps() const { return steps; }
 
-    std::string as_str() const override;
+    std::string as_str(DisplayMode mode) const override;
 
     bool isInCloseable() const override; 
 
@@ -218,7 +219,7 @@ public:
         : Protocol(inCloseable), recvType(v)
     {}
 
-    std::string as_str() const override;
+    std::string as_str(DisplayMode mode) const override;
 
     const Protocol *getInverse() const override;
     const Protocol *getCopy() const override;
@@ -241,7 +242,7 @@ public:
         : Protocol(inCloseable), sendType(v)
     {}
 
-    std::string as_str() const override;
+    std::string as_str(DisplayMode mode) const override;
 
     const Protocol *getInverse() const override;
     const Protocol *getCopy() const override;
@@ -264,7 +265,7 @@ public:
         : Protocol(inCloseable), proto(p)
     {}
 
-    std::string as_str() const override;
+    std::string as_str(DisplayMode mode) const override;
 
     const Protocol *getInverse() const override;
     const Protocol *getCopy() const override;
@@ -287,7 +288,7 @@ public:
         : Protocol(inCloseable), proto(p)
     {}
 
-    std::string as_str() const override;
+    std::string as_str(DisplayMode mode) const override;
 
     const Protocol *getInverse() const override;
     const Protocol *getCopy() const override;
@@ -310,7 +311,7 @@ public:
         : Protocol(inCloseable), opts(o)
     {}
 
-    std::string as_str() const override;
+    std::string as_str(DisplayMode mode) const override;
 
     const Protocol *getInverse() const override;
     const Protocol *getCopy() const override;
@@ -333,7 +334,7 @@ public:
         : Protocol(inCloseable), opts(o)
     {}
 
-    std::string as_str() const override;
+    std::string as_str(DisplayMode mode) const override;
 
     const ProtocolEChoice *getInverse() const override;
     const Protocol *getCopy() const override;
@@ -355,7 +356,7 @@ private:
 public:
     ProtocolClose(bool inCloseable, const ProtocolSequence *p, unsigned int num) : Protocol(inCloseable), proto(p), closeNumber(num) {}
 
-    std::string as_str() const override;
+    std::string as_str(DisplayMode mode) const override;
 
     const Protocol *getInverse() const override;
     const Protocol *getCopy() const override;

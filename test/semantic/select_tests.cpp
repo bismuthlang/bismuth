@@ -39,7 +39,7 @@ TEST_CASE("Basic select", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 
@@ -72,7 +72,7 @@ TEST_CASE("Select without any cases", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 
@@ -112,7 +112,7 @@ TEST_CASE("Basic select inf error 1", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
   CHECK(sv->hasErrors(ERROR));
@@ -149,7 +149,7 @@ TEST_CASE("Basic select inf 1", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 
@@ -187,7 +187,7 @@ TEST_CASE("Basic select inf 2", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 
@@ -226,7 +226,7 @@ TEST_CASE("Basic select inf 3", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 
@@ -263,7 +263,7 @@ TEST_CASE("Basic select - Dead Code - var", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 
@@ -298,7 +298,7 @@ TEST_CASE("Basic select - Dead Code - proc", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 
@@ -333,7 +333,7 @@ TEST_CASE("Basic select - Dead Code - func", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 
@@ -371,7 +371,7 @@ TEST_CASE("Wrong case Type in Select", "[semantic][conditional]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 

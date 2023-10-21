@@ -5,7 +5,7 @@ std::string Symbol::getIdentifier() const { return identifier; }
 std::string Symbol::toString() const
 {
     std::ostringstream description;
-    std::string typeName = type->toString();
+    std::string typeName = type->toString(DisplayMode::C_STYLE);
     description << '[' << identifier << ", " << typeName << ']';
     return description.str();
 }

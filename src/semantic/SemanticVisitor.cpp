@@ -206,7 +206,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 // FIXME: DO SUBTYPING BETTER!
                 if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
                 {
-                    errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString());
+                    errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
                 }
             }
             else
@@ -309,7 +309,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
                 {
                     if (type_cast<TypeBottom>(providedType) || type_cast<TypeAbsurd>(providedType) || type_cast<TypeUnit>(providedType))
                     {
-                        errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType->toString() + " to a function");
+                        errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType->toString(toStringMode) + " to a function");
                     }
                     continue;
                 }
@@ -327,7 +327,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
                 if (providedType->isNotSubtype(expectedType))
                 {
                     std::ostringstream errorMsg;
-                    errorMsg << "Argument " << i << " provided to " << name << " expected " << expectedType->toString() << " but got " << providedType->toString();
+                    errorMsg << "Argument " << i << " provided to " << name << " expected " << expectedType->toString(toStringMode) << " but got " << providedType->toString(toStringMode);
 
                     errorHandler.addError(ctx->getStart(), errorMsg.str());
                 }
@@ -339,7 +339,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         else
         {
             // Symbol was not an function type, so report an error & return UNDEFINED.
-            return errorHandler.addError(ctx->getStart(), "Can only invoke functions, not " + name + " : " + tn->getType()->toString());
+            return errorHandler.addError(ctx->getStart(), "Can only invoke functions, not " + name + " : " + tn->getType()->toString(toStringMode));
         }
     }
     // return new TInvocationNode(tn, args, actualTypes, ctx->getStart());
@@ -424,7 +424,7 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
                 if (providedType->isNotSubtype(eleItr.second))
                 {
                     std::ostringstream errorMsg;
-                    errorMsg << "Product init. argument " << i << " provided to " << name << " expected " << eleItr.second->toString() << " but got " << providedType->toString();
+                    errorMsg << "Product init. argument " << i << " provided to " << name << " expected " << eleItr.second->toString(toStringMode) << " but got " << providedType->toString(toStringMode);
 
                     errorHandler.addError(ctx->getStart(), errorMsg.str());
                     isValid = false;
@@ -442,7 +442,7 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         return new TInitProductNode(product, n, ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString());
+    return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString(toStringMode));
 }
 
 std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitBoxContext *ctx)
@@ -483,7 +483,7 @@ std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     if (providedType->isNotSubtype(storeType))
     {
         std::ostringstream errorMsg;
-        errorMsg << "Initialize box expected " << storeType->toString() << ", but got " << providedType->toString() << "";
+        errorMsg << "Initialize box expected " << storeType->toString(toStringMode) << ", but got " << providedType->toString(toStringMode) << "";
 
         return errorHandler.addError(ctx->getStart(), errorMsg.str());
     }
@@ -509,7 +509,7 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     const Type *exprType = expr->getType();
     if (exprType->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "Array access index expected type INT but got " + exprType->toString());
+        return errorHandler.addError(ctx->getStart(), "Array access index expected type INT but got " + exprType->toString(toStringMode));
     }
 
     /*
@@ -534,7 +534,7 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     }
 
     // Report error
-    return errorHandler.addError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->field->getText() + " : " + field->getType()->toString());
+    return errorHandler.addError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->field->getText() + " : " + field->getType()->toString(toStringMode));
 }
 
 std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LValueContext *ctx)
@@ -630,13 +630,13 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     case BismuthParser::MINUS:
         if (innerType->isNotSubtype(Types::DYN_INT))
         {
-            return errorHandler.addError(ctx->getStart(), "INT expected in unary minus, but got " + innerType->toString());
+            return errorHandler.addError(ctx->getStart(), "INT expected in unary minus, but got " + innerType->toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
     case BismuthParser::NOT:
         if (innerType->isNotSubtype(Types::DYN_BOOL))
         {
-            return errorHandler.addError(ctx->getStart(), "BOOL expected in unary not, but got " + innerType->toString());
+            return errorHandler.addError(ctx->getStart(), "BOOL expected in unary not, but got " + innerType->toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_NOT, innerNode, ctx->getStart());
     }
@@ -663,7 +663,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     if (left->getType()->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString());
+        return errorHandler.addError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString(toStringMode));
     }
 
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
@@ -677,7 +677,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     if (right->getType()->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
+        return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString(toStringMode));
     }
 
     return new TBinaryArithNode(
@@ -771,7 +771,7 @@ std::variant<TLogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
         if (type->isNotSubtype(Types::DYN_BOOL))
         {
-            errorHandler.addError(e->getStart(), "BOOL expression expected, but was " + type->toString());
+            errorHandler.addError(e->getStart(), "BOOL expression expected, but was " + type->toString(toStringMode));
         }
         else
         {
@@ -824,7 +824,7 @@ std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
         if (type->isNotSubtype(Types::DYN_BOOL))
         {
-            errorHandler.addError(e->getStart(), "BOOL expression expected, but was " + type->toString());
+            errorHandler.addError(e->getStart(), "Expected boolean but got " + type->toString(toStringMode));
         }
         else
         {
@@ -884,7 +884,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
             }
             else
             {
-                return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
+                return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString(toStringMode));
             }
         }
         else if (i + 1 == ctx->fields.size() && type_cast<TypeArray>(ty) && ctx->fields.at(i)->getText() == "length")
@@ -911,7 +911,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         // }
         else
         {
-            return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
+            return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString(toStringMode));
         }
     }
     return new TFieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
@@ -937,7 +937,7 @@ std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
         return new TDerefBoxNode(boxOpt.value(), expr, is_rvalue, ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Dereference expected Box<T> but got " + exprType->toString());
+    return errorHandler.addError(ctx->getStart(), "Dereference expected Box<T> but got " + exprType->toString(toStringMode));
 }
 
 // Passthrough to expression
@@ -973,7 +973,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     if (left->getType()->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString());
+        return errorHandler.addError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString(toStringMode));
     }
 
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
@@ -987,7 +987,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     if (right->getType()->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString());
+        return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString(toStringMode));
     }
 
     return new TBinaryRelNode(
@@ -1145,7 +1145,7 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     // Make sure that the types are compatible. Inference automatically managed here.
     if (exprType->isNotSubtype(type))
     {
-        return errorHandler.addError(ctx->getStart(), "Assignment statement expected " + type->toString() + " but got " + exprType->toString());
+        return errorHandler.addError(ctx->getStart(), "Assignment statement expected " + type->toString(toStringMode) + " but got " + exprType->toString(toStringMode));
     }
 
     return new TAssignNode(var, expr, ctx->getStart());
@@ -1228,7 +1228,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 // Note: This automatically performs checks to prevent issues with setting VAR = VAR
                 if (e->a && exprType->isNotSubtype(newAssignType))
                 {
-                    return errorHandler.addError(e->getStart(), "Expression of type " + exprType->toString() + " cannot be assigned to " + newAssignType->toString());
+                    return errorHandler.addError(e->getStart(), "Expression of type " + exprType->toString(toStringMode) + " cannot be assigned to " + newAssignType->toString(toStringMode));
                 }
 
                 const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType;
@@ -1290,7 +1290,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
                 if (!sumType->contains(caseType))
                 {
-                    errorHandler.addError(altCtx->type()->getStart(), "Impossible case for " + sumType->toString() + " to act as " + caseType->toString());
+                    errorHandler.addError(altCtx->type()->getStart(), "Impossible case for " + sumType->toString(toStringMode) + " to act as " + caseType->toString(toStringMode));
                 }
 
                 if (foundCaseTypes.count(caseType))
@@ -1331,7 +1331,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
         if (foundCaseTypes.size() != sumType->getCases().size())
         {
-            return errorHandler.addError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
+            return errorHandler.addError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString(toStringMode));
         }
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
@@ -1345,7 +1345,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
         return new TMatchStatementNode(sumType, cond, cases, dat.post, ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString());
+    return errorHandler.addError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString(toStringMode));
 }
 
 /**
@@ -1487,7 +1487,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             if (checkType->isNotSubtype(Types::DYN_BOOL))
             {
-                return errorHandler.addError(ctx->getStart(), "Select alternative expected BOOL but got " + checkType->toString());
+                return errorHandler.addError(ctx->getStart(), "Select alternative expected boolean but got " + checkType->toString(toStringMode));
             }
 
             stmgr->enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
@@ -1549,14 +1549,14 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         // If the type of the return symbol is a BOT, then we must be in a PROC and, thus, we cannot return anything
         if (sym->type->isSubtype(Types::UNIT))
         {
-            return errorHandler.addError(ctx->getStart(), "PROC cannot return value, yet it was given a " + valType->toString() + " to return!");
+            return errorHandler.addError(ctx->getStart(), "PROC cannot return value, yet it was given a " + valType->toString(toStringMode) + " to return!");
         }
 
         // As the return type is not a BOT, we have to make sure that it is the correct type to return
 
         if (valType->isNotSubtype(sym->type))
         {
-            return errorHandler.addError(ctx->getStart(), "Expected return type of " + sym->type->toString() + " but got " + valType->toString());
+            return errorHandler.addError(ctx->getStart(), "Expected return type of " + sym->type->toString(toStringMode) + " but got " + valType->toString(toStringMode));
         }
 
         std::pair<const Type *, TypedNode *> ans = {sym->type, val};
@@ -1570,7 +1570,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         return new TReturnNode(ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym->type->toString() + " but received nothing");
+    return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym->type->toString(toStringMode) + " but received nothing");
 }
 
 std::variant<TExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExitStatementContext *ctx)
@@ -1704,7 +1704,7 @@ SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
 
         if (caseType->isLinear())
         {
-            return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container");
+            return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString(toStringMode) + ", in non-linear container");
         }
 
         cases.insert(caseType);
@@ -1753,7 +1753,7 @@ std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
                 if (caseType->isLinear())
                 {
-                    return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString() + ", in non-linear container");
+                    return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString(toStringMode) + ", in non-linear container");
                 }
 
                 cases.insert(caseType);
@@ -1771,7 +1771,7 @@ std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         return new TDefineEnumNode(id, sumTy, ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Expected enum/sum, but got: " + sym->type->toString());
+    return errorHandler.addError(ctx->getStart(), "Expected enum/sum, but got: " + sym->type->toString(toStringMode));
 }
 
 std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
@@ -1815,7 +1815,7 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
 
                 if (caseTy->isLinear())
                 {
-                    return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString() + ", in non-linear container");
+                    return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString(toStringMode) + ", in non-linear container");
                 }
 
                 el.insert({caseName, caseTy});
@@ -1826,7 +1826,7 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
         return new TDefineStructNode(id, structType, ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Expected struct/product, but got: " + sym->type->toString());
+    return errorHandler.addError(ctx->getStart(), "Expected struct/product, but got: " + sym->type->toString(toStringMode));
 }
 
 std::variant<const Type *, ErrorChain *>
@@ -1992,7 +1992,7 @@ std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSen
 
         if (!canSend)
         {
-            return errorHandler.addError(ctx->getStart(), "Failed to send " + ty->toString() + " over channel " + sym->toString());
+            return errorHandler.addError(ctx->getStart(), "Failed to send " + ty->toString(toStringMode) + " over channel " + sym->toString());
         }
         return new TProgramSendNode(sym, inCloseable, tn, canSend.value(), ctx->getStart());
     }
@@ -2218,7 +2218,7 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
         if (!projectIndex)
         {
-            return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString());
+            return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString(toStringMode));
         }
 
         return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
@@ -2286,7 +2286,7 @@ std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramW
         const TypeChannel *channel = channelOpt.value();
         if (!channel->getProtocol()->weaken())
         {
-            return errorHandler.addError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString());
+            return errorHandler.addError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString(toStringMode));
         }
         return new TProgramWeakenNode(sym, ctx->getStart());
     }
@@ -2314,10 +2314,10 @@ std::cout << "2308" << std::endl;
 std::cout << "2314" << std::endl;
         if (!closeOpt)
         {
-            return errorHandler.addError(ctx->getStart(), "Failed to cancel: " + id + " : "  + channel->toString());
+            return errorHandler.addError(ctx->getStart(), "Failed to cancel: " + id + " : "  + channel->toString(toStringMode));
         }
         std::cout << "2319" << std::endl;
-        std::cout << "2319a " << closeOpt.value()->toString() << std::endl;
+        std::cout << "2319a " << closeOpt.value()->toString(toStringMode) << std::endl;
         return new TProgramCancelNode(sym, closeOpt.value()->getCloseNumber(), ctx->getStart());
     }
 std::cout << "2322" << std::endl;
@@ -2343,7 +2343,7 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
         std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptLoop();
         if (!acceptOpt)
         {
-            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
+            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString(toStringMode));
         }
         const ProtocolSequence *postC = channel->getProtocolCopy();
         postC->guard();
@@ -2416,7 +2416,7 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
         std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptWhileLoop();
         if (!acceptOpt)
         {
-            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
+            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString(toStringMode));
         }
         const ProtocolSequence *postC = channel->getProtocolCopy();
         postC->guard();
@@ -2486,7 +2486,7 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptIf();
         if (!acceptOpt)
         {
-            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString());
+            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString(toStringMode));
         }
 
         std::vector<BismuthParser::BlockContext *> blksCtx = {ctx->trueBlk};
@@ -2571,7 +2571,7 @@ std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
             ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Cannot exec: " + prog->getType()->toString());
+    return errorHandler.addError(ctx->getStart(), "Cannot exec: " + prog->getType()->toString(toStringMode));
 }
 
 std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(BismuthParser::CopyExprContext *ctx)
@@ -2588,7 +2588,7 @@ std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(Bism
 
     if (ty->isLinear())
     {
-        return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty->toString());
+        return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty->toString(toStringMode));
     }
 
     return new TExprCopyNode(tn, ctx->getStart());

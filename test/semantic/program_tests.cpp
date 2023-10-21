@@ -22,7 +22,7 @@ void EnsureErrorsWithMessage(antlr4::ANTLRInputStream *input, std::string messag
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, 0);
+  SemanticVisitor *sv = new SemanticVisitor(stm, DisplayMode::C_STYLE, 0);
   auto cuOpt = sv->visitCtx(tree);
 
   REQUIRE(sv->hasErrors(0));
@@ -91,7 +91,7 @@ TEST_CASE("Comment EOF", "[semantic]")
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
 
@@ -154,7 +154,7 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
   REQUIRE(tree != NULL);
   STManager *stm = new STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stm);
+  SemanticVisitor *sv = new SemanticVisitor(stm, DisplayMode::C_STYLE);
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(0));
 }
@@ -306,7 +306,7 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -1056,7 +1056,7 @@ define program :: c : Channel<-int> = {
 
   STManager *stmgr = new STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -1095,7 +1095,7 @@ define program :: c : Channel<-int> = {
 
   STManager *stmgr = new STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -1135,7 +1135,7 @@ define program :: c : Channel<-int> = {
 
   STManager *stmgr = new STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   // sv->visitCompilationUnit(tree);
   // REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -1178,7 +1178,7 @@ define program :: c : Channel<-int> = {
 
   STManager *stmgr = new STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   auto TypedOpt = sv->visitCtx(tree);
   // sv->visitCompilationUnit(tree);
@@ -1678,7 +1678,7 @@ define foo :: c : Channel<+int> = {
 
   STManager *stmgr = new STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));
@@ -1750,7 +1750,7 @@ define program :: c : Channel<-int> = {
 
   STManager *stmgr = new STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv->visitCompilationUnit(tree);
   REQUIRE_FALSE(sv->hasErrors(ERROR));

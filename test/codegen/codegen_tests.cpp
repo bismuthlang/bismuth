@@ -28,12 +28,12 @@ void EnsureCompilesTo(antlr4::ANTLRInputStream *input, string hash)
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, 0);
+    SemanticVisitor *sv = new SemanticVisitor(stm, DisplayMode::C_STYLE, 0);
     auto cuOpt = sv->visitCtx(tree);
     REQUIRE_FALSE(sv->hasErrors(0));
     REQUIRE(std::holds_alternative<TCompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
 
-    CodegenVisitor *cv = new CodegenVisitor("BismuthProgram", 0);
+    CodegenVisitor *cv = new CodegenVisitor("BismuthProgram", DisplayMode::C_STYLE, 0);
     cv->visitCompilationUnit(std::get<TCompilationUnitNode*>(cuOpt));//cuOpt.value());
     REQUIRE_FALSE(cv->hasErrors(0));
 
@@ -50,7 +50,7 @@ void EnsureErrors(antlr4::ANTLRInputStream *input)
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager *stm = new STManager();
-    SemanticVisitor *sv = new SemanticVisitor(stm, 0);
+    SemanticVisitor *sv = new SemanticVisitor(stm, DisplayMode::C_STYLE, 0);
     auto cuOpt = sv->visitCtx(tree);
 
     REQUIRE(sv->hasErrors(0));
