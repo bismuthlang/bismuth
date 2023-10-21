@@ -19,7 +19,6 @@
 std::mutex running_mutex; // NOTE: A PATTERN LIKE THIS MIGHT BE CHALLENGING IN MY LANG! (SEE THIS AND WAITFORALLTOFINISH)
 std::condition_variable running_cond;
 std::atomic<int> running;
-std::atomic<unsigned int> num_exec; // Temporary debugging var used to give each channel a unique id
 
 bool DEBUG = false;
 
@@ -45,11 +44,10 @@ Message ReadLossyMessageFrom(unsigned int aId);
 
 // TODO: move definition to separate file!
 extern "C" struct _Channel {
-    const unsigned int id; 
     IPCBuffer<Message> read; 
     IPCBuffer<Message> write; 
 
-    _Channel(unsigned int i) : id(i) {}
+    _Channel(){}
 };
 
 extern "C" void WriteChannel(unsigned int aId, uint8_t *value);
