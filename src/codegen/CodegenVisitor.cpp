@@ -189,7 +189,7 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
         n->isInCloseable() ? 
             getReadLossyProjection() :  // Should be fine as will handle exact logic later
             getReadLinearProjection(),
-        {builder->CreateLoad(Int32Ty, chanVal)});
+        {builder->CreateLoad(channelRtPtrTy(), chanVal)});
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n->cases.size());
 
@@ -258,7 +258,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramProjectNode *n)
 
     Value *chanVal = optVal.value();
 
-    builder->CreateCall(getWriteProjection(), {builder->CreateLoad(Int32Ty, chanVal),
+    builder->CreateCall(getWriteProjection(), {builder->CreateLoad(channelRtPtrTy(), chanVal),
                                                ConstantInt::get(Int32Ty, n->projectIndex, false)});
     return std::nullopt;
 }
@@ -340,7 +340,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode *n)
         n->isInCloseable() ? 
             getReadLossyChannel() : // Should be fine as logic ab diff return types handled later 
             getReadLinearChannel(), 
-        {builder->CreateLoad(Int32Ty, chanVal)}); // Will be a void*
+        {builder->CreateLoad(channelRtPtrTy(), chanVal)}); // Will be a void*
     Value *casted = builder->CreateBitCast(valPtr, recvType->getPointerTo());                       // Cast the void* to the correct type ptr
 
     if (n->isInCloseable())
@@ -379,7 +379,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramIsPresetNode *n)
         n->isInCloseable() ? 
             get_OC_isPresentLossy() :  // Should be fine as just booleans
             get_OC_isPresentLinear(), 
-        {builder->CreateLoad(Int32Ty, chanVal)});
+        {builder->CreateLoad(channelRtPtrTy(), chanVal)});
 }
 
 std::optional<Value *> CodegenVisitor::visit(TProgramExecNode *n)
@@ -439,7 +439,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
     }
 
     Value *chanVal = optVal.value();
-    builder->CreateCall(getWriteChannel(), {builder->CreateLoad(Int32Ty, chanVal), corrected}); // Will be a void*
+    builder->CreateCall(getWriteChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal), corrected}); // Will be a void*
     return std::nullopt;
 }
 
@@ -456,7 +456,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramContractNode *n)
 
     Value *chanVal = optVal.value();
 
-    builder->CreateCall(getContractChannel(), {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(getContractChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal)});
 
     return std::nullopt;
 }
@@ -474,7 +474,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramWeakenNode *n)
 
     Value *chanVal = optVal.value();
 
-    builder->CreateCall(getWeakenChannel(), {builder->CreateLoad(Int32Ty, chanVal)});
+    builder->CreateCall(getWeakenChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal)});
 
     return std::nullopt;
 }
@@ -492,7 +492,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramCancelNode *n)
 
     Value *chanVal = optVal.value();
 
-    builder->CreateCall(getCancelChannel(), {builder->CreateLoad(Int32Ty, chanVal), ConstantInt::get(Int32Ty, n->closeNumber, true)});
+    builder->CreateCall(getCancelChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal), ConstantInt::get(Int32Ty, n->closeNumber, true)});
     return std::nullopt;
 }
 
@@ -512,7 +512,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode *n)
     Value *chanVal = optVal.value();
 
     auto checkFn = n->isInCloseable() ? getShouldLossyLoop() : getShouldLinearLoop();  // Should be fine as just booleans 
-    Value *check = builder->CreateCall(checkFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    Value *check = builder->CreateCall(checkFn, {builder->CreateLoad(channelRtPtrTy(), chanVal)});
 
     auto parent = builder->GetInsertBlock()->getParent();
 
@@ -531,7 +531,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode *n)
     }
 
     // Re-calculate the loop condition
-    check = builder->CreateCall(checkFn, {builder->CreateLoad(Int32Ty, chanVal)});
+    check = builder->CreateCall(checkFn, {builder->CreateLoad(channelRtPtrTy(), chanVal)});
 
     // Check if we need to loop back again...
     builder->CreateCondBr(check, loopBlk, restBlk);
@@ -588,7 +588,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
         n->isInCloseable() ? 
             getShouldLossyAcceptWhileLoop() :  // Here this is fine as its just a boolean either way
             getShouldLinearAcceptWhileLoop(), 
-        {builder->CreateLoad(Int32Ty, chanVal)});
+        {builder->CreateLoad(channelRtPtrTy(), chanVal)});
 
     builder->CreateCondBr(check, loopBlk, restBlk);
 
@@ -655,7 +655,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode *n)
             n->isInCloseable() ? 
                 getShouldLossyAcceptWhileLoop() :  // Fine here as just booleans either way 
                 getShouldLinearAcceptWhileLoop(), 
-            {builder->CreateLoad(Int32Ty, chanVal)}),
+            {builder->CreateLoad(channelRtPtrTy(), chanVal)}),
         thenBlk,
         elseBlk);
     condBlk = builder->GetInsertBlock();
