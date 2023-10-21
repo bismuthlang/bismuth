@@ -116,19 +116,19 @@ public:
     // These should automatically have GlobalValue::ExternalLinkage per inspecting source code...
     llvm::FunctionCallee getWriteProjection()
     {
-        return module->getOrInsertFunction("WriteProjection",
+        return module->getOrInsertFunction("_WriteProjection",
                                            llvm::FunctionType::get(
                                                UnitTy,
-                                               {Int32Ty,
+                                               {channelRtPtrTy,
                                                 Int32Ty},
                                                false));
     }
 
     llvm::FunctionCallee getReadLinearProjection()
     {
-        return module->getOrInsertFunction("ReadProjection",
+        return module->getOrInsertFunction("_ReadLinearProjection",
                                            llvm::FunctionType::get(
-                                               Int32Ty,
+                                               channelRtPtrTy,
                                                {Int32Ty},
                                                false));
     }
@@ -137,7 +137,7 @@ public:
     {
         return module->getOrInsertFunction("_ReadLossyProjection",
                                            llvm::FunctionType::get(
-                                               Int32Ty,
+                                               channelRtPtrTy,
                                                {Int32Ty},
                                                false));
     }
@@ -175,20 +175,20 @@ public:
     llvm::FunctionCallee getWeakenChannel()
     {
         return module->getOrInsertFunction(
-            "WeakenChannel",
+            "_WeakenChannel",
             llvm::FunctionType::get(
                 UnitTy,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
     llvm::FunctionCallee getWriteChannel()
     {
         return module->getOrInsertFunction(
-            "WriteChannel",
+            "_WriteChannel",
             llvm::FunctionType::get(
                 UnitTy,
-                {Int32Ty,
+                {channelRtPtrTy,
                  i8p},
                 false));
     }
@@ -196,10 +196,10 @@ public:
     llvm::FunctionCallee getReadLinearChannel()
     {
         return module->getOrInsertFunction(
-            "ReadChannel",
+            "_ReadLinearChannel",
             llvm::FunctionType::get(
                 i8p,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
@@ -209,7 +209,7 @@ public:
             "_ReadLossyChannel",
             llvm::FunctionType::get(
                 i8p,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
@@ -218,10 +218,10 @@ public:
         return module->getOrInsertFunction(
             "Execute",
             llvm::FunctionType::get(
-                Int32Ty,
+                channelRtPtrTy,
                 {llvm::FunctionType::get(
                      UnitTy,
-                     {Int32Ty},
+                     {channelRtPtrTy},
                      false)
                      ->getPointerTo()},
                 false));
@@ -230,10 +230,10 @@ public:
     llvm::FunctionCallee getShouldLinearLoop()
     {
         return module->getOrInsertFunction(
-            "ShouldLoop",
+            "_ShouldLinearLoop",
             llvm::FunctionType::get(
                 Int1Ty,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
@@ -243,27 +243,27 @@ public:
             "_ShouldLossyLoop",
             llvm::FunctionType::get(
                 Int1Ty,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
     llvm::FunctionCallee getShouldLinearAcceptWhileLoop()
     {
         return module->getOrInsertFunction(
-            "ShouldAcceptWhileLoop",
+            "_ShouldLinearAcceptWhileLoop",
             llvm::FunctionType::get(
                 Int1Ty,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
     llvm::FunctionCallee getShouldLossyAcceptWhileLoop()
     {
         return module->getOrInsertFunction(
-            "ShouldLossyAcceptWhileLoop",
+            "_ShouldLossyAcceptWhileLoop",
             llvm::FunctionType::get(
                 Int1Ty,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
@@ -273,7 +273,7 @@ public:
             "_OC_isPresent",
             llvm::FunctionType::get(
                 Int1Ty,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
@@ -283,17 +283,17 @@ public:
             "_OC_isPresentLossy",
             llvm::FunctionType::get(
                 Int1Ty,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
     llvm::FunctionCallee getContractChannel()
     {
         return module->getOrInsertFunction(
-            "ContractChannel",
+            "_ContractChannel",
             llvm::FunctionType::get(
                 UnitTy,
-                {Int32Ty},
+                {channelRtPtrTy},
                 false));
     }
 
@@ -312,7 +312,7 @@ public:
         return module->getOrInsertFunction(
             "_ArrayToChannel",
             llvm::FunctionType::get(
-                Int32Ty,
+                channelRtPtrTy,
                 {Int8PtrPtrTy, Int32Ty},
                 false));
     }
@@ -366,7 +366,7 @@ public:
             "_PreemptChannel",
             llvm::FunctionType::get(
                 UnitTy,
-                {Int32Ty, Int32Ty},
+                {channelRtPtrTy, Int32Ty},
                 false));
     }
 

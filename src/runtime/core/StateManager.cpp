@@ -9,7 +9,7 @@ extern "C" void waitForAllToFinish()
                       { return running == 0; });
 }
 
-extern "C" _Channel * Execute(void (*func)(_Channel *))
+extern "C" _Channel * _Execute(void (*func)(_Channel *))
 {
     exec_mutex.lock();
 
@@ -139,13 +139,13 @@ void WriteMessageTo(_Channel * c, Message m)
 
 
 
-extern "C" void WriteChannel(_Channel * c, uint8_t *value)
+extern "C" void _WriteChannel(_Channel * c, uint8_t *value)
 {
     Value v(value);
     WriteMessageTo(c, v);
 }
 
-extern "C" uint8_t *ReadChannel(_Channel * c)
+extern "C" uint8_t *_ReadLinearChannel(_Channel * c)
 {
     Message m = ReadLinearMessageFrom(c);
 
@@ -181,13 +181,13 @@ extern "C" uint8_t *_ReadLossyChannel(_Channel * c)
 
 
 
-extern "C" void WriteProjection(_Channel * c, unsigned int selVal)
+extern "C" void _WriteProjection(_Channel * c, unsigned int selVal)
 {
     SEL s(selVal);
     WriteMessageTo(c, s);
 }
 
-extern "C" unsigned int ReadProjection(_Channel * c)
+extern "C" unsigned int _ReadLinearProjection(_Channel * c)
 {
     Message m = ReadLinearMessageFrom(c);
 
@@ -289,7 +289,7 @@ extern "C" bool _OC_isPresentLossy(_Channel * c)
 
 
 
-extern "C" bool ShouldAcceptWhileLoop(_Channel * c)
+extern "C" bool _ShouldLinearAcceptWhileLoop(_Channel * c)
 {
     IPCBuffer<Message> *readQueue = c->read;
     Message m = readQueue->peak();
@@ -308,7 +308,7 @@ extern "C" bool ShouldAcceptWhileLoop(_Channel * c)
     throw std::runtime_error("Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!");
 }
 
-extern "C" bool ShouldLossyAcceptWhileLoop(_Channel * c)
+extern "C" bool _ShouldLossyAcceptWhileLoop(_Channel * c)
 {
     IPCBuffer<Message> *readQueue = c->read;
     Message m = readQueue->peak();
@@ -337,7 +337,7 @@ extern "C" bool ShouldLossyAcceptWhileLoop(_Channel * c)
 
 
 
-extern "C" void ContractChannel(_Channel * c)
+extern "C" void _ContractChannel(_Channel * c)
 {
     START_LOOP v;
     WriteMessageTo(c, v);

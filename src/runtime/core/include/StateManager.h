@@ -44,7 +44,7 @@ extern "C" struct _Channel {
     _Channel(IPCBuffer<Message> * r, IPCBuffer<Message> * w) : read(r), write(w) {}
 };
 
-extern "C" _Channel * Execute(void (*func)(_Channel *));
+extern "C" _Channel * _Execute(void (*func)(_Channel *));
 
 // TODO: do better error handling for WriteMessageTo instead of just logging and returns!
 void WriteMessageTo(_Channel * c, Message m);
@@ -52,29 +52,29 @@ void WriteMessageTo(_Channel * c, Message m);
 Message ReadLinearMessageFrom(_Channel * c);
 Message ReadLossyMessageFrom(_Channel * c);
 
-extern "C" void WriteChannel(_Channel * c, uint8_t *value);
-extern "C" uint8_t *ReadChannel(_Channel * c);
+extern "C" void _WriteChannel(_Channel * c, uint8_t *value);
+extern "C" uint8_t *_ReadLinearChannel(_Channel * c);
 extern "C" uint8_t * _ReadLossyChannel(_Channel * c); // FIXME: START USING
 
 
-extern "C" void WriteProjection(_Channel * c, unsigned int selVal);
-extern "C" unsigned int ReadProjection(_Channel * c);
+extern "C" void _WriteProjection(_Channel * c, unsigned int selVal);
+extern "C" unsigned int _ReadLinearProjection(_Channel * c);
 extern "C" unsigned int _ReadLossyProjection(_Channel * c); // FIXME: START USING
 
 
 
-extern "C" bool ShouldLoop(_Channel * c);
+extern "C" bool _ShouldLinearLoop(_Channel * c);
 extern "C" bool _ShouldLossyLoop(_Channel * c); // FIXME: START USING!
 
 extern "C" bool _OC_isPresent(_Channel * c);
 extern "C" bool _OC_isPresentLossy(_Channel * c); // FIXME: START USING!
 
-extern "C" bool ShouldAcceptWhileLoop(_Channel * c);
-extern "C" bool ShouldLossyAcceptWhileLoop(_Channel * c); // FIXME: START USING!
+extern "C" bool _ShouldLinearAcceptWhileLoop(_Channel * c);
+extern "C" bool _ShouldLossyAcceptWhileLoop(_Channel * c); // FIXME: START USING!
 
-extern "C" void ContractChannel(_Channel * c);
+extern "C" void _ContractChannel(_Channel * c);
 
-extern "C" void WeakenChannel(_Channel * c);
+extern "C" void _WeakenChannel(_Channel * c);
 
 extern "C" _Channel * _ArrayToChannel(uint8_t * array[], unsigned int len);
 
