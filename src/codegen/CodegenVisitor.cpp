@@ -19,6 +19,8 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
      ***********************************/
     for (auto e : n->defs)
     {
+        std::cout << "HELLO" << std::endl; 
+        module->dump(); 
         if (std::holds_alternative<TProgramDefNode *>(e))
         {
             TProgramDefNode *octx = std::get<TProgramDefNode *>(e);
@@ -37,6 +39,8 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
             Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->name, module);
             type->setName(fn->getName().str());
         }
+
+        module->dump(); 
     }
 
     for (auto e : n->externs)
@@ -1837,7 +1841,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
     builder->SetInsertPoint(bBlk);
 
     // Bind all of the arguments
-    std::optional<llvm::AllocaInst *> vOpt = CreateEntryBlockAlloc(Int32Ty, n->channelSymbol->getIdentifier());
+    std::optional<llvm::AllocaInst *> vOpt = CreateEntryBlockAlloc(channelRtPtrTy(), n->channelSymbol->getIdentifier());
     if (!vOpt)
     {
         errorHandler.addError(nullptr, "Failed to generate alloc for channel value, is it somehow void?"); // Should never occur bc int32Ty

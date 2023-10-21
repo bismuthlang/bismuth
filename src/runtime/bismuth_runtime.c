@@ -14,8 +14,10 @@
 // The program entry function
 void program(unsigned int i);
 
-unsigned int Execute(void (*func)(unsigned int));
-void *ReadChannel(unsigned int aId);
+extern struct _Channel; 
+
+struct _Channel * _Execute(void (*func)(struct _Channel *));
+void *_ReadLinearChannel(struct _Channel *);
 
 void waitForAllToFinish();
 
@@ -34,9 +36,9 @@ int main(int argc, char *argv[])
   argCount = argc;
   args = argv;
 
-  unsigned int idOut = Execute(&program);
+  struct _Channel * idOut = _Execute(&program);
 
-  void *ptr = ReadChannel(idOut);
+  void *ptr = _ReadLinearChannel(idOut);
 
   waitForAllToFinish();
   return 0;

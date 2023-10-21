@@ -339,9 +339,15 @@ llvm::FunctionType *TypeProgram::getLLVMFunctionType(llvm::Module *M) const
 {
     llvm::Type *ret = Types::UNIT->getLLVMType(M);
 
+     // TODO: bring in line w/ definition in codegenutils! (if a chane was made in either, itd break the other)
+    llvm::StructType *argTy = llvm::StructType::getTypeByName(M->getContext(), "_Channel");
+    if (!argTy)
+        argTy = llvm::StructType::create(M->getContext(), "_Channel");
+
+
     return llvm::FunctionType::get(
         ret,
-        {llvm::Type::getInt32Ty(M->getContext())},
+        {argTy->getPointerTo()},
         false);
 }
 

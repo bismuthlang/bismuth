@@ -79,9 +79,6 @@ public:
         Int32One = ConstantInt::get(Int32Ty, 1, true);
         i8p = llvm::Type::getInt8PtrTy(module->getContext());
         Int8PtrPtrTy = i8p->getPointerTo();
-
-        channelRtTy = llvm::StructType::create(module->getContext(), "_Channel");
-        channelRtPtrTy = channelRtPtrTy->getPointerTo(); 
     }
 
     CodegenModule(Module *m, int f, BismuthErrorHandler e) : errorHandler(e)
@@ -105,13 +102,24 @@ public:
         Int32One = ConstantInt::get(Int32Ty, 1, true);
         i8p = llvm::Type::getInt8PtrTy(module->getContext());
         Int8PtrPtrTy = i8p->getPointerTo();
-
-        channelRtTy = llvm::StructType::create(module->getContext(), "_Channel");
-        channelRtPtrTy = channelRtPtrTy->getPointerTo(); 
     }
 
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
     std::string getErrors() { return errorHandler.errorList(); }
+
+    llvm::StructType * channelRtTy() {
+        llvm::StructType *ty = llvm::StructType::getTypeByName(module->getContext(), "_Channel");
+        if (ty)
+            return ty;
+
+        return llvm::StructType::create(module->getContext(), "_Channel");
+    }
+
+    llvm::PointerType * channelRtPtrTy() 
+    {
+        return channelRtTy()->getPointerTo(); 
+    }
+
 
     // These should automatically have GlobalValue::ExternalLinkage per inspecting source code...
     llvm::FunctionCallee getWriteProjection()
@@ -119,7 +127,7 @@ public:
         return module->getOrInsertFunction("_WriteProjection",
                                            llvm::FunctionType::get(
                                                UnitTy,
-                                               {channelRtPtrTy,
+                                               {channelRtPtrTy(),
                                                 Int32Ty},
                                                false));
     }
@@ -128,7 +136,7 @@ public:
     {
         return module->getOrInsertFunction("_ReadLinearProjection",
                                            llvm::FunctionType::get(
-                                               channelRtPtrTy,
+                                               channelRtPtrTy(),
                                                {Int32Ty},
                                                false));
     }
@@ -137,7 +145,7 @@ public:
     {
         return module->getOrInsertFunction("_ReadLossyProjection",
                                            llvm::FunctionType::get(
-                                               channelRtPtrTy,
+                                               channelRtPtrTy(),
                                                {Int32Ty},
                                                false));
     }
@@ -178,7 +186,7 @@ public:
             "_WeakenChannel",
             llvm::FunctionType::get(
                 UnitTy,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
@@ -188,7 +196,7 @@ public:
             "_WriteChannel",
             llvm::FunctionType::get(
                 UnitTy,
-                {channelRtPtrTy,
+                {channelRtPtrTy(),
                  i8p},
                 false));
     }
@@ -199,7 +207,7 @@ public:
             "_ReadLinearChannel",
             llvm::FunctionType::get(
                 i8p,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
@@ -209,19 +217,19 @@ public:
             "_ReadLossyChannel",
             llvm::FunctionType::get(
                 i8p,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
     llvm::FunctionCallee getExecute()
     {
         return module->getOrInsertFunction(
-            "Execute",
+            "_Execute",
             llvm::FunctionType::get(
-                channelRtPtrTy,
+                channelRtPtrTy(),
                 {llvm::FunctionType::get(
                      UnitTy,
-                     {channelRtPtrTy},
+                     {channelRtPtrTy()},
                      false)
                      ->getPointerTo()},
                 false));
@@ -233,7 +241,7 @@ public:
             "_ShouldLinearLoop",
             llvm::FunctionType::get(
                 Int1Ty,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
@@ -243,7 +251,7 @@ public:
             "_ShouldLossyLoop",
             llvm::FunctionType::get(
                 Int1Ty,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
@@ -253,7 +261,7 @@ public:
             "_ShouldLinearAcceptWhileLoop",
             llvm::FunctionType::get(
                 Int1Ty,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
@@ -263,7 +271,7 @@ public:
             "_ShouldLossyAcceptWhileLoop",
             llvm::FunctionType::get(
                 Int1Ty,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
@@ -273,7 +281,7 @@ public:
             "_OC_isPresent",
             llvm::FunctionType::get(
                 Int1Ty,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
@@ -283,7 +291,7 @@ public:
             "_OC_isPresentLossy",
             llvm::FunctionType::get(
                 Int1Ty,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
@@ -293,7 +301,7 @@ public:
             "_ContractChannel",
             llvm::FunctionType::get(
                 UnitTy,
-                {channelRtPtrTy},
+                {channelRtPtrTy()},
                 false));
     }
 
@@ -312,7 +320,7 @@ public:
         return module->getOrInsertFunction(
             "_ArrayToChannel",
             llvm::FunctionType::get(
-                channelRtPtrTy,
+                channelRtPtrTy(),
                 {Int8PtrPtrTy, Int32Ty},
                 false));
     }
@@ -366,7 +374,7 @@ public:
             "_PreemptChannel",
             llvm::FunctionType::get(
                 UnitTy,
-                {channelRtPtrTy, Int32Ty},
+                {channelRtPtrTy(), Int32Ty},
                 false));
     }
 
@@ -398,8 +406,6 @@ protected:
     llvm::IntegerType *Int64Ty;
     llvm::Type *i8p;
     llvm::Type *Int8PtrPtrTy;
-    llvm::StructType * channelRtTy; 
-    llvm::PointerType * channelRtPtrTy; 
     Constant *Int32Zero;
     Constant *Int32One;
 };
