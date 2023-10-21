@@ -9,12 +9,12 @@ extern "C" void waitForAllToFinish()
                       { return running == 0; });
 }
 
-extern "C" _Channel * Execute(void (*func)(_Channel))
+extern "C" _Channel * Execute(void (*func)(_Channel *))
 {
     exec_mutex.lock();
 
-    _Channel a = _Channel(); 
-    _Channel * b = new _Channel(a.write, a.read); // Flip direction of buffers
+    _Channel * a = new _Channel(); 
+    _Channel * b = new _Channel(a->write, a->read); // Flip direction of buffers
 
     // unsigned int idOut = State.size();
     // State.insert({idOut, aOut});
@@ -89,9 +89,9 @@ std::string Message2String(Message m)
 // }
 
 
-Message ReadLinearMessageFrom(_Channel c)
+Message ReadLinearMessageFrom(_Channel * c)
 {
-    Message m = c.read->dequeue();
+    Message m = c->read->dequeue();
     // if (DEBUG)
     // {
     //     std::ostringstream p;
@@ -101,9 +101,9 @@ Message ReadLinearMessageFrom(_Channel c)
     return m;
 }
 
-Message ReadLossyMessageFrom(_Channel c)
+Message ReadLossyMessageFrom(_Channel * c)
 {
-    IPCBuffer<Message> *readQueue = c.read;
+    IPCBuffer<Message> *readQueue = c->read;
 
     Message m = readQueue->peak(); 
 
@@ -121,9 +121,9 @@ Message ReadLossyMessageFrom(_Channel c)
     return m;
 }
 
-void WriteMessageTo(_Channel c, Message m)
+void WriteMessageTo(_Channel * c, Message m)
 {
-    IPCBuffer<Message> *writeQueue = c.write;
+    IPCBuffer<Message> *writeQueue = c->write;
 
     // if (DEBUG)
     // {
@@ -139,13 +139,13 @@ void WriteMessageTo(_Channel c, Message m)
 
 
 
-extern "C" void WriteChannel(_Channel c, uint8_t *value)
+extern "C" void WriteChannel(_Channel * c, uint8_t *value)
 {
     Value v(value);
     WriteMessageTo(c, v);
 }
 
-extern "C" uint8_t *ReadChannel(_Channel c)
+extern "C" uint8_t *ReadChannel(_Channel * c)
 {
     Message m = ReadLinearMessageFrom(c);
 
@@ -158,7 +158,7 @@ extern "C" uint8_t *ReadChannel(_Channel c)
     throw std::runtime_error("Preservation Error: _ReadLinearChannel got non-VALUE: " + Message2String(m));
 }
 
-extern "C" uint8_t *_ReadLossyChannel(_Channel c)
+extern "C" uint8_t *_ReadLossyChannel(_Channel * c)
 {
     Message m = ReadLossyMessageFrom(c);
 
@@ -181,13 +181,13 @@ extern "C" uint8_t *_ReadLossyChannel(_Channel c)
 
 
 
-extern "C" void WriteProjection(_Channel c, unsigned int selVal)
+extern "C" void WriteProjection(_Channel * c, unsigned int selVal)
 {
     SEL s(selVal);
     WriteMessageTo(c, s);
 }
 
-extern "C" unsigned int ReadProjection(_Channel c)
+extern "C" unsigned int ReadProjection(_Channel * c)
 {
     Message m = ReadLinearMessageFrom(c);
 
@@ -200,7 +200,7 @@ extern "C" unsigned int ReadProjection(_Channel c)
     throw std::runtime_error("Preservation Error: ReadProjection got non-SEL!");
 }
 
-extern "C" unsigned int _ReadLossyProjection(_Channel c)
+extern "C" unsigned int _ReadLossyProjection(_Channel * c)
 {
     Message m = ReadLossyMessageFrom(c);
 
@@ -221,7 +221,7 @@ extern "C" unsigned int _ReadLossyProjection(_Channel c)
 
 
 
-extern "C" bool ShouldLoop(_Channel c)
+extern "C" bool ShouldLoop(_Channel * c)
 {
     Message m = ReadLinearMessageFrom(c);
 
@@ -233,7 +233,7 @@ extern "C" bool ShouldLoop(_Channel c)
     throw std::runtime_error("Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!");
 }
 
-extern "C" bool _ShouldLossyLoop(_Channel c)
+extern "C" bool _ShouldLossyLoop(_Channel * c)
 {
     Message m = ReadLossyMessageFrom(c);
 
@@ -250,9 +250,9 @@ extern "C" bool _ShouldLossyLoop(_Channel c)
 
 
 
-extern "C" bool _OC_isPresent(_Channel c)
+extern "C" bool _OC_isPresent(_Channel * c)
 {
-    std::optional<Message> mOpt = c.read->peakNow();
+    std::optional<Message> mOpt = c->read->peakNow();
 
     if (!mOpt)
         return false;
@@ -267,9 +267,9 @@ extern "C" bool _OC_isPresent(_Channel c)
     throw std::runtime_error("Preservation Error: _OC_isPresent got something besides START_LOOP or END_LOOP!");
 }
 
-extern "C" bool _OC_isPresentLossy(_Channel c)
+extern "C" bool _OC_isPresentLossy(_Channel * c)
 {
-    std::optional<Message> mOpt = c.read->peakNow();
+    std::optional<Message> mOpt = c->read->peakNow();
 
     if (!mOpt)
         return false;
@@ -289,9 +289,9 @@ extern "C" bool _OC_isPresentLossy(_Channel c)
 
 
 
-extern "C" bool ShouldAcceptWhileLoop(_Channel c)
+extern "C" bool ShouldAcceptWhileLoop(_Channel * c)
 {
-    IPCBuffer<Message> *readQueue = c.read;
+    IPCBuffer<Message> *readQueue = c->read;
     Message m = readQueue->peak();
 
     if (std::holds_alternative<START_LOOP>(m))
@@ -308,9 +308,9 @@ extern "C" bool ShouldAcceptWhileLoop(_Channel c)
     throw std::runtime_error("Preservation Error: ShouldLoop got something besides START_LOOP or END_LOOP!");
 }
 
-extern "C" bool ShouldLossyAcceptWhileLoop(_Channel c)
+extern "C" bool ShouldLossyAcceptWhileLoop(_Channel * c)
 {
-    IPCBuffer<Message> *readQueue = c.read;
+    IPCBuffer<Message> *readQueue = c->read;
     Message m = readQueue->peak();
 
     if (std::holds_alternative<START_LOOP>(m))
@@ -337,23 +337,23 @@ extern "C" bool ShouldLossyAcceptWhileLoop(_Channel c)
 
 
 
-extern "C" void ContractChannel(_Channel c)
+extern "C" void ContractChannel(_Channel * c)
 {
     START_LOOP v;
     WriteMessageTo(c, v);
 }
 
-extern "C" void WeakenChannel(_Channel c)
+extern "C" void WeakenChannel(_Channel * c)
 {
     END_LOOP v;
     WriteMessageTo(c, v);
 }
 
-extern "C" _Channel _ArrayToChannel(uint8_t *array[], unsigned int len)
+extern "C" _Channel * _ArrayToChannel(uint8_t *array[], unsigned int len)
 {
     exec_mutex.lock();
     IPCBuffer<Message> *aRead = new IPCBuffer<Message>();
-    _Channel c = _Channel(aRead, nullptr); // TODO: note nullptr!
+    _Channel * c = new _Channel(aRead, nullptr); // TODO: note nullptr!
 
     for (unsigned int i = 0; i < len; i++)
     {
@@ -432,13 +432,13 @@ void _ClearChannel(std::deque<Message> &q)//(IPCBuffer<Message> *readQueue) // _
         // });
 }
 
-extern "C" void _PreemptChannel(_Channel c, unsigned int skipTo)
+extern "C" void _PreemptChannel(_Channel * c, unsigned int skipTo)
 {
-    c.read->operateOn([skipTo](std::deque<Message> &q)
+    c->read->operateOn([skipTo](std::deque<Message> &q)
                          { q.push_front(SKIP(skipTo));
                            _ClearChannel(q); });
 
-    c.write->operateOn([skipTo](std::deque<Message> &q)
+    c->write->operateOn([skipTo](std::deque<Message> &q)
                           { q.push_back(CLOSE(skipTo));
                             _ClearChannel(q); });
 

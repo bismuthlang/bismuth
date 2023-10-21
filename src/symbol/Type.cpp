@@ -189,7 +189,13 @@ std::string TypeChannel::toString() const
 
 llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
 {
-    return llvm::Type::getInt32Ty(M->getContext());
+    // return llvm::Type::getInt32Ty(M->getContext());
+    // TODO: bring in line w/ definition in codegenutils! (if a chane was made in either, itd break the other)
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), "_Channel");
+    if (ty)
+        return ty;
+
+    return llvm::StructType::create(M->getContext(), "_Channel");
 }
 
 // Note rhetoric of how we could group each type by fn. ie keep the deep copies together
