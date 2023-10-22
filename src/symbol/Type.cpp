@@ -910,6 +910,6 @@ const TypeStruct * TypeStruct::getCopy() const { return this; };
 
 bool TypeStruct::isSupertypeFor(const Type *other) const
 {
-    // FIXME: How do we get types across files?
+    // PLAN: allow for extern/import structs
     return this == other; // FIXME: DO BETTER
 }
