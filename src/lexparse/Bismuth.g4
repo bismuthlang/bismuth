@@ -123,8 +123,8 @@ assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
 
 
 statement           : defineType                                                                                            # TypeDef
-                    | <assoc=right> to=lValue ASSIGN a=expression ';'                                                       # AssignStatement 
-                    | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'                 # VarDeclStatement
+                    | assignmentStatement  ';'?                                                                             # AssignStatement 
+                    | variableDeclaration  ';'?                                                                             # VarDeclStatement
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                            # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* RSQB (rest+=statement)*                                       # SelectStatement     
                     | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                                # MatchStatement   
@@ -150,6 +150,9 @@ statement           : defineType                                                
                     | 'cancel' '(' channel=VARIABLE ')' ';'?                                # ProgramCancel
                     ; 
                     
+
+assignmentStatement : <assoc=right> to=lValue ASSIGN a=expression                                        ;
+variableDeclaration : <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)*  ;
 
 //Operators
 ASSIGN      :       ':='    ; 

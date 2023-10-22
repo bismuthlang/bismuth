@@ -1,0 +1,35 @@
+extern func printf(str s, ...) : int; 
+
+# define program :: c : Channel<-int> {
+#   c.send(0);
+# }
+
+define program :: c : Channel<-int> {
+
+  c.send(0)
+
+  var break := exec loopBreaker
+
+
+  var i := 1
+  accept(break) 
+  {
+    break.send(i)
+
+    i := i + 1
+  }
+}
+
+define loopBreaker :: c : Channel<?+int> {
+
+  int i := -1
+
+  unfold(c)
+
+  while(c.recv() != 0) # FIXME: this shouldn't be allowed!
+  {
+    printf("looped?\n");
+  }
+
+  weaken(c)
+}

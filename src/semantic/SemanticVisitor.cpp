@@ -1106,7 +1106,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     return node;
 };
 
-std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::AssignStatementContext *ctx)
+std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::AssignmentStatementContext *ctx)
 {
     // This one is the update one!
 
@@ -1151,7 +1151,7 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     return new TAssignNode(var, expr, ctx->getStart());
 }
 
-std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::VarDeclStatementContext *ctx)
+std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::VariableDeclarationContext *ctx)
 {
     std::vector<AssignmentNode *> a;
 

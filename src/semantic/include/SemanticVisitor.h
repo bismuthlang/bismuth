@@ -98,8 +98,9 @@ public:
     std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::LValueContext *ctx);
     std::any visitLValue(BismuthParser::LValueContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }
 
-    std::variant<TAssignNode *, ErrorChain *> visitCtx(BismuthParser::AssignStatementContext *ctx);
-    std::any visitAssignStatement(BismuthParser::AssignStatementContext *ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx)); }
+    std::variant<TAssignNode *, ErrorChain *> visitCtx(BismuthParser::AssignmentStatementContext *ctx);
+    std::any visitAssignmentStatement(BismuthParser::AssignmentStatementContext * ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx)); }
+    std::any visitAssignStatement(BismuthParser::AssignStatementContext *ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx->assignmentStatement())); }
 
     std::optional<ParameterListNode> visitCtx(BismuthParser::ParameterListContext *ctx);
     std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { return visitCtx(ctx); }
@@ -201,8 +202,9 @@ public:
     std::variant<TCompilationUnitNode *, ErrorChain *> visitCtx(BismuthParser::CompilationUnitContext *ctx);
     std::any visitCompilationUnit(BismuthParser::CompilationUnitContext *ctx) override { return visitCtx(ctx); }
 
-    std::variant<TVarDeclNode *, ErrorChain *> visitCtx(BismuthParser::VarDeclStatementContext *ctx);
-    std::any visitVarDeclStatement(BismuthParser::VarDeclStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
+    std::variant<TVarDeclNode *, ErrorChain *> visitCtx(BismuthParser::VariableDeclarationContext *ctx);
+    std::any visitVariableDeclaration(BismuthParser::VariableDeclarationContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); };
+    std::any visitVarDeclStatement(BismuthParser::VarDeclStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx->variableDeclaration())); }
 
     std::variant<TMatchStatementNode *, ErrorChain *> visitCtx(BismuthParser::MatchStatementContext *ctx);
     std::any visitMatchStatement(BismuthParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // NOTE: CASTS NEEDED B/C OF HOW C++ HANDLES ANYs BY MANGLED NAME!
