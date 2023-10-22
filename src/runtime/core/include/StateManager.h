@@ -54,23 +54,23 @@ Message ReadLossyMessageFrom(_Channel * c);
 
 extern "C" void _WriteChannel(_Channel * c, uint8_t *value);
 extern "C" uint8_t *_ReadLinearChannel(_Channel * c);
-extern "C" uint8_t * _ReadLossyChannel(_Channel * c); // FIXME: START USING
+extern "C" uint8_t * _ReadLossyChannel(_Channel * c);
 
 
 extern "C" void _WriteProjection(_Channel * c, unsigned int selVal);
 extern "C" unsigned int _ReadLinearProjection(_Channel * c);
-extern "C" unsigned int _ReadLossyProjection(_Channel * c); // FIXME: START USING
+extern "C" unsigned int _ReadLossyProjection(_Channel * c);
 
 
 
 extern "C" bool _ShouldLinearLoop(_Channel * c);
-extern "C" bool _ShouldLossyLoop(_Channel * c); // FIXME: START USING!
+extern "C" bool _ShouldLossyLoop(_Channel * c);
 
 extern "C" bool _OC_isPresent(_Channel * c);
-extern "C" bool _OC_isPresentLossy(_Channel * c); // FIXME: START USING!
+extern "C" bool _OC_isPresentLossy(_Channel * c);
 
 extern "C" bool _ShouldLinearAcceptWhileLoop(_Channel * c);
-extern "C" bool _ShouldLossyAcceptWhileLoop(_Channel * c); // FIXME: START USING!
+extern "C" bool _ShouldLossyAcceptWhileLoop(_Channel * c);
 
 extern "C" void _ContractChannel(_Channel * c);
 
