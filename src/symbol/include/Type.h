@@ -439,7 +439,7 @@ private:
     const ProtocolSequence *protocol;
 
     /**
-     * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
+     * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a pre-declaration waiting to be fulfilled)
      *
      */
     bool defined;
@@ -521,7 +521,7 @@ private:
     bool variadic = false;
 
     /**
-     * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
+     * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a pre-declaration waiting to be fulfilled)
      *
      */
     bool defined;
@@ -764,7 +764,7 @@ private:
     std::optional<std::string> name;
 
     /**
-     * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a predeclaration waiting to be fulfilled)
+     * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a pre-declaration waiting to be fulfilled)
      *
      */
     bool defined;

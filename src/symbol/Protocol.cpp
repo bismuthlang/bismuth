@@ -217,26 +217,26 @@ std::string ProtocolSequence::as_str(DisplayMode mode) const
 
 const ProtocolSequence *ProtocolSequence::getInverse() const
 {
-    vector<const Protocol *> invs;
+    vector<const Protocol *> inverseSteps;
 
     for (auto p : this->steps)
     {
-        invs.push_back(p->getInverse());
+        inverseSteps.push_back(p->getInverse());
     }
 
-    return new ProtocolSequence(this->inCloseable, invs);
+    return new ProtocolSequence(this->inCloseable, inverseSteps);
 }
 
 const ProtocolSequence *ProtocolSequence::getCopy() const
 {
-    vector<const Protocol *> invs;
+    vector<const Protocol *> inverseSteps;
 
     for (auto p : this->steps)
     {
-        invs.push_back(p->getCopy());
+        inverseSteps.push_back(p->getCopy());
     }
 
-    auto ans = new ProtocolSequence(this->inCloseable, invs);
+    auto ans = new ProtocolSequence(this->inCloseable, inverseSteps);
     ans->guardCount = this->guardCount;
     return ans;
 }
@@ -516,7 +516,7 @@ ProtocolSequence::caseAnalysis(vector<const ProtocolSequence *> testOpts) const 
         std::set<const ProtocolSequence *, ProtocolCompare> foundCaseTypes = {};
         std::vector<const ProtocolSequence *> ans = {}; 
 
-        for (const ProtocolSequence *p : testOpts) // TODO: METHODIZE WITH MATCHSTATEMENT
+        for (const ProtocolSequence *p : testOpts) // TODO: METHODIZE WITH MatchStatement?
         {
             const ProtocolSequence * res = this->getCopy(); 
             

@@ -209,7 +209,7 @@ std::string TypeChannel::toString(DisplayMode mode) const
 llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
 {
     // return llvm::Type::getInt32Ty(M->getContext());
-    // TODO: bring in line w/ definition in codegenutils! (if a chane was made in either, itd break the other)
+    // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
     llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), "_Channel");
     if (ty)
         return ty;
@@ -241,7 +241,7 @@ void TypeChannel::setProtocol(const ProtocolSequence *p) const // FIXME: DO BETT
     u_this->protocol = p;
 }
 
-bool TypeChannel::isGuarded() const // FIXME: DO BETTER, NEED TO ALSO REDIRECT ISGUARDED!? FOR THIS AND FOR TYPE PROGRAM? NO PROBS JUST THIS?
+bool TypeChannel::isGuarded() const // FIXME: DO BETTER, NEED TO ALSO REDIRECT isGuarded!? FOR THIS AND FOR TYPE PROGRAM? NO probably JUST THIS?
 {
     return protocol->isGuarded();
 }
@@ -359,7 +359,7 @@ llvm::FunctionType *TypeProgram::getLLVMFunctionType(llvm::Module *M) const
 {
     llvm::Type *ret = Types::UNIT->getLLVMType(M);
 
-     // TODO: bring in line w/ definition in codegenutils! (if a chane was made in either, itd break the other)
+     // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
     llvm::StructType *argTy = llvm::StructType::getTypeByName(M->getContext(), "_Channel");
     if (!argTy)
         argTy = llvm::StructType::create(M->getContext(), "_Channel");
@@ -637,19 +637,19 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
     /*
         * If the other type is also an inference type...
         */
-    if (const TypeInfer *oinf = dynamic_cast<const TypeInfer *>(other))
+    if (const TypeInfer *oInf = dynamic_cast<const TypeInfer *>(other))
     {
         // If the other inference type has a value determined, try using that
-        if (oinf->valueType->has_value())
+        if (oInf->valueType->has_value())
         {
-            return setValue(oinf->valueType->value());
+            return setValue(oInf->valueType->value());
         }
 
         // Otherwise, add the types to be dependencies of each other, and return true.
         TypeInfer *u_this = const_cast<TypeInfer *>(this);
-        u_this->infTypes.push_back(oinf);
+        u_this->infTypes.push_back(oInf);
 
-        TypeInfer *moth = const_cast<TypeInfer *>(oinf);
+        TypeInfer *moth = const_cast<TypeInfer *>(oInf);
         moth->infTypes.push_back(this);
         return true;
     }

@@ -422,7 +422,7 @@ public:
             //     }
             // }
 
-            // Lookup the function in the current scope and prevent redeclaratons
+            // Lookup the function in the current scope and prevent re-declarations
 
             // Add the symbol to the stmgr and enter the scope.
             stmgr->addSymbol(sym);
@@ -531,15 +531,15 @@ private:
         {
             // Get the Scope* and check for any uninferred symbols
             Scope *scope = res.value();
-            std::vector<Symbol *> uninf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
+            std::vector<Symbol *> unInf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope
-            if (uninf.size() > 0)
+            if (unInf.size() > 0)
             {
                 std::ostringstream details;
 
-                for (auto e : uninf)
+                for (auto e : unInf)
                 {
                     details << e->toString() << "; ";
                 }

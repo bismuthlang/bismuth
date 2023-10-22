@@ -1501,7 +1501,7 @@ public:
     const TypeBool *getType() override { return Types::DYN_BOOL; }
 
     std::string toString() const override {
-        return "EQEXPR";
+        return "EqualExpr";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }

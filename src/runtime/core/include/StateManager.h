@@ -17,7 +17,7 @@
 // extern "C" void * My_malloc(size_t t) { return GC_MALLOC(t); }
 
 // TODO: REMOVE NEED FOR RUNNING MUTEX?
-std::mutex running_mutex; // NOTE: A PATTERN LIKE THIS MIGHT BE CHALLENGING IN MY LANG! (SEE THIS AND WAITFORALLTOFINISH)
+std::mutex running_mutex; // NOTE: A PATTERN LIKE THIS MIGHT BE CHALLENGING IN MY LANG! (SEE THIS AND waitForAllToFinish)
 std::condition_variable running_cond;
 std::atomic<int> running;
 

@@ -216,15 +216,15 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
     }
 
-    std::vector<Symbol *> uninf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
+    std::vector<Symbol *> unInf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
 
     // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
     // due to the var leaving the scope
-    if (uninf.size() > 0)
+    if (unInf.size() > 0)
     {
         std::ostringstream details;
 
-        for (auto e : uninf)
+        for (auto e : unInf)
         {
             details << e->toString() << "; ";
         }
@@ -604,7 +604,7 @@ std::variant<TStringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 }
 
 /**
- * @brief Typechecks Unary Expressions
+ * @brief Type check Unary Expressions
  *
  * @param ctx The UnaryExpressionContext to type check
  * @return const Type* Returns the type of the inner expression if valid; UNDEFINED otherwise.
@@ -1236,7 +1236,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 Symbol *symbol = new Symbol(id, newExprType, false, stmgr->isGlobalScope()); // Done with exprType for later type inference purposes
                 stmgr->addSymbol(symbol);
 
-                // This is somewhat inefficient to have to repeat this for every single value, but needed if for linears and if we aren't purely FP.  
+                // This is somewhat inefficient to have to repeat this for every single value, but needed if for linear resources and if we aren't purely FP.  
                 a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Does assignment node need to be list?
             }
         }
@@ -1413,7 +1413,7 @@ std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCt
         blksCtx.size() == 1,
         [this](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
         {
-            // Scopes automatically handled, have to use false bc we can't have the block autoscope otherwise we might throw an error before we get the chance to realize that we use all linears.
+            // Scopes automatically handled, have to use false bc we can't have the block automatically scope otherwise we might throw an error before we get the chance to realize that we use all linear resources.
             return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
         });
 
@@ -1907,7 +1907,7 @@ std::variant<const TypeChannel *, ErrorChain *>
 SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
 {
     ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
-    std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
+    std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
     delete protoVisitor;
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
@@ -1946,7 +1946,7 @@ std::variant<const TypeProgram *, ErrorChain *>
 SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 {
     ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);                              // TODO: methodize?
-    std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, protocolvisitor visit type ctx?
+    std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
     delete protoVisitor;
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
@@ -2745,7 +2745,7 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
     {
         this->stmgr = origStmgr;
 
-        stmgr->enterScope(StopType::NONE); // Why? This doesnt make sense.. oh it does, but should ideally refactor!
+        stmgr->enterScope(StopType::NONE); // Why? This doesn't make sense.. oh it does, but should ideally refactor!
 
         std::optional<ErrorChain *> errorOpt = checkCase(ctx->getStart(), true, "Failed to type check code when conditional skipped over", "Failed to type check when skipped over and no branch followed");
         if(errorOpt) return errorOpt.value();

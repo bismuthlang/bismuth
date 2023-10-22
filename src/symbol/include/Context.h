@@ -97,7 +97,7 @@ class Context {
      * @brief Determines if the current scope is the global scope
      * 
      * @return true if current scope is the global scope
-     * @return false if the current scope is not the gobal scope
+     * @return false if the current scope is not the global scope
      */
     bool isGlobalScope() {
       if(scopes.size() == 0) return false; 
