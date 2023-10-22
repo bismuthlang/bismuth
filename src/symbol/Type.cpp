@@ -212,9 +212,9 @@ llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
     // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
     llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), "_Channel");
     if (ty)
-        return ty;
+        return ty->getPointerTo();
 
-    return llvm::StructType::create(M->getContext(), "_Channel");
+    return llvm::StructType::create(M->getContext(), "_Channel")->getPointerTo();
 }
 
 // Note rhetoric of how we could group each type by fn. ie keep the deep copies together
