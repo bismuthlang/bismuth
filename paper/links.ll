@@ -66,8 +66,8 @@ entry:
   %10 = call %Unit @free(i8* %7)
   store %_Channel* %9, %_Channel** %b, align 8
   %11 = load %_Channel*, %_Channel** %a, align 8
-  %12 = call %_Channel* @_ReadLinearProjection(%_Channel* %11)
-  switch %_Channel* %12, label %match-cont [
+  %12 = call i32 @_ReadLinearProjection(%_Channel* %11)
+  switch i32 %12, label %match-cont [
     i32 1, label %tagBranch1
     i32 2, label %tagBranch2
   ]
@@ -124,8 +124,8 @@ entry:
   %c = alloca %_Channel*, align 8
   store %_Channel* %0, %_Channel** %c, align 8
   %1 = load %_Channel*, %_Channel** %c, align 8
-  %2 = call %_Channel* @_ReadLinearProjection(%_Channel* %1)
-  switch %_Channel* %2, label %match-cont [
+  %2 = call i32 @_ReadLinearProjection(%_Channel* %1)
+  switch i32 %2, label %match-cont [
     i32 1, label %tagBranch1
     i32 2, label %tagBranch2
   ]
@@ -195,7 +195,7 @@ declare i8* @malloc(i32)
 
 declare %Unit @_WriteChannel(%_Channel*, i8*)
 
-declare %_Channel* @_ReadLinearProjection(i32)
+declare i32 @_ReadLinearProjection(%_Channel*)
 
 declare %Unit @_WriteProjection(%_Channel*, i32)
 

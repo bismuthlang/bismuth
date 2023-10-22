@@ -54,7 +54,7 @@ define program :: c : Channel<-int> {
   c.send(0)
 }
       )"""",
-      "Assignment statement expected {VAR/BOOL} but got INT"
+      "Assignment statement expected {VAR/boolean} but got int"
     );
 }
 

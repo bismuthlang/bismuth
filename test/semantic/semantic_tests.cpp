@@ -9,207 +9,207 @@
 
 TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 {
-  Type *TOP = new Type(false);
-  Type *INT = new TypeInt(false);
-  Type *BOOL = new TypeBool(false);
-  Type *STR = new TypeStr(false);
-  Type *BOT = new TypeBottom(false);
-  Type* UNIT = new TypeUnit(false); 
-  Type* ABSD = new TypeAbsurd(false); 
+  Type *TopTy = new Type(false);
+  Type *IntTy = new TypeInt(false);
+  Type *BoolTy = new TypeBool(false);
+  Type *StrTy = new TypeStr(false);
+  Type *BotTy = new TypeBottom(false);
+  Type* UnitTy = new TypeUnit(false); 
+  Type* AbsurdTy = new TypeAbsurd(false); 
 
   SECTION("Top Type tests")
   {
-    REQUIRE(TOP->isSubtype(TOP));
+    REQUIRE(TopTy->isSubtype(TopTy));
 
-    REQUIRE(TOP->isNotSubtype(INT));
-    REQUIRE_FALSE(TOP->isSubtype(INT));
+    REQUIRE(TopTy->isNotSubtype(IntTy));
+    REQUIRE_FALSE(TopTy->isSubtype(IntTy));
 
-    REQUIRE(TOP->isNotSubtype(BOOL));
-    REQUIRE_FALSE(TOP->isSubtype(BOOL));
+    REQUIRE(TopTy->isNotSubtype(BoolTy));
+    REQUIRE_FALSE(TopTy->isSubtype(BoolTy));
 
-    REQUIRE(TOP->isNotSubtype(STR));
+    REQUIRE(TopTy->isNotSubtype(StrTy));
 
-    REQUIRE(TOP->isNotSubtype(BOT));
+    REQUIRE(TopTy->isNotSubtype(BotTy));
 
-    REQUIRE(TOP->isNotSubtype(UNIT));
-    REQUIRE(TOP->isNotSubtype(ABSD));
+    REQUIRE(TopTy->isNotSubtype(UnitTy));
+    REQUIRE(TopTy->isNotSubtype(AbsurdTy));
   }
 
   SECTION("Int Type tests")
   {
-    REQUIRE(INT->isSubtype(TOP));
-    REQUIRE_FALSE(INT->isNotSubtype(TOP));
+    REQUIRE(IntTy->isSubtype(TopTy));
+    REQUIRE_FALSE(IntTy->isNotSubtype(TopTy));
 
-    REQUIRE(INT->isSubtype(INT));
-    // REQUIRE(INT->isNotSubtype(TypeInt()));
+    REQUIRE(IntTy->isSubtype(IntTy));
+    // REQUIRE(IntTy->isNotSubtype(TypeInt()));
 
-    REQUIRE(INT->isNotSubtype(BOOL));
+    REQUIRE(IntTy->isNotSubtype(BoolTy));
 
-    REQUIRE(INT->isNotSubtype(STR));
+    REQUIRE(IntTy->isNotSubtype(StrTy));
 
-    REQUIRE(INT->isNotSubtype(BOT));
+    REQUIRE(IntTy->isNotSubtype(BotTy));
 
-    REQUIRE(INT->isNotSubtype(UNIT));
-    REQUIRE(INT->isNotSubtype(ABSD));
+    REQUIRE(IntTy->isNotSubtype(UnitTy));
+    REQUIRE(IntTy->isNotSubtype(AbsurdTy));
   }
 
   SECTION("Bool Type Tests")
   {
-    REQUIRE(BOOL->isSubtype(TOP));
-    REQUIRE(BOOL->isNotSubtype(INT));
-    REQUIRE(BOOL->isNotSubtype(STR));
-    REQUIRE(BOOL->isSubtype(BOOL));
-    REQUIRE(BOOL->isNotSubtype(BOT));
-    REQUIRE(BOOL->isNotSubtype(UNIT));
-    REQUIRE(BOOL->isNotSubtype(ABSD));
+    REQUIRE(BoolTy->isSubtype(TopTy));
+    REQUIRE(BoolTy->isNotSubtype(IntTy));
+    REQUIRE(BoolTy->isNotSubtype(StrTy));
+    REQUIRE(BoolTy->isSubtype(BoolTy));
+    REQUIRE(BoolTy->isNotSubtype(BotTy));
+    REQUIRE(BoolTy->isNotSubtype(UnitTy));
+    REQUIRE(BoolTy->isNotSubtype(AbsurdTy));
   }
 
   SECTION("Str Type Tests")
   {
-    REQUIRE(STR->isSubtype(TOP));
-    REQUIRE(STR->isNotSubtype(INT));
-    REQUIRE(STR->isSubtype(STR));
-    REQUIRE(STR->isNotSubtype(BOOL));
-    REQUIRE(STR->isNotSubtype(BOT));
-    REQUIRE(STR->isNotSubtype(UNIT));
-    REQUIRE(STR->isNotSubtype(ABSD));
+    REQUIRE(StrTy->isSubtype(TopTy));
+    REQUIRE(StrTy->isNotSubtype(IntTy));
+    REQUIRE(StrTy->isSubtype(StrTy));
+    REQUIRE(StrTy->isNotSubtype(BoolTy));
+    REQUIRE(StrTy->isNotSubtype(BotTy));
+    REQUIRE(StrTy->isNotSubtype(UnitTy));
+    REQUIRE(StrTy->isNotSubtype(AbsurdTy));
   }
 
   SECTION("Bot Type Tests")
   {
-    REQUIRE(BOT->isSubtype(TOP));
-    REQUIRE_FALSE(BOT->isSubtype(INT)); //FIXME: THESE SEEM WRONG.... MAYBE?
-    REQUIRE_FALSE(BOT->isSubtype(STR));
-    REQUIRE_FALSE(BOT->isSubtype(BOOL));
-    REQUIRE_FALSE(BOT->isSubtype(BOT));
-    REQUIRE_FALSE(BOT->isSubtype(UNIT));
-    REQUIRE_FALSE(BOT->isSubtype(ABSD));
+    REQUIRE(BotTy->isSubtype(TopTy));
+    REQUIRE_FALSE(BotTy->isSubtype(IntTy)); //FIXME: THESE SEEM WRONG.... MAYBE?
+    REQUIRE_FALSE(BotTy->isSubtype(StrTy));
+    REQUIRE_FALSE(BotTy->isSubtype(BoolTy));
+    REQUIRE_FALSE(BotTy->isSubtype(BotTy));
+    REQUIRE_FALSE(BotTy->isSubtype(UnitTy));
+    REQUIRE_FALSE(BotTy->isSubtype(AbsurdTy));
   }
 
   SECTION("Unit Type Tests")
   {
-    REQUIRE(UNIT->isSubtype(TOP));
-    REQUIRE_FALSE(UNIT->isSubtype(INT));
-    REQUIRE_FALSE(UNIT->isSubtype(STR));
-    REQUIRE_FALSE(UNIT->isSubtype(BOOL));
-    REQUIRE_FALSE(UNIT->isSubtype(BOT));
-    REQUIRE(UNIT->isSubtype(UNIT));
-    REQUIRE_FALSE(UNIT->isSubtype(ABSD));
+    REQUIRE(UnitTy->isSubtype(TopTy));
+    REQUIRE_FALSE(UnitTy->isSubtype(IntTy));
+    REQUIRE_FALSE(UnitTy->isSubtype(StrTy));
+    REQUIRE_FALSE(UnitTy->isSubtype(BoolTy));
+    REQUIRE_FALSE(UnitTy->isSubtype(BotTy));
+    REQUIRE(UnitTy->isSubtype(UnitTy));
+    REQUIRE_FALSE(UnitTy->isSubtype(AbsurdTy));
   }
 
   SECTION("Absurd Type Tests")
   {
-    REQUIRE(ABSD->isSubtype(TOP));
-    REQUIRE_FALSE(ABSD->isSubtype(INT));
-    REQUIRE_FALSE(ABSD->isSubtype(STR));
-    REQUIRE_FALSE(ABSD->isSubtype(BOOL));
-    REQUIRE_FALSE(ABSD->isSubtype(BOT));
-    REQUIRE_FALSE(ABSD->isSubtype(UNIT));
-    REQUIRE_FALSE(ABSD->isSubtype(ABSD));
+    REQUIRE(AbsurdTy->isSubtype(TopTy));
+    REQUIRE_FALSE(AbsurdTy->isSubtype(IntTy));
+    REQUIRE_FALSE(AbsurdTy->isSubtype(StrTy));
+    REQUIRE_FALSE(AbsurdTy->isSubtype(BoolTy));
+    REQUIRE_FALSE(AbsurdTy->isSubtype(BotTy));
+    REQUIRE_FALSE(AbsurdTy->isSubtype(UnitTy));
+    REQUIRE_FALSE(AbsurdTy->isSubtype(AbsurdTy));
   }
   // Why is PL easier to read in mono fonts?
 }
 
 TEST_CASE("Test Type Equality - Supertype", "[semantic]")
 {
-  Type *TOP = new Type(false);
-  Type *INT = new TypeInt(false);
-  Type *BOOL = new TypeBool(false);
-  Type *STR = new TypeStr(false);
-  Type *BOT = new TypeBottom(false);
-  Type* UNIT = new TypeUnit(false); 
-  Type* ABSD = new TypeAbsurd(false); 
+  Type *TopTy = new Type(false);
+  Type *IntTy = new TypeInt(false);
+  Type *BoolTy = new TypeBool(false);
+  Type *StrTy = new TypeStr(false);
+  Type *BotTy = new TypeBottom(false);
+  Type* UnitTy = new TypeUnit(false); 
+  Type* AbsurdTy = new TypeAbsurd(false); 
 
   SECTION("Top Type tests")
   {
-    REQUIRE(TOP->isSupertype(TOP));
-    REQUIRE_FALSE(TOP->isNotSupertype(TOP));
+    REQUIRE(TopTy->isSupertype(TopTy));
+    REQUIRE_FALSE(TopTy->isNotSupertype(TopTy));
 
-    REQUIRE(TOP->isSupertype(INT));
-    REQUIRE_FALSE(TOP->isNotSupertype(INT));
+    REQUIRE(TopTy->isSupertype(IntTy));
+    REQUIRE_FALSE(TopTy->isNotSupertype(IntTy));
 
-    REQUIRE(TOP->isSupertype(BOOL));
-    REQUIRE_FALSE(TOP->isNotSupertype(BOOL));
+    REQUIRE(TopTy->isSupertype(BoolTy));
+    REQUIRE_FALSE(TopTy->isNotSupertype(BoolTy));
 
-    REQUIRE(TOP->isSupertype(STR));
+    REQUIRE(TopTy->isSupertype(StrTy));
 
-    REQUIRE(TOP->isSupertype(BOT));
+    REQUIRE(TopTy->isSupertype(BotTy));
 
-    REQUIRE(TOP->isSupertype(UNIT));
-    REQUIRE(TOP->isSupertype(ABSD));
+    REQUIRE(TopTy->isSupertype(UnitTy));
+    REQUIRE(TopTy->isSupertype(AbsurdTy));
   }
 
   SECTION("Int Type tests")
   {
-    REQUIRE(INT->isNotSupertype(TOP));
-    REQUIRE_FALSE(INT->isSupertype(TOP));
+    REQUIRE(IntTy->isNotSupertype(TopTy));
+    REQUIRE_FALSE(IntTy->isSupertype(TopTy));
 
-    REQUIRE(INT->isSupertype(INT));
-    // REQUIRE(INT->isSupertype(TypeInt()));
+    REQUIRE(IntTy->isSupertype(IntTy));
+    // REQUIRE(IntTy->isSupertype(TypeInt()));
 
-    REQUIRE(INT->isNotSupertype(BOOL));
+    REQUIRE(IntTy->isNotSupertype(BoolTy));
 
-    REQUIRE(INT->isNotSupertype(STR));
+    REQUIRE(IntTy->isNotSupertype(StrTy));
 
-    REQUIRE(INT->isNotSupertype(BOT));
+    REQUIRE(IntTy->isNotSupertype(BotTy));
 
-    REQUIRE(INT->isNotSupertype(UNIT));
-    REQUIRE(INT->isNotSupertype(ABSD));
+    REQUIRE(IntTy->isNotSupertype(UnitTy));
+    REQUIRE(IntTy->isNotSupertype(AbsurdTy));
   }
 
   SECTION("Bool Type Tests")
   {
-    REQUIRE(BOOL->isNotSupertype(TOP));
-    REQUIRE(BOOL->isNotSupertype(INT));
-    REQUIRE(BOOL->isNotSupertype(STR));
-    REQUIRE(BOOL->isSupertype(BOOL));
-    REQUIRE(BOOL->isNotSupertype(BOT));
-    REQUIRE(BOOL->isNotSupertype(UNIT));
-    REQUIRE(BOOL->isNotSupertype(ABSD));
+    REQUIRE(BoolTy->isNotSupertype(TopTy));
+    REQUIRE(BoolTy->isNotSupertype(IntTy));
+    REQUIRE(BoolTy->isNotSupertype(StrTy));
+    REQUIRE(BoolTy->isSupertype(BoolTy));
+    REQUIRE(BoolTy->isNotSupertype(BotTy));
+    REQUIRE(BoolTy->isNotSupertype(UnitTy));
+    REQUIRE(BoolTy->isNotSupertype(AbsurdTy));
   }
 
   SECTION("Str Type Tests")
   {
-    REQUIRE(STR->isNotSupertype(TOP));
-    REQUIRE(STR->isNotSupertype(INT));
-    REQUIRE(STR->isSupertype(STR));
-    REQUIRE(STR->isNotSupertype(BOOL));
-    REQUIRE(STR->isNotSupertype(BOT));
-    REQUIRE(STR->isNotSupertype(UNIT));
-    REQUIRE(STR->isNotSupertype(ABSD));
+    REQUIRE(StrTy->isNotSupertype(TopTy));
+    REQUIRE(StrTy->isNotSupertype(IntTy));
+    REQUIRE(StrTy->isSupertype(StrTy));
+    REQUIRE(StrTy->isNotSupertype(BoolTy));
+    REQUIRE(StrTy->isNotSupertype(BotTy));
+    REQUIRE(StrTy->isNotSupertype(UnitTy));
+    REQUIRE(StrTy->isNotSupertype(AbsurdTy));
   }
 
   SECTION("Bot Type Tests")
   {
-    REQUIRE(BOT->isNotSupertype(TOP));
-    REQUIRE(BOT->isNotSupertype(INT));
-    REQUIRE(BOT->isNotSupertype(STR));
-    REQUIRE(BOT->isNotSupertype(BOOL));
-    REQUIRE(BOT->isNotSupertype(BOT));
-    REQUIRE(BOT->isNotSupertype(UNIT));
-    REQUIRE(BOT->isNotSupertype(ABSD));
+    REQUIRE(BotTy->isNotSupertype(TopTy));
+    REQUIRE(BotTy->isNotSupertype(IntTy));
+    REQUIRE(BotTy->isNotSupertype(StrTy));
+    REQUIRE(BotTy->isNotSupertype(BoolTy));
+    REQUIRE(BotTy->isNotSupertype(BotTy));
+    REQUIRE(BotTy->isNotSupertype(UnitTy));
+    REQUIRE(BotTy->isNotSupertype(AbsurdTy));
   }
 
   SECTION("Unit Type Tests")
   {
-    REQUIRE(UNIT->isNotSupertype(TOP));
-    REQUIRE(UNIT->isNotSupertype(INT));
-    REQUIRE(UNIT->isNotSupertype(STR));
-    REQUIRE(UNIT->isNotSupertype(BOOL));
-    REQUIRE(UNIT->isNotSupertype(BOT));
-    REQUIRE(UNIT->isSubtype(UNIT));
-    REQUIRE(UNIT->isNotSupertype(ABSD));
+    REQUIRE(UnitTy->isNotSupertype(TopTy));
+    REQUIRE(UnitTy->isNotSupertype(IntTy));
+    REQUIRE(UnitTy->isNotSupertype(StrTy));
+    REQUIRE(UnitTy->isNotSupertype(BoolTy));
+    REQUIRE(UnitTy->isNotSupertype(BotTy));
+    REQUIRE(UnitTy->isSubtype(UnitTy));
+    REQUIRE(UnitTy->isNotSupertype(AbsurdTy));
   }
 
   SECTION("Absurd Type Tests")
   {
-    REQUIRE(ABSD->isNotSupertype(TOP));
-    REQUIRE(ABSD->isNotSupertype(INT));
-    REQUIRE(ABSD->isNotSupertype(STR));
-    REQUIRE(ABSD->isNotSupertype(BOOL));
-    REQUIRE(ABSD->isNotSupertype(BOT));
-    REQUIRE(ABSD->isNotSupertype(UNIT));
-    REQUIRE(ABSD->isNotSupertype(ABSD));
+    REQUIRE(AbsurdTy->isNotSupertype(TopTy));
+    REQUIRE(AbsurdTy->isNotSupertype(IntTy));
+    REQUIRE(AbsurdTy->isNotSupertype(StrTy));
+    REQUIRE(AbsurdTy->isNotSupertype(BoolTy));
+    REQUIRE(AbsurdTy->isNotSupertype(BotTy));
+    REQUIRE(AbsurdTy->isNotSupertype(UnitTy));
+    REQUIRE(AbsurdTy->isNotSupertype(AbsurdTy));
   }
   // Why is PL easier to read in mono fonts?
 }

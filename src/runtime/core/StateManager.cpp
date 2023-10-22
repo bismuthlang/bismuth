@@ -221,7 +221,7 @@ extern "C" unsigned int _ReadLossyProjection(_Channel * c)
 
 
 
-extern "C" bool ShouldLoop(_Channel * c)
+extern "C" bool _ShouldLinearLoop(_Channel * c)
 {
     Message m = ReadLinearMessageFrom(c);
 
@@ -343,7 +343,7 @@ extern "C" void _ContractChannel(_Channel * c)
     WriteMessageTo(c, v);
 }
 
-extern "C" void WeakenChannel(_Channel * c)
+extern "C" void _WeakenChannel(_Channel * c)
 {
     END_LOOP v;
     WriteMessageTo(c, v);

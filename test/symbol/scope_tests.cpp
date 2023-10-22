@@ -14,12 +14,12 @@
 
 // TEST_CASE("Check symbol return from add", "[symbol]") {
 //   Scope* scope = new Scope();
-//   Symbol* s = scope->addSymbol("a", BOOL);
+//   Symbol* s = scope->addSymbol("a", Types::DYN_BOOL);
 //   CHECK(s->identifier == "a");
-//   Symbol* s2 = scope->addSymbol("b", INT);
+//   Symbol* s2 = scope->addSymbol("b", TYPES::DYN_INT);
 //   // Check same values
 //   CHECK("b" == s2->identifier);
-//   CHECK(INT == s2->type);
+//   CHECK(Types::DYN_INT == s2->type);
 //   // Uncomment the next in order to see what a scope string looks like.
 //   // CHECK(scope->toString() == "foo");
 // }

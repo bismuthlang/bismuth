@@ -16,8 +16,6 @@
 #include <concepts>
 #include <regex>
 #include <variant>
-// typedef std::variant<Value, START_LOOP, END_LOOP, SEL> Message;
-// typedef
 
 template<typename T>                             
 concept RestRuleContext = requires(T a) {
@@ -289,7 +287,7 @@ public:
 
         if (conditionType->isNotSubtype(Types::DYN_BOOL))
         {
-            return errorHandler.addError(ex->getStart(), "Condition expected BOOL, but was given " + conditionType->toString(toStringMode));
+            return errorHandler.addError(ex->getStart(), "Condition expected boolean, but was given " + conditionType->toString(toStringMode));
         }
 
         return cond;
@@ -408,12 +406,12 @@ public:
         {
             std::string funcId = ctx->name->getText();
 
-            // If the symbol name is program, do some extra checks to make sure it has no arguments and returns an INT. Otherwise, we will get a link error.
+            // If the symbol name is program, do some extra checks to make sure it has no arguments and returns an int. Otherwise, we will get a link error.
             // if (funcId == "program") //FIXME: DO BETTER
             // {
             //     if (!dynamic_cast<const TypeInt *>(progType->getReturnType()))
             //     {
-            //         errorHandler.addSemanticCritWarning(ctx->getStart(), "program() should return type INT");
+            //         errorHandler.addSemanticCritWarning(ctx->getStart(), "program() should return type int");
             //     }
 
             //     if (progType->getParamTypes().size() != 0)

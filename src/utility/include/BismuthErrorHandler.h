@@ -179,7 +179,7 @@ public:
   /**
    * @brief Determines if the compiler has errors of a specific severity
    *
-   * @param errorFlags INT representation of ErrSev to determine which errors to check. Ie. 0 for all, 1 for ERROR, 2 for CRITICAL_WARNING, 3 = ERROR | CRITICAL_WARNING, etc.
+   * @param errorFlags int representation of ErrSev to determine which errors to check. Ie. 0 for all, 1 for ERROR, 2 for CRITICAL_WARNING, 3 = ERROR | CRITICAL_WARNING, etc.
    * @return true
    * @return false
    */

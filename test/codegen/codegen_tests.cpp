@@ -137,7 +137,7 @@ TEST_CASE("programs/test7 - Test String equality + Nested Loops", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test7.bismuth"))),
-        "dd74a6265ae9f82a381e36078c5c762e073222a8bf6bfe20fec943e7b8f98a71");
+        "d205a48dcc3498f6435aa6e5e2016cea7553718a3d6b49d54496f4e579512b34");
 }
 
 TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
@@ -411,97 +411,97 @@ TEST_CASE("paper/links", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links.bismuth"))),
-        "74570eee263b5817a7693c53aae6ea22197e6b3136f417108c4c0f6a1885f1ce");
+        "f26147785e7a019ec05d33daf3a905b6abb78db1609691f94586cdc2f7ad32cd");
 }
 
 TEST_CASE("paper/links2", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links2.bismuth"))),
-        "e9145e630f32139daba01610ef3aebeeeae8799c7556ec87f80eeb6c66ed4507");
+        "1ee56444a1fb644f6c4c0cf2a5622d7b587fa88b694fafad34eb7b06d21f28a1");
 }
 
 TEST_CASE("paper/links3", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links3.bismuth"))),
-        "3723b6527a033a44c8787f9596c1986dc0652ea69aedf725bb49950ee2af63eb");
+        "53b2555f6186876cb1f5621d1b4a9bdae6baa1545bfb61b4dc7cea66abaa8467");
 }
 
 TEST_CASE("paper/links4", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/paper/links4.bismuth"))),
-        "22ec98f6ecb6520b4128974cf32d964b0fca15e2a3b643030162d85e254ca3a4");
+        "838daf453c0b617b3e5ba350b1cbb0c94757f404567923262ab8be02831bb899");
 }
 
 TEST_CASE("programs/doubleArg1c2 - weakening and loops", "[codegen][linear-types]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/doubleArg1c2.bismuth"))),
-        "1d20ca026de3897c4aa64ce9545adacf89b97799c4a30fcdf2aaf0464ad782f2");
+        "f3363e85bb628436cff3e506a080a0dc1ebc65131b217ca6d286c18568c72723");
 }
 
 TEST_CASE("programs/enumedit", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumedit.bismuth"))),
-        "44e08fc9ff114660ac8cc5dc58be66e982e8cd33d2d989d025f61b82e752b9e0");
+        "7c0d836acbadcadc17be9eca1f71a619b8ec1d78ea5567c0d89e40af8d0eea6c");
 }
 
 TEST_CASE("programs/TBox - Parody + Clone w/ boxes", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TBox.bismuth"))),
-        "5e863270446cb4a7c029588be745eed69cf2fbe2c786d1ac7d3ab0c22c3a3ba5");
+        "7dda01623a703aa3f79640e0ba6bec2faea21f744f96f74e95148df60ddea3f0");
 }
 
 TEST_CASE("programs/TBox2 - Parody + Clone w/ boxes", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TBox2.bismuth"))),
-        "3e77737208a88429fa003f8f320f9f8b950e155f71862335cd4ea95b6aff5640");
+        "56e5e59e9b8b311fe8ff3dd3963f0c5ae91e0e75e316af23c395c1bf5c23d0bf");
 }
 
 TEST_CASE("programs/TStruct - Parody + Clone w/ Struct Boxes ", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStruct.bismuth"))),
-        "c5135d51ca668a9edee53d4128b24b7a9cf76a05e0c182af56e04463f0e66b7b");
+        "b655c6c80ccad18e0c3e86f987898b5df4c21e8f4c130332619cb6f5d4d8f3d0");
 }
 
 TEST_CASE("programs/TStructEnum - Parody + Clone w/ Enum Struct Boxes ", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnum.bismuth"))),
-        "b6c7a56f30d766a49d3320d0c5376cf33b21022b4d5a1f2bfdf65b9ebdf56f5b");
+        "a2d2481a6b188f3c97b8bce82d436eaaa416bff4201eb7431dc8992ed946cdcf");
 }
 
 TEST_CASE("programs/TStructEnumGC - Parody + Clone w/ Enum Struct Boxes + GC ", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnumGC.bismuth"))),
-        "0c1cd4f71a078a5473b0ad3af6dcace77fe2d444691272b3824ece9bd38cb6f1");
+        "53ee7320183d2bb44c9dca326e6d95e5e5cfee0155167555c3b80e4de8884238");
 }
 
 TEST_CASE("programs/TArray - Parody + Clone w/ Array", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TArray.bismuth"))),
-        "ecb51dfc8c9b462e219b4f75199dc888bd065f4b18dc1b0d986cd4b398b0708f");
+        "0cabf130278d8589170df5770626279c8072d60f40a12c213fbdcbbb8ee97818");
 }
 TEST_CASE("programs/TArray2 - Parody + Clone w/ Array Double box", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TArray2.bismuth"))),
-        "26f2ca452884c47688c78c3502742531c16e586f7e2d7fecd03c5459beb55320");
+        "d9855d31f372f5a79561ae11098df263f51765fee274ce1e23e23b12900adf0c");
 }
 
 TEST_CASE("programs/TStructEnumArray - Parody + Clone w/ Struct Enum Array", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructEnumArray.bismuth"))),
-        "d50c7cb760d6538040a734d6db980e2401de91ea8c89c3edb1a3633bf654d736");
+        "d73d5ac1199eb312b3719a879b8f6d37579dd2d669d9e8d6de80291f7d686014");
 }
 
 TEST_CASE("programs/TStructEnumArrayBlock - TStructEnumArray with blocks to mess with control flow", "[codegen][enum]")
@@ -515,119 +515,119 @@ TEST_CASE("programs/loop - Basic GC with boxes in loops based on example", "[cod
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/loop.bismuth"))),
-        "7727655235f992144ba2241c8f2b815af840a37a295574a2592ef272b82e6620");
+        "3a825347023f218c004f76ed1cf14f22a1849c80e4b0bd6b06f2af3245be2207");
 }
 
 TEST_CASE("programs/GC-test - Basic GC w/ Send", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/GC-test.bismuth"))),
-        "e5f5cfa7638e2c611c403746d9f4e19711c87a1bcd58fbbec2b7ae2bf9d0f234");
+        "e034828376e96a8d893c7fd82e74200e6db711aea00d6f418aaa63a303e33265");
 }
 
 TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructGC.bismuth"))),
-        "381062c171d639435cbf37039eb9cf834525fbdd19edb85d07888537116f142d");
+        "02698fcd137c5a151a46d119d4b4990aed5b8ae6c057348740d5b719bd31e4ed");
 }
 
 TEST_CASE("programs/TStructCopy - Basic test of copy", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/TStructCopy.bismuth"))),
-        "dcb236013d66d32d90f9244eaae943e682ec7cecf9d9f19e9742cbe014486d77");
+        "d4b33b46f536a4fffc7ec4c959afc5f2cfb46ae0f5a4621365bbf45b1ce47c2a");
 }
 
 TEST_CASE("programs/db/db - Basic DB 1", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db.bismuth"))),
-        "8f5f62d7dd8ad55e7e7747e0903626f9a4d1cd01520e06eb13fc1a12d851f889");
+        "2e7609ce6e5f614e444e6b0d7d1122ac797a7d26f978d58cbf3afaabc0c1dbc3");
 }
 
 TEST_CASE("programs/db/db2 - Basic DB 2", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db2.bismuth"))),
-        "37d2f34e59462560f2eb14c5c1368a6ae718dcc3b8446ca05bc70450b4fec86f");
+        "e57d059dfcbae73f62d7c5a742355a20db54005d4523172b7fe61c3a79e34562");
 }
 
 TEST_CASE("programs/db/db3 - Basic DB 3", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db3.bismuth"))),
-        "4e7b73797a694ba6a334b626aefdb39c5725165ebecb46875ba0886c8ea33aed");
+        "5d228f4f1b6b018de4da09237788eb4ffba1b405f9a66e4be460d0ace0445f83");
 }
 
 TEST_CASE("programs/db/db4 - Basic DB 4", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db4.bismuth"))),
-        "f095966819c9edfabf28dddbb404fef41d6b12f6d1d4d8bc3ccd7d827af3343c");
+        "16e3604904def68af47c4ae1b813d075020812658fbf645c7702ef2117e350e8");
 }
 
 TEST_CASE("programs/db/db5-if - Basic DB 5 - AcceptIf", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if.bismuth"))),
-        "c12396829d1a512ccebb7443a47eb448b7f41a1c380d5ded67fe8237a02883eb");
+        "c1ab1cd16318bd64465135b53d334eb8b82b535e259f8cad43605c3d6e608edd");
 }
 
 TEST_CASE("programs/db/db5-if-present - Basic DB 5 - AcceptIf and is_present", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if-present.bismuth"))),
-        "b64f24005d2f4ccb3260db7b1f11c852727b593ab6aba21723699568a3700fe3");
+        "955c5eb91a739bb2b41399388637abe8931f2ce7fd1fb1966567636f30e61413");
 }
 
 TEST_CASE("programs/db/db5-if-present-else - Basic DB 5 - AcceptIf with else and is_present", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if-present-else.bismuth"))),
-        "7ef604f62ff56e462f587776a73be9db08c86197afad15d2d7c30c059ede319f");
+        "614dc3eaa4b344541d0d0793ce47953de260d4369bda6a46b55545ac18dbce60");
 }
 
 TEST_CASE("programs/db/db5-while-present - Basic DB 5 - AcceptWhile and is_present", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-while-present.bismuth"))),
-        "535c2b7ba4834e5ac68f5ed6ccadb453de66308861702741ad2af71e757ccd91");
+        "2e93568808caff6aee52654acabe1e985e342a937b074d5d776fd6d1fae05266");
 }
 
 TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/bt.bismuth"))),
-        "a3a5c186f928b3f4b6bd595f71beb11760adc245ce1bd06af198b585c3f350c6");
+        "75d1cb92d6f260329cf232ea820cff31cb869c3ff3937bb5dee1077fcd73e2da");
 }
 
 TEST_CASE("programs/bt-walker1 - Basic Binary Tree w/ walker", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/bt-walker1.bismuth"))),
-        "590ec84dfae19dd0113189bd0907f2f7b2c220e87bb1ea2d428ba308f2c10ff9");
+        "375a49ca790b4cd110093feadaf263217d49f0a55bb6e4c5afe16264d2ddea4c");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 1", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/parity-check.bismuth"))),
-        "ef0252eee1d37ed28524c61e9476311d0c06664a4c3c44cc3c6d982dedab764f");
+        "72d8705a4883679ad6a164e9b6db709cd85e8bd14de8c39cc8e4fff4cc1470a0");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 2", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/parity-check2.bismuth"))),
-        "1e9d023732849f65af9438ac76e7b144e485d9480cf7521f2fbe1729b14ba2fd");
+        "a5815fbd4e40e4f18ddd6b530c62486d2629c07dff8cf744e80b65dc860ccbc1");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 2a", "[codegen][enum]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/parity-check2a.bismuth"))),
-        "d7fdacc9a86d980c7a9f02771de161b6470621ea403db11cb7fac9f1ff831ad5");
+        "d36b0e1e131e7e5e7a07c06edc1a86b2b51c72380de816ff0a64ed8173752992");
 }
 
 
@@ -635,77 +635,77 @@ TEST_CASE("programs/adder - Add Stream", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder.bismuth"))),
-        "5b197be58b320967d601d8aeb5ef6b544c4e69b1f371a46ed9c49fb4f3062a6a");
+        "50743d104c6eb900254b972afd39699803adfe56aa65f61d04dbf6dcddd95d6f");
 }
 
 TEST_CASE("programs/adder2 - Add Stream 2", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder2.bismuth"))),
-        "7ce6e8ee62e90176cec9ad6b2504adc7cc6949535ea4cd1c0514340c27174352");
+        "b9784fb47b1836abe4d3ffbd603e4d66b1d2385b4dea6f6efcfae692cf309635");
 }
 
 TEST_CASE("programs/adder3 - Add Stream 3", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder3.bismuth"))),
-        "2afda1f4ac120325c69981c93a3a0e5f47085e1d03c20348bd75e45e20652383");
+        "61bf4281115cc5c77fe743fd3b4babf6bbba403f0bc2c316ef04e15874bb3d22");
 }
 
 TEST_CASE("programs/adder4 - Add Stream 3 but out of order and higher-order channel", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder4.bismuth"))),
-        "7e5ef2cba7f9905e43de9c236e50be2695478345142e851f19a419bbfb6e8293");
+        "81a297e1db8180d055b13813403557c84f8ca3814984c39a6c5d2248ad66623c");
 }
 
 TEST_CASE("programs/adder5 - Add Stream 4 but using fn that returns linear variable", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adder5.bismuth"))),
-        "1574f9660cfbe9b5338e3f1bc4d1c45cdbbd7b05661c74599696dfd5de0c4d12");
+        "82f35d92e6c84192208e712d319ade4b1ccd6ce8fd6d2b61ddda3017c2895780");
 }
 
 TEST_CASE("programs/nested_struct - Definitions within definitions", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/nested_struct.bismuth"))),
-        "8c0207b60fd885331411b85d6c1ca6191d05ab14f01f925b8fe2830df7619244");
+        "936426dff7c6e2132fc077378e519a7f0c57953ea73e6c7496c50c80c03314e1");
 }
 
 TEST_CASE("programs/asChannel-int - Convert an int into stream", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/asChannel-int.bismuth"))),
-        "b1c56efe4a81d2e0af27e2b304d1ff434631cf32418c41aa32e963e6e4e5bead");
+        "6a16488e47843b55af7a7bb1e5f29c1e569418f661606df7196f386061763a23");
 }
 
 TEST_CASE("programs/asChannel-array - Convert an array into stream", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/asChannel-array.bismuth"))),
-        "48a955cb0abaf3d36c6ddefd816b1b806adcf5613eb70aea75d6a1a79baca7cf");
+        "afaa96f5447a3c48adfcb6516a857ed945c764f55ab97f4946b9d4b5a1bc7b26");
 }
 
 TEST_CASE("programs/asChannel-channel - Convert regular channel into stream", "[codegen]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/asChannel-channel.bismuth"))),
-        "b9dc91ff94405612881c8601b57c9f7fba027d07ae813d62132eca1b7ef5246b");
+        "5770206895e10c63776ef3a8ff55967347bca9db5b4edb416d158860c75e2775");
 }
 
 TEST_CASE("programs/cancelable/BasicCancel - Basic cancel block with two recv", "[codegen][cancel]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/BasicCancel.bismuth"))),
-        "802e1124ffc93512a1e35bf4c310ed85ceace0f2c3101b8ced405aeebd7caf1f");
+        "05186fc6f50aef9b513a346c457fd716f9c9705cab9b7ddedc4862637f7aefc7");
 }
 
 TEST_CASE("programs/cancelable/DoubleCancel - Basic two blocks with cancel", "[codegen][cancel]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/DoubleCancel.bismuth"))),
-        "8f8f321feb60738d4d754befd37b8c9558e1de717eec503941eb77986d4af621");
+        "2fdc415377354971ef281b4aef616dba677b61518fa5db107840747fd61267e4");
 }
 
 TEST_CASE("programs/cancelable/BranchCancel1 - Basic cancel w/ branch and repetition", "[codegen][cancel]")

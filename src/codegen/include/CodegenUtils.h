@@ -136,8 +136,8 @@ public:
     {
         return module->getOrInsertFunction("_ReadLinearProjection",
                                            llvm::FunctionType::get(
-                                               channelRtPtrTy(),
-                                               {Int32Ty},
+                                               Int32Ty,
+                                               {channelRtPtrTy()},
                                                false));
     }
 
@@ -145,8 +145,8 @@ public:
     {
         return module->getOrInsertFunction("_ReadLossyProjection",
                                            llvm::FunctionType::get(
-                                               channelRtPtrTy(),
-                                               {Int32Ty},
+                                               Int32Ty,
+                                               {channelRtPtrTy()},
                                                false));
     }
 

@@ -494,7 +494,7 @@ std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue)
 {
     /*
-     * Check that we are provided an INT for the index.
+     * Check that we are provided an int for the index.
      */
     std::variant<TypedNode *, ErrorChain *> exprOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->index->accept(this));
 
@@ -509,7 +509,7 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     const Type *exprType = expr->getType();
     if (exprType->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "Array access index expected type INT but got " + exprType->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Array access index expected type int but got " + exprType->toString(toStringMode));
     }
 
     /*
@@ -630,13 +630,13 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     case BismuthParser::MINUS:
         if (innerType->isNotSubtype(Types::DYN_INT))
         {
-            return errorHandler.addError(ctx->getStart(), "INT expected in unary minus, but got " + innerType->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "int expected in unary minus, but got " + innerType->toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
     case BismuthParser::NOT:
         if (innerType->isNotSubtype(Types::DYN_BOOL))
         {
-            return errorHandler.addError(ctx->getStart(), "BOOL expected in unary not, but got " + innerType->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "boolean expected in unary not, but got " + innerType->toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_NOT, innerNode, ctx->getStart());
     }
@@ -645,10 +645,10 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 }
 
 /**
- * @brief Visits a Binary Arithmetic Expression ensuring LHS and RHS are INT.
+ * @brief Visits a Binary Arithmetic Expression ensuring LHS and RHS are int.
  *
  * @param ctx The BinaryArithExprContext to Visit
- * @return const Type* INT if lhs and rhs are INT; UNDEFINED otherwise.
+ * @return const Type* int if lhs and rhs are int; UNDEFINED otherwise.
  */
 std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BinaryArithExprContext *ctx)
 {
@@ -663,7 +663,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     if (left->getType()->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "int left expression expected, but was " + left->getType()->toString(toStringMode));
     }
 
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
@@ -677,7 +677,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     if (right->getType()->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "int right expression expected, but was " + right->getType()->toString(toStringMode));
     }
 
     return new TBinaryArithNode(
@@ -729,10 +729,10 @@ std::variant<TEqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 }
 
 /**
- * @brief Visits a Logical And Expression ensuring LHS and RHS are BOOL.
+ * @brief Visits a Logical And Expression ensuring LHS and RHS are boolean.
  *
  * @param ctx The LogAndExprContext to Visit
- * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
+ * @return const Type* boolean if lhs and rhs are boolean; UNDEFINED otherwise.
  */
 std::variant<TLogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LogAndExprContext *ctx)
 {
@@ -771,7 +771,7 @@ std::variant<TLogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
         if (type->isNotSubtype(Types::DYN_BOOL))
         {
-            errorHandler.addError(e->getStart(), "BOOL expression expected, but was " + type->toString(toStringMode));
+            errorHandler.addError(e->getStart(), "boolean expression expected, but was " + type->toString(toStringMode));
         }
         else
         {
@@ -782,10 +782,10 @@ std::variant<TLogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 }
 
 /**
- * @brief Visits a Logical Or Expression ensuring LHS and RHS are BOOL.
+ * @brief Visits a Logical Or Expression ensuring LHS and RHS are boolean.
  *
  * @param ctx The LogOrExprContext to Visit
- * @return const Type* BOOL if lhs and rhs are BOOL; UNDEFINED otherwise.
+ * @return const Type* boolean if lhs and rhs are boolean; UNDEFINED otherwise.
  */
 std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LogOrExprContext *ctx)
 {
@@ -838,7 +838,7 @@ std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
  * @brief Visits a FieldAccessExprContext---Currently limited to array lengths
  *
  * @param ctx the FieldAccessExprContext to visit
- * @return const Type* INT if correctly used to test array length; UNDEFINED if any errors.
+ * @return const Type* int if correctly used to test array length; UNDEFINED if any errors.
  */
 std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::FieldAccessExprContext *ctx, bool is_rvalue)
 {
@@ -955,10 +955,10 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
 }
 
 /**
- * @brief Visits a BinaryRelational Expression ensuring both lhs and rhs are INT.
+ * @brief Visits a BinaryRelational Expression ensuring both lhs and rhs are int.
  *
  * @param ctx The BinaryRelExprContext to visit.
- * @return const Type* BOOL if lhs and rhs INT; UNDEFINED otherwise.
+ * @return const Type* boolean if lhs and rhs int; UNDEFINED otherwise.
  */
 std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BinaryRelExprContext *ctx)
 {
@@ -973,7 +973,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     if (left->getType()->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "INT left expression expected, but was " + left->getType()->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "int left expression expected, but was " + left->getType()->toString(toStringMode));
     }
 
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
@@ -987,7 +987,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     if (right->getType()->isNotSubtype(Types::DYN_INT))
     {
-        return errorHandler.addError(ctx->getStart(), "INT right expression expected, but was " + right->getType()->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "int right expression expected, but was " + right->getType()->toString(toStringMode));
     }
 
     return new TBinaryRelNode(

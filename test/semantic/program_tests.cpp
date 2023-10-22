@@ -327,7 +327,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Argument 0 provided to foo expected INT but got STR");
+    "Argument 0 provided to foo expected int but got str");
 }
 
 TEST_CASE("Invoke on Non-Function (str)", "[semantic][program]")
@@ -340,7 +340,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Can only invoke functions, not x : STR");
+    "Can only invoke functions, not x : str");
 }
 
 // FIXME: TYPE INFERENCE ON FUNCTIONS? AND TEST FUNCTION SUBTYPER!
@@ -355,7 +355,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""",
-    "Can only invoke functions, not x : INT");
+    "Can only invoke functions, not x : int");
 }
 
 TEST_CASE("Redeclaration of function 1", "[semantic][program]")
@@ -386,7 +386,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Cannot perform a copy on a linear type: ↿-INT↾");
+    "Cannot perform a copy on a linear type: Channel<-int>");
 }
 
 TEST_CASE("Redeclaration of program 1", "[semantic][program]")
@@ -744,7 +744,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""", 
-    "Expression of type INT cannot be assigned to BOOL");
+    "Expression of type int cannot be assigned to boolean");
 }
 
 TEST_CASE("Wrong UnaryMinus", "[semantic][program]")
@@ -756,7 +756,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""", 
-    "INT expected in unary minus, but got STR");
+    "int expected in unary minus, but got str");
 }
 
 TEST_CASE("Wrong RHS Arithmetic", "[semantic][program]")
@@ -768,7 +768,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""", 
-    "INT right expression expected, but was STR");
+    "int right expression expected, but was str");
 }
 
 TEST_CASE("Wrong LogAnd LHS", "[semantic][program]")
@@ -780,7 +780,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""",
-    "BOOL expression expected, but was INT");
+    "boolean expression expected, but was int");
 }
 
 TEST_CASE("Wrong LogAnd RHS", "[semantic][program]")
@@ -792,7 +792,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""", 
-    "BOOL expression expected, but was INT");
+    "boolean expression expected, but was int");
 }
 
 TEST_CASE("Wrong LogOr LHS", "[semantic][program]")
@@ -804,7 +804,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""", 
-    "BOOL expression expected, but was INT");
+    "Expected boolean but got int");
 }
 
 TEST_CASE("Wrong LogOr RHS", "[semantic][program]")
@@ -816,7 +816,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""",
-    "BOOL expression expected, but was INT");
+    "Expected boolean but got int");
 }
 
 TEST_CASE("Field Access - var", "[semantic][program]")
@@ -842,7 +842,7 @@ define program :: c : Channel<-int> {
     c.send(0);
 }
     )"""", 
-    "Cannot access length on INT");
+    "Cannot access length on int");
 }
 
 // TODO: does it cause errors that we print types as all caps but define them as diff case?
@@ -857,7 +857,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""",
-    "Array access index expected type INT but got BOOL");
+    "Array access index expected type int but got boolean");
 }
 
 TEST_CASE("Field Access - Unsupported/Undefined", "[semantic][program]")
@@ -870,7 +870,7 @@ define program :: c : Channel<-int> {
     c.send(0);
 }
     )"""", 
-    "Cannot access testing on INT[5]");
+    "Cannot access testing on int[5]");
 }
 
 TEST_CASE("Field Access - Undefined Var", "[semantic][program]")
@@ -922,7 +922,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "PROC cannot return value, yet it was given a INT to return!");
+    "PROC cannot return value, yet it was given a int to return!");
 }
 
 TEST_CASE("Function return nothing", "[semantic][program]")
@@ -938,7 +938,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""",
-    "Expected to return a INT but received nothing");
+    "Expected to return a int but received nothing");
 }
 
 TEST_CASE("Function return wrong type", "[semantic][program]")
@@ -949,7 +949,7 @@ define program :: c : Channel<-int> = {
   c.send("hey"); 
 }
     )"""", 
-    "Failed to send STR over channel [c, ↿-INT↾]");
+    "Failed to send str over channel [c, Channel<-int>]");
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program][local-function]")
@@ -1440,7 +1440,7 @@ define program :: c : Channel<-int> = {
     return 0; 
 }
     )"""", 
-    "Expression of type INT cannot be assigned to Outer");
+    "Expression of type int cannot be assigned to Outer");
 }
 
 TEST_CASE("Nested Enums - Disallow Local Assign with mismatch", "[semantic][program][enum]")
@@ -1476,7 +1476,7 @@ define program :: c : Channel<-int> = {
     return 0; 
 }
     )"""", 
-    "Expression of type (BOOL + INT) cannot be assigned to Outer");
+    "Expression of type (boolean + int) cannot be assigned to Outer");
 }
 
 TEST_CASE("Duplicated enum keys", "[semantic][program][enum]")
@@ -1639,7 +1639,7 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""", 
-    "Argument 0 provided to test expected ((BOOL + STR) + BOOL + INT) but got STR");
+    "Argument 0 provided to test expected ((boolean + str) + boolean + int) but got str");
 }
 
 TEST_CASE("Channel Assignment 1", "[semantic]")
@@ -1701,7 +1701,7 @@ define bar :: c : Channel<?(?-int);+int> = {
     int a := c.recv();
 }
     )"""", 
-    "Failed to weaken: c against ↿*?(?(-INT));+INT↾");
+    "Failed to weaken: c against Channel<*?(?(-int));+int>");
 }
 
 TEST_CASE("double recv", "[semantic]")
@@ -1718,7 +1718,7 @@ define program :: c : Channel<-int> = {
     c.send(a)
 }
     )"""", 
-    "Failed to recv over channel: [com, ↿↾]");
+    "Failed to recv over channel: [com, Channel<>]");
 }
 
 TEST_CASE("double recv - correct", "[semantic]")
@@ -1807,7 +1807,7 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""", 
-    "Failed to send STR over channel [a, ↿↾]");
+    "Failed to send str over channel [a, Channel<>]");
 }
 
 TEST_CASE("Links3 - 2", "[semantic]")
@@ -1860,7 +1860,7 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""", 
-    "Failed to send STR over channel [a, ↿↾]");
+    "Failed to send str over channel [a, Channel<>]");
 }
 
 TEST_CASE("Links3 - 3", "[semantic]")
@@ -1913,7 +1913,7 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""", 
-    "Failed to send STR over channel [a, ↿↾]");
+    "Failed to send str over channel [a, Channel<>]");
 }
 
 TEST_CASE("Links3 - 4", "[semantic]")
@@ -1965,7 +1965,7 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""", 
-    "Unused linear types in context: [a, ↿-STR↾]");
+    "Unused linear types in context: [a, Channel<-str>]");
 }
 
 // not all of these are duplicates as some hit different branches. some may be the exact same code though, need to check
@@ -2018,7 +2018,7 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""", 
-    "Unused linear types in context: [a, ↿-STR↾]");
+    "Unused linear types in context: [a, Channel<-str>]");
 }
 
 TEST_CASE("No assignments of guarded", "[semantic]")
@@ -2074,7 +2074,7 @@ TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[
 TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[semantic]")
 {
     EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg2.bismuth"))),
-      "Can only invoke functions, not foo : PROGRAM : +INT");
+      "Can only invoke functions, not foo : PROGRAM : +int");
 }
 
 
@@ -2101,7 +2101,7 @@ TEST_CASE("B Level Negative Test #1", "[semantic]")
 TEST_CASE("B Level Negative Test #2", "[semantic]")
 {
   EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BNegative2.bismuth"))),
-                          "Expression of type BOOL cannot be assigned to INT");
+                          "Expression of type boolean cannot be assigned to int");
 }
 
 /*********************************
