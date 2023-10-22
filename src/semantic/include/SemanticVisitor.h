@@ -508,6 +508,23 @@ private:
 
     int flags; // Compiler flags
 
+    // void safeVisitScope(antlr4::ParserRuleContext *ctx, StopType stopType, void (*visitor)())
+    // {
+    //     stmgr->enterScope(stopType);
+    //     visitor();
+    //     safeExitScope(ctx);
+    // }
+
+    // template<typename T> 
+    // safeVisitScope(StopType stopType, T (*visitor)())
+    // {
+    //     stmgr->enterScope(stopType);
+    //     visitor();
+    //     // safeExitScope(ctx);
+    //     stmgr->exitScope(); 
+    // }
+
+
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
         // First, try exiting the scope
