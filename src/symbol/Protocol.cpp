@@ -102,19 +102,40 @@ const Protocol *ProtocolOC::getCopy() const
  * ********************************************/
 std::string ProtocolIChoice::as_str(DisplayMode mode) const
 {
-    // FIXME: THIS IS MATH MODE: IMPLEMENT C_STYLE FOR THIS AND EXT CHOICE!
     std::ostringstream description;
 
-    unsigned int i = 0;
-    for (auto p : opts)
+    switch(mode)
     {
-        if (i != 0)
-            description << "&";
-        description << p->toString(mode);
-        i++;
-    }
+        case C_STYLE:
+        {
+            description << "InternalChoice<";
+            unsigned int i = 0;
+            for (auto p : opts)
+            {
+                if (i != 0)
+                    description << ", ";
+                description << p->toString(mode);
+                i++;
+            }
+            description << ">";
 
-    return description.str();
+            return description.str(); 
+        }
+
+        case MATH_STYLE:
+        {
+            unsigned int i = 0;
+            for (auto p : opts)
+            {
+                if (i != 0)
+                    description << "&";
+                description << p->toString(mode);
+                i++;
+            }
+
+            return description.str();
+        }
+    }
 }
 
 const ProtocolEChoice *ProtocolIChoice::getInverse() const
@@ -151,16 +172,39 @@ const Protocol *ProtocolIChoice::getCopy() const
 std::string ProtocolEChoice::as_str(DisplayMode mode) const
 {
     std::ostringstream description;
-    unsigned int i = 0;
-    for (auto p : opts)
-    {
-        if (i != 0)
-            description << "\u2295";
-        description << p->toString(mode);
-        i++;
-    }
 
-    return description.str();
+    switch(mode)
+    {
+        case C_STYLE:
+        {
+            description << "ExternalChoice<";
+            unsigned int i = 0;
+            for (auto p : opts)
+            {
+                if (i != 0)
+                    description << ", ";
+                description << p->toString(mode);
+                i++;
+            }
+            description << ">";
+
+            return description.str(); 
+        }
+
+        case MATH_STYLE:
+        {
+            unsigned int i = 0;
+            for (auto p : opts)
+            {
+                if (i != 0)
+                    description << "\u2295";
+                description << p->toString(mode);
+                i++;
+            }
+
+            return description.str();
+        }
+    }
 }
 
 const Protocol *ProtocolEChoice::getInverse() const
