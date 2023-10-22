@@ -136,6 +136,7 @@ statement           : defineType                                                
                     | block                                                                                                 # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                 # ProgramSend
                     | WHILE check=condition block                                                                           # ProgramLoop
+                    // | 'for' '(' VarDeclStatement ';' check=condition ';' expr=expression ')' blk=block
                     | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ protoElse? ')' (rest+=statement)*  # ProgramCase  
                     | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ ('|' protoElse?)? (rest+=statement)*                   # ProgramCase   
                     | channel=VARIABLE LBRC sel=protocol RBRC                                                               # ProgramProject
