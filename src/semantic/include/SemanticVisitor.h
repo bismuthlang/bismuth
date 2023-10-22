@@ -492,16 +492,6 @@ public:
         std::vector<T *> ctxCases,
         bool checkRestIndependently,
         std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck);
-        
-    template <typename T>
-    std::vector<T> *Append(std::vector<T> a, const std::vector<T> b)
-    {
-        std::vector<T> *ans = new std::vector<T>();
-        ans->reserve(a.size() + b.size());
-        ans->insert(ans->end(), a.begin(), a.end());
-        ans->insert(ans->end(), b.begin(), b.end());
-        return ans;
-    }
 
 private:
     DisplayMode toStringMode; 
