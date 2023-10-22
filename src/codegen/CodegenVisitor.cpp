@@ -19,8 +19,6 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
      ***********************************/
     for (auto e : n->defs)
     {
-        std::cout << "HELLO" << std::endl; 
-        module->dump(); 
         if (std::holds_alternative<TProgramDefNode *>(e))
         {
             TProgramDefNode *octx = std::get<TProgramDefNode *>(e);
@@ -39,8 +37,6 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
             Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->name, module);
             type->setName(fn->getName().str());
         }
-
-        module->dump(); 
     }
 
     for (auto e : n->externs)

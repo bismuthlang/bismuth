@@ -2298,29 +2298,28 @@ std::variant<TProgramCancelNode *, ErrorChain *> SemanticVisitor::TvisitProgramC
 {
     std::string id = ctx->channel->getText();
     std::optional<Symbol *> opt = stmgr->lookup(id);
-    std::cout << "2301" << std::endl;
+    
     if (!opt)
     {
         return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
     }
-std::cout << "2306" << std::endl;
+
     Symbol *sym = opt.value();
-std::cout << "2308" << std::endl;
+
     std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->type);
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
         std::optional<const ProtocolClose *> closeOpt = channel->getProtocol()->cancel();
-std::cout << "2314" << std::endl;
+
         if (!closeOpt)
         {
             return errorHandler.addError(ctx->getStart(), "Failed to cancel: " + id + " : "  + channel->toString(toStringMode));
         }
-        std::cout << "2319" << std::endl;
-        std::cout << "2319a " << closeOpt.value()->toString(toStringMode) << std::endl;
+        
         return new TProgramCancelNode(sym, closeOpt.value()->getCloseNumber(), ctx->getStart());
     }
-std::cout << "2322" << std::endl;
+
     return errorHandler.addError(ctx->getStart(), "Cannot cancel on non-channel: " + id); // TODO : better error messages (expected type XYZ but got)
 }
 

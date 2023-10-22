@@ -460,7 +460,6 @@ public:
         bool operator()(std::pair<const Protocol *, BismuthParser::StatementContext *> a,
                         std::pair<const Protocol *, BismuthParser::StatementContext *> b) const
         {
-            // std::cout << a.first->toString() << " < " << b.first->toString() << " = " << (a.first->toString() < b.second->toString()) << std::endl;
             return a.first->toString(C_STYLE) < b.first->toString(C_STYLE);
         }
     };
