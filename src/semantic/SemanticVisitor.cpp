@@ -2076,10 +2076,22 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
-        std::set<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
+        std::set<
+            std::pair<
+                std::variant<const ProtocolSequence *, std::string>,
+            BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
 
         for (auto alt : ctx->protoAlternative())
         {
+            if(alt->lbl)
+            {
+                optsI.insert({
+                    alt->lbl->getText(), 
+                    alt->eval
+                });
+                continue; 
+            }
+
             // TODO: SEEMS WRONG TO PERFORM ERROR CHECKS HERE AS, BY DEF, COULD ONLY ERROR SHOULD HIGHER-LEVEL PROTO FAIL, BUT I GUESS MAYBE USEFUL IF WE LATER ADD INF!
             ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
             std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(alt->check); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
@@ -2090,19 +2102,32 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
                 (*e)->addError(ctx->getStart(), "Failed to generate protocol type in channel case statement");
                 return *e;
             }
-
+            
             const ProtocolSequence *a = std::get<const ProtocolSequence *>(protoOpt);
 
-            optsI.insert({a->getInverse(), alt->eval}); // Double inverses to ensure order same for both sides (server & client)
+            optsI.insert({
+                a->getInverse(), alt->eval}); // Double inverses to ensure order same for both sides (server & client)
         }
 
-        std::vector<const ProtocolSequence *> branchSequences = {};
+        std::vector<std::variant<const ProtocolSequence *, std::string>> branchSequences = {};
         std::vector<BismuthParser::StatementContext *> alternatives = {};
 
 
         for (auto itr : optsI)
         {
-            branchSequences.push_back(itr.first->getInverse());
+            std::variant<const ProtocolSequence *, std::string> tmp = itr.first; 
+            if(std::holds_alternative<const ProtocolSequence *>(tmp))
+            {
+                branchSequences.push_back(
+                    std::get<const ProtocolSequence *>(tmp)->getInverse()
+                );
+                // TODO: delete std::get<const ProtocolSequence *>(tmp)?
+            } 
+            else 
+            {
+                branchSequences.push_back(tmp);
+            }
+            // branchSequences.push_back(itr.first->getInverse());
             alternatives.push_back(itr.second);
         }
 
@@ -2201,6 +2226,18 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
+
+        if(ctx->lbl)
+        {
+            unsigned int projectIndex = channel->getProtocol()->project(ctx->lbl->getText());
+
+            if (!projectIndex)
+            {
+                return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ctx->lbl->getText());
+            }
+
+            return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
+        }
 
         ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
         std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->sel); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?

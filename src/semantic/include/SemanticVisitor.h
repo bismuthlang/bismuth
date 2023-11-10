@@ -459,10 +459,41 @@ public:
 
     struct ProtocolCompareInv
     {
-        bool operator()(std::pair<const Protocol *, BismuthParser::StatementContext *> a,
-                        std::pair<const Protocol *, BismuthParser::StatementContext *> b) const
+        bool operator()(std::pair<std::variant<const ProtocolSequence *, std::string>, BismuthParser::StatementContext *> ap,
+                        std::pair<std::variant<const ProtocolSequence *, std::string>, BismuthParser::StatementContext *> bp) const
         {
-            return a.first->toString(C_STYLE) < b.first->toString(C_STYLE);
+            std::variant<const ProtocolSequence *, std::string> a = ap.first;
+            std::variant<const ProtocolSequence *, std::string> b = bp.first;
+
+            if(std::holds_alternative<std::string>(a))
+            {
+                if(std::holds_alternative<std::string>(b))
+                    return std::get<std::string>(a) < std::get<std::string>(b); 
+
+                return true; // TODO: verify 
+            }
+            
+            if(std::holds_alternative<std::string>(b))
+                return false; // TODO: verify 
+
+            return std::get<const ProtocolSequence *>(a)->toString(DisplayMode::C_STYLE) < std::get<const ProtocolSequence *>(b)->toString(DisplayMode::C_STYLE);
+
+            // const ProtocolBranchOption * a = ap.first; 
+            // const ProtocolBranchOption * b = bp.first; 
+            
+            // if(a->label)
+            // {
+            //     if(b->label)
+            //         return a->label.value() < b->label.value(); 
+
+            //     return true; // TODO: verify 
+            // }
+            
+            // if(b->label)
+            //     return false; // TODO: verify 
+
+            // return a->seq->toString(DisplayMode::C_STYLE) < b->seq->toString(DisplayMode::C_STYLE);
+            // return //a.first->toString(C_STYLE) < b.first->toString(C_STYLE);
         }
     };
 

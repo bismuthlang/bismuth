@@ -23,6 +23,8 @@
 // #include <climits> // Max & Min
 
 #include <variant>
+// #include <memory> // Smart pointers
+
 
 #include "Type.h"
 #include "SymbolUtils.h"
@@ -37,6 +39,8 @@ class ProtocolWN;
 class ProtocolIChoice;
 
 class ProtocolClose; 
+
+struct ProtocolBranchOption; 
 
 class Protocol
 {
@@ -94,7 +98,7 @@ public:
     }
 };
 
-// FIXME: DO BETTER
+// FIXME: DO BETTER, can probably be removed
 struct ProtocolCompare
 {
     bool operator()(const Protocol *a, const Protocol *b) const
@@ -176,9 +180,10 @@ public:
     optional<const ProtocolSequence *> acceptIf() const;
 
     unsigned int project(const ProtocolSequence *ps) const;
+    unsigned int project(std::string label) const; 
     // optional<vector<const ProtocolSequence *>>  
     optional<CaseMetadata>
-    caseAnalysis(vector<const ProtocolSequence *> testOpts) const;
+    caseAnalysis(vector<variant<const ProtocolSequence *, string>> testOpts) const;
 
 
     bool isGuarded() const override;
@@ -192,7 +197,7 @@ private:
     std::optional<const Protocol *> popFirst() const;
 
     // void swapFirst(const Protocol * toSwap) const;
-    bool swapChoice(const ProtocolSequence *) const;
+    bool swapChoice(const ProtocolBranchOption *) const;
     void insertSteps(vector<const Protocol *> ins) const;
 
     std::optional<const ProtocolClose *> popFirstCancelable() const;
@@ -296,6 +301,76 @@ public:
     const ProtocolSequence *getInnerProtocol() const { return proto; }
 };
 
+
+/*******************************************
+ * 
+ * Branch Helpers
+ * 
+ ********************************************/
+
+struct ProtocolBranchOption {
+    std::optional<std::string> label; 
+    const ProtocolSequence * seq; 
+
+    ProtocolBranchOption(std::string lbl, const ProtocolSequence * s) 
+        : label(lbl)
+        , seq(s) 
+    {}
+
+    ProtocolBranchOption(const ProtocolSequence * s)
+        : label(std::nullopt)
+        , seq(s) 
+        {}
+
+    
+    std::string toString(DisplayMode mode) const {
+        if(label) return label.value() + " : " + seq->toString(mode); 
+        return seq->toString(mode); 
+    }
+
+private: 
+    ProtocolBranchOption(std::optional<std::string> lbl, const ProtocolSequence * s) 
+            : label(lbl)
+            , seq(s) 
+        {}
+
+public: 
+    const ProtocolBranchOption * getInverse() const { 
+        return new ProtocolBranchOption(
+            label, 
+            seq->getInverse()
+        );
+    }
+
+    const ProtocolBranchOption * getCopy() const { 
+        return new ProtocolBranchOption(
+            label, 
+            seq->getCopy()
+        );
+    }
+};
+
+
+// FIXME: DO BETTER
+struct BranchOptCompare
+{
+    bool operator()(const ProtocolBranchOption * a, const ProtocolBranchOption *b) const
+    {
+        if(a->label)
+        {
+            if(b->label)
+                return a->label.value() < b->label.value(); 
+
+            return true; // TODO: verify 
+        }
+        
+        if(b->label)
+            return false; // TODO: verify 
+
+        return a->seq->toString(DisplayMode::C_STYLE) < b->seq->toString(DisplayMode::C_STYLE);
+    }
+};
+
 /*******************************************
  *
  * External Choice Protocol
@@ -304,10 +379,10 @@ public:
 class ProtocolEChoice : public Protocol
 {
 private:
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
 
 public:
-    ProtocolEChoice(bool inCloseable, std::set<const ProtocolSequence *, ProtocolCompare> o)
+    ProtocolEChoice(bool inCloseable, std::set<const ProtocolBranchOption *, BranchOptCompare> o)
         : Protocol(inCloseable), opts(o)
     {}
 
@@ -316,7 +391,8 @@ public:
     const Protocol *getInverse() const override;
     const Protocol *getCopy() const override;
 
-    std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
+    std::set<const ProtocolBranchOption *, BranchOptCompare> getOptions() const { return opts; }
+    std::optional<const ProtocolBranchOption *> lookup(std::variant<const ProtocolSequence *, std::string> opt) const; 
 };
 
 /*******************************************
@@ -327,10 +403,10 @@ public:
 class ProtocolIChoice : public Protocol
 {
 private:
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
 
 public:
-    ProtocolIChoice(bool inCloseable, std::set<const ProtocolSequence *, ProtocolCompare> o)
+    ProtocolIChoice(bool inCloseable, std::set<const ProtocolBranchOption *, BranchOptCompare> o)
         : Protocol(inCloseable), opts(o)
     {}
 
@@ -339,7 +415,7 @@ public:
     const ProtocolEChoice *getInverse() const override;
     const Protocol *getCopy() const override;
 
-    std::set<const ProtocolSequence *, ProtocolCompare> getOptions() const { return opts; }
+    std::set<const ProtocolBranchOption *, BranchOptCompare> getOptions() const { return opts; }
 };
 
 /*******************************************
