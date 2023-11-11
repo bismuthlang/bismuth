@@ -1,0 +1,25 @@
+extern func printf(str s, ...) : int; 
+
+define program :: c : Channel<-int> {
+  int[50] a; 
+  a[0] := 1; 
+  a[1] := 2; 
+  a[2] := 3; 
+  a[3] := 4;
+  a[4] := 5; 
+
+
+  # int[] data; # Synamically sized array 
+
+  # data[10] := 20; 
+
+  for(int i := 0; i < 10; i := i + 1) # For loops
+  {
+    match a[i]
+      | Unit u => printf("Unit, ");
+      | int t => printf("%i, ", t);
+  }
+
+  printf("\n");
+  c.send(0);
+}
