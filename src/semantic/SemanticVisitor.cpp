@@ -1346,7 +1346,13 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
  */
 std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ProgramLoopContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+    std::variant<TypedNode *, ErrorChain *> checkOpt;
+
+    stmgr->enterNonlinearScope(
+        [this, &checkOpt, ctx](){
+            checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+        }
+    );
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
     {
