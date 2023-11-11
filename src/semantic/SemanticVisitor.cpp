@@ -2281,7 +2281,7 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         const TypeChannel *channel = channelOpt.value();
         if (!channel->getProtocol()->contract())
         {
-            return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id);
+            return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id + " : " + channel->getProtocol()->toString(toStringMode));
         }
         // stmgr->addSymbol(sym); // Makes sure we enforce weakening rules...
 

@@ -83,6 +83,9 @@ public:
     // FIXME: ALMOST SAME AS TO TYPE!
     virtual bool isGuarded() const { return guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
     
+    // FIXME: Change to be more robust (ie, flags) + allow soft cancel in loops!
+    virtual bool isCancelable() const { return guardCount == 0; }
+
     virtual void guard() const
     {
         guardCount = guardCount + 1;
@@ -187,6 +190,8 @@ public:
 
 
     bool isGuarded() const override;
+    bool isCancelable() const override; 
+
     void guard() const override;
     bool unguard() const override;
 
@@ -440,4 +445,10 @@ public:
     const ProtocolSequence *getInnerProtocol() const { return proto; }
 
     unsigned int getCloseNumber() const { return closeNumber; }
+
+    bool isGuarded() const override;
+    bool isCancelable() const override; 
+
+    void guard() const override;
+    bool unguard() const override;
 };

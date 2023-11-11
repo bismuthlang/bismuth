@@ -438,8 +438,10 @@ bool ProtocolSequence::weaken() const
 
 optional<const ProtocolClose *> ProtocolSequence::cancel() const
 {
-    if (steps.front()->isGuarded() || this->isGuarded())
-        return std::nullopt;
+    if(steps.size() == 0 || !this->isCancelable())
+        return std::nullopt; 
+    // if (steps.front()->isGuarded() || this->isGuarded())
+        // return std::nullopt;
 
     return this->popFirstCancelable(); // should always be true?
 }
@@ -679,6 +681,15 @@ bool ProtocolSequence::isGuarded() const // FIXME: DO BETTER
     return steps.front()->isGuarded();
 }
 
+bool ProtocolSequence::isCancelable() const // FIXME: DO BETTER
+{
+    if (steps.size() == 0)
+    {
+        return guardCount == 0;
+    }
+    return steps.front()->isCancelable();
+}
+
 void ProtocolSequence::guard() const // FIXME: DO BETTER
 {
     if (steps.size() == 0)
@@ -873,4 +884,54 @@ const Protocol *ProtocolClose::getCopy() const
     auto ans = new ProtocolClose(this->inCloseable, this->proto->getCopy(), this->getCloseNumber());
     ans->guardCount = this->guardCount;
     return ans;
+}
+
+bool ProtocolClose::isGuarded() const // FIXME: DO BETTER
+{
+    // if (proto.   steps.size() == 0)
+    // {
+    //     return guardCount > 0;
+    // }
+    return proto->isGuarded(); // && guardCount >> 0; //steps.front()->isGuarded();
+}
+
+bool ProtocolClose::isCancelable() const // FIXME: DO BETTER
+{
+    return guardCount == 0; 
+    // if (steps.size() == 0)
+    // {
+    //     return guardCount == 0;
+    // }
+    // return steps.front()->isCancelable();
+}
+
+void ProtocolClose::guard() const // FIXME: DO BETTER
+{
+    // if (steps.size() == 0)
+    // {
+    guardCount = guardCount + 1;
+    // }
+    // else
+    // {
+    proto->guard(); // TOOD: may be wrong...
+    // }
+}
+
+bool ProtocolClose::unguard() const // FIXME: DO BETTER
+{
+    if(guardCount == 0)
+        return false; 
+    
+
+    // if (steps.size() == 0)
+    // {
+    //     if (guardCount == 0)
+    //         return false;
+
+    guardCount = guardCount - 1;
+    //     return true;
+    // }
+    proto->unguard(); 
+    return true; 
+    // return steps.front()->unguard();
 }

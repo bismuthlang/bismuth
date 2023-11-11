@@ -719,7 +719,7 @@ TEST_CASE("programs/cancelable/BranchCancel1 - Basic cancel w/ branch and repeti
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/BranchCancel1.bismuth"))),
-        "0"); // 
+        "63a62249d19f9af950958f81c15c2c786072229af82c054803ab5357ef468ef2"); // FIXME: QUITE LIMITED & NEEDS IMPROVEMENTS!
 }
 
 
