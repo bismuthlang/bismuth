@@ -173,6 +173,8 @@ public:
     {
       errList << e->toString() << std::endl;
     }
+    errList << "Number of Errors: " << errors.size() << std::endl; 
+    
     return errList.str();
   }
 

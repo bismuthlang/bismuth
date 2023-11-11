@@ -1,11 +1,11 @@
 #include "Context.h"
 
-enum InsertStopType
-{
-    NONE,
-    LINEAR,
-    GLOBAL
-};
+// enum InsertStopType
+// {
+//     NONE,
+//     LINEAR,
+//     GLOBAL
+// };
 
 Scope &Context::enterScope(bool insertStop)
 {

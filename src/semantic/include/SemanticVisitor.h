@@ -98,8 +98,9 @@ public:
     std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::LValueContext *ctx);
     std::any visitLValue(BismuthParser::LValueContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }
 
-    std::variant<TAssignNode *, ErrorChain *> visitCtx(BismuthParser::AssignStatementContext *ctx);
-    std::any visitAssignStatement(BismuthParser::AssignStatementContext *ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx)); }
+    std::variant<TAssignNode *, ErrorChain *> visitCtx(BismuthParser::AssignmentStatementContext *ctx);
+    std::any visitAssignmentStatement(BismuthParser::AssignmentStatementContext * ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx)); }
+    std::any visitAssignStatement(BismuthParser::AssignStatementContext *ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx->assignmentStatement())); }
 
     std::optional<ParameterListNode> visitCtx(BismuthParser::ParameterListContext *ctx);
     std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { return visitCtx(ctx); }
@@ -153,6 +154,10 @@ public:
     std::variant<TWhileLoopNode *, ErrorChain *> visitCtx(BismuthParser::ProgramLoopContext *ctx);
     std::any visitProgramLoop(BismuthParser::ProgramLoopContext *ctx) override { return TNVariantCast<TWhileLoopNode>(visitCtx(ctx)); }
 
+
+    std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::ForStatementContext *ctx);
+    std::any visitForStatement(BismuthParser::ForStatementContext *ctx) override { return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
+
     std::variant<TReturnNode *, ErrorChain *> visitCtx(BismuthParser::ReturnStatementContext *ctx);
     std::any visitReturnStatement(BismuthParser::ReturnStatementContext *ctx) override { return TNVariantCast<TReturnNode>(visitCtx(ctx)); }
 
@@ -201,8 +206,9 @@ public:
     std::variant<TCompilationUnitNode *, ErrorChain *> visitCtx(BismuthParser::CompilationUnitContext *ctx);
     std::any visitCompilationUnit(BismuthParser::CompilationUnitContext *ctx) override { return visitCtx(ctx); }
 
-    std::variant<TVarDeclNode *, ErrorChain *> visitCtx(BismuthParser::VarDeclStatementContext *ctx);
-    std::any visitVarDeclStatement(BismuthParser::VarDeclStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
+    std::variant<TVarDeclNode *, ErrorChain *> visitCtx(BismuthParser::VariableDeclarationContext *ctx);
+    std::any visitVariableDeclaration(BismuthParser::VariableDeclarationContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); };
+    std::any visitVarDeclStatement(BismuthParser::VarDeclStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx->variableDeclaration())); }
 
     std::variant<TMatchStatementNode *, ErrorChain *> visitCtx(BismuthParser::MatchStatementContext *ctx);
     std::any visitMatchStatement(BismuthParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // NOTE: CASTS NEEDED B/C OF HOW C++ HANDLES ANYs BY MANGLED NAME!
@@ -293,6 +299,8 @@ public:
         return cond;
     }
 
+
+    // TODO: refactor into general saveVisit!
     /**
      * @brief Used to safely enter a block. This is used to ensure there aren't FUNC/PROC definitions / code following returns in it.
      *
@@ -338,6 +346,52 @@ public:
             this->safeExitScope(ctx);
 
         return new TBlockNode(nodes, ctx->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
+    }
+
+
+    // TODO: will have to be very careful with this. It could easily break type 
+    // checking... maybe? by skipping over parts due to return, but then still 
+    // check later code... 
+    std::variant<TBlockNode *, ErrorChain *> safeVisit(std::vector<antlr4::ParserRuleContext *> exprs, bool newScope)
+    {
+        assert(exprs.size() > 0); // TODO: do better?
+
+        // Enter a new scope if desired
+        if (newScope)
+            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
+
+        std::vector<TypedNode *> nodes;
+
+        // Tracks if we have found a return statement or not
+        bool foundReturn = false;
+        for (auto expr : exprs)
+        {
+            // Visit all the statements in the block
+            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, expr->accept(this));
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
+            {
+                // (*e)->addError(expr->getStart(), "Failed to type check statement");
+                return *e;
+            }
+
+            nodes.push_back(std::get<TypedNode *>(tnOpt));
+            // If we found a return, then this is dead code, and we can break out of the loop.
+            if (foundReturn)
+            {
+                errorHandler.addError(expr->getStart(), "Dead code");
+                break;
+            }
+
+            // If the current statement is a return, set foundReturn = true
+            if (dynamic_cast<BismuthParser::ReturnStatementContext *>(expr)) // FIXME: what about exit? Also need it here AND in block!
+                foundReturn = true;
+        }
+        // If we entered a new scope, then we can now safely exit a scope
+        if (newScope)
+            this->safeExitScope(exprs.at(0));
+
+        return new TBlockNode(nodes, exprs.at(0)->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
 
     std::variant<Symbol *, ErrorChain *> getProgramSymbol(BismuthParser::DefineProgramContext *ctx)
@@ -457,10 +511,41 @@ public:
 
     struct ProtocolCompareInv
     {
-        bool operator()(std::pair<const Protocol *, BismuthParser::StatementContext *> a,
-                        std::pair<const Protocol *, BismuthParser::StatementContext *> b) const
+        bool operator()(std::pair<std::variant<const ProtocolSequence *, std::string>, BismuthParser::StatementContext *> ap,
+                        std::pair<std::variant<const ProtocolSequence *, std::string>, BismuthParser::StatementContext *> bp) const
         {
-            return a.first->toString(C_STYLE) < b.first->toString(C_STYLE);
+            std::variant<const ProtocolSequence *, std::string> a = ap.first;
+            std::variant<const ProtocolSequence *, std::string> b = bp.first;
+
+            if(std::holds_alternative<std::string>(a))
+            {
+                if(std::holds_alternative<std::string>(b))
+                    return std::get<std::string>(a) < std::get<std::string>(b); 
+
+                return true; // TODO: verify 
+            }
+            
+            if(std::holds_alternative<std::string>(b))
+                return false; // TODO: verify 
+
+            return std::get<const ProtocolSequence *>(a)->toString(DisplayMode::C_STYLE) < std::get<const ProtocolSequence *>(b)->toString(DisplayMode::C_STYLE);
+
+            // const ProtocolBranchOption * a = ap.first; 
+            // const ProtocolBranchOption * b = bp.first; 
+            
+            // if(a->label)
+            // {
+            //     if(b->label)
+            //         return a->label.value() < b->label.value(); 
+
+            //     return true; // TODO: verify 
+            // }
+            
+            // if(b->label)
+            //     return false; // TODO: verify 
+
+            // return a->seq->toString(DisplayMode::C_STYLE) < b->seq->toString(DisplayMode::C_STYLE);
+            // return //a.first->toString(C_STYLE) < b.first->toString(C_STYLE);
         }
     };
 

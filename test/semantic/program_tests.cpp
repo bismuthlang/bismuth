@@ -2089,6 +2089,45 @@ define program :: c : Channel<-int> {
       "Failed to cancel: c : ");
 }
 
+TEST_CASE("While Loop Break I", "[semantic]")
+{
+  EnsureErrorsWithMessage(
+      R""""(
+extern func printf(str s, ...) : int; 
+
+define program :: c : Channel<-int> {
+
+  c.send(0)
+
+  var break := exec loopBreaker
+
+
+  var i := 1
+  accept(break) 
+  {
+    break.send(i)
+
+    i := i + 1
+  }
+}
+
+define loopBreaker :: c : Channel<?+int> {
+
+  int i := -1
+
+  unfold(c)
+
+  while(c.recv() != 0) # FIXME: Improve error msg, currently just says c DNE, when it does, you just can't use it in non-linear context! In the future, make it so we unfold the while loop so things like this can be done
+  {
+    printf("looped?\n");
+  }
+
+  weaken(c)
+}
+    )"""",
+      "Could not find channel: c");
+}
+
 /*********************************
  * B-Level Example tests
  *********************************/
