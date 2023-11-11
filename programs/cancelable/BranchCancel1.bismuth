@@ -24,18 +24,23 @@ define program :: c : Channel<-int>
 define c2 :: c : Channel<
                         Cancelable<
                             Cancelable<
-                                ExternalChoice<+int, -int>>;
+                                ExternalChoice<
+                                    +int, 
+                                    -int
+                                >
+                            >;
                             ?(+boolean)>;
                         Cancelable<+int;-int;+int>> {
 
     offer c 
         |   +int => {
-                int a := c.recv(); 
+                var a := c.recv(); 
             }
         |   -int => {
                 c.send(0); 
+                # cancel(c); 
             }
-        |   else => {}
+        |   else => printf("Error!");
 
     int i := 0; 
 
@@ -44,15 +49,19 @@ define c2 :: c : Channel<
     while(i < 10)
     {
         unfold(c); 
-        boolean b := c.recv(); 
+        # cancel(c); # TODO: enable 
+        var b := c.recv(); 
         i := i + 1; 
     }
 
     weaken(c); 
+    cancel(c);
 
-    int a := c.recv(); 
+    var a := c.recv(); 
     c.send(2); 
-    int b := c.recv(); 
+    var b := c.recv(); 
+
+    cancel(c); # FIXME: when missing, errors are misleading!
 
     # match a 
     #     |   Unit u => printf("WRONG! Got unit!\n");

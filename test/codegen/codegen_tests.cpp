@@ -588,6 +588,13 @@ TEST_CASE("programs/db/db5-if-present-else - Basic DB 5 - AcceptIf with else and
         "9ffb7e4a2d51db8e99d9a90c40136418ae3ba7ac4d540f4309a5c637d4087485");
 }
 
+TEST_CASE("programs/db/db5-if-present-else-lbl - Basic DB 5 - AcceptIf with else and is_present and labels", "[codegen][enum]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/db/db5-if-present-else-lbl.bismuth"))),
+        "965677a808bc5746292febaf170e96b891f8d387a7cb5afa3b5a94713e3620f1");
+}
+
 TEST_CASE("programs/db/db5-while-present - Basic DB 5 - AcceptWhile and is_present", "[codegen][enum]")
 {
     EnsureCompilesTo(
@@ -712,7 +719,7 @@ TEST_CASE("programs/cancelable/BranchCancel1 - Basic cancel w/ branch and repeti
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/cancelable/BranchCancel1.bismuth"))),
-        "0"); // 
+        "63a62249d19f9af950958f81c15c2c786072229af82c054803ab5357ef468ef2"); // FIXME: QUITE LIMITED & NEEDS IMPROVEMENTS!
 }
 
 

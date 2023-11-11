@@ -20,9 +20,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         {
             std::string id = progCtx->name->getText();
 
-            std::optional<Symbol *> opt = stmgr->lookup(id);
-
-            if (opt)
+            if (stmgr->isBound(id))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of program " + id);
             }
@@ -38,9 +36,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         {
             std::string id = fnCtx->name->getText();
 
-            std::optional<Symbol *> opt = stmgr->lookup(id);
-
-            if (opt)
+            if (stmgr->isBound(id))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of function " + id);
             }
@@ -56,9 +52,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         {
             std::string id = prodCtx->name->getText();
 
-            std::optional<Symbol *> opt = stmgr->lookup(id);
-
-            if (opt)
+            if (stmgr->isBound(id))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of struct " + id);
             }
@@ -74,9 +68,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         {
             std::string id = sumCtx->name->getText();
 
-            std::optional<Symbol *> opt = stmgr->lookup(id);
-
-            if (opt)
+            if (stmgr->isBound(id))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of enum " + id);
             }
@@ -186,7 +178,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
          * there is NO main block and that we have a program block
          **********************************************************/
 
-        if (stmgr->lookup("main"))
+        if (stmgr->isBound("main"))
         {
             errorHandler.addError(ctx->getStart(), "When compiling in demo mode, main is reserved!");
         }
@@ -1073,9 +1065,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     std::string id = ctx->name->getText();
 
-    std::optional<Symbol *> opt = stmgr->lookup(id);
-
-    if (opt)
+    if (stmgr->isBound(id))
     {
         return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
     }
@@ -1106,7 +1096,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     return node;
 };
 
-std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::AssignStatementContext *ctx)
+std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::AssignmentStatementContext *ctx)
 {
     // This one is the update one!
 
@@ -1151,7 +1141,7 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     return new TAssignNode(var, expr, ctx->getStart());
 }
 
-std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::VarDeclStatementContext *ctx)
+std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::VariableDeclarationContext *ctx)
 {
     std::vector<AssignmentNode *> a;
 
@@ -1356,7 +1346,13 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
  */
 std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ProgramLoopContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+    std::variant<TypedNode *, ErrorChain *> checkOpt;
+
+    stmgr->enterNonlinearScope(
+        [this, &checkOpt, ctx](){
+            checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+        }
+    );
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
     {
@@ -1381,6 +1377,67 @@ std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
     return new TWhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
+}
+
+// FIXME: CANT BE WHILE LOOP BC OF MULTIPLE STATEMENTS!
+std::variant<TBlockNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ForStatementContext *ctx)
+{
+    std::vector<TypedNode *> exprs; 
+
+    // Should this return errors early? Probably not?
+    if(ctx->decl)
+    {
+        std::variant<TVarDeclNode *, ErrorChain *> declOpt = this->visitCtx(ctx->decl);
+        if(std::holds_alternative<TVarDeclNode *>(declOpt))
+            exprs.push_back(std::get<TVarDeclNode *>(declOpt));
+    }
+    else 
+    {
+        std::variant<TAssignNode *, ErrorChain *> assignOpt = this->visitCtx(ctx->assign);
+        if(std::holds_alternative<TAssignNode *>(assignOpt))
+            exprs.push_back(std::get<TAssignNode *>(assignOpt));
+    }
+
+    
+
+    // PLAN: Update to handle better (along with while loops)
+    std::variant<TypedNode *, ErrorChain *> checkOpt;
+    stmgr->enterNonlinearScope(
+        [this, &checkOpt, ctx](){
+            checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+        }
+    );
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to typecheck condition in for loop");
+        return *e;
+    }
+
+
+
+    stmgr->guard();
+
+    std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisit(
+        {ctx->block(), ctx->expr},
+        true); 
+        //ctx->block(), true);
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
+    {
+        (*e)->addError(ctx->getStart(), "1330");
+        return *e;
+    }
+
+    if (!stmgr->unguard())
+    {
+        return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
+    }
+
+    exprs.push_back(new TWhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart()));
+
+    // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
+    return new TBlockNode(exprs, ctx->getStart());
 }
 
 std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ConditionalStatementContext *ctx)
@@ -1721,9 +1778,9 @@ SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
 std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
 {
     std::string id = ctx->name->getText();
-    // std::optional<Symbol *> opt = stmgr->lookup(id);
+
     std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-    if (!opt && stmgr->lookup(id))
+    if (!opt && stmgr->isBound(id))
     {
         return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
     }
@@ -1778,8 +1835,8 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
 {
     std::string id = ctx->name->getText();
     std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-    // std::optional<Symbol*> opt = stmgr->lookup(id);
-    if (!opt && stmgr->lookup(id))
+
+    if (!opt && stmgr->isBound(id))
     {
         return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
     }
@@ -2076,10 +2133,22 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
     if (channelOpt)
     {
         const TypeChannel *channel = channelOpt.value();
-        std::set<std::pair<const ProtocolSequence *, BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
+        std::set<
+            std::pair<
+                std::variant<const ProtocolSequence *, std::string>,
+            BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
 
         for (auto alt : ctx->protoAlternative())
         {
+            if(alt->lbl)
+            {
+                optsI.insert({
+                    alt->lbl->getText(), 
+                    alt->eval
+                });
+                continue; 
+            }
+
             // TODO: SEEMS WRONG TO PERFORM ERROR CHECKS HERE AS, BY DEF, COULD ONLY ERROR SHOULD HIGHER-LEVEL PROTO FAIL, BUT I GUESS MAYBE USEFUL IF WE LATER ADD INF!
             ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
             std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(alt->check); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
@@ -2090,19 +2159,32 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
                 (*e)->addError(ctx->getStart(), "Failed to generate protocol type in channel case statement");
                 return *e;
             }
-
+            
             const ProtocolSequence *a = std::get<const ProtocolSequence *>(protoOpt);
 
-            optsI.insert({a->getInverse(), alt->eval}); // Double inverses to ensure order same for both sides (server & client)
+            optsI.insert({
+                a->getInverse(), alt->eval}); // Double inverses to ensure order same for both sides (server & client)
         }
 
-        std::vector<const ProtocolSequence *> branchSequences = {};
+        std::vector<std::variant<const ProtocolSequence *, std::string>> branchSequences = {};
         std::vector<BismuthParser::StatementContext *> alternatives = {};
 
 
         for (auto itr : optsI)
         {
-            branchSequences.push_back(itr.first->getInverse());
+            std::variant<const ProtocolSequence *, std::string> tmp = itr.first; 
+            if(std::holds_alternative<const ProtocolSequence *>(tmp))
+            {
+                branchSequences.push_back(
+                    std::get<const ProtocolSequence *>(tmp)->getInverse()
+                );
+                // TODO: delete std::get<const ProtocolSequence *>(tmp)?
+            } 
+            else 
+            {
+                branchSequences.push_back(tmp);
+            }
+            // branchSequences.push_back(itr.first->getInverse());
             alternatives.push_back(itr.second);
         }
 
@@ -2202,6 +2284,18 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
     {
         const TypeChannel *channel = channelOpt.value();
 
+        if(ctx->lbl)
+        {
+            unsigned int projectIndex = channel->getProtocol()->project(ctx->lbl->getText());
+
+            if (!projectIndex)
+            {
+                return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ctx->lbl->getText());
+            }
+
+            return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
+        }
+
         ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
         std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->sel); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
         delete protoVisitor;
@@ -2244,7 +2338,7 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         const TypeChannel *channel = channelOpt.value();
         if (!channel->getProtocol()->contract())
         {
-            return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id);
+            return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id + " : " + channel->getProtocol()->toString(toStringMode));
         }
         // stmgr->addSymbol(sym); // Makes sure we enforce weakening rules...
 

@@ -18,6 +18,8 @@
 #include <stack>
 #include <iostream>
 
+#include <functional> // std::function
+
 enum StopType
 {
   NONE,
@@ -27,6 +29,10 @@ enum StopType
 
 class STManager
 {
+private: 
+  // PLAN: handle better, tracks where in hierarchy we are able to access
+  bool nonLinearOnly = false; 
+
 public:
   STManager(){};
 
@@ -37,7 +43,6 @@ public:
    */
   void enterScope(StopType stopType)
   {
-
     context.enterScope(stopType == GLOBAL);
   }
 
@@ -77,7 +82,31 @@ public:
    */
   std::optional<Symbol *> lookup(std::string id)
   {
-    return context.lookup(id);
+    std::optional<Symbol *> sym = context.lookup(id); 
+    // TODO: propagate this data down so we don't have 
+    // to do excess branching checks. 
+    // Also, ensure this doesn't mess w/ error messages by 
+    // making it seem like stuff isn't unbound. 
+    // Ie, while isBound will help, we may use lookup in field access!
+    if(nonLinearOnly && sym.has_value() && sym.value()->type->isLinear())
+      return std::nullopt; 
+    return sym; 
+    // return context.lookup(id);
+  }
+
+  // Has to be std::function so they can be capturing---which is unfortunately less efficient 
+  void enterNonlinearScope(std::function<void()> func)//void (*func)())
+  {
+    bool prevValue = nonLinearOnly; 
+    nonLinearOnly = true; 
+    func(); 
+    nonLinearOnly = prevValue; 
+  }
+
+
+  bool isBound(std::string id)
+  {
+    return context.lookup(id).has_value(); 
   }
 
   /**
@@ -107,6 +136,7 @@ public:
 
   std::vector<Symbol *> getLinears(int flags) { return context.getSymbols(flags); }
 
+  
   void guard()
   {
     for (Symbol *sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))

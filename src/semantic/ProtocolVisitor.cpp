@@ -105,7 +105,8 @@ std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
 
 std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::ExtChoiceProtoContext *ctx)
 {
-    std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
+    // std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
     unsigned int origCloseNumber = this->closeNumber; 
     unsigned int maxCloseNumber = this->closeNumber; 
 
@@ -123,7 +124,19 @@ std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 
         const Protocol *proto = std::get<const Protocol *>(protoOpt);
 
-        opts.insert(toSequence(proto));
+        // opts.insert(toSequence(proto));
+        if(e->lbl) 
+        {
+            opts.insert(
+                new ProtocolBranchOption(e->lbl->getText(), toSequence(proto))
+            );
+        }
+        else
+        {
+            opts.insert(
+                new ProtocolBranchOption(toSequence(proto))
+            );
+        }
     }
 
     if (ctx->protoOpts.size() != opts.size())
@@ -138,7 +151,8 @@ std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 
 std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::IntChoiceProtoContext *ctx)
 {
-    std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
+    // std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
     unsigned int origCloseNumber = this->closeNumber;  // We do this logic regardless as probably faster to not branch, and will remain zero in the case that were not in a close block
     unsigned int maxCloseNumber = this->closeNumber; 
 
@@ -156,7 +170,19 @@ std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 
         const Protocol *proto = std::get<const Protocol *>(protoOpt);
 
-        opts.insert(toSequence(proto));
+        // opts.insert(toSequence(proto));
+        if(e->lbl) 
+        {
+            opts.insert(
+                new ProtocolBranchOption(e->lbl->getText(), toSequence(proto))
+            );
+        }
+        else
+        {
+            opts.insert(
+                new ProtocolBranchOption(toSequence(proto))
+            );
+        }
     }
 
     if (ctx->protoOpts.size() != opts.size())

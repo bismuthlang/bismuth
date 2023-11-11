@@ -140,7 +140,7 @@ std::string ProtocolIChoice::as_str(DisplayMode mode) const
 
 const ProtocolEChoice *ProtocolIChoice::getInverse() const
 {
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
 
     for (auto p : this->opts)
     {
@@ -152,7 +152,7 @@ const ProtocolEChoice *ProtocolIChoice::getInverse() const
 
 const Protocol *ProtocolIChoice::getCopy() const
 {
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
 
     for (auto p : this->opts)
     {
@@ -209,7 +209,7 @@ std::string ProtocolEChoice::as_str(DisplayMode mode) const
 
 const Protocol *ProtocolEChoice::getInverse() const
 {
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
 
     for (auto p : this->opts)
     {
@@ -221,7 +221,7 @@ const Protocol *ProtocolEChoice::getInverse() const
 
 const Protocol *ProtocolEChoice::getCopy() const
 {
-    std::set<const ProtocolSequence *, ProtocolCompare> opts;
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
 
     for (auto p : this->opts)
     {
@@ -233,6 +233,38 @@ const Protocol *ProtocolEChoice::getCopy() const
     return ans;
 }
 
+
+// TODO: add to internal choice then use it instead of existing lookup? 
+std::optional<const ProtocolBranchOption *> 
+ProtocolEChoice::lookup(std::variant<const ProtocolSequence *, std::string> opt) const
+{
+    // TODO: switch to visitor
+    if(std::holds_alternative<std::string>(opt))
+    {
+        std::string label = std::get<std::string>(opt); 
+
+        for(const ProtocolBranchOption * br : opts)
+        {
+            if(!br->label) continue; 
+
+            if(br->label.value() == label) return br;
+        }
+    }
+
+    const ProtocolSequence * ps = std::get<const ProtocolSequence *>(opt); 
+
+    for(const ProtocolBranchOption * br : opts)
+    {
+        if(br->label) continue; 
+
+        // Note: this has to be explicit matching; subtypes/structural equivalences could technically be 
+        // other branches...
+        if (br->seq->toString(DisplayMode::C_STYLE) == ps->toString(DisplayMode::C_STYLE)) 
+            return br; 
+    }
+
+    return std::nullopt; 
+}
 /*********************************************
  *
  *  ProtocolSequence
@@ -406,8 +438,10 @@ bool ProtocolSequence::weaken() const
 
 optional<const ProtocolClose *> ProtocolSequence::cancel() const
 {
-    if (steps.front()->isGuarded() || this->isGuarded())
-        return std::nullopt;
+    if(steps.size() == 0 || !this->isCancelable())
+        return std::nullopt; 
+    // if (steps.front()->isGuarded() || this->isGuarded())
+        // return std::nullopt;
 
     return this->popFirstCancelable(); // should always be true?
 }
@@ -523,12 +557,39 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
     if (!ic)
         return 0;
 
-    unsigned int ans = 1;
-    for (const ProtocolSequence *p : ic.value()->getOptions())
+    unsigned int ans = 0;
+    for (auto *p : ic.value()->getOptions())
     {
-        if (ps->toString(DisplayMode::C_STYLE) == p->toString(DisplayMode::C_STYLE)) // FIXME: DO BETTER COMPARISON!
+        ans++;
+        if(p->label) continue; 
+
+        // Note: this has to be explicit matching; subtypes/structural equivalences could technically be 
+        // other branches...
+        if (p->seq->toString(DisplayMode::C_STYLE) == ps->toString(DisplayMode::C_STYLE)) 
         {
-            if (!this->swapChoice(ps))
+            if (!this->swapChoice(p))
+                return 0;
+            return ans;
+        }
+    }
+
+    return 0;
+}
+
+unsigned int ProtocolSequence::project(std::string label) const
+{
+    optional<const ProtocolIChoice *> ic = this->getIntChoice();
+    if (!ic)
+        return 0;
+
+    unsigned int ans = 1;
+    for (auto *p : ic.value()->getOptions())
+    {
+        if(!p->label) continue; 
+
+        if (label == p->label.value())
+        {
+            if (!this->swapChoice(p))
                 return 0;
             return ans;
         }
@@ -540,7 +601,7 @@ unsigned int ProtocolSequence::project(const ProtocolSequence *ps) const
 
 // optional<vector<const ProtocolSequence *>> 
 optional<CaseMetadata> 
-ProtocolSequence::caseAnalysis(vector<const ProtocolSequence *> testOpts) const // Note: using vector as otherwise duplicate cases could be too easily ignored by type checking (ie, semantic visitor dumps cases into set and thus isn't aware of duplicates) //set<const ProtocolSequence *, ProtocolCompare> testOpts) const
+ProtocolSequence::caseAnalysis(vector<variant<const ProtocolSequence *, string>> testOpts) const // Note: using vector as otherwise duplicate cases could be too easily ignored by type checking (ie, semantic visitor dumps cases into set and thus isn't aware of duplicates) //set<const ProtocolSequence *, ProtocolCompare> testOpts) const
 {
     if (isComplete())
         return std::nullopt;
@@ -557,14 +618,19 @@ ProtocolSequence::caseAnalysis(vector<const ProtocolSequence *> testOpts) const 
 
     if (const ProtocolEChoice *eChoice = dynamic_cast<const ProtocolEChoice *>(proto))
     {
-        std::set<const ProtocolSequence *, ProtocolCompare> foundCaseTypes = {};
+        std::set<const ProtocolBranchOption *, BranchOptCompare> foundCaseTypes = {};
         std::vector<const ProtocolSequence *> ans = {}; 
 
-        for (const ProtocolSequence *p : testOpts) // TODO: METHODIZE WITH MatchStatement?
+        for (auto p : testOpts) // TODO: METHODIZE WITH MatchStatement?
         {
+            std::optional<const ProtocolBranchOption *> brOpt = eChoice->lookup(p);
+            if(!brOpt) return std::nullopt; // Got something that isn't in the ext choice 
+
+            const ProtocolBranchOption * br = brOpt.value(); 
+
             const ProtocolSequence * res = this->getCopy(); 
             
-            if(!res->swapChoice(p)) // if (!eChoice->getOptions().count(p))
+            if(!res->swapChoice(br)) // if (!eChoice->getOptions().count(p))
             {
                 // errorHandler.addSemanticError(ctx->getStart(), "Impossible case: " p->toString());
                 return std::nullopt;
@@ -574,14 +640,14 @@ ProtocolSequence::caseAnalysis(vector<const ProtocolSequence *> testOpts) const 
                 ans.push_back(res); 
             }
 
-            if (foundCaseTypes.count(p)) // Is this even possible? its a set after all. Would require messy subtyping
+            if (foundCaseTypes.count(br)) // Is this even possible? its a set after all. Would require messy subtyping
             {
                 // errorHandler.addSemanticError(ctx->getStart(), "Duplicate case: " + p->toString());
                 return std::nullopt; // FIXME: HANDLE ERRORS BETTER IN THE SEMANTIC VISITOR SO WE CAN GET THESE ERRORS!!
             }
             else
             {
-                foundCaseTypes.insert(p);
+                foundCaseTypes.insert(br);
             }
         }
 
@@ -613,6 +679,15 @@ bool ProtocolSequence::isGuarded() const // FIXME: DO BETTER
         return guardCount > 0;
     }
     return steps.front()->isGuarded();
+}
+
+bool ProtocolSequence::isCancelable() const // FIXME: DO BETTER
+{
+    if (steps.size() == 0)
+    {
+        return guardCount == 0;
+    }
+    return steps.front()->isCancelable();
 }
 
 void ProtocolSequence::guard() const // FIXME: DO BETTER
@@ -668,7 +743,7 @@ optional<const Protocol *> ProtocolSequence::getFirst() const
 //
 // FIXME: There are also likely issues should we have closeable blocks in choice branches 
 // as we won't correctly track the close block #!
-bool ProtocolSequence::swapChoice(const ProtocolSequence * swap) const
+bool ProtocolSequence::swapChoice(const ProtocolBranchOption * swap) const
 {
     if (isComplete())
         return false;
@@ -701,7 +776,7 @@ bool ProtocolSequence::swapChoice(const ProtocolSequence * swap) const
     }
 
     seq->steps.erase(seq->steps.begin());
-    seq->steps.insert(seq->steps.begin(), swap->steps.begin(), swap->steps.end()); 
+    seq->steps.insert(seq->steps.begin(), swap->seq->steps.begin(), swap->seq->steps.end()); 
 
     return true;
 }
@@ -809,4 +884,54 @@ const Protocol *ProtocolClose::getCopy() const
     auto ans = new ProtocolClose(this->inCloseable, this->proto->getCopy(), this->getCloseNumber());
     ans->guardCount = this->guardCount;
     return ans;
+}
+
+bool ProtocolClose::isGuarded() const // FIXME: DO BETTER
+{
+    // if (proto.   steps.size() == 0)
+    // {
+    //     return guardCount > 0;
+    // }
+    return proto->isGuarded(); // && guardCount >> 0; //steps.front()->isGuarded();
+}
+
+bool ProtocolClose::isCancelable() const // FIXME: DO BETTER
+{
+    return guardCount == 0; 
+    // if (steps.size() == 0)
+    // {
+    //     return guardCount == 0;
+    // }
+    // return steps.front()->isCancelable();
+}
+
+void ProtocolClose::guard() const // FIXME: DO BETTER
+{
+    // if (steps.size() == 0)
+    // {
+    guardCount = guardCount + 1;
+    // }
+    // else
+    // {
+    proto->guard(); // TOOD: may be wrong...
+    // }
+}
+
+bool ProtocolClose::unguard() const // FIXME: DO BETTER
+{
+    if(guardCount == 0)
+        return false; 
+    
+
+    // if (steps.size() == 0)
+    // {
+    //     if (guardCount == 0)
+    //         return false;
+
+    guardCount = guardCount - 1;
+    //     return true;
+    // }
+    proto->unguard(); 
+    return true; 
+    // return steps.front()->unguard();
 }

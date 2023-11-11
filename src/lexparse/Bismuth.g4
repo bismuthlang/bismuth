@@ -95,7 +95,7 @@ condition           : (LPAR ex=expression RPAR) | ex=expression ;
 //Used to model each alternative in a selection 
 selectAlternative   : check=expression ':' eval=statement   ; 
 matchAlternative    : check=type name=VARIABLE '=>' eval=statement ;
-protoAlternative    : check=protocol '=>' eval=statement    ;
+protoAlternative    : (lbl=VARIABLE | check=protocol) '=>' eval=statement    ;
 protoElse           : ELSE '=>' eval=statement              ;
 
 
@@ -123,8 +123,8 @@ assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
 
 
 statement           : defineType                                                                                            # TypeDef
-                    | <assoc=right> to=lValue ASSIGN a=expression ';'                                                       # AssignStatement 
-                    | <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)* ';'                 # VarDeclStatement
+                    | assignmentStatement  ';'?                                                                             # AssignStatement 
+                    | variableDeclaration  ';'?                                                                             # VarDeclStatement
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                            # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* RSQB (rest+=statement)*                                       # SelectStatement     
                     | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                                # MatchStatement   
@@ -136,10 +136,10 @@ statement           : defineType                                                
                     | block                                                                                                 # BlockStatement
                     | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                 # ProgramSend
                     | WHILE check=condition block                                                                           # ProgramLoop
-                    // | 'for' '(' VarDeclStatement ';' check=condition ';' expr=expression ')' blk=block
+                    | 'for' '(' (decl=variableDeclaration | assign=assignmentStatement) ';' check=condition ';' expr=statement ')' blk=block   # ForStatement // FIXME: IMPLEMENT!
                     | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ protoElse? ')' (rest+=statement)*  # ProgramCase  
                     | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ ('|' protoElse?)? (rest+=statement)*                   # ProgramCase   
-                    | channel=VARIABLE LBRC sel=protocol RBRC                                                               # ProgramProject
+                    | channel=VARIABLE LBRC (lbl=VARIABLE | sel=protocol) RBRC                                                               # ProgramProject
                     | 'more' '(' channel=VARIABLE ')'   ';'?                                # ProgramContract 
                     | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 
                     | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
@@ -150,6 +150,9 @@ statement           : defineType                                                
                     | 'cancel' '(' channel=VARIABLE ')' ';'?                                # ProgramCancel
                     ; 
                     
+
+assignmentStatement : <assoc=right> to=lValue ASSIGN a=expression                                        ;
+variableDeclaration : <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)*  ;
 
 //Operators
 ASSIGN      :       ':='    ; 
@@ -199,10 +202,14 @@ subProtocol     :   '+' ty=type                 # RecvType
                 |   '-' ty=type                 # SendType
                 |   '?' proto=protocol          # WnProto
                 |   '!' proto=protocol          # OcProto
-                |    EXTERNAL_CHOICE LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # ExtChoiceProto
-                |    INTERNAL_CHOICE LESS protoOpts+=protocol (COMMA protoOpts+=protocol)+ GREATER     # IntChoiceProto
+                |    EXTERNAL_CHOICE LESS protoOpts+=protoBranch (COMMA protoOpts+=protoBranch)+ GREATER     # ExtChoiceProto
+                |    INTERNAL_CHOICE LESS protoOpts+=protoBranch (COMMA protoOpts+=protoBranch)+ GREATER     # IntChoiceProto
                 |    CLOSEABLE LESS proto=protocol GREATER   # CloseableProto // TODO: NAME BETTER?
                 ;
+
+protoBranch     : protocol                      
+                | lbl=VARIABLE ':' protocol
+                ; 
 
 
 //Allows us to have a type of ints, bools, or strings with the option for them to become 1d arrays. 
