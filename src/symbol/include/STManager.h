@@ -80,6 +80,12 @@ public:
     return context.lookup(id);
   }
 
+
+  bool isBound(std::string id)
+  {
+    return context.lookup(id).has_value(); 
+  }
+
   /**
    * @brief Lookup a symbol only in the current scope.
    *
@@ -107,6 +113,7 @@ public:
 
   std::vector<Symbol *> getLinears(int flags) { return context.getSymbols(flags); }
 
+  
   void guard()
   {
     for (Symbol *sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))

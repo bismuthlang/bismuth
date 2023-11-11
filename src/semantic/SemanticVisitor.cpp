@@ -20,9 +20,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         {
             std::string id = progCtx->name->getText();
 
-            std::optional<Symbol *> opt = stmgr->lookup(id);
-
-            if (opt)
+            if (stmgr->isBound(id))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of program " + id);
             }
@@ -38,9 +36,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         {
             std::string id = fnCtx->name->getText();
 
-            std::optional<Symbol *> opt = stmgr->lookup(id);
-
-            if (opt)
+            if (stmgr->isBound(id))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of function " + id);
             }
@@ -56,9 +52,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         {
             std::string id = prodCtx->name->getText();
 
-            std::optional<Symbol *> opt = stmgr->lookup(id);
-
-            if (opt)
+            if (stmgr->isBound(id))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of struct " + id);
             }
@@ -74,9 +68,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         {
             std::string id = sumCtx->name->getText();
 
-            std::optional<Symbol *> opt = stmgr->lookup(id);
-
-            if (opt)
+            if (stmgr->isBound(id))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of enum " + id);
             }
@@ -186,7 +178,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
          * there is NO main block and that we have a program block
          **********************************************************/
 
-        if (stmgr->lookup("main"))
+        if (stmgr->isBound("main"))
         {
             errorHandler.addError(ctx->getStart(), "When compiling in demo mode, main is reserved!");
         }
@@ -1073,9 +1065,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     std::string id = ctx->name->getText();
 
-    std::optional<Symbol *> opt = stmgr->lookup(id);
-
-    if (opt)
+    if (stmgr->isBound(id))
     {
         return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
     }
@@ -1721,9 +1711,9 @@ SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
 std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
 {
     std::string id = ctx->name->getText();
-    // std::optional<Symbol *> opt = stmgr->lookup(id);
+
     std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-    if (!opt && stmgr->lookup(id))
+    if (!opt && stmgr->isBound(id))
     {
         return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
     }
@@ -1778,8 +1768,8 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
 {
     std::string id = ctx->name->getText();
     std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-    // std::optional<Symbol*> opt = stmgr->lookup(id);
-    if (!opt && stmgr->lookup(id))
+
+    if (!opt && stmgr->isBound(id))
     {
         return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
     }
