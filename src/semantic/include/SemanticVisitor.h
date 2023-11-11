@@ -620,7 +620,7 @@ private:
         {
             // Get the Scope* and check for any uninferred symbols
             Scope *scope = res.value();
-            std::vector<Symbol *> unInf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
+            std::vector<Symbol *> uninf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
 
             // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
             // due to the var leaving the scope

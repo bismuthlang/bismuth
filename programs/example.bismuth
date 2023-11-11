@@ -72,7 +72,9 @@ define program :: c : Channel<-int> = {
     while i < samples.length {
         # toString(samples[i]);
         Channel<-(Unit + Color + int + boolean + str)> io := exec toString; 
-        io.send(samples[i])
+        match samples[i]
+          | Color c => io.send(c);
+          | Unit u => io.send(u);
 
         i := i + 1; 
     }

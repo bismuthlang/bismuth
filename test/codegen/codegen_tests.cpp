@@ -397,7 +397,7 @@ TEST_CASE("programs/example", "[codegen][program]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/example.bismuth"))),
-        "567e9b12de1834da95185e5533c517c09148c74fb0d3f1b7c79a99c6952b9e41");
+        "6d46bc6de43fd6066f47a23c302fb1b65b0da64f9db9732c9d8ce237fd29b176");
 }
 
 TEST_CASE("programs/SendChannel", "[codegen][linear-types]")
