@@ -82,7 +82,7 @@ public:
 
     // FIXME: ALMOST SAME AS TO TYPE!
     virtual bool isGuarded() const { return guardCount > 0; } // FIXME: handle these better b/c right now kind of sketchy that we only guard first part of protocol step?
-
+    
     virtual void guard() const
     {
         guardCount = guardCount + 1;

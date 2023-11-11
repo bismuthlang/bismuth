@@ -107,6 +107,7 @@ ChangeLog
 1.3.4 - XXX: 
   - Added toChannel function to convert ty -> Channel<!+ty>
   - Added --display-mode to enable error messages to show types as they would appear in-code instead of mathematical representation
+  - Now displaying number of errors on compile failure
 
   - Fixed bug where nested control flow would incorrectly process use of linear resources
   - Fixed typos in generated IR files, error messages, and compiler internals
