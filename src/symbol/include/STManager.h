@@ -94,6 +94,7 @@ public:
     // return context.lookup(id);
   }
 
+  // Has to be std::function so they can be capturing---which is unfortunately less efficient 
   void enterNonlinearScope(std::function<void()> func)//void (*func)())
   {
     bool prevValue = nonLinearOnly; 

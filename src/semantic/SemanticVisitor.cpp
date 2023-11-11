@@ -1379,6 +1379,67 @@ std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     return new TWhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
 }
 
+// FIXME: CANT BE WHILE LOOP BC OF MULTIPLE STATEMENTS!
+std::variant<TBlockNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ForStatementContext *ctx)
+{
+    std::vector<TypedNode *> exprs; 
+
+    // Should this return errors early? Probably not?
+    if(ctx->decl)
+    {
+        std::variant<TVarDeclNode *, ErrorChain *> declOpt = this->visitCtx(ctx->decl);
+        if(std::holds_alternative<TVarDeclNode *>(declOpt))
+            exprs.push_back(std::get<TVarDeclNode *>(declOpt));
+    }
+    else 
+    {
+        std::variant<TAssignNode *, ErrorChain *> assignOpt = this->visitCtx(ctx->assign);
+        if(std::holds_alternative<TAssignNode *>(assignOpt))
+            exprs.push_back(std::get<TAssignNode *>(assignOpt));
+    }
+
+    
+
+    // PLAN: Update to handle better (along with while loops)
+    std::variant<TypedNode *, ErrorChain *> checkOpt;
+    stmgr->enterNonlinearScope(
+        [this, &checkOpt, ctx](){
+            checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
+        }
+    );
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to typecheck condition in for loop");
+        return *e;
+    }
+
+
+
+    stmgr->guard();
+
+    std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisit(
+        {ctx->block(), ctx->expr},
+        true); 
+        //ctx->block(), true);
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
+    {
+        (*e)->addError(ctx->getStart(), "1330");
+        return *e;
+    }
+
+    if (!stmgr->unguard())
+    {
+        return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
+    }
+
+    exprs.push_back(new TWhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart()));
+
+    // Return UNDEFINED because this is a statement, and UNDEFINED cannot be assigned to anything
+    return new TBlockNode(exprs, ctx->getStart());
+}
+
 std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ConditionalStatementContext *ctx)
 {
     // Automatically handles checking that we have a valid condition

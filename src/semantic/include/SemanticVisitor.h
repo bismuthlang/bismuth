@@ -154,6 +154,10 @@ public:
     std::variant<TWhileLoopNode *, ErrorChain *> visitCtx(BismuthParser::ProgramLoopContext *ctx);
     std::any visitProgramLoop(BismuthParser::ProgramLoopContext *ctx) override { return TNVariantCast<TWhileLoopNode>(visitCtx(ctx)); }
 
+
+    std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::ForStatementContext *ctx);
+    std::any visitForStatement(BismuthParser::ForStatementContext *ctx) override { return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
+
     std::variant<TReturnNode *, ErrorChain *> visitCtx(BismuthParser::ReturnStatementContext *ctx);
     std::any visitReturnStatement(BismuthParser::ReturnStatementContext *ctx) override { return TNVariantCast<TReturnNode>(visitCtx(ctx)); }
 
@@ -295,6 +299,8 @@ public:
         return cond;
     }
 
+
+    // TODO: refactor into general saveVisit!
     /**
      * @brief Used to safely enter a block. This is used to ensure there aren't FUNC/PROC definitions / code following returns in it.
      *
@@ -340,6 +346,52 @@ public:
             this->safeExitScope(ctx);
 
         return new TBlockNode(nodes, ctx->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
+    }
+
+
+    // TODO: will have to be very careful with this. It could easily break type 
+    // checking... maybe? by skipping over parts due to return, but then still 
+    // check later code... 
+    std::variant<TBlockNode *, ErrorChain *> safeVisit(std::vector<antlr4::ParserRuleContext *> exprs, bool newScope)
+    {
+        assert(exprs.size() > 0); // TODO: do better?
+
+        // Enter a new scope if desired
+        if (newScope)
+            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
+
+        std::vector<TypedNode *> nodes;
+
+        // Tracks if we have found a return statement or not
+        bool foundReturn = false;
+        for (auto expr : exprs)
+        {
+            // Visit all the statements in the block
+            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, expr->accept(this));
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
+            {
+                // (*e)->addError(expr->getStart(), "Failed to type check statement");
+                return *e;
+            }
+
+            nodes.push_back(std::get<TypedNode *>(tnOpt));
+            // If we found a return, then this is dead code, and we can break out of the loop.
+            if (foundReturn)
+            {
+                errorHandler.addError(expr->getStart(), "Dead code");
+                break;
+            }
+
+            // If the current statement is a return, set foundReturn = true
+            if (dynamic_cast<BismuthParser::ReturnStatementContext *>(expr)) // FIXME: what about exit? Also need it here AND in block!
+                foundReturn = true;
+        }
+        // If we entered a new scope, then we can now safely exit a scope
+        if (newScope)
+            this->safeExitScope(exprs.at(0));
+
+        return new TBlockNode(nodes, exprs.at(0)->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
 
     std::variant<Symbol *, ErrorChain *> getProgramSymbol(BismuthParser::DefineProgramContext *ctx)
