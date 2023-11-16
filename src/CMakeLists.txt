@@ -12,6 +12,7 @@ include(Symbol)
 include(Codegen)
 include(LLVM)
 include(Runtime)
+include(LTL)
 
 ####################################################################
 # See: https://cmake.org/cmake/help/latest/command/find_package.html
@@ -27,8 +28,7 @@ add_subdirectory(semantic)
 add_subdirectory(utility)
 add_subdirectory(codegen)
 add_subdirectory(runtime)
-
-
+add_subdirectory(ltl)
 
 add_executable(bismuthc bismuthc.cpp)
 
@@ -42,6 +42,7 @@ add_dependencies(bismuthc
   utility_lib
   codegen_lib
   bismuth_runtime
+  ltl_lib
 )
 
 target_include_directories(bismuthc PUBLIC 
@@ -50,6 +51,7 @@ target_include_directories(bismuthc PUBLIC
   ${SEMANTIC_INCLUDE}
   ${UTILITY_INCLUDE}
   ${CODEGEN_INCLUDE}
+  ${LTL_INCLUDE}
   ${LLVM_BINARY_DIR}/include
   ${LLVM_INCLUDE_DIR}
   ${LLVM_TARGETS_TO_BUILD}
@@ -64,6 +66,7 @@ target_link_libraries(bismuthc
   semantic_lib
   utility_lib
   codegen_lib
+  ltl_lib
   ${LLVM_LIBS}
 )
 

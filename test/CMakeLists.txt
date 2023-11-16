@@ -7,6 +7,7 @@ include(Semantic)
 include(Utility)
 include(Codegen)
 include(LLVM)
+include(LTL)
 
 find_package(LLVM REQUIRED CONFIG)
 list(APPEND CMAKE_MODULE_PATH ${LLVM_DIR})
@@ -35,6 +36,7 @@ add_dependencies(tests
   semantic_lib
   utility_lib
   codegen_lib
+  ltl_lib
   )
 
 target_include_directories(tests PUBLIC 
@@ -43,6 +45,7 @@ target_include_directories(tests PUBLIC
   ${SEMANTIC_INCLUDE}
   ${UTILITY_INCLUDE}
   ${CODEGEN_INCLUDE}
+  ${LTL_INCLUDE}
   ${LLVM_BINARY_DIR}/include
   ${LLVM_INCLUDE_DIR}
   )
@@ -56,6 +59,7 @@ target_link_libraries(tests
   semantic_lib
   utility_lib
   codegen_lib
+  ltl_lib
   ${LLVM_LIBS}
   Catch2::Catch2WithMain
 )

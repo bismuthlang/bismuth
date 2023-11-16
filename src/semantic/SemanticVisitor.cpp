@@ -12,6 +12,8 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     std::vector<std::pair<BismuthParser::DefineStructContext *, TypeStruct *>> structs;
     std::vector<std::pair<BismuthParser::DefineEnumContext *, TypeSum *>> enums;
 
+    std::vector<LTLMonitor> monitors;
+
     std::vector<DefinitionNode> defs;
 
     for (auto e : ctx->defs)
@@ -25,12 +27,29 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of program " + id);
             }
 
+            std::optional<LTLMonitorDef> monitorDef = LTLMonitorDef::get(progCtx);
+            std::string monId;
+
+            if (monitorDef) {
+                monId = std::string(id);
+                id.insert(0, "@monitored::");
+            }
+
             TypeProgram *progType = new TypeProgram();
             Symbol *progSym = new Symbol(id, progType, true, true);
             symBindings->bind(progCtx, progSym);
             stmgr->addSymbol(progSym);
 
             progs.push_back({progCtx, progType});
+
+            if (monitorDef) {
+                TypeProgram *monType = new TypeProgram();
+                Symbol *monSym = new Symbol(monId, monType, true, true);
+                stmgr->addSymbol(monSym);
+
+                LTLMonitor monitor(*monitorDef, progSym, monSym);
+                monitors.push_back(monitor);
+            }
         }
         else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
@@ -137,6 +156,11 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         // std::variant<TypedNode *, ErrorChain *> opt =
         anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
     }
+    for (auto m : monitors)
+    {
+        m.resolveMonitorType();
+    }
+    
 
     // Visit the statements contained in the unit
     for (auto e : ctx->defs)
@@ -166,6 +190,20 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             defs.push_back(std::get<TLambdaConstNode *>(opt));
         }
     }
+
+    for (auto m : monitors)
+    {
+        std::variant<TProgramDefNode *, ErrorChain *> monOpt = m.gen();
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&monOpt))
+        {
+            (*e)->addError(ctx->getStart(), "Failed to instansiate monitor");
+            return *e;
+        }
+        
+        defs.push_back(std::get<TProgramDefNode *>(monOpt));
+    }
+            
 
     /*******************************************
      * Extra checks depending on compiler flags

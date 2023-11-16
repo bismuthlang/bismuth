@@ -8,6 +8,7 @@
 #include "TypedAST.h"
 #include "CastUtils.h"
 #include "ProtocolVisitor.h"
+#include "LTLMonitor.h"
 
 // #include "TypeVisitor.h"
 
