@@ -342,6 +342,59 @@ protected:
     bool isSupertypeFor(const Type *other) const override;
 };
 
+
+/*******************************************
+ *
+ * Dynamic-Length Array Type Definition
+ *
+ *******************************************/
+class TypeDynArray : public Type
+{
+private:
+    /**
+     * @brief The type of the array elements
+     *
+     */
+    const Type *valueType;
+
+public:
+    /**
+     * @brief Construct a new TypeArray
+     *
+     * @param v The type of the array elements
+     */
+    TypeDynArray(const Type *valTy) : Type(false), valueType(valTy)  {}
+
+    /**
+     * @brief Returns the name of the string in form of <valueType name>[<array length>].
+     *
+     * @return std::string String name representation of this type.
+     */
+    std::string toString(DisplayMode mode) const override;
+
+    /**
+     * @brief Get the Value Type object
+     *
+     * @return const Type*
+     */
+    const Type *getValueType() const;
+
+    /**
+     * @brief Gets the LLVM type for an array of the given valueType and length.
+     *
+     * @param C LLVM Context
+     * @return llvm::Type*
+     */
+    llvm::StructType *getLLVMType(llvm::Module *M) const override;
+
+    bool requiresDeepCopy() const override;
+
+    const TypeDynArray * getCopy() const override;
+
+protected:
+    bool isSupertypeFor(const Type *other) const override;
+};
+
 /*******************************************
  *
  * Channel Type Definition

@@ -1907,6 +1907,22 @@ SemanticVisitor::visitCtx(BismuthParser::CustomTypeContext *ctx)
     return sym->type;
 }
 
+std::variant<const TypeDynArray *, ErrorChain*> 
+SemanticVisitor::visitCtx(BismuthParser::DynArrayTypeContext * ctx)
+{
+    std::variant<const Type *, ErrorChain *> innerOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&innerOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to generate array type");
+        return *e;
+    }
+
+    const Type *inner = std::get<const Type *>(innerOpt);
+
+    return new TypeDynArray(inner);
+}
+
 std::variant<const TypeArray *, ErrorChain *>
 SemanticVisitor::visitCtx(BismuthParser::ArrayTypeContext *ctx)
 {

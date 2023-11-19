@@ -230,6 +230,9 @@ public:
     std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::BaseTypeContext *ctx);
     std::any visitBaseType(BismuthParser::BaseTypeContext *ctx) override { return visitCtx(ctx); } // casting done in the function
 
+    std::variant<const TypeDynArray *, ErrorChain*> visitCtx(BismuthParser::DynArrayTypeContext * ctx); 
+    std::any visitDynArrayType(BismuthParser::DynArrayTypeContext * ctx) override { return TypeVariantCast<TypeDynArray>(visitCtx(ctx)); }
+
     std::variant<const TypeArray *, ErrorChain *> visitCtx(BismuthParser::ArrayTypeContext *ctx);
     std::any visitArrayType(BismuthParser::ArrayTypeContext *ctx) override { return TypeVariantCast<TypeArray>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 

@@ -182,6 +182,62 @@ bool TypeArray::isSupertypeFor(const Type *other) const
 }
 
 
+/*******************************************
+ *
+ * Dynamic-Length Array Type Definition
+ *
+ *******************************************/
+
+std::string TypeDynArray::toString(DisplayMode mode=C_STYLE) const
+{
+    return valueType->toString(mode) + "[]";
+}
+
+const Type *TypeDynArray::getValueType() const { return valueType; }
+
+llvm::StructType *TypeDynArray::getLLVMType(llvm::Module *M) const
+{
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+    if (ty)
+        return ty;
+
+    ty = llvm::StructType::create(M->getContext(), toString());
+
+    std::vector<llvm::Type *> typeVec = {
+        valueType->getLLVMType(M)->getPointerTo(), // Pointer
+        llvm::Type::getInt32Ty(M->getContext()),   // Length
+        llvm::Type::getInt32Ty(M->getContext())    // Capacity
+    };
+
+
+    llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
+    ty->setBody(ref); // Done like this to enable recursive types
+
+    return ty;
+}
+
+// FIXME: VERIFY, THIS PROBS DOENST WORK BC WILL HAVE TO COPY OVER THE MALLOCED DATA!!!
+bool TypeDynArray::requiresDeepCopy() const { return valueType->requiresDeepCopy(); }
+
+const TypeDynArray * TypeDynArray::getCopy() const { return this; };
+
+bool TypeDynArray::isSupertypeFor(const Type *other) const
+{
+    // An array can only be a supertype of another array
+    if (const TypeDynArray *p = dynamic_cast<const TypeDynArray *>(other))
+    {
+        /*
+            * If the other array's value type is a subtype of the current
+            * array's type AND their lengths match, then we can consider
+            * this to be a supertype of the other array.
+            */
+        return p->valueType->isSubtype(valueType);
+    }
+    // TODO: allow unsized arrays to become sized!
+
+    return false;
+}
+
 
 /*******************************************
  *
