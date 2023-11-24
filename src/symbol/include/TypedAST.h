@@ -2,6 +2,8 @@
 
 #include "Symbol.h" //Should give us symbols and yyues...
 #include <variant>
+#include <functional> // std::function
+
 
 #include "antlr4-runtime.h" //For token
 
@@ -102,6 +104,8 @@ class TExprCopyNode;
 
 class TAsChannelNode; 
 
+class CompCodeWrapper; 
+
 class TypedASTVisitor
 {
 public:
@@ -153,6 +157,7 @@ public:
     virtual std::optional<Value *> visit(TProgramProjectNode *n) = 0;
     virtual std::optional<Value *> visit(TExprCopyNode *n) = 0; 
     virtual std::optional<Value *> visit(TAsChannelNode *n) = 0; 
+    std::optional<Value *> visit(CompCodeWrapper *n);  // TODO: why don't we directly call the generator? 
 
     // virtual std::optional<Value
 
@@ -203,6 +208,7 @@ public:
     std::any any_visit(TProgramProjectNode *n) { return this->visit(n); }
     std::any any_visit(TExprCopyNode *n) {return this->visit(n); }
     std::any any_visit(TAsChannelNode *n) { return this->visit(n); }
+    std::any any_visit(CompCodeWrapper *n) { return this->visit(n); }
 
     std::any visit(std::any n) { return "FIXME"; }
     std::any accept(TypedNode *n)
@@ -1392,6 +1398,27 @@ public:
     std::string toString() const override { return "AsChannel(" + expr->toString() + ")"; } 
     virtual std::any accept(TypedASTVisitor * a) override { return a ->any_visit(this); }
 };
+
+
+class CompCodeWrapper : public TypedNode
+{
+public: 
+    std::function<std::optional<Value *>()> generator; 
+
+public:
+    CompCodeWrapper(std::function<std::optional<Value *>()> gen) : TypedNode(nullptr), generator(gen)
+    {
+    }
+
+    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+
+    std::string toString() const override {
+        return "GENERATOR NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
 
 /**************************************************
  *

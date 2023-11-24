@@ -56,7 +56,7 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, ConstantInt * len32)
     }
 }
 
-void CodegenModule::ReallocateDynArray(llvm::AllocaInst * alloc, ConstantInt * newCapacity)
+void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCapacity)
 {
     unsigned int GROW_FACTOR = 2; // FIXME: DO BETTER
 
@@ -91,7 +91,7 @@ void CodegenModule::ReallocateDynArray(llvm::AllocaInst * alloc, ConstantInt * n
     Value * loadedArray = builder->CreateLoad(vecPtr, vecPtr->getType()->getPointerElementType());
     // Value * indexPtr = builder->CreateGEP(loadedArray, indexValue);
 
-    Value *newData = builder->CreateCall(
+    Value *newData_i8ptr = builder->CreateCall(
         getGCMalloc(), 
         {
             builder->CreateNSWMul(
@@ -105,10 +105,14 @@ void CodegenModule::ReallocateDynArray(llvm::AllocaInst * alloc, ConstantInt * n
         }
     );
 
-    {
-        llvm::AllocaInst * loopValue = CreateEntryBlockAlloc(Int32Ty, "");
-        builder->CreateStore(Int32Zero, loopValue);
+    Value * newData = builder->CreateBitCast(newData_i8ptr, loadedArray->getType()->getPointerTo());
 
+
+    {
+        llvm::AllocaInst * loopValuePtr = CreateEntryBlockAlloc(Int32Ty, "");
+        builder->CreateStore(Int32Zero, loopValuePtr);
+
+        
         // TODO: Refactor with while loop! (AND MAYBE DEEP COPY VISITOR IMPL?)
 
         auto parent = builder->GetInsertBlock()->getParent();
@@ -118,29 +122,31 @@ void CodegenModule::ReallocateDynArray(llvm::AllocaInst * alloc, ConstantInt * n
 
         builder->CreateCondBr(
             builder->CreateICmpSLT(
-                builder->CreateLoad(Int32Ty, loopValue), 
+                builder->CreateLoad(Int32Ty, loopValuePtr), 
                 origLen
             )
             , loopBlk, restBlk);
 
-        /*
-        * In the loop block
-        */
+        //
+        // In the loop block
+        //
         builder->SetInsertPoint(loopBlk);
 
-        builder->CreateStore(
-            builder->CreateLoad(
-                builder->CreateGEP(loadedArray, loopValue)
-            ), 
-            builder->CreateGEP(newData, loopValue)
-        );
-
+        Value * loopValueLoaded = builder->CreateLoad(Int32Ty, loopValuePtr); 
+        
+        // builder->CreateStore(
+        //     builder->CreateLoad(
+        //         builder->CreateGEP(loadedArray, loopValueLoaded)
+        //     ), 
+        //     builder->CreateGEP(builder->CreateLoad(newData), loopValueLoaded)
+        // );
+        
         builder->CreateStore(
             builder->CreateNSWAdd(
-                builder->CreateLoad(loopValue),
+                loopValueLoaded,
                 Int32One
             ),
-            loopValue
+            loopValuePtr
         );
 
         // Re-calculate the loop condition
@@ -148,28 +154,29 @@ void CodegenModule::ReallocateDynArray(llvm::AllocaInst * alloc, ConstantInt * n
         // Check if we need to loop back again...
         builder->CreateCondBr(
             builder->CreateICmpSLT(
-                builder->CreateLoad(Int32Ty, loopValue), 
+                builder->CreateLoad(Int32Ty, loopValuePtr), 
                 origLen
             ),
             loopBlk, restBlk);
         loopBlk = builder->GetInsertBlock();
 
-        /*
-        * Out of loop
-        */
+        //
+        // Out of loop
+        //
         parent->getBasicBlockList().push_back(restBlk);
         builder->SetInsertPoint(restBlk);
+        
 
-
-        builder->CreateStore(
-            newData, 
-            vecPtr
-        ); 
+        // builder->CreateStore(
+        //     builder->CreateLoad(newData), 
+        //     vecPtr
+        // ); 
         Value *capPtr = builder->CreateGEP(alloc, {Int32Zero, ConstantInt::get(Int32Ty, 2, true)});
 
         builder->CreateStore(newCapacity, capPtr);
 
     }
+    
 
 
 

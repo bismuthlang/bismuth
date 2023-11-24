@@ -874,10 +874,73 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
     Value *structPtr = structOpt.value();
 
 
+
+    Value *lengthPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32One});
+    Value *length = builder->CreateLoad(lengthPtr->getType()->getPointerElementType(), lengthPtr); 
+
     if (!n->is_rvalue)
     {
         
+        (new TConditionalStatementNode(
+            nullptr, 
+            // Condition
+            new TBinaryRelNode(
+                BinaryRelOperator::BINARY_Rel_LESS_EQ,
+                new CompCodeWrapper([length]() { return length; }),
+                new CompCodeWrapper([indexValue](){ return indexValue; }),
+                nullptr
+            ), 
+            // True block 
+            new TBlockNode({
+                new CompCodeWrapper([this, lengthPtr, length, structPtr, indexValue](){
 
+                    Value *capPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32One});
+                    Value *cap =    builder->CreateLoad(Int32Ty, capPtr);
+
+                    // TODO: does this memory leak?
+                    (new TConditionalStatementNode(
+                        nullptr,
+                        // Condition
+                        new TBinaryRelNode(
+                            BinaryRelOperator::BINARY_Rel_LESS_EQ,
+                            new CompCodeWrapper([cap](){ return cap; }),
+                            new CompCodeWrapper([indexValue]() { return indexValue; }),
+                            nullptr
+                        ), 
+                        // True Block 
+                        new TBlockNode({
+                            new CompCodeWrapper([this, structPtr, indexValue](){
+                                ReallocateDynArray(structPtr, 
+                                    builder->CreateNSWMul(indexValue, // TODO: Should really be the max of capacity or len!
+                                     builder->getInt32(2)) // TODO: DO BETTER MULTIPLIER
+                                );
+
+                                return std::nullopt; 
+                            })
+                        }, nullptr),
+                        // Post 
+                        {
+                            new CompCodeWrapper(
+                                [this, lengthPtr, indexValue](){
+                                    builder->CreateStore(
+                                        builder->CreateNSWAdd(indexValue, Int32One),
+                                        lengthPtr
+                                    ); 
+                                    return std::nullopt; 
+                                }
+                            )
+                        }
+                    ))->accept(this); 
+                    
+
+                    return std::nullopt; 
+                })
+            }, nullptr),
+            // Post 
+            {
+
+            }
+        ))->accept(this); 
         // ReallocateDynArray
 
 
@@ -889,8 +952,7 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
         return indexPtr; //builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
     }
 
-    Value *lengthPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32One});
-    Value *length = builder->CreateLoad(lengthPtr->getType()->getPointerElementType(), lengthPtr);
+    
 
 
     Value *idxBoundsCheckValue = builder->CreateICmpSLT(
