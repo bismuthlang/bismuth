@@ -105,7 +105,7 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
         }
     );
 
-    Value * newData = builder->CreateBitCast(newData_i8ptr, loadedArray->getType()->getPointerTo());
+    Value * newData = builder->CreateBitCast(newData_i8ptr, loadedArray->getType());
 
 
     {
@@ -134,12 +134,12 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
 
         Value * loopValueLoaded = builder->CreateLoad(Int32Ty, loopValuePtr); 
         
-        // builder->CreateStore(
-        //     builder->CreateLoad(
-        //         builder->CreateGEP(loadedArray, loopValueLoaded)
-        //     ), 
-        //     builder->CreateGEP(builder->CreateLoad(newData), loopValueLoaded)
-        // );
+        builder->CreateStore(
+            builder->CreateLoad(
+                builder->CreateGEP(loadedArray, loopValueLoaded)
+            ), 
+            builder->CreateGEP(newData, loopValueLoaded)
+        );
         
         builder->CreateStore(
             builder->CreateNSWAdd(
@@ -167,10 +167,10 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
         builder->SetInsertPoint(restBlk);
         
 
-        // builder->CreateStore(
-        //     builder->CreateLoad(newData), 
-        //     vecPtr
-        // ); 
+        builder->CreateStore(
+            newData, 
+            vecPtr
+        ); 
         Value *capPtr = builder->CreateGEP(alloc, {Int32Zero, ConstantInt::get(Int32Ty, 2, true)});
 
         builder->CreateStore(newCapacity, capPtr);
