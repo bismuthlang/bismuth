@@ -746,6 +746,11 @@ std::set<const Type *, TypeCompare> TypeSum::getCases() const { return cases; }
 
 unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
 {
+    std::string type_str;
+    llvm::raw_string_ostream rso(type_str);
+    toFind->print(rso);
+    std::cout << "TOFIND: " << rso.str() << std::endl; 
+
     unsigned i = 1;
 
     for (auto e : getCases())

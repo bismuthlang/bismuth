@@ -98,6 +98,7 @@ public:
     std::optional<Value *> visit(TFieldAccessNode *n) override;
     std::optional<Value *> visit(TDerefBoxNode *n) override;
     std::optional<Value *> visit(TArrayAccessNode *n) override;
+    std::optional<Value *> visit(TDynArrayAccessNode *n) override; 
     std::optional<Value *> visit(TAssignNode *n) override;
     std::optional<Value *> visit(TBinaryRelNode *n) override;
     std::optional<Value *> visit(TBinaryArithNode *n) override;

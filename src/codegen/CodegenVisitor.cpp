@@ -852,6 +852,115 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) // TODO: COnsi
     return phi;
 }
 
+
+std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: COnsider refactoring/ improving generated IR
+{
+    std::optional<Value *> indexOpt = AcceptType(this, n->indexExpr);
+
+    if (!indexOpt)
+    {
+        errorHandler.addError(n->getStart(), "Failed to generate code in visiting TArrayAccessNode for index!");
+        return std::nullopt;
+    }
+
+    std::optional<Value *> structOpt = AcceptType(this, n->field);
+    if (!structOpt)
+    {
+        errorHandler.addError(n->getStart(), "Failed to locate array in access");
+        return std::nullopt;
+    }
+
+    Value *indexValue = indexOpt.value();
+    Value *structPtr = structOpt.value();
+
+
+    if (!n->is_rvalue)
+    {
+        
+
+        // ReallocateDynArray
+
+
+        // If its an lvalue,need the pointer!
+        Value * arrayPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32Zero});
+        Value * loadedArray = builder->CreateLoad(arrayPtr, arrayPtr->getType()->getPointerElementType());
+        Value * indexPtr = builder->CreateGEP(loadedArray, indexValue);
+
+        return indexPtr; //builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
+    }
+
+    Value *lengthPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32One});
+    Value *length = builder->CreateLoad(lengthPtr->getType()->getPointerElementType(), lengthPtr);
+
+
+    Value *idxBoundsCheckValue = builder->CreateICmpSLT(
+        indexValue,
+        length
+    );
+
+    auto parentFn = builder->GetInsertBlock()->getParent();
+
+    BasicBlock *ltlBlk = BasicBlock::Create(module->getContext(), "accessLTL", parentFn);
+    BasicBlock *gtzBlk = BasicBlock::Create(module->getContext(), "accessGTZ");
+    BasicBlock *elseBlk = BasicBlock::Create(module->getContext(), "accessBad");
+    BasicBlock *restBlk = BasicBlock::Create(module->getContext(), "accessAfter");
+
+    builder->CreateCondBr(builder->CreateZExtOrTrunc(idxBoundsCheckValue, Int1Ty), ltlBlk, elseBlk);
+
+    /*
+     * We knw its less than the length, but need to ensure greater than zero
+     */
+    builder->SetInsertPoint(ltlBlk);
+
+    builder->CreateCondBr(
+        builder->CreateZExtOrTrunc(
+            builder->CreateICmpSGE(indexValue, Int32Zero), // PLAN: Add slices which could loop!
+            Int1Ty),
+        gtzBlk,
+        elseBlk);
+    ltlBlk = builder->GetInsertBlock();
+
+    /*
+     * Passed Bounds Check Blk
+     */
+    parentFn->getBasicBlockList().push_back(gtzBlk);
+    builder->SetInsertPoint(gtzBlk);
+    Value *vecPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32Zero});
+    Value *vec = builder->CreateLoad(vecPtr->getType()->getPointerElementType(), vecPtr);
+    
+    Value * valuePtr = builder->CreateGEP(vec, {indexValue});
+    Value * value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+
+    std::cout << n->getRValueType()->toString(DisplayMode::C_STYLE) << std::endl; 
+    auto ptr = correctSumAssignment(n->getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
+    builder->CreateBr(restBlk);
+    gtzBlk = builder->GetInsertBlock();
+
+    /*
+     * Out of bounds, so set unit
+     */
+    parentFn->getBasicBlockList().push_back(elseBlk);
+    builder->SetInsertPoint(elseBlk);
+
+    auto unitPtr = correctSumAssignment(n->getRValueType(), getUnitValue());
+    builder->CreateBr(restBlk);
+    elseBlk = builder->GetInsertBlock();
+
+    /*
+     * Return to computation
+     */
+    parentFn->getBasicBlockList().push_back(restBlk);
+    builder->SetInsertPoint(restBlk);
+
+    module->dump(); 
+
+    PHINode *phi = builder->CreatePHI(n->getType()->getLLVMType(module), 2, "arrayAccess");
+    phi->addIncoming(ptr, gtzBlk);
+    phi->addIncoming(unitPtr, elseBlk);
+
+    return phi;
+}
+
 std::optional<Value *> CodegenVisitor::visit(TIntConstExprNode *n)
 {
     return builder->getInt32(n->value);
@@ -1136,6 +1245,10 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
             // If it is, correctly, an array type, then we can get the array's length (this is the only operation currently, so we can just do thus)
             return builder->getInt32(arOpt.value()->getLength());
         }
+        // else if(std::optional<const TypeDynArray *> dynArOpt = type_cast<TypeDynArray>(modOpt))
+        // {
+            // Value *lenPtr = builder->CreateGEP(dynArOpt.value(), {Int32Zero, Int32One});
+        // }
 
         // Can't throw error b/c length could be field of struct
     }
@@ -1176,6 +1289,12 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 
             const Type *fieldType = n->accesses.at(i).second;
             ty = fieldType;
+        }
+        else if (type_cast<TypeDynArray>(ty) &&  i + 1 == n->accesses.size() && n->accesses.at(n->accesses.size() - 1).first == "length")
+        {
+            // Value *lenPtr = builder->CreateGEP(dynArOpt.value(), {Int32Zero, Int32One});
+            addresses.push_back(Int32One);
+            ty = Types::DYN_INT; 
         }
         else
         {
@@ -1469,6 +1588,10 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
                     {
                         builder->CreateStore(stoVal, v);
                     }
+                }
+                else if(const TypeDynArray * dynArray = dynamic_cast<const TypeDynArray*>(varSymbol->type))
+                {
+                    InitDynArray(v, builder->getInt32(10)); // FIXME: DO BETTER
                 }
             }
         }

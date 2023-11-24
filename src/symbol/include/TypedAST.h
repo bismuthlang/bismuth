@@ -78,6 +78,7 @@ class TExternNode;
 class TInvocationNode;
 class TFieldAccessNode;
 class TArrayAccessNode;
+class TDynArrayAccessNode; 
 class TAssignNode;
 class TBinaryRelNode;
 class TBinaryArithNode;
@@ -133,6 +134,7 @@ public:
     virtual std::optional<Value *> visit(TInvocationNode *n) = 0;
     virtual std::optional<Value *> visit(TFieldAccessNode *n) = 0;
     virtual std::optional<Value *> visit(TArrayAccessNode *n) = 0;
+    virtual std::optional<Value *> visit(TDynArrayAccessNode *n) = 0; 
     virtual std::optional<Value *> visit(TAssignNode *n) = 0;
     virtual std::optional<Value *> visit(TBinaryRelNode *n) = 0;
     virtual std::optional<Value *> visit(TBinaryArithNode *n) = 0;
@@ -182,6 +184,7 @@ public:
     std::any any_visit(TInvocationNode *n) { return this->visit(n); }
     std::any any_visit(TFieldAccessNode *n) { return this->visit(n); }
     std::any any_visit(TArrayAccessNode *n) { return this->visit(n); }
+    std::any any_visit(TDynArrayAccessNode *n) { return this->visit(n); }
     std::any any_visit(TAssignNode *n) { return this->visit(n); }
     std::any any_visit(TBinaryRelNode *n) { return this->visit(n); }
     std::any any_visit(TBinaryArithNode *n) { return this->visit(n); }
@@ -872,6 +875,7 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
+
 class TArrayAccessNode : public TypedNode
 {
 public:
@@ -912,6 +916,47 @@ public:
 
     std::string toString() const override {
         return "Array Access Node";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+class TDynArrayAccessNode : public TypedNode
+{
+public:
+    TFieldAccessNode *field;
+    TypedNode *indexExpr;
+    bool is_rvalue;
+
+    TDynArrayAccessNode(TFieldAccessNode *f, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
+    {
+        field = f;
+        indexExpr = i;
+        is_rvalue = r;
+    }
+
+    // TODO: allow for modulo get so that way we can access fields more directly?
+    const Type *getType() override
+    {
+        const Type * arrayType = dynamic_cast<const TypeDynArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+
+        if(!is_rvalue)
+        {
+            return arrayType;
+        }
+
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        return new TypeSum(cases);
+    }
+
+    const TypeSum* getRValueType() {
+        const Type * arrayType = dynamic_cast<const TypeDynArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        return new TypeSum(cases);
+    }
+
+    std::string toString() const override {
+        return "Dynamic Array Access Node";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }

@@ -483,7 +483,7 @@ std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     return new TInitBoxNode(new TypeBox(storeType), tn, ctx->getStart());
 }
 
-std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue)
+std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue)
 {
     /*
      * Check that we are provided an int for the index.
@@ -524,6 +524,10 @@ std::variant<TArrayAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     {
         return new TArrayAccessNode(field, expr, is_rvalue, ctx->getStart());
     }
+    else if(type_cast<TypeDynArray>(field->getType()))
+    {
+        return new TDynArrayAccessNode(field, expr, is_rvalue, ctx->getStart()); 
+    }
 
     // Report error
     return errorHandler.addError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->field->getText() + " : " + field->getType()->toString(toStringMode));
@@ -544,7 +548,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     /*
      * As we are not a var, we must be an array access, so we must visit that context.
      */
-    return TNVariantCast<TArrayAccessNode>(this->visitCtx(ctx->array, false));
+    return (this->visitCtx(ctx->array, false));
 }
 
 std::variant<TIntConstExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IConstExprContext *ctx)
@@ -879,7 +883,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
                 return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString(toStringMode));
             }
         }
-        else if (i + 1 == ctx->fields.size() && type_cast<TypeArray>(ty) && ctx->fields.at(i)->getText() == "length")
+        else if (i + 1 == ctx->fields.size() && (type_cast<TypeArray>(ty) || type_cast<TypeDynArray>(ty)) && ctx->fields.at(i)->getText() == "length")
         {
             a.push_back({"length",
                          Types::DYN_INT});

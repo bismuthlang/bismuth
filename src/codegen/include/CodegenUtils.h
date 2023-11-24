@@ -388,6 +388,23 @@ public:
         return tempBuilder.CreateAlloca(ty, 0, identifier);
     }
 
+
+    /******************************
+     * 
+     * Dynamic Arrays Section
+     * 
+     ******************************/
+
+    // llvm::AllocaInst * CreateDynArrayAlloc(TypeDynArray * array, std::string identifier)
+    // {
+
+    // }
+    
+    void InitDynArray(llvm::AllocaInst * alloc, ConstantInt * len);
+
+    void ReallocateDynArray(llvm::AllocaInst * alloc, ConstantInt * newLen32); 
+
+
 private:
     DisplayMode toStringMode; 
 

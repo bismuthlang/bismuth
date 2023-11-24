@@ -89,11 +89,11 @@ public:
     std::variant<TDerefBoxNode *, ErrorChain *> visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue);
     std::any visitDereferenceExpr(BismuthParser::DereferenceExprContext *ctx) override { return TNVariantCast<TDerefBoxNode>(visitCtx(ctx, true)); }
 
-    std::variant<TArrayAccessNode *, ErrorChain *> visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue);
-    std::any visitArrayAccess(BismuthParser::ArrayAccessContext *ctx) override { return TNVariantCast<TArrayAccessNode>(visitCtx(ctx, true)); }
+    std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue);
+    std::any visitArrayAccess(BismuthParser::ArrayAccessContext *ctx) override { return visitCtx(ctx, true); }
 
-    std::variant<TArrayAccessNode *, ErrorChain *> visitCtx(BismuthParser::ArrayAccessExprContext *ctx) { return this->visitCtx(ctx->arrayAccess(), true); }
-    std::any visitArrayAccessExpr(BismuthParser::ArrayAccessExprContext *ctx) override { return TNVariantCast<TArrayAccessNode>(visitCtx(ctx)); }
+    // std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::ArrayAccessExprContext *ctx) { return this->visitCtx(ctx->arrayAccess(), true); }
+    std::any visitArrayAccessExpr(BismuthParser::ArrayAccessExprContext *ctx) override { return this->visitCtx(ctx->arrayAccess(), true); } //TNVariantCast<TArrayAccessNode>(visitCtx(ctx)); }
 
     std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::LValueContext *ctx);
     std::any visitLValue(BismuthParser::LValueContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }

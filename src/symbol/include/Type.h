@@ -31,6 +31,8 @@
 
 #include "SymbolUtils.h"
 
+#include <iostream> // cout
+
 class ProtocolSequence;
 /*******************************************
  *
