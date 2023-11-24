@@ -993,6 +993,13 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
     Value * valuePtr = builder->CreateGEP(vec, {indexValue});
     Value * value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
 
+    // FIXME: NULLABILITY CHECKS + FIX BUG WHERE DYN ARRAY CAN BE USED W/ LINEAR RESOURCES 
+    // FIXME: ALLOW STREAMING OF DYN ARRAYS!
+
+
+
+
+
     std::cout << n->getRValueType()->toString(DisplayMode::C_STYLE) << std::endl; 
     auto ptr = correctSumAssignment(n->getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
