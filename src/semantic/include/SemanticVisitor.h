@@ -170,6 +170,9 @@ public:
     std::variant<TInitProductNode *, ErrorChain *> visitCtx(BismuthParser::InitProductContext *ctx);
     std::any visitInitProduct(BismuthParser::InitProductContext *ctx) override { return TNVariantCast<TInitProductNode>(visitCtx(ctx)); }
 
+    std::variant<TArrayRValue *, ErrorChain *> visitCtx(BismuthParser::ArrayExpressionContext * ctx); 
+    std::any visitArrayExpression(BismuthParser::ArrayExpressionContext * ctx) override { return TNVariantCast<TArrayRValue>(visitCtx(ctx)); }
+
     std::variant<TInitBoxNode *, ErrorChain *> visitCtx(BismuthParser::InitBoxContext *ctx);
     std::any visitInitBox(BismuthParser::InitBoxContext *ctx) override { return TNVariantCast<TInitBoxNode>(visitCtx(ctx)); }
 

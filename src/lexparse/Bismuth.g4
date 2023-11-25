@@ -77,6 +77,7 @@ expression          : LPAR ex=expression RPAR                                   
                     | COPY LPAR expr=expression RPAR                # CopyExpr
                     | COPY expr=expression                          # CopyExpr
                     | 'asChannel' LPAR expr=expression RPAR         # AsChannelExpr
+                    | '[' ((elements+=expression ',')* elements+=expression)? ']'   # ArrayExpression
                     ;
 
 lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;

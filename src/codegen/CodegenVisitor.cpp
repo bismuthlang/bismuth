@@ -714,7 +714,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode *n)
     const TypeStruct *product = n->product;
 
     llvm::Type *ty = product->getLLVMType(module);
-    llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, "");
+    llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, ""); // TODO: this allocation isn' always needed
     {
         unsigned i = 0;
         std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
@@ -735,6 +735,83 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode *n)
     }
 
     Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
+    return loaded;
+}
+
+std::optional<Value *> CodegenVisitor::visit(TArrayRValue *n)
+{
+    // FIXME: ADD OPTIMIZATION TO USE GLOBAL CONSTANT WHEN ABLE!
+    std::variant<const TypeArray *, const TypeDynArray *> typeVariant = n->getTypeVariant(); 
+
+    llvm::AllocaInst * ans; 
+    Value * writeTo; 
+    const Type * stoType = nullptr; 
+
+    if(std::holds_alternative<const TypeArray *>(typeVariant))
+    {
+        const TypeArray * ty = std::get<const TypeArray *>(typeVariant);
+
+        ans = CreateEntryBlockAlloc(ty->getLLVMType(module), ""); // TODO: this isn't always needed
+        writeTo = ans; 
+        stoType = const_cast<Type *>(ty->getValueType()); 
+    }
+    else // TODO: UNUSED SO FAR BC NO WAY TO SET IT AS DYN
+    {
+        // TODO: use pattern matching instead of get to ensure we visit all possible opts
+        const TypeDynArray * ty = std::get<const TypeDynArray *>(typeVariant); 
+
+        ans = CreateEntryBlockAlloc(ty->getLLVMType(module), ""); // TODO: this isn't always needed
+
+        InitDynArray(ans, builder->getInt32(n->exprs.size()));
+
+        Value * vecPtr = builder->CreateGEP(ans, {Int32Zero, Int32Zero});
+        writeTo = builder->CreateLoad(vecPtr, vecPtr->getType()->getPointerElementType());
+
+        stoType = const_cast<Type *>(ty->getValueType()); 
+    }
+    
+    std::vector<Value *> args;
+
+    for (TypedNode *e : n->exprs)
+    {
+        std::optional<Value *> valOpt = AcceptType(this, e);
+        if (!valOpt)
+        {
+            errorHandler.addError(n->getStart(), "Failed to generate code");
+            return std::nullopt;
+        }
+
+        Value *stoVal = valOpt.value();
+
+        args.push_back(stoVal);
+    }
+
+    unsigned int i = 0; 
+
+    if(std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(stoType)) // FIXME: WONT WORK FOR [[(A + B)]]
+    {
+        const TypeSum * sumTy = sumOpt.value();
+        for(Value * a : args)
+        {
+            a = correctSumAssignment(sumTy, a);
+
+            Value *ptr = builder->CreateGEP(writeTo, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
+            builder->CreateStore(a, ptr);
+            i++;
+        }
+    }
+    else 
+    {
+        for(Value * a : args)
+        {
+            Value *ptr = builder->CreateGEP(writeTo, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
+            builder->CreateStore(a, ptr);
+            i++;   
+        }
+    }
+
+
+    Value *loaded = builder->CreateLoad(ans->getType()->getPointerElementType(), ans);
     return loaded;
 }
 
@@ -1000,7 +1077,7 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
 
 
 
-    std::cout << n->getRValueType()->toString(DisplayMode::C_STYLE) << std::endl; 
+    // std::cout << n->getRValueType()->toString(DisplayMode::C_STYLE) << std::endl; 
     auto ptr = correctSumAssignment(n->getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();

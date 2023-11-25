@@ -437,6 +437,110 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->type->toString(toStringMode));
 }
 
+std::variant<TArrayRValue *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ArrayExpressionContext *ctx)
+{
+    const Type * innerTy = new TypeInfer(); 
+
+    vector<TypedNode *> elements; 
+
+    bool isValid = true; 
+
+    for(auto eleCtx : ctx->elements)
+    {
+        std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, eleCtx->accept(this));
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+        {
+            (*e)->addError(eleCtx->getStart(), "Unable to generate expression");
+            return *e;
+        }
+
+        TypedNode *tn = std::get<TypedNode *>(opt);
+        elements.push_back(tn);
+        
+        const Type *providedType = tn->getType();
+
+        if (providedType->isNotSubtype(innerTy))
+        {
+            // PLAN: handle errors better!
+            return errorHandler.addError(ctx->getStart(), "Expected " + innerTy->toString(toStringMode) + " but got " + providedType->toString(toStringMode));
+            // isValid = false;
+        }
+
+    }
+    
+    return new TArrayRValue(new TypeArray(innerTy, elements.size()), elements, ctx->getStart());
+
+    /*
+    std::string name = ctx->v->getText();
+    std::optional<Symbol *> opt = stmgr->lookup(name);
+
+    if (!opt)
+    {
+        return errorHandler.addError(ctx->getStart(), "Cannot initialize undefined product: " + name);
+    }
+
+    Symbol *sym = opt.value();
+
+    // TODO: METHODIZE WITH INVOKE?
+
+    std::optional<const TypeStruct *> productOpt = type_cast<TypeStruct>(sym->type);
+    if (productOpt)
+    {
+        const TypeStruct *product = productOpt.value();
+        std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
+        if (elements.size() != ctx->exprs.size())
+        {
+            std::ostringstream errorMsg;
+            errorMsg << "Initialization of " << name << " expected " << elements.size() << " argument(s), but got " << ctx->exprs.size();
+            return errorHandler.addError(ctx->getStart(), errorMsg.str());
+        }
+
+        std::vector<TypedNode *> n;
+
+        bool isValid = true;
+        {
+            unsigned int i = 0;
+
+            for (auto eleItr : elements)
+            {
+                std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->exprs.at(i)->accept(this));
+
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+                {
+                    (*e)->addError(ctx->exprs.at(i)->getStart(), "Unable to generate expression");
+                    return *e;
+                }
+
+                TypedNode *tn = std::get<TypedNode *>(opt);
+
+                n.push_back(tn);
+                const Type *providedType = tn->getType();
+
+                if (providedType->isNotSubtype(eleItr.second))
+                {
+                    std::ostringstream errorMsg;
+                    errorMsg << "Product init. argument " << i << " provided to " << name << " expected " << eleItr.second->toString(toStringMode) << " but got " << providedType->toString(toStringMode);
+
+                    errorHandler.addError(ctx->getStart(), errorMsg.str());
+                    isValid = false;
+                }
+
+                i++;
+            }
+        }
+
+        if (!isValid)
+        {
+            return errorHandler.addError(ctx->getStart(), "Invalid parameters passed to product init");
+        }
+
+        return new TInitProductNode(product, n, ctx->getStart());
+    }
+    */
+    return errorHandler.addError(ctx->getStart(), "FIXME: IMPLEMENT");//"Cannot initialize non-product type " + name + " : " + sym->type->toString(toStringMode));
+}
+
 std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitBoxContext *ctx)
 {
     std::variant<const Type *, ErrorChain *> storeTypeOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));

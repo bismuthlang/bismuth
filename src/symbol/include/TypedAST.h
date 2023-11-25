@@ -73,6 +73,7 @@ class TProgramAcceptIfNode;
 class TDefineEnumNode;
 class TDefineStructNode;
 class TInitProductNode;
+class TArrayRValue; 
 class TInitBoxNode;
 class TDerefBoxNode;
 class TWhileLoopNode;
@@ -131,6 +132,7 @@ public:
     // virtual std::optional<Value *> visit(TDefineEnumNode *n) = 0;
     // virtual std::optional<Value *> visit(TDefineStructNode *n) = 0;
     virtual std::optional<Value *> visit(TInitProductNode *n) = 0;
+    virtual std::optional<Value *> visit(TArrayRValue *n) = 0; 
     virtual std::optional<Value *> visit(TInitBoxNode *n) = 0; 
     virtual std::optional<Value *> visit(TDerefBoxNode *n) = 0; 
     virtual std::optional<Value *> visit(TWhileLoopNode *n) = 0;
@@ -182,6 +184,7 @@ public:
     std::any any_visit(TDefineEnumNode *n) { return this->visit(n); }
     std::any any_visit(TDefineStructNode *n) { return this->visit(n); }
     std::any any_visit(TInitProductNode *n) { return this->visit(n); }
+    std::any any_visit(TArrayRValue *n) { return this->visit(n); }
     std::any any_visit(TInitBoxNode *n) { return this->visit(n); }
     std::any any_visit(TDerefBoxNode *n) { return this->visit(n); }
     std::any any_visit(TWhileLoopNode *n) { return this->visit(n); }
@@ -717,6 +720,40 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
+
+class TArrayRValue : public TypedNode
+{
+public:
+    std::variant<const TypeArray *, const TypeDynArray *> type; 
+    vector<TypedNode *> exprs;
+
+    TArrayRValue(const TypeArray *p, vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
+    {
+        type = p;
+        exprs = e;
+    }
+
+    TArrayRValue(const TypeDynArray *p, vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
+    {
+        type = p;
+        exprs = e;
+    }
+
+    const Type *getType() override { 
+        // return type;  // Wish we could do this
+        if(std::holds_alternative<const TypeArray *>(type))
+            return std::get<const TypeArray *>(type); 
+        return std::get<const TypeDynArray*>(type); 
+    }
+
+    std::variant<const TypeArray *, const TypeDynArray*> getTypeVariant() { return type; }
+
+    std::string toString() const override {
+        return "ARRAY RVALUE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
 
 class TInitBoxNode : public TypedNode
 {
