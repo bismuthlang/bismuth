@@ -227,6 +227,9 @@ type            :    ty=type LBRC len=INTEGER RBRC                              
                 ;
 
 TYPE_INT        :   'int'       ; 
+// TYPE_U32        :   'u32'       ;
+// TYPE_I64        :   'i64'       ;
+// TYPE_U64        :   'u64'       ; 
 TYPE_BOOL       :   'boolean'   ;
 TYPE_STR        :   'str'       ; 
 TYPE_UNIT       :   'Unit'      ;
