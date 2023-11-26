@@ -1,0 +1,54 @@
+extern func printf(str s, ...) : int; 
+
+define func printIdxValue(int[] array, str id, int idx) : Unit 
+{
+    var val := array[idx];
+
+    match val 
+        |   Unit u => printf("%s[%u] = Unit\n", id, idx);
+        |   int i => printf("%s[%u] = %u\n", id, idx, i);
+
+    return;
+}
+
+
+define program :: c : Channel<-int> {
+
+    int [] a; 
+
+    # a[0] := 1; # a.length; 
+
+    # a[0] := 30; 
+
+    printIdxValue(a, "a", 0); # TODO: Returns 0... interesting
+
+    c.send(0)
+
+
+    a[0] := 30; 
+
+    printIdxValue(a, "a", 0);
+
+
+    a[21] := a.length; 
+
+    printIdxValue(a, "a", 1);
+
+    for(int i := 0; i < a.length; i := i + 1)
+    {
+        printIdxValue(a, "a", i);
+    }
+
+    # Channel<-int>[] channel_array; 
+
+    # channel_array[0] := c; 
+
+    # for(int i := 0; i < channel_array.length; i := i + 1)
+    # {
+    #     printf("%u\n", i);
+    #     var a := channel_array[i]; 
+    #     match a 
+    #         |   Unit u => {}
+    #         |   Channel<-int> a => { a.send(0); }
+    # }
+}
