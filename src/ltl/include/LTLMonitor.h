@@ -1,8 +1,10 @@
 #pragma once
 
 #include <optional>
+#include <variant>
 #include "BismuthParser.h"
 #include "LTLMonitorDef.h"
+#include "DFA.h"
 #include "Symbol.h"
 #include "TypedAST.h"
 #include "BismuthErrorHandler.h"
@@ -13,11 +15,15 @@ class LTLMonitor
     LTLMonitorDef def;
     Symbol *progSym;
     Symbol *monSym;
+    antlr4::Token *rootTok = NULL;
 
  public:
     LTLMonitor(LTLMonitorDef def, Symbol *progSym, Symbol *monSym);
 
-    std::variant<TProgramDefNode *, ErrorChain *> gen();
+    std::variant<TProgramDefNode *, ErrorChain *> gen(BismuthErrorHandler &errorHandler);
 
     void resolveMonitorType();
+
+  private:
+    const TypeProgram *getProgTy();
 };

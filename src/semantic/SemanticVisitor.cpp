@@ -193,7 +193,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     for (auto m : monitors)
     {
-        std::variant<TProgramDefNode *, ErrorChain *> monOpt = m.gen();
+        std::variant<TProgramDefNode *, ErrorChain *> monOpt = m.gen(errorHandler);
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&monOpt))
         {

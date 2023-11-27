@@ -10,4 +10,5 @@ set (LTL_INCLUDE
 set (LTL_SOURCES
   ${LTL_DIR}/LTLMonitor.cpp
   ${LTL_DIR}/LTLMonitorDef.cpp
+  ${LTL_DIR}/DFA.cpp
 )

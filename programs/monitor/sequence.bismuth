@@ -1,0 +1,13 @@
+extern func printf(str s, ...) : int;
+
+define MONITORED :: c : Channel<+int; -int> {
+    int x := c.recv();
+    printf("Got: %i\n", x);
+    c.send(x);
+}
+
+define program :: c : Channel<-int> {
+    var monitored := exec MONITORED;
+    monitored.send(0);
+    c.send(monitored.recv());
+}
