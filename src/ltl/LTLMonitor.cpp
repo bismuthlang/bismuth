@@ -30,7 +30,7 @@ struct ChanCx
 
 struct GenCx
 {
-    DFA dfa;
+    DFA *dfa;
     
     BismuthErrorHandler *errorHandler;
     antlr4::Token *rootTok; // TODO: more precise error locations
@@ -39,6 +39,8 @@ struct GenCx
     ChanCx child;
 
     std::vector<TypedNode *> body;
+
+    GenCx makeInner();
 };
 
 void genExec(GenCx &cx, Symbol *sym);
@@ -71,7 +73,7 @@ std::variant<TProgramDefNode *, ErrorChain *> LTLMonitor::gen(BismuthErrorHandle
     };
     
     GenCx genCx{
-        .dfa = dfa,
+        .dfa = &dfa,
         .errorHandler = &errorHandler,
         .rootTok = this->rootTok,
         .c = chanCx,
@@ -111,6 +113,20 @@ TProgramSendNode *ChanCx::send(GenCx &cx, TProgramRecvNode *recv)
     assert(sendTy);
     return new TProgramSendNode(this->sym, this->proto->isInCloseable(), recv, *sendTy, cx.rootTok);
 }
+
+GenCx GenCx::makeInner() {
+    GenCx innerCx{
+        .dfa = this->dfa,
+        .errorHandler = this->errorHandler,
+        .rootTok = this->rootTok,
+        .c = this->c,
+        .child = this->child,
+        //body{}        
+    };
+    return innerCx;
+}
+
+void genLoop(GenCx &cx, ChanCx *acceptChan, ChanCx *moreChan);
     
 std::variant<std::monostate, ErrorChain *> genProtocol(GenCx &cx, const Protocol *&&proto)
 {
@@ -138,11 +154,13 @@ std::variant<std::monostate, ErrorChain *> genProtocol(GenCx &cx, const Protocol
     }
     else if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto))
     {
-        //
+        genLoop(cx, &cx.child, &cx.c);
+        return std::monostate();
     }
     else if (const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(proto))
     {
-        //
+        genLoop(cx, &cx.c, &cx.child);
+        return std::monostate();
     }
     else if (const ProtocolEChoice *ec = dynamic_cast<const ProtocolEChoice *>(proto))
     {
@@ -174,4 +192,38 @@ void genExec(GenCx &cx, Symbol *sym) {
     TVarDeclNode *decl = new TVarDeclNode({assign}, cx.rootTok);
 
     cx.body.push_back(decl);
+}
+
+void genLoop(GenCx &cx, ChanCx *acceptChan, ChanCx *moreChan) {
+    std::optional<const ProtocolSequence *> acceptProto = acceptChan->proto->acceptLoop();
+    assert(acceptProto);
+
+    bool inCloseable = acceptChan->proto->isInCloseable(); // no clue if this is right
+
+    ChanCx innerChan {
+        .sym = acceptChan->sym,
+        .proto = acceptProto.value(),
+    };
+
+    ChanCx restoreChan = std::exchange(*acceptChan, innerChan);
+    std::vector restoreBody = std::exchange(cx.body, {});
+
+    assert(moreChan->proto->contract());
+
+    TProgramContractNode *contractNode = new TProgramContractNode(moreChan->sym, cx.rootTok);
+    cx.body.push_back(contractNode);
+
+    genProtocol(cx, acceptChan == &cx.c ? acceptProto.value() : acceptProto.value()->getInverse());
+
+    TBlockNode *loopBodyNode = new TBlockNode(cx.body, cx.rootTok);
+    TProgramAcceptNode *acceptNode = new TProgramAcceptNode(acceptChan->sym, inCloseable, loopBodyNode, cx.rootTok);
+
+    *acceptChan = restoreChan;
+    cx.body = restoreBody;
+    
+    cx.body.push_back(acceptNode);
+
+    assert(moreChan->proto->weaken());
+    TProgramWeakenNode *weakenNode = new TProgramWeakenNode(moreChan->sym, cx.rootTok);
+    cx.body.push_back(weakenNode);
 }
