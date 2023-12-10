@@ -4,7 +4,9 @@ LTLMonitor::LTLMonitor(LTLMonitorDef def, Symbol *progSym, Symbol *monSym) : def
 
 void LTLMonitor::resolveMonitorType()
 {
-    this->monSym->type = this->getProgTy()->getCopy();
+    TypeProgram *ty = new TypeProgram(this->getProgTy()->getProtocol());
+    ty->setName(this->monSym->getIdentifier());
+    this->monSym->type = ty;
 }
 
 const TypeProgram *LTLMonitor::getProgTy()
@@ -33,6 +35,7 @@ struct GenCx
     DFA *dfa;
     
     BismuthErrorHandler *errorHandler;
+    Symbol *abortSym;
     antlr4::Token *rootTok; // TODO: more precise error locations
 
     ChanCx c;
@@ -47,7 +50,7 @@ void genExec(GenCx &cx, Symbol *sym);
 std::variant<std::monostate, ErrorChain *> genProtocol(GenCx &cx, const Protocol *&&proto);
 
 
-std::variant<TProgramDefNode *, ErrorChain *> LTLMonitor::gen(BismuthErrorHandler &errorHandler)
+std::variant<TProgramDefNode *, ErrorChain *> LTLMonitor::gen(BismuthErrorHandler &errorHandler, Symbol *abortSym)
 {
     const ProtocolSequence *protocol = this->getProgTy()->getProtocol();
 
@@ -75,6 +78,7 @@ std::variant<TProgramDefNode *, ErrorChain *> LTLMonitor::gen(BismuthErrorHandle
     GenCx genCx{
         .dfa = &dfa,
         .errorHandler = &errorHandler,
+        .abortSym = abortSym,
         .rootTok = this->rootTok,
         .c = chanCx,
         .child = childCx,
@@ -95,7 +99,7 @@ std::variant<TProgramDefNode *, ErrorChain *> LTLMonitor::gen(BismuthErrorHandle
     
     TBlockNode *block = new TBlockNode(genCx.body, this->rootTok);
 
-    TProgramDefNode *def = new TProgramDefNode(this->monSym->getIdentifier(), genCx.c.sym, block, this->getProgTy()->getCopy(), this->rootTok);
+    TProgramDefNode *def = new TProgramDefNode(this->monSym->getIdentifier(), genCx.c.sym, block, dynamic_cast<const TypeProgram *>(this->monSym->type), this->rootTok);
     return def;
 }
 
@@ -118,6 +122,7 @@ GenCx GenCx::makeInner() {
     GenCx innerCx{
         .dfa = this->dfa,
         .errorHandler = this->errorHandler,
+        .abortSym = this->abortSym,
         .rootTok = this->rootTok,
         .c = this->c,
         .child = this->child,
@@ -192,6 +197,15 @@ void genExec(GenCx &cx, Symbol *sym) {
     TVarDeclNode *decl = new TVarDeclNode({assign}, cx.rootTok);
 
     cx.body.push_back(decl);
+}
+
+void genFail(GenCx &cx) {
+
+    TFieldAccessNode *nameNode = new TFieldAccessNode(cx.rootTok, cx.abortSym, false, {});
+
+    TInvocationNode *invokeNode = new TInvocationNode(nameNode, {}, {}, cx.rootTok);
+
+    cx.body.push_back(invokeNode);
 }
 
 void genLoop(GenCx &cx, ChanCx *acceptChan, ChanCx *moreChan) {

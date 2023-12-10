@@ -20,7 +20,7 @@ class LTLMonitor
  public:
     LTLMonitor(LTLMonitorDef def, Symbol *progSym, Symbol *monSym);
 
-    std::variant<TProgramDefNode *, ErrorChain *> gen(BismuthErrorHandler &errorHandler);
+    std::variant<TProgramDefNode *, ErrorChain *> gen(BismuthErrorHandler &errorHandler, Symbol *abortSym);
 
     void resolveMonitorType();
 

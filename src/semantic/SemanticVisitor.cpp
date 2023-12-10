@@ -112,6 +112,8 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
     }
 
+    std::optional<Symbol *> abortSym{};
+
     // Visit externs first; they will report any errors if they have any.
     for (auto e : ctx->externs)
     {
@@ -131,6 +133,18 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
             }
         }
+
+        if (node->getSymbol()->getIdentifier() == "abort") {
+            abortSym = node->getSymbol();
+        }
+
+        externs.push_back(node);
+    }
+
+    if (!monitors.empty() && !abortSym.has_value()) {
+        TExternNode *node = new TExternNode("abort", {}, new TypeFunc(std::vector<const Type *>()), false, NULL);
+
+        abortSym = node->getSymbol();
 
         externs.push_back(node);
     }
@@ -193,14 +207,14 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     for (auto m : monitors)
     {
-        std::variant<TProgramDefNode *, ErrorChain *> monOpt = m.gen(errorHandler);
+        std::variant<TProgramDefNode *, ErrorChain *> monOpt = m.gen(errorHandler, abortSym.value());
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&monOpt))
         {
             (*e)->addError(ctx->getStart(), "Failed to instansiate monitor");
             return *e;
         }
-        
+
         defs.push_back(std::get<TProgramDefNode *>(monOpt));
     }
             

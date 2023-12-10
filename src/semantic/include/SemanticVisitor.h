@@ -459,7 +459,7 @@ public:
 
         if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->type))
         {
-            std::string funcId = ctx->name->getText();
+            std::string funcId = sym->getIdentifier();
 
             // If the symbol name is program, do some extra checks to make sure it has no arguments and returns an int. Otherwise, we will get a link error.
             // if (funcId == "program") //FIXME: DO BETTER
