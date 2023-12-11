@@ -242,9 +242,13 @@ void genChoice(GenCx &cx, ChanCx *projectChan, ChanCx *offerChan, std::set<const
     std::vector<variant<const ProtocolSequence *, string>> arms;
     for (const ProtocolBranchOption *alt : cases)
     {
-        arms.push_back(alt->seq->getInverse());
+        if (alt->label) {
+            arms.push_back(std::string(alt->label.value()));
+        } else {
+            arms.push_back(alt->seq->getInverse());
+        }
     }
-
+    
     std::optional<CaseMetadata> meta = offerChan->proto->caseAnalysis(arms);
     assert(meta);
 
