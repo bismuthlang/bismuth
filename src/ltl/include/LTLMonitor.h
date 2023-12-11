@@ -8,6 +8,7 @@
 #include "Symbol.h"
 #include "TypedAST.h"
 #include "BismuthErrorHandler.h"
+#include "GenCx.h"
 
 class LTLMonitor
 {
@@ -27,3 +28,4 @@ class LTLMonitor
   private:
     const TypeProgram *getProgTy();
 };
+

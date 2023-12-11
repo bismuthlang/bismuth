@@ -9,8 +9,9 @@
 class LTLMonitorDef
 {
   private:
-    /// A non-checking definition
-    LTLMonitorDef(); 
+    bool demo;
+    
+    LTLMonitorDef(bool demo); 
     
   public:
     static std::optional<LTLMonitorDef> get(BismuthParser::DefineProgramContext * const &progCtx);

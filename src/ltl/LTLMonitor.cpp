@@ -19,34 +19,8 @@ const TypeProgram *LTLMonitor::getProgTy()
     return progTy;
 }
 
-struct GenCx;
-
-struct ChanCx
-{
-    Symbol *sym;
-    const ProtocolSequence *proto;
-
-    TProgramRecvNode *recv(GenCx &cx);
-    TProgramSendNode *send(GenCx &cx, TProgramRecvNode *recv);
-};
-
-struct GenCx
-{
-    DFA *dfa;
-    
-    BismuthErrorHandler *errorHandler;
-    Symbol *abortSym;
-    antlr4::Token *rootTok; // TODO: more precise error locations
-
-    ChanCx c;
-    ChanCx child;
-
-    std::vector<TypedNode *> body;
-};
-
 void genExec(GenCx &cx, Symbol *sym);
 void genProtocol(GenCx &cx, const Protocol *&&proto);
-
 
 std::variant<TProgramDefNode *, ErrorChain *> LTLMonitor::gen(BismuthErrorHandler &errorHandler, Symbol *abortSym)
 {
@@ -85,7 +59,7 @@ std::variant<TProgramDefNode *, ErrorChain *> LTLMonitor::gen(BismuthErrorHandle
 
     genExec(genCx, this->progSym);
         
-    dfa.genInit(genCx.body);
+    dfa.genInit(genCx);
 
     genProtocol(genCx, protocol);
     
@@ -275,6 +249,10 @@ void genChoice(GenCx &cx, ChanCx *projectChan, ChanCx *offerChan, std::set<const
             projectChan->proto->project(branch->seq);
         }
         cx.body.push_back(new TProgramProjectNode(projectChan->sym, idx + 1, cx.rootTok));
+
+        if (branch->label) {
+            cx.dfa->genLabel(cx, branch->label.value());
+        }
         
         const ProtocolSequence *innerStructure = offerChan == &cx.c ? branch->seq->getInverse() : branch->seq;
         genProtocol(cx, innerStructure);

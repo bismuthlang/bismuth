@@ -1,0 +1,89 @@
+extern func printf(str s, ...) : int;
+
+define MONITORED_DEMO
+:: c : Channel<
+    !ExternalChoice<
+        ready: +boolean, # no unit protocol :(
+        unready: +boolean,
+        get: -int,
+        set: +int,
+        meow: +boolean;-str
+    >
+> {
+    int ready := -1;
+    int val := 0;
+
+    accept (c) {
+        offer c
+        | ready => {
+            ready := ready * -1;
+            boolean b := c.recv();
+        }
+        | unready => {
+            ready := ready * -1
+            boolean b := c.recv()
+        }
+        | get => {
+            c.send(val * ready);
+        }
+        | set => {
+            val := c.recv()
+        }
+        | meow => if c.recv() {
+            c.send("mow");
+        } else {
+            c.send("mrew");
+        }
+    }
+}
+
+define program :: c : Channel<-int> {
+    var m := exec MONITORED_DEMO;
+
+    more(m);
+    m[ready]
+    m.send(true);
+
+    more(m);
+    m[set]
+    m.send(3);
+
+    more(m);
+    m[meow]
+    m.send(true);
+    printf(":3 %s\n", m.recv());
+
+    more(m);
+    m[unready]
+    m.send(true);
+
+    more(m);
+    m[meow]
+    m.send(true);
+    printf(":3 %s\n", m.recv());
+
+    more(m);
+    m[ready]
+    m.send(true);
+
+    more(m);
+    m[get]
+    printf("Got: %d\n", m.recv());
+
+    more(m);
+    m[meow]
+    m.send(false);
+    printf(":3 %s\n", m.recv());
+
+    more(m);
+    m[unready]
+    m.send(true);
+    
+    more(m);
+    m[unready] # tried to unready while the program was already unready; this should abort
+    m.send(true);
+
+    weaken(m);
+
+    c.send(0);
+}
