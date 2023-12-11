@@ -1,0 +1,30 @@
+extern func printf(str s, ...) : int;
+
+define MONITORED :: c : Channel<ExternalChoice<+int, -int;-int>;-int> {
+    int x := -1;
+    
+    offer c
+    | +int => {
+        x := c.recv();    
+    }
+    | -int;-int => {
+        c.send(x);
+        c.send(x);
+    }
+
+    printf("X: %d\n", x);
+
+    c.send(x);
+}
+
+define program :: c : Channel<-int> {
+    var monitored := exec MONITORED;
+
+    monitored[-int]
+
+    monitored.send(0);
+    # int x := monitored.recv();
+    # x := monitored.recv();
+
+    c.send(monitored.recv());
+}

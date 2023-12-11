@@ -42,12 +42,10 @@ struct GenCx
     ChanCx child;
 
     std::vector<TypedNode *> body;
-
-    GenCx makeInner();
 };
 
 void genExec(GenCx &cx, Symbol *sym);
-std::variant<std::monostate, ErrorChain *> genProtocol(GenCx &cx, const Protocol *&&proto);
+void genProtocol(GenCx &cx, const Protocol *&&proto);
 
 
 std::variant<TProgramDefNode *, ErrorChain *> LTLMonitor::gen(BismuthErrorHandler &errorHandler, Symbol *abortSym)
@@ -89,13 +87,7 @@ std::variant<TProgramDefNode *, ErrorChain *> LTLMonitor::gen(BismuthErrorHandle
         
     dfa.genInit(genCx.body);
 
-    auto genRes = genProtocol(genCx, protocol);
-    
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&genRes))
-    {
-        (*e)->addError(this->rootTok, "Error generating monitor."); // wrong
-        return *e;
-    }
+    genProtocol(genCx, protocol);
     
     TBlockNode *block = new TBlockNode(genCx.body, this->rootTok);
 
@@ -118,22 +110,23 @@ TProgramSendNode *ChanCx::send(GenCx &cx, TProgramRecvNode *recv)
     return new TProgramSendNode(this->sym, this->proto->isInCloseable(), recv, *sendTy, cx.rootTok);
 }
 
-GenCx GenCx::makeInner() {
-    GenCx innerCx{
-        .dfa = this->dfa,
-        .errorHandler = this->errorHandler,
-        .abortSym = this->abortSym,
-        .rootTok = this->rootTok,
-        .c = this->c,
-        .child = this->child,
-        //body{}        
-    };
-    return innerCx;
-}
+// GenCx GenCx::makeInner() {
+//     GenCx innerCx{
+//         .dfa = this->dfa,
+//         .errorHandler = this->errorHandler,
+//         .abortSym = this->abortSym,
+//         .rootTok = this->rootTok,
+//         .c = this->c,
+//         .child = this->child,
+//         //body{}        
+//     };
+//     return innerCx;
+// }
 
 void genLoop(GenCx &cx, ChanCx *acceptChan, ChanCx *moreChan);
+void genChoice(GenCx &cx, ChanCx *projectChan, ChanCx *offerChan, std::set<const ProtocolBranchOption *, BranchOptCompare> caseSet);
     
-std::variant<std::monostate, ErrorChain *> genProtocol(GenCx &cx, const Protocol *&&proto)
+void genProtocol(GenCx &cx, const Protocol *&&proto)
 {
     if (const ProtocolSequence *seq = dynamic_cast<const ProtocolSequence *>(proto))
     {
@@ -141,50 +134,48 @@ std::variant<std::monostate, ErrorChain *> genProtocol(GenCx &cx, const Protocol
         {
             genProtocol(cx, std::move(step)); // threads through the channel types and output via cx
         }
-        return std::monostate();
+        return;
     }
     else if (const ProtocolRecv *recv = dynamic_cast<const ProtocolRecv *>(proto))
     {
         TProgramRecvNode *recvExpr = cx.c.recv(cx);
         TProgramSendNode *sendExpr = cx.child.send(cx, recvExpr);
         cx.body.push_back(sendExpr);
-        return std::monostate();
+        return;
     }
     else if (const ProtocolSend *send = dynamic_cast<const ProtocolSend *>(proto))
     {
         TProgramRecvNode *recvExpr = cx.child.recv(cx);
         TProgramSendNode *sendExpr = cx.c.send(cx, recvExpr);
         cx.body.push_back(sendExpr);
-        return std::monostate();
+        return;
     }
     else if (const ProtocolWN *wn = dynamic_cast<const ProtocolWN *>(proto))
     {
         genLoop(cx, &cx.child, &cx.c);
-        return std::monostate();
+        return;
     }
     else if (const ProtocolOC *oc = dynamic_cast<const ProtocolOC *>(proto))
     {
         genLoop(cx, &cx.c, &cx.child);
-        return std::monostate();
+        return;
     }
     else if (const ProtocolEChoice *ec = dynamic_cast<const ProtocolEChoice *>(proto))
     {
-        //
+        std::set<const ProtocolBranchOption *, BranchOptCompare> inv;
+        for (auto br : ec->getOptions()) {
+            inv.insert(br->getInverse());
+        }
+        genChoice(cx, &cx.child, &cx.c, inv);
+        return;
     }
     else if (const ProtocolIChoice *ic = dynamic_cast<const ProtocolIChoice *>(proto))
     {
-        // 
+        genChoice(cx, &cx.child, &cx.c, ic->getOptions());
+        return;
     }
-    else if (const ProtocolClose *close = dynamic_cast<const ProtocolClose *>(proto))
-    {
-        //
-    }
-    else
-    {
-        assert(false); // TODO: better ICE strategy
-    }
-
-    return cx.errorHandler->addError(cx.rootTok, "Monitor unimplemented"s);
+    
+    assert(false); // Unknown protocol
 }
 
 void genExec(GenCx &cx, Symbol *sym) {
@@ -240,4 +231,61 @@ void genLoop(GenCx &cx, ChanCx *acceptChan, ChanCx *moreChan) {
     assert(moreChan->proto->weaken());
     TProgramWeakenNode *weakenNode = new TProgramWeakenNode(moreChan->sym, cx.rootTok);
     cx.body.push_back(weakenNode);
+}
+
+void genChoice(GenCx &cx, ChanCx *projectChan, ChanCx *offerChan, std::set<const ProtocolBranchOption *, BranchOptCompare> caseSet)
+{
+    bool inCloseable = offerChan->proto->isInCloseable(); // ?
+
+    std::vector<const ProtocolBranchOption *> cases(caseSet.begin(), caseSet.end());
+    
+    std::vector<variant<const ProtocolSequence *, string>> arms;
+    for (const ProtocolBranchOption *alt : cases)
+    {
+        arms.push_back(alt->seq->getInverse());
+    }
+
+    std::optional<CaseMetadata> meta = offerChan->proto->caseAnalysis(arms);
+    assert(meta);
+
+    std::vector<TypedNode *> armNodes;
+
+    const ProtocolSequence *unprojected = projectChan->proto->getCopy();
+    std::vector outerBody = std::exchange(cx.body, {}); // a new body for each alternative
+
+    assert(meta->fullSequences.size() == cases.size());
+    for (unsigned long idx = 0; idx < meta->fullSequences.size(); idx++)
+    {
+        const ProtocolSequence *seq = meta->fullSequences[idx];
+        const ProtocolBranchOption *branch = cases[idx];
+        
+        offerChan->proto = seq;
+        projectChan->proto = unprojected->getCopy();
+        cx.body = {};
+
+        if (branch->label)
+        {
+            projectChan->proto->project(branch->label.value());
+        } else {
+            projectChan->proto->project(branch->seq);
+        }
+        cx.body.push_back(new TProgramProjectNode(projectChan->sym, idx + 1, cx.rootTok));
+        
+        const ProtocolSequence *innerStructure = offerChan == &cx.c ? branch->seq->getInverse() : branch->seq;
+        genProtocol(cx, innerStructure);
+
+        armNodes.push_back(new TBlockNode(cx.body, cx.rootTok));
+     }
+
+    offerChan->proto = meta->rest;
+    projectChan->proto = meta->rest->getInverse();
+    cx.body = {}; // the body for post
+
+    //    genProtocol(cx, meta->rest);
+
+    TChannelCaseStatementNode *caseNode = new TChannelCaseStatementNode(offerChan->sym, inCloseable, false, armNodes, {}/*cx.body*/, cx.rootTok);
+
+    cx.body = outerBody;
+
+    cx.body.push_back(caseNode);
 }
