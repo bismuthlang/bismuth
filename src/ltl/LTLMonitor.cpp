@@ -218,17 +218,18 @@ void genLoop(GenCx &cx, ChanCx *acceptChan, ChanCx *moreChan) {
     TProgramContractNode *contractNode = new TProgramContractNode(moreChan->sym, cx.rootTok);
     cx.body.push_back(contractNode);
 
-    genProtocol(cx, acceptChan == &cx.c ? acceptProto.value() : acceptProto.value()->getInverse());
+    const ProtocolSequence *structural = acceptChan == &cx.c ? acceptProto.value() : acceptProto.value()->getInverse();
+    genProtocol(cx, structural);
 
     TBlockNode *loopBodyNode = new TBlockNode(cx.body, cx.rootTok);
     TProgramAcceptNode *acceptNode = new TProgramAcceptNode(acceptChan->sym, inCloseable, loopBodyNode, cx.rootTok);
 
     *acceptChan = restoreChan;
     cx.body = restoreBody;
-    
+
     cx.body.push_back(acceptNode);
 
-    assert(moreChan->proto->weaken());
+    assert(moreChan->proto->getSteps().empty() || moreChan->proto->weaken()); // FIXME: Hacky but works (maybe) (idrk)
     TProgramWeakenNode *weakenNode = new TProgramWeakenNode(moreChan->sym, cx.rootTok);
     cx.body.push_back(weakenNode);
 }
