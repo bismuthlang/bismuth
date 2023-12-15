@@ -153,10 +153,10 @@ public:
  * Integer (32 bit, signed) Type Definition
  *
  *******************************************/
-class TypeInt : public Type
+class TypeInt : public Type, public TypeNum 
 {
 public:
-    TypeInt(bool isLinear) : Type(isLinear){}; 
+    TypeInt(bool isLinear) : Type(isLinear), TypeNum(true, 32, false) {}; 
 
     std::string toString(DisplayMode mode) const override;
 
@@ -176,10 +176,10 @@ protected:
  * Integer (32 bit, unsigned) Type Definition
  *
  *******************************************/
-class TypeU32 : public Type
+class TypeU32 : public Type, public TypeNum
 {
 public:
-    TypeU32(bool isLinear) : Type(isLinear){}; 
+    TypeU32(bool isLinear) : Type(isLinear), TypeNum(false, 32, false){}; 
 
     std::string toString(DisplayMode mode) const override;
 
@@ -199,10 +199,10 @@ protected:
  * Integer (64 bit, signed) Type Definition
  *
  *******************************************/
-class TypeI64 : public Type
+class TypeI64 : public Type, public TypeNum 
 {
 public:
-    TypeI64(bool isLinear) : Type(isLinear){}; 
+    TypeI64(bool isLinear) : Type(isLinear), TypeNum(true, 64, false){}; 
 
     std::string toString(DisplayMode mode) const override;
 
@@ -221,10 +221,10 @@ protected:
  * Integer (64 bit, unsigned) Type Definition
  *
  *******************************************/
-class TypeU64 : public Type
+class TypeU64 : public Type, public TypeNum
 {
 public:
-    TypeU64(bool isLinear) : Type(isLinear){}; 
+    TypeU64(bool isLinear) : Type(isLinear), TypeNum(false, 64, false){}; 
 
     std::string toString(DisplayMode mode) const override;
 
