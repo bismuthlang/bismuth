@@ -10,7 +10,7 @@
 TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 {
   Type *TopTy = new Type(false);
-  Type *IntTy = new TypeInt(false);
+  Type *IntTy = new TypeInt(false); // TODO: test other int/unsigned int types?
   Type *BoolTy = new TypeBool(false);
   Type *StrTy = new TypeStr(false);
   Type *BotTy = new TypeBottom(false);
