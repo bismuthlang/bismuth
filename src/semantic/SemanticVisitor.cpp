@@ -817,6 +817,7 @@ std::variant<TEqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         errorHandler.addError(ctx->getStart(), "Both sides of '=' must have the same type");
     }
 
+    // FIXME: SHOULD WE BE ABLE TO DO EQUALITY ON POINTERS, STRUCTS, ETC? 
     // Note: As per C spec, arrays cannot be compared
     if (type_cast<TypeArray>(lhs->getType()) || type_cast<TypeArray>(rhs->getType()))
     {
