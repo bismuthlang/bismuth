@@ -138,7 +138,13 @@ private:
 public: 
     TypeNum(bool s, unsigned int bits, bool f=false) : isSigned(s), numBits(bits), isFloat(f)
     {}
-    
+
+
+
+public: 
+    bool Signed() const { return isSigned; }
+    unsigned int getNumBits() const { return numBits; }
+    bool Float() const { return isFloat; }  
 
 };
 
