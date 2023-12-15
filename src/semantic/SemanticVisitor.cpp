@@ -752,6 +752,10 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
  */
 std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::BinaryArithExprContext *ctx)
 {
+    // TODO: Allow operations on sumtype as syntactic sugar if
+    // operation allowed on all elements in the sum? 
+
+    
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
     {
