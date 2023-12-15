@@ -31,6 +31,58 @@ llvm::IntegerType *TypeInt::getLLVMType(llvm::Module *M) const
     return llvm::Type::getInt32Ty(M->getContext());
 }
 
+/*******************************************
+ *
+ * Integer (32 bit, unsigned) Type Definition
+ *
+ *******************************************/
+bool TypeU32::isSupertypeFor(const Type *other) const
+{
+    return dynamic_cast<const TypeU32 *>(other);
+}
+
+std::string TypeU32::toString(DisplayMode) const { return "u32"; }
+
+llvm::IntegerType *TypeU32::getLLVMType(llvm::Module *M) const
+{
+    return llvm::Type::getInt32Ty(M->getContext());
+}
+
+
+/*******************************************
+ *
+ * Integer (64 bit, signed) Type Definition
+ *
+ *******************************************/
+bool TypeI64::isSupertypeFor(const Type *other) const
+{
+    return dynamic_cast<const TypeI64 *>(other);
+}
+
+std::string TypeI64::toString(DisplayMode) const { return "i64"; }
+
+llvm::IntegerType *TypeI64::getLLVMType(llvm::Module *M) const
+{
+    return llvm::Type::getInt64Ty(M->getContext());
+}
+
+/*******************************************
+ *
+ * Integer (64 bit, unsigned) Type Definition
+ *
+ *******************************************/
+bool TypeU64::isSupertypeFor(const Type *other) const
+{
+    return dynamic_cast<const TypeU64 *>(other);
+}
+
+std::string TypeU64::toString(DisplayMode) const { return "u64"; }
+
+llvm::IntegerType *TypeU64::getLLVMType(llvm::Module *M) const
+{
+    return llvm::Type::getInt32Ty(M->getContext());
+}
+
 
 /*******************************************
  *

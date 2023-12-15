@@ -216,7 +216,7 @@ protoBranch     : protocol
 //Allows us to have a type of ints, bools, or strings with the option for them to become 1d arrays. 
 type            :    ty=type LBRC len=INTEGER RBRC                                          # ArrayType
                 |    ty=type LBRC RBRC                                                      # DynArrayType
-                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT)                       # BaseType
+                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT | TYPE_U32 | TYPE_I64 | TYPE_U64)                       # BaseType
                 |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
                 |    LPAR (paramTypes+=type (COMMA paramTypes+=type)*)? RPAR MAPS_TO (returnType=type | LPAR RPAR) # LambdaType
                 |    LPAR type (PLUS type)+ RPAR                                            # SumType 
@@ -227,9 +227,9 @@ type            :    ty=type LBRC len=INTEGER RBRC                              
                 ;
 
 TYPE_INT        :   'int'       ; 
-// TYPE_U32        :   'u32'       ;
-// TYPE_I64        :   'i64'       ;
-// TYPE_U64        :   'u64'       ; 
+TYPE_U32        :   'u32'       ;
+TYPE_I64        :   'i64'       ;
+TYPE_U64        :   'u64'       ; 
 TYPE_BOOL       :   'boolean'   ;
 TYPE_STR        :   'str'       ; 
 TYPE_UNIT       :   'Unit'      ;

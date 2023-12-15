@@ -127,6 +127,21 @@ private:
     const bool linear; 
 };
 
+
+class TypeNum {
+private: 
+    bool isSigned;
+    unsigned int numBits; 
+    bool isFloat; 
+
+
+public: 
+    TypeNum(bool s, unsigned int bits, bool f=false) : isSigned(s), numBits(bits), isFloat(f)
+    {}
+    
+
+};
+
 /*******************************************
  *
  * Integer (32 bit, signed) Type Definition
@@ -144,6 +159,74 @@ public:
     bool requiresDeepCopy() const override { return false; }
 
     const TypeInt * getCopy() const override { return this; };
+
+protected:
+    bool isSupertypeFor(const Type *other) const override;
+};
+
+
+/*******************************************
+ *
+ * Integer (32 bit, unsigned) Type Definition
+ *
+ *******************************************/
+class TypeU32 : public Type
+{
+public:
+    TypeU32(bool isLinear) : Type(isLinear){}; 
+
+    std::string toString(DisplayMode mode) const override;
+
+    llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
+
+    bool requiresDeepCopy() const override { return false; }
+
+    const TypeU32 * getCopy() const override { return this; };
+
+protected:
+    bool isSupertypeFor(const Type *other) const override;
+};
+
+
+/*******************************************
+ *
+ * Integer (64 bit, signed) Type Definition
+ *
+ *******************************************/
+class TypeI64 : public Type
+{
+public:
+    TypeI64(bool isLinear) : Type(isLinear){}; 
+
+    std::string toString(DisplayMode mode) const override;
+
+    llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
+
+    bool requiresDeepCopy() const override { return false; }
+
+    const TypeI64 * getCopy() const override { return this; };
+
+protected:
+    bool isSupertypeFor(const Type *other) const override;
+};
+
+/*******************************************
+ *
+ * Integer (64 bit, unsigned) Type Definition
+ *
+ *******************************************/
+class TypeU64 : public Type
+{
+public:
+    TypeU64(bool isLinear) : Type(isLinear){}; 
+
+    std::string toString(DisplayMode mode) const override;
+
+    llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
+
+    bool requiresDeepCopy() const override { return false; }
+
+    const TypeU64 * getCopy() const override { return this; };
 
 protected:
     bool isSupertypeFor(const Type *other) const override;
@@ -276,6 +359,10 @@ namespace Types
     inline const TypeStr *LIN_STR = new TypeStr(true);
     inline const TypeUnit *UNIT = new TypeUnit(false);
     inline const TypeAbsurd *ABSURD = new TypeAbsurd(false);
+
+    inline const TypeU32 *DYN_U32 = new TypeU32(false);
+    inline const TypeI64 *DYN_I64 = new TypeI64(false);
+    inline const TypeU64 *DYN_U64 = new TypeU64(false);
 };
 
 /*******************************************
