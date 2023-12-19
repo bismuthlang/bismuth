@@ -603,7 +603,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     TypedNode *expr = std::get<TypedNode *>(exprOpt);
 
     const Type *exprType = expr->getType();
-    if (exprType->isNotSubtype(Types::DYN_INT))
+    if (exprType->isNotSubtype(Types::DYN_INT)) //TODO: TYPE uint?
     {
         return errorHandler.addError(ctx->getStart(), "Array access index expected type int but got " + exprType->toString(toStringMode));
     }
@@ -655,9 +655,57 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     return (this->visitCtx(ctx->array, false));
 }
 
-std::variant<TIntConstExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IConstExprContext *ctx)
+std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IConstExprContext *ctx)
 {
-    return new TIntConstExprNode(std::stoi(ctx->i->getText()), ctx->getStart());
+    auto tyModifier = ctx->i->ty ? ctx->i->ty->getText() : "i32"; 
+    std::optional<std::pair<int, std::string>> datOpt = [ctx]() -> std::optional<std::pair<int, std::string>> {
+        if(ctx->i->DEC_LITERAL())
+            return std::make_optional<std::pair<int, std::string>>({10, ctx->i->DEC_LITERAL()->getText()});
+        if(ctx->i->HEX_LITERAL())
+            return std::make_optional<std::pair<int, std::string>>({16, ctx->i->HEX_LITERAL()->getText().substr(2)});
+        if(ctx->i->BIN_LITERAL())
+            return std::make_optional<std::pair<int, std::string>>({2, ctx->i->BIN_LITERAL()->getText().substr(2)});
+
+        return std::nullopt; 
+    }(); 
+
+    if(!datOpt) {
+        return errorHandler.addError(ctx->getStart(), "Unable to sort integer into dec, hex, or bin. This is likely a compiler error. Please report it."); // TODO: Report Error
+    }
+
+    std::pair<int, std::string> dat = datOpt.value(); 
+
+    // https://en.cppreference.com/w/cpp/string/basic_string/stol
+
+    std::size_t pos{};
+    int base = dat.first; 
+    std::string text = dat.second; 
+    
+    if(tyModifier == "i32")
+    {
+        // TODO: what happens if these fail? Ie, what if num too large?
+        int32_t val = static_cast<int32_t>(std::stol(text, &pos, base)); 
+        return TNVariantCast<TInt32ConstExprNode>(new TInt32ConstExprNode(val, ctx->getStart()));
+    }
+    else if(tyModifier == "u32")
+    {
+        uint32_t val = static_cast<uint32_t>(std::stoul(text, &pos, base)); 
+        return TNVariantCast<TIntU32ConstExprNode>(new TIntU32ConstExprNode(val, ctx->getStart()));
+    }
+    else if(tyModifier == "i64")
+    {
+        int64_t val = static_cast<int64_t>(std::stoll(text, &pos, base)); 
+        return TNVariantCast<TInt64ConstExprNode>(new TInt64ConstExprNode(val, ctx->getStart()));
+    }
+    else if(tyModifier == "u64")
+    {
+        uint64_t val = static_cast<uint64_t>(std::stoull(text, &pos, base)); 
+        return TNVariantCast<TIntU64ConstExprNode>(new TIntU64ConstExprNode(val, ctx->getStart()));
+    }
+    // else 
+    // {
+    return errorHandler.addError(ctx->i->getStart(), "Unknown integer type modifier: " + ctx->i->ty->getText() + ". This is likely a complier error. Please report it."); // TODO: REPORT TO?
+    // }
 }
 
 std::variant<TStringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SConstExprContext *ctx)
@@ -728,8 +776,9 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     switch (ctx->op->getType())
     {
     case BismuthParser::MINUS:
-        if (innerType->isNotSubtype(Types::DYN_INT))
+        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64}))
         {
+            // TODO: int/i64 expected?
             return errorHandler.addError(ctx->getStart(), "int expected in unary minus, but got " + innerType->toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
@@ -1070,7 +1119,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
     {
-        (*e)->addError(ctx->getStart(), "616");
+        (*e)->addError(ctx->getStart(), "Unable to type check LHS of binary relation expression");
         return *e;
     }
 
@@ -2051,7 +2100,7 @@ SemanticVisitor::visitCtx(BismuthParser::ArrayTypeContext *ctx)
 
     // Undefined type errors handled below
 
-    int len = std::stoi(ctx->len->getText());
+    int len = std::stoi(ctx->len->getText()); //FIXME: CHANGE, SHOULD DO BETTER EXPRESSION PARSING + BETTER GRAMMAR!
 
     if (len < 1)
     {
@@ -2067,6 +2116,18 @@ SemanticVisitor::visitCtx(BismuthParser::BaseTypeContext *ctx)
     if (ctx->TYPE_INT())
     {
         return (const Type *)Types::DYN_INT;
+    }
+    else if(ctx->TYPE_U32())
+    {
+        return (const Type *)Types::DYN_U32;
+    }
+    else if(ctx->TYPE_I64())
+    {
+        return (const Type *)Types::DYN_I64;
+    }
+    else if(ctx->TYPE_U64())
+    {
+        return (const Type *)Types::DYN_U64;
     }
     else if (ctx->TYPE_BOOL())
     {

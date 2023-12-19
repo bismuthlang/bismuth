@@ -68,7 +68,7 @@ expression          : LPAR ex=expression RPAR                                   
                     | dereferenceExpr                               # Deref
                     | arrayAccess                                   # ArrayAccessExpr
                     | booleanConst                                  # BConstExpr 
-                    | i=INTEGER                                     # IConstExpr
+                    | i=integerValue                                # IConstExpr
                     | s=STRING                                      # SConstExpr 
                     | lambdaConstExpr                               # LambdaExpr
                     | channel=VARIABLE '.recv' LPAR RPAR            # AssignableRecv
@@ -214,7 +214,7 @@ protoBranch     : protocol
 
 
 //Allows us to have a type of ints, bools, or strings with the option for them to become 1d arrays. 
-type            :    ty=type LBRC len=INTEGER RBRC                                          # ArrayType
+type            :    ty=type LBRC len=DEC_LITERAL RBRC                                          # ArrayType
                 |    ty=type LBRC RBRC                                                      # DynArrayType
                 |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT | TYPE_U32 | TYPE_I64 | TYPE_U64)                       # BaseType
                 |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
@@ -225,6 +225,22 @@ type            :    ty=type LBRC len=INTEGER RBRC                              
                 |    TYPE_BOX     LESS ty=type GREATER                                      # BoxType
                 |    VARIABLE                                                               # CustomType
                 ;
+
+// TODO: not convinced about the whole {u,i}{32,64} thing as it kinda seems like needing to know more metaphors.. and lower level?
+
+//Integer 
+integerValue        :   (DEC_LITERAL | HEX_LITERAL | BIN_LITERAL) ty=('i32' | TYPE_U32 | TYPE_I64 | TYPE_U64)?   ;  //Negative numbers handled by unary minus 
+
+DEC_LITERAL         :  DEC_DIGIT+               ;
+fragment DEC_DIGIT  :  [0-9]                    ;
+
+HEX_LITERAL         :  '0x' HEX_DIGIT+          ; 
+fragment HEX_DIGIT  :  [0-9A-Fa-f]              ;
+
+BIN_LITERAL         : '0b' BIN_DIGIT+           ;
+fragment BIN_DIGIT  : [01]                      ;
+
+
 
 TYPE_INT        :   'int'       ; 
 TYPE_U32        :   'u32'       ;
@@ -266,8 +282,6 @@ booleanConst        :   TRUE | FALSE ;
 FALSE               :   'false' ; 
 TRUE                :   'true'  ; 
 
-//Integer 
-INTEGER             :   '0' | [1-9][0-9]* ; //Negative numbers handled by unary minus 
 
 /*
  * Strings

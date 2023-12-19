@@ -61,6 +61,14 @@ public:
      */
     virtual bool isSubtype(const Type *other) const;
     virtual bool isNotSubtype(const Type *other) const { return !(isSubtype(other)); }
+    
+    // TODO: probably doesn't work nicely with inference
+    virtual bool isNotSubtype(std::vector<const Type *> others) const {
+        for(auto a : others) // FIXME: HOW TO SPECIFY I32 VS u32 etc
+            if(isSubtype(a))
+                return false; 
+        return true; 
+    } 
 
     /**
      * @brief Determines if this type is a supertype of another

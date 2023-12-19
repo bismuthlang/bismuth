@@ -1107,9 +1107,29 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
     return phi;
 }
 
-std::optional<Value *> CodegenVisitor::visit(TIntConstExprNode *n)
+std::optional<Value *> CodegenVisitor::visit(TInt32ConstExprNode *n)
 {
-    return builder->getInt32(n->value);
+    // return builder->getInt32(n->value);
+    return ConstantInt::get(Int32Ty, n->value, true);
+}
+
+std::optional<Value *> CodegenVisitor::visit(TInt64ConstExprNode *n)
+{
+    // return builder->getInt32(n->value);
+    // return ConstantInt::get(Int32Ty, n->value, false);
+    return ConstantInt::get(Int64Ty, n->value, true);
+}
+
+std::optional<Value *> CodegenVisitor::visit(TIntU32ConstExprNode *n)
+{
+    // return builder->getInt32(n->value);
+    return ConstantInt::get(Int32Ty, n->value, false);
+}
+
+std::optional<Value *> CodegenVisitor::visit(TIntU64ConstExprNode *n)
+{
+    // return builder->getInt32(n->value);
+    return ConstantInt::get(Int64Ty, n->value, false);
 }
 
 std::optional<Value *> CodegenVisitor::visit(TStringConstNode *n)
@@ -1440,7 +1460,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
         {
             // Value *lenPtr = builder->CreateGEP(dynArOpt.value(), {Int32Zero, Int32One});
             addresses.push_back(Int32One);
-            ty = Types::DYN_INT; 
+            ty = Types::DYN_U32; 
         }
         else
         {

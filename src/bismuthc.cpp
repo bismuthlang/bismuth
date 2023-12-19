@@ -105,6 +105,8 @@ Version: Pre-Alpha 1.3.3 @ )"""" << GIT_COMMIT_HASH <<  R""""(
 ChangeLog
 =========
 1.3.4 - XXX: 
+  - Added u32, i64, and u64
+  - Added ability to specify integer values in hex via 0x and binary via 0b prefixes
   - Added for loops
   - Added toChannel function to convert ty -> Channel<!+ty>
   - Added --display-mode to enable error messages to show types as they would appear in-code instead of mathematical representation

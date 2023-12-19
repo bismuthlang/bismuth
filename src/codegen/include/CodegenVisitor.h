@@ -109,7 +109,10 @@ public:
     std::optional<Value *> visit(TLogOrExprNode *n) override;
     std::optional<Value *> visit(TStringConstNode *n) override;
     std::optional<Value *> visit(TBooleanConstNode *n) override;
-    std::optional<Value *> visit(TIntConstExprNode *n) override;
+    std::optional<Value *> visit(TInt32ConstExprNode *n) override;
+    std::optional<Value *> visit(TInt64ConstExprNode *n) override;
+    std::optional<Value *> visit(TIntU32ConstExprNode *n) override;
+    std::optional<Value *> visit(TIntU64ConstExprNode *n) override;
     std::optional<Value *> visit(TCompilationUnitNode *n) override;
     std::optional<Value *> visit(TVarDeclNode *n) override;
     std::optional<Value *> visit(TMatchStatementNode *n) override;

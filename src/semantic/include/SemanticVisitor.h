@@ -53,8 +53,8 @@ public:
     template <class... Ts>
     overloaded(Ts...) -> overloaded<Ts...>;
 
-    std::variant<TIntConstExprNode *, ErrorChain *> visitCtx(BismuthParser::IConstExprContext *ctx);
-    std::any visitIConstExpr(BismuthParser::IConstExprContext *ctx) override { return TNVariantCast<TIntConstExprNode>(visitCtx(ctx)); }
+    std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::IConstExprContext *ctx);
+    std::any visitIConstExpr(BismuthParser::IConstExprContext *ctx) override { return visitCtx(ctx); }
 
     std::variant<TBooleanConstNode *, ErrorChain *> visitCtx(BismuthParser::BConstExprContext *ctx) { return visitCtx(ctx->booleanConst()); }
     std::any visitBConstExpr(BismuthParser::BConstExprContext *ctx) override { return TNVariantCast<TBooleanConstNode>(visitCtx(ctx)); }

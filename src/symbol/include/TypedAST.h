@@ -91,7 +91,10 @@ class TLogAndExprNode;
 class TLogOrExprNode;
 class TStringConstNode;
 class TBooleanConstNode;
-class TIntConstExprNode;
+class TInt32ConstExprNode;
+class TInt64ConstExprNode;
+class TIntU32ConstExprNode;
+class TIntU64ConstExprNode;
 class TCompilationUnitNode;
 
 class TVarDeclNode;
@@ -150,7 +153,10 @@ public:
     virtual std::optional<Value *> visit(TLogOrExprNode *n) = 0;
     virtual std::optional<Value *> visit(TStringConstNode *n) = 0;
     virtual std::optional<Value *> visit(TBooleanConstNode *n) = 0;
-    virtual std::optional<Value *> visit(TIntConstExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TInt32ConstExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TInt64ConstExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TIntU32ConstExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TIntU64ConstExprNode *n) = 0;
     virtual std::optional<Value *> visit(TCompilationUnitNode *n) = 0;
     virtual std::optional<Value *> visit(TVarDeclNode *n) = 0;
     virtual std::optional<Value *> visit(TMatchStatementNode *n) = 0;
@@ -202,7 +208,10 @@ public:
     std::any any_visit(TLogOrExprNode *n) { return this->visit(n); }
     std::any any_visit(TStringConstNode *n) { return this->visit(n); }
     std::any any_visit(TBooleanConstNode *n) { return this->visit(n); }
-    std::any any_visit(TIntConstExprNode *n) { return this->visit(n); }
+    std::any any_visit(TInt32ConstExprNode *n) { return this->visit(n); }
+    std::any any_visit(TInt64ConstExprNode *n) { return this->visit(n); }
+    std::any any_visit(TIntU32ConstExprNode *n) { return this->visit(n); }
+    std::any any_visit(TIntU64ConstExprNode *n) { return this->visit(n); }
     std::any any_visit(TCompilationUnitNode *n) { return this->visit(n); }
     std::any any_visit(TVarDeclNode *n) { return this->visit(n); }
     std::any any_visit(TMatchStatementNode *n) { return this->visit(n); }
@@ -1233,12 +1242,12 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class TIntConstExprNode : public TypedNode
+class TInt32ConstExprNode : public TypedNode
 {
 public:
-    int value;
+    int32_t value;
 
-    TIntConstExprNode(int v, antlr4::Token *tok) : TypedNode(tok)
+    TInt32ConstExprNode(int32_t v, antlr4::Token *tok) : TypedNode(tok)
     {
         value = v;
     }
@@ -1246,7 +1255,64 @@ public:
     const TypeInt *getType() override { return Types::DYN_INT; }
 
     std::string toString() const override {
-        return "I CONST";
+        return "i32 CONST";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+class TInt64ConstExprNode : public TypedNode
+{
+public:
+    int64_t value;
+
+    TInt64ConstExprNode(int64_t v, antlr4::Token *tok) : TypedNode(tok)
+    {
+        value = v;
+    }
+
+    const TypeI64 *getType() override { return Types::DYN_I64; }
+
+    std::string toString() const override {
+        return "i64 CONST";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+class TIntU32ConstExprNode : public TypedNode
+{
+public:
+    uint32_t value;
+
+    TIntU32ConstExprNode(uint32_t v, antlr4::Token *tok) : TypedNode(tok)
+    {
+        value = v;
+    }
+
+    const TypeU32 *getType() override { return Types::DYN_U32; }
+
+    std::string toString() const override {
+        return "u32 CONST";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+class TIntU64ConstExprNode : public TypedNode
+{
+public:
+    uint64_t value;
+
+    TIntU64ConstExprNode(uint64_t v, antlr4::Token *tok) : TypedNode(tok)
+    {
+        value = v;
+    }
+
+    const TypeU64 *getType() override { return Types::DYN_U64; }
+
+    std::string toString() const override {
+        return "u64 CONST";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
