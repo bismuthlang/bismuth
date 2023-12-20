@@ -80,7 +80,7 @@ std::string TypeU64::toString(DisplayMode) const { return "u64"; }
 
 llvm::IntegerType *TypeU64::getLLVMType(llvm::Module *M) const
 {
-    return llvm::Type::getInt32Ty(M->getContext());
+    return llvm::Type::getInt64Ty(M->getContext());
 }
 
 

@@ -1093,7 +1093,7 @@ public:
         return "BINARY ARITH";
     }
 
-    const TypeInt *getType() override { return Types::DYN_INT; }
+    const Type *getType() override { return lhs->getType(); }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 

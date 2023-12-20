@@ -1204,6 +1204,7 @@ std::optional<Value *> CodegenVisitor::visit(TBinaryArithNode *n)
         return std::nullopt;
     }
 
+    // FIXME: DOESN'T WORK, THIS TREATS EVERYTHING AS SIGNED AND AS 32 BIT!!!
     switch (n->op)
     {
     case BINARY_ARITH_PLUS:
