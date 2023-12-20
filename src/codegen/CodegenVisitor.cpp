@@ -989,7 +989,7 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
                             new CompCodeWrapper([this, structPtr, indexValue](){
                                 ReallocateDynArray(structPtr, 
                                     builder->CreateNSWMul(indexValue, // TODO: Should really be the max of capacity or len!
-                                     builder->getInt32(2)) // TODO: DO BETTER MULTIPLIER
+                                    builder->getInt32(DYN_ARRAY_GROW_FACTOR))
                                 );
 
                                 return std::nullopt; 
