@@ -112,7 +112,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
 
         builder->SetInsertPoint(matchBlk);
 
-        switchInst->addCase(ConstantInt::get(Int32Ty, index, true), matchBlk);
+        switchInst->addCase(getU32(index), matchBlk);
         origParent->getBasicBlockList().push_back(matchBlk);
 
         //  Get the type of the symbol
@@ -255,7 +255,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramProjectNode *n)
     Value *chanVal = optVal.value();
 
     builder->CreateCall(getWriteProjection(), {builder->CreateLoad(channelRtPtrTy(), chanVal),
-                                               ConstantInt::get(Int32Ty, n->projectIndex, false)});
+                                               getU32(n->projectIndex)});
     return std::nullopt;
 }
 
@@ -488,7 +488,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramCancelNode *n)
 
     Value *chanVal = optVal.value();
 
-    builder->CreateCall(getCancelChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal), ConstantInt::get(Int32Ty, n->closeNumber, true)});
+    builder->CreateCall(getCancelChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal), getU32(n->closeNumber)});
     return std::nullopt;
 }
 
@@ -1109,27 +1109,22 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
 
 std::optional<Value *> CodegenVisitor::visit(TInt32ConstExprNode *n)
 {
-    // return builder->getInt32(n->value);
-    return ConstantInt::get(Int32Ty, n->value, true);
+    return getI32(n->value);
 }
 
 std::optional<Value *> CodegenVisitor::visit(TInt64ConstExprNode *n)
 {
-    // return builder->getInt32(n->value);
-    // return ConstantInt::get(Int32Ty, n->value, false);
-    return ConstantInt::get(Int64Ty, n->value, true);
+    return getI64(n->value);
 }
 
 std::optional<Value *> CodegenVisitor::visit(TIntU32ConstExprNode *n)
 {
-    // return builder->getInt32(n->value);
-    return ConstantInt::get(Int32Ty, n->value, false);
+    return getU32(n->value);
 }
 
 std::optional<Value *> CodegenVisitor::visit(TIntU64ConstExprNode *n)
 {
-    // return builder->getInt32(n->value);
-    return ConstantInt::get(Int64Ty, n->value, false);
+    return getU64(n->value);
 }
 
 std::optional<Value *> CodegenVisitor::visit(TStringConstNode *n)
@@ -1452,7 +1447,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
             }
 
             unsigned int index = indexOpt.value();
-            addresses.push_back(ConstantInt::get(Int32Ty, index, false));
+            addresses.push_back(getU32(index));
 
             const Type *fieldType = n->accesses.at(i).second;
             ty = fieldType;

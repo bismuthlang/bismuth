@@ -445,4 +445,10 @@ protected:
     llvm::Type *Int8PtrPtrTy;
     Constant *Int32Zero;
     Constant *Int32One;
+
+protected:
+    llvm::ConstantInt * getI32(int32_t value) { return ConstantInt::get(Int32Ty, value, true); }
+    llvm::ConstantInt * getU32(uint32_t value) { return ConstantInt::get(Int32Ty, value, false); }
+    llvm::ConstantInt * getI64(int64_t value) { return ConstantInt::get(Int64Ty, value, true); }
+    llvm::ConstantInt * getU64(uint64_t value) { return ConstantInt::get(Int64Ty, value, false); }
 };
