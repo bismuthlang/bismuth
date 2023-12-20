@@ -5,7 +5,7 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, ConstantInt * len32)
 {
     // Value * len64 = builder->CreateSExtOrBitCast(len32, Int64Ty);//CreateIntCast(len, Int64Ty);
 
-    Value * capacity = builder->CreateNSWMul(len32, builder->getInt32(DYN_ARRAY_GROW_FACTOR));
+    Value * capacity = builder->CreateNSWMul(len32, getU32(DYN_ARRAY_GROW_FACTOR));
 
     // FIXME: DYN ARRAYS DONT CURRENTLY WORK WITH COPY!
 
@@ -43,7 +43,7 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, ConstantInt * len32)
 
     }
 
-    Value *capPtr = builder->CreateGEP(alloc, {Int32Zero, ConstantInt::get(Int32Ty, 2, true)});
+    Value *capPtr = builder->CreateGEP(alloc, {Int32Zero, getU32(DYN_ARRAY_GROW_FACTOR)});
     {
         builder->CreateStore(
             capacity, 
@@ -165,7 +165,7 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
             newData, 
             vecPtr
         ); 
-        Value *capPtr = builder->CreateGEP(alloc, {Int32Zero, ConstantInt::get(Int32Ty, 2, true)});
+        Value *capPtr = builder->CreateGEP(alloc, {Int32Zero, getU32(DYN_ARRAY_GROW_FACTOR)});
 
         builder->CreateStore(newCapacity, capPtr);
 

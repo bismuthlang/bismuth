@@ -210,7 +210,7 @@ public:
 
             Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
 
-            builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+            builder->CreateStore(getU32(index), tagPtr);
 
             Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
 

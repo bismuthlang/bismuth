@@ -760,7 +760,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue *n)
 
         ans = CreateEntryBlockAlloc(ty->getLLVMType(module), ""); // TODO: this isn't always needed
 
-        InitDynArray(ans, builder->getInt32(n->exprs.size()));
+        InitDynArray(ans, getU32(n->exprs.size()));
 
         Value * vecPtr = builder->CreateGEP(ans, {Int32Zero, Int32Zero});
         writeTo = builder->CreateLoad(vecPtr, vecPtr->getType()->getPointerElementType());
@@ -866,10 +866,11 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) // TODO: COnsi
         return builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
     }
 
+    // TODO: SIGNED VS UNSIGNED? AND LENGTH! NUM ELEMENTS IS 64!!
     Value *idxBoundsCheckValue = builder->CreateICmpSLT(
         indexValue,
-        builder->getInt32(n->length()) // arrayPtr->getType()->getNumElements())
-    );                                 // TODO: SIGNED VS UNSIGNED? AND LENGTH! NUM ELEMENTS IS 64!!
+        getU32(n->length())
+    );
 
     auto parentFn = builder->GetInsertBlock()->getParent();
 
@@ -987,7 +988,7 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
                             new CompCodeWrapper([this, structPtr, indexValue](){
                                 ReallocateDynArray(structPtr, 
                                     builder->CreateNSWMul(indexValue, // TODO: Should really be the max of capacity or len!
-                                    builder->getInt32(DYN_ARRAY_GROW_FACTOR))
+                                    getU32(DYN_ARRAY_GROW_FACTOR))
                                 );
 
                                 return std::nullopt; 
@@ -1168,7 +1169,7 @@ std::optional<Value *> CodegenVisitor::visit(TUnaryExprNode *n)
             return std::nullopt;
         }
 
-        return builder->CreateNSWSub(builder->getInt32(0), innerVal.value());
+        return builder->CreateNSWSub(Int32Zero, innerVal.value());
     }
 
     case UNARY_NOT:
@@ -1403,7 +1404,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
         if (std::optional<const TypeArray *> arOpt = type_cast<TypeArray>(modOpt))
         {
             // If it is, correctly, an array type, then we can get the array's length (this is the only operation currently, so we can just do thus)
-            return builder->getInt32(arOpt.value()->getLength());
+            return getU32(arOpt.value()->getLength());
         }
         // else if(std::optional<const TypeDynArray *> dynArOpt = type_cast<TypeDynArray>(modOpt))
         // {
@@ -1751,7 +1752,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
                 }
                 else if(const TypeDynArray * dynArray = dynamic_cast<const TypeDynArray*>(varSymbol->type))
                 {
-                    InitDynArray(v, builder->getInt32(10)); // FIXME: DO BETTER
+                    InitDynArray(v, getU32(10)); // FIXME: DO BETTER
                 }
             }
         }
@@ -2247,7 +2248,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n) // TODO: POSSIBL
 
         Value *read = builder->CreateLoad(readLoc->getType()->getPointerElementType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
 
-        Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(read->getType()))});
+        Value *v = builder->CreateCall(getMalloc(), {getU32(getSizeForValue(read))});
         Value *casted = builder->CreateBitCast(v, read->getType()->getPointerTo());
 
         builder->CreateStore(read, casted);
