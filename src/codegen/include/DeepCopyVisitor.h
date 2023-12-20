@@ -95,16 +95,6 @@ public:
     }
 
 private:
-    llvm::TypeSize getSizeForType(llvm::Type *type)
-    {
-        return module->getDataLayout().getTypeAllocSize(type);
-    }
-
-    llvm::TypeSize getSizeForValue(Value *val)
-    {
-        return getSizeForType(val->getType());
-    }
-
     // FIXME: DONT DUPLICATE THESE ACROSS FILES
     optional<Value *> deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap)//, DeepCopyType copyType)
     {

@@ -22,9 +22,7 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, ConstantInt * len32)
                 builder->CreateNSWMul(
                     builder->CreateSExtOrBitCast(capacity, Int64Ty), 
                     builder->getInt64(
-                        module->getDataLayout().getTypeAllocSize( // TODO: Move DeepCopyVisitor::getSizeForType to here!
-                           storeType
-                        )
+                        getSizeForType(storeType)
                     )
                 )
             }
@@ -95,9 +93,7 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
             builder->CreateNSWMul(
                 builder->CreateSExtOrBitCast(newCapacity, Int64Ty), 
                 builder->getInt64(
-                    module->getDataLayout().getTypeAllocSize( // TODO: Move DeepCopyVisitor::getSizeForType to here!
-                        loadedArray->getType()->getPointerElementType()
-                    )
+                    getSizeForType(loadedArray->getType()->getPointerElementType())
                 )
             )
         }

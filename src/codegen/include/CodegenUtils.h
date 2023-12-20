@@ -414,6 +414,16 @@ private:
 public:
     DisplayMode getToStringMode() { return toStringMode; }
 
+protected: 
+    llvm::TypeSize getSizeForType(llvm::Type *type)
+    {
+        return module->getDataLayout().getTypeAllocSize(type);
+    }
+
+    llvm::TypeSize getSizeForValue(Value *val)
+    {
+        return getSizeForType(val->getType());
+    }
 
 protected:
     int flags; 
