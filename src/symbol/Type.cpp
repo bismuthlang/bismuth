@@ -316,7 +316,6 @@ std::string TypeChannel::toString(DisplayMode mode) const
 
 llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
 {
-    // return llvm::Type::getInt32Ty(M->getContext());
     // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
     llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), "_Channel");
     if (ty)
