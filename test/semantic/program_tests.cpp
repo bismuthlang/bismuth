@@ -768,7 +768,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""", 
-    "int right expression expected, but was str");
+    "Operator - cannot be applied between int and str. Expected int - int");
 }
 
 TEST_CASE("Wrong LogAnd LHS", "[semantic][program]")

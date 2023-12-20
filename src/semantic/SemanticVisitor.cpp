@@ -804,6 +804,11 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     // TODO: Allow operations on sumtype as syntactic sugar if
     // operation allowed on all elements in the sum? 
 
+    std::string opStr = ctx->MULTIPLY() ?  "*" 
+                                        : ctx->DIVIDE()   ? "/"
+                                        : ctx->MOD()      ? "%"
+                                        : ctx->PLUS()     ? "+"
+                                                          : "-";
     
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
@@ -814,9 +819,9 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     auto left = std::get<TypedNode *>(leftOpt);
 
-    if (left->getType()->isNotSubtype(Types::DYN_INT))
+    if (left->getType()->isNotSubtype({Types::DYN_INT, Types::DYN_U32, Types::DYN_I64, Types::DYN_U64}))
     {
-        return errorHandler.addError(ctx->getStart(), "int left expression expected, but was " + left->getType()->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Cannot apply " + opStr + " to " + left->getType()->toString(toStringMode));
     }
 
     auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
@@ -828,9 +833,9 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     auto right = std::get<TypedNode *>(rightOpt);
 
-    if (right->getType()->isNotSubtype(Types::DYN_INT))
+    if (right->getType()->isNotSubtype(left->getType())) // TODO: PROBABLY WONT WORK IF LEFT DONE VIA INFERENCE
     {
-        return errorHandler.addError(ctx->getStart(), "int right expression expected, but was " + right->getType()->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Operator " + opStr + " cannot be applied between " + left->getType()->toString(toStringMode) + " and " + right->getType()->toString(toStringMode) + ". Expected " + left->getType()->toString(toStringMode) + " " + opStr + " " + left->getType()->toString(toStringMode));
     }
 
     return new TBinaryArithNode(
