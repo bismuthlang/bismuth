@@ -419,7 +419,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode *n)
         stoVal = correctSumAssignment(sumOpt.value(), stoVal);
     }
 
-    Value *v = builder->CreateCall(getMalloc(), {builder->getInt32(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+    Value *v = builder->CreateCall(getMalloc(), {getU32(getSizeForValue(stoVal))});
     Value *casted = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
 
     builder->CreateStore(stoVal, casted);
