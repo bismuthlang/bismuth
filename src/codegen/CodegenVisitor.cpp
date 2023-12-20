@@ -543,8 +543,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
 {
     // Very similar to regular loop & Accept while
-    // FIXME: Somewhat inefficient due to dequeuing
-
     Symbol *sym = n->sym;
     std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
 
@@ -614,7 +612,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode *n)
 std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode *n)
 {
     // Very similar to regular loop & Accept while
-    // FIXME: Somewhat inefficient due to dequeuing
     std::optional<Value *> condOpt = AcceptType(this, n->cond);
 
     if (!condOpt)
