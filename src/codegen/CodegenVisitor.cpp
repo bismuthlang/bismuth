@@ -198,12 +198,10 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode *n)
         builder->SetInsertPoint(matchBlk);
 
         switchInst->addCase(
-            ConstantInt::get(Int32Ty, 
-                n->hasElseStatement && (i + 1) == n->cases.size() ? 
+            getU32(n->hasElseStatement && (i + 1) == n->cases.size() ? 
                     0 :  // FIXME: TEST THESE ELSE BLOCKS
-                    i + 1,
-                // i + 1, 
-                true), 
+                    i + 1
+                ), 
             matchBlk);
         origParent->getBasicBlockList().push_back(matchBlk);
 
@@ -726,7 +724,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode *n)
                 a = correctSumAssignment(sumOpt.value(), a);
             }
 
-            Value *ptr = builder->CreateGEP(v, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
+            Value *ptr = builder->CreateGEP(v, {Int32Zero, getU32(i)});
 
             builder->CreateStore(a, ptr);
 
@@ -795,7 +793,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue *n)
         {
             a = correctSumAssignment(sumTy, a);
 
-            Value *ptr = builder->CreateGEP(writeTo, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
+            Value *ptr = builder->CreateGEP(writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
             i++;
         }
@@ -804,7 +802,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue *n)
     {
         for(Value * a : args)
         {
-            Value *ptr = builder->CreateGEP(writeTo, {Int32Zero, ConstantInt::get(Int32Ty, i, true)});
+            Value *ptr = builder->CreateGEP(writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
             i++;   
         }
@@ -1635,7 +1633,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
     const Type *varSymType = n->var->getType();
     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymType))
     {
-        unsigned int index = sumOpt.value()->getIndex(module, stoVal->getType());
+        uint32_t index = sumOpt.value()->getIndex(module, stoVal->getType());
 
         if (index == 0)
         {
@@ -1647,7 +1645,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
         }
         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
 
-        builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+        builder->CreateStore(getU32(index), tagPtr);
         Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
 
         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
@@ -1728,7 +1726,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
                     Value *stoVal = exVal.value();
                     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol->type))
                     {
-                        unsigned int index = sumOpt.value()->getIndex(module, stoVal->getType());
+                        uint32_t index = sumOpt.value()->getIndex(module, stoVal->getType());
 
                         if (index == 0)
                         {
@@ -1740,7 +1738,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
 
                         Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
 
-                        builder->CreateStore(ConstantInt::get(Int32Ty, index, true), tagPtr);
+                        builder->CreateStore(getU32(index), tagPtr);
                         Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
 
                         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
@@ -2218,7 +2216,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n) // TODO: POSSIBL
     AllocaInst *loop_index = CreateEntryBlockAlloc(Int32Ty, "idx");
     AllocaInst *loop_len = CreateEntryBlockAlloc(Int32Ty, "len");
     builder->CreateStore(Int32Zero, loop_index);
-    builder->CreateStore(ConstantInt::get(Int32Ty, arrayType->getLength(), true), loop_len);
+    builder->CreateStore(getU32(arrayType->getLength()), loop_len);
 
     auto parent = builder->GetInsertBlock()->getParent();
     BasicBlock *condBlk = BasicBlock::Create(module->getContext(), "loop-cond", parent);
@@ -2290,7 +2288,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     const TypeSum * sum = meta.actingType.value(); 
 
-    unsigned int unitIndex = sum->getIndex(module, Types::UNIT->getLLVMType(module));
+    uint32_t unitIndex = sum->getIndex(module, Types::UNIT->getLLVMType(module));
     
     if (unitIndex == 0) // Shouldn't be a problem...
     {
@@ -2306,7 +2304,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     }
 
     llvm::Type * valueType = meta.protocolType->getLLVMType(module);
-    unsigned int valueIndex = sum->getIndex(module, valueType);
+    uint32_t valueIndex = sum->getIndex(module, valueType);
 
     if (valueIndex == 0)
     {
@@ -2320,7 +2318,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
 
-    builder->CreateStore(ConstantInt::get(Int32Ty, unitIndex, true), tagPtr); // TODO: IS THIS WASTEFUL AS OPPOSED TO BRANCH?
+    builder->CreateStore(getU32(unitIndex), tagPtr); // TODO: IS THIS WASTEFUL AS OPPOSED TO BRANCH?
 
     // Get the condition that the if statement is for
 
@@ -2344,7 +2342,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
      * Then block
      */
     builder->SetInsertPoint(thenBlk);
-    builder->CreateStore(ConstantInt::get(Int32Ty, valueIndex, true), tagPtr);
+    builder->CreateStore(getU32(valueIndex), tagPtr);
 
     Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
 
