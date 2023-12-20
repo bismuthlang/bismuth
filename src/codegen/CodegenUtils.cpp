@@ -3,11 +3,9 @@
 
 void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, ConstantInt * len32)
 {
-    unsigned int GROW_FACTOR = 2; // FIXME: DO BETTER
-
     // Value * len64 = builder->CreateSExtOrBitCast(len32, Int64Ty);//CreateIntCast(len, Int64Ty);
 
-    Value * capacity = builder->CreateNSWMul(len32, builder->getInt32(GROW_FACTOR));
+    Value * capacity = builder->CreateNSWMul(len32, builder->getInt32(DYN_ARRAY_GROW_FACTOR));
 
     // FIXME: DYN ARRAYS DONT CURRENTLY WORK WITH COPY!
 
@@ -58,7 +56,7 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, ConstantInt * len32)
 
 void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCapacity)
 {
-    unsigned int GROW_FACTOR = 2; // FIXME: DO BETTER
+    // PLAN: use DYN_ARRAY_GROW_FACTOR
 
     Value *lenPtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
     Value * origLen = builder->CreateLoad(Int32Ty, lenPtr); 

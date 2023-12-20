@@ -1079,7 +1079,7 @@ class TBinaryArithNode : public TypedNode
 {
 public:
     BinaryArithOperator op;
-    TypedNode *lhs;
+    TypedNode *lhs; // Wish we could specify type of TypedNode was a number
     TypedNode *rhs;
 
     TBinaryArithNode(BinaryArithOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)

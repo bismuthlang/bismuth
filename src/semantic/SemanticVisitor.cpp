@@ -1546,7 +1546,7 @@ std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     return new TWhileLoopNode(std::get<TypedNode *>(checkOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
 }
 
-// FIXME: CANT BE WHILE LOOP BC OF MULTIPLE STATEMENTS!
+// Note: this returns a TBlockNode instead of a while loop directly as we need to have multiple statements, and we use desugaring 
 std::variant<TBlockNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ForStatementContext *ctx)
 {
     std::vector<TypedNode *> exprs; 
@@ -2974,7 +2974,8 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
             }
         }
 
-        safeExitScope(ctx); // FIXME: MAKE THIS ABLE TO TRIP ERROR?
+        // Note: this will throw errors if it fails, but we cannot detect them here
+        safeExitScope(ctx);
 
         std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 

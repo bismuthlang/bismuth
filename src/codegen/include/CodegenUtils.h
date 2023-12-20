@@ -49,6 +49,9 @@ using llvm::Value;
 
 class CodegenModule
 {
+public: 
+    const unsigned int DYN_ARRAY_GROW_FACTOR = 2; // FIXME: DO BETTER
+
 
 public:
     /**
