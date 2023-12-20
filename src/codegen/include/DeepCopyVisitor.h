@@ -226,9 +226,8 @@ private:
                 if (localTy->requiresDeepCopy())
                 {
                     Value *memLoc = builder->CreateGEP(v, {Int32Zero,
-                                                           ConstantInt::get(Int32Ty,
-                                                                            structType->getElementIndex(eleItr.first).value(), // In theory, bad opt access, but should never happen
-                                                                            true)});
+                                                           getU32(structType->getElementIndex(eleItr.first).value()) // In theory, bad opt access, but should never happen
+                                            });
                     Value *loaded = builder->CreateLoad(eleItr.second->getLLVMType(module), memLoc);
 
                     optional<Value *> valOpt = deepCopyHelper(builder, eleItr.second, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
@@ -250,14 +249,14 @@ private:
             Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
             SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
 
-            unsigned int index = 0;
+            uint32_t index = 0;
             for(const Type * caseNode : sumType->getCases())
             {
                 index = index + 1;
                 BasicBlock *matchBlk = BasicBlock::Create(module->getContext(), "tagBranch" + std::to_string(index));
                 builder->SetInsertPoint(matchBlk);
                 
-                switchInst->addCase(ConstantInt::get(Int32Ty, index, true), matchBlk);
+                switchInst->addCase(getU32(index), matchBlk);
                 origParent->getBasicBlockList().push_back(matchBlk);
 
                 Value *corrected = builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
@@ -282,7 +281,7 @@ private:
             AllocaInst *loop_index = CreateEntryBlockAlloc(builder,Int32Ty, "idx");
             AllocaInst *loop_len = CreateEntryBlockAlloc(builder, Int32Ty, "len");
             builder->CreateStore(Int32Zero, loop_index);
-            builder->CreateStore(ConstantInt::get(Int32Ty, arrayType->getLength(), true), loop_len);
+            builder->CreateStore(getU32(arrayType->getLength()), loop_len);
 
             auto parent = builder->GetInsertBlock()->getParent();
             BasicBlock *condBlk = BasicBlock::Create(module->getContext(), "loop-cond", parent);
