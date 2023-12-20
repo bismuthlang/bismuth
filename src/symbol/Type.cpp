@@ -204,7 +204,7 @@ std::string TypeArray::toString(DisplayMode mode) const
 
 const Type *TypeArray::getValueType() const { return valueType; }
 
-int TypeArray::getLength() const { return length; }
+uint32_t TypeArray::getLength() const { return length; }
 
 llvm::ArrayType *TypeArray::getLLVMType(llvm::Module *M) const
 {

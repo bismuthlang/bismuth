@@ -397,7 +397,7 @@ private:
      * @brief The length of the array
      *
      */
-    int length;
+    uint32_t length;
 
 public:
     /**
@@ -406,7 +406,7 @@ public:
      * @param v The type of the array elements
      * @param l The length of the array. NOTE: THIS SHOULD ALWAYS BE AT LEAST ONE!
      */
-    TypeArray(const Type *valTy, int len) : Type(false), valueType(valTy), length(len) {}
+    TypeArray(const Type *valTy, uint32_t len) : Type(false), valueType(valTy), length(len) {}
 
     /**
      * @brief Returns the name of the string in form of <valueType name>[<array length>].
@@ -425,9 +425,9 @@ public:
     /**
      * @brief Get the Length object
      *
-     * @return int
+     * @return uint32_t
      */
-    int getLength() const;
+    uint32_t getLength() const;
 
     /**
      * @brief Gets the LLVM type for an array of the given valueType and length.

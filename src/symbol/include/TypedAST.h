@@ -962,7 +962,7 @@ public:
         return new TypeSum(cases);
     }
 
-    int length() const {
+    uint32_t length() const {
         return dynamic_cast<const TypeArray *>(field->getType())->getLength();
     }
 
