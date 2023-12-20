@@ -2186,8 +2186,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode *n) // TODO: POSSIBL
     }
 
     Value *loadedVal = valOpt.value();
-    // TODO: SWITCH TO TUPLE INSTEAD OF MUTABLE!
-    const TypeArray *arrayType = [this, n, &loadedVal]() mutable -> const TypeArray *
+    const TypeArray *arrayType = [this, n, &loadedVal]() -> const TypeArray *
     {
         const Type *ty = n->expr->getType();
         if (const TypeArray *arrayType = dynamic_cast<const TypeArray *>(ty))
