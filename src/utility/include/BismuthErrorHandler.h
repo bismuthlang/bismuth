@@ -35,6 +35,7 @@ enum ErrSev
   CRITICAL_WARNING = 2, // Not an error per se, but need to stop compiling.
   WARNING = 4,          // Important warning message, but nothing that prevents compiling (Currently unused)
   INFO = 8,             // Informational message (currently unused)
+  COMPILER = 16,        // Compiler error
 };
 
 /**
@@ -136,6 +137,8 @@ struct ErrorChain
       return "Warning";
     case INFO:
       return "Informational";
+    case COMPILER:
+      return "Compiler Error";
     }
   }
 };
@@ -147,6 +150,18 @@ private:
 
 public:
   BismuthErrorHandler(ErrType ty) : errType(ty) {}
+
+  ErrorChain *addCompilerError(antlr4::Token *t, std::string msg)
+  {
+    // TODO: where to report error to?
+    ErrorChain *e = new ErrorChain(t,
+                                   msg + ". This is likely an error with the compiler. Please report it.",
+                                   errType,
+                                   COMPILER);
+    errors.push_back(e); 
+
+    return e;                                    
+  }
 
   ErrorChain *addError(antlr4::Token *t, std::string msg)
   {
@@ -173,8 +188,8 @@ public:
     {
       errList << e->toString() << std::endl;
     }
-    errList << "Number of Errors: " << errors.size() << std::endl; 
-    
+    errList << "Number of Errors: " << errors.size() << std::endl;
+
     return errList.str();
   }
 

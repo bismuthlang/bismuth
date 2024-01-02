@@ -657,7 +657,7 @@ private:
             Scope *scope = res.value();
             std::vector<Symbol *> uninf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
 
-            // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+            // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
             // due to the var leaving the scope
             if (unInf.size() > 0)
             {
@@ -673,7 +673,7 @@ private:
 
             std::vector<Symbol *> lins = scope->getSymbols(SymbolLookupFlags::PENDING_LINEAR);
 
-            // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+            // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
             // due to the var leaving the scope
             if (lins.size() > 0)
             {

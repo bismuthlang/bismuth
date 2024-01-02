@@ -115,6 +115,7 @@ ChangeLog
   - Fixed bug where nested control flow would incorrectly process use of linear resources
   - Fixed typos in generated IR files, error messages, and compiler internals
 
+  - Added new error type for internal/compiler errors. 
   - Improved efficiency of IPC by removing state to eliminate additional lookup step
   - Refactored code internals to promote compile speed (of Bismuth, not the Bismuth compiler)
   - Added ProtocolVisitor.cpp/.h and moved code relating to visiting protocols to there from SemanticVisitor.cpp/.h

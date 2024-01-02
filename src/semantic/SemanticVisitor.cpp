@@ -210,7 +210,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     std::vector<Symbol *> unInf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
 
-    // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+    // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
     if (unInf.size() > 0)
     {
@@ -601,7 +601,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     }(); 
 
     if(!datOpt) {
-        return errorHandler.addError(ctx->getStart(), "Unable to sort integer into dec, hex, or bin. This is likely a compiler error. Please report it."); // TODO: Report Error
+        return errorHandler.addCompilerError(ctx->getStart(), "Unable to sort integer into dec, hex, or bin.");
     }
 
     std::pair<int, std::string> dat = datOpt.value(); 
@@ -2377,7 +2377,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
                     return optEval;
                 }
 
-                return errorHandler.addError(alt->getStart(), "FAILED; COMPILER ERROR");
+                return errorHandler.addCompilerError(alt->getStart(), "Channel identifier does not have a channel type in external choice.");
             });
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
@@ -2576,7 +2576,7 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
         std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
         std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
-        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+        // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
         // due to the var leaving the scope
         if (lins.size() > 0)
         {
@@ -2646,7 +2646,7 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
         std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
         std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
-        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+        // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
         // due to the var leaving the scope
         if (lins.size() > 0)
         {
@@ -2749,7 +2749,7 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
                         return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
                     }
 
-                    return errorHandler.addError(blk->getStart(), "FAILED; COMPILER ERROR");
+                    return errorHandler.addError(blk->getStart(), "Channel identifier does not have a channel type in accept if.");
                 }
                 return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
             });
@@ -2830,7 +2830,8 @@ std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExp
 
 
 TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) {
-
+    for(auto entry : ctx->gen)
+    {}
 }
 
 template <RestRuleContext R, typename T>
@@ -2915,7 +2916,7 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
 
         std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
-        // If there are any uninferred symbols, then add it as a compiler error as we won't be able to resolve them
+        // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
         // due to the var leaving the scope
         if (lins.size() > 0)
         {
@@ -2942,7 +2943,7 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
         {
             std::optional<STManager *> optSTCopy = origStmgr->getCopy();
             if (!optSTCopy)
-                return errorHandler.addError(alt->getStart(), "Failed to copy symbol table; this is likely a compiler error");
+                return errorHandler.addCompilerError(alt->getStart(), "Failed to copy symbol table.");
             this->stmgr = optSTCopy.value(); // TODO: DELETE RESOURCE?
         }
         else

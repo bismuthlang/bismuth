@@ -32,8 +32,8 @@ std::variant<T *, ErrorChain*> anyOpt2VarError(BismuthErrorHandler& errorHandler
     }
 
     std::ostringstream details;
-    details << "Unable to cast " << a.type().name() << " to Variant<" << typeid(T).name() << "*, ErrorChain*>. This most likely an internal compiler error.";
-    return errorHandler.addError(nullptr, details.str());
+    details << "Unable to cast " << a.type().name() << " to Variant<" << typeid(T).name() << "*, ErrorChain*>.";
+    return errorHandler.addCompilerError(nullptr, details.str());
 }
 
 template<typename T, typename std::enable_if<std::is_base_of<TypedNode, T>::value>::type* = nullptr>

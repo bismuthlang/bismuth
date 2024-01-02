@@ -1539,7 +1539,7 @@ std::optional<Value *> CodegenVisitor::visit(TExternNode *n)
 
     if (!symbol->type)
     {
-        errorHandler.addError(n->getStart(), "Type for extern statement not correctly bound! Probably a compiler error.");
+        errorHandler.addCompilerError(n->getStart(), "Type for extern statement not correctly bound.");
         return std::nullopt;
     }
 

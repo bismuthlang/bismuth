@@ -334,7 +334,7 @@ private:
         {
             builder->CreateRet(v);
             builder->SetInsertPoint(ins);
-            errorHandler.addError(nullptr, "Compiler Error (Please report this bug!): I don't know how to copy the following type: " + type->toString(getToStringMode()));
+            errorHandler.addCompilerError(nullptr, "I don't know how to copy the following type: " + type->toString(getToStringMode()));
             return std::nullopt;
         }
 
