@@ -80,7 +80,14 @@ expression          : LPAR ex=expression RPAR                                   
                     | '[' ((elements+=expression ',')* elements+=expression)? ']'   # ArrayExpression
                     ;
 
-lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
+// TODO: how to specify that we need a protocol type, linear type, etc?
+genericTemplate     : '<' gen+=genericEntry (',' gen+=genericEntry)* '>' ;
+
+genericEntry        : name=VARIABLE (':' supTy+=type (',' supTy+=type)*)?   # GenericType
+                    | 'Session' name=VARIABLE                               # GenericSession
+                    ;
+
+lambdaConstExpr     : genericTemplate? LPAR parameterList RPAR (COLON ret=type)? block ;
 
 /* 
  * Keeping block as its own rule so that way we can re-use it as

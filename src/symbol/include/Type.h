@@ -136,6 +136,35 @@ private:
 };
 
 
+// class NameableType {
+// protected: 
+//     NameableType(std::optional<std::string> n) : name(n) {}
+//     virtual ~NameableType() = default;
+
+// private: 
+//     std::optional<std::string> name; 
+
+// public: 
+//     std::optional<std::string> getName() const { return name; }
+//     virtual std::string getTypeRepresentation() const = 0;
+// };
+
+class  TemplateInfo {
+
+};
+
+class TemplateableType {
+protected: 
+    TemplateableType(std::optional<TemplateInfo> i) : info(i) {}
+    virtual ~TemplateableType() = default; 
+
+private: 
+    std::optional<TemplateInfo> info; 
+
+public:
+    std::optional<TemplateInfo> getTemplateInfo() const { return info; }
+};
+
 class TypeNum {
 private: 
     bool isSigned;
@@ -655,6 +684,8 @@ protected:
  *
  *******************************************/
 
+// TODO: With generics, allow for pattern matching? Ie, 
+// <TY1, TY2 : { someIdentifier : TY1, ...}> ? 
 class TypeFunc : public Type
 {
 private:

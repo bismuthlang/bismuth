@@ -284,6 +284,35 @@ public:
     std::variant<TProgramProjectNode *, ErrorChain *> TvisitProgramProject(BismuthParser::ProgramProjectContext *ctx);
     std::any visitProgramProject(BismuthParser::ProgramProjectContext *ctx) override { return TNVariantCast<TProgramProjectNode>(TvisitProgramProject(ctx)); }
 
+
+    /*
+    virtual std::any visitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) override {
+        return visitChildren(ctx);
+    }
+
+    virtual std::any visitGenericType(BismuthParser::GenericTypeContext *ctx) override {
+        return visitChildren(ctx);
+    }
+
+    virtual std::any visitGenericSession(BismuthParser::GenericSessionContext *ctx) override {
+        return visitChildren(ctx);
+    }
+    */
+
+   TemplateInfo TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx); 
+   std::any visitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) override { return TvisitGenericTemplate(ctx); }
+
+
+
+
+
+
+
+
+
+
+
+
     std::variant<TypedNode *, ErrorChain *> visitCondition(BismuthParser::ExpressionContext *ex)
     {
         std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, ex->accept(this));
