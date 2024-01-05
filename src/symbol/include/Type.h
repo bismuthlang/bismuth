@@ -150,7 +150,12 @@ private:
 // };
 
 class  TemplateInfo {
+//     std::vector<Symbol *> templates; 
+    std::vector<std::string> templates; 
 
+public: 
+    TemplateInfo(std::vector<std::string> t) : templates(t) {}    
+    ~TemplateInfo() = default; 
 };
 
 class TemplateableType {

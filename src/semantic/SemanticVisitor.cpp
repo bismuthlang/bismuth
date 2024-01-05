@@ -2830,8 +2830,40 @@ std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExp
 
 
 TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) {
+    std::vector<std::string> syms; 
+    std::map<std::string, antlr4::Token *> visited; 
+
     for(auto entry : ctx->gen)
-    {}
+    {
+        if(dynamic_cast<BismuthParser::GenericSessionContext *>(entry))
+            errorHandler.addCompilerError(entry->getStart(), "FIXME: Session Type templates are currently unimplemented.");
+        else if(BismuthParser::GenericTypeContext * tyCtx = dynamic_cast<BismuthParser::GenericTypeContext *>(entry))
+        {
+            if(tyCtx->supTy.size())
+                errorHandler.addCompilerError(tyCtx->supTy.at(0)->getStart(), "FIXME: Specifying super types are currently unimplemented for generics");
+            else
+            {
+                std::string idName = tyCtx->name->getText(); 
+                auto prev = visited.find(idName);
+                if(prev != visited.end())
+                {
+                    auto token = prev->second;
+                    errorHandler.addError(tyCtx->getStart(),                      // TODO: add utility function to pretty print lines
+                        "Redefinition of previously used identifier in template." // Previously used at " + token->getLine() << ':' << token->getCharPositionInLine()
+                    );
+                }
+                else
+                {
+                    syms.push_back(idName);
+                    visited.insert({idName, tyCtx->getStart()});
+                }
+            }
+        }   
+        else 
+            errorHandler.addCompilerError(entry->getStart(), "Unknown case for templates");         
+    }
+
+    return TemplateInfo(syms);
 }
 
 template <RestRuleContext R, typename T>
