@@ -9,10 +9,18 @@ compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ;
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
 
+
+// TODO: how to specify that we need a protocol type, linear type, etc?
+genericTemplate     : '<' gen+=genericEntry (',' gen+=genericEntry)* '>' ;
+
+genericEntry        : name=VARIABLE (':' supTy+=type (',' supTy+=type)*)?   # GenericType
+                    | 'Session' name=VARIABLE                               # GenericSession
+                    ;
+
 defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
                   | DEFINE STRUCT name=VARIABLE LSQB (cases+=structCase)*  RSQB             # DefineStruct
                   | DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block   # DefineProgram
-                  | DEFINE FUNC name=VARIABLE lam=lambdaConstExpr                           # DefineFunction
+                  | DEFINE FUNC name=VARIABLE genericTemplate? lam=lambdaConstExpr                           # DefineFunction
                   ; 
 
 //FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
@@ -80,14 +88,7 @@ expression          : LPAR ex=expression RPAR                                   
                     | '[' ((elements+=expression ',')* elements+=expression)? ']'   # ArrayExpression
                     ;
 
-// TODO: how to specify that we need a protocol type, linear type, etc?
-genericTemplate     : '<' gen+=genericEntry (',' gen+=genericEntry)* '>' ;
-
-genericEntry        : name=VARIABLE (':' supTy+=type (',' supTy+=type)*)?   # GenericType
-                    | 'Session' name=VARIABLE                               # GenericSession
-                    ;
-
-lambdaConstExpr     : genericTemplate? LPAR parameterList RPAR (COLON ret=type)? block ;
+lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
 
 /* 
  * Keeping block as its own rule so that way we can re-use it as

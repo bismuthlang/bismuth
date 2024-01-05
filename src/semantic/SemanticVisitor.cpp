@@ -2,17 +2,99 @@
 
 std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx)
 {
+    class CompilationUnit {
+        protected: 
+            std::string name; 
+        public: 
+            CompilationUnit(std::string n) : name(n) {}
+            virtual ~CompilationUnit() = default; 
+
+            std::string getName() { return name; }
+            virtual const Type * getFreshStubType() = 0; 
+    };
+
+    class ProgramUnit : public CompilationUnit {
+        private: 
+            BismuthParser::DefineProgramContext * ctx; 
+
+        public: 
+            ProgramUnit(BismuthParser::DefineProgramContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
+
+            const TypeProgram * getFreshStubType() override { return new TypeProgram(); }
+    };
+
+    class FunctionUnit : public CompilationUnit {
+        private: 
+            BismuthParser::DefineFunctionContext * ctx; 
+
+        public: 
+            FunctionUnit(BismuthParser::DefineFunctionContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
+
+            const TypeFunc * getFreshStubType() override { return new TypeFunc(); }
+    };
+
+    class StructUnit : public CompilationUnit {
+        private: 
+            BismuthParser::DefineStructContext * ctx; 
+
+        public: 
+            StructUnit(BismuthParser::DefineStructContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
+
+            const TypeStruct * getFreshStubType() override { return new TypeStruct(name); }
+    };
+
+    class EnumUnit : public CompilationUnit {
+        private: 
+            BismuthParser::DefineEnumContext * ctx; 
+
+        public: 
+            EnumUnit(BismuthParser::DefineEnumContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
+
+            const TypeSum * getFreshStubType() override { return new TypeSum(name); }
+    };
+
     // Enter initial scope
     stmgr->enterScope(StopType::NONE);
 
     std::vector<TExternNode *> externs;
 
-    std::vector<std::pair<BismuthParser::DefineProgramContext *, TypeProgram *>> progs;
-    std::vector<std::pair<BismuthParser::DefineFunctionContext *, TypeFunc *>> funcs;
-    std::vector<std::pair<BismuthParser::DefineStructContext *, TypeStruct *>> structs;
-    std::vector<std::pair<BismuthParser::DefineEnumContext *, TypeSum *>> enums;
+    std::vector<ProgramUnit> progs;
+    std::vector<FunctionUnit> funcs;
+    std::vector<StructUnit> structs;
+    std::vector<EnumUnit> enums;
 
     std::vector<DefinitionNode> defs;
+
+    for (auto e : ctx->defs)
+    {
+        if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
+        {
+            progs.push_back(ProgramUnit(progCtx));
+        }
+        else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
+        {
+            funcs.push_back(FunctionUnit(fnCtx));
+        }
+        else if (BismuthParser::DefineStructContext *prodCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
+        {
+            structs.push_back(StructUnit(prodCtx));
+        }
+        else if (BismuthParser::DefineEnumContext *sumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
+        {
+            enums.push_back(EnumUnit(sumCtx));
+        }
+        else
+        {
+            // std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
+            // if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+            // {
+            //     (*e)->addError(ctx->getStart(), "Failed to type check definition");
+            //     return *e;
+            // }
+
+            errorHandler.addError(ctx->getStart(), "Unhandled case");
+        }
+    }
 
     for (auto e : ctx->defs)
     {
@@ -2833,6 +2915,8 @@ TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTempla
     std::vector<std::string> syms; 
     std::map<std::string, antlr4::Token *> visited; 
 
+    // TODO: what restrictions should there be on the name of these variables?
+    // Implement some function to do all the checking for if an identifier can be used
     for(auto entry : ctx->gen)
     {
         if(dynamic_cast<BismuthParser::GenericSessionContext *>(entry))
