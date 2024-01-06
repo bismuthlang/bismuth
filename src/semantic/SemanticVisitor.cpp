@@ -74,8 +74,6 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     std::vector<StructUnit *> structs;
     std::vector<EnumUnit *> enums;
 
-    std::vector<DefinitionNode> defs;
-
     for (auto e : ctx->defs)
     {
         if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
@@ -100,13 +98,6 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
         else
         {
-            // std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
-            // if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-            // {
-            //     (*e)->addError(ctx->getStart(), "Failed to type check definition");
-            //     return *e;
-            // }
-
             errorHandler.addError(ctx->getStart(), "Unhandled case");
         }
     }
@@ -170,12 +161,14 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         anyOpt2VarError<TypedNode>(errorHandler, e->getContext()->accept(this));
     }
 
+
     // Visit the statements contained in the unit
-    for (auto e : ctx->defs)
+    std::vector<DefinitionNode> defs;
+    for (auto u : units)
     {
-        if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
+        if (ProgramUnit * prog = dynamic_cast<ProgramUnit *>(u))
         {
-            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(progCtx);
+            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(prog->getContext());
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
@@ -185,9 +178,9 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             defs.push_back(std::get<TProgramDefNode *>(progOpt));
         }
-        else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
+        else if (FunctionUnit *fn = dynamic_cast<FunctionUnit *>(u))
         {
-            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx);
+            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fn->getContext());
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
