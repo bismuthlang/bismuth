@@ -11,6 +11,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             std::string getName() { return name; }
             virtual const Type * getFreshStubType() = 0; 
+            virtual antlr4::ParserRuleContext * getContext() = 0; 
     };
 
     class ProgramUnit : public CompilationUnit {
@@ -21,6 +22,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             ProgramUnit(BismuthParser::DefineProgramContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
 
             const TypeProgram * getFreshStubType() override { return new TypeProgram(); }
+            BismuthParser::DefineProgramContext * getContext() override { return ctx; }
     };
 
     class FunctionUnit : public CompilationUnit {
@@ -31,6 +33,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             FunctionUnit(BismuthParser::DefineFunctionContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
 
             const TypeFunc * getFreshStubType() override { return new TypeFunc(); }
+            BismuthParser::DefineFunctionContext * getContext() override { return ctx; }
     };
 
     class StructUnit : public CompilationUnit {
@@ -41,6 +44,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             StructUnit(BismuthParser::DefineStructContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
 
             const TypeStruct * getFreshStubType() override { return new TypeStruct(name); }
+            BismuthParser::DefineStructContext * getContext() override { return ctx; }
     };
 
     class EnumUnit : public CompilationUnit {
@@ -51,17 +55,24 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             EnumUnit(BismuthParser::DefineEnumContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
 
             const TypeSum * getFreshStubType() override { return new TypeSum(name); }
+            BismuthParser::DefineEnumContext * getContext() override { return ctx; }
     };
+
+    // class TemplateUnit : public CompilationUnit {
+
+    // };
 
     // Enter initial scope
     stmgr->enterScope(StopType::NONE);
 
     std::vector<TExternNode *> externs;
 
-    std::vector<ProgramUnit> progs;
-    std::vector<FunctionUnit> funcs;
-    std::vector<StructUnit> structs;
-    std::vector<EnumUnit> enums;
+    std::vector<CompilationUnit *> units; 
+
+    std::vector<ProgramUnit *> progs;
+    std::vector<FunctionUnit *> funcs;
+    std::vector<StructUnit *> structs;
+    std::vector<EnumUnit *> enums;
 
     std::vector<DefinitionNode> defs;
 
@@ -69,19 +80,23 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     {
         if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
-            progs.push_back(ProgramUnit(progCtx));
+            progs.push_back(new ProgramUnit(progCtx));
+            units.push_back(progs.at(progs.size() - 1));
         }
         else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
-            funcs.push_back(FunctionUnit(fnCtx));
+            funcs.push_back(new FunctionUnit(fnCtx));
+            units.push_back(funcs.at(funcs.size() - 1));
         }
         else if (BismuthParser::DefineStructContext *prodCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
         {
-            structs.push_back(StructUnit(prodCtx));
+            structs.push_back(new StructUnit(prodCtx));
+            units.push_back(structs.at(structs.size() - 1));
         }
         else if (BismuthParser::DefineEnumContext *sumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
         {
-            enums.push_back(EnumUnit(sumCtx));
+            enums.push_back(new EnumUnit(sumCtx));
+            units.push_back(enums.at(enums.size() - 1));
         }
         else
         {
@@ -96,83 +111,18 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
     }
 
-    for (auto e : ctx->defs)
+    for (auto u : units)
     {
-        if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
+        std::string id = u->getName(); 
+
+        if (stmgr->isBound(id))
         {
-            std::string id = progCtx->name->getText();
-
-            if (stmgr->isBound(id))
-            {
-                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of program " + id);
-            }
-
-            TypeProgram *progType = new TypeProgram();
-            Symbol *progSym = new Symbol(id, progType, true, true);
-            symBindings->bind(progCtx, progSym);
-            stmgr->addSymbol(progSym);
-
-            progs.push_back({progCtx, progType});
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
         }
-        else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
-        {
-            std::string id = fnCtx->name->getText();
 
-            if (stmgr->isBound(id))
-            {
-                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of function " + id);
-            }
-
-            TypeFunc *funcType = new TypeFunc();
-            Symbol *sym = new Symbol(id, funcType, true, true);
-            symBindings->bind(fnCtx, sym);
-            stmgr->addSymbol(sym);
-
-            funcs.push_back({fnCtx, funcType});
-        }
-        else if (BismuthParser::DefineStructContext *prodCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
-        {
-            std::string id = prodCtx->name->getText();
-
-            if (stmgr->isBound(id))
-            {
-                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of struct " + id);
-            }
-
-            TypeStruct *structType = new TypeStruct(id);
-            Symbol *sym = new Symbol(id, structType, true, true);
-            symBindings->bind(prodCtx, sym);
-            stmgr->addSymbol(sym);
-
-            structs.push_back({prodCtx, structType});
-        }
-        else if (BismuthParser::DefineEnumContext *sumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
-        {
-            std::string id = sumCtx->name->getText();
-
-            if (stmgr->isBound(id))
-            {
-                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of enum " + id);
-            }
-
-            TypeSum *ty = new TypeSum(id);
-            Symbol *sym = new Symbol(id, ty, true, true);
-            symBindings->bind(sumCtx, sym);
-            stmgr->addSymbol(sym);
-
-            enums.push_back({sumCtx, ty});
-        }
-        else
-        {
-            std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-            {
-                (*e)->addError(ctx->getStart(), "Failed to type check definition");
-                return *e;
-            }
-
-            errorHandler.addError(ctx->getStart(), "Unhandled case");
-        }
+        Symbol * sym = new Symbol(id, u->getFreshStubType(), true, true);
+        symBindings->bind(u->getContext(), sym);
+        stmgr->addSymbol(sym);
     }
 
     // Visit externs first; they will report any errors if they have any.
@@ -203,21 +153,21 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     // FIXME: ERROR CHECK!
     for (auto e : progs)
     {
-        getProgramSymbol(e.first);
+        getProgramSymbol(e->getContext());
     }
     for (auto e : funcs)
     {
-        getFunctionSymbol(e.first);
+        getFunctionSymbol(e->getContext());
     }
     for (auto e : structs)
     {
         // std::variant<TypedNode *, ErrorChain *> opt =
-        anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
+        anyOpt2VarError<TypedNode>(errorHandler, e->getContext()->accept(this));
     }
     for (auto e : enums)
     {
         // std::variant<TypedNode *, ErrorChain *> opt =
-        anyOpt2VarError<TypedNode>(errorHandler, e.first->accept(this));
+        anyOpt2VarError<TypedNode>(errorHandler, e->getContext()->accept(this));
     }
 
     // Visit the statements contained in the unit

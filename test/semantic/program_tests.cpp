@@ -374,7 +374,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Unsupported redeclaration of function foo");
+    "Unsupported redeclaration of foo");
 }
 
 TEST_CASE("Copy linear resources", "[semantic][program]")
@@ -405,7 +405,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Unsupported redeclaration of program foo");
+    "Unsupported redeclaration of foo");
 }
 
 // TEST_CASE("Redeclaration of function 2", "[semantic][program]")
@@ -459,7 +459,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Unsupported redeclaration of function foo");
+    "Unsupported redeclaration of foo");
 }
 
 TEST_CASE("Redeclaration of program 3", "[semantic][program]")
@@ -478,7 +478,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Unsupported redeclaration of program foo");
+    "Unsupported redeclaration of foo");
 }
 
 TEST_CASE("Redeclaration of function 4", "[semantic][program]")
@@ -497,7 +497,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Unsupported redeclaration of function foo");
+    "Unsupported redeclaration of foo");
 }
 
 TEST_CASE("Redeclaration of program 4", "[semantic][program]")
@@ -517,7 +517,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Unsupported redeclaration of program foo");
+    "Unsupported redeclaration of foo");
 }
 
 TEST_CASE("Redeclaration in extern", "[semantic][program]")
