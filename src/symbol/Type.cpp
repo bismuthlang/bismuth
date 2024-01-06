@@ -1025,3 +1025,83 @@ bool TypeStruct::isSupertypeFor(const Type *other) const
     // PLAN: allow for extern/import structs
     return this == other; // FIXME: DO BETTER
 }
+
+
+/*******************************************
+ *
+ * Type used for Generics Inference
+ *
+ *******************************************/
+
+std::optional<const Type*> TypeTemplate::getValueType() const { return valueType; }
+
+std::optional<const Type*> TypeTemplate::canApplyTemplate(std::vector<const Type *> subs) const {
+    if(!this->getTemplateInfo()) // || this->getTemplateInfo().value().templates.size() == 0)
+    {
+        if(subs.size() != 0)
+            return std::nullopt; // Cannot apply template to untemplated type
+
+        return this->getValueType(); // TODO: will need to change the name of the type... 
+    }
+
+    std::vector<std::string> ids = this->getTemplateInfo().value().templates;
+
+    if(ids.size() != subs.size())
+    {
+        return std::nullopt; // Wrong number of template params
+    }
+
+    // FIXME: THIS DOESNT ACTUALLY APPLY THE TEMPLATE!!
+
+    return this->getValueType(); 
+}
+
+std::string TypeTemplate::toString(DisplayMode mode) const 
+{
+    std::ostringstream description;
+    std::optional<TemplateInfo> infoOpt = this->getTemplateInfo(); 
+
+    description << "<";
+    if(infoOpt)
+    {
+        unsigned int ctr = 0;
+        unsigned int size = infoOpt.value().templates.size();
+        for (auto t : infoOpt.value().templates)
+        {
+            description << t;//e.second->toString(mode);
+            if (++ctr != size)
+                description << ", ";
+        }
+
+    }
+
+    description << ">";
+    description << this->valueType->toString(mode); 
+
+    return description.str();
+}
+
+llvm::Type *TypeTemplate::getLLVMType(llvm::Module *M) const 
+{
+    return llvm::Type::getVoidTy(M->getContext()); // TODO: DO BETTER!
+}
+
+bool TypeTemplate::requiresDeepCopy() const 
+{
+    return valueType->requiresDeepCopy(); 
+}
+
+const TypeTemplate * TypeTemplate::getCopy() const
+{
+    return this; 
+}
+
+bool TypeTemplate::isSupertypeFor(const Type *other) const
+{
+    // FIXME: DO BETTER!
+    if (const TypeTemplate *p = dynamic_cast<const TypeTemplate *>(other))
+    {
+        return toString(C_STYLE) == other->toString(C_STYLE); 
+    }
+    return false; 
+}

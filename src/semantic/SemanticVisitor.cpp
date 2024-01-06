@@ -58,8 +58,16 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             BismuthParser::DefineEnumContext * getContext() override { return ctx; }
     };
 
-    // class TemplateUnit : public CompilationUnit {
 
+    // class TemplateUnit : public CompilationUnit {
+    //     private: 
+    //         antlr4::ParserRuleContext * ctx; 
+
+    //     public: 
+    //         TemplateUnit(std::string name, antlr4::ParserRuleContext * c) : CompilationUnit(name), ctx(c) {} 
+
+    //         const TypeTemplate * getFreshStubType() override { return new TypeSum(name); }
+    //         antlr4::ParserRuleContext *getContext() override { return ctx; }
     // };
 
     // Enter initial scope
@@ -148,6 +156,19 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     }
     for (auto e : funcs)
     {
+        bool isTemplate = e->getContext()->genericTemplate(); 
+        if(isTemplate)
+        {
+            // TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx)
+            TemplateInfo info = TvisitGenericTemplate(e->getContext()->genericTemplate());
+
+            for(auto i : info.templates)
+            {
+                stmgr->addSymbol(
+                    new Symbol(i, Types::DYN_INT, true, false)
+                );
+            }
+        }
         getFunctionSymbol(e->getContext());
     }
     for (auto e : structs)

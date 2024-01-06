@@ -231,6 +231,7 @@ type            :    ty=type LBRC len=DEC_LITERAL RBRC                          
                 |    TYPE_CHANNEL LESS proto=protocol GREATER                               # ChannelType
                 |    TYPE_PROGRAM LESS proto=protocol GREATER                               # ProgramType
                 |    TYPE_BOX     LESS ty=type GREATER                                      # BoxType
+                |    ty=type  LESS subst+=type (',' subst+=type) GREATER              # TemplatedType
                 |    VARIABLE                                                               # CustomType
                 ;
 

@@ -150,6 +150,7 @@ private:
 // };
 
 class  TemplateInfo {
+public: // TODO CHANGE
 //     std::vector<Symbol *> templates; 
     std::vector<std::string> templates; 
 
@@ -169,6 +170,55 @@ private:
 public:
     std::optional<TemplateInfo> getTemplateInfo() const { return info; }
 };
+
+/*******************************************
+ *
+ * Type used for Generics Inference
+ *
+ *******************************************/
+class TypeTemplate : public Type, public TemplateableType
+{
+private:
+    const Type * valueType;
+
+public:
+    TypeTemplate(std::optional<TemplateInfo> i, const Type * vt) : Type(false), TemplateableType(i), valueType(vt)// FIXME: IS IT Non linear?
+    {
+    }
+
+    std::optional<const Type*> getValueType() const;
+
+    std::optional<const Type*> canApplyTemplate(std::vector<const Type *>) const; 
+
+    /**
+     * @brief Returns VAR if type inference has not been completed or {VAR/<INFERRED TYPE>} if type inference has completed.
+     *
+     * @return std::string
+     */
+    std::string toString(DisplayMode mode) const override;
+    /**
+     * @brief Gets the LLVM representation of the inferred type.
+     *
+     * @param C LLVM Context
+     * @return llvm::Type* the llvm type for the inferred type.
+     */
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
+
+    bool requiresDeepCopy() const override;
+
+    const TypeTemplate * getCopy() const override;
+
+protected:
+    /**
+     * @brief Determines if this is a supertype of another type (and thus, also performs type inferencing).
+     *
+     * @param other
+     * @return true
+     * @return false
+     */
+    bool isSupertypeFor(const Type *other) const override;
+};
+
 
 class TypeNum {
 private: 
