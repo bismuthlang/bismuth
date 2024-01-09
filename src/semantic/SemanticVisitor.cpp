@@ -168,8 +168,8 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 {
 
                     templateTy->canApplyTemplate({Types::DYN_INT});
-                    // templateTy->canApplyTemplate({Types::DYN_BOOL});
-                    // templateTy->canApplyTemplate({Types::DYN_STR});
+                    templateTy->canApplyTemplate({Types::DYN_BOOL});
+                    templateTy->canApplyTemplate({Types::DYN_STR});
 
                     std::cout << "# Reg. " << templateTy->getRegisteredTemplates().size() << std::endl; 
                     std::cout << "175 " << lambda->getType() << std::endl;
@@ -384,7 +384,12 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
 
     // FIXME: ERROR IS OCCURING HERE B/C WE ARE GETTING BACK A TEMPLATE TYPE INSTEAD OF A FUNCTYPE!
-    lam->type = const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->type)); // FIXME: DO BETTER! NEEDED B/C OF NAME RES!
+    // lam->type = const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->type)); // FIXME: DO BETTER! NEEDED B/C OF NAME RES!
+    lam->type = [funcSym]() -> TypeFunc * {
+        if(const TypeTemplate * temp = dynamic_cast<const TypeTemplate *>(funcSym->type))
+            return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(temp->getValueType().value())); 
+        return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->type));
+    }();
 
     lam->name = funcSym->getIdentifier(); // Not really needed.
     return lam;
