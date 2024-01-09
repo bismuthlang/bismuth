@@ -57,6 +57,11 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
             TLambdaConstNode *a = std::get<TLambdaConstNode *>(e);
             AcceptType(this, a);
         }
+        else if(std::holds_alternative<TDefineTemplateNode *>(e))
+        {
+            TDefineTemplateNode * a = std::get<TDefineTemplateNode *>(e); 
+            AcceptType(this, a);
+        }
     }
 
     /*******************************************
@@ -2033,22 +2038,24 @@ std::optional<Value *> CodegenVisitor::visit(TBlockNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
 {
+    std::cout << "2041" << std::endl;
     // Get the current insertion point
     BasicBlock *ins = builder->GetInsertBlock();
 
     const TypeFunc *type = n->getType();
-
+std::cout << "2046" << std::endl;
+std::cout << "2046a " << type->toString(getToStringMode()) << std::endl;
     llvm::FunctionType *fnType = type->getLLVMFunctionType(module);
-
+std::cout << "2049" << std::endl;
     Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
     type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED
-
+std::cout << "2052" << std::endl;
     std::vector<Symbol *> paramList = n->paramSymbols;
 
     // Create basic block
     BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
     builder->SetInsertPoint(bBlk);
-
+std::cout << "2058" << std::endl;
     // Bind all of the arguments
     for (auto &arg : fn->args())
     {
@@ -2071,13 +2078,13 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
 
         builder->CreateStore(&arg, v);
     }
-
+std::cout << "2081" << std::endl;
     // Generate code for the block
     for (auto e : n->block->exprs)
     {
         AcceptType(this, e);
     }
-
+std::cout << "2087" << std::endl;
     // Needed to help make the branching programs work due to switches being exhaustive. Will have to do this better eventually!
     llvm::Instruction *inst = &*(builder->GetInsertBlock()->rbegin());
     if (!dyn_cast<llvm::ReturnInst>(inst))
@@ -2098,7 +2105,7 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
 
     // Return to original insert point
     builder->SetInsertPoint(ins);
-
+std::cout << "2108" << std::endl;
     return fn;
 }
 
@@ -2146,6 +2153,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 {
+    std::cout << "2149" << std::endl; 
     // FIXME: ENABLE TEMPLATE GENERATION!
     // FIXME: BAD OPT ACCESS
     auto info = n->getType()->getTemplateInfo().value(); 
@@ -2157,6 +2165,7 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
             info.templates.at(i).second->actingType = t.at(i); 
         }
         
+        std::cout << "2161" << std::endl; 
         // substutute each 
         AcceptType(this, n->getTemplatedNodes());
     }
