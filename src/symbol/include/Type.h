@@ -1091,7 +1091,8 @@ protected:
     TemplateableType(std::optional<TemplateInfo> i) : info(i) {}
     virtual ~TemplateableType() = default; 
 
-private: 
+// TODO: CHANGE TO PRIVATE!
+protected: 
     std::optional<TemplateInfo> info; 
 
 public:
@@ -1110,9 +1111,26 @@ private:
 
     mutable std::set<std::vector<const Type *>> registeredTemplates = {};
 
+    bool defined = false; 
+
 public:
-    TypeTemplate(std::optional<TemplateInfo> i, const Type * vt) : Type(false), TemplateableType(i), valueType(vt)// FIXME: IS IT Non linear?
+    TypeTemplate(std::optional<TemplateInfo> i, const Type * vt) : Type(false), TemplateableType(i), valueType(vt), defined(true)// FIXME: IS IT Non linear?
     {
+    }
+
+    bool isDefined() const { return defined; }
+
+    // PLAN: Contract that such a function may exist, but no guarantee about param types?
+    bool define(std::optional<TemplateInfo> i, const Type * vt)
+    {
+        if(defined) return false; 
+
+        TypeTemplate *u_this = const_cast<TypeTemplate *>(this);
+        u_this->defined = true; 
+        u_this->info = i; 
+        u_this->valueType = vt; 
+
+        return true; 
     }
 
     std::optional<const Type*> getValueType() const;

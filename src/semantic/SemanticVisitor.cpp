@@ -1968,6 +1968,12 @@ std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
             sumTy->define(cases);
 
+
+
+
+
+
+
             stmgr->addSymbol(sym);
         }
         return new TDefineEnumNode(id, sumTy, ctx->getStart());
@@ -2023,6 +2029,17 @@ std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
                 el.insert({caseName, caseTy});
             }
             structType->define(el);
+
+
+
+
+
+
+
+
+
+
+
             stmgr->addSymbol(sym);
         }
         return new TDefineStructNode(id, structType, ctx->getStart());
@@ -3059,4 +3076,229 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
     }
 
     return ConditionalData(cases, restDat->post);
+}
+
+
+std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx)
+{
+    // TODO: maybe refactor with visitCtx for Lambda?
+    auto defineFunction = [this](BismuthParser::DefineFunctionContext *ctx, const TypeFunc *funcType) -> std::optional<ErrorChain *> {
+        if(funcType->isDefined()) return std::nullopt; 
+
+        std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
+
+        if (!paramTypeOpt)
+        {
+            return errorHandler.addError(ctx->getStart(), "340");
+        }
+
+        ParameterListNode params = paramTypeOpt.value();
+        std::vector<const Type *> ps;
+
+        for (ParameterNode param : params)
+        {
+            ps.push_back(param.type);
+        }
+
+
+        std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->lam->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->lam->ret->accept(this))
+                            : (const Type*) Types::UNIT;
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&retTypeOpt))
+        {
+            (*e)->addError(ctx->getStart(), "Error generating return type");
+            return *e;
+        }
+
+        const Type *retType = std::get<const Type *>(retTypeOpt);
+
+        funcType->setInvoke(ps, retType);
+
+        return std::nullopt; 
+    };
+
+    auto defineProgram = [this](BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType) -> std::optional<ErrorChain *> {
+        if (progType->isDefined()) return std::nullopt; 
+
+        std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
+        {
+            (*e)->addError(ctx->getStart(), "Failed to generate channel type for program");
+            return *e;
+        }
+
+        const Type * ty = std::get<const Type*>(tyOpt);
+
+        if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
+        {
+            progType->setProtocol(channel->getProtocol());
+            return std::nullopt; 
+        }
+
+        return errorHandler.addError(ctx->getStart(), "Process expected channel but got " + ty->toString(toStringMode));
+    };
+
+    auto defineEnum = [this](BismuthParser::DefineEnumContext *ctx, const TypeSum *sumTy) -> std::optional<ErrorChain *> {
+        if (sumTy->isDefined()) return std::nullopt; 
+
+        std::set<const Type *, TypeCompare> cases = {};
+
+        for (auto e : ctx->cases)
+        {
+            std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, e->accept(this));
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
+            {
+                (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                return *e;
+            }
+
+            const Type *caseType = std::get<const Type *>(caseTypeOpt);
+
+            if (caseType->isLinear())
+            {
+                return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString(toStringMode) + ", in non-linear container");
+            }
+
+            cases.insert(caseType);
+        }
+
+        if (cases.size() != ctx->cases.size())
+        {
+            return errorHandler.addError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
+        }
+
+        sumTy->define(cases);
+        return std::nullopt; 
+    };
+
+    auto defineStruct = [this](BismuthParser::DefineStructContext *ctx, const TypeStruct *structType) -> std::optional<ErrorChain *> {
+        if (structType->isDefined()) return std::nullopt; 
+        LinkedMap<std::string, const Type *> el;
+
+        for (BismuthParser::StructCaseContext *caseCtx : ctx->cases)
+        {
+            std::string caseName = caseCtx->name->getText();
+            if (el.lookup(caseName))
+            {
+                return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
+            }
+
+            std::variant<const Type *, ErrorChain *> caseTyOpt = anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this));
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTyOpt))
+            {
+                (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                return *e;
+            }
+
+            const Type *caseTy = std::get<const Type *>(caseTyOpt);
+
+            if (caseTy->isLinear())
+            {
+                return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString(toStringMode) + ", in non-linear container");
+            }
+
+            el.insert({caseName, caseTy});
+        }
+        structType->define(el);
+        return std::nullopt; 
+    };
+
+
+
+    // Essentially a type-case
+    if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
+    {
+        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+
+        if (!opt && stmgr->lookupInCurrentScope(fnCtx->name->getText()))
+        {
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + fnCtx->name->getText());
+        }
+
+        bool isTemplate = fnCtx->genericTemplate(); 
+
+        if(isTemplate)
+        {
+            if(opt)
+            {
+
+
+            }
+
+
+            // TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx)
+            TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
+
+            TypeFunc * funcTy = new TypeFunc(); 
+
+            Symbol *sym = new Symbol(
+                fnCtx->name->getText(), 
+                new TypeTemplate(info, funcTy),
+                true, 
+                false);
+
+            // FIXME: verify these bindings all go through
+            for(auto i : info.templates)
+            {
+                stmgr->addSymbol(
+                    new Symbol(i.first, i.second, true, false) //Types::DYN_INT, true, false)
+                );
+            }
+
+        }
+        else
+        {
+            Symbol *sym = opt.value_or(
+                new Symbol(
+                    fnCtx->name->getText(), 
+                    new TypeFunc(),
+                    true, false));
+
+            if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(sym->type))
+            {
+                std::optional<ErrorChain *> optErr = defineFunction(fnCtx, funcType);
+
+                if(optErr) return optErr.value();
+                return sym;
+            }
+
+            return errorHandler.addError(ctx->getStart(), "Expected function but got: " + sym->type->toString(toStringMode));
+        }
+
+        
+    }
+    else if(BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(ctx))
+    {
+        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+
+        if (!opt && stmgr->lookupInCurrentScope(progCtx->name->getText()))
+        {
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + progCtx->name->getText());
+        }
+    }
+    else if(BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(ctx))
+    {
+        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+
+        if (!opt && stmgr->lookupInCurrentScope(structCtx->name->getText()))
+        {
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + structCtx->name->getText());
+        }
+    }
+    else if(BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(ctx))
+    {
+        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+
+        if (!opt && stmgr->lookupInCurrentScope(enumCtx->name->getText()))
+        {
+            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + enumCtx->name->getText());
+        }
+    }
+    else
+    {
+        return errorHandler.addCompilerError(ctx->getStart(), "Failed to generate the type for a definition; Unknown and unimplemented case for define type.");
+    }
 }

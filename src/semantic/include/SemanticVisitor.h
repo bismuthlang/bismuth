@@ -692,6 +692,28 @@ private:
 
     // NOTE: IS THERE A WAY FOR ME TO PROVIDE ONE OF TWO TYPES TO A FN, AND THEN HAVE THAT BE RET TYPE? (BUT ONLY ONE OF TWO...)
 
+    //BismuthParser::DefineFunctionContext *ctx,
+    template <class T>
+    void defineTypeCase(BismuthParser::DefineTypeContext * ctx, 
+                        std::function<T(BismuthParser::DefineFunctionContext *)> funcFn, 
+                        std::function<T(BismuthParser::DefineProgramContext *)> progFn,
+                        std::function<T(BismuthParser::DefineStructContext *)> structFn,
+                        std::function<T(BismuthParser::DefineEnumContext *)> enumFn,
+                        std::function<T()> errFn){
+        if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
+            return funcFn(fnCtx);
+        if(BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(ctx))
+            return progFn(progCtx);
+        if(BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(ctx))
+            return structFn(structCtx);
+        if(BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(ctx))
+            return enumFn(enumCtx);
+        return errFn();
+    }
+
+
+    std::variant<Symbol *, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx);
+
     std::variant<Symbol *, ErrorChain *> getFunctionSymbol(BismuthParser::DefineFunctionContext *ctx)
     {
         std::optional<Symbol *> opt = symBindings->getBinding(ctx);
