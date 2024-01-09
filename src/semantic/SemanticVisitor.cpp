@@ -136,6 +136,11 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
         else if (BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
+            if(fnCtx->genericTemplate())
+            {
+                // FIXME: REBIND THE SYMBOLS FOR GENERIC!!
+            }
+
             std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -150,7 +155,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 defs.push_back(lambda);
             else 
             {
-                std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+                std::optional<Symbol *> opt = symBindings->getBinding(e);
 
                 if(!opt)
                 {
@@ -3204,8 +3209,8 @@ std::cout << "3237" << std::endl;
             std::optional<ErrorChain *> ans = defineFunction(fnCtx, funcTy);
 std::cout << "3240" << std::endl;
             
-            for(auto templateSym : templateSyms)
-                stmgr->removeSymbol(templateSym);
+            // for(auto templateSym : templateSyms)
+            //     stmgr->removeSymbol(templateSym);
 std::cout << "3244" << std::endl;
             return ans; 
         }

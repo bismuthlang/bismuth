@@ -704,6 +704,8 @@ public:
     std::string toString() const override { return "DEF TEMPLATE NODE"; }
 
     const TypeTemplate * getType() override { return type; }
+    TypedNode * getTemplatedNodes() { return templatedNodes; }
+
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 

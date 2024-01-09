@@ -2147,11 +2147,19 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
 std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 {
     // FIXME: ENABLE TEMPLATE GENERATION!
-    // for(auto template : type->getRegisteredTemplates())
-    // {
-    //     // substutute each 
-    //     AcceptType(this, n->getTemplatedNodes());
-    // }
+    // FIXME: BAD OPT ACCESS
+    auto info = n->getType()->getTemplateInfo().value(); 
+    for(auto t : n->getType()->getRegisteredTemplates())
+    {
+        // FIXME: CHECK BOUNDS ARE SAME FOR BOTH?
+        for(unsigned int i = 0; i < info.templates.size(); i++)
+        {
+            info.templates.at(i).second->actingType = t.at(i); 
+        }
+        
+        // substutute each 
+        AcceptType(this, n->getTemplatedNodes());
+    }
 
     return std::nullopt; 
 }
