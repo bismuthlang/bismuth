@@ -233,6 +233,19 @@ bool TypeArray::isSupertypeFor(const Type *other) const
     return false;
 }
 
+const Type * TypeArray::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    
+    TypeArray * ans = new TypeArray(nullptr, length);
+
+    existing.insert({this, ans});
+
+    ans->valueType = this->valueType->getCopySubst(existing);
+
+    return ans; 
+}
 
 /*******************************************
  *
@@ -290,6 +303,19 @@ bool TypeDynArray::isSupertypeFor(const Type *other) const
     return false;
 }
 
+const Type * TypeDynArray::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    
+    TypeDynArray * ans = new TypeDynArray(nullptr);
+
+    existing.insert({this, ans});
+
+    ans->valueType = this->valueType->getCopySubst(existing);
+
+    return ans; 
+}
 
 /*******************************************
  *
@@ -434,6 +460,20 @@ bool TypeBox::isSupertypeFor(const Type *other) const
     return false;
 }
 
+
+const Type * TypeBox::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    
+    TypeBox * ans = new TypeBox(nullptr);
+
+    existing.insert({this, ans});
+
+    ans->innerType = this->innerType->getCopySubst(existing);
+
+    return ans; 
+}
 
 /*******************************************
  *
@@ -656,6 +696,24 @@ bool TypeFunc::isSupertypeFor(const Type *other) const
         return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeUnit *>(this->retType) && dynamic_cast<const TypeUnit *>(p->retType));
     }
     return false;
+}
+
+
+const Type * TypeFunc::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    
+    TypeFunc * ans = new TypeFunc();
+
+    existing.insert({this, ans});
+
+    for(auto ty : this->paramTypes)
+        ans->paramTypes.push_back(
+            ty->getCopySubst(existing)
+        );
+
+    return ans; 
 }
 
 
@@ -930,6 +988,27 @@ bool TypeSum::isSupertypeFor(const Type *other) const
     return false;
 }
 
+const Type * TypeSum::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    std::set<const Type *, TypeCompare> cases = {};
+    TypeSum * ans = new TypeSum(cases);
+
+    existing.insert({this, ans});
+
+    for(auto ty : this->cases)
+        cases.insert(
+            ty->getCopySubst(existing)
+        );
+
+    ans->cases = cases; 
+
+    return ans; 
+}
+
+
+
 
 /*******************************************
  *
@@ -1026,6 +1105,27 @@ bool TypeStruct::isSupertypeFor(const Type *other) const
     return this == other; // FIXME: DO BETTER
 }
 
+const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    LinkedMap<std::string, const Type *> elements;
+    TypeStruct * ans = new TypeStruct(elements);
+
+    existing.insert({this, ans});
+
+    for(auto ty : this->getElements())
+    {
+        elements.insert(
+            {ty.first, ty.second->getCopySubst(existing)}
+        );
+    }
+
+    ans->elements = elements; 
+
+    return ans; 
+}
+
 
 /*******************************************
  *
@@ -1044,16 +1144,28 @@ std::optional<const Type*> TypeTemplate::canApplyTemplate(std::vector<const Type
         return this->getValueType(); // TODO: will need to change the name of the type... 
     }
 
-    std::vector<std::string> ids = this->getTemplateInfo().value().templates;
+     std::vector<std::pair<std::string, TypeGeneric *>> ids = this->getTemplateInfo().value().templates;
 
     if(ids.size() != subs.size())
     {
         return std::nullopt; // Wrong number of template params
     }
 
+    std::map<const Type *, const Type *> subst; 
+
+    // May have to change later when we get in session types!
+    for(unsigned int i = 0; i < ids.size(); i++)
+    {
+        subst.insert({ids.at(i).second, subs.at(i)});
+    } 
+
+    const Type * ans = valueType->getCopySubst(subst);
+
+    registeredTemplates.insert(subs); // FIXME: track previously generated getCopySubst and return those if able
+
     // FIXME: THIS DOESNT ACTUALLY APPLY THE TEMPLATE!!
 
-    return this->getValueType(); 
+    return ans;//this->getValueType(); 
 }
 
 std::string TypeTemplate::toString(DisplayMode mode) const 
@@ -1068,7 +1180,7 @@ std::string TypeTemplate::toString(DisplayMode mode) const
         unsigned int size = infoOpt.value().templates.size();
         for (auto t : infoOpt.value().templates)
         {
-            description << t;//e.second->toString(mode);
+            description << t.first;//e.second->toString(mode);
             if (++ctr != size)
                 description << ", ";
         }
@@ -1104,4 +1216,14 @@ bool TypeTemplate::isSupertypeFor(const Type *other) const
         return toString(C_STYLE) == other->toString(C_STYLE); 
     }
     return false; 
+}
+
+const Type * TypeTemplate::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    // FIXME: WRONG IMPL
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    existing.insert({this, this});
+
+    return this; 
 }

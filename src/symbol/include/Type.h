@@ -119,6 +119,15 @@ public:
 
     virtual bool isLossy() const { return !linear; }
 
+    virtual const Type * getCopySubst(std::map<const Type *, const Type *> existing) const { 
+        if(existing.contains(this))
+            return existing.find(this)->second; 
+
+        existing.insert({this, this});
+
+        return this; 
+    }
+
 protected:
     mutable unsigned int guardCount = 0;
 
@@ -148,76 +157,6 @@ private:
 //     std::optional<std::string> getName() const { return name; }
 //     virtual std::string getTypeRepresentation() const = 0;
 // };
-
-class  TemplateInfo {
-public: // TODO CHANGE
-//     std::vector<Symbol *> templates; 
-    std::vector<std::string> templates; 
-
-public: 
-    TemplateInfo(std::vector<std::string> t) : templates(t) {}    
-    ~TemplateInfo() = default; 
-};
-
-class TemplateableType {
-protected: 
-    TemplateableType(std::optional<TemplateInfo> i) : info(i) {}
-    virtual ~TemplateableType() = default; 
-
-private: 
-    std::optional<TemplateInfo> info; 
-
-public:
-    std::optional<TemplateInfo> getTemplateInfo() const { return info; }
-};
-
-/*******************************************
- *
- * Type used for Generics Inference
- *
- *******************************************/
-class TypeTemplate : public Type, public TemplateableType
-{
-private:
-    const Type * valueType;
-
-public:
-    TypeTemplate(std::optional<TemplateInfo> i, const Type * vt) : Type(false), TemplateableType(i), valueType(vt)// FIXME: IS IT Non linear?
-    {
-    }
-
-    std::optional<const Type*> getValueType() const;
-
-    std::optional<const Type*> canApplyTemplate(std::vector<const Type *>) const; 
-
-    /**
-     * @brief Returns VAR if type inference has not been completed or {VAR/<INFERRED TYPE>} if type inference has completed.
-     *
-     * @return std::string
-     */
-    std::string toString(DisplayMode mode) const override;
-    /**
-     * @brief Gets the LLVM representation of the inferred type.
-     *
-     * @param C LLVM Context
-     * @return llvm::Type* the llvm type for the inferred type.
-     */
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
-
-    bool requiresDeepCopy() const override;
-
-    const TypeTemplate * getCopy() const override;
-
-protected:
-    /**
-     * @brief Determines if this is a supertype of another type (and thus, also performs type inferencing).
-     *
-     * @param other
-     * @return true
-     * @return false
-     */
-    bool isSupertypeFor(const Type *other) const override;
-};
 
 
 class TypeNum {
@@ -525,6 +464,8 @@ public:
 
     const TypeArray * getCopy() const override;
 
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
 protected:
     bool isSupertypeFor(const Type *other) const override;
 };
@@ -578,6 +519,8 @@ public:
 
     const TypeDynArray * getCopy() const override;
 
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
 protected:
     bool isSupertypeFor(const Type *other) const override;
 };
@@ -627,8 +570,12 @@ public:
 
     bool isLossy() const override; 
 
+    // FIXME: IMPL!
+    // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
 protected:
     bool isSupertypeFor(const Type *other) const override;
+
 };
 
 /*******************************************
@@ -659,8 +606,11 @@ public:
 
     const TypeBox * getCopy() const override;
 
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
 protected:
     bool isSupertypeFor(const Type *other) const override;
+
 };
 
 /*******************************************
@@ -729,8 +679,12 @@ public:
 
     const TypeProgram * getCopy() const override;
 
+    // FIXME: IMPL!
+    // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
 protected:
     bool isSupertypeFor(const Type *other) const override;
+
 };
 
 /*******************************************
@@ -841,8 +795,11 @@ public:
 
     const TypeFunc * getCopy() const override;
 
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+    
 protected:
     bool isSupertypeFor(const Type *other) const override;
+
 };
 
 /*******************************************
@@ -899,6 +856,9 @@ public:
 
     const TypeInfer * getCopy() const override;
 
+    // FIXME: IMPL!
+    // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
 protected:
     /**
      * @brief Internal helper function used to try updating the type that this inference represents
@@ -917,6 +877,7 @@ protected:
      * @return false
      */
     bool isSupertypeFor(const Type *other) const override;
+
 };
 
 /*******************************************
@@ -981,8 +942,11 @@ public:
 
     const TypeSum * getCopy() const override;
 
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
 protected:
     bool isSupertypeFor(const Type *other) const override;
+
 };
 
 /*******************************************
@@ -1050,8 +1014,12 @@ public:
 
     const TypeStruct * getCopy() const override;
 
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
+
 protected:
     bool isSupertypeFor(const Type *other) const override;
+
 };
 
 
@@ -1076,3 +1044,110 @@ inline std::optional<const T*> type_cast(const Type * ty)
 
     return std::nullopt; 
 }
+
+
+
+
+/*******************************************
+ *
+ * Generic Type; Used for polymorphism. 
+ *
+ *******************************************/
+class TypeGeneric : public Type
+{
+public: // TODO: PRIVATE + USE SETTER
+    const Type * actingType = Types::ABSURD; 
+public:
+    TypeGeneric(bool isLinear) : Type(isLinear) {}; 
+
+    std::string toString(DisplayMode mode) const override { return actingType->toString(mode); }
+
+    llvm::Type *getLLVMType(llvm::Module *M) const override { return actingType->getLLVMType(M); } 
+
+    bool requiresDeepCopy() const override { return actingType->requiresDeepCopy(); } //false; }
+
+    const TypeGeneric * getCopy() const override { return this; };
+
+    // FIXME: IMPL
+    // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
+protected:
+    bool isSupertypeFor(const Type *other) const override { return false; }
+
+};
+
+class  TemplateInfo {
+public: // TODO CHANGE
+//     std::vector<Symbol *> templates; 
+    std::vector<std::pair<std::string, TypeGeneric *>> templates; 
+
+public: 
+    TemplateInfo( std::vector<std::pair<std::string, TypeGeneric *>> t) : templates(t) {}    
+    ~TemplateInfo() = default; 
+};
+
+class TemplateableType {
+protected: 
+    TemplateableType(std::optional<TemplateInfo> i) : info(i) {}
+    virtual ~TemplateableType() = default; 
+
+private: 
+    std::optional<TemplateInfo> info; 
+
+public:
+    std::optional<TemplateInfo> getTemplateInfo() const { return info; }
+};
+
+/*******************************************
+ *
+ * Type used for Generics Inference
+ *
+ *******************************************/
+class TypeTemplate : public Type, public TemplateableType
+{
+private:
+    const Type * valueType;
+
+    mutable std::set<std::vector<const Type *>> registeredTemplates = {};
+
+public:
+    TypeTemplate(std::optional<TemplateInfo> i, const Type * vt) : Type(false), TemplateableType(i), valueType(vt)// FIXME: IS IT Non linear?
+    {
+    }
+
+    std::optional<const Type*> getValueType() const;
+
+    std::optional<const Type*> canApplyTemplate(std::vector<const Type *>) const; 
+
+    /**
+     * @brief Returns VAR if type inference has not been completed or {VAR/<INFERRED TYPE>} if type inference has completed.
+     *
+     * @return std::string
+     */
+    std::string toString(DisplayMode mode) const override;
+    /**
+     * @brief Gets the LLVM representation of the inferred type.
+     *
+     * @param C LLVM Context
+     * @return llvm::Type* the llvm type for the inferred type.
+     */
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
+
+    bool requiresDeepCopy() const override;
+
+    const TypeTemplate * getCopy() const override;
+
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
+    const std::set<std::vector<const Type *>> getRegisteredTemplates() const { return registeredTemplates; }
+
+protected:
+    /**
+     * @brief Determines if this is a supertype of another type (and thus, also performs type inferencing).
+     *
+     * @param other
+     * @return true
+     * @return false
+     */
+    bool isSupertypeFor(const Type *other) const override;
+};

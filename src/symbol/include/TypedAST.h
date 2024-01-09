@@ -71,6 +71,7 @@ class TProgramAcceptNode;
 class TProgramAcceptWhileNode; 
 class TProgramAcceptIfNode; 
 class TDefineEnumNode;
+class TDefineTemplateNode; 
 class TDefineStructNode;
 class TInitProductNode;
 class TArrayRValue; 
@@ -134,6 +135,7 @@ public:
     virtual std::optional<Value *> visit(TProgramAcceptIfNode *n) = 0; 
     // virtual std::optional<Value *> visit(TDefineEnumNode *n) = 0;
     // virtual std::optional<Value *> visit(TDefineStructNode *n) = 0;
+    virtual std::optional<Value *> visit(TDefineTemplateNode *n) = 0; 
     virtual std::optional<Value *> visit(TInitProductNode *n) = 0;
     virtual std::optional<Value *> visit(TArrayRValue *n) = 0; 
     virtual std::optional<Value *> visit(TInitBoxNode *n) = 0; 
@@ -188,6 +190,7 @@ public:
     std::any any_visit(TProgramAcceptWhileNode *n) { return this->visit(n); }
     std::any any_visit(TProgramAcceptIfNode *n) { return this->visit(n); }
     std::any any_visit(TDefineEnumNode *n) { return this->visit(n); }
+    std::any any_visit(TDefineTemplateNode *n) { return this->visit(n); }
     std::any any_visit(TDefineStructNode *n) { return this->visit(n); }
     std::any any_visit(TInitProductNode *n) { return this->visit(n); }
     std::any any_visit(TArrayRValue *n) { return this->visit(n); }
@@ -682,6 +685,25 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+
+class TDefineTemplateNode : public TypedNode // FIXME: ADD TO VISITORS AND SUCH
+{
+private: 
+    const TypeTemplate * type; // Used to figure out what versions we need to generate
+    TypedNode * templatedNodes; 
+
+    // TODO track templated names generated?
+
+public:
+    TDefineTemplateNode(const TypeTemplate * t, TypedNode * n, antlr4::Token *tok) : TypedNode(tok), type(t), templatedNodes(n)
+    {}
+
+    std::string toString() const override { return "DEF TEMPLATE NODE"; }
+
+    const TypeTemplate * getType() override { return type; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
@@ -1320,7 +1342,7 @@ public:
 
 /////////////////////
 
-typedef variant<TDefineEnumNode *, TDefineStructNode *, TProgramDefNode *, TLambdaConstNode *> DefinitionNode;
+typedef variant<TDefineEnumNode *, TDefineStructNode *, TProgramDefNode *, TLambdaConstNode *, TDefineTemplateNode *> DefinitionNode;
 
 class TCompilationUnitNode
 {

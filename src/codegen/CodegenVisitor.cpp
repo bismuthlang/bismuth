@@ -2144,6 +2144,18 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
     return std::nullopt;
 }
 
+std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
+{
+    // FIXME: ENABLE TEMPLATE GENERATION!
+    // for(auto template : type->getRegisteredTemplates())
+    // {
+    //     // substutute each 
+    //     AcceptType(this, n->getTemplatedNodes());
+    // }
+
+    return std::nullopt; 
+}
+
 std::optional<Value *> CodegenVisitor::visit(TExprCopyNode *n)
 {
     std::optional<Value *> valOpt = AcceptType(this, n->expr);

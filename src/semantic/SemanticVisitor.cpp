@@ -165,7 +165,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             for(auto i : info.templates)
             {
                 stmgr->addSymbol(
-                    new Symbol(i, Types::DYN_INT, true, false)
+                    new Symbol(i.first, i.second, true, false) //Types::DYN_INT, true, false)
                 );
             }
         }
@@ -209,7 +209,8 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 return *e;
             }
 
-            defs.push_back(std::get<TLambdaConstNode *>(opt));
+            TLambdaConstNode * lambda = std::get<TLambdaConstNode *>(opt);
+            defs.push_back(lambda);
         }
     }
 
@@ -2876,7 +2877,7 @@ std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExp
 
 
 TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) {
-    std::vector<std::string> syms; 
+    std::vector<std::pair<std::string, TypeGeneric *>> syms; //std::string> syms;  // FIXME: SHOULD THIS BE CONST?
     std::map<std::string, antlr4::Token *> visited; 
 
     // TODO: what restrictions should there be on the name of these variables?
@@ -2902,7 +2903,7 @@ TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTempla
                 }
                 else
                 {
-                    syms.push_back(idName);
+                    syms.push_back({idName, new TypeGeneric(false)}); //idName); // FIXME: BETTER ISLINEAR?
                     visited.insert({idName, tyCtx->getStart()});
                 }
             }
