@@ -599,6 +599,7 @@ bool TypeFunc::setInvoke(std::vector<const Type *> p, const Type *r, bool v) con
 // PLAN: should improve tostring, make it match syntax + math
 std::string TypeFunc::toString(DisplayMode mode) const
 {
+    if(!isDefined()) return "Undefined Function"; // FIXME: ADD SUCH CHECKS EVERYWHERE!
     std::ostringstream description;
 
     if (paramTypes.size() == 0)
@@ -1187,8 +1188,12 @@ std::string TypeTemplate::toString(DisplayMode mode) const
 
     }
 
+    std::cout << "1190" << std::endl; 
     description << ">";
-    description << this->valueType->toString(mode); 
+
+    // FIXME: ENABLE THIS, BUT DOING SO SEEMS TO SEGFAULT
+    // description << 
+    //     (this->valueType ? this->valueType->toString(mode) : "?"); 
 
     return description.str();
 }

@@ -428,52 +428,7 @@ public:
 
         return new TBlockNode(nodes, exprs.at(0)->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
-
-    std::variant<Symbol *, ErrorChain *> getProgramSymbol(BismuthParser::DefineProgramContext *ctx)
-    {
-        std::optional<Symbol *> symOpt = symBindings->getBinding(ctx);
-
-        if (!symOpt && stmgr->lookupInCurrentScope(ctx->name->getText()))
-        {
-            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
-        }
-
-        Symbol *sym = symOpt.value_or(
-            new Symbol(
-                ctx->name->getText(), new TypeProgram(),
-                true, false));
-
-        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->type))
-        {
-            // std::string funcId = ctx->name->getText();
-
-            if (!progType->isDefined())
-            {
-                std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
     
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
-                {
-                    (*e)->addError(ctx->getStart(), "Failed to generate channel type for program");
-                    return *e;
-                }
-
-                const Type * ty = std::get<const Type*>(tyOpt);
-
-                if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
-                {
-                    progType->setProtocol(channel->getProtocol());
-                }
-                else
-                {
-                    return errorHandler.addError(ctx->getStart(), "Process expected channel but got " + ty->toString(toStringMode));
-                }
-            }
-            return sym;
-        }
-
-        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString(toStringMode));
-    }
-
     /**
      * @brief Visits a program definition
      *
@@ -482,7 +437,7 @@ public:
      */
     std::variant<TProgramDefNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx)
     {
-        std::variant<Symbol *, ErrorChain *> symOpt = getProgramSymbol(ctx);
+        std::variant<Symbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
         {
@@ -699,7 +654,7 @@ private:
                         std::function<T(BismuthParser::DefineProgramContext *)> progFn,
                         std::function<T(BismuthParser::DefineStructContext *)> structFn,
                         std::function<T(BismuthParser::DefineEnumContext *)> enumFn,
-                        std::function<T()> errFn){
+                        std::function<T(BismuthParser::DefineTypeContext *)> errFn){
         if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
             return funcFn(fnCtx);
         if(BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(ctx))
@@ -708,67 +663,11 @@ private:
             return structFn(structCtx);
         if(BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(ctx))
             return enumFn(enumCtx);
-        return errFn();
+        return errFn(ctx);
     }
 
 
     std::variant<Symbol *, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx);
-
-    std::variant<Symbol *, ErrorChain *> getFunctionSymbol(BismuthParser::DefineFunctionContext *ctx)
-    {
-        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-
-        if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
-        {
-            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
-        }
-
-        Symbol *sym = opt.value_or(
-            new Symbol(
-                ctx->name->getText(), new TypeFunc(),
-                true, false));
-
-        if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(sym->type))
-        {
-            if (!funcType->isDefined())
-            {
-                std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
-
-                if (!paramTypeOpt)
-                {
-                    return errorHandler.addError(ctx->getStart(), "340");
-                }
-
-                ParameterListNode params = paramTypeOpt.value();
-                std::vector<const Type *> ps;
-
-                for (ParameterNode param : params)
-                {
-                    ps.push_back(param.type);
-                }
-
-
-                std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->lam->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->lam->ret->accept(this))
-                                  : (const Type*) Types::UNIT;
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&retTypeOpt))
-                {
-                    (*e)->addError(ctx->getStart(), "Error generating return type");
-                    return *e;
-                }
-
-                const Type *retType = std::get<const Type *>(retTypeOpt);
-        
-                funcType->setInvoke(ps, retType);
-
-                // stmgr->addSymbol(sym); //Maybe do this here instead? would be more similar to how others are managed...
-            }
-
-            return sym;
-        }
-
-        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString(toStringMode));
-    }
 
     void bindRestData(antlr4::ParserRuleContext *ctx, std::deque<DeepRestData *> *rd)
     { // DeepRestData * rd) {

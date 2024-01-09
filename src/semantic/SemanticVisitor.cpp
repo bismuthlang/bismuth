@@ -84,6 +84,45 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     for (auto e : ctx->defs)
     {
+        // Wastes a bit of memory in allocating type even for duplicates
+        // defineTypeCase<std::optional<std::pair<std::string, const Type *>>>(
+        //     e, 
+        //     [](BismuthParser::DefineFunctionContext *ctx) -> std::pair<std::string, const Type *>{
+        //         return {
+        //             ctx->name->getText(), 
+        //             ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeFunc()
+        //         };
+        //     },
+
+        //     [](BismuthParser::DefineProgramContext *ctx) -> std::pair<std::string, const Type *>{
+        //         return {
+        //             ctx->name->getText(), 
+        //             new TypeProgram()
+        //         };
+        //     },
+
+        //     [](BismuthParser::DefineStructContext *ctx) -> std::pair<std::string, const Type *>{
+        //         std::string name = ctx->name->getText(); 
+        //         return {
+        //             name, 
+        //             new TypeStruct(name)
+        //         };
+        //     },
+
+        //     [](BismuthParser::DefineEnumContext *ctx) -> std::pair<std::string, const Type *>{
+        //         std::string name = ctx->name->getText(); 
+        //         return {
+        //             name, 
+        //             new TypeSum(name)
+        //         };
+        //     },
+
+        //     [this](BismuthParser::DefineTypeContext * ctx){
+        //         errorHandler.addCompilerError(ctx->getStart(), "Unhandled case in identifying definitions");
+        //         return std::nullopt; 
+        //     }
+
+        // );
         if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
             progs.push_back(new ProgramUnit(progCtx));
@@ -152,24 +191,25 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     // FIXME: ERROR CHECK!
     for (auto e : progs)
     {
-        getProgramSymbol(e->getContext());
+        defineAndGetSymbolFor(e->getContext());
     }
     for (auto e : funcs)
     {
-        bool isTemplate = e->getContext()->genericTemplate(); 
-        if(isTemplate)
-        {
-            // TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx)
-            TemplateInfo info = TvisitGenericTemplate(e->getContext()->genericTemplate());
+        // bool isTemplate = e->getContext()->genericTemplate(); 
+        // if(isTemplate)
+        // {
+        //     // TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx)
+        //     TemplateInfo info = TvisitGenericTemplate(e->getContext()->genericTemplate());
 
-            for(auto i : info.templates)
-            {
-                stmgr->addSymbol(
-                    new Symbol(i.first, i.second, true, false) //Types::DYN_INT, true, false)
-                );
-            }
-        }
-        getFunctionSymbol(e->getContext());
+        //     for(auto i : info.templates)
+        //     {
+        //         stmgr->addSymbol(
+        //             new Symbol(i.first, i.second, true, false) //Types::DYN_INT, true, false)
+        //         );
+        //     }
+        // }
+        // getFunctionSymbol(e->getContext());
+        defineAndGetSymbolFor(e->getContext());
     }
     for (auto e : structs)
     {
@@ -387,7 +427,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
 std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
-    std::variant<Symbol *, ErrorChain *> funcSymOpt = getFunctionSymbol(ctx);
+    std::variant<Symbol *, ErrorChain *> funcSymOpt = defineAndGetSymbolFor(ctx);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&funcSymOpt))
     {
@@ -3208,22 +3248,24 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
 
     auto defineTemplate = [this, defineFunction](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy) -> std::optional<ErrorChain *> {
+        std::cout << "3212" << std::endl;
         if (templateTy->isDefined()) return std::nullopt; 
-
+std::cout << "3213" << std::endl;
         if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
         {
+            std::cout << "3216" << std::endl;
             // TODO: get errors from this?
             TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
 
             TypeFunc * funcTy = new TypeFunc(); 
-
+std::cout << "3221" << std::endl;
             Symbol *sym = new Symbol(
                 fnCtx->name->getText(), 
                 new TypeTemplate(info, funcTy),
                 true, 
                 false);
 
-
+std::cout << "3228" << std::endl;
             std::vector<Symbol *> templateSyms; 
             // FIXME: verify these bindings all go through
             for(auto i : info.templates)
@@ -3232,14 +3274,14 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
                 stmgr->addSymbol(templateSym);
                 templateSyms.push_back(templateSym);
             }
-
+std::cout << "3237" << std::endl;
 
             std::optional<ErrorChain *> ans = defineFunction(fnCtx, funcTy);
-
+std::cout << "3240" << std::endl;
             
             for(auto templateSym : templateSyms)
                 stmgr->removeSymbol(templateSym);
-
+std::cout << "3244" << std::endl;
             return ans; 
         }
 
@@ -3251,13 +3293,14 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
     // Essentially a type-case
     if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
     {
+        std::cout << "3255" << std::endl;
         std::optional<Symbol *> opt = symBindings->getBinding(ctx);
 
         if (!opt && stmgr->lookupInCurrentScope(fnCtx->name->getText()))
         {
             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + fnCtx->name->getText());
         }
-
+std::cout << "3262" << std::endl;
         bool isTemplate = fnCtx->genericTemplate(); 
 
         if(isTemplate)
@@ -3267,24 +3310,26 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
                     fnCtx->name->getText(), 
                     new TypeTemplate(),
                     true, false));
+std::cout << "3272" << std::endl;
 
+std::cout << "3273 " << sym->getIdentifier()  << " " << (new TypeTemplate())->toString(toStringMode) << std::endl;
             if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->type))
             {
                 std::optional<ErrorChain *> optErr = defineTemplate(fnCtx, templateTy);
 
                 if(optErr) return optErr.value();
 
-                
+            std::cout << "3279" << std::endl;    
                 // FIXME: UNSAFE OPTIONAL? 
                 if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
                 {
                     return sym;
                 }
-
+std::cout << "3285" << std::endl;
                 // TOOD: print templateTy->getValueType().value()? 
                 return errorHandler.addError(ctx->getStart(), "Expected function but got: " + sym->type->toString(toStringMode));
             }
-
+std::cout << "3293" << std::endl;
             return errorHandler.addError(ctx->getStart(), "Expected template but got: " + sym->type->toString(toStringMode));
 
         }
@@ -3317,6 +3362,22 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
         {
             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + progCtx->name->getText());
         }
+
+        Symbol *sym = opt.value_or(
+            new Symbol(
+                progCtx->name->getText(), 
+                new TypeProgram(),
+                true, false));
+
+        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->type))
+        {
+            std::optional<ErrorChain *> optErr = defineProgram(progCtx, progType);
+
+            if(optErr) return optErr.value();
+            return sym;
+        }
+
+        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString(toStringMode));
     }
     else if(BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(ctx))
     {
