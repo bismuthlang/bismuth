@@ -1123,7 +1123,7 @@ public:
     bool isDefined() const { return defined; }
 
     // PLAN: Contract that such a function may exist, but no guarantee about param types?
-    bool define(std::optional<TemplateInfo> i, const Type * vt)
+    bool define(std::optional<TemplateInfo> i, const Type * vt) const
     {
         if(defined) return false; 
 

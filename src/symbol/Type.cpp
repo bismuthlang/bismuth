@@ -1190,10 +1190,9 @@ std::string TypeTemplate::toString(DisplayMode mode) const
 
     std::cout << "1190" << std::endl; 
     description << ">";
-
-    // FIXME: ENABLE THIS, BUT DOING SO SEEMS TO SEGFAULT
-    // description << 
-    //     (this->valueType ? this->valueType->toString(mode) : "?"); 
+    
+    description << 
+        (this->isDefined() ? this->valueType->toString(mode) : "?"); 
 
     return description.str();
 }

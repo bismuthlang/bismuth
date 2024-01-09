@@ -2,165 +2,65 @@
 
 std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx)
 {
-    class CompilationUnit {
-        protected: 
-            std::string name; 
-        public: 
-            CompilationUnit(std::string n) : name(n) {}
-            virtual ~CompilationUnit() = default; 
-
-            std::string getName() { return name; }
-            virtual const Type * getFreshStubType() = 0; 
-            virtual antlr4::ParserRuleContext * getContext() = 0; 
-    };
-
-    class ProgramUnit : public CompilationUnit {
-        private: 
-            BismuthParser::DefineProgramContext * ctx; 
-
-        public: 
-            ProgramUnit(BismuthParser::DefineProgramContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
-
-            const TypeProgram * getFreshStubType() override { return new TypeProgram(); }
-            BismuthParser::DefineProgramContext * getContext() override { return ctx; }
-    };
-
-    class FunctionUnit : public CompilationUnit {
-        private: 
-            BismuthParser::DefineFunctionContext * ctx; 
-
-        public: 
-            FunctionUnit(BismuthParser::DefineFunctionContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
-
-            const TypeFunc * getFreshStubType() override { return new TypeFunc(); }
-            BismuthParser::DefineFunctionContext * getContext() override { return ctx; }
-    };
-
-    class StructUnit : public CompilationUnit {
-        private: 
-            BismuthParser::DefineStructContext * ctx; 
-
-        public: 
-            StructUnit(BismuthParser::DefineStructContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
-
-            const TypeStruct * getFreshStubType() override { return new TypeStruct(name); }
-            BismuthParser::DefineStructContext * getContext() override { return ctx; }
-    };
-
-    class EnumUnit : public CompilationUnit {
-        private: 
-            BismuthParser::DefineEnumContext * ctx; 
-
-        public: 
-            EnumUnit(BismuthParser::DefineEnumContext * c) : CompilationUnit(c->name->getText()), ctx(c) {} 
-
-            const TypeSum * getFreshStubType() override { return new TypeSum(name); }
-            BismuthParser::DefineEnumContext * getContext() override { return ctx; }
-    };
-
-
-    // class TemplateUnit : public CompilationUnit {
-    //     private: 
-    //         antlr4::ParserRuleContext * ctx; 
-
-    //     public: 
-    //         TemplateUnit(std::string name, antlr4::ParserRuleContext * c) : CompilationUnit(name), ctx(c) {} 
-
-    //         const TypeTemplate * getFreshStubType() override { return new TypeSum(name); }
-    //         antlr4::ParserRuleContext *getContext() override { return ctx; }
-    // };
-
     // Enter initial scope
     stmgr->enterScope(StopType::NONE);
 
     std::vector<TExternNode *> externs;
 
-    std::vector<CompilationUnit *> units; 
-
-    std::vector<ProgramUnit *> progs;
-    std::vector<FunctionUnit *> funcs;
-    std::vector<StructUnit *> structs;
-    std::vector<EnumUnit *> enums;
-
     for (auto e : ctx->defs)
     {
         // Wastes a bit of memory in allocating type even for duplicates
-        // defineTypeCase<std::optional<std::pair<std::string, const Type *>>>(
-        //     e, 
-        //     [](BismuthParser::DefineFunctionContext *ctx) -> std::pair<std::string, const Type *>{
-        //         return {
-        //             ctx->name->getText(), 
-        //             ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeFunc()
-        //         };
-        //     },
+        std::optional<std::pair<std::string, const Type *>> opt = defineTypeCase<std::optional<std::pair<std::string, const Type *>>>(
+            e, 
+            [](BismuthParser::DefineFunctionContext *ctx) -> std::pair<std::string, const Type *>{
+                return {
+                    ctx->name->getText(), 
+                    ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeFunc()
+                };
+            },
 
-        //     [](BismuthParser::DefineProgramContext *ctx) -> std::pair<std::string, const Type *>{
-        //         return {
-        //             ctx->name->getText(), 
-        //             new TypeProgram()
-        //         };
-        //     },
+            [](BismuthParser::DefineProgramContext *ctx) -> std::pair<std::string, const Type *>{
+                return {
+                    ctx->name->getText(), 
+                    new TypeProgram()
+                };
+            },
 
-        //     [](BismuthParser::DefineStructContext *ctx) -> std::pair<std::string, const Type *>{
-        //         std::string name = ctx->name->getText(); 
-        //         return {
-        //             name, 
-        //             new TypeStruct(name)
-        //         };
-        //     },
+            [](BismuthParser::DefineStructContext *ctx) -> std::pair<std::string, const Type *>{
+                std::string name = ctx->name->getText(); 
+                return {
+                    name, 
+                    new TypeStruct(name)
+                };
+            },
 
-        //     [](BismuthParser::DefineEnumContext *ctx) -> std::pair<std::string, const Type *>{
-        //         std::string name = ctx->name->getText(); 
-        //         return {
-        //             name, 
-        //             new TypeSum(name)
-        //         };
-        //     },
+            [](BismuthParser::DefineEnumContext *ctx) -> std::pair<std::string, const Type *>{
+                std::string name = ctx->name->getText(); 
+                return {
+                    name, 
+                    new TypeSum(name)
+                };
+            },
 
-        //     [this](BismuthParser::DefineTypeContext * ctx){
-        //         errorHandler.addCompilerError(ctx->getStart(), "Unhandled case in identifying definitions");
-        //         return std::nullopt; 
-        //     }
+            [this](BismuthParser::DefineTypeContext * ctx){
+                errorHandler.addCompilerError(ctx->getStart(), "Unhandled case in identifying definitions");
+                return std::nullopt; 
+            }
 
-        // );
-        if (BismuthParser::DefineProgramContext *progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
-        {
-            progs.push_back(new ProgramUnit(progCtx));
-            units.push_back(progs.at(progs.size() - 1));
-        }
-        else if (BismuthParser::DefineFunctionContext *fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
-        {
-            funcs.push_back(new FunctionUnit(fnCtx));
-            units.push_back(funcs.at(funcs.size() - 1));
-        }
-        else if (BismuthParser::DefineStructContext *prodCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
-        {
-            structs.push_back(new StructUnit(prodCtx));
-            units.push_back(structs.at(structs.size() - 1));
-        }
-        else if (BismuthParser::DefineEnumContext *sumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
-        {
-            enums.push_back(new EnumUnit(sumCtx));
-            units.push_back(enums.at(enums.size() - 1));
-        }
-        else
-        {
-            errorHandler.addError(ctx->getStart(), "Unhandled case");
-        }
-    }
+        );
+        if(!opt) continue; 
 
-    for (auto u : units)
-    {
-        std::string id = u->getName(); 
+        std::string id = opt.value().first; 
 
         if (stmgr->isBound(id))
         {
             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
         }
 
-        Symbol * sym = new Symbol(id, u->getFreshStubType(), true, true);
-        symBindings->bind(u->getContext(), sym);
+        Symbol * sym = new Symbol(id, opt.value().second, true, true);
+        symBindings->bind(e, sym);
         stmgr->addSymbol(sym);
+
     }
 
     // Visit externs first; they will report any errors if they have any.
@@ -189,47 +89,42 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     // Auto forward decl
 
     // FIXME: ERROR CHECK!
-    for (auto e : progs)
-    {
-        defineAndGetSymbolFor(e->getContext());
-    }
-    for (auto e : funcs)
-    {
-        // bool isTemplate = e->getContext()->genericTemplate(); 
-        // if(isTemplate)
-        // {
-        //     // TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx)
-        //     TemplateInfo info = TvisitGenericTemplate(e->getContext()->genericTemplate());
 
-        //     for(auto i : info.templates)
-        //     {
-        //         stmgr->addSymbol(
-        //             new Symbol(i.first, i.second, true, false) //Types::DYN_INT, true, false)
-        //         );
-        //     }
-        // }
-        // getFunctionSymbol(e->getContext());
-        defineAndGetSymbolFor(e->getContext());
-    }
-    for (auto e : structs)
+    // TODO: refactor to use defineAndGetSymbolFor for each, then can remove defineTypeCase and replace with single function call.
+    for (auto e : ctx->defs)
     {
-        // std::variant<TypedNode *, ErrorChain *> opt =
-        anyOpt2VarError<TypedNode>(errorHandler, e->getContext()->accept(this));
-    }
-    for (auto e : enums)
-    {
-        // std::variant<TypedNode *, ErrorChain *> opt =
-        anyOpt2VarError<TypedNode>(errorHandler, e->getContext()->accept(this));
-    }
+        // Wastes a bit of memory in allocating type even for duplicates
+        defineTypeCase<void>(
+            e, 
+            [this](BismuthParser::DefineFunctionContext *ctx){
+                defineAndGetSymbolFor(ctx);
+            },
 
+            [this](BismuthParser::DefineProgramContext *ctx){
+                defineAndGetSymbolFor(ctx);
+            },
+
+            [this](BismuthParser::DefineStructContext *ctx){
+                anyOpt2VarError<TypedNode>(errorHandler, ctx->accept(this));
+            },
+
+            [this](BismuthParser::DefineEnumContext *ctx){
+                anyOpt2VarError<TypedNode>(errorHandler, ctx->accept(this));
+            },
+
+            [this](BismuthParser::DefineTypeContext * ctx){
+                errorHandler.addCompilerError(ctx->getStart(), "Unhandled case in defined types, yet somehow after we identified them.");
+            }
+        );
+    }
 
     // Visit the statements contained in the unit
     std::vector<DefinitionNode> defs;
-    for (auto u : units)
+    for (auto e : ctx->defs)
     {
-        if (ProgramUnit * prog = dynamic_cast<ProgramUnit *>(u))
+        if (BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
-            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(prog->getContext());
+            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(progCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
@@ -239,9 +134,9 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             defs.push_back(std::get<TProgramDefNode *>(progOpt));
         }
-        else if (FunctionUnit *fn = dynamic_cast<FunctionUnit *>(u))
+        else if (BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
-            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fn->getContext());
+            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
@@ -250,7 +145,34 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             }
 
             TLambdaConstNode * lambda = std::get<TLambdaConstNode *>(opt);
-            defs.push_back(lambda);
+
+            if(!fnCtx->genericTemplate())
+                defs.push_back(lambda);
+            else 
+            {
+                std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+
+                if(!opt)
+                {
+                    return errorHandler.addCompilerError(ctx->getStart(), "Failed to find symbol for template.");
+                }
+
+                Symbol * sym = opt.value(); 
+
+                if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->type))
+                {
+                    TDefineTemplateNode * templateNode = new TDefineTemplateNode(
+                        templateTy, 
+                        lambda, 
+                        ctx->getStart()
+                    );
+
+                    defs.push_back(templateNode);
+                    continue; 
+                }
+                
+                return errorHandler.addCompilerError(ctx->getStart(), "Got wrong type for template symbol: " + sym->type->toString(toStringMode));
+            }
         }
     }
 
@@ -3258,10 +3180,13 @@ std::cout << "3213" << std::endl;
             TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
 
             TypeFunc * funcTy = new TypeFunc(); 
+
+            templateTy->define(info, funcTy);
+
 std::cout << "3221" << std::endl;
             Symbol *sym = new Symbol(
                 fnCtx->name->getText(), 
-                new TypeTemplate(info, funcTy),
+                templateTy,
                 true, 
                 false);
 
