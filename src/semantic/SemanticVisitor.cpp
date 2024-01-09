@@ -3207,6 +3207,46 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
     };
 
 
+    auto defineTemplate = [this, defineFunction](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy) -> std::optional<ErrorChain *> {
+        if (templateTy->isDefined()) return std::nullopt; 
+
+        if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
+        {
+            // TODO: get errors from this?
+            TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
+
+            TypeFunc * funcTy = new TypeFunc(); 
+
+            Symbol *sym = new Symbol(
+                fnCtx->name->getText(), 
+                new TypeTemplate(info, funcTy),
+                true, 
+                false);
+
+
+            std::vector<Symbol *> templateSyms; 
+            // FIXME: verify these bindings all go through
+            for(auto i : info.templates)
+            {
+                Symbol * templateSym =  new Symbol(i.first, i.second, true, false);
+                stmgr->addSymbol(templateSym);
+                templateSyms.push_back(templateSym);
+            }
+
+
+            std::optional<ErrorChain *> ans = defineFunction(fnCtx, funcTy);
+
+            
+            for(auto templateSym : templateSyms)
+                stmgr->removeSymbol(templateSym);
+
+            return ans; 
+        }
+
+        return errorHandler.addError(ctx->getStart(), "Currently, templates are only supported on functions.");
+    };
+
+
 
     // Essentially a type-case
     if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
@@ -3222,31 +3262,30 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
         if(isTemplate)
         {
-            if(opt)
+            Symbol *sym = opt.value_or(
+                new Symbol(
+                    fnCtx->name->getText(), 
+                    new TypeTemplate(),
+                    true, false));
+
+            if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->type))
             {
+                std::optional<ErrorChain *> optErr = defineTemplate(fnCtx, templateTy);
 
+                if(optErr) return optErr.value();
 
+                
+                // FIXME: UNSAFE OPTIONAL? 
+                if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
+                {
+                    return sym;
+                }
+
+                // TOOD: print templateTy->getValueType().value()? 
+                return errorHandler.addError(ctx->getStart(), "Expected function but got: " + sym->type->toString(toStringMode));
             }
 
-
-            // TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx)
-            TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
-
-            TypeFunc * funcTy = new TypeFunc(); 
-
-            Symbol *sym = new Symbol(
-                fnCtx->name->getText(), 
-                new TypeTemplate(info, funcTy),
-                true, 
-                false);
-
-            // FIXME: verify these bindings all go through
-            for(auto i : info.templates)
-            {
-                stmgr->addSymbol(
-                    new Symbol(i.first, i.second, true, false) //Types::DYN_INT, true, false)
-                );
-            }
+            return errorHandler.addError(ctx->getStart(), "Expected template but got: " + sym->type->toString(toStringMode));
 
         }
         else
@@ -3297,8 +3336,8 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + enumCtx->name->getText());
         }
     }
-    else
-    {
+    // else
+    // {
         return errorHandler.addCompilerError(ctx->getStart(), "Failed to generate the type for a definition; Unknown and unimplemented case for define type.");
-    }
+    // }
 }

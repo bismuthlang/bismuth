@@ -694,7 +694,7 @@ private:
 
     //BismuthParser::DefineFunctionContext *ctx,
     template <class T>
-    void defineTypeCase(BismuthParser::DefineTypeContext * ctx, 
+    T defineTypeCase(BismuthParser::DefineTypeContext * ctx, 
                         std::function<T(BismuthParser::DefineFunctionContext *)> funcFn, 
                         std::function<T(BismuthParser::DefineProgramContext *)> progFn,
                         std::function<T(BismuthParser::DefineStructContext *)> structFn,

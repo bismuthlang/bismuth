@@ -1114,6 +1114,8 @@ private:
     bool defined = false; 
 
 public:
+    TypeTemplate() : Type(false), TemplateableType({}), defined(false) {}
+
     TypeTemplate(std::optional<TemplateInfo> i, const Type * vt) : Type(false), TemplateableType(i), valueType(vt), defined(true)// FIXME: IS IT Non linear?
     {
     }
