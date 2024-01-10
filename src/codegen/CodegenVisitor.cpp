@@ -2035,25 +2035,21 @@ std::optional<Value *> CodegenVisitor::visit(TBlockNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
 {
-    std::cout << "2041" << std::endl;
     // Get the current insertion point
     BasicBlock *ins = builder->GetInsertBlock();
 
     const TypeFunc *type = n->getType();
-std::cout << "2046" << std::endl;
-std::cout << "2046a " << type->toString(getToStringMode()) << std::endl;
-std::cout << "2046b " << n->getName() << std::endl; 
+
     llvm::FunctionType *fnType = type->getLLVMFunctionType(module);
-std::cout << "2049" << std::endl;
     Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->getName(), module);
     type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED
-std::cout << "2052" << std::endl;
+
     std::vector<Symbol *> paramList = n->paramSymbols;
 
     // Create basic block
     BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
     builder->SetInsertPoint(bBlk);
-std::cout << "2058" << std::endl;
+
     // Bind all of the arguments
     for (auto &arg : fn->args())
     {
@@ -2076,13 +2072,13 @@ std::cout << "2058" << std::endl;
 
         builder->CreateStore(&arg, v);
     }
-std::cout << "2081" << std::endl;
+
     // Generate code for the block
     for (auto e : n->block->exprs)
     {
         AcceptType(this, e);
     }
-std::cout << "2087" << std::endl;
+
     // Needed to help make the branching programs work due to switches being exhaustive. Will have to do this better eventually!
     llvm::Instruction *inst = &*(builder->GetInsertBlock()->rbegin());
     if (!dyn_cast<llvm::ReturnInst>(inst))
@@ -2103,7 +2099,7 @@ std::cout << "2087" << std::endl;
 
     // Return to original insert point
     builder->SetInsertPoint(ins);
-std::cout << "2108" << std::endl;
+
     return fn;
 }
 
@@ -2151,7 +2147,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 {
-    std::cout << "2149" << std::endl; 
     // FIXME: ENABLE TEMPLATE GENERATION!
     // FIXME: BAD OPT ACCESS
     auto info = n->getType()->getTemplateInfo().value(); 
@@ -2175,11 +2170,9 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 
         }
         
-        std::cout << "2178 " << t.second->toString(DisplayMode::C_STYLE) << std::endl; 
         n->getTemplatedNodes()->setName(origName + customName + ">");
-        std::cout << "2179 " << n->getTemplatedNodes()->updateType(t.second) << std::endl; // FIXME: CHECK THIS IS TRUE!!
+        n->getTemplatedNodes()->updateType(t.second); // FIXME: CHECK THIS IS TRUE!!
 
-        std::cout << "2161" << std::endl; 
         // substitute each 
         AcceptType(this, n->getTemplatedNodes());
     }
