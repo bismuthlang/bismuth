@@ -94,28 +94,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     for (auto e : ctx->defs)
     {
         // Wastes a bit of memory in allocating type even for duplicates
-        defineTypeCase<void>(
-            e, 
-            [this](BismuthParser::DefineFunctionContext *ctx){
-                defineAndGetSymbolFor(ctx);
-            },
-
-            [this](BismuthParser::DefineProgramContext *ctx){
-                defineAndGetSymbolFor(ctx);
-            },
-
-            [this](BismuthParser::DefineStructContext *ctx){
-                anyOpt2VarError<TypedNode>(errorHandler, ctx->accept(this));
-            },
-
-            [this](BismuthParser::DefineEnumContext *ctx){
-                anyOpt2VarError<TypedNode>(errorHandler, ctx->accept(this));
-            },
-
-            [this](BismuthParser::DefineTypeContext * ctx){
-                errorHandler.addCompilerError(ctx->getStart(), "Unhandled case in defined types, yet somehow after we identified them.");
-            }
-        );
+        defineAndGetSymbolFor(e); 
     }
 
     // Visit the statements contained in the unit
