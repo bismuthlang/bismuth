@@ -166,15 +166,6 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
                 if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->type))
                 {
-
-                    templateTy->canApplyTemplate({Types::DYN_INT});
-                    templateTy->canApplyTemplate({Types::DYN_BOOL});
-                    templateTy->canApplyTemplate({Types::DYN_STR});
-
-                    std::cout << "# Reg. " << templateTy->getRegisteredTemplates().size() << std::endl; 
-                    std::cout << "175 " << lambda->getType() << std::endl;
-
-                    std::cout << templateTy->getTemplateInfo().value().templates.size() << std::endl; 
                     TDefineTemplateNode * templateNode = new TDefineTemplateNode(
                         templateTy, 
                         lambda, 
