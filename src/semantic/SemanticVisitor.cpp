@@ -120,7 +120,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 // FIXME: REBIND THE SYMBOLS FOR GENERIC!!
             }
 
-            std::variant<TLambdaConstNode *, ErrorChain *> opt = visitCtx(fnCtx);
+            std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(fnCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
@@ -128,35 +128,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 return *e;
             }
 
-            TLambdaConstNode * lambda = std::get<TLambdaConstNode *>(opt);
-
-            if(!fnCtx->genericTemplate())
-                defs.push_back(lambda);
-            else 
-            {
-                std::optional<Symbol *> opt = symBindings->getBinding(e);
-
-                if(!opt)
-                {
-                    return errorHandler.addCompilerError(ctx->getStart(), "Failed to find symbol for template.");
-                }
-
-                Symbol * sym = opt.value(); 
-
-                if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->type))
-                {
-                    TDefineTemplateNode * templateNode = new TDefineTemplateNode(
-                        templateTy, 
-                        lambda, 
-                        ctx->getStart()
-                    );
-
-                    defs.push_back(templateNode);
-                    continue; 
-                }
-                
-                return errorHandler.addCompilerError(ctx->getStart(), "Got wrong type for template symbol: " + sym->type->toString(toStringMode));
-            }
+            defs.push_back(std::get<DefinitionNode *>(opt));
         }
     }
 
@@ -331,7 +303,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     return (TInvocationNode *)tn;
 }
 
-std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
+std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
     std::variant<Symbol *, ErrorChain *> funcSymOpt = defineAndGetSymbolFor(ctx);
 
@@ -362,7 +334,29 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     }();
 
     lam->setName(funcSym->getIdentifier()); // Not really needed.
-    return lam;
+
+
+    /*
+     *  Check if this is a template or not, and handle it accordingly
+     */
+
+    // FIXME: refactor this kind of thing across all of the typedefs
+    if(!ctx->genericTemplate())
+        return lam; 
+
+
+    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(funcSym->type))
+    {
+        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
+            templateTy, 
+            lam, 
+            ctx->getStart()
+        );
+
+        return templateNode; 
+    }
+    
+    return errorHandler.addCompilerError(ctx->getStart(), "Got wrong type for template symbol: " + funcSym->type->toString(toStringMode));
 }
 
 std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitProductContext *ctx)

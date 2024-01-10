@@ -142,8 +142,8 @@ public:
 
     std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitCtx(ctx)); }
 
-    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::DefineFunctionContext *ctx);
-    std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx)); }
+    std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineFunctionContext *ctx);
+    std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<TSelectStatementNode *, ErrorChain *> visitCtx(BismuthParser::SelectStatementContext *ctx);
     std::any visitSelectStatement(BismuthParser::SelectStatementContext *ctx) override { return TNVariantCast<TSelectStatementNode>(visitCtx(ctx)); }
