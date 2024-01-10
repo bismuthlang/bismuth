@@ -260,6 +260,9 @@ public:
     std::variant<const TypeSum *, ErrorChain *>  visitCtx(BismuthParser::SumTypeContext *ctx);
     std::any visitSumType(BismuthParser::SumTypeContext *ctx) override { return TypeVariantCast<TypeSum>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
+    std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::TemplatedTypeContext * ctx);
+    std::any visitTemplatedType(BismuthParser::TemplatedTypeContext * ctx) override { return visitCtx(ctx); }
+
     /*
      *  Protocols
      */

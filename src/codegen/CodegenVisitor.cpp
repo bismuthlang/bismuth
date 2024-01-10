@@ -19,23 +19,23 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
      ***********************************/
     for (auto e : n->defs)
     {
-        if (std::holds_alternative<TProgramDefNode *>(e))
+        if (TProgramDefNode * octx = dynamic_cast<TProgramDefNode *>(e))
         {
-            TProgramDefNode *octx = std::get<TProgramDefNode *>(e);
-
             const TypeProgram *type = octx->getType();
 
-            Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->name, module);
+            Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->getName(), module);
             type->setName(fn->getName().str());
         }
-        else if (std::holds_alternative<TLambdaConstNode *>(e))
+        else if (TLambdaConstNode *octx = dynamic_cast<TLambdaConstNode *>(e))
         {
-            TLambdaConstNode *octx = std::get<TLambdaConstNode *>(e);
-
             const TypeFunc *type = octx->getType();
 
-            Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->name, module);
+            Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, octx->getName(), module);
             type->setName(fn->getName().str());
+        }
+        else if (TDefineTemplateNode *octx = dynamic_cast<TDefineTemplateNode *>(e))
+        {
+            // FIXME: forward decl!
         }
     }
 
@@ -47,19 +47,16 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
     for (auto e : n->defs)
     {
         // Generate code for statement
-        if (std::holds_alternative<TProgramDefNode *>(e))
+        if (TProgramDefNode * a = dynamic_cast<TProgramDefNode *>(e))
         {
-            TProgramDefNode *a = std::get<TProgramDefNode *>(e);
             AcceptType(this, a);
         }
-        else if (std::holds_alternative<TLambdaConstNode *>(e))
+        else if (TLambdaConstNode *a = dynamic_cast<TLambdaConstNode *>(e))
         {
-            TLambdaConstNode *a = std::get<TLambdaConstNode *>(e);
             AcceptType(this, a);
         }
-        else if(std::holds_alternative<TDefineTemplateNode *>(e))
+        else if (TDefineTemplateNode *a = dynamic_cast<TDefineTemplateNode *>(e))
         {
-            TDefineTemplateNode * a = std::get<TDefineTemplateNode *>(e); 
             AcceptType(this, a);
         }
     }
@@ -2045,9 +2042,10 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
     const TypeFunc *type = n->getType();
 std::cout << "2046" << std::endl;
 std::cout << "2046a " << type->toString(getToStringMode()) << std::endl;
+std::cout << "2046b " << n->getName() << std::endl; 
     llvm::FunctionType *fnType = type->getLLVMFunctionType(module);
 std::cout << "2049" << std::endl;
-    Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
+    Function *fn = type->getLLVMName() ? module->getFunction(type->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->getName(), module);
     type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED
 std::cout << "2052" << std::endl;
     std::vector<Symbol *> paramList = n->paramSymbols;
@@ -2117,7 +2115,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
 
     llvm::FunctionType *fnType = prog->getLLVMFunctionType(module);
 
-    Function *fn = prog->getLLVMName() ? module->getFunction(prog->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->name, module);
+    Function *fn = prog->getLLVMName() ? module->getFunction(prog->getLLVMName().value()) : Function::Create(fnType, GlobalValue::PrivateLinkage, n->getName(), module);
     prog->setName(fn->getName().str());
 
     // Create basic block
@@ -2157,18 +2155,37 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
     // FIXME: ENABLE TEMPLATE GENERATION!
     // FIXME: BAD OPT ACCESS
     auto info = n->getType()->getTemplateInfo().value(); 
+
+    std::string origName = n->getTemplatedNodes()->getName(); 
+    const Type * origType = n->getTemplatedNodes()->getType();
+
     for(auto t : n->getType()->getRegisteredTemplates())
     {
+        std::string customName = "<";
         // FIXME: CHECK BOUNDS ARE SAME FOR BOTH?
+        unsigned int i = 0; 
+        
         for(unsigned int i = 0; i < info.templates.size(); i++)
         {
-            info.templates.at(i).second->actingType = t.at(i); 
+            info.templates.at(i).second->actingType = t.first.at(i); 
+
+            if(i != 0) customName += ", ";
+
+            customName += t.first.at(i)->toString(DisplayMode::C_STYLE); 
+
         }
         
+        std::cout << "2178 " << t.second->toString(DisplayMode::C_STYLE) << std::endl; 
+        n->getTemplatedNodes()->setName(origName + customName + ">");
+        std::cout << "2179 " << n->getTemplatedNodes()->updateType(t.second) << std::endl; // FIXME: CHECK THIS IS TRUE!!
+
         std::cout << "2161" << std::endl; 
-        // substutute each 
+        // substitute each 
         AcceptType(this, n->getTemplatedNodes());
     }
+
+    n->getTemplatedNodes()->setName(origName);
+    // n->getTemplatedNodes()->updateType(origType);
 
     return std::nullopt; 
 }

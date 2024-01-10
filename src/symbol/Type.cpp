@@ -709,10 +709,15 @@ const Type * TypeFunc::getCopySubst(std::map<const Type *, const Type *> existin
 
     existing.insert({this, ans});
 
+    // TODO: use ->define() func!
     for(auto ty : this->paramTypes)
         ans->paramTypes.push_back(
             ty->getCopySubst(existing)
         );
+
+    ans->retType = retType->getCopySubst(existing);
+
+    ans->defined = true; 
 
     return ans; 
 }
@@ -1137,39 +1142,42 @@ const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> exist
 std::optional<const Type*> TypeTemplate::getValueType() const { return valueType; }
 
 std::optional<const Type*> TypeTemplate::canApplyTemplate(std::vector<const Type *> subs) const {
+
+    auto it = registeredTemplates.find(subs);
+
+    if(it != registeredTemplates.end())
+        return it->second; 
+
     if(!this->getTemplateInfo()) // || this->getTemplateInfo().value().templates.size() == 0)
     {
-        std::cout << "1142" << std::endl; 
+        
         if(subs.size() != 0)
             return std::nullopt; // Cannot apply template to untemplated type
-std::cout << "1145" << std::endl; 
+
         return this->getValueType(); // TODO: will need to change the name of the type... 
     }
-std::cout << "1148" << std::endl; 
+
     std::vector<std::pair<std::string, TypeGeneric *>> ids = this->getTemplateInfo().value().templates;
-std::cout << "1150" << std::endl; 
+
     if(ids.size() != subs.size())
     {
-        std::cout << "1150" << std::endl; 
         return std::nullopt; // Wrong number of template params
     }
-std::cout << "1156" << std::endl; 
+
     std::map<const Type *, const Type *> subst; 
-std::cout << "1158" << std::endl; 
     // May have to change later when we get in session types!
     for(unsigned int i = 0; i < ids.size(); i++)
     {
         subst.insert({ids.at(i).second, subs.at(i)});
     } 
-std::cout << "1159" << std::endl; 
+
+    std::cout << "1169 ----- " << valueType->toString(DisplayMode::C_STYLE) << std::endl; 
     const Type * ans = valueType->getCopySubst(subst);
+    std::cout << "1171 ----- " << ans->toString(DisplayMode::C_STYLE) << std::endl; 
 
-std::cout << "REGISTERED!" << std::endl; 
-    registeredTemplates.insert(subs); // FIXME: track previously generated getCopySubst and return those if able
+    registeredTemplates.insert({subs, ans}); 
 
-    // FIXME: THIS DOESNT ACTUALLY APPLY THE TEMPLATE!!
-
-    return ans;//this->getValueType(); 
+    return ans;
 }
 
 std::string TypeTemplate::toString(DisplayMode mode) const 

@@ -119,7 +119,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     }
 
     // Visit the statements contained in the unit
-    std::vector<DefinitionNode> defs;
+    std::vector<DefinitionNode *> defs;
     for (auto e : ctx->defs)
     {
         if (BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
@@ -391,7 +391,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->type));
     }();
 
-    lam->name = funcSym->getIdentifier(); // Not really needed.
+    lam->setName(funcSym->getIdentifier()); // Not really needed.
     return lam;
 }
 
@@ -1900,6 +1900,46 @@ SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
     }
 
     return new TypeSum(cases);
+}
+
+std::variant<const Type *, ErrorChain *>
+SemanticVisitor::visitCtx(BismuthParser::TemplatedTypeContext *ctx)
+{
+    std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
+    {
+        (*e)->addError(ctx->getStart(), "Failed to generate case type");
+        return *e;
+    }
+
+    const Type * main = std::get<const Type *>(caseTypeOpt);
+
+    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(main))
+    {
+        std::vector<const Type *> innerTys; 
+
+        for(auto a : ctx->subst)
+        {
+            std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, a->accept(this));
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
+            {
+                (*e)->addError(a->getStart(), "Failed to generate type in template application");
+                return *e;
+            }
+
+            const Type * sub = std::get<const Type *>(caseTypeOpt);
+            innerTys.push_back(sub); 
+        }
+
+        std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
+        if(!appliedOpt)
+            return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
+        return appliedOpt.value(); 
+    }
+
+    return errorHandler.addError(ctx->getStart(), "Expected a template type but got: " + main->toString(toStringMode));
 }
 
 std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)

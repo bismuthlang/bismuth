@@ -43,6 +43,24 @@ public:
 
     antlr4::Token *getStart() { return token; }
 };
+
+class DefinitionNode : public TypedNode 
+{
+private: 
+    std::string name; 
+    // std::optional<std::string> llvmName;
+
+public: 
+    virtual ~DefinitionNode() = default; 
+    DefinitionNode(std::string n, antlr4::Token *tok) : TypedNode(tok), name(n) {}
+
+    // std::optional<std::string> getLLVMName() { return llvmName; }
+    std::string getName() { return name; }
+    void setName(std::string n ) { name = n; } //llvmName = std::nullopt; }
+
+    virtual bool updateType(const Type * nxt) = 0; 
+};
+
 // From C++ Documentation for visitors
 template <class... Ts>
 struct overloaded : Ts...
@@ -311,25 +329,22 @@ public:
 
 typedef vector<ParameterNode> ParameterListNode;
 
-class TLambdaConstNode : public TypedNode
+class TLambdaConstNode : public DefinitionNode
 {
     // private:
 
 public:
-    string name;
     vector<Symbol *> paramSymbols;
     const Type *retType;
     TBlockNode *block;
-    TypeFunc *type;
+    const TypeFunc *type;
 
-    TLambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, TBlockNode *b, string n = "LAM") : TypedNode(tok)
+    TLambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, TBlockNode *b, string n = "LAM") : DefinitionNode(n, tok)
     {
         // paramList = p;
         paramSymbols = p;
         retType = r;
         block = b;
-
-        name = n;
 
         vector<const Type *> paramTypes;
 
@@ -351,22 +366,30 @@ public:
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    // FIXME: do better, this is just for templates to work
+    bool updateType(const Type * nxt) override {
+        if(const TypeFunc * fn = dynamic_cast<const TypeFunc *>(nxt))
+        {
+            type = fn; 
+            return true; 
+        }
+        return false; 
+    }
 };
 
-class TProgramDefNode : public TypedNode
+class TProgramDefNode : public DefinitionNode
 {
 private:
     const TypeProgram *type;
 
 public:
-    string name;
     Symbol *channelSymbol;
     // TypeChannel * channelType;
     TBlockNode *block;
 
-    TProgramDefNode(string n, Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : TypedNode(tok)
+    TProgramDefNode(string n, Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : DefinitionNode(n, tok)
     {
-        name = n;
         channelSymbol = cn;
         // channelType = ct;
         block = b;
@@ -384,6 +407,15 @@ public:
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    bool updateType(const Type * nxt) override {
+        if(const TypeProgram * fn = dynamic_cast<const TypeProgram *>(nxt))
+        {
+            type = fn; 
+            return true; 
+        }
+        return false; 
+    }
 };
 
 class TConditionalStatementNode : public TypedNode
@@ -666,16 +698,13 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class TDefineEnumNode : public TypedNode
+class TDefineEnumNode : public DefinitionNode
 {
 public:
-    string name;
     const TypeSum *sum;
 
-    TDefineEnumNode(string n, const TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
+    TDefineEnumNode(string n, const TypeSum *s, antlr4::Token *tok) : DefinitionNode(n, tok)
     {
-        name = n;
-        // cases = c;
         sum = s;
     }
 
@@ -686,39 +715,50 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    bool updateType(const Type * nxt) override {
+        if(const TypeSum * fn = dynamic_cast<const TypeSum *>(nxt))
+        {
+            sum = fn; 
+            return true; 
+        }
+        return false; 
+    }
 };
 
 
-class TDefineTemplateNode : public TypedNode // FIXME: ADD TO VISITORS AND SUCH
+class TDefineTemplateNode : public DefinitionNode // FIXME: ADD TO VISITORS AND SUCH
 {
 private: 
     const TypeTemplate * type; // Used to figure out what versions we need to generate
-    TypedNode * templatedNodes; 
+    DefinitionNode * templatedNodes; 
 
     // TODO track templated names generated?
 
 public:
-    TDefineTemplateNode(const TypeTemplate * t, TypedNode * n, antlr4::Token *tok) : TypedNode(tok), type(t), templatedNodes(n)
+    TDefineTemplateNode(const TypeTemplate * t, DefinitionNode * n, antlr4::Token *tok) : DefinitionNode(t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
     {}
 
     std::string toString() const override { return "DEF TEMPLATE NODE"; }
 
     const TypeTemplate * getType() override { return type; }
-    TypedNode * getTemplatedNodes() { return templatedNodes; }
+    DefinitionNode * getTemplatedNodes() { return templatedNodes; }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    bool updateType(const Type * nxt) override {
+        // FIXME: DO BETTER!
+        return false; 
+    }
 };
 
-class TDefineStructNode : public TypedNode
+class TDefineStructNode : public DefinitionNode
 {
 public:
-    string name;
     const TypeStruct *product;
 
-    TDefineStructNode(string n, const TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
+    TDefineStructNode(string n, const TypeStruct *p, antlr4::Token *tok) : DefinitionNode(n, tok)
     {
-        name = n;
-        // cases = c;
         product = p;
     }
 
@@ -730,6 +770,15 @@ public:
 
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+
+    bool updateType(const Type * nxt) override {
+        if(const TypeStruct * fn = dynamic_cast<const TypeStruct *>(nxt))
+        {
+            product = fn; 
+            return true; 
+        }
+        return false; 
+    }
 };
 
 class TInitProductNode : public TypedNode
@@ -1344,15 +1393,14 @@ public:
 
 /////////////////////
 
-typedef variant<TDefineEnumNode *, TDefineStructNode *, TProgramDefNode *, TLambdaConstNode *, TDefineTemplateNode *> DefinitionNode;
 
 class TCompilationUnitNode
 {
 public:
     vector<TExternNode *> externs;
-    vector<DefinitionNode> defs;
+    vector<DefinitionNode *> defs;
 
-    TCompilationUnitNode(vector<TExternNode *> e, vector<DefinitionNode> d)
+    TCompilationUnitNode(vector<TExternNode *> e, vector<DefinitionNode *> d)
     {
         externs = e;
         defs = d;

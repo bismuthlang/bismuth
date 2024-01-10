@@ -1109,7 +1109,7 @@ class TypeTemplate : public Type, public TemplateableType
 private:
     const Type * valueType;
 
-    mutable std::set<std::vector<const Type *>> registeredTemplates = {};
+    mutable std::map<std::vector<const Type *>, const Type *> registeredTemplates = {};
 
     bool defined = false; 
 
@@ -1159,7 +1159,7 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
-    const std::set<std::vector<const Type *>> getRegisteredTemplates() const { return registeredTemplates; }
+    const std::map<std::vector<const Type *>, const Type *> getRegisteredTemplates() const { return registeredTemplates; }
 
 protected:
     /**
