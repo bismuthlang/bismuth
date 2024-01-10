@@ -1936,64 +1936,21 @@ SemanticVisitor::visitCtx(BismuthParser::TemplatedTypeContext *ctx)
 std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
 {
     // FIXME: do we need type_cast?
-    std::string id = ctx->name->getText();
+    std::variant<Symbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
 
-    std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-    if (!opt && stmgr->isBound(id))
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
     {
-        return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
+        return *e;
     }
 
-    Symbol *sym = opt.value_or(
-        new Symbol(id, new TypeSum(id), true, true));
+    Symbol *sym = std::get<Symbol *>(symOpt);
+    stmgr->addSymbol(sym);
 
-    std::optional<const TypeSum *> sumTyOpt = type_cast<TypeSum>(sym->type);
-    if (sumTyOpt)
-    {
-        const TypeSum *sumTy = sumTyOpt.value();
-        if (!sumTy->isDefined())
-        {
-            std::set<const Type *, TypeCompare> cases = {};
-
-            for (auto e : ctx->cases)
-            {
-                std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, e->accept(this));
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
-                {
-                    (*e)->addError(ctx->getStart(), "Failed to generate case type");
-                    return *e;
-                }
-
-                const Type *caseType = std::get<const Type *>(caseTypeOpt);
-
-                if (caseType->isLinear())
-                {
-                    return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString(toStringMode) + ", in non-linear container");
-                }
-
-                cases.insert(caseType);
-            }
-
-            if (cases.size() != ctx->cases.size())
-            {
-                return errorHandler.addError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
-            }
-
-            sumTy->define(cases);
-
-
-
-
-
-
-
-            stmgr->addSymbol(sym);
-        }
-        return new TDefineEnumNode(id, sumTy, ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Expected enum/sum, but got: " + sym->type->toString(toStringMode));
+    // FIXME: Check dynamic cast? should be ok, but maybe not in case of template?
+    return new TDefineEnumNode(
+        sym->getIdentifier(), 
+        dynamic_cast<const TypeSum *>(sym->type), 
+        ctx->getStart());
 }
 
 std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
