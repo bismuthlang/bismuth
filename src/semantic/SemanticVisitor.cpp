@@ -3260,43 +3260,42 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
 
     // Essentially a type-case
-    if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
-    {
-        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+    return defineTypeCase<std::variant<Symbol *, ErrorChain *>>(ctx, 
+        [this, defineTemplate, defineFunction](BismuthParser::DefineFunctionContext * fnCtx) -> std::variant<Symbol *, ErrorChain *> {
+            std::optional<Symbol *> opt = symBindings->getBinding(fnCtx);
 
-        if (!opt && stmgr->lookupInCurrentScope(fnCtx->name->getText()))
-        {
-            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + fnCtx->name->getText());
-        }
-        bool isTemplate = fnCtx->genericTemplate(); 
-
-        if(isTemplate)
-        {
-            Symbol *sym = opt.value_or(
-                new Symbol(
-                    fnCtx->name->getText(), 
-                    new TypeTemplate(),
-                    true, false));
-
-            if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->type))
+            if (!opt && stmgr->lookupInCurrentScope(fnCtx->name->getText()))
             {
-                std::optional<ErrorChain *> optErr = defineTemplate(fnCtx, templateTy);
-
-                if(optErr) return optErr.value();
-  
-                // FIXME: UNSAFE OPTIONAL? 
-                if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
-                {
-                    return sym;
-                }
-                // TOOD: print templateTy->getValueType().value()? 
-                return errorHandler.addError(ctx->getStart(), "Expected function but got: " + sym->type->toString(toStringMode));
+                return errorHandler.addError(fnCtx->getStart(), "Unsupported redeclaration of " + fnCtx->name->getText());
             }
+            bool isTemplate = fnCtx->genericTemplate(); 
 
-            return errorHandler.addError(ctx->getStart(), "Expected template but got: " + sym->type->toString(toStringMode));
-        }
-        else
-        {
+            if(isTemplate)
+            {
+                Symbol *sym = opt.value_or(
+                    new Symbol(
+                        fnCtx->name->getText(), 
+                        new TypeTemplate(),
+                        true, false));
+
+                if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->type))
+                {
+                    std::optional<ErrorChain *> optErr = defineTemplate(fnCtx, templateTy);
+
+                    if(optErr) return optErr.value();
+    
+                    // FIXME: UNSAFE OPTIONAL? 
+                    if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
+                    {
+                        return sym;
+                    }
+                    // TODO: print templateTy->getValueType().value()? 
+                    return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym->type->toString(toStringMode));
+                }
+
+                return errorHandler.addError(fnCtx->getStart(), "Expected template but got: " + sym->type->toString(toStringMode));
+            }
+            
             Symbol *sym = opt.value_or(
                 new Symbol(
                     fnCtx->name->getText(), 
@@ -3311,56 +3310,59 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
                 return sym;
             }
 
-            return errorHandler.addError(ctx->getStart(), "Expected function but got: " + sym->type->toString(toStringMode));
+            return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym->type->toString(toStringMode));       
+        },
+
+        [this, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
+            std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+
+            if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+            {
+                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+            }
+
+            Symbol *sym = opt.value_or(
+                new Symbol(
+                    ctx->name->getText(), 
+                    new TypeProgram(),
+                    true, false));
+
+            if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->type))
+            {
+                std::optional<ErrorChain *> optErr = defineProgram(ctx, progType);
+
+                if(optErr) return optErr.value();
+                return sym;
+            }
+
+            return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString(toStringMode));
+        },
+
+        [this](BismuthParser::DefineStructContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
+            std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+
+            if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+            {
+                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+            }
+
+            return errorHandler.addCompilerError(ctx->getStart(), "FIXME: unimplemented!");
+        },
+
+        [this](BismuthParser::DefineEnumContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
+            std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+
+            if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+            {
+                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+            }
+
+            return errorHandler.addCompilerError(ctx->getStart(), "FIXME: unimplemented!");
+        },
+
+        [this](BismuthParser::DefineTypeContext * ctx) -> std::variant<Symbol *, ErrorChain *>{
+            return errorHandler.addCompilerError(ctx->getStart(), "Failed to generate the type for a definition; Unknown and unimplemented case for define type.");
         }
 
-        
-    }
-    else if(BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(ctx))
-    {
-        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-
-        if (!opt && stmgr->lookupInCurrentScope(progCtx->name->getText()))
-        {
-            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + progCtx->name->getText());
-        }
-
-        Symbol *sym = opt.value_or(
-            new Symbol(
-                progCtx->name->getText(), 
-                new TypeProgram(),
-                true, false));
-
-        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->type))
-        {
-            std::optional<ErrorChain *> optErr = defineProgram(progCtx, progType);
-
-            if(optErr) return optErr.value();
-            return sym;
-        }
-
-        return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString(toStringMode));
-    }
-    else if(BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(ctx))
-    {
-        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-
-        if (!opt && stmgr->lookupInCurrentScope(structCtx->name->getText()))
-        {
-            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + structCtx->name->getText());
-        }
-    }
-    else if(BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(ctx))
-    {
-        std::optional<Symbol *> opt = symBindings->getBinding(ctx);
-
-        if (!opt && stmgr->lookupInCurrentScope(enumCtx->name->getText()))
-        {
-            return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + enumCtx->name->getText());
-        }
-    }
-    // else
-    // {
-        return errorHandler.addCompilerError(ctx->getStart(), "Failed to generate the type for a definition; Unknown and unimplemented case for define type.");
-    // }
+    );
 }
