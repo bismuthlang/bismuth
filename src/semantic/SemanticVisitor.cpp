@@ -1935,6 +1935,7 @@ SemanticVisitor::visitCtx(BismuthParser::TemplatedTypeContext *ctx)
 
 std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
 {
+    // FIXME: do we need type_cast?
     std::string id = ctx->name->getText();
 
     std::optional<Symbol *> opt = symBindings->getBinding(ctx);
@@ -1997,68 +1998,21 @@ std::variant<TDefineEnumNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
 std::variant<TDefineStructNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
 {
-    std::string id = ctx->name->getText();
-    std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+    std::variant<Symbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
 
-    if (!opt && stmgr->isBound(id))
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
     {
-        return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
+        return *e;
     }
 
-    Symbol *sym = opt.value_or(
-        new Symbol(id, new TypeStruct(id), true, true));
+    Symbol *sym = std::get<Symbol *>(symOpt);
+    stmgr->addSymbol(sym);
 
-    std::optional<const TypeStruct *> structTypeOpt = type_cast<TypeStruct>(sym->type);
-    if (structTypeOpt)
-    {
-        const TypeStruct *structType = structTypeOpt.value();
-        if (!structType->isDefined())
-        {
-            LinkedMap<std::string, const Type *> el;
-
-            for (BismuthParser::StructCaseContext *caseCtx : ctx->cases)
-            {
-                std::string caseName = caseCtx->name->getText();
-                if (el.lookup(caseName))
-                {
-                    return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
-                }
-
-                std::variant<const Type *, ErrorChain *> caseTyOpt = anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this));
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTyOpt))
-                {
-                    (*e)->addError(ctx->getStart(), "Failed to generate case type");
-                    return *e;
-                }
-
-                const Type *caseTy = std::get<const Type *>(caseTyOpt);
-
-                if (caseTy->isLinear())
-                {
-                    return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString(toStringMode) + ", in non-linear container");
-                }
-
-                el.insert({caseName, caseTy});
-            }
-            structType->define(el);
-
-
-
-
-
-
-
-
-
-
-
-            stmgr->addSymbol(sym);
-        }
-        return new TDefineStructNode(id, structType, ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Expected struct/product, but got: " + sym->type->toString(toStringMode));
+    // FIXME: Check dynamic cast? should be ok, but maybe not in case of template?
+    return new TDefineStructNode(
+        sym->getIdentifier(), 
+        dynamic_cast<const TypeStruct *>(sym->type), 
+        ctx->getStart());
 }
 
 std::variant<const Type *, ErrorChain *>
@@ -3232,6 +3186,7 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
             templateTy->define(info, funcTy);
 
+            // FIXME: UNUSED!
             Symbol *sym = new Symbol(
                 fnCtx->name->getText(), 
                 templateTy,
@@ -3338,7 +3293,7 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
             return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->type->toString(toStringMode));
         },
 
-        [this](BismuthParser::DefineStructContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
+        [this, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
             std::optional<Symbol *> opt = symBindings->getBinding(ctx);
 
             if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
@@ -3346,10 +3301,22 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
             }
 
-            return errorHandler.addCompilerError(ctx->getStart(), "FIXME: unimplemented!");
+            std::string name = ctx->name->getText(); 
+
+            Symbol *sym = opt.value_or(new Symbol(name, new TypeStruct(name), true, true)); // FIXME: WHY ARE OTHERS true, false? when this is true, true
+
+            if(const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym->type))
+            {
+                std::optional<ErrorChain *> errOpt = defineStruct(ctx, structTy);
+
+                if(errOpt) return errOpt.value(); 
+                return sym; 
+            }
+
+            return errorHandler.addError(ctx->getStart(), "Expected struct/product but got: " + sym->type->toString(toStringMode));
         },
 
-        [this](BismuthParser::DefineEnumContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
+        [this, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
             std::optional<Symbol *> opt = symBindings->getBinding(ctx);
 
             if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
@@ -3357,7 +3324,20 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
             }
 
-            return errorHandler.addCompilerError(ctx->getStart(), "FIXME: unimplemented!");
+            std::string name = ctx->name->getText(); 
+
+            Symbol *sym = opt.value_or(new Symbol(name, new TypeSum(name), true, true)); // FIXME: WHY ARE OTHERS true, false? when this is true, true
+
+            if(const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym->type))
+            {
+                std::optional<ErrorChain *> errOpt = defineEnum(ctx, sumTy);
+
+                if(errOpt) return errOpt.value(); 
+                return sym; 
+            }
+
+            // return errorHandler.addCompilerError(ctx->getStart(), "FIXME: unimplemented!");
+            return errorHandler.addError(ctx->getStart(), "Expected enum/sum but got: " + sym->type->toString(toStringMode));
         },
 
         [this](BismuthParser::DefineTypeContext * ctx) -> std::variant<Symbol *, ErrorChain *>{
