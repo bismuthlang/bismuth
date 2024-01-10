@@ -3221,12 +3221,10 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
 
     auto defineTemplate = [this, defineFunction](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy) -> std::optional<ErrorChain *> {
-        std::cout << "3212" << std::endl;
         if (templateTy->isDefined()) return std::nullopt; 
-std::cout << "3213" << std::endl;
+
         if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
         {
-            std::cout << "3216" << std::endl;
             // TODO: get errors from this?
             TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
 
@@ -3234,14 +3232,12 @@ std::cout << "3213" << std::endl;
 
             templateTy->define(info, funcTy);
 
-std::cout << "3221" << std::endl;
             Symbol *sym = new Symbol(
                 fnCtx->name->getText(), 
                 templateTy,
                 true, 
                 false);
 
-std::cout << "3228" << std::endl;
             std::vector<Symbol *> templateSyms; 
             // FIXME: verify these bindings all go through
             for(auto i : info.templates)
@@ -3250,14 +3246,11 @@ std::cout << "3228" << std::endl;
                 stmgr->addSymbol(templateSym);
                 templateSyms.push_back(templateSym);
             }
-std::cout << "3237" << std::endl;
 
             std::optional<ErrorChain *> ans = defineFunction(fnCtx, funcTy);
-std::cout << "3240" << std::endl;
             
             // for(auto templateSym : templateSyms)
             //     stmgr->removeSymbol(templateSym);
-std::cout << "3244" << std::endl;
             return ans; 
         }
 
@@ -3269,14 +3262,12 @@ std::cout << "3244" << std::endl;
     // Essentially a type-case
     if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
     {
-        std::cout << "3255" << std::endl;
         std::optional<Symbol *> opt = symBindings->getBinding(ctx);
 
         if (!opt && stmgr->lookupInCurrentScope(fnCtx->name->getText()))
         {
             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + fnCtx->name->getText());
         }
-std::cout << "3262" << std::endl;
         bool isTemplate = fnCtx->genericTemplate(); 
 
         if(isTemplate)
@@ -3286,28 +3277,23 @@ std::cout << "3262" << std::endl;
                     fnCtx->name->getText(), 
                     new TypeTemplate(),
                     true, false));
-std::cout << "3272" << std::endl;
 
-std::cout << "3273 " << sym->getIdentifier()  << " " << (new TypeTemplate())->toString(toStringMode) << std::endl;
             if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->type))
             {
                 std::optional<ErrorChain *> optErr = defineTemplate(fnCtx, templateTy);
 
                 if(optErr) return optErr.value();
-
-            std::cout << "3279" << std::endl;    
+  
                 // FIXME: UNSAFE OPTIONAL? 
                 if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
                 {
                     return sym;
                 }
-std::cout << "3285" << std::endl;
                 // TOOD: print templateTy->getValueType().value()? 
                 return errorHandler.addError(ctx->getStart(), "Expected function but got: " + sym->type->toString(toStringMode));
             }
-std::cout << "3293" << std::endl;
-            return errorHandler.addError(ctx->getStart(), "Expected template but got: " + sym->type->toString(toStringMode));
 
+            return errorHandler.addError(ctx->getStart(), "Expected template but got: " + sym->type->toString(toStringMode));
         }
         else
         {
