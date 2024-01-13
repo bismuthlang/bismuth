@@ -7,10 +7,10 @@
 //     GLOBAL
 // };
 
-Scope &Context::enterScope(bool insertStop)
+Scope &Context::enterScope(bool insertStop, std::function<std::string()> n)
 {
     // This is safe because we use optionals
-    Scope *next = new Scope(this->currentScope);
+    Scope *next = new Scope(this->currentScope, n);
     next->setId(this->scopeNumber++);
 
     this->currentScope = std::optional<Scope *>{next};
@@ -44,24 +44,47 @@ std::optional<Scope *> Context::exitScope()
     return std::optional<Scope *>{last};
 }
 
-bool Context::addSymbol(Symbol *symbol)
+std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool d, bool glob)
 {
-    if (!currentScope)
-    {
-        return false;
+    // Check that the exact same identifier doesn't already exist in the current scope
+    if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
+
+    // Find a unique name for the symbol within the current stop
+    // TODO: do this more efficiency! (Also note this may break if multiple contexts!!!)
+    uint32_t idNum = 0; 
+    std::string uniqName = id; 
+
+    while(this->lookup(uniqName)) {
+        std::ostringstream nxtName;
+        nxtName << id << "." << idNum; // TODO: do better name mangling, make it an interface---one of which follows C spec
+    
+        uniqName = nxtName.str(); 
     }
 
-    Scope *current = currentScope.value();
+    // Note: this is safe as we previously check that currentScope exists
+    return currentScope.value()->addSymbol(new Symbol(id, t, d, glob, uniqName, currentScope.value()));
+}
 
-    // Check to see if it exists
-    std::string id = symbol->identifier;
-    if (current->lookup(id))
-    {
-        // Change if you want to throw an exception
-        // return std::nullopt;
-        return false;
+std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const Type * t, bool d)
+{
+    std::string id = "#" + wantedId; // TODO: Better symbol to indicate anon. @ reserved for compiler internals
+    // Check that the exact same identifier doesn't already exist in the current scope
+    if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
+
+    // Find a unique name for the symbol within the current stop
+    // TODO: do this more efficiency! (Also note this may break if multiple contexts!!!)
+    uint32_t idNum = 0; 
+
+    while(this->lookup(id)) {
+        std::ostringstream nxtName;
+        nxtName << id << "." << idNum; // TODO: do better name mangling, make it an interface---one of which follows C spec
+    
+        id = nxtName.str(); 
     }
-    return current->addSymbol(symbol);
+
+    // Note: this is safe as we previously check that currentScope exists
+    // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
+    return currentScope.value()->addSymbol(new Symbol(id, t, d, false, id, currentScope.value()));
 }
 
 bool Context::removeSymbol(Symbol *symbol)
@@ -105,7 +128,7 @@ std::optional<Symbol *> Context::lookup(std::string id)
         std::optional<Symbol *> sym = scope->lookup(id);
         if (sym)
         {
-            if (depth >= stop || sym.value()->isDefinition || sym.value()->isGlobal)
+            if (depth >= stop || sym.value()->isDefinition() || sym.value()->isGlobal())
                 return sym;
             return std::nullopt;
         }

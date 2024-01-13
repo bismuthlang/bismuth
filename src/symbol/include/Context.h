@@ -24,11 +24,11 @@ class Context {
      * 
      * @return Scope& the scope we entered
      */
-    Scope& enterScope() {
-      return enterScope(false);
+    Scope& enterScope(std::function<std::string()> n) {
+      return enterScope(false, n);
     };
 
-    Scope& enterScope(bool insertStop);
+    Scope& enterScope(bool insertStop, std::function<std::string()> n);
     
     /**
      * @brief Exit the current scope and move up one level
@@ -44,7 +44,9 @@ class Context {
      * @return true if successful
      * @return false if unsuccessful (ie, name already bound to another symbol)
      */
-    bool addSymbol(Symbol* symbol);
+    std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool d, bool glob); // Symbol* symbol);
+
+    std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t, bool d); 
 
     /**
      * @brief Removes a symbol from the scope
@@ -121,14 +123,14 @@ class Context {
 
         if(!optParent)
         {
-          Scope * ans = new Scope({}, orig->copySymbols());
+          Scope * ans = new Scope({}, orig->copySymbols(), orig->nameGenerator); // FIXME SWITCH TO COPY CONSTRUCTOR!
           ans->setId(orig->getId());
           copies.insert({orig, ans});
           newScopes.push_back(ans); 
         }
         else if(copies.find(optParent.value()) != copies.end())
         {
-          Scope * ans = new Scope(copies[optParent.value()], orig->copySymbols());
+          Scope * ans = new Scope(copies[optParent.value()], orig->copySymbols(), orig->nameGenerator);
           ans->setId(orig->getId());
           copies.insert({orig, ans});
           newScopes.push_back(ans); 

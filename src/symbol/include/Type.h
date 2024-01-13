@@ -663,7 +663,7 @@ public:
 
     bool requiresDeepCopy() const override;
 
-    std::optional<std::string> getLLVMName() const;
+    // std::optional<std::string> getLLVMName() const;
 
     bool setName(std::string n) const;
 
@@ -759,7 +759,7 @@ public:
 
     bool requiresDeepCopy() const override;
 
-    std::optional<std::string> getLLVMName() const;
+    // std::optional<std::string> getLLVMName() const;
 
     bool setName(std::string n) const;
 

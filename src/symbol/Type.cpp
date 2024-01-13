@@ -526,7 +526,7 @@ llvm::PointerType *TypeProgram::getLLVMType(llvm::Module *M) const
 
 bool TypeProgram::requiresDeepCopy() const { return false; }
 
-std::optional<std::string> TypeProgram::getLLVMName() const { return name; }
+// std::optional<std::string> TypeProgram::getLLVMName() const { return name; }
 
 bool TypeProgram::setName(std::string n) const
 {
@@ -651,7 +651,7 @@ llvm::PointerType *TypeFunc::getLLVMType(llvm::Module *M) const
 
 bool TypeFunc::requiresDeepCopy() const { return false; }
 
-std::optional<std::string> TypeFunc::getLLVMName() const { return name; }
+// std::optional<std::string> TypeFunc::getLLVMName() const { return name; }
 bool TypeFunc::setName(std::string n) const
 {
     if (name)

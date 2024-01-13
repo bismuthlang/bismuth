@@ -55,6 +55,43 @@ using llvm::Value;
 
 class CodegenVisitor : public CodegenModule, TypedASTVisitor
 {
+    // TODO: move all defs to cpp file and move everything here to the private section at the end of the file
+private:
+    // TODO: DO BETTER W/ A mangler
+    // std::string currentNamespacePath; 
+    std::map<std::string, llvm::AllocaInst *> allocations; 
+
+    std::string getCodegenID(Symbol * sym) {
+        if(!sym->isDefinition())
+            return sym->getUniqueNameInScope();
+
+        return sym->getUniqueNameInScope(); // TODO: needs to be done better!
+    }
+
+    // std::optional<llvm::AllocaInst *> getAllocation(std::string fullPathName) {
+    //     auto it = allocations.find(fullPathName); 
+    //     if(it == allocations.end()) return std::nullopt; 
+    //     return it->second; 
+    // } 
+
+    void setAllocation(Symbol * sym, llvm::AllocaInst * a)
+    {
+        allocations.insert({getCodegenID(sym), a});
+    }
+
+    std::optional<llvm::AllocaInst *> getAllocation(Symbol * sym) {
+        auto it = allocations.find(getCodegenID(sym)); 
+        if(it == allocations.end()) return std::nullopt; 
+        return it->second; 
+    }
+
+    llvm::AllocaInst * CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol * sym)
+    {
+        llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, getCodegenID(sym));
+        // sym->setAllocation(v);
+        setAllocation(sym, v); 
+        return v; 
+    }
 
 public:
     /**
@@ -132,51 +169,39 @@ public:
     std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
     {
         // Try getting the type for the symbol, raising an error if it could not be determined
-        llvm::Type *type = sym->type->getLLVMType(module);
+        llvm::Type *type = sym->getType()->getLLVMType(module);
         if (!type)
         {
-            errorHandler.addError(nullptr, "Unable to find type for variable: " + sym->getIdentifier());
+            errorHandler.addError(nullptr, "Unable to find type for variable: " + getCodegenID(sym));
             return std::nullopt;
         }
         
         // Make sure the variable has an allocation (or that we can find it due to it being a global var)
-        std::optional<llvm::AllocaInst *> optVal = sym->getAllocation();
+        std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
         if (!optVal)
         {
             // If the symbol is a global var
-            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->type))
+            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->getType()))
             {
-                if (!inv->getLLVMName())
-                {
-                    errorHandler.addError(nullptr, "Could not locate IR name for program: " + sym->toString());
-                    return std::nullopt;
-                }
-
-                Function *fn = module->getFunction(inv->getLLVMName().value());
+                Function *fn = module->getFunction(getCodegenID(sym));
 
                 return fn;
             }
-            else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->type)) // This is annoying that we have to have duplicate code despite both APIs being the same
+            else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
             {
-                if (!inv->getLLVMName())
-                {
-                    errorHandler.addError(nullptr, "Could not locate IR name for function: " + sym->toString());
-                    return std::nullopt;
-                }
-
-                Function *fn = module->getFunction(inv->getLLVMName().value());
+                Function *fn = module->getFunction(getCodegenID(sym));
 
                 return fn;
             }
-            else if (sym->isGlobal)
+            else if (sym->isGlobal())
             {
                 // Lookup the global var for the symbol
-                llvm::GlobalVariable *glob = module->getNamedGlobal(sym->identifier);
+                llvm::GlobalVariable *glob = module->getNamedGlobal(getCodegenID(sym));
 
                 // Check that we found the variable. If not, throw an error.
                 if (!glob)
                 {
-                    errorHandler.addError(nullptr, "Unable to find global variable: " + sym->getIdentifier());
+                    errorHandler.addError(nullptr, "Unable to find global variable: " + getCodegenID(sym));
                     return std::nullopt;
                 }
 
@@ -185,7 +210,7 @@ public:
                 return val;
             }
 
-            errorHandler.addError(nullptr, "Unable to find allocation for variable: " + sym->getIdentifier());
+            errorHandler.addError(nullptr, "Unable to find allocation for variable: " + getCodegenID(sym));
             return std::nullopt;
         }
 
@@ -193,7 +218,7 @@ public:
             return optVal.value();
 
         // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
-        Value *v = builder->CreateLoad(type, optVal.value(), sym->getIdentifier());
+        Value *v = builder->CreateLoad(type, optVal.value(), getCodegenID(sym));
         // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
         // builder->CreateStore(v, alloc);
         // return alloc;

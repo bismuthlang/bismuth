@@ -20,6 +20,10 @@
 
 #include "Type.h"
 
+// #include "Scope.h"
+
+class Scope; 
+
 // using namespace Types; 
 
 /*******************************************
@@ -29,44 +33,44 @@
  *******************************************/
 struct Symbol
 {
-    std::string identifier; // Mostly needed for our tostring function
-    const Type *type;       // Keeps track of the symbol's type
+private: 
+    std::string identifier;         // The symbol's name as seen in code
+    std::string uniqueNameInScope;  // Unique name for the symbol in its scope
+    const Type *type;               // The symbol's type
 
-    bool isGlobal;
+    bool global;                    // Determines if the symbol is globally defined or not
+    bool definition;                // Tracks if symbol can be modified at all or if it is a definition
 
-    /**
-     * @brief Tracks if symbol cna be modified at all or if it is a definition
-     * 
-     */
-    bool isDefinition; 
-
+    Scope * scope; 
+public:
     // Constructs a symbol from an ID and symbol type.
-    Symbol(std::string id, const Type *t, bool definition, bool glob)
+    Symbol(std::string id, const Type *t, bool d, bool glob, std::string uniqName, Scope * s) 
     {
         identifier = id;
         type = t;
-        isGlobal = glob;
-        isDefinition = definition; 
+        global = glob;
+        definition = d; 
 
-        // val = {};
-        val = new std::optional<llvm::AllocaInst *>(); 
+        uniqueNameInScope = uniqName; 
+        scope = s; 
     }
 
     Symbol(Symbol& sym)
     {
         identifier = sym.identifier; 
         type = sym.type->getCopy(); 
-        isGlobal = sym.isGlobal;
-        isDefinition = sym.isDefinition;
-        val = sym.val; 
+        global = sym.global;
+        definition = sym.definition;
+        // FIXME: is this constructor needed? If so, do we need to add uniqName and scope?
     }
 
-    std::string getIdentifier() const; 
+    // std::string getIdentifier() const; 
     std::string toString() const;
+    const Type * getType() const; 
 
-    std::optional<llvm::AllocaInst *> getAllocation(); 
-    void setAllocation(llvm::AllocaInst * a); 
+    bool isGlobal() const; 
+    bool isDefinition() const; 
 
-private: 
-    std::optional<llvm::AllocaInst *> * val;
+    std::string getUniqueNameInScope() const; 
+    std::string getScopedIdentifier() const; 
 };

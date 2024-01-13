@@ -15,6 +15,8 @@
 #include <optional>
 // #include <assert.h>
 
+#include <functional> // for std::function
+
 enum SymbolLookupFlags
 {
     NON_LINEAR = 1,
@@ -27,8 +29,9 @@ enum SymbolLookupFlags
 class Scope
 {
 public:
-    Scope()
+    Scope(std::function<std::string()> n)
     {
+        nameGenerator = n; 
         // By default, we set parent to be empty
     }
 
@@ -37,15 +40,17 @@ public:
      *
      * @param p The parent to the current scope
      */
-    Scope(std::optional<Scope *> p)
+    Scope(std::optional<Scope *> p, std::function<std::string()> n)
     {
         parent = p;
+        nameGenerator = n; 
     }
 
-    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms)
+    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms, std::function<std::string()> n)
     {
         parent = p;
         symbols = syms;
+        nameGenerator = n; 
     }
 
     /**
@@ -55,7 +60,7 @@ public:
      * @return true If successful
      * @return false If this could not be done (ie, due to a redeclaration)
      */
-    bool addSymbol(Symbol *symbol);
+    std::optional<Symbol *> addSymbol(Symbol *symbol);
 
     bool removeSymbol(const Symbol *symbol);
 
@@ -127,16 +132,16 @@ public:
         {
             if (include_uninferred)
             {
-                if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->type))
+                if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->getType()))
                 {
                     if (!inf->hasBeenInferred())
                         ans.push_back(item.second);
                 }
             }
 
-            if (include_linear && item.second->type->isLinear() && !(item.second->getIdentifier() == "@RETURN"))
+            if (include_linear && item.second->getType()->isLinear() && !(item.second->getScopedIdentifier() == "@RETURN"))
             {
-                if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
+                if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->getType()))
                 {
                     if (
                         (include_complete || !inf->getProtocol()->isComplete()) &&
@@ -165,8 +170,15 @@ public:
         return ans;
     }
 
+    std::string getName() {
+        return nameGenerator(); // TODO: Do better & use mangaler 
+    }
+
 private:
     int scopeId = -1;
     std::optional<Scope *> parent = {};
     std::map<std::string, Symbol *> symbols;
+
+public: // FIXME: CHANGE TO PRIVATE: NEEDED BY CONTEXT!
+    std::function<std::string()> nameGenerator;
 };

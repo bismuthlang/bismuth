@@ -14,14 +14,14 @@
 //   return addSymbol(symbol);
 // }
 
-bool Scope::addSymbol(Symbol *symbol)
+std::optional<Symbol *> Scope::addSymbol(Symbol *symbol)
 {
-  std::string id = symbol->identifier;
+  std::string id = symbol->getScopedIdentifier();
   if (symbols.find(id) != symbols.end())
   {
     // Symbol already defined
-    delete symbol; // Save the memory FIXME: IS THIS UNSAFE?
-    return false;
+    delete symbol; // Save the memory FIXME: IS THIS UNSAFE? It should be safe now that we create the symbol in context and only return it to user if valid
+    return std::nullopt;
   }
 
   auto ret = symbols.insert({id, symbol}).first;
@@ -30,7 +30,7 @@ bool Scope::addSymbol(Symbol *symbol)
 
 bool Scope::removeSymbol(const Symbol *symbol)
 {
-  std::string id = symbol->identifier;
+  std::string id = symbol->getScopedIdentifier();
   if (symbols.find(id) != symbols.end())
   {
     symbols.erase(symbols.find(id));

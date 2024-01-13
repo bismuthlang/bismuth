@@ -47,16 +47,18 @@ public:
 class DefinitionNode : public TypedNode 
 {
 private: 
-    std::string name; 
+    Symbol * symbol; 
     // std::optional<std::string> llvmName;
 
 public: 
     virtual ~DefinitionNode() = default; 
-    DefinitionNode(std::string n, antlr4::Token *tok) : TypedNode(tok), name(n) {}
+    DefinitionNode(Symbol * s, antlr4::Token *tok) : TypedNode(tok), symbol(s) {}
 
     // std::optional<std::string> getLLVMName() { return llvmName; }
-    std::string getName() { return name; }
-    void setName(std::string n ) { name = n; } //llvmName = std::nullopt; }
+
+    // std::string getUniqueNameInScope() { return symbol->getUniqueNameInScope(); }
+
+    Symbol * getSymbol() { return symbol; }
 
     virtual bool updateType(const Type * nxt) = 0; 
 };
@@ -339,20 +341,22 @@ public:
     TBlockNode *block;
     const TypeFunc *type;
 
-    TLambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, TBlockNode *b, string n = "LAM") : DefinitionNode(n, tok)
+    TLambdaConstNode(Symbol * sym, vector<Symbol *> p, const Type *r, TBlockNode *b, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         // paramList = p;
         paramSymbols = p;
         retType = r;
         block = b;
 
+
         vector<const Type *> paramTypes;
 
         for (Symbol *p : paramSymbols)
         {
-            paramTypes.push_back(p->type);
+            paramTypes.push_back(p->getType());
         }
 
+        // FIXME: REMOVE AS ALREADY CALCULATED?
         type = new TypeFunc(paramTypes, retType);
     }
 
@@ -388,7 +392,7 @@ public:
     // TypeChannel * channelType;
     TBlockNode *block;
 
-    TProgramDefNode(string n, Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : DefinitionNode(n, tok)
+    TProgramDefNode(Symbol * sym,  Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         channelSymbol = cn;
         // channelType = ct;
@@ -703,7 +707,7 @@ class TDefineEnumNode : public DefinitionNode
 public:
     const TypeSum *sum;
 
-    TDefineEnumNode(string n, const TypeSum *s, antlr4::Token *tok) : DefinitionNode(n, tok)
+    TDefineEnumNode(Symbol * sym, const TypeSum *s, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         sum = s;
     }
@@ -736,7 +740,7 @@ private:
     // TODO track templated names generated?
 
 public:
-    TDefineTemplateNode(const TypeTemplate * t, DefinitionNode * n, antlr4::Token *tok) : DefinitionNode(t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
+    TDefineTemplateNode(Symbol * sym, const TypeTemplate * t, DefinitionNode * n, antlr4::Token *tok) : DefinitionNode(sym, tok), type(t), templatedNodes(n) //t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
     {}
 
     std::string toString() const override { return "DEF TEMPLATE NODE"; }
@@ -757,7 +761,7 @@ class TDefineStructNode : public DefinitionNode
 public:
     const TypeStruct *product;
 
-    TDefineStructNode(string n, const TypeStruct *p, antlr4::Token *tok) : DefinitionNode(n, tok)
+    TDefineStructNode(Symbol * sym, const TypeStruct *p, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         product = p;
     }
@@ -909,18 +913,8 @@ private:
     const TypeFunc *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
-    TExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
-    {
-        vector<const Type *> paramTypes;
-
-        for (ParameterNode param : p)
-        {
-            paramTypes.push_back(param.type);
-        }
-
-        ty = new TypeFunc(paramTypes, r, v);
-        sym = new Symbol(id, ty, true, true);
-    }
+    TExternNode(Symbol * s, TypeFunc * func, antlr4::Token *tok) : TypedNode(tok), sym(s), ty(func)
+    {}
 
     const TypeFunc *getType() override
     {
@@ -980,7 +974,7 @@ public:
 
         if (r.empty())
         {
-            type = symbol->type;
+            type = symbol->getType();
         }
         else
         {

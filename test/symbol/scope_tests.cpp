@@ -12,6 +12,8 @@
 #include "Scope.h"
 #include <iostream>
 
+// FIXME: RE-ENABLE THESE TESTS!! (AND ADD TESTS FOR MANGALING!)
+
 // TEST_CASE("Check symbol return from add", "[symbol]") {
 //   Scope* scope = new Scope();
 //   Symbol* s = scope->addSymbol("a", Types::DYN_BOOL);

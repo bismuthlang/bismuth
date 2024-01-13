@@ -105,8 +105,8 @@ public:
     std::optional<ParameterListNode> visitCtx(BismuthParser::ParameterListContext *ctx);
     std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { return visitCtx(ctx); }
 
-    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx);
-    std::any visitLambdaConstExpr(BismuthParser::LambdaConstExprContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx)); }
+    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<Symbol *> sym);
+    std::any visitLambdaConstExpr(BismuthParser::LambdaConstExprContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx, std::nullopt)); }
 
     std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::BlockStatementContext *ctx) { return this->visitCtx(ctx->block()); }
     std::any visitBlockStatement(BismuthParser::BlockStatementContext *ctx) override { return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
@@ -350,7 +350,7 @@ public:
     {
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
+            stmgr->enterScope(StopType::NONE, [](){ return ""; }); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -396,7 +396,7 @@ public:
 
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
+            stmgr->enterScope(StopType::NONE, [](){ return ""; }); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -449,7 +449,7 @@ public:
 
         Symbol *sym = std::get<Symbol *>(symOpt);
 
-        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->type))
+        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->getType()))
         {
             std::string funcId = ctx->name->getText();
 
@@ -469,14 +469,13 @@ public:
 
             // Lookup the function in the current scope and prevent re-declarations
 
-            // Add the symbol to the stmgr and enter the scope.
-            stmgr->addSymbol(sym);
-            stmgr->enterScope(StopType::GLOBAL); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
+            // Add the symbol to the stmgr and enter the scope. -> Already done
+            // stmgr->addSymbol(sym);
+            stmgr->enterScope(StopType::GLOBAL, [sym](){ return sym->getUniqueNameInScope(); }); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
 
-            Symbol *channelSymbol = new Symbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false, false);
-            stmgr->addSymbol(channelSymbol);
+            Symbol *channelSymbol = stmgr->addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false, false).value();
             // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
-            stmgr->addSymbol(new Symbol("@EXIT", Types::UNIT, false, false));
+            stmgr->addSymbol("@EXIT", Types::UNIT, false, false);
 
             // Safe visit the program block without creating a new scope (as we are managing the scope)
             std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
@@ -494,7 +493,7 @@ public:
 
             // Safe exit the scope.
             safeExitScope(ctx);
-            return new TProgramDefNode(funcId, channelSymbol, std::get<TBlockNode *>(blkOpt), progType, ctx->getStart());
+            return new TProgramDefNode(sym, channelSymbol, std::get<TBlockNode *>(blkOpt), progType, ctx->getStart());
         }
         else
         {

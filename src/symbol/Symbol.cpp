@@ -1,6 +1,6 @@
 #include "Symbol.h"
 
-std::string Symbol::getIdentifier() const { return identifier; }
+// std::string Symbol::getIdentifier() const { return identifier; }
 
 std::string Symbol::toString() const
 {
@@ -10,12 +10,10 @@ std::string Symbol::toString() const
     return description.str();
 }
 
-std::optional<llvm::AllocaInst *> Symbol::getAllocation()
-{
-    return *val;
-}
+const Type * Symbol::getType() const { return type; }
 
-void Symbol::setAllocation(llvm::AllocaInst * a) 
-{ 
-    *val = a; 
-}
+bool Symbol::isGlobal() const { return global; }
+bool Symbol::isDefinition() const { return definition; }
+
+std::string Symbol::getUniqueNameInScope() const { return uniqueNameInScope; }
+std::string Symbol::getScopedIdentifier() const { return identifier; }
