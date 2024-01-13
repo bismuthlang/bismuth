@@ -34,6 +34,7 @@
 
 #include "TypedAST.h"
 #include "CodegenUtils.h"
+#include "Scope.h"
 
 // using namespace llvm;
 using llvm::ArrayRef;
@@ -61,12 +62,7 @@ private:
     // std::string currentNamespacePath; 
     std::map<std::string, llvm::AllocaInst *> allocations; 
 
-    std::string getCodegenID(Symbol * sym) {
-        if(!sym->isDefinition())
-            return sym->getUniqueNameInScope();
-
-        return sym->getUniqueNameInScope(); // TODO: needs to be done better!
-    }
+    std::string getCodegenID(Symbol * sym);
 
     // std::optional<llvm::AllocaInst *> getAllocation(std::string fullPathName) {
     //     auto it = allocations.find(fullPathName); 

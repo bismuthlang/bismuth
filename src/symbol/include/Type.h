@@ -1145,6 +1145,9 @@ public:
      * @return std::string
      */
     std::string toString(DisplayMode mode) const override;
+
+    std::string templateString(DisplayMode mode) const; 
+    
     /**
      * @brief Gets the LLVM representation of the inferred type.
      *

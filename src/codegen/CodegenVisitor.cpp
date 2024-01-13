@@ -2146,7 +2146,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 {
-    // FIXME: ENABLE TEMPLATE GENERATION!
     // FIXME: BAD OPT ACCESS
     auto info = n->getType()->getTemplateInfo().value(); 
 
@@ -2174,6 +2173,7 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 
         // substitute each 
         AcceptType(this, n->getTemplatedNodes());
+        std::cout << "2176 " << n->getSymbol()->toString() << std::endl; 
     }
 
     // n->getTemplatedNodes()->setName(origName);
@@ -2399,4 +2399,27 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     // return builder->CreateLoad(sumTy, alloc);
     return alloc;
+}
+
+
+std::string CodegenVisitor::getCodegenID(Symbol * sym)
+{
+    if(!sym->isDefinition())
+        return sym->getUniqueNameInScope();
+
+    std::string name = sym->getUniqueNameInScope(); 
+
+    std::optional<Scope *> scopeOpt = sym->getScope(); 
+    while(scopeOpt)
+    {
+        Scope * scope = scopeOpt.value(); 
+        std::string scopeName = scope->getName();
+
+        if(scopeName != "")
+            name = scopeName + "::" + name; 
+
+        scopeOpt = scope->getParent();
+    }
+
+    return name; //sym->getUniqueNameInScope(); // TODO: needs to be done better!
 }

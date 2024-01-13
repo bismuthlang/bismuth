@@ -1180,7 +1180,7 @@ std::optional<const Type*> TypeTemplate::canApplyTemplate(std::vector<const Type
     return ans;
 }
 
-std::string TypeTemplate::toString(DisplayMode mode) const 
+std::string TypeTemplate::templateString(DisplayMode mode) const
 {
     std::ostringstream description;
     std::optional<TemplateInfo> infoOpt = this->getTemplateInfo(); 
@@ -1192,20 +1192,24 @@ std::string TypeTemplate::toString(DisplayMode mode) const
         unsigned int size = infoOpt.value().templates.size();
         for (auto t : infoOpt.value().templates)
         {
-            description << t.first;//e.second->toString(mode);
+            description << t.second->toString(mode);
             if (++ctr != size)
                 description << ", ";
         }
 
     }
 
-    std::cout << "1190" << std::endl; 
     description << ">";
 
-    description << 
+    return description.str(); 
+}
+
+std::string TypeTemplate::toString(DisplayMode mode) const 
+{
+    return this->templateString(mode)  + 
         (this->isDefined() ? this->valueType->toString(mode) : "?"); 
 
-    return description.str();
+    // return description.str();
 }
 
 llvm::Type *TypeTemplate::getLLVMType(llvm::Module *M) const 

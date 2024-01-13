@@ -62,6 +62,9 @@ public:
         global = sym.global;
         definition = sym.definition;
         // FIXME: is this constructor needed? If so, do we need to add uniqName and scope?
+
+        uniqueNameInScope = sym.uniqueNameInScope;
+        scope = sym.scope; 
     }
 
     // std::string getIdentifier() const; 
@@ -73,4 +76,6 @@ public:
 
     std::string getUniqueNameInScope() const; 
     std::string getScopedIdentifier() const; 
+
+    Scope * getScope() const; 
 };

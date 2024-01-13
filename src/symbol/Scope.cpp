@@ -49,10 +49,8 @@ bool Scope::removeSymbol(const Symbol *symbol)
 std::optional<Symbol *> Scope::lookup(std::string id)
 {
   auto symbol = symbols.find(id);
-
   if (symbol == symbols.end())
     return std::nullopt;
-
   return symbol->second;
 }
 

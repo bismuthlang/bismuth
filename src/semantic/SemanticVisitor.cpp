@@ -2,6 +2,7 @@
 
 std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx)
 {
+    std::cout << "5" << std::endl; 
     // Enter initial scope
     stmgr->enterScope(StopType::NONE, [](){ return "";});
 
@@ -62,7 +63,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         symBindings->bind(e, symOpt.value());
 
     }
-
+std::cout << "66" << std::endl; 
     // Visit externs first; they will report any errors if they have any.
     for (auto e : ctx->externs)
     {
@@ -87,7 +88,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     }
 
     // Auto forward decl
-
+std::cout << "91" << std::endl; 
     // FIXME: ERROR CHECK!
 
     // TODO: refactor to use defineAndGetSymbolFor for each, then can remove defineTypeCase and replace with single function call.
@@ -96,7 +97,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         // Wastes a bit of memory in allocating type even for duplicates
         defineAndGetSymbolFor(e); 
     }
-
+std::cout << "100" << std::endl; 
     // Visit the statements contained in the unit
     std::vector<DefinitionNode *> defs;
     for (auto e : ctx->defs)
@@ -131,7 +132,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             defs.push_back(std::get<DefinitionNode *>(opt));
         }
     }
-
+std::cout << "135" << std::endl; 
     /*******************************************
      * Extra checks depending on compiler flags
      *******************************************/
@@ -172,7 +173,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             }
         }
     }
-
+std::cout << "176" << std::endl; 
     std::vector<Symbol *> unInf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
 
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
@@ -188,6 +189,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
         errorHandler.addError(ctx->getStart(), "230 Uninferred types in context: " + details.str());
     }
+    std::cout << "192" << std::endl; 
     // Return UNDEFINED as this should be viewed as a statement and not something assignable
     return new TCompilationUnitNode(externs, defs);
 }
@@ -1801,11 +1803,14 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     }
 
     // FIXME: technically could be bad opt access, but should never happen
-    Symbol * sym = symOpt.value_or(
-        stmgr->addAnonymousSymbol("lambda", new TypeFunc(paramTypes, retType), true).value()
-    );
+    std::cout << "1804" << std::endl; 
+    std::cout << "1084a " << symOpt.has_value() << std::endl; 
+    Symbol * sym = lazy_value_or<Symbol *>(symOpt, 
+        [this, paramTypes, retType]() { return stmgr->addAnonymousSymbol("lambda", new TypeFunc(paramTypes, retType), true).value(); });
+    std::cout << "1808" << std::endl; 
 
 
+    std::cout <<  "1813 SCOPING!! " << sym->toString() << std::endl; 
     stmgr->enterScope(StopType::GLOBAL, [sym](){ return sym->getUniqueNameInScope(); });
     stmgr->addSymbol("@RETURN", retType, false, false); // Because of inserting a global stop, this will always go through
 
@@ -3155,7 +3160,9 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
             for(auto i : info.templates)
             {
                 // FIXME: ERROR CHECK, BAD OPT ACCESS
+                std::cout << "3160" << std::endl; 
                 Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
+                std::cout << "3162" << std::endl; 
                 templateSyms.push_back(templateSym);
             }
 
@@ -3170,10 +3177,11 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
     };
 
 
-
+std::cout << "3179" << std::endl; 
     // Essentially a type-case
     return defineTypeCase<std::variant<Symbol *, ErrorChain *>>(ctx, 
         [this, defineTemplate, defineFunction](BismuthParser::DefineFunctionContext * fnCtx) -> std::variant<Symbol *, ErrorChain *> {
+            std::cout << "3183" << std::endl; 
             std::optional<Symbol *> opt = symBindings->getBinding(fnCtx);
 
             if (!opt && stmgr->lookupInCurrentScope(fnCtx->name->getText()))
@@ -3184,13 +3192,13 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
             if(isTemplate)
             {
-                Symbol *sym = opt.value_or(
-                    stmgr->addSymbol(
-                    // new Symbol(
-                        fnCtx->name->getText(), 
-                        new TypeTemplate(),
-                        true, false).value() //should be safe as we checked for redeclarations
-                        );
+                Symbol *sym = lazy_value_or<Symbol *>(opt, 
+                    [this, fnCtx](){
+                        return stmgr->addSymbol(
+                            fnCtx->name->getText(), 
+                            new TypeTemplate(),
+                            true, false).value(); //should be safe as we checked for redeclarations
+                    });
 
                 if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
                 {
@@ -3209,15 +3217,16 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
                 return errorHandler.addError(fnCtx->getStart(), "Expected template but got: " + sym->getType()->toString(toStringMode));
             }
-            
-            Symbol *sym = opt.value_or(
-                // new Symbol(
-                stmgr->addSymbol(
-                    fnCtx->name->getText(), 
-                    new TypeFunc(),
-                    true, false).value() //should be safe as we checked for redeclarations
-                    );
 
+         std::cout << "3219" << std::endl;    
+            Symbol *sym = lazy_value_or<Symbol *>(opt, 
+                [this, fnCtx]() {
+                    return stmgr->addSymbol(
+                        fnCtx->name->getText(), 
+                        new TypeFunc(),
+                        true, false).value(); //should be safe as we checked for redeclarations
+                });
+std::cout << "3227" << std::endl; 
             if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(sym->getType()))
             {
                 std::optional<ErrorChain *> optErr = defineFunction(fnCtx, funcType);
@@ -3230,21 +3239,22 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
         },
 
         [this, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
-            std::optional<Symbol *> opt = symBindings->getBinding(ctx);
+            std::optional<Symbol *> opt = symBindings->getBinding((BismuthParser::DefineTypeContext *)ctx);
 
             if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
             }
-
-            Symbol *sym = opt.value_or(
-                // new Symbol(
-                stmgr->addSymbol(
+std::cout << "DOES OPY HAVE BINDING? " << opt.has_value()  << std::endl; 
+std::cout << "3248" << std::endl; 
+// std::cout << stmgr->toString() << std::endl;  
+            Symbol *sym = lazy_value_or<Symbol *>(opt, 
+                [this, ctx]() { return stmgr->addSymbol(
                     ctx->name->getText(), 
                     new TypeProgram(),
-                    true, false).value() //should be safe as we checked for redeclarations
-                );
-
+                    true, false).value(); //should be safe as we checked for redeclarations
+                });
+std::cout << "3256" << std::endl; 
             if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->getType()))
             {
                 std::optional<ErrorChain *> optErr = defineProgram(ctx, progType);
@@ -3266,12 +3276,11 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
             std::string name = ctx->name->getText(); 
 
-            Symbol *sym = opt.value_or(
-                // new Symbol(
-                stmgr->addSymbol(
+            Symbol *sym = lazy_value_or<Symbol *>(opt, 
+                [this, name]() { return stmgr->addSymbol(
                     name, new TypeStruct(name), true, true) // FIXME: WHY ARE OTHERS true, false? when this is true, true
-                    .value() //should be safe as we checked for redeclarations
-                ); 
+                    .value(); //should be safe as we checked for redeclarations
+                }); 
 
             if(const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym->getType()))
             {
@@ -3294,12 +3303,12 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
             std::string name = ctx->name->getText(); 
 
-            Symbol *sym = opt.value_or(
-                // new Symbol
-                stmgr->addSymbol(
-                    name, new TypeSum(name), true, true) // FIXME: WHY ARE OTHERS true, false? when this is true, true
-                .value() //should be safe as we checked for redeclarations
-            );
+            Symbol *sym = lazy_value_or<Symbol *>(opt, 
+                [this, name](){
+                    return stmgr->addSymbol(
+                        name, new TypeSum(name), true, true) // FIXME: WHY ARE OTHERS true, false? when this is true, true
+                    .value(); //should be safe as we checked for redeclarations
+            });
 
             if(const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym->getType()))
             {

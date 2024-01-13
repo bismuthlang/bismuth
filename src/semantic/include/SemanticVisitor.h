@@ -7,6 +7,7 @@
 #include "CompilerFlags.h"
 #include "TypedAST.h"
 #include "CastUtils.h"
+#include "CUtils.h"
 #include "ProtocolVisitor.h"
 
 // #include "TypeVisitor.h"

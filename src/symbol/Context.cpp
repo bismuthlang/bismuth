@@ -57,7 +57,7 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
     while(this->lookup(uniqName)) {
         std::ostringstream nxtName;
         nxtName << id << "." << idNum; // TODO: do better name mangling, make it an interface---one of which follows C spec
-    
+        idNum++; 
         uniqName = nxtName.str(); 
     }
 
@@ -69,19 +69,19 @@ std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const 
 {
     std::string id = "#" + wantedId; // TODO: Better symbol to indicate anon. @ reserved for compiler internals
     // Check that the exact same identifier doesn't already exist in the current scope
-    if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
-
+    if(!currentScope) return std::nullopt;
     // Find a unique name for the symbol within the current stop
     // TODO: do this more efficiency! (Also note this may break if multiple contexts!!!)
     uint32_t idNum = 0; 
-
     while(this->lookup(id)) {
         std::ostringstream nxtName;
-        nxtName << id << "." << idNum; // TODO: do better name mangling, make it an interface---one of which follows C spec
-    
+        nxtName << "#" << wantedId << "." << idNum; // TODO: do better name mangling, make it an interface---one of which follows C spec
+        idNum++;
         id = nxtName.str(); 
     }
 
+    std::cout << "ANON FOUND " << id << std::endl; 
+    std::cout << "CURR SCOPE? " << currentScope.has_value() << std::endl; 
     // Note: this is safe as we previously check that currentScope exists
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
     return currentScope.value()->addSymbol(new Symbol(id, t, d, false, id, currentScope.value()));
@@ -165,14 +165,12 @@ std::vector<Symbol *> Context::getSymbols(int flags) //TODO: DO BETTER
 std::optional<Symbol *> Context::lookupInCurrentScope(std::string id)
 {
     std::optional<Scope *> opt = currentScope;
-
     if (opt)
     {
         Scope *scope = opt.value();
         std::optional<Symbol *> sym = scope->lookup(id);
         if (sym)
             return sym;
-
         // opt = scope->getParent();
         // while (opt)
         // {
