@@ -17,7 +17,10 @@ Scope &Context::enterScope(bool insertStop, std::function<std::string()> n)
     scopes.push_back(next);
 
     if (insertStop)
+    {
         stops.push(scopes.size() - 1);
+        nameCounter.push(std::map<std::string, uint32_t>());
+    }
 
     return *next;
 }
@@ -39,6 +42,7 @@ std::optional<Scope *> Context::exitScope()
     if (getCurrentStop() == depth && getCurrentStop() != 0)
     {
         stops.pop();
+        nameCounter.pop();
     }
 
     return std::optional<Scope *>{last};
@@ -49,18 +53,14 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
     // Check that the exact same identifier doesn't already exist in the current scope
     if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
 
+
     // Find a unique name for the symbol within the current stop
-    // TODO: do this more efficiency! (Also note this may break if multiple contexts!!!)
     uint32_t idNum = 0; 
-    std::string uniqName = id; 
+    std::string uniqName = getUniqNameFor(id); 
 
-    while(this->lookup(uniqName)) {
-        std::ostringstream nxtName;
-        nxtName << id << "." << idNum; // TODO: do better name mangling, make it an interface---one of which follows C spec
-        idNum++; 
-        uniqName = nxtName.str(); 
-    }
+    std::cout << "END W/ " << uniqName << " for " << id << std::endl; 
 
+    // std::cout << this->toString() << std::endl;  // FIXME: THIS SEGFUALTS!
     // Note: this is safe as we previously check that currentScope exists
     return currentScope.value()->addSymbol(new Symbol(id, t, d, glob, uniqName, currentScope.value()));
 }
@@ -71,17 +71,8 @@ std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const 
     // Check that the exact same identifier doesn't already exist in the current scope
     if(!currentScope) return std::nullopt;
     // Find a unique name for the symbol within the current stop
-    // TODO: do this more efficiency! (Also note this may break if multiple contexts!!!)
-    uint32_t idNum = 0; 
-    while(this->lookup(id)) {
-        std::ostringstream nxtName;
-        nxtName << "#" << wantedId << "." << idNum; // TODO: do better name mangling, make it an interface---one of which follows C spec
-        idNum++;
-        id = nxtName.str(); 
-    }
+    id = getUniqNameFor(id);
 
-    std::cout << "ANON FOUND " << id << std::endl; 
-    std::cout << "CURR SCOPE? " << currentScope.has_value() << std::endl; 
     // Note: this is safe as we previously check that currentScope exists
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
     return currentScope.value()->addSymbol(new Symbol(id, t, d, false, id, currentScope.value()));

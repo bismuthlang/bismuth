@@ -16,8 +16,11 @@
 #include <stack>
 
 class Context {
+  private: 
+    std::stack<std::map<std::string, uint32_t>> nameCounter; 
+
   public:
-    Context(){};
+    Context(){nameCounter.push(std::map<std::string, uint32_t>());};
 
     /**
      * @brief Enter a new scope
@@ -163,5 +166,19 @@ class Context {
     int getCurrentStop(std::stack<int> st)
     {
       return st.size() == 0 ? 0 : st.top(); 
+    }
+
+
+    std::string getUniqNameFor(std::string id) {
+      auto itr = nameCounter.top().find(id);
+      if(itr == nameCounter.top().end())
+      {
+          nameCounter.top().insert({id, 0});
+          return id;
+      }
+      std::ostringstream nextName; 
+      nextName << id << "." << itr->second; 
+      nameCounter.top().insert({id, itr->second++});
+      return nextName.str(); 
     }
 };

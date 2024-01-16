@@ -54,13 +54,7 @@ public:
     virtual ~DefinitionNode() = default; 
     DefinitionNode(Symbol * s, antlr4::Token *tok) : TypedNode(tok), symbol(s) {}
 
-    // std::optional<std::string> getLLVMName() { return llvmName; }
-
-    // std::string getUniqueNameInScope() { return symbol->getUniqueNameInScope(); }
-
     Symbol * getSymbol() { return symbol; }
-
-    virtual bool updateType(const Type * nxt) = 0; 
 };
 
 // From C++ Documentation for visitors
@@ -370,16 +364,6 @@ public:
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-
-    // FIXME: do better, this is just for templates to work
-    bool updateType(const Type * nxt) override {
-        if(const TypeFunc * fn = dynamic_cast<const TypeFunc *>(nxt))
-        {
-            type = fn; 
-            return true; 
-        }
-        return false; 
-    }
 };
 
 class TProgramDefNode : public DefinitionNode
@@ -411,15 +395,6 @@ public:
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-
-    bool updateType(const Type * nxt) override {
-        if(const TypeProgram * fn = dynamic_cast<const TypeProgram *>(nxt))
-        {
-            type = fn; 
-            return true; 
-        }
-        return false; 
-    }
 };
 
 class TConditionalStatementNode : public TypedNode
@@ -719,15 +694,6 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; }
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-
-    bool updateType(const Type * nxt) override {
-        if(const TypeSum * fn = dynamic_cast<const TypeSum *>(nxt))
-        {
-            sum = fn; 
-            return true; 
-        }
-        return false; 
-    }
 };
 
 
@@ -749,11 +715,6 @@ public:
     DefinitionNode * getTemplatedNodes() { return templatedNodes; }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-
-    bool updateType(const Type * nxt) override {
-        // FIXME: DO BETTER!
-        return false; 
-    }
 };
 
 class TDefineStructNode : public DefinitionNode
@@ -774,15 +735,6 @@ public:
 
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
-
-    bool updateType(const Type * nxt) override {
-        if(const TypeStruct * fn = dynamic_cast<const TypeStruct *>(nxt))
-        {
-            product = fn; 
-            return true; 
-        }
-        return false; 
-    }
 };
 
 class TInitProductNode : public TypedNode

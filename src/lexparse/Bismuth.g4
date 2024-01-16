@@ -17,6 +17,8 @@ genericEntry        : name=VARIABLE (':' supTy+=type (',' supTy+=type)*)?   # Ge
                     | 'Session' name=VARIABLE                               # GenericSession
                     ;
 
+genericSpecifier    : LESS subst+=type (',' subst+=type)* GREATER        ;
+
 defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
                   | DEFINE STRUCT name=VARIABLE LSQB (cases+=structCase)*  RSQB             # DefineStruct
                   | DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block   # DefineProgram
@@ -29,7 +31,7 @@ externStatement : EXTERN FUNC name=VARIABLE LPAR ((paramList=parameterList varia
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
 invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr)  inv_args+;
 
-fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  ;
+fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  genericSpecifier? ;
 dereferenceExpr     : MULTIPLY expr=expression                  ;
 
 //Helps allow us to use VARIABLE or arrayAccess and not other expressions (such as for assignments)
@@ -71,7 +73,7 @@ expression          : LPAR ex=expression RPAR                                   
                     | exprs+=expression (AND exprs+=expression)+                                    # LogAndExpr 
                     | exprs+=expression (OR  exprs+=expression)+                                    # LogOrExpr
                     | call=invocation                                                               # CallExpr
-                    | v=VARIABLE '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')'     # InitProduct
+                    | v=VARIABLE genericSpecifier? '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')'     # InitProduct
                     | 'Box'     LESS ty=type GREATER '::init' '(' expr=expression ')'               # InitBox
                     | dereferenceExpr                               # Deref
                     | arrayAccess                                   # ArrayAccessExpr
@@ -231,7 +233,7 @@ type            :    ty=type LBRC len=DEC_LITERAL RBRC                          
                 |    TYPE_CHANNEL LESS proto=protocol GREATER                               # ChannelType
                 |    TYPE_PROGRAM LESS proto=protocol GREATER                               # ProgramType
                 |    TYPE_BOX     LESS ty=type GREATER                                      # BoxType
-                |    ty=type  LESS subst+=type (',' subst+=type)* GREATER                   # TemplatedType
+                |    ty=type  genericSpecifier                                              # TemplatedType
                 |    VARIABLE                                                               # CustomType
                 ;
 

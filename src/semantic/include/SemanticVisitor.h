@@ -306,7 +306,8 @@ public:
    TemplateInfo TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx); 
    std::any visitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) override { return TvisitGenericTemplate(ctx); }
 
-
+    std::variant<std::vector<const Type *>, ErrorChain *> TvisitGenericSpecifier(BismuthParser::GenericSpecifierContext *ctx);
+    std::any visitGenericSpecifier(BismuthParser::GenericSpecifierContext *ctx) override { return TvisitGenericSpecifier(ctx); }
 
 
 

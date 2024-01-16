@@ -1056,7 +1056,7 @@ inline std::optional<const T*> type_cast(const Type * ty)
 class TypeGeneric : public Type
 {
 public: // TODO: PRIVATE + USE SETTER
-    const Type * actingType = Types::ABSURD; 
+    const Type * actingType = new Type(false);//Types::ABSURD; 
 public:
     TypeGeneric(bool isLinear) : Type(isLinear) {}; 
 
@@ -1066,13 +1066,13 @@ public:
 
     bool requiresDeepCopy() const override { return actingType->requiresDeepCopy(); } //false; }
 
-    const TypeGeneric * getCopy() const override { return this; };
+    const TypeGeneric * getCopy() const override { return this; }; 
 
     // FIXME: IMPL
     // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override { return false; }
+    bool isSupertypeFor(const Type *other) const override { return this == other; }
 
 };
 

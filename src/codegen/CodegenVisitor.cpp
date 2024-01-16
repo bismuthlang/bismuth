@@ -2168,16 +2168,10 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 
         }
         
-        // n->getTemplatedNodes()->setName(origName + customName + ">");
-        n->getTemplatedNodes()->updateType(t.second); // FIXME: CHECK THIS IS TRUE!!
-
         // substitute each 
         AcceptType(this, n->getTemplatedNodes());
         std::cout << "2176 " << n->getSymbol()->toString() << std::endl; 
     }
-
-    // n->getTemplatedNodes()->setName(origName);
-    // n->getTemplatedNodes()->updateType(origType);
 
     return std::nullopt; 
 }
@@ -2402,11 +2396,8 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 }
 
 
-std::string CodegenVisitor::getCodegenID(Symbol * sym)
+std::string CodegenVisitor::getCodegenAllocationID(Symbol * sym)
 {
-    if(!sym->isDefinition())
-        return sym->getUniqueNameInScope();
-
     std::string name = sym->getUniqueNameInScope(); 
 
     std::optional<Scope *> scopeOpt = sym->getScope(); 
@@ -2421,5 +2412,31 @@ std::string CodegenVisitor::getCodegenID(Symbol * sym)
         scopeOpt = scope->getParent();
     }
 
-    return name; //sym->getUniqueNameInScope(); // TODO: needs to be done better!
+    return name;
+}
+
+std::string CodegenVisitor::getCodegenID(Symbol * sym)
+{
+    if(!sym->isDefinition())
+        return sym->getUniqueNameInScope();
+
+    return getCodegenAllocationID(sym); 
+}
+
+void CodegenVisitor::setAllocation(Symbol * sym, llvm::AllocaInst * a)
+{
+    allocations.insert({getCodegenAllocationID(sym), a});
+}
+
+std::optional<llvm::AllocaInst *> CodegenVisitor::getAllocation(Symbol * sym) {
+    auto it = allocations.find(getCodegenAllocationID(sym)); 
+    if(it == allocations.end()) return std::nullopt; 
+    return it->second; 
+}
+
+llvm::AllocaInst * CodegenVisitor::CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol * sym)
+{
+    llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, getCodegenID(sym));
+    setAllocation(sym, v); 
+    return v; 
 }

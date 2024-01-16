@@ -64,30 +64,13 @@ private:
 
     std::string getCodegenID(Symbol * sym);
 
-    // std::optional<llvm::AllocaInst *> getAllocation(std::string fullPathName) {
-    //     auto it = allocations.find(fullPathName); 
-    //     if(it == allocations.end()) return std::nullopt; 
-    //     return it->second; 
-    // } 
+    std::string getCodegenAllocationID(Symbol * sym);
 
-    void setAllocation(Symbol * sym, llvm::AllocaInst * a)
-    {
-        allocations.insert({getCodegenID(sym), a});
-    }
+    void setAllocation(Symbol * sym, llvm::AllocaInst * a);
 
-    std::optional<llvm::AllocaInst *> getAllocation(Symbol * sym) {
-        auto it = allocations.find(getCodegenID(sym)); 
-        if(it == allocations.end()) return std::nullopt; 
-        return it->second; 
-    }
+    std::optional<llvm::AllocaInst *> getAllocation(Symbol * sym);
 
-    llvm::AllocaInst * CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol * sym)
-    {
-        llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, getCodegenID(sym));
-        // sym->setAllocation(v);
-        setAllocation(sym, v); 
-        return v; 
-    }
+    llvm::AllocaInst * CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol * sym);
 
 public:
     /**
