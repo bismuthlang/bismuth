@@ -618,7 +618,7 @@ std::string TypeFunc::toString(DisplayMode mode) const
     if (variadic)
         description << ", ... ";
 
-    description << "-> ";
+    description << " -> ";
 
     description << retType->toString(mode);
     return description.str();

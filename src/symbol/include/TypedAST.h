@@ -701,18 +701,20 @@ class TDefineTemplateNode : public DefinitionNode // FIXME: ADD TO VISITORS AND 
 {
 private: 
     const TypeTemplate * type; // Used to figure out what versions we need to generate
-    DefinitionNode * templatedNodes; 
+    // DefinitionNode * templatedNodes; 
+    TypedNode * templatedNodes; 
 
     // TODO track templated names generated?
 
 public:
-    TDefineTemplateNode(Symbol * sym, const TypeTemplate * t, DefinitionNode * n, antlr4::Token *tok) : DefinitionNode(sym, tok), type(t), templatedNodes(n) //t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
+    TDefineTemplateNode(Symbol * sym, const TypeTemplate * t, TypedNode * n, antlr4::Token *tok) : DefinitionNode(sym, tok), type(t), templatedNodes(n) //t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
     {}
 
     std::string toString() const override { return "DEF TEMPLATE NODE"; }
 
     const TypeTemplate * getType() override { return type; }
-    DefinitionNode * getTemplatedNodes() { return templatedNodes; }
+    // DefinitionNode * getTemplatedNodes() { return templatedNodes; }
+    TypedNode * getTemplatedNodes() { return templatedNodes; }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };

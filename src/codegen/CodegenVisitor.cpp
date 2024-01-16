@@ -2149,9 +2149,6 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
     // FIXME: BAD OPT ACCESS
     auto info = n->getType()->getTemplateInfo().value(); 
 
-    // std::string origName = n->getTemplatedNodes()->getName(); 
-    // const Type * origType = n->getTemplatedNodes()->getType();
-
     for(auto t : n->getType()->getRegisteredTemplates())
     {
         std::string customName = "<";
@@ -2167,7 +2164,7 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
             customName += t.first.at(i)->toString(DisplayMode::C_STYLE); 
 
         }
-        
+
         // substitute each 
         AcceptType(this, n->getTemplatedNodes());
         std::cout << "2176 " << n->getSymbol()->toString() << std::endl; 

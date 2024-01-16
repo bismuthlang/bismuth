@@ -172,6 +172,13 @@ public:
 
                 return fn;
             }
+            else if (const TypeTemplate * tmp = dynamic_cast<const TypeTemplate *>(sym->getType())) // FIXME: is this an adequate check? what about other type defs?
+            {
+                Function *fn = module->getFunction(getCodegenID(sym));
+                std::cout << "178 found " << fn << std::endl; 
+                if(fn) return fn; 
+                return std::nullopt; 
+            }
             else if (sym->isGlobal())
             {
                 // Lookup the global var for the symbol
@@ -180,7 +187,7 @@ public:
                 // Check that we found the variable. If not, throw an error.
                 if (!glob)
                 {
-                    errorHandler.addError(nullptr, "Unable to find global variable: " + getCodegenID(sym));
+                    errorHandler.addError(nullptr, "Unable to find global variable: " + getCodegenID(sym) + " " + sym->toString());
                     return std::nullopt;
                 }
 

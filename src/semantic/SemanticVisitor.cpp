@@ -376,7 +376,33 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     // TODO: METHODIZE WITH INVOKE?
 
-    std::optional<const TypeStruct *> productOpt = type_cast<TypeStruct>(sym->getType());
+    const Type * ty = sym->getType(); 
+    
+    if(ctx->genericSpecifier())
+    {
+        // Very similar to code in field access
+         if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(ty))
+        {
+            std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(ctx->genericSpecifier());
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
+            {
+                // (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                return *e;
+            }
+
+            std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
+
+
+
+            std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
+            if(!appliedOpt)
+                return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
+            ty = appliedOpt.value(); 
+        }
+    }
+
+    std::optional<const TypeStruct *> productOpt = type_cast<TypeStruct>(ty);
     if (productOpt)
     {
         const TypeStruct *product = productOpt.value();
