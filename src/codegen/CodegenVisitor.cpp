@@ -100,7 +100,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
     {
         Symbol *localSym = caseNode.first;
 
-        llvm::Type *toFind = localSym->getType()->getLLVMType(module);
+        llvm::Type *toFind = getLLVMType(localSym);
 
         unsigned int index = sumType->getIndex(module, toFind);
 
@@ -117,8 +117,8 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
         switchInst->addCase(getU32(index), matchBlk);
         origParent->getBasicBlockList().push_back(matchBlk);
 
-        //  Get the type of the symbol
-        llvm::Type *ty = localSym->getType()->getLLVMType(module);
+        //  Get the type of the symbol // FIXME: WHY IS THIS SAME AS TOFIND?
+        llvm::Type *ty = getLLVMType(localSym);
 
         // Can skip global stuff
         llvm::AllocaInst *v = CreateAndLinkEntryBlockAlloc(ty, localSym);
@@ -1635,8 +1635,6 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode *n)
 
         if (index == 0)
         {
-            // Value *corrected = builder->CreateBitCast(stoVal, varSymType->getLLVMType(module));
-            // builder->CreateStore(corrected, v);
             Value *corrected = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
             builder->CreateStore(stoVal, corrected);
             return std::nullopt;
@@ -1677,8 +1675,8 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
         {
             std::cout << "1677 " << varSymbol->toString() << std::endl; 
             //  Get the type of the symbol
-            llvm::Type *ty = varSymbol->getType()->getLLVMType(module);
-            ty = varSymbol->getType()->getLLVMType(module);
+            llvm::Type *ty = getLLVMType(varSymbol);
+
             // Branch depending on if the var is global or not
             if (varSymbol->isGlobal())
             {
@@ -1728,7 +1726,6 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
 
                         if (index == 0)
                         {
-                            // Value *corrected = builder->CreateBitCast(stoVal, varSymbol->type->getLLVMType(module));
                             Value *corrected = builder->CreateBitCast(v, stoVal->getType()->getPointerTo());
                             builder->CreateStore(stoVal, corrected);
                             return std::nullopt;
@@ -2431,4 +2428,10 @@ llvm::AllocaInst * CodegenVisitor::CreateAndLinkEntryBlockAlloc(llvm::Type * ty,
     llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, getCodegenID(sym));
     setAllocation(sym, v); 
     return v; 
+}
+
+llvm::Type * CodegenVisitor::getLLVMType(Symbol * sym)
+{
+    // FIXME: ADD TEMPLATE CHECK!
+    return sym->getType()->getLLVMType(module); 
 }

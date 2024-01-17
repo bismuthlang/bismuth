@@ -1116,7 +1116,7 @@ const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> exist
         return existing.find(this)->second; 
 
     LinkedMap<std::string, const Type *> elements;
-    TypeStruct * ans = new TypeStruct(elements);
+    TypeStruct * ans = new TypeStruct(elements, this->name);
 
     existing.insert({this, ans});
 
@@ -1168,10 +1168,11 @@ std::optional<const Type*> TypeTemplate::canApplyTemplate(std::vector<const Type
     // May have to change later when we get in session types!
     for(unsigned int i = 0; i < ids.size(); i++)
     {
+        std::cout << ids.at(i).second->toString(DisplayMode::C_STYLE) << " / " << subs.at(i)->toString(DisplayMode::C_STYLE) << std::endl;
         subst.insert({ids.at(i).second, subs.at(i)});
     } 
 
-    std::cout << "1169 ----- " << valueType->toString(DisplayMode::C_STYLE) << std::endl; 
+    std::cout << "1169 ----- " << valueType->toString(DisplayMode::C_STYLE) << " / " << std::endl; 
     const Type * ans = valueType->getCopySubst(subst);
     std::cout << "1171 ----- " << ans->toString(DisplayMode::C_STYLE) << std::endl; 
 

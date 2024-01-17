@@ -19,9 +19,9 @@ genericEntry        : name=VARIABLE (':' supTy+=type (',' supTy+=type)*)?   # Ge
 
 genericSpecifier    : LESS subst+=type (',' subst+=type)* GREATER        ;
 
-defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
-                  | DEFINE STRUCT name=VARIABLE LSQB (cases+=structCase)*  RSQB             # DefineStruct
-                  | DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block   # DefineProgram
+defineType        : DEFINE ENUM name=VARIABLE genericTemplate? LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
+                  | DEFINE STRUCT name=VARIABLE genericTemplate? LSQB (cases+=structCase)*  RSQB             # DefineStruct
+                  | DEFINE name=VARIABLE genericTemplate? '::' channelName=VARIABLE ':' ty=type '='? block   # DefineProgram
                   | DEFINE FUNC name=VARIABLE genericTemplate? lam=lambdaConstExpr                           # DefineFunction
                   ; 
 

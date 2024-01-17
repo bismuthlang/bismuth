@@ -23,7 +23,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             [](BismuthParser::DefineProgramContext *ctx) -> std::pair<std::string, const Type *>{
                 return {
                     ctx->name->getText(), 
-                    new TypeProgram()
+                    ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeProgram()
                 };
             },
 
@@ -31,15 +31,15 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 std::string name = ctx->name->getText(); 
                 return {
                     name, 
-                    new TypeStruct(name)
+                    ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeStruct(name)
                 };
             },
 
             [](BismuthParser::DefineEnumContext *ctx) -> std::pair<std::string, const Type *>{
                 std::string name = ctx->name->getText(); 
                 return {
-                    name, 
-                    new TypeSum(name)
+                    name,
+                    ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeSum(name)
                 };
             },
 
@@ -3247,38 +3247,145 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
     };
 
 
-    auto defineTemplate = [this, defineFunction](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy) -> std::optional<ErrorChain *> {
+    auto defineTemplate = [this, defineFunction, defineProgram, defineEnum, defineStruct](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy) -> std::optional<ErrorChain *> {
         if (templateTy->isDefined()) return std::nullopt; 
 
-        if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
-        {
-            // TODO: get errors from this?
-            TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
+        return defineTypeCase<std::optional<ErrorChain *>>(ctx, 
+            [this, templateTy, defineFunction](BismuthParser::DefineFunctionContext * fnCtx) -> std::optional<ErrorChain *> {
+                // TODO: get errors from this?
+                TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
 
-            TypeFunc * funcTy = new TypeFunc(); 
+                TypeFunc * funcTy = new TypeFunc(); 
 
-            templateTy->define(info, funcTy);
+                templateTy->define(info, funcTy);
 
-            std::vector<Symbol *> templateSyms; 
-            // FIXME: verify these bindings all go through
-            for(auto i : info.templates)
-            {
-                // FIXME: ERROR CHECK, BAD OPT ACCESS
-                Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
-                templateSyms.push_back(templateSym);
+                std::vector<Symbol *> templateSyms; 
+                // FIXME: verify these bindings all go through
+                for(auto i : info.templates)
+                {
+                    // FIXME: ERROR CHECK, BAD OPT ACCESS
+                    Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
+                    templateSyms.push_back(templateSym);
+                }
+
+                std::optional<ErrorChain *> ans = defineFunction(fnCtx, funcTy);
+                
+                // for(auto templateSym : templateSyms)
+                //     stmgr->removeSymbol(templateSym);
+                return ans; 
+            },
+
+
+            [this, templateTy, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::optional<ErrorChain *> {
+                // TODO: get errors from this?
+                TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
+
+                TypeProgram * progTy = new TypeProgram(); 
+
+                templateTy->define(info, progTy);
+
+                std::vector<Symbol *> templateSyms; 
+                // FIXME: verify these bindings all go through
+                for(auto i : info.templates)
+                {
+                    // FIXME: ERROR CHECK, BAD OPT ACCESS
+                    Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
+                    templateSyms.push_back(templateSym);
+                }
+
+                std::optional<ErrorChain *> ans = defineProgram(ctx, progTy);
+                
+                // for(auto templateSym : templateSyms)
+                //     stmgr->removeSymbol(templateSym);
+                return ans; 
+            },
+
+
+            [this, templateTy, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::optional<ErrorChain *> {
+                // TODO: get errors from this?
+                TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
+
+                TypeStruct * structTy = new TypeStruct(ctx->name->getText()); 
+
+                templateTy->define(info, structTy);
+
+                std::vector<Symbol *> templateSyms; 
+                // FIXME: verify these bindings all go through
+                for(auto i : info.templates)
+                {
+                    // FIXME: ERROR CHECK, BAD OPT ACCESS
+                    Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
+                    templateSyms.push_back(templateSym);
+                }
+
+                std::optional<ErrorChain *> ans = defineStruct(ctx, structTy);
+                
+                // for(auto templateSym : templateSyms)
+                //     stmgr->removeSymbol(templateSym);
+                return ans; 
+            },
+
+
+            [this, templateTy, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::optional<ErrorChain *> {
+                TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
+
+                TypeSum * sumTy = new TypeSum(ctx->name->getText()); 
+
+                templateTy->define(info, sumTy);
+
+                std::vector<Symbol *> templateSyms; 
+                // FIXME: verify these bindings all go through
+                for(auto i : info.templates)
+                {
+                    // FIXME: ERROR CHECK, BAD OPT ACCESS
+                    Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
+                    templateSyms.push_back(templateSym);
+                }
+
+                std::optional<ErrorChain *> ans = defineEnum(ctx, sumTy);
+                
+                // for(auto templateSym : templateSyms)
+                //     stmgr->removeSymbol(templateSym);
+                return ans; 
+
+            },
+
+
+            [this](BismuthParser::DefineTypeContext * ctx) -> std::optional<ErrorChain *> {
+                return errorHandler.addCompilerError(ctx->getStart(), "Attempted to apply a template to an unknown/unimplemented type definition.");
             }
-
-            std::optional<ErrorChain *> ans = defineFunction(fnCtx, funcTy);
-            
-            // for(auto templateSym : templateSyms)
-            //     stmgr->removeSymbol(templateSym);
-            return ans; 
-        }
-
-        return errorHandler.addError(ctx->getStart(), "Currently, templates are only supported on functions.");
+        );
     };
 
 
+
+    auto getTemplateSymbol = [this, defineTemplate](std::optional<Symbol *> opt, std::string symName, BismuthParser::DefineTypeContext* innerCtx) -> std::variant<Symbol *, ErrorChain *> {
+        Symbol * sym = lazy_value_or<Symbol *>(opt, 
+            [this, symName]() {
+                return stmgr->addSymbol(
+                    symName, 
+                    new TypeTemplate(), 
+                    true, false).value(); //should be safe as we checked for redeclarations
+            });
+
+        if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+        {
+            std::optional<ErrorChain *> optErr = defineTemplate(innerCtx, templateTy);
+
+            if(optErr) return optErr.value();
+
+            // FIXME: UNSAFE OPTIONAL? 
+            // if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
+            // {
+                std::cout << "3380 generated generic symbol: " << sym->toString() << " --- " << sym->getUniqueNameInScope() << std::endl; 
+                return sym;
+            // }
+            // TODO: print templateTy->getValueType().value()? 
+            // return errorHandler.addError(innerCtx->getStart(), "Expected function but got: " + sym->getType()->toString(toStringMode));
+        }
+
+        return errorHandler.addError(innerCtx->getStart(), "Expected template but got: " + sym->getType()->toString(toStringMode));
+    };
 std::cout << "3179" << std::endl; 
     // Essentially a type-case
     return defineTypeCase<std::variant<Symbol *, ErrorChain *>>(ctx, 
@@ -3311,6 +3418,7 @@ std::cout << "3179" << std::endl;
                     // FIXME: UNSAFE OPTIONAL? 
                     if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
                     {
+                        std::cout << "3421 generated generic symbol: " << sym->toString() << std::endl; 
                         return sym;
                     }
                     // TODO: print templateTy->getValueType().value()? 
@@ -3339,7 +3447,7 @@ std::cout << "3179" << std::endl;
             return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym->getType()->toString(toStringMode));       
         },
 
-        [this, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
+        [this, getTemplateSymbol, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
             std::optional<Symbol *> opt = symBindings->getBinding((BismuthParser::DefineTypeContext *)ctx);
 
             if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
@@ -3347,7 +3455,12 @@ std::cout << "3179" << std::endl;
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
             }
 
-// std::cout << stmgr->toString() << std::endl;  
+            if(ctx->genericTemplate())
+            {
+                return getTemplateSymbol(opt, ctx->name->getText(), ctx);
+            }
+
+
             Symbol *sym = lazy_value_or<Symbol *>(opt, 
                 [this, ctx]() { return stmgr->addSymbol(
                     ctx->name->getText(), 
@@ -3366,7 +3479,7 @@ std::cout << "3179" << std::endl;
             return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->getType()->toString(toStringMode));
         },
 
-        [this, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
+        [this, getTemplateSymbol, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
             std::optional<Symbol *> opt = symBindings->getBinding(ctx);
 
             if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
@@ -3375,6 +3488,11 @@ std::cout << "3179" << std::endl;
             }
 
             std::string name = ctx->name->getText(); 
+
+            if(ctx->genericTemplate())
+            {
+                return getTemplateSymbol(opt, name, ctx);
+            }
 
             Symbol *sym = lazy_value_or<Symbol *>(opt, 
                 [this, name]() { return stmgr->addSymbol(
@@ -3393,7 +3511,7 @@ std::cout << "3179" << std::endl;
             return errorHandler.addError(ctx->getStart(), "Expected struct/product but got: " + sym->getType()->toString(toStringMode));
         },
 
-        [this, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
+        [this, getTemplateSymbol, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::variant<Symbol *, ErrorChain *> {
             std::optional<Symbol *> opt = symBindings->getBinding(ctx);
 
             if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
@@ -3402,6 +3520,11 @@ std::cout << "3179" << std::endl;
             }
 
             std::string name = ctx->name->getText(); 
+
+            if(ctx->genericTemplate())
+            {
+                return getTemplateSymbol(opt, name, ctx);
+            }
 
             Symbol *sym = lazy_value_or<Symbol *>(opt, 
                 [this, name](){

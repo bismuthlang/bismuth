@@ -72,6 +72,8 @@ private:
 
     llvm::AllocaInst * CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol * sym);
 
+    llvm::Type * getLLVMType(Symbol * sym);
+
 public:
     /**
      * @brief Construct a new Codegen Visitor object
