@@ -174,9 +174,10 @@ public:
             }
             else if (const TypeTemplate * tmp = dynamic_cast<const TypeTemplate *>(sym->getType())) // FIXME: is this an adequate check? what about other type defs?
             {
-                Function *fn = module->getFunction(getCodegenID(sym));
-                std::cout << "178 found " << fn << std::endl; 
-                if(fn) return fn; 
+                // Function *fn = module->getFunction(getCodegenID(sym));
+                // std::cout << "178 found " << fn << std::endl; 
+                // if(fn) return fn; 
+                errorHandler.addError(nullptr, "Cannot visit a template as if it were a variable");
                 return std::nullopt; 
             }
             else if (sym->isGlobal())
@@ -205,9 +206,6 @@ public:
 
         // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
         Value *v = builder->CreateLoad(type, optVal.value(), getCodegenID(sym));
-        // llvm::AllocaInst *alloc = builder->CreateAlloca(v->getType());
-        // builder->CreateStore(v, alloc);
-        // return alloc;
         return v;
     }
 

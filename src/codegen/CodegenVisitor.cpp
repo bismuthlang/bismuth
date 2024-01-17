@@ -1386,17 +1386,17 @@ std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 {
-    Symbol *sym = n->symbol;
+    // Symbol *sym = n->symbol;
 
-    if (!sym->getType()) // TODO: symbol or use local type on typed ast node?
-    {
-        errorHandler.addError(n->getStart(), "Improperly initialized symbol in field access: " + getCodegenID(n->symbol));
-        return std::nullopt;
-    }
+    // if (!sym->getType()) // TODO: symbol or use local type on typed ast node?
+    // {
+    //     errorHandler.addError(n->getStart(), "Improperly initialized symbol in field access: " + getCodegenID(n->symbol));
+    //     return std::nullopt;
+    // }
 
     if (n->accesses.size() > 0 && n->accesses.at(n->accesses.size() - 1).first == "length")
     {
-        const Type *modOpt = (n->accesses.size() > 1) ? n->accesses.at(n->accesses.size() - 2).second : sym->getType();
+        const Type *modOpt = (n->accesses.size() > 1) ? n->accesses.at(n->accesses.size() - 2).second : n->getSymbolType(); //sym->getType();
         if (std::optional<const TypeArray *> arOpt = type_cast<TypeArray>(modOpt))
         {
             // If it is, correctly, an array type, then we can get the array's length (this is the only operation currently, so we can just do thus)
@@ -1410,8 +1410,9 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
         // Can't throw error b/c length could be field of struct
     }
 
-    const Type *ty = sym->getType();
-    std::optional<Value *> baseOpt = visitVariable(sym, n->accesses.size() == 0 ? n->is_rvalue : false);
+    const Type *ty = n->getSymbolType(); //sym->getType();
+    std::cout << "1414!!!! " << ty->toString(DisplayMode::C_STYLE) << std::endl; 
+    std::optional<Value *> baseOpt = visitVariable(n->getSymbol(), n->accesses.size() == 0 ? n->is_rvalue : false);
 
     if (!baseOpt)
     {
@@ -1674,6 +1675,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
         // For each of the variables being assigned to that value
         for (Symbol *varSymbol : e->syms)
         {
+            std::cout << "1677 " << varSymbol->toString() << std::endl; 
             //  Get the type of the symbol
             llvm::Type *ty = varSymbol->getType()->getLLVMType(module);
             ty = varSymbol->getType()->getLLVMType(module);
@@ -2151,18 +2153,11 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 
     for(auto t : n->getType()->getRegisteredTemplates())
     {
-        std::string customName = "<";
         // FIXME: CHECK BOUNDS ARE SAME FOR BOTH?
-        unsigned int i = 0; 
         
         for(unsigned int i = 0; i < info.templates.size(); i++)
         {
             info.templates.at(i).second->actingType = t.first.at(i); 
-
-            if(i != 0) customName += ", ";
-
-            customName += t.first.at(i)->toString(DisplayMode::C_STYLE); 
-
         }
 
         // substitute each 

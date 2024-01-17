@@ -31,7 +31,7 @@ externStatement : EXTERN FUNC name=VARIABLE LPAR ((paramList=parameterList varia
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
 invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr)  inv_args+;
 
-fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  genericSpecifier? ;
+fieldAccessExpr     : fields+=VARIABLE genericSpecifier? ('.' fields+=VARIABLE)*  ;
 dereferenceExpr     : MULTIPLY expr=expression                  ;
 
 //Helps allow us to use VARIABLE or arrayAccess and not other expressions (such as for assignments)

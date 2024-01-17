@@ -327,7 +327,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
 
-    // FIXME: ERROR IS OCCURING HERE B/C WE ARE GETTING BACK A TEMPLATE TYPE INSTEAD OF A FUNCTYPE!
+    // FIXME: ERROR IS OCCURRING HERE B/C WE ARE GETTING BACK A TEMPLATE TYPE INSTEAD OF A FUNC TYPE!
     // lam->type = const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->type)); // FIXME: DO BETTER! NEEDED B/C OF NAME RES!
     lam->type = [funcSym]() -> TypeFunc * {
         if(const TypeTemplate * temp = dynamic_cast<const TypeTemplate *>(funcSym->getType()))
@@ -975,9 +975,41 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
     }
 
+    const Type * symType = sym->getType(); 
+
+    if(ctx->genericSpecifier())
+    {
+        std::cout << "982" << std::endl;
+        if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(symType))
+        {
+            std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(ctx->genericSpecifier());
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
+            {
+                // (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                return *e;
+            }
+
+            std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
+
+
+
+            std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
+            if(!appliedOpt)
+                return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
+            symType = appliedOpt.value(); 
+            std::cout << "1001" << std::endl;
+        }
+        else 
+        {
+            return errorHandler.addError(ctx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + symType->toString(toStringMode));
+        }
+    }
+
     std::vector<std::pair<std::string, const Type *>> a;
 
-    const Type *ty = sym->getType();
+    const Type *ty = symType;
+    std::cout << "1012"  << symType->toString(toStringMode) << std::endl;
 
     for (unsigned int i = 1; i < ctx->fields.size(); i++)
     {
@@ -1027,6 +1059,9 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
     }
 
+    return new TFieldAccessNode(ctx->getStart(), sym, symType, is_rvalue, a);
+    /*
+
     if(!ctx->genericSpecifier())
         return new TFieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
 
@@ -1049,8 +1084,8 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
             return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
         return new TFieldAccessNode(ctx->getStart(), sym, is_rvalue, a); // FIXME: NOT SURE WHAT TO RETURN HERE. If we can return this, then refactor to share this line with non-templated branch
     }
-
     return errorHandler.addError(ctx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + ty->toString(toStringMode));
+    */
 }
 
 std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue)
@@ -1390,6 +1425,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
                 const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType;
 
+                std::cout << "1425 " << id << " : " << newAssignType->toString(toStringMode) << " vs " << newExprType->toString(toStringMode) << std::endl; 
                 // Done with exprType for later type inference purposes
                 // .value() should be safe as we already checked name uniqueness
                 Symbol * symbol = stmgr->addSymbol(id, newExprType, false, stmgr->isGlobalScope()).value();
@@ -2924,7 +2960,7 @@ TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTempla
                 }
                 else
                 {
-                    syms.push_back({idName, new TypeGeneric(false)}); //idName); // FIXME: BETTER ISLINEAR?
+                    syms.push_back({idName, new TypeGeneric(false)}); //idName); // FIXME: BETTER IS-LINEAR?
                     visited.insert({idName, tyCtx->getStart()});
                 }
             }

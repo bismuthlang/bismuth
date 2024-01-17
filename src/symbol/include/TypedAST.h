@@ -913,33 +913,34 @@ public:
 class TFieldAccessNode : public TypedNode
 {
 private:
-    const Type *type;
+    // const Type *type;
+    Symbol *symbol;
+    const Type * symType; 
+    const Type * resultType; 
+
 
 public:
-    Symbol *symbol;
-    vector<pair<string, const Type *>> accesses;
     bool is_rvalue;
+    vector<pair<string, const Type *>> accesses;
 
-    TFieldAccessNode(antlr4::Token *tok, Symbol *f, bool rv, vector<pair<string, const Type *>> r = {}) : TypedNode(tok)
+    TFieldAccessNode(antlr4::Token *tok, Symbol *s, const Type * st, bool rv, vector<pair<string, const Type *>> r = {}) 
+        : TypedNode(tok)
+        , symbol(s)
+        , symType(st)
+        , is_rvalue(rv)
+        , accesses(r)
     {
-        symbol = f;
-        is_rvalue = rv;
-        accesses = r;
-
-        if (r.empty())
-        {
-            type = symbol->getType();
-        }
-        else
-        {
-            type = r.at(r.size() - 1).second;
-        }
+        resultType = r.empty() ? symType : r.at(r.size() - 1).second;
     }
 
-    const Type *getType() override
-    {
-        return type;
-    }
+    const Type *getType() override { return resultType; }
+
+    const Type * getResultantType() { return resultType; }
+
+    const Type * getSymbolType() { return symType; }
+
+    Symbol * getSymbol() { return symbol; }
+
 
     std::string toString() const override {
         return "FIELD ACCESS NODE " + symbol->toString();
