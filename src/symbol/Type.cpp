@@ -492,14 +492,24 @@ bool TypeProgram::setProtocol(const ProtocolSequence * p) const
     return true;
 }
 
-// FIXME: should this and function return the actual name of the type, not just the representation (like what happens with structs and such)
-// SHould also greatly improve this
-std::string TypeProgram::toString(DisplayMode mode) const
+
+
+// FIXME: SHould also greatly improve these two naming functions for programs
+
+std::string TypeProgram::getTypeRepresentation(DisplayMode mode) const 
 {
     std::ostringstream description;
     description << "PROGRAM : " << (protocol ? protocol->toString(mode) : "PARTIAL DEFINITION");
 
     return description.str();
+}
+
+std::string TypeProgram::toString(DisplayMode mode) const
+{
+    // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
+    if (this->getName())
+        return this->getName().value();
+    return getTypeRepresentation(mode);
 }
 
 llvm::FunctionType *TypeProgram::getLLVMFunctionType(llvm::Module *M) const
@@ -528,14 +538,14 @@ bool TypeProgram::requiresDeepCopy() const { return false; }
 
 // std::optional<std::string> TypeProgram::getLLVMName() const { return name; }
 
-bool TypeProgram::setName(std::string n) const
-{
-    if (name)
-        return false;
-    TypeProgram *u_this = const_cast<TypeProgram *>(this);
-    u_this->name = n;
-    return true;
-}
+// bool TypeProgram::setName(std::string n) const
+// {
+//     if (name)
+//         return false;
+//     TypeProgram *u_this = const_cast<TypeProgram *>(this);
+//     u_this->name = n;
+//     return true;
+// }
 
 bool TypeProgram::isDefined() const { return defined; }
 
@@ -596,8 +606,8 @@ bool TypeFunc::setInvoke(std::vector<const Type *> p, const Type *r, bool v) con
     return true;
 }
 
-// PLAN: should improve tostring, make it match syntax + math
-std::string TypeFunc::toString(DisplayMode mode) const
+
+std::string TypeFunc::getTypeRepresentation(DisplayMode mode) const 
 {
     if(!isDefined()) return "Undefined Function"; // FIXME: ADD SUCH CHECKS EVERYWHERE!
     std::ostringstream description;
@@ -622,6 +632,16 @@ std::string TypeFunc::toString(DisplayMode mode) const
 
     description << retType->toString(mode);
     return description.str();
+}
+
+// PLAN: should improve tostring, make it match syntax + math
+std::string TypeFunc::toString(DisplayMode mode) const
+{
+    // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
+    if (this->getName())
+        return this->getName().value();
+    return getTypeRepresentation(mode);
+
 }
 
 llvm::FunctionType *TypeFunc::getLLVMFunctionType(llvm::Module *M) const
@@ -651,16 +671,15 @@ llvm::PointerType *TypeFunc::getLLVMType(llvm::Module *M) const
 
 bool TypeFunc::requiresDeepCopy() const { return false; }
 
-// std::optional<std::string> TypeFunc::getLLVMName() const { return name; }
-bool TypeFunc::setName(std::string n) const
-{
-    if (name)
-        return false;
-    TypeFunc *u_this = const_cast<TypeFunc *>(this);
-    u_this->name = n;
-    // name = n;
-    return true;
-}
+// bool TypeFunc::setName(std::string n) const
+// {
+//     if (name)
+//         return false;
+//     TypeFunc *u_this = const_cast<TypeFunc *>(this);
+//     u_this->name = n;
+//     // name = n;
+//     return true;
+// }
 
 std::vector<const Type *> TypeFunc::getParamTypes() const { return paramTypes; }
 
@@ -879,12 +898,12 @@ unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
     return (unsigned int)0;
 }
 
-// TODO: Improve tostring to make it match syntax?
-std::string TypeSum::toString(DisplayMode mode) const
-{
-    if (name)
-        return name.value();
 
+
+// TODO: Improve tostring to make it match syntax?
+
+std::string TypeSum::getTypeRepresentation(DisplayMode mode) const
+{
     std::ostringstream description;
 
     description << "(";
@@ -901,6 +920,14 @@ std::string TypeSum::toString(DisplayMode mode) const
     description << ")";
 
     return description.str();
+}
+
+std::string TypeSum::toString(DisplayMode mode) const
+{
+    // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
+    if (this->getName())
+        return this->getName().value();
+    return getTypeRepresentation(mode);
 }
 
 llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
@@ -1050,11 +1077,9 @@ bool TypeStruct::isDefined() const { return defined; }
 vector<pair<std::string, const Type *>> TypeStruct::getElements() const { return elements.getElements(); }
 optional<unsigned int> TypeStruct::getElementIndex(std::string k) const { return elements.getIndex(k); }
 
-std::string TypeStruct::toString(DisplayMode mode=C_STYLE) const
-{
-    if (name)
-        return name.value();
 
+std::string TypeStruct::getTypeRepresentation(DisplayMode mode) const
+{
     std::ostringstream description;
 
     description << "(";
@@ -1071,6 +1096,14 @@ std::string TypeStruct::toString(DisplayMode mode=C_STYLE) const
     description << ")";
 
     return description.str();
+}
+
+std::string TypeStruct::toString(DisplayMode mode=C_STYLE) const
+{
+    // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
+    if (this->getName())
+        return this->getName().value();
+    return getTypeRepresentation(mode);
 }
 
 llvm::StructType *TypeStruct::getLLVMType(llvm::Module *M) const
@@ -1116,7 +1149,7 @@ const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> exist
         return existing.find(this)->second; 
 
     LinkedMap<std::string, const Type *> elements;
-    TypeStruct * ans = new TypeStruct(elements, this->name);
+    TypeStruct * ans = new TypeStruct(elements, this->getName());
 
     existing.insert({this, ans});
 
@@ -1139,9 +1172,9 @@ const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> exist
  *
  *******************************************/
 
-std::optional<const Type*> TypeTemplate::getValueType() const { return valueType; }
+std::optional<const NameableType*> TypeTemplate::getValueType() const { return valueType; }
 
-std::optional<const Type*> TypeTemplate::canApplyTemplate(std::vector<const Type *> subs) const {
+std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<const Type *> subs) const {
 
     auto it = registeredTemplates.find(subs);
 
@@ -1174,6 +1207,7 @@ std::optional<const Type*> TypeTemplate::canApplyTemplate(std::vector<const Type
 
     std::cout << "1169 ----- " << valueType->toString(DisplayMode::C_STYLE) << " / " << std::endl; 
     const Type * ans = valueType->getCopySubst(subst);
+    // FIXME: MAYBE UPDATE NAME HERE?
     std::cout << "1171 ----- " << ans->toString(DisplayMode::C_STYLE) << std::endl; 
 
     registeredTemplates.insert({subs, ans}); 

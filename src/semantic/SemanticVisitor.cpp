@@ -335,9 +335,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->getType()));
     }();
 
-    // lam->setName(funcSym->getIdentifier()); // Not really needed.
-
-
     /*
      *  Check if this is a template or not, and handle it accordingly
      */
@@ -1060,32 +1057,6 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     }
 
     return new TFieldAccessNode(ctx->getStart(), sym, symType, is_rvalue, a);
-    /*
-
-    if(!ctx->genericSpecifier())
-        return new TFieldAccessNode(ctx->getStart(), sym, is_rvalue, a);
-
-    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(ty))
-    {
-        std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(ctx->genericSpecifier());
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
-        {
-            // (*e)->addError(ctx->getStart(), "Failed to generate case type");
-            return *e;
-        }
-
-        std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
-
-
-
-        std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
-        if(!appliedOpt)
-            return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-        return new TFieldAccessNode(ctx->getStart(), sym, is_rvalue, a); // FIXME: NOT SURE WHAT TO RETURN HERE. If we can return this, then refactor to share this line with non-templated branch
-    }
-    return errorHandler.addError(ctx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + ty->toString(toStringMode));
-    */
 }
 
 std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue)

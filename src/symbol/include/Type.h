@@ -145,18 +145,27 @@ private:
 };
 
 
-// class NameableType {
-// protected: 
-//     NameableType(std::optional<std::string> n) : name(n) {}
-//     virtual ~NameableType() = default;
+class NameableType {
+protected: 
+    NameableType(std::optional<std::string> n) : name(n) {}
+    virtual ~NameableType() = default;
 
-// private: 
-//     std::optional<std::string> name; 
+private: 
+    std::optional<std::string> name; 
+    std::optional<std::function<std::string()>> meta = std::nullopt; 
 
-// public: 
-//     std::optional<std::string> getName() const { return name; }
-//     virtual std::string getTypeRepresentation() const = 0;
-// };
+public: 
+    std::optional<std::string> getName() const { 
+        return name; 
+        // return (name.has_value() ? name.value() : "") + (meta.has_value() ? meta.value()() : "");
+    }
+    virtual std::string getTypeRepresentation(DisplayMode mode) const = 0;
+    bool hasName() { return name.has_value(); }
+
+    void setMeta(std::function<std::string()> m) {
+        meta = m; 
+    }
+};
 
 
 class TypeNum {
@@ -619,7 +628,7 @@ protected:
  *
  *******************************************/
 
-class TypeProgram : public Type
+class TypeProgram : public Type, public NameableType
 {
 private:
     /**
@@ -634,28 +643,32 @@ private:
      */
     bool defined;
 
-    /**
-     * @brief Name used by llvm to represent this function
-     *
-     */
-    std::optional<std::string> name = {}; // NOT FOR SEMANTIC NAMES!!! THIS ONE IS FOR LLVM ONLY
-
+    // FIXME: NAME IS ALWAYS NULLOPT!
 public:
-    TypeProgram() : Type(false), defined(false)
-    {
-    }
+    TypeProgram() 
+        : Type(false)
+        , NameableType(std::nullopt)
+        , defined(false)
+    {}
+
     /**
      * @brief Construct a new Type Program object
      * 
      * @param p The protocol sequence for the program's main channel to follow
      */
-    TypeProgram(const ProtocolSequence *p) : Type(false), protocol(p), defined(true)
-    {
-    }
+    TypeProgram(const ProtocolSequence *p) 
+        : Type(false)
+        , NameableType(std::nullopt)
+        , protocol(p)
+        , defined(true)
+    {}
 
     bool setProtocol(const ProtocolSequence * p) const; 
 
     std::string toString(DisplayMode mode) const override;
+
+    std::string getTypeRepresentation(DisplayMode mode) const override; 
+
 
     llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const;
 
@@ -665,7 +678,7 @@ public:
 
     // std::optional<std::string> getLLVMName() const;
 
-    bool setName(std::string n) const;
+    // bool setName(std::string n) const;
 
     /**
      * @brief Returns if this is defined
@@ -695,7 +708,7 @@ protected:
 
 // TODO: With generics, allow for pattern matching? Ie, 
 // <TY1, TY2 : { someIdentifier : TY1, ...}> ? 
-class TypeFunc : public Type
+class TypeFunc : public Type, public NameableType
 {
 private:
     /**
@@ -722,16 +735,13 @@ private:
      */
     bool defined;
 
-    /**
-     * @brief Name used by llvm to represent this function
-     *
-     */
-    std::optional<std::string> name = {}; // NOT FOR SEMANTIC NAMES!!! THIS ONE IS FOR LLVM ONLY
-
+    // FIXME: FUNCS ALWAYS HAVE NULLOPT NAME?!
 public:
-    TypeFunc() : Type(false), defined(false)
-    {
-    }
+    TypeFunc() 
+        : Type(false)
+        , NameableType(std::nullopt)
+        , defined(false)
+    {}
 
     /**
      * @brief Construct a new TypeFunc object
@@ -740,9 +750,14 @@ public:
      * @param v Determines if this should be a variadic
      * @param d Determines if this has been fully defined
      */
-    TypeFunc(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) : Type(false), paramTypes(p), retType(r), variadic(v), defined(true)
-    {
-    }
+    TypeFunc(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) 
+        : Type(false)
+        , NameableType(std::nullopt)
+        , paramTypes(p)
+        , retType(r)
+        , variadic(v)
+        , defined(true)
+    {}
 
     bool setInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) const;
 
@@ -753,16 +768,13 @@ public:
      */
     std::string toString(DisplayMode mode) const override;
 
+    std::string getTypeRepresentation(DisplayMode mode) const override; 
+
     llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const;
 
     llvm::PointerType *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
-
-    // std::optional<std::string> getLLVMName() const;
-
-    bool setName(std::string n) const;
-
     /**
      * @brief Get the Param Types object
      *
@@ -885,7 +897,7 @@ protected:
  * Sum Types
  *
  *******************************************/
-class TypeSum : public Type
+class TypeSum : public Type, public NameableType
 {
 private:
     /**
@@ -894,23 +906,21 @@ private:
      */
     std::set<const Type *, TypeCompare> cases = {};
 
-    /**
-     * @brief LLVM IR Representation of the type
-     *
-     */
-    // llvm::Type * llvmType;
-    std::optional<std::string> name = {};
-
     bool defined;
 
 public:
-    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) : Type(false), cases(c), name(n), defined(true)
-    {
-    }
+    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) 
+        : Type(false)
+        , NameableType(n)
+        , cases(c)
+        , defined(true)
+    {}
 
-    TypeSum(std::string n) : Type(false), name(n), defined(false)
-    {
-    }
+    TypeSum(std::string n) 
+        : Type(false)
+        , NameableType(n)
+        , defined(false)
+    {}
 
     bool define(std::set<const Type *, TypeCompare> c) const;
     bool isDefined() const;
@@ -929,6 +939,8 @@ public:
      * @return std::string String name representation of this type.
      */
     std::string toString(DisplayMode mode) const override;
+
+    std::string getTypeRepresentation(DisplayMode mode) const override; 
 
     /**
      * @brief Gets the LLVM type for an array of the given valueType and length.
@@ -954,7 +966,7 @@ protected:
  * Struct Types (Product Types w/ Names)
  *
  *******************************************/
-class TypeStruct : public Type
+class TypeStruct : public Type, public NameableType
 {
 private:
     /**
@@ -964,25 +976,24 @@ private:
     LinkedMap<std::string, const Type *> elements;
 
     /**
-     * @brief LLVM IR Representation of the type
-     *
-     */
-    std::optional<std::string> name;
-
-    /**
      * @brief Determines if the function has been fully defined (true), or if it is a partial signature (ie, a pre-declaration waiting to be fulfilled)
      *
      */
     bool defined;
 
 public:
-    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) : Type(false), elements(e), name(n), defined(true)
-    {
-    }
+    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) 
+        : Type(false)
+        , NameableType(n)
+        , elements(e)
+        , defined(true)
+    {}
 
-    TypeStruct(std::string n) : Type(false), name(n), defined(false)
-    {
-    }
+    TypeStruct(std::string n) 
+        : Type(false)
+        , NameableType(n)
+        , defined(false)
+    {}
 
     std::optional<const Type *> get(std::string id) const;
 
@@ -1001,6 +1012,8 @@ public:
      * @return std::string String name representation of this type.
      */
     std::string toString(DisplayMode mode) const override;
+
+    std::string getTypeRepresentation(DisplayMode mode) const override; 
 
     /**
      * @brief Gets the LLVM type for an array of the given valueType and length.
@@ -1107,23 +1120,23 @@ public:
 class TypeTemplate : public Type, public TemplateableType
 {
 private:
-    const Type * valueType;
+    const NameableType * valueType;
 
-    mutable std::map<std::vector<const Type *>, const Type *> registeredTemplates = {};
+    mutable std::map<std::vector<const Type *>, const NameableType *> registeredTemplates = {};
 
     bool defined = false; 
 
 public:
     TypeTemplate() : Type(false), TemplateableType({}), defined(false) {}
 
-    TypeTemplate(std::optional<TemplateInfo> i, const Type * vt) : Type(false), TemplateableType(i), valueType(vt), defined(true)// FIXME: IS IT Non linear?
+    TypeTemplate(std::optional<TemplateInfo> i, const NameableType * vt) : Type(false), TemplateableType(i), valueType(vt), defined(true)// FIXME: IS IT Non linear?
     {
     }
 
     bool isDefined() const { return defined; }
 
     // PLAN: Contract that such a function may exist, but no guarantee about param types?
-    bool define(std::optional<TemplateInfo> i, const Type * vt) const
+    bool define(std::optional<TemplateInfo> i, const NameableType * vt) const
     {
         if(defined) return false; 
 
@@ -1135,9 +1148,9 @@ public:
         return true; 
     }
 
-    std::optional<const Type*> getValueType() const;
+    std::optional<const NameableType *> getValueType() const;
 
-    std::optional<const Type*> canApplyTemplate(std::vector<const Type *>) const; 
+    std::optional<const NameableType *> canApplyTemplate(std::vector<const Type *>) const; 
 
     /**
      * @brief Returns VAR if type inference has not been completed or {VAR/<INFERRED TYPE>} if type inference has completed.

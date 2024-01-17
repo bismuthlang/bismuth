@@ -24,14 +24,14 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
             const TypeProgram *type = octx->getType();
 
             Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, getCodegenID(octx->getSymbol()), module);
-            type->setName(fn->getName().str());
+            // type->setName(fn->getName().str());
         }
         else if (TLambdaConstNode *octx = dynamic_cast<TLambdaConstNode *>(e))
         {
             const TypeFunc *type = octx->getType();
 
             Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, getCodegenID(octx->getSymbol()), module);
-            type->setName(fn->getName().str());
+            // type->setName(fn->getName().str());
         }
         else if (TDefineTemplateNode *octx = dynamic_cast<TDefineTemplateNode *>(e))
         {
@@ -1546,7 +1546,7 @@ std::optional<Value *> CodegenVisitor::visit(TExternNode *n)
     const TypeFunc *type = n->getType();
 
     Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, getCodegenID(symbol), module);
-    type->setName(fn->getName().str());
+    // type->setName(fn->getName().str());
 
     return std::nullopt;
 }
@@ -1673,7 +1673,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
         // For each of the variables being assigned to that value
         for (Symbol *varSymbol : e->syms)
         {
-            std::cout << "1677 " << varSymbol->toString() << std::endl; 
+            std::cout << "1677 " << varSymbol->toString() << " --- " << varSymbol->getUniqueNameInScope() << std::endl; 
             //  Get the type of the symbol
             llvm::Type *ty = getLLVMType(varSymbol);
 
@@ -2042,7 +2042,7 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
     Function *fn = module->getFunction(funcFullName);
     if(!fn)
         fn = Function::Create(fnType, GlobalValue::PrivateLinkage, funcFullName, module);
-    type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED -> Probably not needed
+    // type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED -> Probably not needed
 
     std::vector<Symbol *> paramList = n->paramSymbols;
 
@@ -2112,7 +2112,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
     if(!fn)
         fn = Function::Create(fnType, GlobalValue::PrivateLinkage, funcFullName, module);
 
-    prog->setName(fn->getName().str());// Note: NOT ALWAYS NEEDED -> Probably not needed
+    // prog->setName(fn->getName().str());// Note: NOT ALWAYS NEEDED -> Probably not needed
 
     // Create basic block
     BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
