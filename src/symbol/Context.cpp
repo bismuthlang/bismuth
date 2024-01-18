@@ -58,7 +58,7 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
     uint32_t idNum = 0; 
     std::string uniqName = getUniqNameFor(id); 
 
-    std::cout << "END W/ " << uniqName << " for " << id << std::endl; 
+    // std::cout << "END W/ " << uniqName << " for " << id << std::endl; 
 
     // std::cout << this->toString() << std::endl;  // FIXME: THIS SEGFUALTS!
     // Note: this is safe as we previously check that currentScope exists

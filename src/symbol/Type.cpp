@@ -221,7 +221,7 @@ bool TypeArray::isSupertypeFor(const Type *other) const
 {
     // An array can only be a supertype of another array
     if (const TypeArray *p = dynamic_cast<const TypeArray *>(other))
-    {
+{
         /*
             * If the other array's value type is a subtype of the current
             * array's type AND their lengths match, then we can consider
@@ -465,13 +465,13 @@ const Type * TypeBox::getCopySubst(std::map<const Type *, const Type *> existing
     if(existing.contains(this))
         return existing.find(this)->second; 
 
-    
+    std::cout << "468" << std::endl;
     TypeBox * ans = new TypeBox(nullptr);
-
+std::cout << "470" << std::endl;
     existing.insert({this, ans});
-
+std::cout << "472" << std::endl;
     ans->innerType = this->innerType->getCopySubst(existing);
-
+std::cout << "474" << std::endl;
     return ans; 
 }
 
@@ -502,14 +502,6 @@ std::string TypeProgram::getTypeRepresentation(DisplayMode mode) const
     description << "PROGRAM : " << (protocol ? protocol->toString(mode) : "PARTIAL DEFINITION");
 
     return description.str();
-}
-
-std::string TypeProgram::toString(DisplayMode mode) const
-{
-    // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
-    if (this->getName())
-        return this->getName().value();
-    return getTypeRepresentation(mode);
 }
 
 llvm::FunctionType *TypeProgram::getLLVMFunctionType(llvm::Module *M) const
@@ -587,6 +579,37 @@ bool TypeProgram::isSupertypeFor(const Type *other) const
     return false;
 }
 
+const Type * TypeProgram::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    
+    TypeProgram * ans = new TypeProgram();
+    // Needed to make nested generics work :D
+    {
+        auto m = this->getMeta(); 
+        if(m)
+            ans->setMeta(m.value());
+    }
+
+    existing.insert({this, ans});
+
+    // FIXME: NEED TO IMPL THIS!!!
+
+    // TODO: use ->define() func!
+    // for(auto ty : this->paramTypes)
+    //     ans->paramTypes.push_back(
+    //         ty->getCopySubst(existing)
+    //     );
+
+    // ans->retType = retType->getCopySubst(existing);
+
+    // ans->defined = true; 
+
+
+    return ans; 
+}
+
 /*******************************************
  *
  * Function
@@ -606,7 +629,7 @@ bool TypeFunc::setInvoke(std::vector<const Type *> p, const Type *r, bool v) con
     return true;
 }
 
-
+// PLAN: should improve tostring, make it match syntax + math
 std::string TypeFunc::getTypeRepresentation(DisplayMode mode) const 
 {
     if(!isDefined()) return "Undefined Function"; // FIXME: ADD SUCH CHECKS EVERYWHERE!
@@ -634,15 +657,7 @@ std::string TypeFunc::getTypeRepresentation(DisplayMode mode) const
     return description.str();
 }
 
-// PLAN: should improve tostring, make it match syntax + math
-std::string TypeFunc::toString(DisplayMode mode) const
-{
-    // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
-    if (this->getName())
-        return this->getName().value();
-    return getTypeRepresentation(mode);
 
-}
 
 llvm::FunctionType *TypeFunc::getLLVMFunctionType(llvm::Module *M) const
 {
@@ -725,6 +740,11 @@ const Type * TypeFunc::getCopySubst(std::map<const Type *, const Type *> existin
 
     
     TypeFunc * ans = new TypeFunc();
+    {
+        auto m = this->getMeta(); 
+        if(m)
+            ans->setMeta(m.value());
+    }
 
     existing.insert({this, ans});
 
@@ -922,16 +942,10 @@ std::string TypeSum::getTypeRepresentation(DisplayMode mode) const
     return description.str();
 }
 
-std::string TypeSum::toString(DisplayMode mode) const
-{
-    // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
-    if (this->getName())
-        return this->getName().value();
-    return getTypeRepresentation(mode);
-}
 
 llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
 {
+    std::cout << "937 " << toString(C_STYLE) << " " << this << std::endl; 
     llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString(C_STYLE));
     if (ty)
         return ty;
@@ -1026,7 +1040,13 @@ const Type * TypeSum::getCopySubst(std::map<const Type *, const Type *> existing
         return existing.find(this)->second; 
 
     std::set<const Type *, TypeCompare> cases = {};
-    TypeSum * ans = new TypeSum(cases);
+    // TODO: refactor getting a stub into a method like freshStub() ? 
+    TypeSum * ans = new TypeSum(cases, this->getName());
+    {
+        auto m = this->getMeta(); 
+        if(m)
+            ans->setMeta(m.value());
+    }
 
     existing.insert({this, ans});
 
@@ -1098,26 +1118,19 @@ std::string TypeStruct::getTypeRepresentation(DisplayMode mode) const
     return description.str();
 }
 
-std::string TypeStruct::toString(DisplayMode mode=C_STYLE) const
-{
-    // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
-    if (this->getName())
-        return this->getName().value();
-    return getTypeRepresentation(mode);
-}
-
 llvm::StructType *TypeStruct::getLLVMType(llvm::Module *M) const
 {
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString(DisplayMode::C_STYLE));
     if (ty)
         return ty;
 
-    ty = llvm::StructType::create(M->getContext(), toString());
+    ty = llvm::StructType::create(M->getContext(), toString(DisplayMode::C_STYLE));
 
     std::vector<llvm::Type *> typeVec;
 
     for (auto ty : elements.getElements())
     {
+        std::cout << "1116 " << toString(C_STYLE) << " has " << ty.second->toString(C_STYLE) << " " << ty.second  << " in " << this << std::endl; 
         typeVec.push_back(ty.second->getLLVMType(M));
     }
 
@@ -1150,6 +1163,11 @@ const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> exist
 
     LinkedMap<std::string, const Type *> elements;
     TypeStruct * ans = new TypeStruct(elements, this->getName());
+    {
+        auto m = this->getMeta(); 
+        if(m)
+            ans->setMeta(m.value());
+    }
 
     existing.insert({this, ans});
 
@@ -1176,6 +1194,14 @@ std::optional<const NameableType*> TypeTemplate::getValueType() const { return v
 
 std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<const Type *> subs) const {
 
+    std::cout << "1173 Apply template W/ "; 
+
+    for(auto itr : subs)
+    {
+        std::cout << itr->toString(DisplayMode::C_STYLE) << ", ";
+    }
+    std::cout << std::endl; 
+
     auto it = registeredTemplates.find(subs);
 
     if(it != registeredTemplates.end())
@@ -1199,16 +1225,45 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
 
     std::map<const Type *, const Type *> subst; 
     // May have to change later when we get in session types!
+
+    {
+        bool areEqual = true; 
+        for(unsigned int i = 0; i < ids.size(); i++)
+        {
+            if(ids.at(i).second != subs.at(i))
+            {
+                areEqual = false; 
+                break; 
+            }
+        }
+        if(areEqual)
+            return this->getValueType(); 
+    }
+
     for(unsigned int i = 0; i < ids.size(); i++)
     {
-        std::cout << ids.at(i).second->toString(DisplayMode::C_STYLE) << " / " << subs.at(i)->toString(DisplayMode::C_STYLE) << std::endl;
-        subst.insert({ids.at(i).second, subs.at(i)});
-    } 
+        std::pair<std::string, TypeGeneric *> id = ids.at(i); 
+        TypeGeneric * gen = id.second; 
 
-    std::cout << "1169 ----- " << valueType->toString(DisplayMode::C_STYLE) << " / " << std::endl; 
-    const Type * ans = valueType->getCopySubst(subst);
+        std::cout << "1201 " << id.second->toString(DisplayMode::C_STYLE) << " / " << subs.at(i)->toString(DisplayMode::C_STYLE) << std::endl;
+        std::cout << "1201@ " << id.second << " / " << subs.at(i) << std::endl;
+        subst.insert({gen, subs.at(i)});
+        // std::cout << "1205" << std::endl; 
+        if(gen != subs.at(i))
+            gen->setActingType(subs.at(i));
+        std::cout << "1207" << std::endl; 
+    } 
+    std::cout << "1169 ----- "; //  << valueType->toString(DisplayMode::C_STYLE) << " ( " << this->templateString(DisplayMode::C_STYLE) << ")" << std::endl; 
+    const NameableType * ans = dynamic_cast<const NameableType *>(valueType->getCopySubst(subst));
+    // const TypeTemplate * parent = dynamic_cast<const TypeTemplate *>(this->getCopySubst(subst));
+    // const NameableType * ans = parent->getValueType().value(); 
     // FIXME: MAYBE UPDATE NAME HERE?
     std::cout << "1171 ----- " << ans->toString(DisplayMode::C_STYLE) << std::endl; 
+
+    std::string meta = this->templateString(DisplayMode::C_STYLE); 
+    std::cout << "1222 " << meta << std::endl; 
+    ans->setMeta([meta](){ return meta; }); //parent->templateString(DisplayMode::C_STYLE); });
+
 
     registeredTemplates.insert({subs, ans}); 
 
@@ -1277,7 +1332,29 @@ const Type * TypeTemplate::getCopySubst(std::map<const Type *, const Type *> exi
     if(existing.contains(this))
         return existing.find(this)->second; 
 
-    existing.insert({this, this});
+/*
+    TypeTemplate * ans = new TypeTemplate(); 
+    existing.insert({this, ans});
 
+
+
+    // std::vector<std::pair<std::string, TypeGeneric *>> t;
+
+    // for(auto a : this->getTemplateInfo().value().templates)
+    // {
+    //     t.push_back({
+    //         a.first, 
+    //         const_cast<TypeGeneric *>(dynamic_cast<const TypeGeneric *>(a.second->getCopySubst(existing)))
+    //     });
+    // }
+
+
+    // FIXME: DO BETTR PROBS CANT USE  getTemplateInfo!!
+    ans->define(this->getTemplateInfo().value(),//TemplateInfo(t), 
+                dynamic_cast<const NameableType *>(this->valueType->getCopySubst(existing)));
+
+
+
+*/
     return this; 
 }

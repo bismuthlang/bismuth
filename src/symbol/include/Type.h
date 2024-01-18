@@ -145,14 +145,14 @@ private:
 };
 
 
-class NameableType {
+class NameableType : public Type  {
 protected: 
-    NameableType(std::optional<std::string> n) : name(n) {}
+    NameableType(bool v, std::optional<std::string> n) : Type(v), name(n) {}
     virtual ~NameableType() = default;
 
 private: 
     std::optional<std::string> name; 
-    std::optional<std::function<std::string()>> meta = std::nullopt; 
+    mutable std::optional<std::function<std::string()>> meta = std::nullopt; 
 
 public: 
     std::optional<std::string> getName() const { 
@@ -162,9 +162,37 @@ public:
     virtual std::string getTypeRepresentation(DisplayMode mode) const = 0;
     bool hasName() { return name.has_value(); }
 
-    void setMeta(std::function<std::string()> m) {
-        meta = m; 
-    }
+    void setMeta(std::function<std::string()> m) const { meta = m; }
+
+
+    std::optional<std::function<std::string()>> getMeta() const { return meta; }
+
+
+
+    std::string toString(DisplayMode mode) const override
+    {
+        std::string metaInfo = (meta.has_value() ? meta.value()() : "");
+        // return this->getName().value_or("") + (meta.has_value() ? meta.value()() : "");
+        // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
+        if (this->getName())
+            return this->getName().value() + metaInfo;
+        return getTypeRepresentation(mode);
+    } 
+
+    /****************************************
+     * 
+     * Passthrough functions required of any type
+     * 
+     ****************************************/
+
+    virtual llvm::Type *getLLVMType(llvm::Module *M) const override = 0;
+    virtual bool requiresDeepCopy() const override = 0;
+    virtual const Type * getCopy() const override = 0;
+
+    virtual const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override = 0;
+
+protected: 
+    virtual bool isSupertypeFor(const Type *other) const override = 0;
 };
 
 
@@ -628,7 +656,7 @@ protected:
  *
  *******************************************/
 
-class TypeProgram : public Type, public NameableType
+class TypeProgram : public NameableType
 {
 private:
     /**
@@ -646,8 +674,7 @@ private:
     // FIXME: NAME IS ALWAYS NULLOPT!
 public:
     TypeProgram() 
-        : Type(false)
-        , NameableType(std::nullopt)
+        : NameableType(false, std::nullopt)
         , defined(false)
     {}
 
@@ -657,15 +684,12 @@ public:
      * @param p The protocol sequence for the program's main channel to follow
      */
     TypeProgram(const ProtocolSequence *p) 
-        : Type(false)
-        , NameableType(std::nullopt)
+        : NameableType(false, std::nullopt)
         , protocol(p)
         , defined(true)
     {}
 
     bool setProtocol(const ProtocolSequence * p) const; 
-
-    std::string toString(DisplayMode mode) const override;
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
 
@@ -693,7 +717,7 @@ public:
     const TypeProgram * getCopy() const override;
 
     // FIXME: IMPL!
-    // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
     bool isSupertypeFor(const Type *other) const override;
@@ -708,7 +732,7 @@ protected:
 
 // TODO: With generics, allow for pattern matching? Ie, 
 // <TY1, TY2 : { someIdentifier : TY1, ...}> ? 
-class TypeFunc : public Type, public NameableType
+class TypeFunc : public NameableType
 {
 private:
     /**
@@ -738,8 +762,7 @@ private:
     // FIXME: FUNCS ALWAYS HAVE NULLOPT NAME?!
 public:
     TypeFunc() 
-        : Type(false)
-        , NameableType(std::nullopt)
+        : NameableType(false, std::nullopt)
         , defined(false)
     {}
 
@@ -751,8 +774,7 @@ public:
      * @param d Determines if this has been fully defined
      */
     TypeFunc(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) 
-        : Type(false)
-        , NameableType(std::nullopt)
+        : NameableType(false, std::nullopt)
         , paramTypes(p)
         , retType(r)
         , variadic(v)
@@ -760,13 +782,6 @@ public:
     {}
 
     bool setInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) const;
-
-    /**
-     * @brief Returns a string representation of the type in format: <PROC | FUNC> (param_0, param_1, ...) -> return_type.
-     *
-     * @return std::string
-     */
-    std::string toString(DisplayMode mode) const override;
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
 
@@ -897,7 +912,7 @@ protected:
  * Sum Types
  *
  *******************************************/
-class TypeSum : public Type, public NameableType
+class TypeSum : public NameableType
 {
 private:
     /**
@@ -910,15 +925,13 @@ private:
 
 public:
     TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) 
-        : Type(false)
-        , NameableType(n)
+        : NameableType(false, n)
         , cases(c)
         , defined(true)
     {}
 
     TypeSum(std::string n) 
-        : Type(false)
-        , NameableType(n)
+        : NameableType(false, n)
         , defined(false)
     {}
 
@@ -932,13 +945,6 @@ public:
     std::set<const Type *, TypeCompare> getCases() const;
 
     unsigned int getIndex(llvm::Module *M, llvm::Type *toFind) const;
-
-    /**
-     * @brief Returns the name of the string in form of <valueType name>[<array length>].
-     *
-     * @return std::string String name representation of this type.
-     */
-    std::string toString(DisplayMode mode) const override;
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
 
@@ -966,7 +972,7 @@ protected:
  * Struct Types (Product Types w/ Names)
  *
  *******************************************/
-class TypeStruct : public Type, public NameableType
+class TypeStruct : public NameableType
 {
 private:
     /**
@@ -983,15 +989,13 @@ private:
 
 public:
     TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) 
-        : Type(false)
-        , NameableType(n)
+        : NameableType(false, n)
         , elements(e)
         , defined(true)
     {}
 
     TypeStruct(std::string n) 
-        : Type(false)
-        , NameableType(n)
+        : NameableType(false, n)
         , defined(false)
     {}
 
@@ -1005,13 +1009,6 @@ public:
 
     vector<pair<std::string, const Type *>> getElements() const;
     optional<unsigned int> getElementIndex(std::string k) const;
-
-    /**
-     * @brief Returns the name of the string in form of <valueType name>[<array length>].
-     *
-     * @return std::string String name representation of this type.
-     */
-    std::string toString(DisplayMode mode) const override;
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
 
@@ -1068,18 +1065,38 @@ inline std::optional<const T*> type_cast(const Type * ty)
  *******************************************/
 class TypeGeneric : public Type
 {
-public: // TODO: PRIVATE + USE SETTER
-    const Type * actingType = new Type(false);//Types::ABSURD; 
+private: 
+    std::string identifier; 
+    std::optional<const Type *> actingType = std::nullopt; 
 public:
-    TypeGeneric(bool isLinear) : Type(isLinear) {}; 
+    TypeGeneric(bool isLinear, std::string id) : Type(isLinear), identifier(id) {}; 
 
-    std::string toString(DisplayMode mode) const override { return actingType->toString(mode); }
+    std::string toString(DisplayMode mode) const override { 
+        if(actingType) return actingType.value()->toString(mode); 
+        return identifier;
+        // return actingType->toString(mode); 
+    }
 
-    llvm::Type *getLLVMType(llvm::Module *M) const override { return actingType->getLLVMType(M); } 
+    llvm::Type *getLLVMType(llvm::Module *M) const override {
+        if(actingType)
+            return actingType.value()->getLLVMType(M); 
 
-    bool requiresDeepCopy() const override { return actingType->requiresDeepCopy(); } //false; }
+        std::cerr << "1082: Attempted to take llvm type of a generic parameter" << std::endl;
+        return llvm::Type::getVoidTy(M->getContext());
+    } 
 
-    const TypeGeneric * getCopy() const override { return this; }; 
+    bool requiresDeepCopy() const override { 
+        if(actingType)
+            return actingType.value()->requiresDeepCopy(); 
+        std::cerr << "1089: Attempted to determine if a generic parameter requires a deep copy" << std::endl;
+        return false; 
+    } //false; }
+
+    const TypeGeneric * getCopy() const override { return this; };
+
+    std::string getId() const { return identifier; }
+    // const Type * getActingType() const { return actingType; }
+    void setActingType(const Type * nxt) { actingType = nxt; }
 
     // FIXME: IMPL
     // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
@@ -1175,7 +1192,7 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
-    const std::map<std::vector<const Type *>, const Type *> getRegisteredTemplates() const { return registeredTemplates; }
+    const std::map<std::vector<const Type *>, const NameableType *> getRegisteredTemplates() const { return registeredTemplates; }
 
 protected:
     /**

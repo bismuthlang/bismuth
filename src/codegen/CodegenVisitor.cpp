@@ -2154,7 +2154,8 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
         
         for(unsigned int i = 0; i < info.templates.size(); i++)
         {
-            info.templates.at(i).second->actingType = t.first.at(i); 
+            // info.templates.at(i).second->actingType = t.first.at(i); 
+            info.templates.at(i).second->setActingType(t.first.at(i)); 
         }
 
         // substitute each 

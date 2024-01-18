@@ -2,7 +2,6 @@
 
 std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx)
 {
-    std::cout << "5" << std::endl; 
     // Enter initial scope
     stmgr->enterScope(StopType::NONE, [](){ return "";});
 
@@ -1976,7 +1975,7 @@ std::variant<std::vector<const Type *>, ErrorChain *> SemanticVisitor::TvisitGen
             (*e)->addError(a->getStart(), "Failed to generate type in template application");
             return *e;
         }
-
+        
         const Type * sub = std::get<const Type *>(caseTypeOpt);
         innerTys.push_back(sub); 
     }
@@ -2010,10 +2009,11 @@ SemanticVisitor::visitCtx(BismuthParser::TemplatedTypeContext *ctx)
         std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
 
 
-
+        std::cout << "2015 " << ctx->getStart()->getLine() << " " << ctx->getText() << std::endl;
         std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
         if(!appliedOpt)
             return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
+        std::cout << "2016 " << appliedOpt.value()->toString(DisplayMode::C_STYLE) << std::endl; 
         return appliedOpt.value(); 
     }
 
@@ -2931,7 +2931,7 @@ TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTempla
                 }
                 else
                 {
-                    syms.push_back({idName, new TypeGeneric(false)}); //idName); // FIXME: BETTER IS-LINEAR?
+                    syms.push_back({idName, new TypeGeneric(false, idName)}); //idName); // FIXME: BETTER IS-LINEAR?
                     visited.insert({idName, tyCtx->getStart()});
                 }
             }
@@ -3212,8 +3212,12 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
             }
 
             el.insert({caseName, caseTy});
+
+            std::cout << "3216 CASE " << caseName << " : " << caseTy->toString(DisplayMode::C_STYLE) << " " << caseTy  << " in " << structType <<  std::endl; 
         }
         structType->define(el);
+        std::cout << "3218 " << structType->toString(C_STYLE) << std::endl;
+        std::cout << "3218a " << structType->getTypeRepresentation(C_STYLE) << std::endl; 
         return std::nullopt; 
     };
 
@@ -3291,6 +3295,7 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
                 std::optional<ErrorChain *> ans = defineStruct(ctx, structTy);
                 
+                std::cout << "3296 " << structTy->toString(C_STYLE) << std::endl; 
                 // for(auto templateSym : templateSyms)
                 //     stmgr->removeSymbol(templateSym);
                 return ans; 
