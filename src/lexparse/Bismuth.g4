@@ -53,6 +53,10 @@ lValue              : deref=dereferenceExpr
  *              the use of variables instead of expressions for array access
  *      11-14. Typical boolean and variable constants. 
  */
+
+annotation          : '#ltl[' expression ']' 
+                    ;
+
 expression          : LPAR ex=expression RPAR                                                       # ParenExpr
                     | fieldAccessExpr                                                               # FieldAccess
                     | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 
