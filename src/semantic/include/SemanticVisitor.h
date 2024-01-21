@@ -162,11 +162,11 @@ public:
     std::variant<TReturnNode *, ErrorChain *> visitCtx(BismuthParser::ReturnStatementContext *ctx);
     std::any visitReturnStatement(BismuthParser::ReturnStatementContext *ctx) override { return TNVariantCast<TReturnNode>(visitCtx(ctx)); }
 
-    std::variant<TDefineEnumNode *, ErrorChain *> visitCtx(BismuthParser::DefineEnumContext *ctx);
-    std::any visitDefineEnum(BismuthParser::DefineEnumContext *ctx) override { return TNVariantCast<TDefineEnumNode>(visitCtx(ctx)); }
+    std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineEnumContext *ctx);
+    std::any visitDefineEnum(BismuthParser::DefineEnumContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
-    std::variant<TDefineStructNode *, ErrorChain *> visitCtx(BismuthParser::DefineStructContext *ctx);
-    std::any visitDefineStruct(BismuthParser::DefineStructContext *ctx) override { return TNVariantCast<TDefineStructNode>(visitCtx(ctx)); }
+    std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineStructContext *ctx);
+    std::any visitDefineStruct(BismuthParser::DefineStructContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<TInitProductNode *, ErrorChain *> visitCtx(BismuthParser::InitProductContext *ctx);
     std::any visitInitProduct(BismuthParser::InitProductContext *ctx) override { return TNVariantCast<TInitProductNode>(visitCtx(ctx)); }
@@ -352,7 +352,7 @@ public:
     {
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE, [](){ return ""; }); // TODO: DO BETTER?
+            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -398,7 +398,7 @@ public:
 
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE, [](){ return ""; }); // TODO: DO BETTER?
+            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -473,7 +473,7 @@ public:
 
             // Add the symbol to the stmgr and enter the scope. -> Already done
             // stmgr->addSymbol(sym);
-            stmgr->enterScope(StopType::GLOBAL, [sym](){ return sym->getUniqueNameInScope(); }); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
+            stmgr->enterScope(StopType::GLOBAL, sym->getIdentifier()); //[sym](){ return sym->getUniqueNameInScope(); }); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
 
             Symbol *channelSymbol = stmgr->addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false, false).value();
             // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language

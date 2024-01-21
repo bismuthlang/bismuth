@@ -7,10 +7,23 @@
 //     GLOBAL
 // };
 
-Scope &Context::enterScope(bool insertStop, std::function<std::string()> n)
+Scope &Context::enterScope(bool insertStop, std::optional<Identifier *> idOpt)  //std::string id, std::optional<std::function<std::string()>> meta)
 {
     // This is safe because we use optionals
-    Scope *next = new Scope(this->currentScope, n);
+    Identifier * id = [this, idOpt](){
+        if(idOpt) return idOpt.value(); 
+
+        std::optional<Identifier *> parentOpt = this->currentScope ? (std::optional<Identifier *>) this->currentScope.value()->getIdentifier() : (std::optional<Identifier *>) std::nullopt; 
+        Identifier * i = new Identifier("", "", parentOpt);
+        // i->meta = meta;
+
+        return i; 
+        
+    }(); 
+
+
+
+    Scope *next = new Scope(this->currentScope, id);
     next->setId(this->scopeNumber++);
 
     this->currentScope = std::optional<Scope *>{next};
@@ -62,7 +75,11 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
 
     // std::cout << this->toString() << std::endl;  // FIXME: THIS SEGFUALTS!
     // Note: this is safe as we previously check that currentScope exists
-    return currentScope.value()->addSymbol(new Symbol(id, t, d, glob, uniqName, currentScope.value()));
+    return currentScope.value()->addSymbol(new Symbol(new Identifier(
+        id, 
+        uniqName, 
+        currentScope.value()->getIdentifier()
+    ), t, d, glob, currentScope.value()));
 }
 
 std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const Type * t, bool d)
@@ -75,7 +92,8 @@ std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const 
 
     // Note: this is safe as we previously check that currentScope exists
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
-    return currentScope.value()->addSymbol(new Symbol(id, t, d, false, id, currentScope.value()));
+    return currentScope.value()->addSymbol(new Symbol(
+        new Identifier(id, id, currentScope.value()->getIdentifier()), t, d, false, currentScope.value()));
 }
 
 bool Context::removeSymbol(Symbol *symbol)

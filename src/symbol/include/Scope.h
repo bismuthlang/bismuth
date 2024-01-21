@@ -15,8 +15,6 @@
 #include <optional>
 // #include <assert.h>
 
-#include <functional> // for std::function
-
 enum SymbolLookupFlags
 {
     NON_LINEAR = 1,
@@ -29,9 +27,9 @@ enum SymbolLookupFlags
 class Scope
 {
 public:
-    Scope(std::function<std::string()> n)
+    Scope(Identifier * n)
+        : id(n)
     {
-        nameGenerator = n; 
         // By default, we set parent to be empty
     }
 
@@ -40,17 +38,17 @@ public:
      *
      * @param p The parent to the current scope
      */
-    Scope(std::optional<Scope *> p, std::function<std::string()> n)
+    Scope(std::optional<Scope *> p, Identifier * n)
     {
         parent = p;
-        nameGenerator = n; 
+        id = n; 
     }
 
-    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms, std::function<std::string()> n)
+    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms, Identifier * n)
     {
         parent = p;
         symbols = syms;
-        nameGenerator = n; 
+        id = n; 
     }
 
     /**
@@ -170,15 +168,17 @@ public:
         return ans;
     }
 
-    std::string getName() {
-        return nameGenerator(); // TODO: Do better & use mangaler 
-    }
+    Identifier * getIdentifier() { return id; }
+
+    // std::string getName() {
+    //     return nameGenerator(); // TODO: Do better & use mangaler 
+    // }
 
 private:
     int scopeId = -1;
     std::optional<Scope *> parent = {};
     std::map<std::string, Symbol *> symbols;
 
-public: // FIXME: CHANGE TO PRIVATE: NEEDED BY CONTEXT!
-    std::function<std::string()> nameGenerator;
+    Identifier * id; 
+
 };

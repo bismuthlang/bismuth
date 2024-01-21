@@ -587,9 +587,10 @@ const Type * TypeProgram::getCopySubst(std::map<const Type *, const Type *> exis
     TypeProgram * ans = new TypeProgram();
     // Needed to make nested generics work :D
     {
-        auto m = this->getMeta(); 
-        if(m)
-            ans->setMeta(m.value());
+        ans->setIdentifier(this->getIdentifier());
+        // auto m = this->getMeta(); 
+        // if(m)
+        //     ans->setMeta(m.value());
     }
 
     existing.insert({this, ans});
@@ -741,9 +742,10 @@ const Type * TypeFunc::getCopySubst(std::map<const Type *, const Type *> existin
     
     TypeFunc * ans = new TypeFunc();
     {
-        auto m = this->getMeta(); 
-        if(m)
-            ans->setMeta(m.value());
+        ans->setIdentifier(this->getIdentifier());
+        // auto m = this->getMeta(); 
+        // if(m)
+        //     ans->setMeta(m.value());
     }
 
     existing.insert({this, ans});
@@ -945,8 +947,10 @@ std::string TypeSum::getTypeRepresentation(DisplayMode mode) const
 
 llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
 {
-    std::cout << "937 " << toString(C_STYLE) << " " << this << std::endl; 
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString(C_STYLE));
+    // FIXME: I THINK WE HAVE TO CHANGE TOSTRING BC IF WE DONT, THEN canApplyTemplate SHOULD BREAK AS IT WONT USE FQNS! 
+    std::string name =  this->hasName() ? this->getIdentifier().value()->getFullyQualifiedName() :  getTypeRepresentation(DisplayMode::C_STYLE);
+    std::cout << "937 " << name << " " << this << std::endl; 
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), name);
     if (ty)
         return ty;
 
@@ -972,9 +976,10 @@ llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
         }
     }
 
+    // FIXME: WHY DO WE DO THIS TWICE?
     // Probably not needed in struct, but might be. 
     // Needed in the case that we generate the type while generating one of the subtypes...
-    ty = llvm::StructType::getTypeByName(M->getContext(), toString(C_STYLE));
+    ty = llvm::StructType::getTypeByName(M->getContext(), name);
     if (ty)
         return ty;
 
@@ -986,7 +991,7 @@ llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
     std::vector<llvm::Type *> typeVec = {llvm::Type::getInt32Ty(M->getContext()), arr};
 
     llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-    auto ans = llvm::StructType::create(M->getContext(), ref, toString(C_STYLE));
+    auto ans = llvm::StructType::create(M->getContext(), ref, name);
     
     return ans;
 }
@@ -1041,11 +1046,12 @@ const Type * TypeSum::getCopySubst(std::map<const Type *, const Type *> existing
 
     std::set<const Type *, TypeCompare> cases = {};
     // TODO: refactor getting a stub into a method like freshStub() ? 
-    TypeSum * ans = new TypeSum(cases, this->getName());
+    TypeSum * ans = new TypeSum(cases, this->getIdentifier()); //this->getName());
     {
-        auto m = this->getMeta(); 
-        if(m)
-            ans->setMeta(m.value());
+        ans->setIdentifier(this->getIdentifier());
+        // auto m = this->getMeta(); 
+        // if(m)
+        //     ans->setMeta(m.value());
     }
 
     existing.insert({this, ans});
@@ -1120,17 +1126,22 @@ std::string TypeStruct::getTypeRepresentation(DisplayMode mode) const
 
 llvm::StructType *TypeStruct::getLLVMType(llvm::Module *M) const
 {
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString(DisplayMode::C_STYLE));
+    // PLAN: have to use this vs tostring bc tostring isnt fqn. Maybe change tostring to fqn?
+    std::string name =  this->hasName() ? this->getIdentifier().value()->getFullyQualifiedName() :  getTypeRepresentation(DisplayMode::C_STYLE);
+
+    std::cout << "struct name is " << name << std::endl; 
+
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), name);
     if (ty)
         return ty;
 
-    ty = llvm::StructType::create(M->getContext(), toString(DisplayMode::C_STYLE));
+    ty = llvm::StructType::create(M->getContext(), name);
 
     std::vector<llvm::Type *> typeVec;
 
     for (auto ty : elements.getElements())
     {
-        std::cout << "1116 " << toString(C_STYLE) << " has " << ty.second->toString(C_STYLE) << " " << ty.second  << " in " << this << std::endl; 
+        // std::cout << "1116 " << name << " has " << ty.second->toString(C_STYLE) << " " << ty.second  << " in " << this << std::endl; 
         typeVec.push_back(ty.second->getLLVMType(M));
     }
 
@@ -1162,11 +1173,13 @@ const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> exist
         return existing.find(this)->second; 
 
     LinkedMap<std::string, const Type *> elements;
-    TypeStruct * ans = new TypeStruct(elements, this->getName());
+    TypeStruct * ans = new TypeStruct(elements, this->getIdentifier()); //this->getName());
     {
-        auto m = this->getMeta(); 
-        if(m)
-            ans->setMeta(m.value());
+        // ans->setIdentifier(this->getIdentifier());
+
+        // auto m = this->getMeta(); 
+        // if(m)
+        //     ans->setMeta(m.value());
     }
 
     existing.insert({this, ans});
@@ -1189,6 +1202,29 @@ const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> exist
  * Type used for Generics Inference
  *
  *******************************************/
+
+bool TypeTemplate::define(std::optional<TemplateInfo> i, const NameableType * vt) const
+{
+    if(defined) return false; 
+
+    TypeTemplate *u_this = const_cast<TypeTemplate *>(this);
+    u_this->defined = true; 
+    u_this->info = i; 
+    u_this->valueType = vt; 
+
+    return true; 
+}
+
+void TypeTemplate::setIdentifier(std::optional<Identifier *> nxt) const {
+    identifier = nxt; // FIXME: DO BETTER!
+    
+    // std::cout << "1222 PRE. ValueType " << ((valueType) ? valueType.value()->toString(C_STYLE) : " NO SET VT") << std::endl; 
+    // FIXME: need to propagate name info to subtype for structs and enums to work
+    // if(valueType)
+    //     valueType.value()->setIdentifier(nxt); // FIXME: VERIFY
+    // std::cout << "1226 ValueType " << valueType << std::endl;
+    // std::cout << "1222 PST. ValueType " << ((valueType) ? valueType.value()->toString(C_STYLE) : " NO SET VT") << std::endl;  
+}
 
 std::optional<const NameableType*> TypeTemplate::getValueType() const { return valueType; }
 
@@ -1245,24 +1281,90 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
         std::pair<std::string, TypeGeneric *> id = ids.at(i); 
         TypeGeneric * gen = id.second; 
 
-        std::cout << "1201 " << id.second->toString(DisplayMode::C_STYLE) << " / " << subs.at(i)->toString(DisplayMode::C_STYLE) << std::endl;
-        std::cout << "1201@ " << id.second << " / " << subs.at(i) << std::endl;
+        // std::cout << "1201 " << id.second->toString(DisplayMode::C_STYLE) << " / " << subs.at(i)->toString(DisplayMode::C_STYLE) << std::endl;
         subst.insert({gen, subs.at(i)});
-        // std::cout << "1205" << std::endl; 
+        // std::cout << "1205 "  << (gen != subs.at(i)) << std::endl; 
         if(gen != subs.at(i))
             gen->setActingType(subs.at(i));
-        std::cout << "1207" << std::endl; 
+        // std::cout << "1207" << std::endl; 
     } 
-    std::cout << "1169 ----- "; //  << valueType->toString(DisplayMode::C_STYLE) << " ( " << this->templateString(DisplayMode::C_STYLE) << ")" << std::endl; 
-    const NameableType * ans = dynamic_cast<const NameableType *>(valueType->getCopySubst(subst));
+
+    assert(valueType.has_value()); // FIXME: DO BETTER
+    // std::cout << "1169 ----- "; //  << valueType->toString(DisplayMode::C_STYLE) << " ( " << this->templateString(DisplayMode::C_STYLE) << ")" << std::endl; 
+    const NameableType * ans = dynamic_cast<const NameableType *>(valueType.value()->getCopySubst(subst));
     // const TypeTemplate * parent = dynamic_cast<const TypeTemplate *>(this->getCopySubst(subst));
     // const NameableType * ans = parent->getValueType().value(); 
     // FIXME: MAYBE UPDATE NAME HERE?
-    std::cout << "1171 ----- " << ans->toString(DisplayMode::C_STYLE) << std::endl; 
+    // std::cout << "1171 ----- " << ans->toString(DisplayMode::C_STYLE) << std::endl; 
+
+
+    auto metaFn =  [subs](){
+        std::ostringstream description;
+        // std::optional<TemplateInfo> infoOpt = this->getTemplateInfo(); 
+
+        description << "<";
+        // if(infoOpt)
+        // {
+            unsigned int ctr = 0;
+            unsigned int size = subs.size(); // infoOpt.value().templates.size();
+            for (auto t : subs)
+            {
+                description << t->toString(C_STYLE);
+                if (++ctr != size)
+                    description << ", ";
+            }
+
+        // }
+
+        description << ">";
+        return description.str(); 
+    };
+
 
     std::string meta = this->templateString(DisplayMode::C_STYLE); 
-    std::cout << "1222 " << meta << std::endl; 
-    ans->setMeta([meta](){ return meta; }); //parent->templateString(DisplayMode::C_STYLE); });
+
+    if(this->getIdentifier())
+    {
+        std::cout << "!!!1304 "<< this->getIdentifier().value()->getFullyQualifiedName() << std::endl;
+        std::cout << "META = " << meta << std::endl; 
+
+        Identifier * templateId = this->getIdentifier().value(); 
+        Identifier * copyId = new Identifier(*templateId);
+        ans->setIdentifier(copyId);
+
+        templateId->meta =  [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };
+        ans->getIdentifier().value()->meta = metaFn; // [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };;
+    }
+    // std::cout << "1222 meta = " << meta << std::endl; 
+    /*
+    if(this->getIdentifier())
+    {
+        Identifier * templateId = this->getIdentifier().value(); 
+        Identifier * copyId = new Identifier(*templateId);
+
+        ans->setIdentifier(copyId);
+        if(dynamic_cast<const TypeSum *>(valueType.value()) || dynamic_cast<const TypeStruct *>(valueType.value()))
+        {
+            std::cout << "USE META " << std::endl; 
+            // ans->setIdentifier(new Identifier(*templateId));
+            // ans->getIdentifier().value()->meta = [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };
+            
+            // if()
+            ans->getIdentifier().value()->meta = [meta](){ return meta; };
+        }
+        else
+        {
+            ans->setIdentifier(copyId);
+            ans->getIdentifier().value()->meta = [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };
+        }
+        std::cout << "1279 " << copyId->getFullyQualifiedName() << std::endl; 
+    }
+    */
+    // ans->setIdentifier(new Identifier(this->getIdentifier().value()));
+    // if(ans->getIdentifier())
+
+    std::cout << "1274 " << ans->toString(DisplayMode::C_STYLE) << std::endl; 
+    // ans->setMeta([meta](){ return meta; }); //parent->templateString(DisplayMode::C_STYLE); });
 
 
     registeredTemplates.insert({subs, ans}); 
@@ -1294,10 +1396,12 @@ std::string TypeTemplate::templateString(DisplayMode mode) const
     return description.str(); 
 }
 
-std::string TypeTemplate::toString(DisplayMode mode) const 
+std::string TypeTemplate::getTypeRepresentation(DisplayMode mode) const 
 {
+    // FIXME: DO BETTER!
+    // FIXME: BAD OPTIONAL ACCESS SHOULDNT BE A PROBLEM, BUT VERIFY!
     return this->templateString(mode)  + 
-        (this->isDefined() ? this->valueType->toString(mode) : "?"); 
+        (this->isDefined() ? this->valueType.value()->toString(mode) : "?"); 
 
     // return description.str();
 }
@@ -1309,7 +1413,12 @@ llvm::Type *TypeTemplate::getLLVMType(llvm::Module *M) const
 
 bool TypeTemplate::requiresDeepCopy() const 
 {
-    return valueType->requiresDeepCopy(); 
+    if(valueType)
+        return valueType.value()->requiresDeepCopy(); 
+    
+    std::cerr << "Attempted to determine if a template needs a deep copy, but it was given no value type!" << std::endl; 
+    return false; 
+    // return valueType->requiresDeepCopy(); 
 }
 
 const TypeTemplate * TypeTemplate::getCopy() const

@@ -46,7 +46,8 @@ public:
 
 class DefinitionNode : public TypedNode 
 {
-private: 
+// private: 
+public:
     Symbol * symbol; 
     // std::optional<std::string> llvmName;
 
@@ -147,8 +148,8 @@ public:
     virtual std::optional<Value *> visit(TProgramAcceptNode *n) = 0;
     virtual std::optional<Value *> visit(TProgramAcceptWhileNode *n) = 0; 
     virtual std::optional<Value *> visit(TProgramAcceptIfNode *n) = 0; 
-    // virtual std::optional<Value *> visit(TDefineEnumNode *n) = 0;
-    // virtual std::optional<Value *> visit(TDefineStructNode *n) = 0;
+    virtual std::optional<Value *> visit(TDefineEnumNode *n) = 0;
+    virtual std::optional<Value *> visit(TDefineStructNode *n) = 0;
     virtual std::optional<Value *> visit(TDefineTemplateNode *n) = 0; 
     virtual std::optional<Value *> visit(TInitProductNode *n) = 0;
     virtual std::optional<Value *> visit(TArrayRValue *n) = 0; 

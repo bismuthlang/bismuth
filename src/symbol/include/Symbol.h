@@ -22,6 +22,8 @@
 
 // #include "Scope.h"
 
+#include "FQN.h"
+
 class Scope; 
 
 // using namespace Types; 
@@ -33,9 +35,9 @@ class Scope;
  *******************************************/
 struct Symbol
 {
-private: 
-    std::string identifier;         // The symbol's name as seen in code
-    std::string uniqueNameInScope;  // Unique name for the symbol in its scope
+// public: 
+private:
+    Identifier * identifier; 
     const Type *type;               // The symbol's type
 
     bool global;                    // Determines if the symbol is globally defined or not
@@ -44,26 +46,28 @@ private:
     Scope * scope; 
 public:
     // Constructs a symbol from an ID and symbol type.
-    Symbol(std::string id, const Type *t, bool d, bool glob, std::string uniqName, Scope * s) 
+    Symbol(Identifier * id, const Type *t, bool d, bool glob, Scope * s) 
     {
-        identifier = id;
+        identifier = id; 
+        // identifier = id;
         type = t;
         global = glob;
         definition = d; 
 
-        uniqueNameInScope = uniqName; 
+        // uniqueNameInScope = uniqName; 
         scope = s; 
     }
 
     Symbol(Symbol& sym)
     {
         identifier = sym.identifier; 
+        // identifier = sym.identifier; 
         type = sym.type->getCopy(); 
         global = sym.global;
         definition = sym.definition;
         // FIXME: is this constructor needed? If so, do we need to add uniqName and scope?
 
-        uniqueNameInScope = sym.uniqueNameInScope;
+        // uniqueNameInScope = sym.uniqueNameInScope;
         scope = sym.scope; 
     }
 
@@ -76,6 +80,12 @@ public:
 
     std::string getUniqueNameInScope() const; 
     std::string getScopedIdentifier() const; 
+    std::string getFullyQualifiedName() const { return identifier->getFullyQualifiedName(); }
+
+    Identifier * getIdentifier() const { return identifier; }
 
     Scope * getScope() const; 
+
+
+    void updateIdentifier(Identifier * nxt); // TODO: DO BETTER, USED ONLY FOR TEMPLATES!
 };

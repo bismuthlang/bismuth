@@ -41,9 +41,9 @@ public:
    *
    * @return Scope& the scope we entered
    */
-  void enterScope(StopType stopType, std::function<std::string()> n)
+  void enterScope(StopType stopType, std::optional<Identifier *> idOpt = std::nullopt) // std::string id, std::optional<std::function<std::string()>> meta = std::nullopt)
   {
-    context.enterScope(stopType == GLOBAL, n);
+    context.enterScope(stopType == GLOBAL, idOpt); //id, meta);
   }
 
   void enterNamespace(); 
@@ -67,9 +67,24 @@ public:
    */
   std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool d, bool g) // TODO: automatically determine g?
   {
-
       // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elimination.
-      return context.addSymbol(id, t, d, g);
+      std::optional<Symbol *> symOpt = context.addSymbol(id, t, d, g);
+
+      if(symOpt && d) 
+      {
+        Symbol * sym = symOpt.value(); 
+        // std::cout << "75 " << sym->toString() << std::endl; 
+        if(const NameableType * nameable = dynamic_cast<const NameableType *>(sym->getType()))
+        {
+          if(!nameable->getIdentifier())
+          {
+            nameable->setIdentifier(sym->getIdentifier());
+            std::cout << "82 SET " << sym->getIdentifier()->getFullyQualifiedName() << std::endl; 
+          }
+        }
+      }
+
+      return symOpt;
   }
 
   std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t, bool d)

@@ -14,7 +14,7 @@ set (SYMBOL_INCLUDE
 
 set (SYMBOL_SOURCES
   ${SYMBOL_DIR}/Symbol.cpp
-  # ${SYMBOL_DIR}/FQN.cpp
+  ${SYMBOL_DIR}/FQN.cpp
   ${SYMBOL_DIR}/Scope.cpp
   ${SYMBOL_DIR}/STManager.cpp
   ${SYMBOL_DIR}/Type.cpp

@@ -27,11 +27,11 @@ class Context {
      * 
      * @return Scope& the scope we entered
      */
-    Scope& enterScope(std::function<std::string()> n) {
-      return enterScope(false, n);
-    };
+    Scope& enterScope(std::optional<Identifier *> idOpt = std::nullopt) { //std::string id, std::optional<std::function<std::string()>> meta = std::nullopt) {
+      return enterScope(false, idOpt); //id, meta);
+    }
 
-    Scope& enterScope(bool insertStop, std::function<std::string()> n);
+    Scope& enterScope(bool insertStop, std::optional<Identifier *> idOpt  = std::nullopt); // std::string id, std::optional<std::function<std::string()>> meta = std::nullopt);
     
     /**
      * @brief Exit the current scope and move up one level
@@ -126,14 +126,14 @@ class Context {
 
         if(!optParent)
         {
-          Scope * ans = new Scope({}, orig->copySymbols(), orig->nameGenerator); // FIXME SWITCH TO COPY CONSTRUCTOR!
+          Scope * ans = new Scope({}, orig->copySymbols(), orig->getIdentifier()); // FIXME SWITCH TO COPY CONSTRUCTOR!
           ans->setId(orig->getId());
           copies.insert({orig, ans});
           newScopes.push_back(ans); 
         }
         else if(copies.find(optParent.value()) != copies.end())
         {
-          Scope * ans = new Scope(copies[optParent.value()], orig->copySymbols(), orig->nameGenerator);
+          Scope * ans = new Scope(copies[optParent.value()], orig->copySymbols(), orig->getIdentifier());
           ans->setId(orig->getId());
           copies.insert({orig, ans});
           newScopes.push_back(ans); 

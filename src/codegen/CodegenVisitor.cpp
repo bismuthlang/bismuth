@@ -10,6 +10,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
      *
      ***********************************/
 
+
     /***********************************
      *
      *
@@ -687,6 +688,23 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode *n)
     return std::nullopt;
 }
 
+std::optional<Value *> CodegenVisitor::visit(TDefineEnumNode *n)
+{
+    std::cout << "GETTING THE SUM?" << std::endl; 
+    n->sum->getLLVMType(module);
+    return std::nullopt;
+}
+
+
+std::optional<Value *> CodegenVisitor::visit(TDefineStructNode *n) 
+{
+    std::cout << "GET struct w/ sym = " << n->symbol->getFullyQualifiedName() << std::endl; 
+    if(n->product->getIdentifier())
+        std::cout << "GET struct w/ type id = " << n->product->getIdentifier().value()->getFullyQualifiedName() << std::endl; 
+    n->product->getLLVMType(module);
+    return std::nullopt;
+}
+
 std::optional<Value *> CodegenVisitor::visit(TInitProductNode *n)
 {
     std::vector<Value *> args;
@@ -1093,7 +1111,6 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
     parentFn->getBasicBlockList().push_back(restBlk);
     builder->SetInsertPoint(restBlk);
 
-    module->dump(); 
 
     PHINode *phi = builder->CreatePHI(n->getType()->getLLVMType(module), 2, "arrayAccess");
     phi->addIncoming(ptr, gtzBlk);
@@ -1673,9 +1690,16 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
         // For each of the variables being assigned to that value
         for (Symbol *varSymbol : e->syms)
         {
-            std::cout << "1677 " << varSymbol->toString() << " --- " << varSymbol->getUniqueNameInScope() << std::endl; 
+            std::cout << "1677 " << varSymbol->toString() << " --- " << varSymbol->getUniqueNameInScope() << " TYPE " << varSymbol->getType()->toString(C_STYLE) << std::endl; 
             //  Get the type of the symbol
             llvm::Type *ty = getLLVMType(varSymbol);
+
+            std::string type_str;
+            llvm::raw_string_ostream rso(type_str);
+            ty->print(rso);
+            std::cout<< "LLVM TYPE = " << rso.str() << std::endl;
+
+
 
             // Branch depending on if the var is global or not
             if (varSymbol->isGlobal())
@@ -2037,6 +2061,9 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
 
     llvm::FunctionType *fnType = type->getLLVMFunctionType(module);
 
+    std::cout << "2040TLambdaConstNode " << n->getSymbol()->toString() << std::endl; 
+    if(n->getType()->getIdentifier())
+        std::cout << "2041 " << n->getType()->getIdentifier().value()->getFullyQualifiedName() << std::endl; 
     std::string funcFullName = getCodegenID(n->getSymbol());
 
     Function *fn = module->getFunction(funcFullName);
@@ -2152,15 +2179,28 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
     {
         // FIXME: CHECK BOUNDS ARE SAME FOR BOTH?
         
+        // std::cout << "2174 ";
         for(unsigned int i = 0; i < info.templates.size(); i++)
         {
             // info.templates.at(i).second->actingType = t.first.at(i); 
             info.templates.at(i).second->setActingType(t.first.at(i)); 
         }
 
+        if(DefinitionNode * defNode = dynamic_cast<DefinitionNode *>(n->getTemplatedNodes()))
+        {
+            std::cout << "2166 " << defNode->symbol->getIdentifier()->getFullyQualifiedName() << std::endl;
+            if(t.second->getIdentifier())
+            {
+                defNode->symbol->updateIdentifier(t.second->getIdentifier().value());
+                // if(const NameableType * nt = dynamic_cast<const NameableType *>(defNode->getType()))
+            }
+            // std::cout << "2172 " << defNode->symbol->getIdentifier()->getFullyQualifiedName() << std::endl;
+        }
+
         // substitute each 
         AcceptType(this, n->getTemplatedNodes());
-        std::cout << "2176 " << n->getSymbol()->toString() << std::endl; 
+        std::cout << "2166 " << n->getSymbol()->toString() << std::endl; 
+        // std::cout << "2167 " << t.second->toString(C_STYLE) << std::endl; 
     }
 
     return std::nullopt; 
@@ -2388,21 +2428,28 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
 std::string CodegenVisitor::getCodegenAllocationID(Symbol * sym)
 {
-    std::string name = sym->getUniqueNameInScope(); 
+    // if(const NameableType * nt = dynamic_cast<const NameableType *>(sym->getType()))
+    // {
+    //     if(nt->hasName())
+    //         return nt->getIdentifier().value()->getFullyQualifiedName(); 
+    // }
 
-    std::optional<Scope *> scopeOpt = sym->getScope(); 
-    while(scopeOpt)
-    {
-        Scope * scope = scopeOpt.value(); 
-        std::string scopeName = scope->getName();
+    return sym->getFullyQualifiedName(); 
+    // std::string name = sym->getUniqueNameInScope(); 
 
-        if(scopeName != "")
-            name = scopeName + "::" + name; 
+    // std::optional<Scope *> scopeOpt = sym->getScope(); 
+    // while(scopeOpt)
+    // {
+    //     Scope * scope = scopeOpt.value(); 
+    //     std::string scopeName = scope->getName();
 
-        scopeOpt = scope->getParent();
-    }
+    //     if(scopeName != "")
+    //         name = scopeName + "::" + name; 
 
-    return name;
+    //     scopeOpt = scope->getParent();
+    // }
+
+    // return name;
 }
 
 std::string CodegenVisitor::getCodegenID(Symbol * sym)

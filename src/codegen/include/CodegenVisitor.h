@@ -108,8 +108,8 @@ public:
     std::optional<Value *> visit(TProgramAcceptNode *n) override;
     std::optional<Value *> visit(TProgramAcceptWhileNode *n) override;
     std::optional<Value *> visit(TProgramAcceptIfNode *n) override; 
-    // std::optional<Value *> visit(TDefineEnumNode *n) override;
-    // std::optional<Value *> visit(TDefineStructNode *n) override;
+    std::optional<Value *> visit(TDefineEnumNode *n) override;
+    std::optional<Value *> visit(TDefineStructNode *n) override;
     std::optional<Value *> visit(TInitProductNode *n) override;
     std::optional<Value *> visit(TArrayRValue *n) override; 
     std::optional<Value *> visit(TWhileLoopNode *n) override;

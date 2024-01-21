@@ -33,6 +33,8 @@
 
 #include <iostream> // cout
 
+#include "FQN.h"
+
 class ProtocolSequence;
 /*******************************************
  *
@@ -147,35 +149,42 @@ private:
 
 class NameableType : public Type  {
 protected: 
-    NameableType(bool v, std::optional<std::string> n) : Type(v), name(n) {}
+    NameableType(bool v, std::optional<Identifier *> n) : Type(v), identifier(n) {}
     virtual ~NameableType() = default;
 
-private: 
-    std::optional<std::string> name; 
-    mutable std::optional<std::function<std::string()>> meta = std::nullopt; 
+// private: 
+    mutable std::optional<Identifier *> identifier; 
 
 public: 
-    std::optional<std::string> getName() const { 
-        return name; 
+    std::optional<Identifier *> getIdentifier() const { 
+        return identifier; 
         // return (name.has_value() ? name.value() : "") + (meta.has_value() ? meta.value()() : "");
     }
+
+    virtual void setIdentifier(std::optional<Identifier *> nxt) const {
+        identifier = nxt; // FIXME: DO BETTER!
+    }
+
     virtual std::string getTypeRepresentation(DisplayMode mode) const = 0;
-    bool hasName() { return name.has_value(); }
+    bool hasName() const { return identifier.has_value(); }
 
-    void setMeta(std::function<std::string()> m) const { meta = m; }
+    // void setMeta(std::function<std::string()> m) const { meta = m; }
 
 
-    std::optional<std::function<std::string()>> getMeta() const { return meta; }
+    // std::optional<std::function<std::string()>> getMeta() const { return meta; }
 
 
 
     std::string toString(DisplayMode mode) const override
     {
-        std::string metaInfo = (meta.has_value() ? meta.value()() : "");
+        // std::string metaInfo = (meta.has_value() ? meta.value()() : "");
         // return this->getName().value_or("") + (meta.has_value() ? meta.value()() : "");
         // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
-        if (this->getName())
-            return this->getName().value() + metaInfo;
+        if (this->hasName())
+        {
+            return this->getIdentifier().value()->getUniqueNameInScope(); // FIXME: VERIFY
+        }
+            // return this->getName().value() + metaInfo;
         return getTypeRepresentation(mode);
     } 
 
@@ -924,13 +933,13 @@ private:
     bool defined;
 
 public:
-    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<std::string> n = {}) 
+    TypeSum(std::set<const Type *, TypeCompare> c, std::optional<Identifier *> n = {}) 
         : NameableType(false, n)
         , cases(c)
         , defined(true)
     {}
 
-    TypeSum(std::string n) 
+    TypeSum(std::optional<Identifier *> n = {}) // Identifier * n) 
         : NameableType(false, n)
         , defined(false)
     {}
@@ -988,13 +997,13 @@ private:
     bool defined;
 
 public:
-    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<std::string> n = {}) 
+    TypeStruct(LinkedMap<std::string, const Type *> e, std::optional<Identifier *> n = {}) 
         : NameableType(false, n)
         , elements(e)
         , defined(true)
     {}
 
-    TypeStruct(std::string n) 
+    TypeStruct(std::optional<Identifier *> n = {}) 
         : NameableType(false, n)
         , defined(false)
     {}
@@ -1134,36 +1143,28 @@ public:
  * Type used for Generics Inference
  *
  *******************************************/
-class TypeTemplate : public Type, public TemplateableType
+class TypeTemplate : public NameableType, public TemplateableType
 {
 private:
-    const NameableType * valueType;
+    std::optional<const NameableType *> valueType;
 
     mutable std::map<std::vector<const Type *>, const NameableType *> registeredTemplates = {};
 
     bool defined = false; 
 
 public:
-    TypeTemplate() : Type(false), TemplateableType({}), defined(false) {}
+    TypeTemplate() : NameableType(false, std::nullopt), TemplateableType(std::nullopt), defined(false) {}
 
-    TypeTemplate(std::optional<TemplateInfo> i, const NameableType * vt) : Type(false), TemplateableType(i), valueType(vt), defined(true)// FIXME: IS IT Non linear?
+    TypeTemplate(std::optional<TemplateInfo> i, const NameableType * vt) : NameableType(false, std::nullopt), TemplateableType(i), valueType(vt), defined(true)// FIXME: IS IT Non linear?
     {
     }
 
     bool isDefined() const { return defined; }
 
     // PLAN: Contract that such a function may exist, but no guarantee about param types?
-    bool define(std::optional<TemplateInfo> i, const NameableType * vt) const
-    {
-        if(defined) return false; 
+    bool define(std::optional<TemplateInfo> i, const NameableType * vt) const;
 
-        TypeTemplate *u_this = const_cast<TypeTemplate *>(this);
-        u_this->defined = true; 
-        u_this->info = i; 
-        u_this->valueType = vt; 
-
-        return true; 
-    }
+    void setIdentifier(std::optional<Identifier *> nxt) const override; 
 
     std::optional<const NameableType *> getValueType() const;
 
@@ -1174,7 +1175,8 @@ public:
      *
      * @return std::string
      */
-    std::string toString(DisplayMode mode) const override;
+    // std::string toString(DisplayMode mode) const override;
+    std::string getTypeRepresentation(DisplayMode mode) const override;
 
     std::string templateString(DisplayMode mode) const; 
     
