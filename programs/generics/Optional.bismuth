@@ -1,0 +1,27 @@
+define struct Empty {}
+
+
+define enum Optional<T> {
+    T, 
+    Empty
+}
+
+define struct Bar<K> {
+    K k; 
+}
+
+define struct Foo<V> {
+    V v; 
+    Bar<V> bar;
+    # Optional<V> opt; 
+}
+
+define program :: c : Channel<-int> {
+
+    Optional<int> optInt; 
+    Optional<boolean> optBool; 
+
+    Foo<str> foo; 
+    
+    c.send(0); 
+}

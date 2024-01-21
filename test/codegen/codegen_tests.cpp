@@ -729,6 +729,56 @@ TEST_CASE("programs/BasicForLoop - Basic For loop ", "[codegen][cancel]")
         "66ee44669728ed700a85a9823f2f240afc64262fbd08ec2f8c4abda6b22d52dd"); // FIXME: QUITE LIMITED & NEEDS IMPROVEMENTS!
 }
 
+TEST_CASE("programs/generics/Arrays - Non-recursive generic function used for dyn array utils", "[codegen][generic]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/Arrays.bismuth"))),
+        "086a73ef2a85a2c41a65c21a2fa33e2c4e83dce7960bb7e0a5047c536ed1ab4e"); 
+}
+
+
+TEST_CASE("programs/generics/inv - Various generic functions including nested", "[codegen][generic]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/inv.bismuth"))),
+        "d0edb2f75e11d68d855bfb6e0d73cab64f805ad509bfc707691c22894950e199"); 
+}
+
+TEST_CASE("programs/generics/Lists - Various complex generic structures including recursive", "[codegen][generic]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/Lists.bismuth"))),
+        "e52a9d9a673e627938411f3b4299e01c816324261a227e7f60f42aa50b8e7fb1"); 
+}
+
+TEST_CASE("programs/generics/Optional - Optional as a means to test templated sum type", "[codegen][generic]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/Optional.bismuth"))),
+        "406731ff15472ffc3c9e9dd71d9d08e08985de0fddc219018fc2de59e094bf1c"); 
+}
+
+TEST_CASE("programs/generics/recfunctemplate - Recursive templated functions", "[codegen][generic]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/recfunctemplate.bismuth"))),
+        "53fa5921bdbc746b98bccc7ce8486729c61c9129674dabce26c1988a42521e58"); 
+}
+
+TEST_CASE("programs/generics/ReferenceGeneric - Co-dependent structs", "[codegen][generic]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/ReferenceGeneric.bismuth"))),
+        "7632d226bf1087a674e91b6e4f8765f9ffc86e14ef2f57a533ccdad04904e7d9"); 
+}
+
+
+TEST_CASE("programs/generics/ReferenceGenericS - Co-dependent structs", "[codegen][generic]")
+{
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/ReferenceGenericS.bismuth"))),
+        "d576cd106373342467ae7afe7be06aee2cbfbc120830d3d150eb4c372d0f2161"); 
+}
 
 /************************************
  * Example C-Level Tests
