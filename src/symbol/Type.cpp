@@ -1216,14 +1216,11 @@ bool TypeTemplate::define(std::optional<TemplateInfo> i, const NameableType * vt
 }
 
 void TypeTemplate::setIdentifier(std::optional<Identifier *> nxt) const {
-    identifier = nxt; // FIXME: DO BETTER!
-    
-    // std::cout << "1222 PRE. ValueType " << ((valueType) ? valueType.value()->toString(C_STYLE) : " NO SET VT") << std::endl; 
-    // FIXME: need to propagate name info to subtype for structs and enums to work
-    // if(valueType)
-    //     valueType.value()->setIdentifier(nxt); // FIXME: VERIFY
-    // std::cout << "1226 ValueType " << valueType << std::endl;
-    // std::cout << "1222 PST. ValueType " << ((valueType) ? valueType.value()->toString(C_STYLE) : " NO SET VT") << std::endl;  
+    identifier = nxt;
+
+    // propagate name info to subtype for structs and enums to work
+    if(valueType)
+        valueType.value()->setIdentifier(nxt);
 }
 
 std::optional<const NameableType*> TypeTemplate::getValueType() const { return valueType; }
@@ -1332,7 +1329,7 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
         Identifier * copyId = new Identifier(*templateId);
         ans->setIdentifier(copyId);
 
-        templateId->meta =  [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };
+        templateId->meta = [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };
         ans->getIdentifier().value()->meta = metaFn; // [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };;
     }
     // std::cout << "1222 meta = " << meta << std::endl; 
