@@ -499,7 +499,7 @@ public:
         }
         else
         {
-            return errorHandler.addError(ctx->getStart(), "Cannot invoke " + sym->toString());
+            return errorHandler.addError(ctx->getStart(), "Cannot execute " + sym->toString());
         }
     }
 
