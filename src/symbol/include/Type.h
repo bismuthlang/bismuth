@@ -1125,41 +1125,33 @@ public:
     ~TemplateInfo() = default; 
 };
 
-class TemplateableType {
-protected: 
-    TemplateableType(std::optional<TemplateInfo> i) : info(i) {}
-    virtual ~TemplateableType() = default; 
-
-// TODO: CHANGE TO PRIVATE!
-protected: 
-    std::optional<TemplateInfo> info; 
-
-public:
-    std::optional<TemplateInfo> getTemplateInfo() const { return info; }
-};
-
 /*******************************************
  *
  * Type used for Generics Inference
  *
  *******************************************/
-class TypeTemplate : public NameableType, public TemplateableType
+class TypeTemplate : public NameableType
 {
 private:
     std::optional<const NameableType *> valueType;
 
     mutable std::map<std::vector<const Type *>, const NameableType *> registeredTemplates = {};
 
+    std::optional<TemplateInfo> info; 
+
     bool defined = false; 
+ 
 
 public:
-    TypeTemplate() : NameableType(false, std::nullopt), TemplateableType(std::nullopt), defined(false) {}
+    TypeTemplate() : NameableType(false, std::nullopt), info(std::nullopt), defined(false) {}
 
-    TypeTemplate(std::optional<TemplateInfo> i, const NameableType * vt) : NameableType(false, std::nullopt), TemplateableType(i), valueType(vt), defined(true)// FIXME: IS IT Non linear?
+    TypeTemplate(std::optional<TemplateInfo> i, const NameableType * vt) : NameableType(false, std::nullopt), valueType(vt), info(i), defined(true)// FIXME: IS IT Non linear?
     {
     }
 
     bool isDefined() const { return defined; }
+
+    std::optional<TemplateInfo> getTemplateInfo() const { return info; }
 
     // PLAN: Contract that such a function may exist, but no guarantee about param types?
     bool define(std::optional<TemplateInfo> i, const NameableType * vt) const;
