@@ -7,13 +7,13 @@ define struct LinkedList<T> {
     (Empty + Box<LinkedList<T>>) next;
     T value; 
     # Box<LinkedList<T>> next; 
-    (Empty + LinkedList<str> + T) sumty; # FIXME: this doesn't work!!! It thinks its still the other type!
+    (Empty + LinkedList<str> + T) sumty; # Note: this is an important test. Need to ensure that the parameters are the correct type
     (Empty + LinkedList<str>) sumty2;
 }
 
 define program :: c : Channel<-int> {
 
-    # FIXME: NEEDS NAME MANGALING
+    # LL2 Is used to ensure that name mangaling applies to nested structs
     define struct LL2<V> {
         int a; 
         (Empty + Box<LL2<V>>) next;

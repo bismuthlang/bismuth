@@ -339,7 +339,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
-    std::variant<Symbol *, ErrorChain *> funcSymOpt = defineAndGetSymbolFor(ctx); // FIXME: use thi sto hack in the symbol name from the template!
+    std::variant<Symbol *, ErrorChain *> funcSymOpt = defineAndGetSymbolFor(ctx);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&funcSymOpt))
     {
@@ -2111,11 +2111,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     }
 
     Symbol *sym = std::get<Symbol *>(symOpt);
-    // stmgr ->addSymbol(sym);
 
-    // FIXME: Check dynamic cast? should be ok, but maybe not in case of template?
-
-    // FIXME: PROBLEM IS THAT IT COULD BE EITHER A TYPESTRUCT OR TYPETEMPLATE! SEE FUNC FOR FIX!
     TDefineStructNode * structNode = new TDefineStructNode(
         sym, 
         [sym]() -> const TypeStruct * {
@@ -2125,7 +2121,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
             }
             return dynamic_cast<const TypeStruct *>(sym->getType());
         }(),
-        // dynamic_cast<const TypeStruct *>(sym->getType()), 
         ctx->getStart());
 
     if(!ctx->genericTemplate())
@@ -3608,7 +3603,6 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
                 return sym; 
             }
 
-            // return errorHandler.addCompilerError(ctx->getStart(), "FIXME: unimplemented!");
             return errorHandler.addError(ctx->getStart(), "Expected enum/sum but got: " + sym->getType()->toString(toStringMode));
         },
 

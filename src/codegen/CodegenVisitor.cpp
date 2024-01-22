@@ -2428,28 +2428,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
 std::string CodegenVisitor::getCodegenAllocationID(Symbol * sym)
 {
-    // if(const NameableType * nt = dynamic_cast<const NameableType *>(sym->getType()))
-    // {
-    //     if(nt->hasName())
-    //         return nt->getIdentifier().value()->getFullyQualifiedName(); 
-    // }
-
     return sym->getFullyQualifiedName(); 
-    // std::string name = sym->getUniqueNameInScope(); 
-
-    // std::optional<Scope *> scopeOpt = sym->getScope(); 
-    // while(scopeOpt)
-    // {
-    //     Scope * scope = scopeOpt.value(); 
-    //     std::string scopeName = scope->getName();
-
-    //     if(scopeName != "")
-    //         name = scopeName + "::" + name; 
-
-    //     scopeOpt = scope->getParent();
-    // }
-
-    // return name;
 }
 
 std::string CodegenVisitor::getCodegenID(Symbol * sym)
@@ -2480,6 +2459,5 @@ llvm::AllocaInst * CodegenVisitor::CreateAndLinkEntryBlockAlloc(llvm::Type * ty,
 
 llvm::Type * CodegenVisitor::getLLVMType(Symbol * sym)
 {
-    // FIXME: ADD TEMPLATE CHECK!
     return sym->getType()->getLLVMType(module); 
 }
