@@ -748,7 +748,7 @@ TEST_CASE("programs/generics/Lists - Various complex generic structures includin
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/Lists.bismuth"))),
-        "e52a9d9a673e627938411f3b4299e01c816324261a227e7f60f42aa50b8e7fb1"); 
+        "63f891cda9e80a7e41e577b84490171356854c84ea531882a783d0671ad23c11"); 
 }
 
 TEST_CASE("programs/generics/Optional - Optional as a means to test templated sum type", "[codegen][generic]")

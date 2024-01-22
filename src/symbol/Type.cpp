@@ -1106,6 +1106,7 @@ optional<unsigned int> TypeStruct::getElementIndex(std::string k) const { return
 
 std::string TypeStruct::getTypeRepresentation(DisplayMode mode) const
 {
+    // std::cout << "HAS REP? " << this->hasName() << std::endl; 
     std::ostringstream description;
 
     description << "(";
@@ -1212,6 +1213,12 @@ bool TypeTemplate::define(std::optional<TemplateInfo> i, const NameableType * vt
     u_this->info = i; 
     u_this->valueType = vt; 
 
+    // Needed to ensure things like recursive structs get their name set (and thus preventing infinite recursion & crashes if their names are accessed)
+    if(this->getIdentifier())
+    {
+        vt->setIdentifier(this->getIdentifier().value());
+    }
+
     return true; 
 }
 
@@ -1239,7 +1246,6 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
 
     if(it != registeredTemplates.end())
         return it->second; 
-
     if(!this->getTemplateInfo()) // || this->getTemplateInfo().value().templates.size() == 0)
     {
         
@@ -1280,7 +1286,7 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
 
         // std::cout << "1201 " << id.second->toString(DisplayMode::C_STYLE) << " / " << subs.at(i)->toString(DisplayMode::C_STYLE) << std::endl;
         subst.insert({gen, subs.at(i)});
-        // std::cout << "1205 "  << (gen != subs.at(i)) << std::endl; 
+        std::cout << "1205 "  << (gen != subs.at(i)) << std::endl; 
         if(gen != subs.at(i))
             gen->setActingType(subs.at(i));
         // std::cout << "1207" << std::endl; 

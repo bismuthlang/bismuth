@@ -3303,8 +3303,7 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
             // std::cout << "3216 CASE " << caseName << " : " << caseTy->toString(DisplayMode::C_STYLE) << " " << caseTy  << " in " << structType <<  std::endl; 
         }
         structType->define(el);
-        // std::cout << "3218 " << structType->toString(C_STYLE) << std::endl;
-        // std::cout << "3218a " << structType->getTypeRepresentation(C_STYLE) << std::endl; 
+        std::cout << "3218 " << structType->toString(C_STYLE) << std::endl;
         return std::nullopt; 
     };
 
@@ -3368,6 +3367,9 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
                 TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
 
                 TypeStruct * structTy = new TypeStruct(); //ctx->name->getText()); 
+
+                // if(templateTy->getIdentifier())
+                //     structTy->setIdentifier(templateTy->getIdentifier().value());
 
                 templateTy->define(info, structTy);
 
