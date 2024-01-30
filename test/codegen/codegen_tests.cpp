@@ -73,7 +73,7 @@ TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)"
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test2.bismuth"))),
-        "1abbbeebd776ceb36249113d91e03ef0bbc174ecc07f166c7ecd17366e127eac");
+        "4d88224546db13f2f2c789787ea7809d1b5f7546075f0b255bc0f497b57c41a4");
 }
 
 TEST_CASE("programs/test3 - If w/o else", "[codegen]")
@@ -193,7 +193,7 @@ TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editin
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-arrayAssign.bismuth"))),
-        "ededc082a6d11fc6f7f2fc0b6b72d23c32e8b06e854e667658cadbef46c0987a");
+        "730e9b41f50f4c3e74564720d82188ba1f6d64290184a54071696cfe94c00b19");
 }
 
 // FIXME: RENAME AS WE DONT HAVE PROC ANYMORE!

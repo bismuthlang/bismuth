@@ -573,7 +573,13 @@ bool TypeProgram::isSupertypeFor(const Type *other) const
     // }
     if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
     {
-        return toString(C_STYLE) == other->toString(C_STYLE); // FIXME: DO BETTER
+        if(this->hasName() && p->hasName())
+            return this->getIdentifier().value()->getFullyQualifiedName() == p->getIdentifier().value()->getFullyQualifiedName();
+        
+        if(this->hasName() && !p->hasName()) return false; 
+
+        return this->getTypeRepresentation(C_STYLE) == p->getTypeRepresentation(C_STYLE);
+        // return toString(C_STYLE) == other->toString(C_STYLE); // FIXME: DO BETTER
         // return protocol->isSubtype(p->protocol);
     }
     return false;
