@@ -303,14 +303,66 @@ public:
     }
     */
 
-   TemplateInfo TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx); 
-   std::any visitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) override { return TvisitGenericTemplate(ctx); }
+    TemplateInfo TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx); 
+    std::any visitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) override { return TvisitGenericTemplate(ctx); }
 
     std::variant<std::vector<const Type *>, ErrorChain *> TvisitGenericSpecifier(BismuthParser::GenericSpecifierContext *ctx);
     std::any visitGenericSpecifier(BismuthParser::GenericSpecifierContext *ctx) override { return TvisitGenericSpecifier(ctx); }
 
+    /*
+    // Used to apply template symbols & then remove them 
+    template <class T>
+    std::variant<T *, ErrorChain *> workInTemplate(std::function<T* ()> fn)
+    {
+        std::vector<Symbol *> templateSyms; 
+
+        for(auto i : info.templates)
+        {
+            std::optional<Symbol *> symOpt = stmgr->addSymbol(i.first, i.second, true, false);
+
+            if(!symOpt)
+            {
+                return errorHandler.addError(nullptr, "Failed to generate template parameter! FIXME: do better error w/ context");
+            }
+
+            templateSyms.push_back(symOpt.value());
+        }
 
 
+    }
+    */
+
+   template <class T>
+    std::variant<T *, ErrorChain *> workInTemplate(const TypeTemplate * templateTy, antlr4::ParserRuleContext * ctx, std::function<std::variant<T *, ErrorChain *> ()> fn)
+    {
+        std::vector<Symbol *> templateSyms; 
+
+        if(!templateTy->getTemplateInfo())
+        {
+            return errorHandler.addCompilerError(ctx->getStart(), "Failed to find template information.");
+        }
+
+        TemplateInfo info = templateTy->getTemplateInfo().value();
+        for(auto i : info.templates)
+        {
+            std::optional<Symbol *> symOpt =  stmgr->addSymbol(i.first, i.second, true, false);
+
+            // FIXME: WRITE BETTER ERROR!
+            if(!symOpt)
+                return errorHandler.addError(ctx->getStart(), "Failed to get template symbol for " + i.first); 
+
+            templateSyms.push_back(symOpt.value());
+        }
+
+
+        std::variant<T *, ErrorChain *> opt = fn(); // visitCtx(ctx->lam, funcSym);
+
+        // TODO: maybe verify these all unbind?
+        for(auto templateSym : templateSyms)
+            stmgr->removeSymbol(templateSym);
+
+        return opt; 
+    }
 
 
 

@@ -96,10 +96,12 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         defineAndGetSymbolFor(e); 
     }
 
+std::cout <<" 99" << std::endl; 
     // Visit the statements contained in the unit
     std::vector<DefinitionNode *> defs;
     for (auto e : ctx->defs)
     {
+        // Note: re-applying template symbols happens in each visitor for now!
         if (BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
             std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(progCtx);
@@ -114,11 +116,6 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
         else if (BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
-            if(fnCtx->genericTemplate())
-            {
-                // FIXME: REBIND THE SYMBOLS FOR GENERIC!!
-            }
-
             std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(fnCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -131,11 +128,6 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
         else if (BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
         {
-            if(structCtx->genericTemplate())
-            {
-                // FIXME: REBIND THE SYMBOLS FOR GENERIC!!
-            }
-
             std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(structCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -148,11 +140,6 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
         else if (BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
         {
-            if(enumCtx->genericTemplate())
-            {
-                // FIXME: REBIND THE SYMBOLS FOR GENERIC!!
-            }
-
             std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(enumCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -347,10 +334,57 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     }
 
     Symbol *funcSym = std::get<Symbol *>(funcSymOpt);
-    // stmgr ->addSymbol(funcSym);
+    
+    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(funcSym->getType()))
+    {
+        std::cout << "340!??!?!" << std::endl; 
+        std::vector<Symbol *> templateSyms; 
 
+        if(!templateTy->getTemplateInfo())
+        {
+            return errorHandler.addCompilerError(ctx->getStart(), "Failed to find template information.");
+        }
+
+        TemplateInfo info = templateTy->getTemplateInfo().value();
+        for(auto i : info.templates)
+        {
+            std::optional<Symbol *> symOpt =  stmgr->addSymbol(i.first, i.second, true, false);
+
+            // FIXME: WRITE BETTER ERROR!
+            if(!symOpt)
+                return errorHandler.addError(ctx->getStart(), "Failed to get template symbol for " + i.first); 
+
+            templateSyms.push_back(symOpt.value());
+        }
+
+
+        std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam, funcSym);
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&lamOpt))
+        {
+            (*e)->addError(ctx->getStart(), "Unable to generate lambda");
+            return *e;
+        }
+
+        // TODO: maybe verify these all unbind?
+        for(auto templateSym : templateSyms)
+            stmgr->removeSymbol(templateSym);
+
+        TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
+
+        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
+            funcSym, 
+            templateTy, 
+            lam, 
+            ctx->getStart()
+        );
+
+        return templateNode; 
+
+    }
+std::cout << "385" << std::endl; 
     std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam, funcSym);
-
+std::cout << "387" << std::endl; 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&lamOpt))
     {
         (*e)->addError(ctx->getStart(), "Unable to generate lambda");
@@ -361,12 +395,11 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     // FIXME: ERROR IS OCCURRING HERE B/C WE ARE GETTING BACK A TEMPLATE TYPE INSTEAD OF A FUNC TYPE!
     // FIXME: IS THIS STILL NEEDED?
-    // lam->type = const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->type)); // FIXME: DO BETTER! NEEDED B/C OF NAME RES!
-    lam->type = [funcSym]() -> TypeFunc * {
-        if(const TypeTemplate * temp = dynamic_cast<const TypeTemplate *>(funcSym->getType()))
-            return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(temp->getValueType().value())); 
-        return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->getType()));
-    }();
+    // lam->type = [funcSym]() -> TypeFunc * {
+    //     if(const TypeTemplate * temp = dynamic_cast<const TypeTemplate *>(funcSym->getType()))
+    //         return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(temp->getValueType().value())); 
+    //     return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->getType()));
+    // }();
 
 
     std::cout << "337!!! " << lam->type->toString(C_STYLE) << std::endl; 
@@ -374,24 +407,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
      *  Check if this is a template or not, and handle it accordingly
      */
 
-    // FIXME: refactor this kind of thing across all of the typedefs
-    if(!ctx->genericTemplate())
-        return lam; 
-
-
-    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(funcSym->getType()))
-    {
-        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
-            funcSym, 
-            templateTy, 
-            lam, 
-            ctx->getStart()
-        );
-
-        return templateNode; 
-    }
-    
-    return errorHandler.addCompilerError(ctx->getStart(), "Got wrong type for template symbol: " + funcSym->getType()->toString(toStringMode));
+    return lam; 
 }
 
 std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitProductContext *ctx)
@@ -1195,6 +1211,7 @@ std::variant<TSelectAlternativeNode *, ErrorChain *> SemanticVisitor::visitCtx(B
 std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::ParameterListContext *ctx)
 {
     std::map<std::string, BismuthParser::ParameterContext *> map;
+    // bool isValid = true; 
 
     ParameterListNode paramList;
 
@@ -1206,6 +1223,8 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::Parame
         if (prevUse != map.end())
         {
             errorHandler.addError(param->getStart(), "Re-use of previously defined parameter " + name);
+            // isValid = false; 
+            return std::nullopt; 
         }
         else
         {
@@ -1873,6 +1892,7 @@ SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
 
 std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<Symbol *> symOpt)
 {
+    std::cout << "1892" << std::endl; 
     std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
 
     if (!paramTypeOpt)
@@ -1883,13 +1903,13 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     std::variant<const Type *, ErrorChain *> retTypeOpt = ctx->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->ret->accept(this))
                                                                    : (const Type *)Types::UNIT;
-
+std::cout << "1903" << std::endl; 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&retTypeOpt))
     {
         (*e)->addError(ctx->getStart(), "Error generating return type");
         return *e;
     }
-
+std::cout << "1909" << std::endl; 
     const Type *retType = std::get<const Type *>(retTypeOpt);
 
     std::vector<const Type *> paramTypes;
@@ -1898,13 +1918,17 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     {
         paramTypes.push_back(p.type);
     }
-
+std::cout << "1918" << std::endl; 
     // FIXME: technically could be bad opt access, but should never happen
     Symbol * sym = lazy_value_or<Symbol *>(symOpt, 
-        [this, paramTypes, retType]() { return stmgr->addAnonymousSymbol("lambda", new TypeFunc(paramTypes, retType), true).value(); });
+        [this, paramTypes, retType]() { 
+            std::cout << "1922aaa" << std::endl; 
+            
+            return stmgr->addAnonymousSymbol("lambda", new TypeFunc(paramTypes, retType), true).value(); });
 
-
+std::cout << "1923 " << std::endl; 
     stmgr->enterScope(StopType::GLOBAL, sym->getIdentifier()); //[sym](){ return sym->getUniqueNameInScope(); });
+    std::cout << "1928 " << std::endl; 
     stmgr->addSymbol("@RETURN", retType, false, false); // Because of inserting a global stop, this will always go through
 
     for (ParameterNode param : params)
@@ -1913,7 +1937,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
             stmgr->addSymbol(param.name, param.type, false, false).value() // TODO: should this be error checked? Based on global stop it should be fine unless duplicates.. but that's likely already caught?
         );
     }
-
+std::cout << "1933" << std::endl; 
     std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
@@ -2067,27 +2091,16 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     }
 
     Symbol *sym = std::get<Symbol *>(symOpt);
-    // stmgr ->addSymbol(sym);
 
     // FIXME: Check dynamic cast? should be ok, but maybe not in case of template?
 
-    TDefineEnumNode * enumNode = new TDefineEnumNode(
-        sym, 
-        // dynamic_cast<const TypeSum *>(sym->getType()), 
-        [sym]() -> const TypeSum * {
-            if(const TypeTemplate * temp = dynamic_cast<const TypeTemplate *>(sym->getType()))
-            {
-                return dynamic_cast<const TypeSum *>(temp->getValueType().value());
-            }
-            return dynamic_cast<const TypeSum *>(sym->getType());
-        }(),
-        ctx->getStart());
-
-    if(!ctx->genericTemplate())
-        return enumNode; 
-
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
     {
+        TDefineEnumNode * enumNode = new TDefineEnumNode(
+            sym, 
+            dynamic_cast<const TypeSum *>(templateTy->getValueType().value()), // FIXME: could cause segfault via nullptr
+            ctx->getStart());
+
         TDefineTemplateNode * templateNode = new TDefineTemplateNode(
             sym, 
             templateTy, 
@@ -2097,8 +2110,13 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
         return templateNode; 
     }
-    
-    return errorHandler.addCompilerError(ctx->getStart(), "Got wrong type for template symbol: " + sym->getType()->toString(toStringMode));
+
+    TDefineEnumNode * enumNode = new TDefineEnumNode(
+        sym, 
+        dynamic_cast<const TypeSum *>(sym->getType()), // FIXME: could cause segfault via nullptr
+        ctx->getStart());
+
+    return enumNode; 
 }
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
@@ -2112,22 +2130,13 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     Symbol *sym = std::get<Symbol *>(symOpt);
 
-    TDefineStructNode * structNode = new TDefineStructNode(
-        sym, 
-        [sym]() -> const TypeStruct * {
-            if(const TypeTemplate * temp = dynamic_cast<const TypeTemplate *>(sym->getType()))
-            {
-                return dynamic_cast<const TypeStruct *>(temp->getValueType().value());
-            }
-            return dynamic_cast<const TypeStruct *>(sym->getType());
-        }(),
-        ctx->getStart());
-
-    if(!ctx->genericTemplate())
-        return structNode; 
-
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
     {
+        TDefineStructNode * structNode = new TDefineStructNode(
+            sym, 
+            dynamic_cast<const TypeStruct *>(templateTy->getValueType().value()), // FIXME: could technically cause segfault via nullptr
+            ctx->getStart());
+
         TDefineTemplateNode * templateNode = new TDefineTemplateNode(
             sym, 
             templateTy, 
@@ -2137,8 +2146,13 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
         return templateNode; 
     }
-    
-    return errorHandler.addCompilerError(ctx->getStart(), "Got wrong type for template symbol: " + sym->getType()->toString(toStringMode));
+
+    TDefineStructNode * structNode = new TDefineStructNode(
+        sym, 
+        dynamic_cast<const TypeStruct *>(sym->getType()), // FIXME: could technically cause segfault via nullptr
+        ctx->getStart());
+
+    return structNode; 
 }
 
 std::variant<const Type *, ErrorChain *>
@@ -2987,7 +3001,7 @@ std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExp
 
 
 TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) {
-    std::vector<std::pair<std::string, TypeGeneric *>> syms; //std::string> syms;  // FIXME: SHOULD THIS BE CONST?
+    std::vector<std::pair<std::string, TypeGeneric *>> syms; // FIXME: SHOULD THIS BE CONST?
     std::map<std::string, antlr4::Token *> visited; 
 
     // TODO: what restrictions should there be on the name of these variables?
@@ -3013,7 +3027,7 @@ TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTempla
                 }
                 else
                 {
-                    syms.push_back({idName, new TypeGeneric(false, idName)}); //idName); // FIXME: BETTER IS-LINEAR?
+                    syms.push_back({idName, new TypeGeneric(false, idName)}); // FIXME: BETTER IS-LINEAR?
                     visited.insert({idName, tyCtx->getStart()});
                 }
             }
@@ -3306,8 +3320,32 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
     auto defineTemplate = [this, defineFunction, defineProgram, defineEnum, defineStruct](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy) -> std::optional<ErrorChain *> {
         if (templateTy->isDefined()) return std::nullopt; 
 
+        auto applyTemplate = [this](TemplateInfo info, std::function<std::optional<ErrorChain *>()> fn) -> std::optional<ErrorChain *> {
+            std::vector<Symbol *> templateSyms; 
+
+            // FIXME: verify these bindings all go through -> NEED TO ENTER SCOPE!
+            for(auto i : info.templates)
+            {
+                std::optional<Symbol *> symOpt =  stmgr->addSymbol(i.first, i.second, true, false);
+
+                // FIXME: WRITE BETTER ERROR!
+                if(!symOpt)
+                    return errorHandler.addError(nullptr, "Failed to get template symbol for " + i.first); 
+
+                templateSyms.push_back(symOpt.value());
+            }
+
+            std::optional<ErrorChain *> ans = fn();
+            
+            // TODO: maybe verify these all unbind?
+            for(auto templateSym : templateSyms)
+                stmgr->removeSymbol(templateSym);
+
+            return ans; 
+        };
+
         return defineTypeCase<std::optional<ErrorChain *>>(ctx, 
-            [this, templateTy, defineFunction](BismuthParser::DefineFunctionContext * fnCtx) -> std::optional<ErrorChain *> {
+            [this, templateTy, defineFunction, applyTemplate](BismuthParser::DefineFunctionContext * fnCtx) -> std::optional<ErrorChain *> {
                 // TODO: get errors from this?
                 TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
 
@@ -3315,24 +3353,13 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
                 templateTy->define(info, funcTy);
 
-                std::vector<Symbol *> templateSyms; 
-                // FIXME: verify these bindings all go through
-                for(auto i : info.templates)
-                {
-                    // FIXME: ERROR CHECK, BAD OPT ACCESS
-                    Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
-                    templateSyms.push_back(templateSym);
-                }
-
-                std::optional<ErrorChain *> ans = defineFunction(fnCtx, funcTy);
-                
-                // for(auto templateSym : templateSyms)
-                //     stmgr->removeSymbol(templateSym);
-                return ans; 
+                return applyTemplate(info, [defineFunction, fnCtx, funcTy](){
+                    return defineFunction(fnCtx, funcTy);
+                });
             },
 
 
-            [this, templateTy, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::optional<ErrorChain *> {
+            [this, templateTy, defineProgram, applyTemplate](BismuthParser::DefineProgramContext * ctx) -> std::optional<ErrorChain *> {
                 // TODO: get errors from this?
                 TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
 
@@ -3340,24 +3367,13 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
                 templateTy->define(info, progTy);
 
-                std::vector<Symbol *> templateSyms; 
-                // FIXME: verify these bindings all go through
-                for(auto i : info.templates)
-                {
-                    // FIXME: ERROR CHECK, BAD OPT ACCESS
-                    Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
-                    templateSyms.push_back(templateSym);
-                }
-
-                std::optional<ErrorChain *> ans = defineProgram(ctx, progTy);
-                
-                // for(auto templateSym : templateSyms)
-                //     stmgr->removeSymbol(templateSym);
-                return ans; 
+                return applyTemplate(info, [defineProgram, ctx, progTy](){
+                    return defineProgram(ctx, progTy);
+                });
             },
 
 
-            [this, templateTy, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::optional<ErrorChain *> {
+            [this, templateTy, defineStruct, applyTemplate](BismuthParser::DefineStructContext * ctx) -> std::optional<ErrorChain *> {
                 // TODO: get errors from this?
                 TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
 
@@ -3368,46 +3384,22 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
 
                 templateTy->define(info, structTy);
 
-                std::vector<Symbol *> templateSyms; 
-                // FIXME: verify these bindings all go through
-                for(auto i : info.templates)
-                {
-                    // FIXME: ERROR CHECK, BAD OPT ACCESS
-                    Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
-                    templateSyms.push_back(templateSym);
-                }
-
-                std::optional<ErrorChain *> ans = defineStruct(ctx, structTy);
-                
-                std::cout << "3296 " << structTy->toString(C_STYLE) << std::endl; 
-                // for(auto templateSym : templateSyms)
-                //     stmgr->removeSymbol(templateSym);
-                return ans; 
+                return applyTemplate(info, [defineStruct, ctx, structTy](){
+                    return defineStruct(ctx, structTy);
+                });
             },
 
 
-            [this, templateTy, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::optional<ErrorChain *> {
+            [this, templateTy, defineEnum, applyTemplate](BismuthParser::DefineEnumContext * ctx) -> std::optional<ErrorChain *> {
                 TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
 
                 TypeSum * sumTy = new TypeSum();//ctx->name->getText()); 
 
                 templateTy->define(info, sumTy);
 
-                std::vector<Symbol *> templateSyms; 
-                // FIXME: verify these bindings all go through
-                for(auto i : info.templates)
-                {
-                    // FIXME: ERROR CHECK, BAD OPT ACCESS
-                    Symbol * templateSym =  stmgr->addSymbol(i.first, i.second, true, false).value();
-                    templateSyms.push_back(templateSym);
-                }
-
-                std::optional<ErrorChain *> ans = defineEnum(ctx, sumTy);
-                
-                // for(auto templateSym : templateSyms)
-                //     stmgr->removeSymbol(templateSym);
-                return ans; 
-
+                return applyTemplate(info, [defineEnum, ctx, sumTy](){
+                    return defineEnum(ctx, sumTy);
+                });
             },
 
 
@@ -3476,8 +3468,12 @@ std::variant<Symbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(Bis
                     std::optional<ErrorChain *> optErr = defineTemplate(fnCtx, templateTy);
 
                     if(optErr) return optErr.value();
+
+                    if(!templateTy->getValueType())
+                    {
+                        return errorHandler.addCompilerError(fnCtx->getStart(), "Cannot find the type to apply a template to.");
+                    }
     
-                    // FIXME: UNSAFE OPTIONAL? 
                     if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
                     {
                         std::cout << "3421 generated generic symbol: " << sym->toString() << std::endl; 

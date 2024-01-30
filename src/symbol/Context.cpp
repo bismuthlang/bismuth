@@ -32,7 +32,7 @@ Scope &Context::enterScope(bool insertStop, std::optional<Identifier *> idOpt)  
     if (insertStop)
     {
         stops.push(scopes.size() - 1);
-        nameCounter.push(std::map<std::string, uint32_t>());
+        nameCounter->push(std::map<std::string, uint32_t>());
     }
 
     return *next;
@@ -55,7 +55,7 @@ std::optional<Scope *> Context::exitScope()
     if (getCurrentStop() == depth && getCurrentStop() != 0)
     {
         stops.pop();
-        nameCounter.pop();
+        nameCounter->pop();
     }
 
     return std::optional<Scope *>{last};

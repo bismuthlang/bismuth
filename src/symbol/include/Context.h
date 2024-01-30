@@ -17,10 +17,12 @@
 
 class Context {
   private: 
-    std::stack<std::map<std::string, uint32_t>> nameCounter; 
+    std::stack<std::map<std::string, uint32_t>> * nameCounter; 
 
   public:
-    Context(){nameCounter.push(std::map<std::string, uint32_t>());};
+    Context(){
+      nameCounter = new std::stack<std::map<std::string, uint32_t>>(); 
+      nameCounter->push(std::map<std::string, uint32_t>());};
 
     /**
      * @brief Enter a new scope
@@ -153,6 +155,7 @@ class Context {
       // c.currentScope = currentScope ? copies[currentScope.value()] : std::nullopt; 
       c.scopeNumber = scopeNumber;
       c.stops = stops; 
+      c.nameCounter = nameCounter;
       return c; 
     }
 
@@ -170,15 +173,15 @@ class Context {
 
 
     std::string getUniqNameFor(std::string id) {
-      auto itr = nameCounter.top().find(id);
-      if(itr == nameCounter.top().end())
+      auto itr = nameCounter->top().find(id);
+      if(itr == nameCounter->top().end())
       {
-          nameCounter.top().insert({id, 0});
+          nameCounter->top().insert({id, 0});
           return id;
       }
       std::ostringstream nextName; 
       nextName << id << "." << itr->second; 
-      nameCounter.top().insert({id, itr->second++});
+      nameCounter->top().insert({id, itr->second++});
       return nextName.str(); 
     }
 };

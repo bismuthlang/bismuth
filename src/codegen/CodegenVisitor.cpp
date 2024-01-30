@@ -101,6 +101,8 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
     {
         Symbol *localSym = caseNode.first;
 
+        std::cout << "104-------- " << localSym->getIdentifier()->getFullyQualifiedName() << std::endl; 
+
         llvm::Type *toFind = getLLVMType(localSym);
 
         unsigned int index = sumType->getIndex(module, toFind);
