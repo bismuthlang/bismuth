@@ -271,14 +271,14 @@ TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignments outside of 
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumAssign.bismuth"))),
-        "f381dfd03b3dd7e3018d305646087ab26d5af2bd3ea0056cebba0d277ef0bf3a");
+        "b64fc9cc04f4d992a5bd05f1771132c1d96e1363fd6fe131928d1dc4776744b8");
 }
 
 TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[codegen][enum][lambda]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/enumAssign2.bismuth"))),
-        "38c39065040b4a6dac8b2dd276dfd39247799b4d718a1b80b50dd637ac6331eb");
+        "2d002078a73da2b21af0b78e6748c07c28f94d382d8010cf8de0c941552e8067");
 }
 
 TEST_CASE("programs/enum3", "[codegen][enum]")
@@ -334,56 +334,56 @@ TEST_CASE("programs/dangerLambda-Program - lambdas with duplicate function names
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Program.bismuth"))),
-        "8fe861422a057ce1a6bc9a8d8149d74a8a99c9776f3511653f89b3749903c24d");
+        "9feabf0d590886986cbac0bd0742870c4d08cc56cecd7696941986034a13e8ad");
 }
 
 TEST_CASE("programs/dangerLambda-Lambda - lambdas with duplicate function names", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/dangerLambda-Lambda.bismuth"))),
-        "caea2fe13e5b4245248178b6e6d7bf0afbdebe4640e561de21eb86ca8840da69");
+        "c65e79e226d0bb05fce0d467ace5c65dde8241cefdbac45a5bdc97033404ec0b");
 }
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing.bismuth"))),
-        "072b25ca39c54411c00392d6a1ef1308f369e228ceafcc467c17ffd5c88e879f");
+        "9a6147644ed5c0bf801340ff927d2a7d1ba43d01a3c61f0efd951a6e4ff3c542");
 }
 
 TEST_CASE("programs/adv/enumPassing-fn - passing non-enum as enum argument", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassing-fn.bismuth"))),
-        "1458917159da5ea724a6f338dc254ec59701506155fefeb9e987a63eff04abea");
+        "5d9e665a2400efcef812c95005f75d146a7ae54b096d560aa41fba5fbfb588e7");
 }
 
 TEST_CASE("programs/Lambda2a - More nested lambdas", "[codegen][lambda]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda2a.bismuth"))),
-        "9f5a80cee77fd41645521043541e3e2ecfd7ed00357b55e217bb8774bf4332f5");
+        "417e00eb1215f604d70ed25a11396eb0172b6226b7358eb2ea4c9d60ccc89a47");
 }
 
 TEST_CASE("programs/adv/enumPassingInf - Enum passing with Type Inference", "[codegen][enum][type-inf]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassingInf.bismuth"))),
-        "e9fe2f7229a7d5aecd7469ffd2ff8c3763cb1750450c91917f68c2aecb15d0b0");
+        "411607c66135c0db20b703a58ac28d525e905e0582b233c561dbf92a7a8808fc");
 }
 
 TEST_CASE("programs/adv/enumPassingInf-fn - Enum passing with Type Inference", "[codegen][enum][type-inf]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/adv/enumPassingInf-fn.bismuth"))),
-        "acedd92da4f5098603ff6f006077c3501e035244575cfff0f71dbbb01fb48ba2");
+        "49f9366ef5d4ac1f8d588431ca9f04a5efe7983959b577c1307416a9134619de");
 }
 
 TEST_CASE("programs/Lambda2b - More nested lambdas", "[codegen][struct]")
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/Lambda2b.bismuth"))),
-        "56b383e75a0785b42d6ddfe4ef8a0959ed50288c669b0c15eb719258d0a4d35b");
+        "8be54ea92a6d7fcb627cd2b86dc0bd46ef828382e7f956c8c29feba7770ae85f");
 }
 
 TEST_CASE("Out of order function", "[codegen][program]")
