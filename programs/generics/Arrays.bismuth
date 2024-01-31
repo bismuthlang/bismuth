@@ -1,3 +1,5 @@
+extern func printf(str s, ...) : Unit; 
+
 # define func fill<T>(T[] array, T value, u32 num)
 # {
 #     for(u32 i := 0u32; i < num; i := i + 1u32)
@@ -16,15 +18,76 @@ define func fill<T>(T[] array, T value, int num)
     return;
 }
 
+
+# bsl::arrays::forEach
+define func forEach<T>(T[] array, (T) -> Unit fn) {
+    for(int i := 0; i < array.length; i := i + 1)
+    {
+        # fn(array[i]);
+        match array[i]
+            |  Unit u => {} # Unreachable
+            |  T t => fn(t);
+    }
+
+    return;
+}
+
+
+# bsl::arrays::map
+define func map<I, O>(I[] array, ((I) -> O + (I, int) -> O) mapper) : O[]
+{
+    O[] output; 
+    match mapper 
+        |   I -> O m1 => {
+                for(int i := 0; i < array.length; i := i + 1) {
+                    match array[i]
+                        |  Unit u => {} # Unreachable
+                        |  I ele => output[i] := m1(ele);
+                }
+            }
+        |   I, int -> O m2 => {
+                for(int i := 0; i < array.length; i := i + 1) {
+                    match array[i]
+                        | Unit u => {} # Unreachable
+                        | I ele => output[i] := m2(ele, i); 
+                }
+            }
+    return output; 
+}
+
 define program :: c : Channel<-int> {
     int[] a;
     boolean[] b; 
+
 
     # fill<int> fillInts; 
     fill<boolean> fillBools; 
 
     fill<int> d := fill<int>; 
 
+    fill<int>(a, 2, 5); 
+    printf("Size: %u\n", a.length);
+
+
+    forEach<int>(a, (int i) : Unit {
+        printf("%u, ", i);
+        return;
+    });
+    printf("\n");
+
+
+    int[] a2 := map<int, int>(a, (int ele, int idx) : int{
+        return idx; 
+    });
+
+    forEach<int>(a2, (int i) : Unit {
+        printf("%u, ", i);
+        return;
+    });
+    printf("\n");
+
+
+    
     c.send(0); 
 }
 

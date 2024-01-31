@@ -96,6 +96,7 @@ class TWhileLoopNode;
 class TExternNode;
 class TInvocationNode;
 class TFieldAccessNode;
+class TPathNode; 
 class TArrayAccessNode;
 class TDynArrayAccessNode; 
 class TAssignNode;
@@ -159,6 +160,7 @@ public:
     virtual std::optional<Value *> visit(TExternNode *n) = 0;
     virtual std::optional<Value *> visit(TInvocationNode *n) = 0;
     virtual std::optional<Value *> visit(TFieldAccessNode *n) = 0;
+    virtual std::optional<Value *> visit(TPathNode *n) = 0; 
     virtual std::optional<Value *> visit(TArrayAccessNode *n) = 0;
     virtual std::optional<Value *> visit(TDynArrayAccessNode *n) = 0; 
     virtual std::optional<Value *> visit(TAssignNode *n) = 0;
@@ -215,6 +217,7 @@ public:
     std::any any_visit(TExternNode *n) { return this->visit(n); }
     std::any any_visit(TInvocationNode *n) { return this->visit(n); }
     std::any any_visit(TFieldAccessNode *n) { return this->visit(n); }
+    std::any any_visit(TPathNode *n) { return this->visit(n); }
     std::any any_visit(TArrayAccessNode *n) { return this->visit(n); }
     std::any any_visit(TDynArrayAccessNode *n) { return this->visit(n); }
     std::any any_visit(TAssignNode *n) { return this->visit(n); }
@@ -911,12 +914,44 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
+
+class TPathNode: public TypedNode
+{
+public:
+    std::variant<Symbol *, const NameableType *> var; //const TypeProgram *, const TypeFunc *, const TypeStruct *, const TypeSum *> var; 
+    bool is_rvalue;
+
+public:
+    TPathNode(antlr4::Token *tok, 
+              std::variant<Symbol *, const NameableType *> v, 
+                bool rv) 
+        : TypedNode(tok)
+        , var(v)
+        , is_rvalue(rv)
+    {
+    }
+
+    const Type *getType() override {
+       return std::visit(overloaded{[](Symbol * sym)
+                { return sym->getType(); },
+                [](const NameableType * nt)
+                { return (const Type *) nt; }},
+                var);
+    }
+
+    std::string toString() const override {
+        return "PATH NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
 class TFieldAccessNode : public TypedNode
 {
 private:
-    // const Type *type;
-    Symbol *symbol;
-    const Type * symType; 
+    // Symbol *symbol;
+    // const Type * symType; 
+    TPathNode * path; 
     const Type * resultType; 
 
 
@@ -924,27 +959,30 @@ public:
     bool is_rvalue;
     vector<pair<string, const Type *>> accesses;
 
-    TFieldAccessNode(antlr4::Token *tok, Symbol *s, const Type * st, bool rv, vector<pair<string, const Type *>> r = {}) 
+    TFieldAccessNode(antlr4::Token *tok, TPathNode * p, bool rv, vector<pair<string, const Type *>> r = {}) 
         : TypedNode(tok)
-        , symbol(s)
-        , symType(st)
+        , path(p)
+        // , symbol(s)
+        // , symType(st)
         , is_rvalue(rv)
         , accesses(r)
     {
-        resultType = r.empty() ? symType : r.at(r.size() - 1).second;
+        resultType = r.empty() ? path->getType() : r.at(r.size() - 1).second;
     }
 
     const Type *getType() override { return resultType; }
 
     const Type * getResultantType() { return resultType; }
 
-    const Type * getSymbolType() { return symType; }
+    const Type * getSymbolType() { return path->getType(); }
 
-    Symbol * getSymbol() { return symbol; }
+    TPathNode * getPath() { return path; }
+
+    // Symbol * getSymbol() { return symbol; }
 
 
     std::string toString() const override {
-        return "FIELD ACCESS NODE " + symbol->toString();
+        return "FIELD ACCESS NODE "; // + symbol->toString();
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }

@@ -403,7 +403,7 @@ public:
 
     // }
     
-    void InitDynArray(llvm::AllocaInst * alloc, ConstantInt * len);
+    void InitDynArray(llvm::AllocaInst * alloc, uint32_t len); //ConstantInt * len);
 
     void ReallocateDynArray(llvm::Value * alloc, llvm::Value * newLen32); 
 

@@ -428,6 +428,7 @@ struct TypeCompare
 {
     bool operator()(const Type *a, const Type *b) const
     {
+        std::cout << "COMP:: " << a->toString(C_STYLE) << " < " << b->toString(C_STYLE) << std::endl; 
         return a->toString(C_STYLE) < b->toString(C_STYLE);
     }
 };
@@ -858,10 +859,17 @@ private:
      */
     std::vector<const TypeInfer *> infTypes;
 
+    /**
+     * @brief Keeps track of a set of possible types for this infer to resolve to. If left empty, this behaves as normal
+     * 
+     */
+    std::set<const Type *> possibleTypes; 
+
 public:
-    TypeInfer() : Type(false) // FIXME: IS IT Non linear?
+    TypeInfer(std::set<const Type *> pt = {}) : Type(false) // FIXME: IS IT Non linear?
     {
         valueType = new std::optional<const Type *>;
+        possibleTypes = pt; 
     }
 
     /**

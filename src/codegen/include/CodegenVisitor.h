@@ -116,6 +116,7 @@ public:
     std::optional<Value *> visit(TExternNode *n) override;
     std::optional<Value *> visit(TInvocationNode *n) override;
     std::optional<Value *> visit(TFieldAccessNode *n) override;
+    std::optional<Value *> visit(TPathNode *n) override; 
     std::optional<Value *> visit(TDerefBoxNode *n) override;
     std::optional<Value *> visit(TArrayAccessNode *n) override;
     std::optional<Value *> visit(TDynArrayAccessNode *n) override; 
@@ -147,69 +148,14 @@ public:
     Module *getModule() { return module; }
     void modPrint() { module->print(llvm::outs(), nullptr); }
 
-    std::optional<Value *> visitVariable(Symbol *sym, bool is_rvalue)
+    // From C++ Documentation for visitors
+    template <class... Ts>
+    struct overloaded : Ts...
     {
-        // Try getting the type for the symbol, raising an error if it could not be determined
-        llvm::Type *type = sym->getType()->getLLVMType(module);
-        if (!type)
-        {
-            errorHandler.addError(nullptr, "Unable to find type for variable: " + getCodegenID(sym));
-            return std::nullopt;
-        }
-        
-        // Make sure the variable has an allocation (or that we can find it due to it being a global var)
-        std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
-        if (!optVal)
-        {
-            // If the symbol is a global var
-            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->getType()))
-            {
-                Function *fn = module->getFunction(getCodegenID(sym));
-
-                return fn;
-            }
-            else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
-            {
-                Function *fn = module->getFunction(getCodegenID(sym));
-
-                return fn;
-            }
-            else if (const TypeTemplate * tmp = dynamic_cast<const TypeTemplate *>(sym->getType())) // FIXME: is this an adequate check? what about other type defs?
-            {
-                // Function *fn = module->getFunction(getCodegenID(sym));
-                // std::cout << "178 found " << fn << std::endl; 
-                // if(fn) return fn; 
-                errorHandler.addError(nullptr, "Cannot visit a template as if it were a variable");
-                return std::nullopt; 
-            }
-            else if (sym->isGlobal())
-            {
-                // Lookup the global var for the symbol
-                llvm::GlobalVariable *glob = module->getNamedGlobal(getCodegenID(sym));
-
-                // Check that we found the variable. If not, throw an error.
-                if (!glob)
-                {
-                    errorHandler.addError(nullptr, "Unable to find global variable: " + getCodegenID(sym) + " " + sym->toString());
-                    return std::nullopt;
-                }
-
-                // Create and return a load for the global var
-                Value *val = builder->CreateLoad(glob);
-                return val;
-            }
-
-            errorHandler.addError(nullptr, "Unable to find allocation for variable: " + getCodegenID(sym));
-            return std::nullopt;
-        }
-
-        if (!is_rvalue)
-            return optVal.value();
-
-        // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
-        Value *v = builder->CreateLoad(type, optVal.value(), getCodegenID(sym));
-        return v;
-    }
+        using Ts::operator()...;
+    };
+    template <class... Ts>
+    overloaded(Ts...) -> overloaded<Ts...>;
 
     Value * correctSumAssignment(const TypeSum *sum, Value *original)
     {

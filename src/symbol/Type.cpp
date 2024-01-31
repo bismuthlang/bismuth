@@ -825,6 +825,11 @@ bool TypeInfer::setValue(const Type *other) const
         return other->isSubtype(valueType->value()); // NOTE: CONDITION INVERSED BECAUSE WE CALL IT INVERSED IN SYMBOL.CPP!
     }
 
+    if(possibleTypes.size())
+    {
+        if(!possibleTypes.contains(other)) return false; 
+    }
+
     // Set our valueType to be the provided type to see if anything breaks...
     TypeInfer *u_this = const_cast<TypeInfer *>(this);
     *u_this->valueType = other;
@@ -904,14 +909,20 @@ bool TypeSum::contains(const Type *ty) const
     return cases.count(ty);
 }
 
-std::set<const Type *, TypeCompare> TypeSum::getCases() const { return cases; }
+std::set<const Type *, TypeCompare> TypeSum::getCases() const { 
+    // Hacky thing needed to refresh sort order when generics are used
+    std::set<const Type *, TypeCompare> resorted; 
+    for(auto a : this->cases)
+        resorted.insert(a); 
+    return resorted; 
+}
 
 unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
 {
     std::string type_str;
     llvm::raw_string_ostream rso(type_str);
     toFind->print(rso);
-    std::cout << "TOFIND: " << rso.str() << std::endl; 
+    std::cout << "TOFIND: " << rso.str() << " in " << this->toString(C_STYLE) << std::endl; 
 
     unsigned i = 1;
 
@@ -919,6 +930,7 @@ unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
     {
         if (e->getLLVMType(M) == toFind)
         {
+            std::cout << "922 " << e->toString(C_STYLE) << " @ " << i << std::endl; 
             return i;
         }
         i++;
@@ -939,7 +951,7 @@ std::string TypeSum::getTypeRepresentation(DisplayMode mode) const
     unsigned int ctr = 0;
     unsigned int size = cases.size();
 
-    for (const Type *el : cases)
+    for (const Type *el : getCases())
     {
         description << el->toString(mode);
         if (++ctr != size)

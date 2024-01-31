@@ -1023,7 +1023,9 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
     }
 
-    const Type * symType = sym->getType(); 
+    const Type * symType = sym->getType();
+
+    std::variant<Symbol *, const NameableType *> pathVar = sym;  
 
     if(ctx->genericSpecifier())
     {
@@ -1042,10 +1044,11 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
 
 
-            std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
+            std::optional<const NameableType *> appliedOpt = templateTy->canApplyTemplate(innerTys); 
             if(!appliedOpt)
                 return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
             symType = appliedOpt.value(); 
+            pathVar = appliedOpt.value(); 
             std::cout << "1001 Applied template: " << symType->toString(C_STYLE) << std::endl;
         }
         else 
@@ -1053,6 +1056,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
             return errorHandler.addError(ctx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + symType->toString(toStringMode));
         }
     }
+
 
     std::vector<std::pair<std::string, const Type *>> a;
 
@@ -1107,7 +1111,8 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
     }
 
-    return new TFieldAccessNode(ctx->getStart(), sym, symType, is_rvalue, a);
+    TPathNode * pathNode = new TPathNode(ctx->getStart(), pathVar,  a.size() == 0 ? is_rvalue : false);
+    return new TFieldAccessNode(ctx->getStart(), pathNode, is_rvalue, a);
 }
 
 std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue)

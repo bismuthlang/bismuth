@@ -4,12 +4,6 @@ define struct LAM {}
 define program :: c : Channel<-int> {
     var a := LAM::init(); 
     c.send(0);
-    # var lambda3 := (boolean i) : boolean {return i; }
-
-    {
-        # define struct A {}  # higher order structs/enums don't appear to work -> They do now :D
-    }
-    # foo();
     
     foo<int> hmm;
     foo<boolean> hmm2;
@@ -29,7 +23,6 @@ define func foo<T>(T t) {
     }
 
 
-    # FIXME: why does just having a define type like this generate as a function?
     define func nested<V>(V param) {
 
         var a := 0; 

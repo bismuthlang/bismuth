@@ -1,11 +1,14 @@
 #include "CodegenUtils.h"
 
 
-void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, ConstantInt * len32)
+void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, uint32_t len)// ConstantInt * len32)
 {
     // Value * len64 = builder->CreateSExtOrBitCast(len32, Int64Ty);//CreateIntCast(len, Int64Ty);
 
-    Value * capacity = builder->CreateNSWMul(len32, getU32(DYN_ARRAY_GROW_FACTOR));
+    // builder->CreateMaxNum(len32, )
+    Value * len32 = getU32(len); 
+    // TODO: DO GROWTH FACTOR BETTER
+    Value * capacity = getU32(len == 0 ? 10 : (2 * len)); //builder->CreateNSWMul(len32, getU32(DYN_ARRAY_GROW_FACTOR));
 
     // FIXME: DYN ARRAYS DONT CURRENTLY WORK WITH COPY!
 

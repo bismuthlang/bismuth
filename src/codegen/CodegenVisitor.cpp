@@ -776,7 +776,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue *n)
 
         ans = CreateEntryBlockAlloc(ty->getLLVMType(module), ""); // TODO: this isn't always needed
 
-        InitDynArray(ans, getU32(n->exprs.size()));
+        InitDynArray(ans, (n->exprs.size()));
 
         Value * vecPtr = builder->CreateGEP(ans, {Int32Zero, Int32Zero});
         writeTo = builder->CreateLoad(vecPtr, vecPtr->getType()->getPointerElementType());
@@ -1033,7 +1033,6 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
 
             }
         ))->accept(this); 
-        // ReallocateDynArray
 
 
         // If its an lvalue,need the pointer!
@@ -1431,7 +1430,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 
     const Type *ty = n->getSymbolType(); //sym->getType();
     std::cout << "1414!!!! " << ty->toString(DisplayMode::C_STYLE) << std::endl; 
-    std::optional<Value *> baseOpt = visitVariable(n->getSymbol(), n->accesses.size() == 0 ? n->is_rvalue : false);
+    std::optional<Value *> baseOpt = visit(n->getPath()); 
 
     if (!baseOpt)
     {
@@ -1492,6 +1491,121 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
     }
 
     return valPtr;
+}
+
+std::optional<Value *> CodegenVisitor::visit(TPathNode *n)
+{
+    if(std::holds_alternative<Symbol *>(n->var))
+    {
+        std::cout << "1501! " << std::endl; 
+        Symbol * sym = std::get<Symbol *>(n->var);
+        std::cout << "1503! " << sym->toString() << std::endl; 
+        llvm::Type *type = sym->getType()->getLLVMType(module);
+        if (!type)
+        {
+            errorHandler.addError(n->getStart(), "Unable to find type for variable: " + getCodegenID(sym));
+            return std::nullopt;
+        }
+std::cout << "1510! " << std::endl; 
+
+        std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+
+        if(!optVal)
+        {
+            // TODO: better erro checking (as seen later)
+            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->getType()))
+            {
+                std::cout << "1514! " << std::endl; 
+                Function *fn = module->getFunction(getCodegenID(sym));
+
+                return fn;
+            }
+            else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
+            {
+                std::cout << "1521! " << std::endl; 
+                Function *fn = module->getFunction(getCodegenID(sym));
+
+                return fn;
+            }
+            else if(sym->isGlobal())
+            {
+                std::cout << "1528! " << std::endl; 
+                // TODO: not sure if this could cause problems in the future by not differentiating lvalue vs rvalue
+                // Lookup the global var for the symbol
+                llvm::GlobalVariable *glob = module->getNamedGlobal(getCodegenID(sym));
+
+                // Check that we found the variable. If not, throw an error.
+                if (!glob)
+                {
+                    errorHandler.addError(n->getStart(),"Unable to find global variable: " + getCodegenID(sym) + " " + sym->toString());
+                    return std::nullopt;
+                }
+
+                // Create and return a load for the global var
+                Value *val = builder->CreateLoad(glob);
+                return val;
+            }
+
+            errorHandler.addError(nullptr, "Unable to find allocation for variable: " + getCodegenID(sym));
+            return std::nullopt;
+        }
+
+        llvm::AllocaInst * val = optVal.value(); 
+
+        if (!n->is_rvalue)
+            return val;
+
+        // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
+        Value *v = builder->CreateLoad(type, val, getCodegenID(sym));
+        return v;
+    }
+    else if(std::holds_alternative<const NameableType *>(n->var))
+    {
+        std::cout << "1560! " << std::endl; 
+        const NameableType * nt = std::get<const NameableType *>(n->var);
+
+        if(dynamic_cast<const TypeProgram *>(nt) || dynamic_cast<const TypeFunc *>(nt))
+        {
+            if(!nt->getIdentifier()) {
+                errorHandler.addCompilerError(n->getStart(), "Unbound identifier in path: " + nt->toString(getToStringMode()));
+                return std::nullopt; 
+            }
+
+            std::string FQN = nt->getIdentifier().value()->getFullyQualifiedName();
+            std::cout << "1570! " << std::endl; 
+            Function *fn = module->getFunction(FQN);
+
+            if(!fn)
+            {
+                errorHandler.addCompilerError(n->getStart(), "Could not find function for: " + FQN);
+                return std::nullopt; 
+            }
+
+            return fn; 
+        }
+
+            // TODO: display name + type if applicable!
+        errorHandler.addError(n->getStart(), "Cannot visit " + nt->toString(getToStringMode()) + " as if it were a variable");
+        return std::nullopt; 
+    }
+
+    errorHandler.addCompilerError(n->getStart(), "Unknown/unimplemented case for path");
+    return std::nullopt;
+
+
+    // std::visit(overloaded{[](START_LOOP &)
+    //             { return std::string("START-LOOP "); },
+    //             [](END_LOOP &)
+    //             { return std::string("END-LOOP "); },
+    //             [](Value &)
+    //             { return std::string("Val "); },
+    //             [](SEL &s)
+    //             { return "SEL[" + std::to_string(s.i) + "] "; },
+    //             [](SKIP &s)
+    //             { return "SKIP[" + std::to_string(s.i) + "] "; },
+    //             [](CLOSE &s)
+    //             { return "CLOSE[" + std::to_string(s.i) + "] "; }},
+    //     n->var);
 }
 
 std::optional<Value *> CodegenVisitor::visit(TDerefBoxNode *n)
@@ -1772,7 +1886,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
                 }
                 else if(const TypeDynArray * dynArray = dynamic_cast<const TypeDynArray*>(varSymbol->getType()))
                 {
-                    InitDynArray(v, getU32(10)); // FIXME: DO BETTER
+                    InitDynArray(v, 1); // FIXME: change to 0 and add push_back
                 }
             }
         }
