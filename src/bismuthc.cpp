@@ -52,6 +52,27 @@ static llvm::cl::opt<bool>
               llvm::cl::init(false),
               llvm::cl::cat(CLIOptions));
 
+// If not specified, the compiler will use the file's fully qualified path as its 
+// path. Otherwise, the specified path will be removed from the beginning of the generated FQNs 
+// (equivalent to running the name mangling out of the TLD specified)/
+static llvm::cl::opt<std::string>
+    srcPath("src-path",
+                llvm::cl::desc("Specifies the directory to look for source files in. Commonly used as ./src when compiling with multiple modules."),
+                llvm::cl::value_desc("source path"),
+                llvm::cl::init(""),
+                llvm::cl::cat(CLIOptions));
+
+// If not specified, the compiler will build generated files into the same directory as 
+// as the source files. Otherwise, the generated files will be placed in the mirrored locations
+// within the specified build path. 
+static llvm::cl::opt<std::string>
+    buildPath("build-path",
+                llvm::cl::desc("Specifies the directory to write generated files to."),
+                llvm::cl::value_desc("output directory"),
+                llvm::cl::init(""),
+                llvm::cl::cat(CLIOptions));   
+                           
+
 enum CompileType
 {
   none,

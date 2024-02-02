@@ -1006,6 +1006,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     std::optional<Symbol *> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
     if (!opt)
     {
+        std::cout << stmgr->toString() << std::endl; 
         return errorHandler.addError(ctx->getStart(), "Undefined variable reference: " + ctx->VARIABLE().at(0)->getText());
     }
     Symbol *sym = opt.value();
@@ -3073,7 +3074,14 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
 
     std::vector<TypedNode *> cases;
 
-    STManager *origStmgr = this->stmgr;
+    // STManager *origStmgr = this->stmgr;
+
+    std::optional<Scope *> origScopeOpt = stmgr->getCurrentScope(); 
+    if(!origScopeOpt)
+    {
+        return errorHandler.addCompilerError(ctx->getStart(), "Symbol table manager has no current scope at branch!"); 
+    }
+    Scope * origScope = origScopeOpt.value(); 
 
     const auto checkCase = [&](antlr4::Token * branchToken, bool checkRest, std::string branchErrorMessage, std::string subsequentErrorMessage) -> std::optional<ErrorChain *>{
         if(checkRest)
@@ -3151,14 +3159,20 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
 
         if (checkRestIndependently || i + 1 < ctxCases.size())
         {
-            std::optional<STManager *> optSTCopy = origStmgr->getCopy();
-            if (!optSTCopy)
-                return errorHandler.addCompilerError(alt->getStart(), "Failed to copy symbol table.");
-            this->stmgr = optSTCopy.value(); // TODO: DELETE RESOURCE?
+            // std::optional<STManager *> optSTCopy = origStmgr->getCopy();
+            Scope * scopeCpy = origScope->copyToStop(); 
+            // std::cout << scopeCpy->toString() << std::endl << std::endl << origScope->toString() << std::endl; 
+            // if (!optSTCopy)
+                // return errorHandler.addCompilerError(alt->getStart(), "Failed to copy symbol table.");
+            // this->stmgr = optSTCopy.value(); // TODO: DELETE RESOURCE?
+            std::cout << "3168 ORIG:  " << stmgr->toString() << std::endl; 
+            this->stmgr->enterScope(scopeCpy);
+            std::cout << "3168 POST: " << stmgr->toString() << std::endl; 
         }
         else
         {
-            this->stmgr = origStmgr;
+            // this->stmgr = origStmgr;
+            this->stmgr->enterScope(origScope);
         }
 
         stmgr->enterScope(StopType::NONE);
@@ -3179,7 +3193,7 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
 
     if (checkRestIndependently)
     {
-        this->stmgr = origStmgr;
+        this->stmgr->enterScope(origScope);
 
         stmgr->enterScope(StopType::NONE); // Why? This doesn't make sense.. oh it does, but should ideally refactor!
 

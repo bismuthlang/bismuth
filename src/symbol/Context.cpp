@@ -23,19 +23,18 @@ Scope &Context::enterScope(bool insertStop, std::optional<Identifier *> idOpt)  
 
 
 
-    Scope *next = new Scope(this->currentScope, id);
+    Scope *next = new Scope(this->currentScope, id, insertStop);
     next->setId(this->scopeNumber++);
 
     this->currentScope = std::optional<Scope *>{next};
-    scopes.push_back(next);
-
-    if (insertStop)
-    {
-        stops.push(scopes.size() - 1);
-        nameCounter->push(std::map<std::string, uint32_t>());
-    }
+    // scopes.push_back(next);
 
     return *next;
+}
+
+void Context::enterScope(Scope * scope)
+{
+    this->currentScope = scope; 
 }
 
 std::optional<Scope *> Context::exitScope()
@@ -49,14 +48,7 @@ std::optional<Scope *> Context::exitScope()
     Scope *last = currentScope.value();
 
     currentScope = last->getParent();
-    scopes.pop_back(); // FIXME: Delete last element in vector? -> We don't do this because it breaks the scope count
-
-    int depth = scopes.size();
-    if (getCurrentStop() == depth && getCurrentStop() != 0)
-    {
-        stops.pop();
-        nameCounter->pop();
-    }
+    // scopes.pop_back(); // FIXME: Delete last element in vector? -> We don't do this because it breaks the scope count
 
     return std::optional<Scope *>{last};
 }
@@ -69,7 +61,7 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
 
     // Find a unique name for the symbol within the current stop
     uint32_t idNum = 0; 
-    std::string uniqName = getUniqNameFor(id); 
+    std::string uniqName = getUniqNameFor(currentScope.value(), id); 
 
     // std::cout << "END W/ " << uniqName << " for " << id << std::endl; 
 
@@ -88,7 +80,7 @@ std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const 
     // Check that the exact same identifier doesn't already exist in the current scope
     if(!currentScope) return std::nullopt;
     // Find a unique name for the symbol within the current stop
-    id = getUniqNameFor(id);
+    id = getUniqNameFor(currentScope.value(), id);
 
     // Note: this is safe as we previously check that currentScope exists
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
@@ -99,25 +91,23 @@ std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const 
 bool Context::removeSymbol(Symbol *symbol)
 {
     std::optional<Scope *> opt = currentScope;
+    bool foundStop = false; 
 
-    int depth = scopes.size() - 1;
-    int stop = this->getCurrentStop();
-    while (opt)
+    while (opt && !foundStop)
     {
         Scope *scope = opt.value();
 
-        if (depth >= stop)
+        if (!foundStop) // depth >= stop)
         {
-            if( scope->removeSymbol(symbol))
+            if(scope->removeSymbol(symbol))
                 return true; 
-            // return scope->removeSymbol(symbol);
         }
         else 
         {
             return false;
         }
 
-        depth--;
+        foundStop = scope->isStop(); 
         opt = scope->getParent();
     }
 
@@ -127,22 +117,49 @@ bool Context::removeSymbol(Symbol *symbol)
 std::optional<Symbol *> Context::lookup(std::string id)
 {
     std::optional<Scope *> opt = currentScope;
+    bool foundStop = false; 
 
-    int depth = scopes.size() - 1;
-    int stop = this->getCurrentStop();
     while (opt)
     {
         Scope *scope = opt.value();
 
-        std::optional<Symbol *> sym = scope->lookup(id);
-        if (sym)
+        std::optional<Symbol *> symOpt = scope->lookup(id);
+        if (symOpt)
         {
-            if (depth >= stop || sym.value()->isDefinition() || sym.value()->isGlobal())
+            Symbol * sym = symOpt.value(); 
+            if (!foundStop || sym->isDefinition() || sym->isGlobal())
                 return sym;
             return std::nullopt;
         }
 
-        depth--;
+        foundStop = scope->isStop(); 
+        opt = scope->getParent();
+    }
+
+    return std::nullopt;
+}
+
+std::optional<std::pair<Symbol *, Scope *>> Context::lookupWithScope(std::string id)
+{
+    std::optional<Scope *> opt = currentScope;
+    bool foundStop = false; 
+
+    while (opt)
+    {
+        Scope *scope = opt.value();
+
+        std::optional<Symbol *> symOpt = scope->lookup(id);
+        if (symOpt)
+        {
+            Symbol * sym = symOpt.value(); 
+            if (!foundStop || sym->isDefinition() || sym->isGlobal())
+            {
+                return std::make_pair(sym, scope);
+            }
+            return std::nullopt;
+        }
+
+        foundStop = scope->isStop(); 
         opt = scope->getParent();
     }
 
@@ -154,17 +171,16 @@ std::vector<Symbol *> Context::getSymbols(int flags) //TODO: DO BETTER
     std::vector<Symbol *> ans;
 
     std::optional<Scope *> opt = currentScope;
+    bool foundStop = false; 
 
-    int depth = scopes.size() - 1;
-    int stop = this->getCurrentStop();
-    while (depth >= stop)
+    while (!foundStop)//depth >= stop)
     {
         Scope *scope = opt.value();
 
         auto toAdd = scope->getSymbols(flags);
         ans.insert(ans.end(), toAdd.begin(), toAdd.end());
 
-        depth--;
+        foundStop = scope->isStop(); 
         opt = scope->getParent();
     }
 
@@ -203,9 +219,16 @@ std::optional<Symbol *> Context::lookupInCurrentScope(std::string id)
 std::string Context::toString() const
 {
     std::ostringstream description;
-    for (auto scope : scopes)
+    std::optional<Scope *> scopeOpt = currentScope; 
+    while(scopeOpt)
     {
-        description << scope->toString();
+        Scope * scope = scopeOpt.value(); 
+        description << scope->toString(); 
+        scopeOpt = scope->getParent(); 
     }
+    // for (auto scope : scopes)
+    // {
+    //     description << scope->toString();
+    // }
     return description.str();
 }

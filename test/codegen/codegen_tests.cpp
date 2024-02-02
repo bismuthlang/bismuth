@@ -733,7 +733,7 @@ TEST_CASE("programs/generics/Arrays - Non-recursive generic function used for dy
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/Arrays.bismuth"))),
-        "0e7c6913e63ea15a5bc9239a02a94e524e85b5d206baeba6a9de9a57b546e306"); 
+        "2e92e23e59a2a25772b24d945d579a3b6c59fb859d4f906bf5a2084e9ea1e724"); 
 }
 
 
@@ -741,7 +741,7 @@ TEST_CASE("programs/generics/inv - Various generic functions including nested", 
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/inv.bismuth"))),
-        "ae210d3c2ed186f9f5eef538e6f5a7c878d31fae4f470da5ecb33a0bbd5c440c"); 
+        "2c043e01cf2140c98b438fc80378e05e454966ab3e655f01424ccffd71f0c4ca"); 
 }
 
 TEST_CASE("programs/generics/Lists - Various complex generic structures including recursive", "[codegen][generic]")

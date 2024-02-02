@@ -58,6 +58,7 @@ std::optional<Symbol *> Scope::lookup(std::string id)
 std::string Scope::toString() const
 {
   std::ostringstream description;
+  /*
   description << std::endl
               << "-------------------" << std::endl
               << "SCOPE: " << scopeId;
@@ -74,6 +75,21 @@ std::string Scope::toString() const
   }
   description << std::endl
               << '}' << std::endl;
+  */
 
+  description << '{'; 
+  description << "\tid: " << scopeId << ", " << std::endl;
+  if(parent) 
+    description << "\tparent: " << parent.value()->scopeId << ", " << std::endl; 
+  description << "\tsymbols: {" << std::endl; 
+
+  for (auto sym : symbols)
+  {
+    description << "\t\t" << sym.second->toString() << ", " << std::endl;
+  }
+
+  description << "\t}," << std::endl; 
+
+  description << "}," << std::endl; 
   return description.str();
 }

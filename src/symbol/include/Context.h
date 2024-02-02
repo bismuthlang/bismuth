@@ -17,12 +17,12 @@
 
 class Context {
   private: 
-    std::stack<std::map<std::string, uint32_t>> * nameCounter; 
+    std::map<std::string, uint32_t> * nameCounter; 
 
   public:
-    Context(){
-      nameCounter = new std::stack<std::map<std::string, uint32_t>>(); 
-      nameCounter->push(std::map<std::string, uint32_t>());};
+    Context(std::map<std::string, uint32_t> * nc) 
+      : nameCounter(nc) 
+    {}
 
     /**
      * @brief Enter a new scope
@@ -35,6 +35,8 @@ class Context {
 
     Scope& enterScope(bool insertStop, std::optional<Identifier *> idOpt  = std::nullopt); // std::string id, std::optional<std::function<std::string()>> meta = std::nullopt);
     
+
+    void enterScope(Scope * scope);
     /**
      * @brief Exit the current scope and move up one level
      * 
@@ -68,6 +70,8 @@ class Context {
      */
     std::optional<Symbol*> lookup(std::string id);
 
+    std::optional<std::pair<Symbol *, Scope *>> lookupWithScope(std::string id); 
+
     std::vector<Symbol *> getSymbols(int flags);
 
     /**
@@ -97,7 +101,7 @@ class Context {
      * 
      * @return int 
      */
-    int scopeCount() { return scopes.size(); }
+    int scopeCount() { return scopeNumber; } // return scopes.size(); }
     std::string toString() const;
 
     /**
@@ -107,81 +111,31 @@ class Context {
      * @return false if the current scope is not the global scope
      */
     bool isGlobalScope() {
-      if(scopes.size() == 0) return false; 
+      // if(scopes.size() == 0) return false; 
 
       if(!currentScope) return false; 
 
-      return currentScope.value()->getId() == 0; 
+      return !currentScope.value()->getParent().has_value(); //->getId() == 0; 
     }
-
-    int getCurrentStop() {
-      return getCurrentStop(stops);
-    }
-
-    std::optional<Context> getCopy() {
-      std::map<Scope*, Scope*> copies; 
-      std::vector<Scope*> newScopes; 
-
-      for(Scope * orig : scopes)
-      {
-        std::optional<Scope *> optParent = orig->getParent();
-
-        if(!optParent)
-        {
-          Scope * ans = new Scope({}, orig->copySymbols(), orig->getIdentifier()); // FIXME SWITCH TO COPY CONSTRUCTOR!
-          ans->setId(orig->getId());
-          copies.insert({orig, ans});
-          newScopes.push_back(ans); 
-        }
-        else if(copies.find(optParent.value()) != copies.end())
-        {
-          Scope * ans = new Scope(copies[optParent.value()], orig->copySymbols(), orig->getIdentifier());
-          ans->setId(orig->getId());
-          copies.insert({orig, ans});
-          newScopes.push_back(ans); 
-        }
-        else 
-        {
-          return std::nullopt; 
-        }
-      }
-
-      Context c; 
-      c.scopes = newScopes; 
-      if(currentScope)
-      {
-        c.currentScope = copies[currentScope.value()];
-      }
-      // c.currentScope = currentScope ? copies[currentScope.value()] : std::nullopt; 
-      c.scopeNumber = scopeNumber;
-      c.stops = stops; 
-      c.nameCounter = nameCounter;
-      return c; 
-    }
-
+    
   private:
     std::vector<Scope*> scopes;
     std::optional<Scope*> currentScope = {}; 
     int scopeNumber = 0;
 
-    std::stack<int> stops; 
-
-    int getCurrentStop(std::stack<int> st)
-    {
-      return st.size() == 0 ? 0 : st.top(); 
-    }
-
-
-    std::string getUniqNameFor(std::string id) {
-      auto itr = nameCounter->top().find(id);
-      if(itr == nameCounter->top().end())
+    std::string getUniqNameFor(Scope * parent, std::string inScope) {
+      // TODO: not sure if getting FQN here will break some stuff wrt generics...
+      std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
+      std::cout << "Find " << id << std::endl; 
+      auto itr = nameCounter->find(id);
+      if(itr == nameCounter->end())
       {
-          nameCounter->top().insert({id, 0});
-          return id;
+          nameCounter->insert({id, 0});
+          return inScope;
       }
       std::ostringstream nextName; 
-      nextName << id << "." << itr->second; 
-      nameCounter->top().insert({id, itr->second++});
+      nextName << inScope << "." << itr->second; 
+      nameCounter->insert({id, itr->second++});
       return nextName.str(); 
     }
 };

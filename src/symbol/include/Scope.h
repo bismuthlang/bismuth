@@ -27,8 +27,9 @@ enum SymbolLookupFlags
 class Scope
 {
 public:
-    Scope(Identifier * n)
+    Scope(Identifier * n, bool s)
         : id(n)
+        , stop(s)
     {
         // By default, we set parent to be empty
     }
@@ -38,17 +39,19 @@ public:
      *
      * @param p The parent to the current scope
      */
-    Scope(std::optional<Scope *> p, Identifier * n)
+    Scope(std::optional<Scope *> p, Identifier * n, bool s)
     {
         parent = p;
         id = n; 
+        stop = s; 
     }
 
-    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms, Identifier * n)
+    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms, Identifier * n, bool s)
     {
         parent = p;
         symbols = syms;
         id = n; 
+        stop = s; 
     }
 
     /**
@@ -86,6 +89,8 @@ public:
      * @return std::optional<Scope*> Empty no parent; present with value if has parent
      */
     std::optional<Scope *> getParent() { return parent; }
+
+    void setParent(Scope * scope) { parent = scope; } // FIXME: MAKE PRIVATE?
 
     /**
      * @brief Set the Id object
@@ -171,8 +176,56 @@ public:
     Identifier * getIdentifier() { return id; }
 
     // std::string getName() {
-    //     return nameGenerator(); // TODO: Do better & use mangaler 
+    //     return nameGenerator(); // TODO: Do better & use mangler 
     // }
+
+
+    bool isStop() { return stop; }
+
+
+    Scope * copyToStop() {
+      std::optional<Scope *> scopeOpt = this;
+      std::optional<Scope *> ans = std::nullopt; 
+      std::optional<Scope *> prev = std::nullopt;
+
+      while(scopeOpt)
+      {
+        Scope * scope = scopeOpt.value(); 
+
+        Scope * scopeCpy = new Scope(std::nullopt, scope->copySymbols(), scope->getIdentifier(), scope->isStop());
+
+        scopeCpy->setId(10 * scope->getId());
+
+        if(!ans)
+        {
+          ans = scopeCpy;
+        }
+
+        if(prev)
+        {
+          prev.value()->setParent(scopeCpy); 
+        }
+
+        if(scope->isStop())
+        {
+            if(scope->getParent())
+            {
+                scopeCpy->setParent(scope->getParent().value());
+            }
+
+            // std::cout << "211 ---- COPIED SCOPE " << scope->toString() << " as ---" << scopeCpy->toString() << std::endl; 
+            return ans.value(); 
+        }
+        
+        
+        // std::cout << "219 ---- COPIED SCOPE " << scope->toString() << " as ---" << scopeCpy->toString() << std::endl; 
+
+        prev = scopeCpy; 
+        scopeOpt = scope->getParent(); 
+      }
+
+        return ans.value(); 
+    }
 
 private:
     int scopeId = -1;
@@ -181,4 +234,5 @@ private:
 
     Identifier * id; 
 
+    bool stop; // FIXME: Switch to visibility modifiers?
 };

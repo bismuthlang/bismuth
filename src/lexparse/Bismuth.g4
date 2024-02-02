@@ -28,6 +28,13 @@ defineType        : DEFINE ENUM name=VARIABLE genericTemplate? LSQB cases+=type 
 //FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
 externStatement : EXTERN FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR (COLON ret=type)? ';'; 
 
+
+pathElement     : id=VARIABLE genericSpecifier? ;
+
+path            : eles+=pathElement ('::' eles+=pathElement)* ; 
+
+importStatement : IMPORT path ('as' alias=VARIABLE)? ';'? ; 
+
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
 invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr)  inv_args+;
 
@@ -280,6 +287,7 @@ DEFINE          :   'define';
 EXIT            :   'exit'  ;
 EXEC            :   'exec'  ;
 COPY            :   'copy'  ;
+IMPORT          :   'import';
 
 // Protocols   
 EXTERNAL_CHOICE :   'ExternalChoice'    ;

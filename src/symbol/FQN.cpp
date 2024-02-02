@@ -7,6 +7,10 @@ std::string Identifier::getFullyQualifiedName() const
 
     optional<Identifier *> parentOpt = this->parent; 
 
+    if(name == "" && parentOpt)
+        return parentOpt.value()->getFullyQualifiedName();
+    // TODO: what if name = "" and parentOpt is empty? shouldn't be possible, but still..
+    
     while(parentOpt)
     {
         Identifier * parent = parentOpt.value(); 

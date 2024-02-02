@@ -463,6 +463,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
+                // TODO: does having return here w/o safe exit again mean that we have a bug if we hit this case? 
                 // (*e)->addError(expr->getStart(), "Failed to type check statement");
                 return *e;
             }
