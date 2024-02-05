@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.20.0)
 project(BISMUTH_COMPILER 
   LANGUAGES CXX C
   VERSION 0.1
-  DESCRIPTION "Bismuth Compiler"
+  DESCRIPTION   "Bismuth Compiler"
 )
 
 option(BUILD_COVERAGE "Build coverage for test programs" OFF)

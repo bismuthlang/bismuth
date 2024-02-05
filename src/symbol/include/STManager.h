@@ -43,7 +43,6 @@ public:
    */
   void enterScope(StopType stopType)
   {
-
     context.enterScope(stopType == GLOBAL);
   }
 
@@ -66,7 +65,7 @@ public:
    */
   bool addSymbol(Symbol *symbol)
   {
-    // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elim.
+      // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elimination.
       return context.addSymbol(symbol);
   }
 
@@ -83,7 +82,31 @@ public:
    */
   std::optional<Symbol *> lookup(std::string id)
   {
-    return context.lookup(id);
+    std::optional<Symbol *> sym = context.lookup(id); 
+    // TODO: propagate this data down so we don't have 
+    // to do excess branching checks. 
+    // Also, ensure this doesn't mess w/ error messages by 
+    // making it seem like stuff isn't unbound. 
+    // Ie, while isBound will help, we may use lookup in field access!
+    if(nonLinearOnly && sym.has_value() && sym.value()->type->isLinear())
+      return std::nullopt; 
+    return sym; 
+    // return context.lookup(id);
+  }
+
+  // Has to be std::function so they can be capturing---which is unfortunately less efficient 
+  void enterNonlinearScope(std::function<void()> func)//void (*func)())
+  {
+    bool prevValue = nonLinearOnly; 
+    nonLinearOnly = true; 
+    func(); 
+    nonLinearOnly = prevValue; 
+  }
+
+
+  bool isBound(std::string id)
+  {
+    return context.lookup(id).has_value(); 
   }
 
   /**
