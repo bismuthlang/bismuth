@@ -54,8 +54,33 @@ lValue              : deref=dereferenceExpr
  *      11-14. Typical boolean and variable constants. 
  */
 
-annotation          : '#ltl[' expression ']' 
+annotation          : '#ltl[' expressions ']' 
                     ;
+
+expressions         :  expression expression*
+
+//associativity
+//names
+                    ;
+
+expression          : '(' expression ')' 
+                    | NOT expression 
+                    | modality expression 
+                    | labelName
+                    | expression AND expression 
+                    | expression OR expression 
+                    | expression ARROW expression 
+                    ;
+
+ARROW               : '->'                         ;
+OR                  : '|'                          ;
+AND                 : '&'                          ;
+NOT                 : '~'                          ;
+modality            : next | eventually | always   ;
+always              : '[]'                         ;
+eventually          : '<>'                         ;
+next                : '{}'                         ;
+labelName           : [a-zA-Z][a-zA-Z0-9_]*        ;
 
 expression          : LPAR ex=expression RPAR                                                       # ParenExpr
                     | fieldAccessExpr                                                               # FieldAccess
