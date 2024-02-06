@@ -13,7 +13,7 @@ std::string Symbol::toString() const
 const Type * Symbol::getType() const { return type; }
 
 bool Symbol::isGlobal() const { return global; }
-bool Symbol::isDefinition() const { return definition; }
+bool Symbol::isDefinition() const { return false; }
 
 std::string Symbol::getUniqueNameInScope() const { 
     // if(const NameableType * t = dynamic_cast<const NameableType *>(getType()))

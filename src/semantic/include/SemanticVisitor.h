@@ -106,7 +106,7 @@ public:
     std::optional<ParameterListNode> visitCtx(BismuthParser::ParameterListContext *ctx);
     std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { return visitCtx(ctx); }
 
-    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<Symbol *> sym);
+    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<DefinitionSymbol *> sym);
     std::any visitLambdaConstExpr(BismuthParser::LambdaConstExprContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx, std::nullopt)); }
 
     std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::BlockStatementContext *ctx) { return this->visitCtx(ctx->block()); }
@@ -309,66 +309,6 @@ public:
     std::variant<std::vector<const Type *>, ErrorChain *> TvisitGenericSpecifier(BismuthParser::GenericSpecifierContext *ctx);
     std::any visitGenericSpecifier(BismuthParser::GenericSpecifierContext *ctx) override { return TvisitGenericSpecifier(ctx); }
 
-    /*
-    // Used to apply template symbols & then remove them 
-    template <class T>
-    std::variant<T *, ErrorChain *> workInTemplate(std::function<T* ()> fn)
-    {
-        std::vector<Symbol *> templateSyms; 
-
-        for(auto i : info.templates)
-        {
-            std::optional<Symbol *> symOpt = stmgr->addSymbol(i.first, i.second, true, false);
-
-            if(!symOpt)
-            {
-                return errorHandler.addError(nullptr, "Failed to generate template parameter! FIXME: do better error w/ context");
-            }
-
-            templateSyms.push_back(symOpt.value());
-        }
-
-
-    }
-    */
-
-   template <class T>
-    std::variant<T *, ErrorChain *> workInTemplate(const TypeTemplate * templateTy, antlr4::ParserRuleContext * ctx, std::function<std::variant<T *, ErrorChain *> ()> fn)
-    {
-        std::vector<Symbol *> templateSyms; 
-
-        if(!templateTy->getTemplateInfo())
-        {
-            return errorHandler.addCompilerError(ctx->getStart(), "Failed to find template information.");
-        }
-
-        TemplateInfo info = templateTy->getTemplateInfo().value();
-        for(auto i : info.templates)
-        {
-            std::optional<Symbol *> symOpt =  stmgr->addSymbol(i.first, i.second, true, false);
-
-            // FIXME: WRITE BETTER ERROR!
-            if(!symOpt)
-                return errorHandler.addError(ctx->getStart(), "Failed to get template symbol for " + i.first); 
-
-            templateSyms.push_back(symOpt.value());
-        }
-
-
-        std::variant<T *, ErrorChain *> opt = fn(); // visitCtx(ctx->lam, funcSym);
-
-        // TODO: maybe verify these all unbind?
-        for(auto templateSym : templateSyms)
-            stmgr->removeSymbol(templateSym);
-
-        return opt; 
-    }
-
-
-
-
-
-
 
     std::variant<TypedNode *, ErrorChain *> visitCondition(BismuthParser::ExpressionContext *ex)
     {
@@ -495,16 +435,20 @@ public:
      */
     std::variant<TProgramDefNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx)
     {
-        std::variant<Symbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
+        std::variant<DefinitionSymbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
         {
             return *e;
         }
 
-        Symbol *sym = std::get<Symbol *>(symOpt);
+        DefinitionSymbol * defSym = std::get<DefinitionSymbol*>(symOpt);
 
-        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->getType()))
+        // Symbol * sym = symScope.first; 
+        // Scope * innerScope = symScope.second; 
+
+
+        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym->getType()))
         {
             std::string funcId = ctx->name->getText();
 
@@ -526,11 +470,13 @@ public:
 
             // Add the symbol to the stmgr and enter the scope. -> Already done
             // stmgr->addSymbol(sym);
-            stmgr->enterScope(StopType::GLOBAL, sym->getIdentifier()); //[sym](){ return sym->getUniqueNameInScope(); }); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
+            // TODO: BAD OPT VALUE (should never really happen though)
+            Scope * orig = stmgr->getCurrentScope().value(); 
+            stmgr->enterScope(defSym->getInnerScope());//StopType::GLOBAL, sym->getIdentifier()); //[sym](){ return sym->getUniqueNameInScope(); }); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
 
-            Symbol *channelSymbol = stmgr->addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false, false).value();
+            Symbol *channelSymbol = stmgr->addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
             // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
-            stmgr->addSymbol("@EXIT", Types::UNIT, false, false);
+            stmgr->addSymbol("@EXIT", Types::UNIT, false);
 
             // Safe visit the program block without creating a new scope (as we are managing the scope)
             std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
@@ -548,11 +494,13 @@ public:
 
             // Safe exit the scope.
             safeExitScope(ctx);
-            return new TProgramDefNode(sym, channelSymbol, std::get<TBlockNode *>(blkOpt), progType, ctx->getStart());
+            stmgr->enterScope(orig); 
+
+            return new TProgramDefNode(defSym, channelSymbol, std::get<TBlockNode *>(blkOpt), progType, ctx->getStart());
         }
         else
         {
-            return errorHandler.addError(ctx->getStart(), "Cannot execute " + sym->toString());
+            return errorHandler.addError(ctx->getStart(), "Cannot execute " + defSym->toString());
         }
     }
 
@@ -633,7 +581,7 @@ public:
 
 private:
     STManager *stmgr;
-    PropertyManager<Symbol> *symBindings = new PropertyManager<Symbol>();
+    PropertyManager<DefinitionSymbol> *symBindings = new PropertyManager<DefinitionSymbol>();
     PropertyManager<std::deque<DeepRestData *>> *restBindings = new PropertyManager<std::deque<DeepRestData *>>();
     BismuthErrorHandler errorHandler = BismuthErrorHandler(SEMANTIC);
 
@@ -724,7 +672,7 @@ private:
     }
 
 
-    std::variant<Symbol *, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx);
+    std::variant<DefinitionSymbol *, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx);
 
     void bindRestData(antlr4::ParserRuleContext *ctx, std::deque<DeepRestData *> *rd)
     { // DeepRestData * rd) {

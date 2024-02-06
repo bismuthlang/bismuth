@@ -1523,7 +1523,10 @@ std::cout << "1510! " << std::endl;
             else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
             {
                 std::cout << "1521! " << std::endl; 
+                std::cout << "1521!a " << getCodegenID(sym) << std::endl; 
                 Function *fn = module->getFunction(getCodegenID(sym));
+
+                std::cout << "1529 " << fn << std::endl; 
 
                 return fn;
             }

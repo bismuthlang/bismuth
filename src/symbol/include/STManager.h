@@ -48,7 +48,7 @@ public:
 
   void enterScope(Scope * s) { context.enterScope(s); }
 
-  void enterNamespace(); 
+  Scope * createNamespace(Identifier * id);
 
   /**
    * @brief Exit the current scope and move up one level
@@ -64,9 +64,13 @@ public:
    * @return true if successful
    * @return false if unsuccessful (ie, name already bound to another symbol)
    */
-  std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool d, bool g); 
+  std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool g); 
 
-  std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t, bool d);
+  std::optional<DefinitionSymbol *> addDefinition(std::string id, const Type * t, bool glob); 
+
+  std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t);
+
+  std::optional<DefinitionSymbol *> addAnonymousDefinition(std::string id, const Type * t);
 
   bool removeSymbol(Symbol *symbol);
 

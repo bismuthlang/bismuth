@@ -167,7 +167,13 @@ public:
 
         for (auto itr : symbols)
         {
-            ans.insert({itr.first, new Symbol(*itr.second)});
+            if(itr.second->isDefinition())
+                ans.insert({
+                    itr.first, 
+                    new DefinitionSymbol(*dynamic_cast<DefinitionSymbol *>(itr.second)) // TODO: not exactly the safest, but should be fine as its the only current way to get definition symbols 
+                });
+            else
+                ans.insert({itr.first, new Symbol(*itr.second)});
         }
 
         return ans;

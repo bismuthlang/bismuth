@@ -35,6 +35,7 @@ class Context {
 
     Scope& enterScope(bool insertStop, std::optional<Identifier *> idOpt  = std::nullopt); // std::string id, std::optional<std::function<std::string()>> meta = std::nullopt);
     
+    Scope * createNamespace(Identifier * id);
 
     void enterScope(Scope * scope);
     /**
@@ -51,9 +52,12 @@ class Context {
      * @return true if successful
      * @return false if unsuccessful (ie, name already bound to another symbol)
      */
-    std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool d, bool glob); // Symbol* symbol);
+    std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool glob); // Symbol* symbol);
 
-    std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t, bool d); 
+    std::optional<DefinitionSymbol *> addDefinition(std::string id, const Type * t, bool glob); 
+
+    std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t); 
+    std::optional<DefinitionSymbol *> addAnonymousDefinition(std::string id, const Type * t); 
 
     /**
      * @brief Removes a symbol from the scope

@@ -6,20 +6,46 @@ void STManager::enterScope(StopType stopType, std::optional<Identifier *> idOpt)
     context.enterScope(stopType == GLOBAL, idOpt); //id, meta);
 } 
 
+
+Scope * STManager::createNamespace(Identifier * id)
+{
+    return context.createNamespace(id); 
+}
+
 std::optional<Scope *> STManager::exitScope()
 {
     return context.exitScope();
 }
 
-std::optional<Symbol *> STManager::addSymbol(std::string id, const Type * t, bool d, bool g) // TODO: automatically determine g?
+std::optional<Symbol *> STManager::addSymbol(std::string id, const Type * t, bool g) // TODO: automatically determine g?
 {
     // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elimination.
-    std::optional<Symbol *> symOpt = context.addSymbol(id, t, d, g);
+    std::optional<Symbol *> symOpt = context.addSymbol(id, t, g);
 
-    if(symOpt && d) 
+    // if(symOpt && d) 
+    // {
+    //     Symbol * sym = symOpt.value(); 
+    //     // std::cout << "75 " << sym->toString() << std::endl; 
+    //     if(const NameableType * nameable = dynamic_cast<const NameableType *>(sym->getType()))
+    //     {
+    //         if(!nameable->getIdentifier())
+    //         {
+    //             nameable->setIdentifier(sym->getIdentifier());
+    //             std::cout << "82 SET " << sym->getIdentifier()->getFullyQualifiedName() << std::endl; 
+    //         }
+    //     }
+    // }
+
+    return symOpt;
+}
+
+std::optional<DefinitionSymbol *> STManager::addDefinition(std::string id, const Type * t, bool glob)
+{
+    std::optional<DefinitionSymbol *> symOpt = context.addDefinition(id, t, glob);
+
+    if(symOpt)
     {
-        Symbol * sym = symOpt.value(); 
-        // std::cout << "75 " << sym->toString() << std::endl; 
+        DefinitionSymbol * sym = symOpt.value(); 
         if(const NameableType * nameable = dynamic_cast<const NameableType *>(sym->getType()))
         {
             if(!nameable->getIdentifier())
@@ -30,12 +56,17 @@ std::optional<Symbol *> STManager::addSymbol(std::string id, const Type * t, boo
         }
     }
 
-    return symOpt;
+    return symOpt; // context.addDefinition(id, t, glob);
 }
 
-std::optional<Symbol *> STManager::addAnonymousSymbol(std::string id, const Type * t, bool d)
+std::optional<Symbol *> STManager::addAnonymousSymbol(std::string id, const Type * t)
 {
-    return context.addAnonymousSymbol(id, t, d); 
+    return context.addAnonymousSymbol(id, t); 
+}
+
+std::optional<DefinitionSymbol *> STManager::addAnonymousDefinition(std::string id, const Type * t)
+{
+    return context.addAnonymousDefinition(id, t); 
 }
 
 bool STManager::removeSymbol(Symbol *symbol)
