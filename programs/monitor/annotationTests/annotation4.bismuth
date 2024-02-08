@@ -1,0 +1,8 @@
+#annotation test # 4: Persistence - “Persistence”: <>[]ϕ means that there exists a point in the trace such that from then on till the end of the trace ϕ holds.
+
+extern func printf(str s, ...) : int;
+#ltl[<>([](A))]
+define program :: io : Channel<-int> = {
+    printf("Hello World!\n");
+    io.send(0)
+}

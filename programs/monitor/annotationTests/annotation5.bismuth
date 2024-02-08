@@ -1,0 +1,9 @@
+# annotation test # 5: absence of A
+
+extern func printf(...) : int;
+
+# ltl[[](~A)]
+define program :: io : Channel<-int> = {
+    printf("Hello World!");
+    io.send(0)
+}

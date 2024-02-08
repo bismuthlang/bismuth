@@ -1,0 +1,8 @@
+#annotation test # 6: Q responds to P
+
+extern func printf(str s, ...) : int;
+#ltl[[]P(P -> (P & <>Q))]
+define program :: io : Channel<-int> = {
+    printf("Hello World!\n");
+    io.send(0)
+}

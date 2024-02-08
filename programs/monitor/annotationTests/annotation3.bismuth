@@ -1,0 +1,8 @@
+# annotation test # 3: Response - “Response”: []<>ϕ means that for any point in the trace there is a point later in the trace where ϕ holds. 
+
+extern func printf(str s, ...) : int;
+#ltl[[](<>(A))]
+define program :: io : Channel<-int> = {
+    printf("Hello World!\n");
+    io.send(0)
+}

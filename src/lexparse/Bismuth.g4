@@ -4,6 +4,34 @@
  */
 grammar Bismuth;
 
+ltlAnnotation          : '#ltl[' ltlExpressions ']' 
+                    ;
+
+ltlExpressions      :  ltlExpression ltlExpression*
+
+//associativity
+//names
+                    ;
+
+ltlExpression          : '(' ltlExpression ')' 
+                    | ltlNot ltlExpression 
+                    | modality ltlExpression 
+                    | LABELNAME
+                    | ltlExpression ltlAnd ltlExpression 
+                    | ltlExpression ltlOr ltlExpression 
+                    | ltlExpression ltlArrow ltlExpression 
+                    ;
+
+ltlArrow            : '->'                         ;
+ltlOr               : '|'                          ;
+ltlAnd              : '&'                          ;
+ltlNot              : '~'                          ;
+modality            : next | eventually | always   ;
+always              : '[]'                         ;
+eventually          : '<>'                         ;
+next                : '{}'                         ;
+LABELNAME           : [a-zA-Z][a-zA-Z0-9_]*        ;
+
 // Parser rules
 compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ; 
 
@@ -11,7 +39,7 @@ structCase        :  (ty=type name=VARIABLE) ';' ;
 
 defineType        : DEFINE ENUM name=VARIABLE LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
                   | DEFINE STRUCT name=VARIABLE LSQB (cases+=structCase)*  RSQB             # DefineStruct
-                  | DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block   # DefineProgram
+                  | DEFINE (annotation=ltlAnnotation '\n')? DEFINE name=VARIABLE '::' channelName=VARIABLE ':' ty=type '='? block   # DefineProgram
                   | DEFINE FUNC name=VARIABLE lam=lambdaConstExpr                           # DefineFunction
                   ; 
 
@@ -53,34 +81,6 @@ lValue              : deref=dereferenceExpr
  *              the use of variables instead of expressions for array access
  *      11-14. Typical boolean and variable constants. 
  */
-
-annotation          : '#ltl[' expressions ']' 
-                    ;
-
-expressions         :  expression expression*
-
-//associativity
-//names
-                    ;
-
-expression          : '(' expression ')' 
-                    | NOT expression 
-                    | modality expression 
-                    | labelName
-                    | expression AND expression 
-                    | expression OR expression 
-                    | expression ARROW expression 
-                    ;
-
-ARROW               : '->'                         ;
-OR                  : '|'                          ;
-AND                 : '&'                          ;
-NOT                 : '~'                          ;
-modality            : next | eventually | always   ;
-always              : '[]'                         ;
-eventually          : '<>'                         ;
-next                : '{}'                         ;
-labelName           : [a-zA-Z][a-zA-Z0-9_]*        ;
 
 expression          : LPAR ex=expression RPAR                                                       # ParenExpr
                     | fieldAccessExpr                                                               # FieldAccess

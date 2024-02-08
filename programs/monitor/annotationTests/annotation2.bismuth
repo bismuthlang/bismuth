@@ -1,0 +1,8 @@
+# annotation test #2: Liveness - “Liveness”: <>ϕ means that eventually before the end of the trace ϕ holds
+
+extern func printf(str s, ...) : int;
+#ltl[<>A]
+define program :: io : Channel<-int> = {
+    printf("Hello World!\n");
+    io.send(0)
+}

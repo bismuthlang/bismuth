@@ -1,0 +1,8 @@
+# annotation test 1: Safety - "“Safety”: []ϕ means that always till the end of the trace
+
+extern func printf(str s, ...) : int;
+#ltl[[]A]
+define program :: io : Channel<-int> = {
+    printf("Hello World!\n");
+    io.send(0)
+}

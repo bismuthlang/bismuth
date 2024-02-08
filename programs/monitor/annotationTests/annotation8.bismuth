@@ -1,0 +1,8 @@
+#annotation test # 7: 7: 'in the next state...'
+
+extern func printf(str s, ...) : int;
+#ltl[[([]ajZGsdkjharuieroiq2yuwrp;4w90u3498querioseh!!!!Hkjhskjdf??{';;]]]})]]
+define program :: io : Channel<-int> = {
+    printf("Hello World!\n");
+    io.send(0)
+}
