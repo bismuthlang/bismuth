@@ -264,6 +264,9 @@ public:
     std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::TemplatedTypeContext * ctx);
     std::any visitTemplatedType(BismuthParser::TemplatedTypeContext * ctx) override { return visitCtx(ctx); }
 
+    // std::optional<ErrorChain *> calculatePredeclarations(BismuthParser::CompilationUnitContext *ctx);
+    std::optional<ErrorChain *> definePredeclarations(BismuthParser::CompilationUnitContext *ctx);
+
     /*
      *  Protocols
      */

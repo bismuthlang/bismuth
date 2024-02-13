@@ -1,5 +1,235 @@
 #include "SemanticVisitor.h"
 
+// std::optional<ErrorChain *> SemanticVisitor::calculatePredeclarations(BismuthParser::CompilationUnitContext *ctx)
+// {
+//        // Enter initial scope
+//     stmgr->enterScope(StopType::NONE);
+
+//     std::vector<TExternNode *> externs;
+
+//     for (auto e : ctx->defs)
+//     {
+//         // Wastes a bit of memory in allocating type even for duplicates
+//         std::optional<std::pair<std::string, const Type *>> opt = defineTypeCase<std::optional<std::pair<std::string, const Type *>>>(
+//             e, 
+//             [](BismuthParser::DefineFunctionContext *ctx) -> std::pair<std::string, const Type *>{
+//                 return {
+//                     ctx->name->getText(), 
+//                     ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeFunc()
+//                 };
+//             },
+
+//             [](BismuthParser::DefineProgramContext *ctx) -> std::pair<std::string, const Type *>{
+//                 return {
+//                     ctx->name->getText(), 
+//                     ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeProgram()
+//                 };
+//             },
+
+//             [](BismuthParser::DefineStructContext *ctx) -> std::pair<std::string, const Type *>{
+//                 std::string name = ctx->name->getText(); 
+//                 return {
+//                     name, 
+//                     ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeStruct()
+//                 };
+//             },
+
+//             [](BismuthParser::DefineEnumContext *ctx) -> std::pair<std::string, const Type *>{
+//                 std::string name = ctx->name->getText(); 
+//                 return {
+//                     name,
+//                     ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeSum()
+//                 };
+//             },
+
+//             [this](BismuthParser::DefineTypeContext * ctx){
+//                 errorHandler.addCompilerError(ctx->getStart(), "Unhandled case in identifying definitions");
+//                 return std::nullopt; 
+//             }
+
+//         );
+//         if(!opt) continue; 
+
+//         std::string id = opt.value().first; 
+
+//         std::optional<DefinitionSymbol *> symOpt = stmgr->addDefinition(id, opt.value().second, true);
+
+//         if (!symOpt)
+//         {
+//             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
+//         }
+
+//         symBindings->bind(e, symOpt.value());
+
+//     }
+ 
+//     // Visit externs first; they will report any errors if they have any.
+//     for (auto e : ctx->externs)
+//     {
+//         std::variant<TExternNode *, ErrorChain *> extOpt = this->visitCtx(e);
+
+//         if (ErrorChain **e = std::get_if<ErrorChain *>(&extOpt))
+//         {
+//             (*e)->addError(ctx->getStart(), "Error in definition of extern");
+//             return *e;
+//         }
+//         TExternNode *node = std::get<TExternNode *>(extOpt);
+
+//         if (flags & CompilerFlags::DEMO_MODE)
+//         {
+//             if (!(node->getSymbol()->getScopedIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::DYN_STR) && node->getType()->getReturnType()->isSubtype(Types::DYN_INT) && node->getType()->isVariadic()))
+//             {
+//                 errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
+//             }
+//         }
+
+//         externs.push_back(node);
+//     }
+
+//     // Auto forward decl
+//     // FIXME: ERROR CHECK!
+
+//     // TODO: refactor to use defineAndGetSymbolFor for each, then can remove defineTypeCase and replace with single function call.
+//     for (auto e : ctx->defs)
+//     {
+//         // Wastes a bit of memory in allocating type even for duplicates
+//         defineAndGetSymbolFor(e); 
+//     }
+
+// std::cout <<" 99" << std::endl; 
+//     // Visit the statements contained in the unit
+//     std::vector<DefinitionNode *> defs;
+//     for (auto e : ctx->defs)
+//     {
+//         // Note: re-applying template symbols happens in each visitor for now!
+//         if (BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
+//         {
+//             std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(progCtx);
+
+//             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
+//             {
+//                 (*e)->addError(ctx->getStart(), "Failed to type check program");
+//                 return *e;
+//             }
+
+//             defs.push_back(std::get<TProgramDefNode *>(progOpt));
+//         }
+//         else if (BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
+//         {
+//             std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(fnCtx);
+
+//             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+//             {
+//                 (*e)->addError(ctx->getStart(), "Failed to type check function");
+//                 return *e;
+//             }
+
+//             defs.push_back(std::get<DefinitionNode *>(opt));
+//         }
+//         else if (BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
+//         {
+//             std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(structCtx);
+
+//             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+//             {
+//                 (*e)->addError(ctx->getStart(), "Failed to type check function");
+//                 return *e;
+//             }
+
+//             defs.push_back(std::get<DefinitionNode *>(opt));
+//         }
+//         else if (BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
+//         {
+//             std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(enumCtx);
+
+//             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+//             {
+//                 (*e)->addError(ctx->getStart(), "Failed to type check function");
+//                 return *e;
+//             }
+
+//             defs.push_back(std::get<DefinitionNode *>(opt));
+//         }
+//     }
+
+//     /*******************************************
+//      * Extra checks depending on compiler flags
+//      *******************************************/
+
+//     if (flags & CompilerFlags::DEMO_MODE)
+//     {
+//         /**********************************************************
+//          * As there is no runtime, we need to make sure that
+//          * there is NO main block and that we have a program block
+//          **********************************************************/
+
+//         if (stmgr->isBound("main"))
+//         {
+//             errorHandler.addError(ctx->getStart(), "When compiling in demo mode, main is reserved!");
+//         }
+
+//         std::optional<Symbol *> opt = stmgr->lookup("program");
+//         if (!opt)
+//         {
+//             errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, 'program :: * : Channel<-int>' must be defined");
+//         }
+//         else
+//         {
+//             Symbol *sym = opt.value();
+//             std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->getType());
+//             if (progOpt)
+//             {
+//                 const TypeProgram *inv = progOpt.value();
+//                 // FIXME: DO SUBTYPING BETTER!
+//                 if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
+//                 {
+//                     errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
+//                 }
+//             }
+//             else
+//             {
+//                 errorHandler.addError(ctx->getStart(), "When compiling in demo, 'program :: * : Channel<-int>' is required");
+//             }
+//         }
+//     }
+
+//     std::vector<Symbol *> unInf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
+
+//     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
+//     // due to the var leaving the scope
+//     if (unInf.size() > 0)
+//     {
+//         std::ostringstream details;
+
+//         for (auto e : unInf)
+//         {
+//             details << e->toString() << "; ";
+//         }
+
+//         errorHandler.addError(ctx->getStart(), "230 Uninferred types in context: " + details.str());
+//     }
+     
+//     // Return UNDEFINED as this should be viewed as a statement and not something assignable
+//     return new TCompilationUnitNode(externs, defs); 
+// }
+
+
+std::optional<ErrorChain *> SemanticVisitor::definePredeclarations(BismuthParser::CompilationUnitContext *ctx)
+{
+    // Enter initial scope
+    // stmgr->enterScope(StopType::NONE);
+
+    // TODO: refactor to use defineAndGetSymbolFor for each, then can remove defineTypeCase and replace with single function call.
+    for (auto e : ctx->defs)
+    {
+        // Wastes a bit of memory in allocating type even for duplicates
+        defineAndGetSymbolFor(e); 
+    }
+
+    return std::nullopt; 
+}
+
+
 std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx)
 {
     // Enter initial scope

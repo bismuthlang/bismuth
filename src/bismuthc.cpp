@@ -56,17 +56,17 @@ static llvm::cl::opt<bool>
 // path. Otherwise, the specified path will be removed from the beginning of the generated FQNs 
 // (equivalent to running the name mangling out of the TLD specified)/
 static llvm::cl::opt<std::string>
-    srcPath("src-path",
+    argSrcPath("src-path",
                 llvm::cl::desc("Specifies the directory to look for source files in. Commonly used as ./src when compiling with multiple modules."),
                 llvm::cl::value_desc("source path"),
-                llvm::cl::init(""),
+                llvm::cl::init("."),
                 llvm::cl::cat(CLIOptions));
 
 // If not specified, the compiler will build generated files into the same directory as 
 // as the source files. Otherwise, the generated files will be placed in the mirrored locations
 // within the specified build path. 
 static llvm::cl::opt<std::string>
-    buildPath("build-path",
+    argBuildPath("build-path",
                 llvm::cl::desc("Specifies the directory to write generated files to."),
                 llvm::cl::value_desc("output directory"),
                 llvm::cl::init(""),
@@ -181,6 +181,28 @@ ChangeLog
   auto RM = llvm::Optional<llvm::Reloc::Model>();
   auto TheTargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
 
+  // TODO: need to verify canonical src starts with current path? maybe? probably not
+  auto currentPath = std::filesystem::current_path(); 
+  auto providedSrc = currentPath / (std::string) argSrcPath; 
+  
+  std::error_code pathEc; 
+  auto canonicalSrc = std::filesystem::canonical(providedSrc, pathEc);
+  if (pathEc)
+  {
+    std::cerr << pathEc.message() << std::endl;
+    return -1;
+  }
+
+  // TODO: a bit inefficient in teh case that build is "" as we already calculated src
+  auto providedDst = currentPath / (argBuildPath == "" ?  (std::string) argSrcPath :  (std::string) argBuildPath); 
+  auto canonicalDst = std::filesystem::canonical(providedDst, pathEc);
+  if (pathEc)
+  {
+    std::cerr << pathEc.message() << std::endl;
+    return -1;
+  }
+
+
   if (inputFileName.empty() && inputString == "-")
   {
     std::cerr << "Please enter a file or an input string to compile." << std::endl;
@@ -209,6 +231,7 @@ ChangeLog
    * input or file(s). To make both cases easy to handle later on,
    * we create a vector of input streams/output file pairs.
    *******************************************************************/
+  std::set<std::filesystem::path> visitedPaths; // TODO: verufy & do better, Tracking that we dont have duplicate paths 
   std::vector<std::pair<antlr4::ANTLRInputStream *, std::string>> inputs;
 
   bool useOutputFileName = outputFileName != "-.ll";
@@ -222,17 +245,36 @@ ChangeLog
     // extension replaced with .ll
     for (auto fileName : inputFileName)
     {
-      unique_ptr<fstream> inStream(new std::fstream(fileName));
-
-      if (inStream->fail())
+      auto providedPath = canonicalSrc / fileName; 
+      auto canonicalPath = std::filesystem::canonical(providedPath, pathEc);
+      if (pathEc)
       {
-        std::cerr << "Error loading file: " << fileName << ". Does it exist?" << std::endl;
-        std::exit(-1);
+        std::cerr << pathEc.message() << std::endl;
+        return -1;
       }
-      inStream->close(); 
 
+      if(visitedPaths.contains(canonicalPath))
+      {
+        std::cerr << "File provided to compiler multiple times: " << fileName << " at " << canonicalPath << std::endl; 
+        return -1; 
+      }
+
+      visitedPaths.insert(canonicalPath);
+
+      // unique_ptr<fstream> inStream(new std::fstream(canonicalPath)); // fileName));
+
+      // if (inStream->fail())
+      // {
+      //   std::cerr << "Error loading file: " << fileName << ". Does it exist?" << std::endl;
+      //   std::exit(-1);
+      // }
+      // inStream->close(); 
+
+
+      // FIXME: DETERMINE OUTPUT FILE NAME!
+      // FIXME: CURRENTLY, THIS ADDS SRCPATH To errors! Need to only do relative to src!!
       auto a = new antlr4::ANTLRFileStream(); 
-      a->loadFromFile(fileName);
+      a->loadFromFile(canonicalPath);
       // TODO: THIS DOESN'T WORK IF NOT GIVEN A PROPER FILE EXTENSION
       inputs.push_back({a,
                         (!(inputFileName.size() > 1) && useOutputFileName) ? outputFileName : fileName.substr(0, fileName.find_last_of('.'))});
@@ -250,6 +292,7 @@ ChangeLog
   // For each input...
   for (auto input : inputs)
   {
+    std::cout << "2253" << input.first->getSourceName() << std::endl;
     /*******************************************************************
      * Create the Lexer from the input.
      * ================================================================

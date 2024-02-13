@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <memory> // Smart pointers 
+#include <filesystem> // Current path 
 
 #include "antlr4-runtime.h"
 #include "BismuthLexer.h"
@@ -34,3 +35,30 @@
 using std::unique_ptr; 
 using std::shared_ptr; 
 using std::fstream; 
+
+
+std::string pathToIdentifier(std::filesystem::path& currentPath, std::filesystem::path& given)
+{
+    // if(given.string().starts_with(currentPath.string()))
+    auto relPath = given.string().starts_with(currentPath.string()) 
+        ? std::filesystem::relative(currentPath, given)
+        : given; 
+
+    std::vector<std::string> parts; 
+
+    // for(auto it = relPath.begin(); it = it.operator-)
+    for(auto it : relPath)
+    {
+        parts.push_back(it);
+    }
+} 
+
+struct CompilerInput {
+    antlr4::ANTLRInputStream * inputStream; 
+    std::string outputPath; 
+
+    CompilerInput(antlr4::ANTLRInputStream * i, std::string o)
+        : inputStream(i)
+        , outputPath(o)
+    {}
+};
