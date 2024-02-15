@@ -23,13 +23,6 @@ static llvm::cl::opt<bool>
                 llvm::cl::cat(CLIOptions));
 
 static llvm::cl::opt<std::string>
-    inputString("s",
-                llvm::cl::desc("Take input from a string, Do not use an input file if -s is used"),
-                llvm::cl::value_desc("input string"),
-                llvm::cl::init("-"),
-                llvm::cl::cat(CLIOptions));
-
-static llvm::cl::opt<std::string>
     outputFileName("o",
                    llvm::cl::desc("supply alternate output file"),
                    llvm::cl::value_desc("output file"),
@@ -136,6 +129,7 @@ ChangeLog
   - Fixed bug where nested control flow would incorrectly process use of linear resources
   - Fixed typos in generated IR files, error messages, and compiler internals
 
+  - Removed CLI feature -s to supply input string instead of file location; makes more sense to re-add in future as REPL.
   - Added new error type for internal/compiler errors. 
   - Improved efficiency of IPC by removing state to eliminate additional lookup step
   - Refactored code internals to promote compile speed (of Bismuth, not the Bismuth compiler)
@@ -203,15 +197,9 @@ ChangeLog
   }
 
 
-  if (inputFileName.empty() && inputString == "-")
+  if (inputFileName.empty())
   {
-    std::cerr << "Please enter a file or an input string to compile." << std::endl;
-    std::exit(-1);
-  }
-
-  if (!inputFileName.empty() && inputString != "-")
-  {
-    std::cerr << "You can only have an input file or and input string, but not both" << std::endl;
+    std::cerr << "No files to compile were provided." << std::endl;
     std::exit(-1);
   }
 
@@ -232,75 +220,79 @@ ChangeLog
    * we create a vector of input streams/output file pairs.
    *******************************************************************/
   std::set<std::filesystem::path> visitedPaths; // TODO: verufy & do better, Tracking that we dont have duplicate paths 
-  std::vector<std::pair<antlr4::ANTLRInputStream *, std::string>> inputs;
+  std::vector<CompilerInput> inputs;
 
   bool useOutputFileName = outputFileName != "-.ll";
 
-  // Case 1: We were given input files
-  if (!inputFileName.empty())
+  // For each file name, make sure the file exist. If so, create an input stream to it
+  // and set its output filename to be the provided name (if we are compiling just
+  // one file, and a name was provided), or the file's name but with the extension
+  // extension replaced with .ll
+  for (auto fileName : inputFileName)
   {
-    // For each file name, make sure the file exist. If so, create an input stream to it
-    // and set its output filename to be the provided name (if we are compiling just
-    // one file, and a name was provided), or the file's name but with the extension
-    // extension replaced with .ll
-    for (auto fileName : inputFileName)
+    auto providedPath = canonicalSrc / fileName; 
+    auto canonicalPath = std::filesystem::canonical(providedPath, pathEc);
+    if (pathEc)
     {
-      auto providedPath = canonicalSrc / fileName; 
-      auto canonicalPath = std::filesystem::canonical(providedPath, pathEc);
-      if (pathEc)
-      {
-        std::cerr << pathEc.message() << std::endl;
-        return -1;
-      }
-
-      if(visitedPaths.contains(canonicalPath))
-      {
-        std::cerr << "File provided to compiler multiple times: " << fileName << " at " << canonicalPath << std::endl; 
-        return -1; 
-      }
-
-      visitedPaths.insert(canonicalPath);
-
-      // unique_ptr<fstream> inStream(new std::fstream(canonicalPath)); // fileName));
-
-      // if (inStream->fail())
-      // {
-      //   std::cerr << "Error loading file: " << fileName << ". Does it exist?" << std::endl;
-      //   std::exit(-1);
-      // }
-      // inStream->close(); 
-
-
-      // FIXME: DETERMINE OUTPUT FILE NAME!
-      // FIXME: CURRENTLY, THIS ADDS SRCPATH To errors! Need to only do relative to src!!
-      auto a = new antlr4::ANTLRFileStream(); 
-      a->loadFromFile(canonicalPath);
-      // TODO: THIS DOESN'T WORK IF NOT GIVEN A PROPER FILE EXTENSION
-      inputs.push_back({a,
-                        (!(inputFileName.size() > 1) && useOutputFileName) ? outputFileName : fileName.substr(0, fileName.find_last_of('.'))});
+      std::cerr << pathEc.message() << std::endl;
+      return -1;
     }
-  }
-  else
-  {
-    // As we were given a string input, create a new String input with the output file
-    inputs.push_back({new antlr4::ANTLRInputStream(inputString),
-                      outputFileName});
+
+    if(visitedPaths.contains(canonicalPath))
+    {
+      std::cerr << "File provided to compiler multiple times: " << fileName << " at " << canonicalPath << std::endl; 
+      return -1; 
+    }
+
+    visitedPaths.insert(canonicalPath);
+
+
+    std::filesystem::path relInputPath = getRelativePath(canonicalSrc,  std::filesystem::path(canonicalPath).replace_extension("")); 
+
+    // FIXME: DETERMINE OUTPUT FILE NAME!
+    // FIXME: CURRENTLY, THIS ADDS SRCPATH To errors! Need to only do relative to src!!
+
+    std::cout << "CAN. SRC " << canonicalSrc << std::endl; 
+    std::cout << "CAN. PAH " << canonicalPath << std::endl; 
+    std::cout << "CAN. DST " << canonicalDst << std::endl; 
+    std::cout << "FUL. DST " << (canonicalDst / fileName) << std::endl; 
+    std::cout << "REL. INP " << relInputPath << std::endl; 
+    std::cout << "FLE. NME " << fileName << std::endl;  
+    auto a = new antlr4::ANTLRFileStream(); 
+    a->loadFromFile(canonicalPath);
+    // TODO: THIS DOESN'T WORK IF NOT GIVEN A PROPER FILE EXTENSION
+    inputs.push_back(
+      CompilerInput(
+        a,
+        canonicalDst / fileName, 
+        // (!(inputFileName.size() > 1) && useOutputFileName) 
+        //   ? outputFileName 
+        //   : fileName.substr(0, fileName.find_last_of('.')),
+        pathToIdentifierSteps(relInputPath) // FIXME: WRONG
+    ));
   }
 
   bool isValid = true;
+  STManager *stm = new STManager();
+
 
   // For each input...
   for (auto input : inputs)
   {
-    std::cout << "2253" << input.first->getSourceName() << std::endl;
+    std::cout << "2253" << input.inputStream->getSourceName() << std::endl;
     /*******************************************************************
      * Create the Lexer from the input.
      * ================================================================
      *
      * Run the lexer on the input
      *******************************************************************/
-    BismuthLexer lexer(input.first);
+    BismuthLexer lexer(input.inputStream); // TODO: Do there need to be leer errors -> Doesn't seem like it?
     antlr4::CommonTokenStream tokens(&lexer);
+
+
+
+
+
 
     /*******************************************************************
      * Create + Run the Parser
@@ -331,6 +323,15 @@ ChangeLog
 
     int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
 
+
+    std::cout << "316 "; 
+    for(auto s : input.pathSteps)
+    {
+      std::cout << s << "::";
+    }
+    std::cout << std::endl; 
+
+
     /*******************************************************************
      * Semantic Analysis
      * ================================================================
@@ -339,13 +340,14 @@ ChangeLog
      * and bind nodes to Symbols using the property manager. If
      * there are any errors we print them out and exit.
      *******************************************************************/
-    STManager *stm = new STManager();
     SemanticVisitor *sv = new SemanticVisitor(stm, toStringMode, flags);
-    auto TypedOpt = sv->visitCtx(tree); // FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
+    auto TypedOpt = sv->visitCtx(tree, input.pathSteps); // FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
+
+
 
     if (sv->hasErrors(0)) // Want to see all errors
     {
-      std::cerr << "Semantic analysis completed for " << input.second << " with errors: " << std::endl;
+      std::cerr << "Semantic analysis completed for " << input.outputPath << " with errors: " << std::endl;
       std::cerr << sv->getErrors() << std::endl;
       isValid = false;
       continue;
@@ -364,8 +366,15 @@ ChangeLog
 
     if (isVerbose)
     {
-      std::cout << "Semantic analysis completed for " << input.second << " without errors. Starting code generation..." << std::endl;
+      std::cout << "Semantic analysis completed for " << input.outputPath << " without errors. Starting code generation..." << std::endl;
     }
+
+
+
+
+
+
+
     /*******************************************************************
      * Code Generation
      * ================================================================
@@ -395,7 +404,8 @@ ChangeLog
     // Dump the code to an output file
     if (!noCode)
     {
-      std::string irFileName = input.second + ".ll";
+      std::string irFileName = input.outputPath.replace_extension(".ll");
+      std::cout << "outpath "<< input.outputPath << std::endl; 
       std::error_code ec;
       llvm::raw_fd_ostream irFileStream(irFileName, ec);
       module->print(irFileStream, nullptr);
@@ -410,14 +420,14 @@ ChangeLog
 
     if (isVerbose)
     {
-      std::cout << "Code generation completed for " << input.second << "." << std::endl;
+      std::cout << "Code generation completed for " << input.outputPath << "." << std::endl;
     }
 
     if (compileWith != none)
     {
       module->setDataLayout(TheTargetMachine->createDataLayout());
 
-      std::string Filename = input.second + ".o";
+      std::string Filename = input.outputPath.replace_extension(".o");
       std::cout << "Filename " << Filename << std::endl;
       std::error_code EC;
       llvm::raw_fd_ostream dest(Filename, EC, llvm::sys::fs::OF_None);
@@ -464,7 +474,7 @@ ChangeLog
     std::string ext = compileWith == clangll ? ".ll " : ".o ";
     for (auto input : inputs)
     {
-      cmd << input.second << ext;
+      cmd << input.outputPath << ext;
     }
 
     // cmd << "./runtime.o -no-pie ";

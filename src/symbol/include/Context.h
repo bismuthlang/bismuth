@@ -18,11 +18,16 @@
 class Context {
   private: 
     std::map<std::string, uint32_t> * nameCounter; 
+    Scope * globalScope; 
 
   public:
     Context(std::map<std::string, uint32_t> * nc) 
       : nameCounter(nc) 
-    {}
+    {
+      // Maybe add a global scope for all files? 
+      enterScope();
+      globalScope = getCurrentScope().value(); 
+    }
 
     /**
      * @brief Enter a new scope
@@ -121,6 +126,8 @@ class Context {
 
       return !currentScope.value()->getParent().has_value(); //->getId() == 0; 
     }
+
+    std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps);
     
   private:
     std::vector<Scope*> scopes;

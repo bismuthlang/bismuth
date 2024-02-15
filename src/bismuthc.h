@@ -37,28 +37,35 @@ using std::shared_ptr;
 using std::fstream; 
 
 
-std::string pathToIdentifier(std::filesystem::path& currentPath, std::filesystem::path& given)
+std::filesystem::path getRelativePath(std::filesystem::path& currentPath, std::filesystem::path& given)
 {
-    // if(given.string().starts_with(currentPath.string()))
-    auto relPath = given.string().starts_with(currentPath.string()) 
-        ? std::filesystem::relative(currentPath, given)
+    return given.string().starts_with(currentPath.string()) 
+        ? std::filesystem::relative(given, currentPath)
         : given; 
+}
 
+std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath)//std::filesystem::path& currentPath, std::filesystem::path& given)
+{
     std::vector<std::string> parts; 
 
-    // for(auto it = relPath.begin(); it = it.operator-)
     for(auto it : relPath)
     {
         parts.push_back(it);
     }
+
+    return parts; 
 } 
 
 struct CompilerInput {
     antlr4::ANTLRInputStream * inputStream; 
-    std::string outputPath; 
+    // std::string outputPath; 
+    std::filesystem::path outputPath; 
 
-    CompilerInput(antlr4::ANTLRInputStream * i, std::string o)
+    std::vector<std::string> pathSteps; 
+
+    CompilerInput(antlr4::ANTLRInputStream * i, std::filesystem::path o, std::vector<std::string> ps)
         : inputStream(i)
         , outputPath(o)
+        , pathSteps(ps)
     {}
 };

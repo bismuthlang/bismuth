@@ -312,3 +312,45 @@ std::string Context::toString() const
     // }
     return description.str();
 }
+
+std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> steps)
+{
+    // Note bad variable names (we have two current scopes in here)
+    std::optional<Scope *> origScope = this->currentScope; 
+
+    this->currentScope = globalScope; 
+
+
+
+    for(std::string s : steps)
+    {
+        std::cout << "STEP " << s << std::endl; 
+        std::optional<Symbol *> symOpt = lookup(s);
+        if(!symOpt)
+        {
+
+            TypeModule * mod = new TypeModule();
+            std::optional<DefinitionSymbol *> dsOpt = addDefinition(s, mod, true);
+
+            assert(dsOpt.has_value()); // We already checked conflicts
+
+            std::cout << "ADDED SCOPE "  << " -> " <<  dsOpt.value()->getInnerScope()->getIdentifier()->getFullyQualifiedName() << std::endl; 
+            this->currentScope = dsOpt.value()->getInnerScope(); 
+
+            
+
+        }
+        else if(DefinitionSymbol * ds = dynamic_cast<DefinitionSymbol *>(symOpt.value()))
+            this->currentScope = ds->getInnerScope(); 
+        else 
+        {
+            this->currentScope = origScope; 
+            return std::nullopt; 
+        }
+    }
+
+    assert(this->currentScope.has_value());
+    Scope * ans = this->currentScope.value(); 
+    this->currentScope = origScope; 
+    return ans; 
+}

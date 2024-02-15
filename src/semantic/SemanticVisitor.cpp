@@ -230,10 +230,30 @@ std::optional<ErrorChain *> SemanticVisitor::definePredeclarations(BismuthParser
 }
 
 
-std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx)
+std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps)
 {
     // Enter initial scope
-    stmgr->enterScope(StopType::NONE);
+    if(steps.empty())
+    {
+        stmgr->enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
+    }
+    else 
+    {
+        std::optional<Scope *> scopeOpt = stmgr->getOrProvisionScope(steps);
+
+        if(!scopeOpt)
+        {
+            return errorHandler.addCompilerError(ctx->getStart(), "Failed to enter scope for compilation unit!"); 
+        }
+
+        stmgr->enterScope(
+            scopeOpt.value()
+        );
+
+
+        std::cout << "254 " << stmgr->getCurrentScope().value()->getIdentifier()->getFullyQualifiedName() << std::endl; 
+
+    }
 
     std::vector<TExternNode *> externs;
 
@@ -1691,6 +1711,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 std::cout << "1425 " << id << " : " << newAssignType->toString(toStringMode) << " vs " << newExprType->toString(toStringMode) << std::endl; 
                 // Done with exprType for later type inference purposes
                 // .value() should be safe as we already checked name uniqueness
+                // FIXME: isGlobalScope probably doesnt work anymore with paths and namespaces. Revise it!
                 Symbol * symbol = stmgr->addSymbol(id, newExprType, stmgr->isGlobalScope()).value();
 
                 // This is somewhat inefficient to have to repeat this for every single value, but needed if for linear resources and if we aren't purely FP.  

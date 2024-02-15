@@ -1488,3 +1488,63 @@ const Type * TypeTemplate::getCopySubst(std::map<const Type *, const Type *> exi
 */
     return this; 
 }
+
+
+/*******************************************
+ *
+ * Type used for files/namespaces/modules  
+ *
+ *******************************************/
+
+std::string TypeModule::getTypeRepresentation(DisplayMode mode) const 
+{
+    // FIXME: Implement type representation for Modules!
+    return "Module";
+}
+
+
+// This shouldn't ever show up in codegen
+llvm::Type *TypeModule::getLLVMType(llvm::Module *M) const
+{
+    assert(false && "Attempted to get LLVM type for module"); 
+    return nullptr; 
+}
+
+// Should never be copied anyhow 
+bool TypeModule::requiresDeepCopy() const { return false; }
+
+const TypeModule * TypeModule::getCopy() const { return this; }
+
+const Type * TypeModule::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    return this; // FIXME: Implement getCopySubst for module! Shouldn't be needed yet though....
+    // if(existing.contains(this))
+    //     return existing.find(this)->second; 
+
+    // LinkedMap<std::string, const Type *> elements;
+    // TypeStruct * ans = new TypeStruct(elements, this->getIdentifier()); //this->getName());
+    // {
+    //     // ans->setIdentifier(this->getIdentifier());
+
+    //     // auto m = this->getMeta(); 
+    //     // if(m)
+    //     //     ans->setMeta(m.value());
+    // }
+
+    // existing.insert({this, ans});
+
+    // for(auto ty : this->getElements())
+    // {
+    //     elements.insert(
+    //         {ty.first, ty.second->getCopySubst(existing)}
+    //     );
+    // }
+
+    // ans->elements = elements; 
+
+    // return ans; 
+}
+
+bool TypeModule::isSupertypeFor(const Type * other) const 
+{
+    return this == other; 
+}

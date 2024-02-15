@@ -1206,3 +1206,56 @@ protected:
      */
     bool isSupertypeFor(const Type *other) const override;
 };
+
+
+/*******************************************
+ *
+ * Type used for files/namespaces/modules  
+ *
+ *******************************************/
+class TypeModule : public NameableType
+{
+private:
+    // Scope * innerScope;
+    bool defined = false; 
+public:
+    TypeModule() 
+        : NameableType(false, std::nullopt)
+        , defined(false) 
+    {}
+    bool isDefined() const { return defined; }
+
+    // std::optional<TemplateInfo> getTemplateInfo() const { return info; }
+
+    // PLAN: Contract that such a function may exist, but no guarantee about param types?
+    // bool define(std::optional<TemplateInfo> i, const NameableType * vt) const;
+
+    // void setIdentifier(std::optional<Identifier *> nxt) const override; 
+
+    std::string getTypeRepresentation(DisplayMode mode) const override;
+    
+    /**
+     * @brief Gets the LLVM representation of the inferred type.
+     *
+     * @param C LLVM Context
+     * @return llvm::Type* the llvm type for the inferred type.
+     */
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
+
+    bool requiresDeepCopy() const override;
+
+    const TypeModule * getCopy() const override;
+
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
+
+protected:
+    /**
+     * @brief Determines if this is a supertype of another type (and thus, also performs type inferencing).
+     *
+     * @param other
+     * @return true
+     * @return false
+     */
+    bool isSupertypeFor(const Type *other) const override;
+};

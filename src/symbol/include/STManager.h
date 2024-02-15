@@ -132,6 +132,9 @@ public:
   bool isGlobalScope(); 
 
 
+  std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps) { return context.getOrProvisionScope(steps); }
+
+
 private: 
   std::string getUniqNameFor(Scope * parent, std::string inScope); 
 
