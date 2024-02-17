@@ -38,7 +38,7 @@ importStatement : IMPORT path ('as' alias=VARIABLE)? ';'? ;
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
 invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr)  inv_args+;
 
-fieldAccessExpr     : fields+=VARIABLE genericSpecifier? ('.' fields+=VARIABLE)*  ;
+fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  ;
 dereferenceExpr     : MULTIPLY expr=expression                  ;
 
 //Helps allow us to use VARIABLE or arrayAccess and not other expressions (such as for assignments)
@@ -241,7 +241,7 @@ type            :    ty=type LBRC len=DEC_LITERAL RBRC                          
                 |    TYPE_PROGRAM LESS proto=protocol GREATER                               # ProgramType
                 |    TYPE_BOX     LESS ty=type GREATER                                      # BoxType
                 |    ty=type  genericSpecifier                                              # TemplatedType
-                |    VARIABLE                                                               # CustomType
+                |    path                                                                   # CustomType
                 ;
 
 // TODO: not convinced about the whole {u,i}{32,64} thing as it kinda seems like needing to know more metaphors.. and lower level?

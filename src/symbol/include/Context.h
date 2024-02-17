@@ -129,6 +129,8 @@ class Context {
 
     std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps);
     
+
+    Scope * getGlobalScope() { return globalScope; }
   private:
     std::vector<Scope*> scopes;
     std::optional<Scope*> currentScope = {}; 

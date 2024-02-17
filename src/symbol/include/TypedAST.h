@@ -127,6 +127,8 @@ class TAsChannelNode;
 
 class CompCodeWrapper; 
 
+// class TIdentifier; 
+
 class TypedASTVisitor
 {
 public:
@@ -160,6 +162,7 @@ public:
     virtual std::optional<Value *> visit(TExternNode *n) = 0;
     virtual std::optional<Value *> visit(TInvocationNode *n) = 0;
     virtual std::optional<Value *> visit(TFieldAccessNode *n) = 0;
+    // virtual std::optional<Value *> visit(TIdentifier *n) = 0; 
     virtual std::optional<Value *> visit(TPathNode *n) = 0; 
     virtual std::optional<Value *> visit(TArrayAccessNode *n) = 0;
     virtual std::optional<Value *> visit(TDynArrayAccessNode *n) = 0; 
@@ -217,6 +220,7 @@ public:
     std::any any_visit(TExternNode *n) { return this->visit(n); }
     std::any any_visit(TInvocationNode *n) { return this->visit(n); }
     std::any any_visit(TFieldAccessNode *n) { return this->visit(n); }
+    // std::any any_visit(TIdentifier *n) { return this->visit(n); }
     std::any any_visit(TPathNode *n) { return this->visit(n); }
     std::any any_visit(TArrayAccessNode *n) { return this->visit(n); }
     std::any any_visit(TDynArrayAccessNode *n) { return this->visit(n); }
@@ -987,6 +991,33 @@ public:
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
+
+// class TIdentifier : public TypedNode 
+// {
+// private:
+//     Symbol * sym; // Variant with this + Nameable type? 
+//     bool rvalue;
+
+// public:
+
+//     TIdentifier(antlr4::Token *tok, 
+//                 Symbol * s, 
+//                 bool rv) 
+//         : TypedNode(tok)
+//         , sym(s)
+//         , rvalue(rv)
+//     {}
+
+//     const Type *getType() override { return sym->getType(); }
+
+//     bool isRValue() { return rvalue; }
+
+//     std::string toString() const override {
+//         return "IDENTIFIER  NODE";
+//     }
+
+//     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+// };
 
 
 class TArrayAccessNode : public TypedNode
