@@ -1430,7 +1430,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 
     const Type *ty = n->getSymbolType(); //sym->getType();
     std::cout << "1414!!!! " << ty->toString(DisplayMode::C_STYLE) << std::endl; 
-    std::optional<Value *> baseOpt = visit(n->getPath()); 
+    std::optional<Value *> baseOpt = visit(n->getIdentifier()); 
 
     if (!baseOpt)
     {
@@ -1493,79 +1493,78 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
     return valPtr;
 }
 
-std::optional<Value *> CodegenVisitor::visit(TPathNode *n)
+std::optional<Value *> CodegenVisitor::visit(TIdentifier *n)
 {
-    if(std::holds_alternative<Symbol *>(n->var))
+    Symbol * sym = n->getSymbol(); 
+
+    llvm::Type *type = sym->getType()->getLLVMType(module);
+    if (!type)
     {
-        std::cout << "1501! " << std::endl; 
-        Symbol * sym = std::get<Symbol *>(n->var);
-        std::cout << "1503! " << sym->toString() << std::endl; 
-        llvm::Type *type = sym->getType()->getLLVMType(module);
-        if (!type)
-        {
-            errorHandler.addError(n->getStart(), "Unable to find type for variable: " + getCodegenID(sym));
-            return std::nullopt;
-        }
+        errorHandler.addError(n->getStart(), "Unable to find type for variable: " + getCodegenID(sym));
+        return std::nullopt;
+    }
 std::cout << "1510! " << std::endl; 
 
-        std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
-        if(!optVal)
+    if(!optVal)
+    {
+        // TODO: better erro checking (as seen later)
+        if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->getType()))
         {
-            // TODO: better erro checking (as seen later)
-            if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->getType()))
+            std::cout << "1514! " << std::endl; 
+            Function *fn = module->getFunction(getCodegenID(sym));
+
+            return fn;
+        }
+        else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
+        {
+            std::cout << "1521! " << std::endl; 
+            std::cout << "1521!a " << getCodegenID(sym) << std::endl; 
+            Function *fn = module->getFunction(getCodegenID(sym));
+
+            std::cout << "1529 " << fn << std::endl; 
+
+            return fn;
+        }
+        else if(sym->isGlobal())
+        {
+            std::cout << "1528! " << std::endl; 
+            // TODO: not sure if this could cause problems in the future by not differentiating lvalue vs rvalue
+            // Lookup the global var for the symbol
+            llvm::GlobalVariable *glob = module->getNamedGlobal(getCodegenID(sym));
+
+            // Check that we found the variable. If not, throw an error.
+            if (!glob)
             {
-                std::cout << "1514! " << std::endl; 
-                Function *fn = module->getFunction(getCodegenID(sym));
-
-                return fn;
-            }
-            else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
-            {
-                std::cout << "1521! " << std::endl; 
-                std::cout << "1521!a " << getCodegenID(sym) << std::endl; 
-                Function *fn = module->getFunction(getCodegenID(sym));
-
-                std::cout << "1529 " << fn << std::endl; 
-
-                return fn;
-            }
-            else if(sym->isGlobal())
-            {
-                std::cout << "1528! " << std::endl; 
-                // TODO: not sure if this could cause problems in the future by not differentiating lvalue vs rvalue
-                // Lookup the global var for the symbol
-                llvm::GlobalVariable *glob = module->getNamedGlobal(getCodegenID(sym));
-
-                // Check that we found the variable. If not, throw an error.
-                if (!glob)
-                {
-                    errorHandler.addError(n->getStart(),"Unable to find global variable: " + getCodegenID(sym) + " " + sym->toString());
-                    return std::nullopt;
-                }
-
-                // Create and return a load for the global var
-                Value *val = builder->CreateLoad(glob);
-                return val;
+                errorHandler.addError(n->getStart(),"Unable to find global variable: " + getCodegenID(sym) + " " + sym->toString());
+                return std::nullopt;
             }
 
-            errorHandler.addError(nullptr, "Unable to find allocation for variable: " + getCodegenID(sym));
-            return std::nullopt;
+            // Create and return a load for the global var
+            Value *val = builder->CreateLoad(glob);
+            return val;
         }
 
-        llvm::AllocaInst * val = optVal.value(); 
-
-        if (!n->is_rvalue)
-            return val;
-
-        // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
-        Value *v = builder->CreateLoad(type, val, getCodegenID(sym));
-        return v;
+        errorHandler.addError(nullptr, "Unable to find allocation for variable: " + getCodegenID(sym));
+        return std::nullopt;
     }
-    else if(std::holds_alternative<const NameableType *>(n->var))
+
+    llvm::AllocaInst * val = optVal.value(); 
+
+    if (!n->isRValue())
+        return val;
+
+    // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
+    Value *v = builder->CreateLoad(type, val, getCodegenID(sym));
+    return v;
+}
+
+std::optional<Value *> CodegenVisitor::visit(TPathNode *n)
+{
+    if(const NameableType * nt = dynamic_cast<const NameableType *>(n->getType()))
     {
         std::cout << "1560! " << std::endl; 
-        const NameableType * nt = std::get<const NameableType *>(n->var);
 
         if(dynamic_cast<const TypeProgram *>(nt) || dynamic_cast<const TypeFunc *>(nt))
         {

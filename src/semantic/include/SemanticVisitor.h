@@ -255,8 +255,9 @@ public:
     std::variant<const TypeProgram *, ErrorChain *> visitCtx(BismuthParser::ProgramTypeContext *ctx);
     std::any visitProgramType(BismuthParser::ProgramTypeContext *ctx) override { return TypeVariantCast<TypeProgram>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
-    std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::CustomTypeContext *ctx); 
-    std::any visitCustomType(BismuthParser::CustomTypeContext *ctx) override { return visitCtx(ctx); } // Casting done by lower level call
+    // std::variant<const, ErrorChain*> visitCtx(BismuthParser::PathContext * ctx, bool is_rvalue);
+    std::variant<const Type *, ErrorChain *> visitPathType(BismuthParser::PathContext *ctx); 
+    std::any visitCustomType(BismuthParser::CustomTypeContext *ctx) override { return visitPathType(ctx->path()); } // Casting done by lower level call
 
     std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::TypeOrVarContext *ctx);
     std::any visitTypeOrVar(BismuthParser::TypeOrVarContext *ctx) override { return visitCtx(ctx); }

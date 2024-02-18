@@ -116,6 +116,7 @@ public:
     std::optional<Value *> visit(TExternNode *n) override;
     std::optional<Value *> visit(TInvocationNode *n) override;
     std::optional<Value *> visit(TFieldAccessNode *n) override;
+    std::optional<Value *> visit(TIdentifier *n) override;
     std::optional<Value *> visit(TPathNode *n) override; 
     std::optional<Value *> visit(TDerefBoxNode *n) override;
     std::optional<Value *> visit(TArrayAccessNode *n) override;

@@ -1272,14 +1272,41 @@ std::variant<TPathNode *, ErrorChain*> SemanticVisitor::visitCtx(BismuthParser::
             return errorHandler.addError(pCtx->getStart(), "Cannot use: " + name + " as a type");
         }
 
+        if(pCtx->genericSpecifier())
+        {
+        // Copied from templated Type
+            if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+            {
+                std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
+
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
+                {
+                    // (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                    return *e;
+                }
+
+                std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
+
+
+                std::cout << "2015 visitTemplateCTX" << ctx->getStart()->getLine() << " " << ctx->getText() << std::endl;
+                std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
+                if(!appliedOpt)
+                    return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
+                std::cout << "2016 " << appliedOpt.value()->toString(DisplayMode::C_STYLE) << std::endl; 
+                return new TPathNode(ctx->getStart(), appliedOpt.value(), is_rvalue);
+            }
+            return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + sym->getType()->toString(toStringMode));
+        }
+
         // return sym->getType();
         // FIXME: Return sym or sym->getType()
-        return new TPathNode(ctx->getStart(), sym,  is_rvalue);
+        return new TPathNode(ctx->getStart(), sym->getType(),  is_rvalue);
     }
 
     // FIXME: add visibility modifiers & checks!
     Scope * lookupScope = stmgr->getGlobalScope(); 
-    std::variant<Symbol *, const NameableType *> pathVar;// = sym; 
+    // std::variant<Symbol *, const NameableType *> pathVar;// = sym; 
+    const Type * pathVar; 
 
     for(auto pCtx : ctx->eles)
     {
@@ -1411,7 +1438,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     const Type * symType = sym->getType();
 
-    std::variant<Symbol *, const NameableType *> pathVar = sym;  
+    // std::variant<Symbol *, const NameableType *> pathVar = sym;  
 
     // if(ctx->genericSpecifier())
     // {
@@ -1496,7 +1523,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
     }
 
-    TPathNode * pathNode = new TPathNode(ctx->getStart(), pathVar,  a.size() == 0 ? is_rvalue : false);
+    TIdentifier * pathNode = new TIdentifier(ctx->getStart(), sym,  a.size() == 0 ? is_rvalue : false);
     return new TFieldAccessNode(ctx->getStart(), pathNode, is_rvalue, a);
 }
 
@@ -2568,9 +2595,9 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 }
 
 std::variant<const Type *, ErrorChain *>
-SemanticVisitor::visitCtx(BismuthParser::CustomTypeContext *ctx)
+SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
 {
-    std::variant<TPathNode *, ErrorChain *> pathOpt = visitCtx(ctx->path(), false);
+    std::variant<TPathNode *, ErrorChain *> pathOpt = visitCtx(ctx, false);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&pathOpt))
     {
