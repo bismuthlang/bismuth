@@ -1566,7 +1566,21 @@ std::optional<Value *> CodegenVisitor::visit(TPathNode *n)
     {
         std::cout << "1560! " << std::endl; 
 
-        if(dynamic_cast<const TypeProgram *>(nt) || dynamic_cast<const TypeFunc *>(nt))
+        if(const TypeProgram * prog = dynamic_cast<const TypeProgram *>(nt))
+        {
+              if(!nt->getIdentifier()) {
+                errorHandler.addCompilerError(n->getStart(), "Unbound identifier in path: " + nt->toString(getToStringMode()));
+                return std::nullopt; 
+            }
+
+            std::string FQN = nt->getIdentifier().value()->getFullyQualifiedName();
+            
+            auto fnc = module->getOrInsertFunction(
+                FQN, 
+                prog->getLLVMFunctionType(module)
+            );
+        }
+        else if(const TypeFunc * func = dynamic_cast<const TypeFunc *>(nt))
         {
             if(!nt->getIdentifier()) {
                 errorHandler.addCompilerError(n->getStart(), "Unbound identifier in path: " + nt->toString(getToStringMode()));
@@ -1574,16 +1588,13 @@ std::optional<Value *> CodegenVisitor::visit(TPathNode *n)
             }
 
             std::string FQN = nt->getIdentifier().value()->getFullyQualifiedName();
-            std::cout << "1570! " << std::endl; 
-            Function *fn = module->getFunction(FQN);
 
-            if(!fn)
-            {
-                errorHandler.addCompilerError(n->getStart(), "Could not find function for: " + FQN);
-                return std::nullopt; 
-            }
+            auto fnc = module->getOrInsertFunction(
+                FQN, 
+                func->getLLVMFunctionType(module)
+            );
 
-            return fn; 
+            return fnc.getCallee(); 
         }
 
             // TODO: display name + type if applicable!

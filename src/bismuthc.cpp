@@ -471,10 +471,11 @@ ChangeLog
       return -1; // Not even possible
     }
 
-    std::string ext = compileWith == clangll ? ".ll " : ".o ";
+    std::string ext = compileWith == clangll ? ".ll" : ".o";
     for (auto input : inputs)
     {
-      cmd << input.outputPath << ext;
+      std::cout << "477!!! " << input.outputPath << std::endl; 
+      cmd << input.outputPath.replace_extension(ext) << " "; 
     }
 
     // cmd << "./runtime.o -no-pie ";
@@ -484,6 +485,7 @@ ChangeLog
     {
       cmd << "-o " << outputFileName;
     }
+    std::cout << cmd.str() << std::endl; 
 
     std::cout << exec(cmd.str()) << std::endl;
   }
