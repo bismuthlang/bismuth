@@ -36,7 +36,7 @@ path            : eles+=pathElement ('::' eles+=pathElement)* ;
 importStatement : IMPORT path ('as' alias=VARIABLE)? ';'? ; 
 
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
-invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr)  inv_args+;
+invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr | path)  inv_args+;
 
 fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  ;
 dereferenceExpr     : MULTIPLY expr=expression                  ;
@@ -72,6 +72,7 @@ lValue              : deref=dereferenceExpr
  */
 expression          : LPAR ex=expression RPAR                                                       # ParenExpr
                     | fieldAccessExpr                                                               # FieldAccess
+                    | path                                         # PathExpr
                     | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 
                     | left=expression op=(MULTIPLY | DIVIDE | MOD) right=expression                 # BinaryArithExpr
                     | left=expression op=(PLUS | MINUS) right=expression                            # BinaryArithExpr

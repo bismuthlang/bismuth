@@ -465,7 +465,10 @@ std::cout <<" 99" << std::endl;
 
 std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InvocationContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) ? TNVariantCast<TLambdaConstNode>(visitCtx(ctx->lam, std::nullopt)) : TNVariantCast<TFieldAccessNode>(visitCtx(ctx->field, true));
+    std::variant<TypedNode *, ErrorChain *> typeOpt = (ctx->lam) 
+        ? TNVariantCast<TLambdaConstNode>(visitCtx(ctx->lam, std::nullopt)) :
+        (ctx->path()) ? TNVariantCast<TPathNode>(visitCtx(ctx->path(), true))
+        : TNVariantCast<TFieldAccessNode>(visitCtx(ctx->field, true));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
     {
         (*e)->addError(ctx->getStart(), "Unable to generate expression to invoke");
@@ -478,7 +481,10 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     for (auto iArgs : ctx->inv_args())
     {
 
-        std::string name = (ctx->lam) ? "lambda " : ctx->field->getText();
+        std::string name = (ctx->lam) 
+            ? "lambda " : 
+            (ctx->path()) ? ctx->path()->getText() // TODO:Verify this case is correct
+            : ctx->field->getText();
         std::optional<const TypeFunc *> funcTyOpt = type_cast<TypeFunc>(tn->getType());
         if (funcTyOpt)
         {

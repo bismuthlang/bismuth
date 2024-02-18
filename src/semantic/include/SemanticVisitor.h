@@ -90,6 +90,9 @@ public:
     std::variant<TFieldAccessNode *, ErrorChain *> visitCtx(BismuthParser::FieldAccessExprContext *ctx, bool is_rvalue);
     std::any visitFieldAccessExpr(BismuthParser::FieldAccessExprContext *ctx) override { return TNVariantCast<TFieldAccessNode>(visitCtx(ctx, true)); }
 
+    // std::variant<TFieldAccessNode *, ErrorChain *> visitCtx(BismuthParser::FieldAccessExprContext *ctx, bool is_rvalue);
+    std::any visitPathExpr(BismuthParser::PathExprContext *ctx) override { return TNVariantCast<TPathNode>(visitCtx(ctx->path(), true)); }
+
     std::variant<TDerefBoxNode *, ErrorChain *> visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue);
     std::any visitDereferenceExpr(BismuthParser::DereferenceExprContext *ctx) override { return TNVariantCast<TDerefBoxNode>(visitCtx(ctx, true)); }
 
