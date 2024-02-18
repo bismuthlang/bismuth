@@ -1250,160 +1250,16 @@ std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
 std::variant<TPathNode *, ErrorChain*> SemanticVisitor::visitCtx(BismuthParser::PathContext * ctx, bool is_rvalue)
 {
-    // FIXME: should this return a path node or a type? 
-    if(ctx->eles.size() == 1)
+    std::variant<const Type *, ErrorChain *> tyOpt = visitPathType(ctx);
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
     {
-
-        auto pCtx = ctx->eles.at(0); 
-
-        std::string name = pCtx->id->getText();
-
-        std::optional<Symbol *> opt = stmgr->lookup(name);
-        if (!opt)
-        {
-            std::cout << stmgr->toString() << std::endl; 
-            return errorHandler.addError(pCtx->getStart(), "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
-        }
-
-        Symbol *sym = opt.value();
-
-        if (!sym->getType() || !sym->isDefinition())
-        {
-            return errorHandler.addError(pCtx->getStart(), "Cannot use: " + name + " as a type");
-        }
-
-        if(pCtx->genericSpecifier())
-        {
-        // Copied from templated Type
-            if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
-            {
-                std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
-                {
-                    // (*e)->addError(ctx->getStart(), "Failed to generate case type");
-                    return *e;
-                }
-
-                std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
-
-
-                std::cout << "2015 visitTemplateCTX" << ctx->getStart()->getLine() << " " << ctx->getText() << std::endl;
-                std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
-                if(!appliedOpt)
-                    return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-                std::cout << "2016 " << appliedOpt.value()->toString(DisplayMode::C_STYLE) << std::endl; 
-                return new TPathNode(ctx->getStart(), appliedOpt.value(), is_rvalue);
-            }
-            return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + sym->getType()->toString(toStringMode));
-        }
-
-        // return sym->getType();
-        // FIXME: Return sym or sym->getType()
-        return new TPathNode(ctx->getStart(), sym->getType(),  is_rvalue);
+        // (*e)->addError(ctx->getStart(), "Failed to generate case type");
+        return *e;
     }
 
-    // FIXME: add visibility modifiers & checks!
-    Scope * lookupScope = stmgr->getGlobalScope(); 
-    // std::variant<Symbol *, const NameableType *> pathVar;// = sym; 
-    const Type * pathVar; 
+    const Type * ty = std::get<const Type *>(tyOpt);
 
-    for(auto pCtx : ctx->eles)
-    {
-        std::string stepId = pCtx->id->getText();
-        std::optional<Symbol *> opt = lookupScope->lookup(stepId);
-
-        if(!opt)
-        {
-            return errorHandler.addError(pCtx->getStart(), "Could not find " + stepId + " in " + lookupScope->getIdentifier()->getFullyQualifiedName());
-        }
-
-        Symbol * sym = opt.value(); 
-        
-        // if (sym->getType()->isLinear())
-        // {
-        //     if (!is_rvalue)
-        //     {
-        //         errorHandler.addError(ctx->getStart(), "Cannot redefine linear variable!");
-        //     }
-
-        //     if (!stmgr->removeSymbol(sym))
-        //     {
-        //         errorHandler.addError(ctx->getStart(), "Failed to unbind local var: " + sym->toString());
-        //     }
-        // }
-
-        
-        // if(!dynamic_cast<const DefinitionSymbol *>(sym))
-        // {
-        //     return errorHandler.addError(pCtx->getStart(), sym->toString() + " is not a definition."); // TODO: better error!
-        // }
-
-        // if(!dynamic_cast<const NameableType *>(sym->getType()))
-        // {
-        //     return errorHandler.addError(pCtx->getStart(), sym->toString() + " expected a named type."); // TODO: better error!
-        // }
-
-        // TODO: macro to allow above style syntax, and get casted result here?
-        // Or, to allow an inline function to return something, and have that apply 
-        // within the bounds of the outside fn
-
-        const Type * symType = sym->getType(); 
-
-        if(const DefinitionSymbol * defSym = dynamic_cast<const DefinitionSymbol *>(sym))
-        {
-            if(const NameableType * nt = dynamic_cast<const NameableType *>(symType))
-            {
-                if(pCtx->genericSpecifier())
-                {
-                    std::cout << "982" << std::endl;
-                    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(symType))
-                    {
-                        std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
-
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
-                        {
-                            // (*e)->addError(ctx->getStart(), "Failed to generate case type");
-                            return *e;
-                        }
-
-                        std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
-
-
-
-                        std::optional<const NameableType *> appliedOpt = templateTy->canApplyTemplate(innerTys); 
-                        if(!appliedOpt)
-                            return errorHandler.addError(pCtx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-                        symType = appliedOpt.value(); 
-                        pathVar = appliedOpt.value(); 
-                        std::cout << "1001 Applied template: " << symType->toString(C_STYLE) << std::endl;
-                    }
-                    else 
-                    {
-                        return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + symType->toString(toStringMode));
-                    }
-                }
-                else
-                {
-                    pathVar = nt; 
-                }
-                lookupScope = defSym->getInnerScope(); 
-            }
-            else
-            {
-                return errorHandler.addError(pCtx->getStart(), sym->toString() + " expected a named type."); // TODO: better error!
-            }
-        }
-        else 
-        {
-            return errorHandler.addError(pCtx->getStart(), sym->toString() + " is not a definition."); // TODO: better error! Can only use this on definitions. For instance variables, try . 
-        }
-
-        
-
-    }
-
-    return new TPathNode(ctx->getStart(), pathVar,  is_rvalue); //a.size() == 0 ? is_rvalue : false);
+    return new TPathNode(ctx->getStart(), ty,  is_rvalue); //a.size() == 0 ? is_rvalue : false);
 }
 
 /**
@@ -2597,32 +2453,155 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 std::variant<const Type *, ErrorChain *>
 SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
 {
-    std::variant<TPathNode *, ErrorChain *> pathOpt = visitCtx(ctx, false);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&pathOpt))
+    if(ctx->eles.size() == 1)
     {
-        return *e;
+
+        auto pCtx = ctx->eles.at(0); 
+
+        std::string name = pCtx->id->getText();
+
+        std::optional<Symbol *> opt = stmgr->lookup(name);
+        if (!opt)
+        {
+            std::cout << stmgr->toString() << std::endl; 
+            return errorHandler.addError(pCtx->getStart(), "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
+        }
+
+        Symbol *sym = opt.value();
+
+        if (!sym->getType() || !sym->isDefinition())
+        {
+            return errorHandler.addError(pCtx->getStart(), "Cannot use: " + name + " as a type");
+        }
+
+        if(pCtx->genericSpecifier())
+        {
+        // Copied from templated Type
+            if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+            {
+                std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
+
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
+                {
+                    // (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                    return *e;
+                }
+
+                std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
+
+
+                std::cout << "2015 visitTemplateCTX" << ctx->getStart()->getLine() << " " << ctx->getText() << std::endl;
+                std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
+                if(!appliedOpt)
+                    return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
+                std::cout << "2016 " << appliedOpt.value()->toString(DisplayMode::C_STYLE) << std::endl; 
+                return appliedOpt.value();
+            }
+            return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + sym->getType()->toString(toStringMode));
+        }
+
+        return sym->getType();
     }
-    TPathNode *pathNode = std::get<TPathNode *>(pathOpt);
 
-    return pathNode->getType(); 
-    // std::string name = ctx->VARIABLE()->getText();
+    // FIXME: add visibility modifiers & checks!
+    Scope * lookupScope = stmgr->getGlobalScope(); 
+    // std::variant<Symbol *, const NameableType *> pathVar;// = sym; 
+    const Type * pathVar; 
 
-    // std::optional<Symbol *> opt = stmgr->lookup(name);
-    // if (!opt)
-    // {
-    //     std::cout << stmgr->toString() << std::endl; 
-    //     return errorHandler.addError(ctx->getStart(), "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
-    // }
+    for(auto pCtx : ctx->eles)
+    {
+        std::string stepId = pCtx->id->getText();
+        std::optional<Symbol *> opt = lookupScope->lookup(stepId);
 
-    // Symbol *sym = opt.value();
+        if(!opt)
+        {
+            return errorHandler.addError(pCtx->getStart(), "Could not find " + stepId + " in " + lookupScope->getIdentifier()->getFullyQualifiedName());
+        }
 
-    // if (!sym->getType() || !sym->isDefinition())
-    // {
-    //     return errorHandler.addError(ctx->getStart(), "Cannot use: " + name + " as a type");
-    // }
+        Symbol * sym = opt.value(); 
+        
+        // if (sym->getType()->isLinear())
+        // {
+        //     if (!is_rvalue)
+        //     {
+        //         errorHandler.addError(ctx->getStart(), "Cannot redefine linear variable!");
+        //     }
 
-    // return sym->getType();
+        //     if (!stmgr->removeSymbol(sym))
+        //     {
+        //         errorHandler.addError(ctx->getStart(), "Failed to unbind local var: " + sym->toString());
+        //     }
+        // }
+
+        
+        // if(!dynamic_cast<const DefinitionSymbol *>(sym))
+        // {
+        //     return errorHandler.addError(pCtx->getStart(), sym->toString() + " is not a definition."); // TODO: better error!
+        // }
+
+        // if(!dynamic_cast<const NameableType *>(sym->getType()))
+        // {
+        //     return errorHandler.addError(pCtx->getStart(), sym->toString() + " expected a named type."); // TODO: better error!
+        // }
+
+        // TODO: macro to allow above style syntax, and get casted result here?
+        // Or, to allow an inline function to return something, and have that apply 
+        // within the bounds of the outside fn
+
+        const Type * symType = sym->getType(); 
+
+        if(const DefinitionSymbol * defSym = dynamic_cast<const DefinitionSymbol *>(sym))
+        {
+            if(const NameableType * nt = dynamic_cast<const NameableType *>(symType))
+            {
+                if(pCtx->genericSpecifier())
+                {
+                    std::cout << "982" << std::endl;
+                    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(symType))
+                    {
+                        std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
+
+                        if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
+                        {
+                            // (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                            return *e;
+                        }
+
+                        std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
+
+
+
+                        std::optional<const NameableType *> appliedOpt = templateTy->canApplyTemplate(innerTys); 
+                        if(!appliedOpt)
+                            return errorHandler.addError(pCtx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
+                        symType = appliedOpt.value(); 
+                        pathVar = appliedOpt.value(); 
+                        std::cout << "1001 Applied template: " << symType->toString(C_STYLE) << std::endl;
+                    }
+                    else 
+                    {
+                        return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + symType->toString(toStringMode));
+                    }
+                }
+                else
+                {
+                    pathVar = nt; 
+                }
+                lookupScope = defSym->getInnerScope(); 
+            }
+            else
+            {
+                return errorHandler.addError(pCtx->getStart(), sym->toString() + " expected a named type."); // TODO: better error!
+            }
+        }
+        else 
+        {
+            return errorHandler.addError(pCtx->getStart(), sym->toString() + " is not a definition."); // TODO: better error! Can only use this on definitions. For instance variables, try . 
+        }
+
+    }
+
+    return pathVar;
 }
 
 std::variant<const TypeDynArray *, ErrorChain*> 
