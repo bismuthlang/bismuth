@@ -68,6 +68,10 @@ public:
     std::string getFullyQualifiedName() const; 
 
 
+    // FIXME: this is a hacky approach to allowing mains to be identified. Do better
+    void promoteToGlobal() {
+        parent = std::nullopt; 
+    }
     // optional<Identifier *>  getParent() const; 
 };
 

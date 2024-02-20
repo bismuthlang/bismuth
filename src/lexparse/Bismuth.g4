@@ -5,7 +5,7 @@
 grammar Bismuth;
 
 // Parser rules
-compilationUnit   :  (externs+=externStatement | defs+=defineType)* EOF ; 
+compilationUnit   :  (imports+=importStatement | externs+=externStatement | defs+=defineType)* EOF ; 
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
 

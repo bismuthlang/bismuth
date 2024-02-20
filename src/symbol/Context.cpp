@@ -89,7 +89,7 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
 
     // std::cout << this->toString() << std::endl;  // FIXME: THIS SEGFUALTS!
     // Note: this is safe as we previously check that currentScope exists
-    return currentScope.value()->addSymbol(new Symbol(new Identifier(
+    return currentScope.value()->addSymbol(new LocatableSymbol(new Identifier(
         id, 
         uniqName, 
         currentScope.value()->getIdentifier()
@@ -126,6 +126,31 @@ std::optional<DefinitionSymbol *> Context::addDefinition(std::string id, const T
     // return currentScope.value()->addSymbol(new Symbol());
 }
 
+std::optional<AliasSymbol *> Context::addAlias(std::string id, Symbol * a)
+{
+    // Check that the exact same identifier doesn't already exist in the current scope
+    if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
+
+
+    // TODO: why are we doing uniqueName? I guess it shouldnt ever happen tho given lookup in currentScope?
+    std::string uniqName = getUniqNameFor(currentScope.value(), id); 
+
+    // std::cout << "END W/ " << uniqName << " for " << id << std::endl; 
+
+    AliasSymbol * alias = new AliasSymbol(
+        new Identifier(id, uniqName, currentScope.value()->getIdentifier()),
+        currentScope.value(),
+        a
+    );
+
+    if(currentScope.value()->addSymbol(alias))
+        return alias; 
+
+    delete alias; 
+
+    return std::nullopt; 
+}
+
 std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const Type * t)
 {
     std::string id = "#" + wantedId; // TODO: Better symbol to indicate anon. @ reserved for compiler internals
@@ -136,7 +161,7 @@ std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const 
 
     // Note: this is safe as we previously check that currentScope exists
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
-    return currentScope.value()->addSymbol(new Symbol(
+    return currentScope.value()->addSymbol(new LocatableSymbol(
         new Identifier(id, id, currentScope.value()->getIdentifier()), t, false, currentScope.value()));
 }
 

@@ -1579,6 +1579,8 @@ std::optional<Value *> CodegenVisitor::visit(TPathNode *n)
                 FQN, 
                 prog->getLLVMFunctionType(module)
             );
+
+            return fnc.getCallee(); 
         }
         else if(const TypeFunc * func = dynamic_cast<const TypeFunc *>(nt))
         {

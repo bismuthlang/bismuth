@@ -89,7 +89,6 @@
 //     // Auto forward decl
 //     // FIXME: ERROR CHECK!
 
-//     // TODO: refactor to use defineAndGetSymbolFor for each, then can remove defineTypeCase and replace with single function call.
 //     for (auto e : ctx->defs)
 //     {
 //         // Wastes a bit of memory in allocating type even for duplicates
@@ -339,7 +338,6 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     // Auto forward decl
     // FIXME: ERROR CHECK!
 
-    // TODO: refactor to use defineAndGetSymbolFor for each, then can remove defineTypeCase and replace with single function call.
     for (auto e : ctx->defs)
     {
         // Wastes a bit of memory in allocating type even for duplicates
@@ -406,7 +404,8 @@ std::cout <<" 99" << std::endl;
      * Extra checks depending on compiler flags
      *******************************************/
 
-    if (flags & CompilerFlags::DEMO_MODE)
+    bool demoMode = flags & CompilerFlags::DEMO_MODE;
+    if (demoMode)
     {
         /**********************************************************
          * As there is no runtime, we need to make sure that
@@ -435,10 +434,36 @@ std::cout <<" 99" << std::endl;
                 {
                     errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
                 }
+                else 
+                {
+                    sym->getIdentifier()->promoteToGlobal(); 
+                }
             }
             else
             {
                 errorHandler.addError(ctx->getStart(), "When compiling in demo, 'program :: * : Channel<-int>' is required");
+            }
+        }
+    }
+    else
+    {
+        std::optional<Symbol *> opt = stmgr->lookup("program");
+        if (opt)
+        {
+            Symbol *sym = opt.value();
+            std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->getType());
+            if (progOpt)
+            {
+                const TypeProgram *inv = progOpt.value();
+                // FIXME: DO SUBTYPING BETTER!
+                if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
+                {
+                    errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
+                }
+                else 
+                {
+                    sym->getIdentifier()->promoteToGlobal(); 
+                }
             }
         }
     }

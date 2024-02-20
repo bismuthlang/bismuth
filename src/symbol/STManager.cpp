@@ -39,6 +39,11 @@ std::optional<Symbol *> STManager::addSymbol(std::string id, const Type * t, boo
     return symOpt;
 }
 
+std::optional<AliasSymbol *> STManager::addAlias(std::string id, Symbol * a)
+{
+    return context.addAlias(id, a);
+}
+
 std::optional<DefinitionSymbol *> STManager::addDefinition(std::string id, const Type * t, bool glob)
 {
     std::optional<DefinitionSymbol *> symOpt = context.addDefinition(id, t, glob);

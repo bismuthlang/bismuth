@@ -30,8 +30,6 @@ std::string Symbol::getUniqueNameInScope() const {
 }
 std::string Symbol::getScopedIdentifier() const { return identifier->getScopedIdentifier(); } //identifier; }
 
-Scope * Symbol::getScope() const { return scope; }
-
 void Symbol::updateIdentifier(Identifier * nxt) 
 {
     if(const NameableType * nt = dynamic_cast<const NameableType *>(type))
@@ -40,3 +38,5 @@ void Symbol::updateIdentifier(Identifier * nxt)
     }
     this->identifier = nxt; 
 }
+
+Scope * LocatableSymbol::getScope() const { return scope; }

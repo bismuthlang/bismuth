@@ -41,18 +41,14 @@ private:
     const Type *type;               // The symbol's type
 
     bool global;                    // Determines if the symbol is globally defined or not
-    // bool definition;             // Tracks if symbol can be modified at all or if it is a definition // TODO: Remove now that we have a definition symbol
 
-    Scope * scope; 
 public:
     // Constructs a symbol from an ID and symbol type.
-    Symbol(Identifier * id, const Type *t, bool glob, Scope * s) 
+    Symbol(Identifier * id, const Type *t, bool glob) 
     {
         identifier = id; 
         type = t;
         global = glob;
-        // definition = d; 
-        scope = s; 
     }
 
     Symbol(Symbol& sym)
@@ -60,43 +56,60 @@ public:
         identifier = sym.identifier; 
         type = sym.type->getCopy(); 
         global = sym.global;
-        // definition = sym.definition;
         // FIXME: is this constructor needed? If so, do we need to add uniqName and scope?
-
-        scope = sym.scope; 
     }
 
     virtual ~Symbol() = default; 
 
-    // std::string getIdentifier() const; 
     std::string toString() const;
     const Type * getType() const; 
 
     bool isGlobal() const; 
     virtual bool isDefinition() const; 
 
-    std::string getUniqueNameInScope() const; 
+    virtual std::string getUniqueNameInScope() const; 
     std::string getScopedIdentifier() const; 
     std::string getFullyQualifiedName() const { return identifier->getFullyQualifiedName(); }
 
     Identifier * getIdentifier() const { return identifier; }
 
-    Scope * getScope() const; 
+    
 
 
     void updateIdentifier(Identifier * nxt); // TODO: DO BETTER, USED ONLY FOR TEMPLATES!
 };
 
-class DefinitionSymbol : public Symbol 
+class LocatableSymbol : public Symbol 
+{
+public: 
+    LocatableSymbol(Identifier * id, const Type *t, bool glob, Scope * s)
+        : Symbol(id, t, glob)
+        , scope(s)
+    {}
+
+    LocatableSymbol(LocatableSymbol& sym) 
+        : Symbol(sym)
+    {
+        sym.scope = scope;  
+    }
+
+
+    Scope * getScope() const; 
+
+private: 
+    Scope * scope; 
+};
+
+class DefinitionSymbol : public LocatableSymbol 
 {
 public: 
     DefinitionSymbol(Identifier * id, const Type *t, bool glob, Scope * s, Scope * i)
-        : Symbol(id, t, glob, s)
+        : LocatableSymbol(id, t, glob, s)
         , innerScope(i)
     {} 
 
     DefinitionSymbol(DefinitionSymbol& sym) 
-        : Symbol(sym)
+        : LocatableSymbol(sym)
     {
         sym.innerScope = this->innerScope; 
     }
@@ -108,4 +121,22 @@ public:
     Scope * getInnerScope() const { return innerScope; }
 private:
     Scope * innerScope; 
+};
+
+
+// FIXME: finish this and impl paths!
+class AliasSymbol : public LocatableSymbol 
+{
+public:
+    AliasSymbol(Identifier * id, Scope * s, Symbol * a)
+        : LocatableSymbol(id, a->getType(), a->isGlobal(), s)
+        , orig(a)
+    {}
+
+    std::string getUniqueNameInScope() const override {
+        return orig->getUniqueNameInScope();
+    }
+
+    private:
+        Symbol * orig; 
 };
