@@ -81,7 +81,7 @@ expression          : LPAR ex=expression RPAR                                   
                     | exprs+=expression (AND exprs+=expression)+                                    # LogAndExpr 
                     | exprs+=expression (OR  exprs+=expression)+                                    # LogOrExpr
                     | call=invocation                                                               # CallExpr
-                    | v=VARIABLE genericSpecifier? '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')'     # InitProduct
+                    | path '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')'     # InitProduct
                     | 'Box'     LESS ty=type GREATER '::init' '(' expr=expression ')'               # InitBox
                     | dereferenceExpr                               # Deref
                     | arrayAccess                                   # ArrayAccessExpr

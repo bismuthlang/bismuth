@@ -1,8 +1,10 @@
-# Symbol component module
-
 ###############################################
-# Modify this module as you see fit. It will
-# depend upon how you design your symbol table
+#
+# Symbol CMake file
+#
+# This component handles functionality related 
+# to the symbol table. 
+#
 ###############################################
 include(LLVM)
 set (SYMBOL_DIR ${CMAKE_SOURCE_DIR}/src/symbol)

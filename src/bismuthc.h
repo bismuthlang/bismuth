@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Compile.h"
+
 #include <iostream>
 #include <fstream>
 #include <memory> // Smart pointers 
@@ -55,17 +57,3 @@ std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath)//
 
     return parts; 
 } 
-
-struct CompilerInput {
-    antlr4::ANTLRInputStream * inputStream; 
-    // std::string outputPath; 
-    std::filesystem::path outputPath; 
-
-    std::vector<std::string> pathSteps; 
-
-    CompilerInput(antlr4::ANTLRInputStream * i, std::filesystem::path o, std::vector<std::string> ps)
-        : inputStream(i)
-        , outputPath(o)
-        , pathSteps(ps)
-    {}
-};

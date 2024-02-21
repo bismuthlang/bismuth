@@ -13,7 +13,7 @@ add_library(semantic_lib OBJECT
 add_dependencies(semantic_lib 
   lexparse_lib
   utility_lib
-  )
+)
 
 include_directories(semantic_lib
   ${ANTLR_INCLUDE}

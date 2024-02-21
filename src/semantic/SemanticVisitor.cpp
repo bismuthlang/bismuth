@@ -1,217 +1,5 @@
 #include "SemanticVisitor.h"
 
-// std::optional<ErrorChain *> SemanticVisitor::calculatePredeclarations(BismuthParser::CompilationUnitContext *ctx)
-// {
-//        // Enter initial scope
-//     stmgr->enterScope(StopType::NONE);
-
-//     std::vector<TExternNode *> externs;
-
-//     for (auto e : ctx->defs)
-//     {
-//         // Wastes a bit of memory in allocating type even for duplicates
-//         std::optional<std::pair<std::string, const Type *>> opt = defineTypeCase<std::optional<std::pair<std::string, const Type *>>>(
-//             e, 
-//             [](BismuthParser::DefineFunctionContext *ctx) -> std::pair<std::string, const Type *>{
-//                 return {
-//                     ctx->name->getText(), 
-//                     ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeFunc()
-//                 };
-//             },
-
-//             [](BismuthParser::DefineProgramContext *ctx) -> std::pair<std::string, const Type *>{
-//                 return {
-//                     ctx->name->getText(), 
-//                     ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeProgram()
-//                 };
-//             },
-
-//             [](BismuthParser::DefineStructContext *ctx) -> std::pair<std::string, const Type *>{
-//                 std::string name = ctx->name->getText(); 
-//                 return {
-//                     name, 
-//                     ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeStruct()
-//                 };
-//             },
-
-//             [](BismuthParser::DefineEnumContext *ctx) -> std::pair<std::string, const Type *>{
-//                 std::string name = ctx->name->getText(); 
-//                 return {
-//                     name,
-//                     ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeSum()
-//                 };
-//             },
-
-//             [this](BismuthParser::DefineTypeContext * ctx){
-//                 errorHandler.addCompilerError(ctx->getStart(), "Unhandled case in identifying definitions");
-//                 return std::nullopt; 
-//             }
-
-//         );
-//         if(!opt) continue; 
-
-//         std::string id = opt.value().first; 
-
-//         std::optional<DefinitionSymbol *> symOpt = stmgr->addDefinition(id, opt.value().second, true);
-
-//         if (!symOpt)
-//         {
-//             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
-//         }
-
-//         symBindings->bind(e, symOpt.value());
-
-//     }
- 
-//     // Visit externs first; they will report any errors if they have any.
-//     for (auto e : ctx->externs)
-//     {
-//         std::variant<TExternNode *, ErrorChain *> extOpt = this->visitCtx(e);
-
-//         if (ErrorChain **e = std::get_if<ErrorChain *>(&extOpt))
-//         {
-//             (*e)->addError(ctx->getStart(), "Error in definition of extern");
-//             return *e;
-//         }
-//         TExternNode *node = std::get<TExternNode *>(extOpt);
-
-//         if (flags & CompilerFlags::DEMO_MODE)
-//         {
-//             if (!(node->getSymbol()->getScopedIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::DYN_STR) && node->getType()->getReturnType()->isSubtype(Types::DYN_INT) && node->getType()->isVariadic()))
-//             {
-//                 errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
-//             }
-//         }
-
-//         externs.push_back(node);
-//     }
-
-//     // Auto forward decl
-//     // FIXME: ERROR CHECK!
-
-//     for (auto e : ctx->defs)
-//     {
-//         // Wastes a bit of memory in allocating type even for duplicates
-//         defineAndGetSymbolFor(e); 
-//     }
-
-// std::cout <<" 99" << std::endl; 
-//     // Visit the statements contained in the unit
-//     std::vector<DefinitionNode *> defs;
-//     for (auto e : ctx->defs)
-//     {
-//         // Note: re-applying template symbols happens in each visitor for now!
-//         if (BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
-//         {
-//             std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(progCtx);
-
-//             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
-//             {
-//                 (*e)->addError(ctx->getStart(), "Failed to type check program");
-//                 return *e;
-//             }
-
-//             defs.push_back(std::get<TProgramDefNode *>(progOpt));
-//         }
-//         else if (BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
-//         {
-//             std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(fnCtx);
-
-//             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-//             {
-//                 (*e)->addError(ctx->getStart(), "Failed to type check function");
-//                 return *e;
-//             }
-
-//             defs.push_back(std::get<DefinitionNode *>(opt));
-//         }
-//         else if (BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
-//         {
-//             std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(structCtx);
-
-//             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-//             {
-//                 (*e)->addError(ctx->getStart(), "Failed to type check function");
-//                 return *e;
-//             }
-
-//             defs.push_back(std::get<DefinitionNode *>(opt));
-//         }
-//         else if (BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
-//         {
-//             std::variant<DefinitionNode *, ErrorChain *> opt = visitCtx(enumCtx);
-
-//             if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-//             {
-//                 (*e)->addError(ctx->getStart(), "Failed to type check function");
-//                 return *e;
-//             }
-
-//             defs.push_back(std::get<DefinitionNode *>(opt));
-//         }
-//     }
-
-//     /*******************************************
-//      * Extra checks depending on compiler flags
-//      *******************************************/
-
-//     if (flags & CompilerFlags::DEMO_MODE)
-//     {
-//         /**********************************************************
-//          * As there is no runtime, we need to make sure that
-//          * there is NO main block and that we have a program block
-//          **********************************************************/
-
-//         if (stmgr->isBound("main"))
-//         {
-//             errorHandler.addError(ctx->getStart(), "When compiling in demo mode, main is reserved!");
-//         }
-
-//         std::optional<Symbol *> opt = stmgr->lookup("program");
-//         if (!opt)
-//         {
-//             errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, 'program :: * : Channel<-int>' must be defined");
-//         }
-//         else
-//         {
-//             Symbol *sym = opt.value();
-//             std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->getType());
-//             if (progOpt)
-//             {
-//                 const TypeProgram *inv = progOpt.value();
-//                 // FIXME: DO SUBTYPING BETTER!
-//                 if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
-//                 {
-//                     errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
-//                 }
-//             }
-//             else
-//             {
-//                 errorHandler.addError(ctx->getStart(), "When compiling in demo, 'program :: * : Channel<-int>' is required");
-//             }
-//         }
-//     }
-
-//     std::vector<Symbol *> unInf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
-
-//     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
-//     // due to the var leaving the scope
-//     if (unInf.size() > 0)
-//     {
-//         std::ostringstream details;
-
-//         for (auto e : unInf)
-//         {
-//             details << e->toString() << "; ";
-//         }
-
-//         errorHandler.addError(ctx->getStart(), "230 Uninferred types in context: " + details.str());
-//     }
-     
-//     // Return UNDEFINED as this should be viewed as a statement and not something assignable
-//     return new TCompilationUnitNode(externs, defs); 
-// }
-
 
 std::optional<ErrorChain *> SemanticVisitor::definePredeclarations(BismuthParser::CompilationUnitContext *ctx)
 {
@@ -335,6 +123,13 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         externs.push_back(node);
     }
 
+    for(auto i : ctx->imports)
+    {
+        std::optional<ErrorChain *> errOpt = this->TVisitImportStatement(i);
+        if(errOpt)
+            return errOpt.value(); 
+    }
+
     // Auto forward decl
     // FIXME: ERROR CHECK!
 
@@ -405,68 +200,44 @@ std::cout <<" 99" << std::endl;
      *******************************************/
 
     bool demoMode = flags & CompilerFlags::DEMO_MODE;
-    if (demoMode)
+
+    /**********************************************************
+     * As there is no runtime, we need to make sure that
+     * there is NO main block and that we have a program block
+     **********************************************************/
+    if (demoMode && stmgr->isBound("main"))
     {
-        /**********************************************************
-         * As there is no runtime, we need to make sure that
-         * there is NO main block and that we have a program block
-         **********************************************************/
-
-        if (stmgr->isBound("main"))
+        errorHandler.addError(ctx->getStart(), "When compiling in demo mode, main is reserved!");
+    }
+    
+    std::optional<Symbol *> opt = stmgr->lookup("program");
+    if (opt)
+    {
+        Symbol *sym = opt.value();
+        std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->getType());
+        if (progOpt)
         {
-            errorHandler.addError(ctx->getStart(), "When compiling in demo mode, main is reserved!");
-        }
-
-        std::optional<Symbol *> opt = stmgr->lookup("program");
-        if (!opt)
-        {
-            errorHandler.addError(ctx->getStart(), "When compiling with no-runtime, 'program :: * : Channel<-int>' must be defined");
-        }
-        else
-        {
-            Symbol *sym = opt.value();
-            std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->getType());
-            if (progOpt)
+            const TypeProgram *inv = progOpt.value();
+            // FIXME: DO SUBTYPING BETTER!
+            if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
             {
-                const TypeProgram *inv = progOpt.value();
-                // FIXME: DO SUBTYPING BETTER!
-                if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
-                {
-                    errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
-                }
-                else 
-                {
-                    sym->getIdentifier()->promoteToGlobal(); 
-                }
+                errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
             }
-            else
+            else 
             {
-                errorHandler.addError(ctx->getStart(), "When compiling in demo, 'program :: * : Channel<-int>' is required");
+                sym->getIdentifier()->promoteToGlobal(); 
             }
+        }
+        else if(demoMode)
+        {
+            errorHandler.addError(ctx->getStart(), "When compiling in demo, 'program :: * : Channel<-int>' (the entry point) is required");
         }
     }
-    else
+    else if(demoMode)
     {
-        std::optional<Symbol *> opt = stmgr->lookup("program");
-        if (opt)
-        {
-            Symbol *sym = opt.value();
-            std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->getType());
-            if (progOpt)
-            {
-                const TypeProgram *inv = progOpt.value();
-                // FIXME: DO SUBTYPING BETTER!
-                if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
-                {
-                    errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
-                }
-                else 
-                {
-                    sym->getIdentifier()->promoteToGlobal(); 
-                }
-            }
-        }
+        errorHandler.addError(ctx->getStart(), "When compiling in demo mode, 'program :: * : Channel<-int>' (the entry point) must be defined"); 
     }
+    
 
     std::vector<Symbol *> unInf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
 
@@ -621,25 +392,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(defSym->getType()))
     {
         std::cout << "340!?!" << std::endl; 
-        // std::vector<Symbol *> templateSyms; 
-
-        // if(!templateTy->getTemplateInfo())
-        // {
-        //     return errorHandler.addCompilerError(ctx->getStart(), "Failed to find template information.");
-        // }
-
-        // TemplateInfo info = templateTy->getTemplateInfo().value();
-        // for(auto i : info.templates)
-        // {
-        //     std::optional<Symbol *> symOpt =  stmgr->addSymbol(i.first, i.second, true, false);
-
-        //     // FIXME: WRITE BETTER ERROR!
-        //     if(!symOpt)
-        //         return errorHandler.addError(ctx->getStart(), "Failed to get template symbol for " + i.first); 
-
-        //     templateSyms.push_back(symOpt.value());
-        // }
-
 
         std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam, defSym);
 
@@ -648,10 +400,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
             (*e)->addError(ctx->getStart(), "Unable to generate lambda");
             return *e;
         }
-
-        // TODO: maybe verify these all unbind?
-        // for(auto templateSym : templateSyms)
-        //     stmgr->removeSymbol(templateSym);
 
         TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
 
@@ -666,9 +414,9 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return templateNode; 
 
     }
-std::cout << "385" << std::endl; 
+
     std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam, defSym);
-std::cout << "387" << std::endl; 
+
     if (ErrorChain **e = std::get_if<ErrorChain *>(&lamOpt))
     {
         (*e)->addError(ctx->getStart(), "Unable to generate lambda");
@@ -676,15 +424,6 @@ std::cout << "387" << std::endl;
     }
 
     TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
-
-    // FIXME: ERROR IS OCCURRING HERE B/C WE ARE GETTING BACK A TEMPLATE TYPE INSTEAD OF A FUNC TYPE!
-    // FIXME: IS THIS STILL NEEDED?
-    // lam->type = [funcSym]() -> TypeFunc * {
-    //     if(const TypeTemplate * temp = dynamic_cast<const TypeTemplate *>(funcSym->getType()))
-    //         return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(temp->getValueType().value())); 
-    //     return const_cast<TypeFunc *>(dynamic_cast<const TypeFunc *>(funcSym->getType()));
-    // }();
-
 
     std::cout << "337!!! " << lam->type->toString(C_STYLE) << std::endl; 
     /*
@@ -696,99 +435,71 @@ std::cout << "387" << std::endl;
 
 std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitProductContext *ctx)
 {
-    std::string name = ctx->v->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(name);
+    std::variant<const Type *, ErrorChain *> tyOpt = visitPathType(ctx->path());
 
-    if (!opt)
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
     {
-        return errorHandler.addError(ctx->getStart(), "Cannot initialize undefined product: " + name);
+        (*e)->addError(ctx->getStart(), "Unknown type.");
+        return *e;
     }
 
-    Symbol *sym = opt.value();
+    const Type *ty = std::get<const Type *>(tyOpt);
 
-    // TODO: METHODIZE WITH INVOKE?
-
-    const Type * ty = sym->getType(); 
-    
-    if(ctx->genericSpecifier())
+    std::optional<const TypeStruct *> productOpt = type_cast<TypeStruct>(ty);
+    if (!productOpt)
     {
-        // Very similar to code in field access
-         if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(ty))
-        {
-            std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(ctx->genericSpecifier());
+        return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type: " + ty->toString(toStringMode));
+    }
+    
+    const TypeStruct *product = productOpt.value();
+    std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
+    if (elements.size() != ctx->exprs.size())
+    {
+        std::ostringstream errorMsg;
+        errorMsg << "Initialization of " << ty->toString(toStringMode) << " expected " << elements.size() << " argument(s), but got " << ctx->exprs.size();
+        return errorHandler.addError(ctx->getStart(), errorMsg.str());
+    }
 
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
+    std::vector<TypedNode *> n;
+
+    bool isValid = true;
+    {
+        unsigned int i = 0;
+
+        for (auto eleItr : elements)
+        {
+            std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->exprs.at(i)->accept(this));
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
             {
-                // (*e)->addError(ctx->getStart(), "Failed to generate case type");
+                (*e)->addError(ctx->exprs.at(i)->getStart(), "Unable to generate expression");
                 return *e;
             }
 
-            std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
+            TypedNode *tn = std::get<TypedNode *>(opt);
 
+            n.push_back(tn);
+            const Type *providedType = tn->getType();
 
-
-            std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
-            if(!appliedOpt)
-                return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-            ty = appliedOpt.value(); 
-        }
-    }
-
-    std::optional<const TypeStruct *> productOpt = type_cast<TypeStruct>(ty);
-    if (productOpt)
-    {
-        const TypeStruct *product = productOpt.value();
-        std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
-        if (elements.size() != ctx->exprs.size())
-        {
-            std::ostringstream errorMsg;
-            errorMsg << "Initialization of " << name << " expected " << elements.size() << " argument(s), but got " << ctx->exprs.size();
-            return errorHandler.addError(ctx->getStart(), errorMsg.str());
-        }
-
-        std::vector<TypedNode *> n;
-
-        bool isValid = true;
-        {
-            unsigned int i = 0;
-
-            for (auto eleItr : elements)
+            if (providedType->isNotSubtype(eleItr.second))
             {
-                std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->exprs.at(i)->accept(this));
+                std::ostringstream errorMsg;
+                errorMsg << "Product init. argument " << i << " provided to " << ty->toString(toStringMode) << " expected " << eleItr.second->toString(toStringMode) << " but got " << providedType->toString(toStringMode);
 
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-                {
-                    (*e)->addError(ctx->exprs.at(i)->getStart(), "Unable to generate expression");
-                    return *e;
-                }
-
-                TypedNode *tn = std::get<TypedNode *>(opt);
-
-                n.push_back(tn);
-                const Type *providedType = tn->getType();
-
-                if (providedType->isNotSubtype(eleItr.second))
-                {
-                    std::ostringstream errorMsg;
-                    errorMsg << "Product init. argument " << i << " provided to " << name << " expected " << eleItr.second->toString(toStringMode) << " but got " << providedType->toString(toStringMode);
-
-                    errorHandler.addError(ctx->getStart(), errorMsg.str());
-                    isValid = false;
-                }
-
-                i++;
+                errorHandler.addError(ctx->getStart(), errorMsg.str());
+                isValid = false;
             }
-        }
 
-        if (!isValid)
-        {
-            return errorHandler.addError(ctx->getStart(), "Invalid parameters passed to product init");
+            i++;
         }
-
-        return new TInitProductNode(product, n, ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type " + name + " : " + sym->getType()->toString(toStringMode));
+    if (!isValid)
+    {
+        return errorHandler.addError(ctx->getStart(), "Invalid parameters passed to product init");
+    }
+
+    return new TInitProductNode(product, n, ctx->getStart());
 }
 
 std::variant<TArrayRValue *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ArrayExpressionContext *ctx)
@@ -1616,10 +1327,17 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     );
 
     DefinitionSymbol * sym = stmgr->addDefinition(
-        id,         // FIXME: NAME CANNOT BE MANGLED & CHECK THIS GOES THROUGH (THOUGH IT SHOULD ALWAYS)
+        id,         // FIXME: CHECK THIS GOES THROUGH (THOUGH IT SHOULD ALWAYS)
         funcTy,
         true
     ).value();
+
+    // TODO: Promoting externs to global is a bit hacky and probably 
+    // allows them to be referenced by other files (eg  <foo>::<some extern>)
+    // which *probably* shouldn't be allowed. Instead, make 
+    // a separate ExternSymbol class which we would use instead. 
+    // This would also be more accurate as externs wouldn't belong to a scope per say
+    sym->getIdentifier()->promoteToGlobal(); 
 
     TExternNode *node = new TExternNode(sym, funcTy, ctx->getStart());
 
@@ -2196,15 +1914,12 @@ SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
 
 std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<DefinitionSymbol *> symOpt)
 {
-    // FIXME: ENTER SCOPE!
-    std::cout << "1892" << std::endl; 
-
     // FIXME: technically could be bad opt access, but should never happen
     DefinitionSymbol * sym = lazy_value_or<DefinitionSymbol *>(symOpt, 
         [this]() { 
             std::cout << "1922aaa" << std::endl; 
             
-            return stmgr->addAnonymousDefinition("lambda", new TypeFunc()).value(); }); // new TypeFunc(paramTypes, retType)).value(); });
+            return stmgr->addAnonymousDefinition("lambda", new TypeFunc()).value(); });
     Scope * origScope = stmgr->getCurrentScope().value(); // TODO: BAD OPT ACCESS BUT SHOULD NEVER HAPPEN 
     stmgr->enterScope(sym->getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
 
@@ -2218,13 +1933,13 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     std::variant<const Type *, ErrorChain *> retTypeOpt = ctx->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->ret->accept(this))
                                                                    : (const Type *)Types::UNIT;
-std::cout << "1903" << std::endl; 
+    
     if (ErrorChain **e = std::get_if<ErrorChain *>(&retTypeOpt))
     {
         (*e)->addError(ctx->getStart(), "Error generating return type");
         return *e;
     }
-std::cout << "1909" << std::endl; 
+
     const Type *retType = std::get<const Type *>(retTypeOpt);
 
     std::vector<const Type *> paramTypes;
@@ -2243,11 +1958,6 @@ std::cout << "1909" << std::endl;
     }
 
     
-
-std::cout << "1923 " << std::endl; 
-
-    // stmgr->enterScope(StopType::GLOBAL, sym->getIdentifier()); //[sym](){ return sym->getUniqueNameInScope(); });
-    std::cout << "1928 " << std::endl; 
     stmgr->addSymbol("@RETURN", retType, false); // Because of inserting a global stop, this will always go through
 
     for (ParameterNode param : params)
@@ -2256,7 +1966,7 @@ std::cout << "1923 " << std::endl;
             stmgr->addSymbol(param.name, param.type, false).value() // TODO: should this be error checked? Based on global stop it should be fine unless duplicates.. but that's likely already caught?
         );
     }
-std::cout << "1933" << std::endl; 
+
     std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
@@ -2413,7 +2123,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     DefinitionSymbol *sym = std::get<DefinitionSymbol *>(symOpt);
 
-    // FIXME: Check dynamic cast? should be ok, but maybe not in case of template?
 
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
     {
@@ -3457,6 +3166,49 @@ std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExp
 }
 
 
+std::optional<ErrorChain *> SemanticVisitor::TVisitImportStatement(BismuthParser::ImportStatementContext * ctx)
+{
+    if(ctx->path()->eles.size() < 2)
+    {
+        // TODO: make error on last path element?
+        return errorHandler.addError(ctx->path()->getStart(), "Path too short for import."); // FIXME: Better error message
+    }
+
+    std::string aliasStr = ctx->alias ? ctx->alias->getText() : ctx->path()->eles.at(ctx->path()->eles.size() - 1)->getText();
+
+    if(stmgr->lookupInCurrentScope(aliasStr))
+    {
+        return errorHandler.addError(ctx->getStart(), aliasStr + " is already defined."); // TODO: better error
+    }
+
+
+    std::variant<const Type *, ErrorChain *> tyOpt = visitPathType(ctx->path());
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
+    {
+        // (*e)->addError(ctx->getStart(), "Failed to generate case type");
+        return *e;
+    }
+
+    const Type * ty = std::get<const Type *>(tyOpt);
+
+    if(const NameableType * nt = dynamic_cast<const NameableType *>(ty))
+    {
+        if(!nt->hasName())
+        {
+            return errorHandler.addCompilerError(ctx->getStart(), "Imported type does not have a name");
+        }
+
+        stmgr->addAlias(
+            aliasStr, 
+            nt, 
+            nt->getIdentifier().value()
+        );
+
+        return std::nullopt; 
+    }
+    return errorHandler.addError(ctx->getStart(), "Cannot import: " + ty->toString(toStringMode) + ". Can only import named definitions."); // TODO: do better!
+}
+
 
 TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) {
     std::vector<std::pair<std::string, TypeGeneric *>> syms; // FIXME: SHOULD THIS BE CONST?
@@ -3796,7 +3548,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
             stmgr->enterScope(defSym->getInnerScope()); 
             // std::vector<Symbol *> templateSyms; 
 
-            // FIXME: verify these bindings all go through -> NEED TO ENTER SCOPE!
+            // FIXME: verify these bindings all go through (they should as we've entered the inner scope, unless there are duplicates?)
             for(auto i : info.templates)
             {
                 std::optional<DefinitionSymbol *> symOpt =  stmgr->addDefinition(i.first, i.second, false);
@@ -3810,9 +3562,6 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             std::optional<ErrorChain *> ans = fn();
             
-            // TODO: maybe verify these all unbind?
-            // for(auto templateSym : templateSyms)
-            //     stmgr->removeSymbol(templateSym);
             stmgr->enterScope(origScope);
             return ans; 
         };

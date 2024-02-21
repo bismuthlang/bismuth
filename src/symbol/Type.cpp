@@ -1302,23 +1302,15 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
         std::pair<std::string, TypeGeneric *> id = ids.at(i); 
         TypeGeneric * gen = id.second; 
 
-        // std::cout << "1201 " << id.second->toString(DisplayMode::C_STYLE) << " / " << subs.at(i)->toString(DisplayMode::C_STYLE) << std::endl;
         subst.insert({gen, subs.at(i)});
-        std::cout << "1205 "  << (gen != subs.at(i)) << std::endl; 
+        // std::cout << "1205 "  << (gen != subs.at(i)) << std::endl; 
         if(gen != subs.at(i))
             gen->setActingType(subs.at(i));
-        // std::cout << "1207" << std::endl; 
     } 
 
-    assert(valueType.has_value()); // FIXME: DO BETTER
-    // std::cout << "1169 ----- "; //  << valueType->toString(DisplayMode::C_STYLE) << " ( " << this->templateString(DisplayMode::C_STYLE) << ")" << std::endl; 
+    assert(valueType.has_value()); // FIXME: Do better, use errors instead of asserts?
+
     const NameableType * ans = dynamic_cast<const NameableType *>(valueType.value()->getCopySubst(subst));
-    // const TypeTemplate * parent = dynamic_cast<const TypeTemplate *>(this->getCopySubst(subst));
-    // const NameableType * ans = parent->getValueType().value(); 
-    // FIXME: MAYBE UPDATE NAME HERE?
-    // std::cout << "1171 ----- " << ans->toString(DisplayMode::C_STYLE) << std::endl; 
-
-
     auto metaFn =  [subs](){
         std::ostringstream description;
         // std::optional<TemplateInfo> infoOpt = this->getTemplateInfo(); 
@@ -1458,7 +1450,7 @@ bool TypeTemplate::isSupertypeFor(const Type *other) const
 }
 
 const Type * TypeTemplate::getCopySubst(std::map<const Type *, const Type *> existing) const { 
-    // FIXME: WRONG IMPL
+    // FIXME: WRONG IMPL -> Seems to be working though?
     if(existing.contains(this))
         return existing.find(this)->second; 
 
@@ -1517,31 +1509,6 @@ const TypeModule * TypeModule::getCopy() const { return this; }
 
 const Type * TypeModule::getCopySubst(std::map<const Type *, const Type *> existing) const { 
     return this; // FIXME: Implement getCopySubst for module! Shouldn't be needed yet though....
-    // if(existing.contains(this))
-    //     return existing.find(this)->second; 
-
-    // LinkedMap<std::string, const Type *> elements;
-    // TypeStruct * ans = new TypeStruct(elements, this->getIdentifier()); //this->getName());
-    // {
-    //     // ans->setIdentifier(this->getIdentifier());
-
-    //     // auto m = this->getMeta(); 
-    //     // if(m)
-    //     //     ans->setMeta(m.value());
-    // }
-
-    // existing.insert({this, ans});
-
-    // for(auto ty : this->getElements())
-    // {
-    //     elements.insert(
-    //         {ty.first, ty.second->getCopySubst(existing)}
-    //     );
-    // }
-
-    // ans->elements = elements; 
-
-    // return ans; 
 }
 
 bool TypeModule::isSupertypeFor(const Type * other) const 

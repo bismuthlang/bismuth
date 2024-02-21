@@ -65,15 +65,6 @@ static llvm::cl::opt<std::string>
                 llvm::cl::init(""),
                 llvm::cl::cat(CLIOptions));   
                            
-
-enum CompileType
-{
-  none,
-  clang,
-  gcc,
-  clangll,
-};
-
 static llvm::cl::opt<CompileType>
     compileWith("compile",
                 llvm::cl::desc("If set, will compile to an executable with the specified compiler."),
@@ -260,7 +251,6 @@ ChangeLog
     std::cout << "FLE. NME " << fileName << std::endl;  
     auto a = new antlr4::ANTLRFileStream(); 
     a->loadFromFile(canonicalPath);
-    // TODO: THIS DOESN'T WORK IF NOT GIVEN A PROPER FILE EXTENSION
     inputs.push_back(
       CompilerInput(
         a,
@@ -268,7 +258,7 @@ ChangeLog
         // (!(inputFileName.size() > 1) && useOutputFileName) 
         //   ? outputFileName 
         //   : fileName.substr(0, fileName.find_last_of('.')),
-        pathToIdentifierSteps(relInputPath) // FIXME: WRONG
+        pathToIdentifierSteps(relInputPath) 
     ));
   }
 

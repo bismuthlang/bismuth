@@ -68,8 +68,8 @@ public:
     virtual bool isDefinition() const; 
 
     virtual std::string getUniqueNameInScope() const; 
-    std::string getScopedIdentifier() const; 
-    std::string getFullyQualifiedName() const { return identifier->getFullyQualifiedName(); }
+    virtual std::string getScopedIdentifier() const; 
+    virtual std::string getFullyQualifiedName() const { return identifier->getFullyQualifiedName(); }
 
     Identifier * getIdentifier() const { return identifier; }
 
@@ -128,15 +128,21 @@ private:
 class AliasSymbol : public LocatableSymbol 
 {
 public:
-    AliasSymbol(Identifier * id, Scope * s, Symbol * a)
-        : LocatableSymbol(id, a->getType(), a->isGlobal(), s)
+    AliasSymbol(Identifier * id, Scope * s, const Type * t, Identifier * a)//Symbol * a)
+        : LocatableSymbol(id, t, true, s)
         , orig(a)
     {}
 
-    std::string getUniqueNameInScope() const override {
-        return orig->getUniqueNameInScope();
+    virtual std::string getFullyQualifiedName() const override {
+        return orig->getFullyQualifiedName(); 
     }
+    // std::string getUniqueNameInScope() const override {
+    //     return orig->getUniqueNameInScope();
+    // }
+
+    bool isDefinition() const override { return true; }
 
     private:
-        Symbol * orig; 
+        Identifier * orig; 
+    //     Symbol * orig; 
 };

@@ -70,7 +70,6 @@ std::optional<Scope *> Context::exitScope()
     Scope *last = currentScope.value();
 
     currentScope = last->getParent();
-    // scopes.pop_back(); // FIXME: Delete last element in vector? -> We don't do this because it breaks the scope count
 
     return std::optional<Scope *>{last};
 }
@@ -85,9 +84,7 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
     uint32_t idNum = 0; 
     std::string uniqName = getUniqNameFor(currentScope.value(), id); 
 
-    // std::cout << "END W/ " << uniqName << " for " << id << std::endl; 
 
-    // std::cout << this->toString() << std::endl;  // FIXME: THIS SEGFUALTS!
     // Note: this is safe as we previously check that currentScope exists
     return currentScope.value()->addSymbol(new LocatableSymbol(new Identifier(
         id, 
@@ -126,7 +123,7 @@ std::optional<DefinitionSymbol *> Context::addDefinition(std::string id, const T
     // return currentScope.value()->addSymbol(new Symbol());
 }
 
-std::optional<AliasSymbol *> Context::addAlias(std::string id, Symbol * a)
+std::optional<AliasSymbol *> Context::addAlias(std::string id, const Type * t, Identifier * a)
 {
     // Check that the exact same identifier doesn't already exist in the current scope
     if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
@@ -140,6 +137,8 @@ std::optional<AliasSymbol *> Context::addAlias(std::string id, Symbol * a)
     AliasSymbol * alias = new AliasSymbol(
         new Identifier(id, uniqName, currentScope.value()->getIdentifier()),
         currentScope.value(),
+        // a
+        t, 
         a
     );
 

@@ -232,6 +232,11 @@ public:
     std::variant<TAsChannelNode *, ErrorChain *> TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx);
     std::any visitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx) override { return TNVariantCast<TAsChannelNode>(TvisitAsChannelExpr(ctx)); }
 
+    
+    // Note: this method doesn't actually add anything to codegen---it just adds symbols or throws errors
+    std::optional<ErrorChain *> TVisitImportStatement(BismuthParser::ImportStatementContext * ctx); 
+    std::any visitImportStatement(BismuthParser::ImportStatementContext * ctx) override { return TVisitImportStatement(ctx); }
+
     const Type *visitCtx(BismuthParser::AssignmentContext *ctx);
 
     /*
@@ -461,28 +466,12 @@ public:
         if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym->getType()))
         {
             std::string funcId = ctx->name->getText();
-
-            // If the symbol name is program, do some extra checks to make sure it has no arguments and returns an int. Otherwise, we will get a link error.
-            // if (funcId == "program") //FIXME: DO BETTER
-            // {
-            //     if (!dynamic_cast<const TypeInt *>(progType->getReturnType()))
-            //     {
-            //         errorHandler.addSemanticCritWarning(ctx->getStart(), "program() should return type int");
-            //     }
-
-            //     if (progType->getParamTypes().size() != 0)
-            //     {
-            //         errorHandler.addSemanticCritWarning(ctx->getStart(), "program() should have no arguments");
-            //     }
-            // }
-
             // Lookup the function in the current scope and prevent re-declarations
 
             // Add the symbol to the stmgr and enter the scope. -> Already done
-            // stmgr->addSymbol(sym);
             // TODO: BAD OPT VALUE (should never really happen though)
             Scope * orig = stmgr->getCurrentScope().value(); 
-            stmgr->enterScope(defSym->getInnerScope());//StopType::GLOBAL, sym->getIdentifier()); //[sym](){ return sym->getUniqueNameInScope(); }); // NOTE: We do NOT duplicate scopes here because we use a saveVisitBlock with newScope=false
+            stmgr->enterScope(defSym->getInnerScope());
 
             Symbol *channelSymbol = stmgr->addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
             // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language

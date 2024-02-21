@@ -61,7 +61,7 @@ class Context {
 
     std::optional<DefinitionSymbol *> addDefinition(std::string id, const Type * t, bool glob); 
 
-    std::optional<AliasSymbol *> addAlias(std::string id, Symbol * a);
+    std::optional<AliasSymbol *> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
 
     std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t); 
     std::optional<DefinitionSymbol *> addAnonymousDefinition(std::string id, const Type * t); 
