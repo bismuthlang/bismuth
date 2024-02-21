@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Compile.h"
+#include "Compile.cpp"
 
 #include <iostream>
 #include <fstream>
@@ -37,23 +37,3 @@
 using std::unique_ptr; 
 using std::shared_ptr; 
 using std::fstream; 
-
-
-std::filesystem::path getRelativePath(std::filesystem::path& currentPath, std::filesystem::path& given)
-{
-    return given.string().starts_with(currentPath.string()) 
-        ? std::filesystem::relative(given, currentPath)
-        : given; 
-}
-
-std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath)//std::filesystem::path& currentPath, std::filesystem::path& given)
-{
-    std::vector<std::string> parts; 
-
-    for(auto it : relPath)
-    {
-        parts.push_back(it);
-    }
-
-    return parts; 
-} 

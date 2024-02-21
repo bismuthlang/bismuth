@@ -39,7 +39,7 @@ add_dependencies(bismuthc
     utility_lib
     codegen_lib
     bismuth_runtime
-    cli_lib
+    # cli_lib
 )
 
 target_include_directories(bismuthc PUBLIC 
@@ -65,7 +65,7 @@ target_link_libraries(bismuthc
     utility_lib
     codegen_lib
     ${LLVM_LIBS}
-    cli_lib
+    # cli_lib
 )
 
 # git commit hash macro from https://stackoverflow.com/questions/1435953/how-can-i-pass-git-sha1-to-compiler-as-definition-using-cmake
