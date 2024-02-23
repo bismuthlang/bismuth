@@ -1,5 +1,8 @@
 #pragma once
 
+#include "antlr4-runtime.h"
+#include <sstream>
+
 /**
  * @file SymbolUtils.h
  * @author Alex Friedman (ahf.dev)
@@ -14,3 +17,11 @@ enum DisplayMode {
     C_STYLE, 
     MATH_STYLE
 };
+
+inline std::string tokenToLineChar(antlr4::Token *token)
+{
+    std::ostringstream e;
+    e << token->getLine() + ':' + token->getCharPositionInLine();
+
+    return e.str(); 
+}

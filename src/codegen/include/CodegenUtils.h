@@ -28,6 +28,7 @@
 #include <optional>
 
 #include "TypedAST.h"
+#include "Symbol.h" // Only for VisibilityModifier
 
 // using namespace llvm;
 using llvm::ArrayRef;
@@ -46,6 +47,23 @@ using llvm::NoFolder;
 using llvm::PHINode;
 using llvm::StringRef;
 using llvm::Value;
+
+
+inline GlobalValue::LinkageTypes getLinkageType(VisibilityModifier m)
+{
+    switch(m)
+    {
+        case VisibilityModifier::PUBLIC:
+            return GlobalValue::ExternalLinkage; 
+
+        case VisibilityModifier::PUBLIC_LINK:
+            return GlobalValue::AvailableExternallyLinkage;
+
+        case VisibilityModifier::PRIVATE:
+            return GlobalValue::PrivateLinkage; 
+    }
+}
+
 
 class CodegenModule
 {

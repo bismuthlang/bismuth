@@ -331,8 +331,7 @@ public:
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
         {
-            (*e)->addError(ex->getStart(), "Unable to type check condition expression");
-            return *e;
+            return (*e)->addError(ex->getStart(), "Unable to type check condition expression");
         }
 
         TypedNode *cond = std::get<TypedNode *>(condOpt);
@@ -372,8 +371,7 @@ public:
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to type check statement in block");
-                return *e;
+                return (*e)->addError(ctx->getStart(), "Failed to type check statement in block");
             }
 
             nodes.push_back(std::get<TypedNode *>(tnOpt));
@@ -419,8 +417,7 @@ public:
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
                 // TODO: does having return here w/o safe exit again mean that we have a bug if we hit this case? 
-                // (*e)->addError(expr->getStart(), "Failed to type check statement");
-                return *e;
+                return (*e)->addErrorAt(expr->getStart());
             }
 
             nodes.push_back(std::get<TypedNode *>(tnOpt));
@@ -454,7 +451,7 @@ public:
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
         {
-            return *e;
+            return (*e)->addErrorAt(ctx->getStart());
         }
 
         DefinitionSymbol * defSym = std::get<DefinitionSymbol*>(symOpt);
@@ -481,8 +478,7 @@ public:
             std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
             if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
             {
-                (*e)->addError(ctx->getStart(), "Failed to safe visit block");
-                return *e;
+                return (*e)->addError(ctx->getStart(), "Failed to safe visit block");
             }
 
             // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
@@ -671,7 +667,7 @@ private:
     }
 
 
-    std::variant<DefinitionSymbol *, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx);
+    std::variant<DefinitionSymbol *, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m = VisibilityModifier::PRIVATE);
 
     void bindRestData(antlr4::ParserRuleContext *ctx, std::deque<DeepRestData *> *rd)
     { // DeepRestData * rd) {

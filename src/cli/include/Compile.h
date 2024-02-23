@@ -22,7 +22,6 @@
 
 #include "TypedAST.h"
 
-// #include "BismuthErrorHandler.h"
 #include "SemanticVisitor.h"
 #include "CodegenVisitor.h"
 #include "llvm/Support/raw_ostream.h"

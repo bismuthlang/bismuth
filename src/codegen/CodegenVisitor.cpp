@@ -24,14 +24,24 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode *n)
         {
             const TypeProgram *type = octx->getType();
 
-            Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, getCodegenID(octx->getSymbol()), module);
+            Function *fn = Function::Create(
+                type->getLLVMFunctionType(module),
+                getLinkageType(e->getVisibility()),
+                getCodegenID(octx->getSymbol()),
+                module
+            );
             // type->setName(fn->getName().str());
         }
         else if (TLambdaConstNode *octx = dynamic_cast<TLambdaConstNode *>(e))
         {
             const TypeFunc *type = octx->getType();
 
-            Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, getCodegenID(octx->getSymbol()), module);
+            Function *fn = Function::Create(
+                type->getLLVMFunctionType(module), 
+                getLinkageType(e->getVisibility()),
+                getCodegenID(octx->getSymbol()),
+                module
+            );
             // type->setName(fn->getName().str());
         }
         else if (TDefineTemplateNode *octx = dynamic_cast<TDefineTemplateNode *>(e))
@@ -700,7 +710,7 @@ std::optional<Value *> CodegenVisitor::visit(TDefineEnumNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TDefineStructNode *n) 
 {
-    std::cout << "GET struct w/ sym = " << n->symbol->getFullyQualifiedName() << std::endl; 
+    std::cout << "GET struct w/ sym = " << n->getSymbol()->getFullyQualifiedName() << std::endl; 
     if(n->product->getIdentifier())
         std::cout << "GET struct w/ type id = " << n->product->getIdentifier().value()->getFullyQualifiedName() << std::endl; 
     n->product->getLLVMType(module);
@@ -1606,21 +1616,6 @@ std::optional<Value *> CodegenVisitor::visit(TPathNode *n)
 
     errorHandler.addCompilerError(n->getStart(), "Unknown/unimplemented case for path");
     return std::nullopt;
-
-
-    // std::visit(overloaded{[](START_LOOP &)
-    //             { return std::string("START-LOOP "); },
-    //             [](END_LOOP &)
-    //             { return std::string("END-LOOP "); },
-    //             [](Value &)
-    //             { return std::string("Val "); },
-    //             [](SEL &s)
-    //             { return "SEL[" + std::to_string(s.i) + "] "; },
-    //             [](SKIP &s)
-    //             { return "SKIP[" + std::to_string(s.i) + "] "; },
-    //             [](CLOSE &s)
-    //             { return "CLOSE[" + std::to_string(s.i) + "] "; }},
-    //     n->var);
 }
 
 std::optional<Value *> CodegenVisitor::visit(TDerefBoxNode *n)
@@ -1693,7 +1688,11 @@ std::optional<Value *> CodegenVisitor::visit(TExternNode *n)
 
     const TypeFunc *type = n->getType();
 
-    Function *fn = Function::Create(type->getLLVMFunctionType(module), GlobalValue::ExternalLinkage, getCodegenID(symbol), module);
+    Function *fn = Function::Create(
+        type->getLLVMFunctionType(module),
+        GlobalValue::ExternalLinkage, // FIXME: USE getLinkageType(e->getVisibility()),? 
+        getCodegenID(symbol),
+        module);
     // type->setName(fn->getName().str());
 
     return std::nullopt;
@@ -2199,7 +2198,13 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
 
     Function *fn = module->getFunction(funcFullName);
     if(!fn)
-        fn = Function::Create(fnType, GlobalValue::PrivateLinkage, funcFullName, module);
+        fn = Function::Create(
+            fnType, 
+            getLinkageType(n->getVisibility()),
+            // GlobalValue::PrivateLinkage,
+            funcFullName,
+            module
+        );
     // type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED -> Probably not needed
 
     std::vector<Symbol *> paramList = n->paramSymbols;
@@ -2268,7 +2273,13 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode *n)
 
     Function *fn = module->getFunction(funcFullName);
     if(!fn)
-        fn = Function::Create(fnType, GlobalValue::PrivateLinkage, funcFullName, module);
+        fn = Function::Create(
+            fnType,
+            // GlobalValue::PrivateLinkage,
+            getLinkageType(n->getVisibility()),
+            funcFullName, 
+            module
+        );
 
     // prog->setName(fn->getName().str());// Note: NOT ALWAYS NEEDED -> Probably not needed
 
@@ -2319,10 +2330,10 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 
         if(DefinitionNode * defNode = dynamic_cast<DefinitionNode *>(n->getTemplatedNodes()))
         {
-            std::cout << "2166 " << defNode->symbol->getIdentifier()->getFullyQualifiedName() << std::endl;
+            std::cout << "2166 " << defNode->getSymbol()->getIdentifier()->getFullyQualifiedName() << std::endl;
             if(t.second->getIdentifier())
             {
-                defNode->symbol->updateIdentifier(t.second->getIdentifier().value());
+                defNode->getSymbol()->updateIdentifier(t.second->getIdentifier().value());
                 // if(const NameableType * nt = dynamic_cast<const NameableType *>(defNode->getType()))
             }
             // std::cout << "2172 " << defNode->symbol->getIdentifier()->getFullyQualifiedName() << std::endl;

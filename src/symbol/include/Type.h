@@ -156,10 +156,7 @@ protected:
     mutable std::optional<Identifier *> identifier; 
 
 public: 
-    std::optional<Identifier *> getIdentifier() const { 
-        return identifier; 
-        // return (name.has_value() ? name.value() : "") + (meta.has_value() ? meta.value()() : "");
-    }
+    std::optional<Identifier *> getIdentifier() const { return identifier; }
 
     virtual void setIdentifier(std::optional<Identifier *> nxt) const {
         identifier = nxt; // FIXME: DO BETTER!
@@ -167,13 +164,6 @@ public:
 
     virtual std::string getTypeRepresentation(DisplayMode mode) const = 0;
     bool hasName() const { return identifier.has_value(); }
-
-    // void setMeta(std::function<std::string()> m) const { meta = m; }
-
-
-    // std::optional<std::function<std::string()>> getMeta() const { return meta; }
-
-
 
     std::string toString(DisplayMode mode) const override
     {
@@ -428,7 +418,7 @@ struct TypeCompare
 {
     bool operator()(const Type *a, const Type *b) const
     {
-        std::cout << "COMP:: " << a->toString(C_STYLE) << " < " << b->toString(C_STYLE) << std::endl; 
+        // std::cout << "COMP:: " << a->toString(C_STYLE) << " < " << b->toString(C_STYLE) << std::endl; 
         return a->toString(C_STYLE) < b->toString(C_STYLE);
     }
 };
@@ -681,7 +671,6 @@ private:
      */
     bool defined;
 
-    // FIXME: NAME IS ALWAYS NULLOPT!
 public:
     TypeProgram() 
         : NameableType(false, std::nullopt)
@@ -726,7 +715,6 @@ public:
 
     const TypeProgram * getCopy() const override;
 
-    // FIXME: IMPL!
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
@@ -1224,13 +1212,6 @@ public:
         , defined(false) 
     {}
     bool isDefined() const { return defined; }
-
-    // std::optional<TemplateInfo> getTemplateInfo() const { return info; }
-
-    // PLAN: Contract that such a function may exist, but no guarantee about param types?
-    // bool define(std::optional<TemplateInfo> i, const NameableType * vt) const;
-
-    // void setIdentifier(std::optional<Identifier *> nxt) const override; 
 
     std::string getTypeRepresentation(DisplayMode mode) const override;
     

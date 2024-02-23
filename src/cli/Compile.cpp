@@ -133,29 +133,28 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
 
         std::filesystem::path relInputPath = getRelativePath(canonicalSrc, std::filesystem::path(canonicalPath).replace_extension(""));
 
-        // FIXME: DETERMINE OUTPUT FILE NAME!
-        // FIXME: CURRENTLY, THIS ADDS SRCPATH To errors! Need to only do relative to src!!
-
-        std::cout << "CAN. SRC " << canonicalSrc << std::endl;
-        std::cout << "CAN. PAH " << canonicalPath << std::endl;
-        std::cout << "CAN. DST " << canonicalDst << std::endl;
-        std::cout << "FUL. DST " << (canonicalDst / fileName) << std::endl;
-        std::cout << "REL. INP " << relInputPath << std::endl;
-        std::cout << "FLE. NME " << fileName << std::endl;
         auto a = new antlr4::ANTLRFileStream();
         a->loadFromFile(canonicalPath);
         inputs.push_back(
             CompilerInput(
                 a,
                 canonicalDst / fileName,
-                // (!(inputFileName.size() > 1) && useOutputFileName)
-                //   ? outputFileName
-                //   : fileName.substr(0, fileName.find_last_of('.')),
-                pathToIdentifierSteps(relInputPath)));
+                pathToIdentifierSteps(relInputPath)
+        ));
     }
 
-    bool isValid = true;
+
+    /*
+     * Sets up compiler flags. These need to be sent to the visitors.
+     */
+
+    int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
+
+    bool isValid = true; // FIXME: DONT CODEGEN IF NOT VALID?
     STManager *stm = new STManager();
+
+
+    std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> toCodegen;
 
     // For each input...
     for (auto input : inputs)
@@ -193,19 +192,6 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
             return -1;
         }
 
-        /*
-         * Sets up compiler flags. These need to be sent to the visitors.
-         */
-
-        int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
-
-        std::cout << "316 ";
-        for (auto s : input.pathSteps)
-        {
-            std::cout << s << "::";
-        }
-        std::cout << std::endl;
-
         /*******************************************************************
          * Semantic Analysis
          * ================================================================
@@ -215,7 +201,7 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
          * there are any errors we print them out and exit.
          *******************************************************************/
         SemanticVisitor *sv = new SemanticVisitor(stm, toStringMode, flags);
-        auto TypedOpt = sv->visitCtx(tree, input.pathSteps); // FIXME: DO BETTER W/ NAME TO SHOW THIS IS TOP LEVEL UNIT
+        auto TypedOpt = sv->visitCtx(tree, input.pathSteps);
 
         if (sv->hasErrors(0)) // Want to see all errors
         {
@@ -241,6 +227,13 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
             std::cout << "Semantic analysis completed for " << input.outputPath << " without errors. Starting code generation..." << std::endl;
         }
 
+        toCodegen.push_back({cu, input});
+    }
+
+
+    for(auto entry : toCodegen)
+    {
+        auto [cu, input] = entry; 
         /*******************************************************************
          * Code Generation
          * ================================================================

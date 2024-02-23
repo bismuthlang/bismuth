@@ -93,7 +93,7 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
     ), t, glob, currentScope.value()));
 }
 
-std::optional<DefinitionSymbol *> Context::addDefinition(std::string id, const Type * t, bool glob)
+std::optional<DefinitionSymbol *> Context::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
 {
     // Check that the exact same identifier doesn't already exist in the current scope
     if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
@@ -111,7 +111,7 @@ std::optional<DefinitionSymbol *> Context::addDefinition(std::string id, const T
 
     Scope* innerScope = this->createNamespace(identifier);
 
-    DefinitionSymbol * sym = new DefinitionSymbol(identifier, t, glob, currentScope.value(), innerScope);
+    DefinitionSymbol * sym = new DefinitionSymbol(m, identifier, t, glob, currentScope.value(), innerScope);
 
     // Need to do this hack just to preserve type safety. No need to add duplicate function. 
     if(currentScope.value()->addSymbol(sym))
@@ -176,6 +176,7 @@ std::optional<DefinitionSymbol *> Context::addAnonymousDefinition(std::string wa
 
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
     DefinitionSymbol * ds = new DefinitionSymbol(
+        VisibilityModifier::PRIVATE,
         identifier, 
         t, 
         false,
@@ -337,7 +338,7 @@ std::string Context::toString() const
     return description.str();
 }
 
-std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> steps)
+std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m)
 {
     // Note bad variable names (we have two current scopes in here)
     std::optional<Scope *> origScope = this->currentScope; 
@@ -352,17 +353,12 @@ std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> ste
         std::optional<Symbol *> symOpt = lookup(s);
         if(!symOpt)
         {
-
             TypeModule * mod = new TypeModule();
-            std::optional<DefinitionSymbol *> dsOpt = addDefinition(s, mod, true);
+            std::optional<DefinitionSymbol *> dsOpt = addDefinition(m, s, mod, true);
 
             assert(dsOpt.has_value()); // We already checked conflicts
 
-            std::cout << "ADDED SCOPE "  << " -> " <<  dsOpt.value()->getInnerScope()->getIdentifier()->getFullyQualifiedName() << std::endl; 
             this->currentScope = dsOpt.value()->getInnerScope(); 
-
-            
-
         }
         else if(DefinitionSymbol * ds = dynamic_cast<DefinitionSymbol *>(symOpt.value()))
             this->currentScope = ds->getInnerScope(); 

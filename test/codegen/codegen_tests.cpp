@@ -733,7 +733,7 @@ TEST_CASE("programs/generics/Arrays - Non-recursive generic function used for dy
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/Arrays.bismuth"))),
-        "2e92e23e59a2a25772b24d945d579a3b6c59fb859d4f906bf5a2084e9ea1e724"); 
+        "55c1655f6a9e138456cbcc12dd449d24b8e9ab7191e78110dd5c4d1810841e19"); 
 }
 
 
@@ -741,7 +741,7 @@ TEST_CASE("programs/generics/inv - Various generic functions including nested", 
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/inv.bismuth"))),
-        "2c043e01cf2140c98b438fc80378e05e454966ab3e655f01424ccffd71f0c4ca"); 
+        "cf1d5390c2dabe120b0356bd56b8ff6b6f7262e56389c126b504536891d9c321"); 
 }
 
 TEST_CASE("programs/generics/Lists - Various complex generic structures including recursive", "[codegen][generic]")
@@ -762,7 +762,7 @@ TEST_CASE("programs/generics/recfunctemplate - Recursive templated functions", "
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/recfunctemplate.bismuth"))),
-        "53fa5921bdbc746b98bccc7ce8486729c61c9129674dabce26c1988a42521e58"); 
+        "0ce78bb4b0b746a703d869cd97d4d02f6e1bd2e723a6b79ed21022c94983c70d"); 
 }
 
 TEST_CASE("programs/generics/ReferenceGeneric - Co-dependent structs", "[codegen][generic]")
@@ -777,7 +777,7 @@ TEST_CASE("programs/generics/ReferenceGenericS - Co-dependent structs", "[codege
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/generics/ReferenceGenericS.bismuth"))),
-        "d576cd106373342467ae7afe7be06aee2cbfbc120830d3d150eb4c372d0f2161"); 
+        "950b9c5cf40bd673a8250726ae932b20089332f552fae683d85a402f471e054c"); 
 }
 
 /************************************

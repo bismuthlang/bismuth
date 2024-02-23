@@ -111,6 +111,7 @@ Version: Pre-Alpha 1.3.3 @ )"""" << GIT_COMMIT_HASH
 ChangeLog
 =========
 1.3.4 - XXX: 
+  - Added imports, basic name mangling, and generics/templates
   - Added u32, i64, and u64
   - Added ability to specify integer values in hex via 0x and binary via 0b prefixes
   - Added for loops
@@ -121,6 +122,9 @@ ChangeLog
   - Fixed bug where nested control flow would incorrectly process use of linear resources
   - Fixed typos in generated IR files, error messages, and compiler internals
 
+  - Reorganized compiler internals to separate CLI elements and support generics
+  - Refactored symbol/allocation handling by connecting them to FQNs instead of symbols
+  - Reorganized compilation order to conduct codegen after all of semantic analysis
   - Removed CLI feature -s to supply input string instead of file location; makes more sense to re-add in future as REPL.
   - Added new error type for internal/compiler errors. 
   - Improved efficiency of IPC by removing state to eliminate additional lookup step

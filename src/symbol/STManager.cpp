@@ -44,9 +44,10 @@ std::optional<AliasSymbol *> STManager::addAlias(std::string id, const Type * t,
     return context.addAlias(id, t, a);
 }
 
-std::optional<DefinitionSymbol *> STManager::addDefinition(std::string id, const Type * t, bool glob)
+std::optional<DefinitionSymbol *> STManager::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
 {
-    std::optional<DefinitionSymbol *> symOpt = context.addDefinition(id, t, glob);
+    
+    std::optional<DefinitionSymbol *> symOpt = context.addDefinition(m, id, t, glob);
 
     if(symOpt)
     {

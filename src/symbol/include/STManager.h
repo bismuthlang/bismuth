@@ -66,7 +66,7 @@ public:
    */
   std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool g); 
 
-  std::optional<DefinitionSymbol *> addDefinition(std::string id, const Type * t, bool glob); 
+  std::optional<DefinitionSymbol *> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
 
   std::optional<AliasSymbol *> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
 
@@ -134,7 +134,7 @@ public:
   bool isGlobalScope(); 
 
 
-  std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps) { return context.getOrProvisionScope(steps); }
+  std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m) { return context.getOrProvisionScope(steps, m); }
 
   Scope * getGlobalScope() { return context.getGlobalScope(); }
 

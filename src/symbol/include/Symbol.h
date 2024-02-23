@@ -28,6 +28,13 @@ class Scope;
 
 // using namespace Types; 
 
+// FIXME: Make these apply directly in semantic analysis---particularly with paths!
+enum VisibilityModifier {
+    PUBLIC,         // Globally accessible
+    PUBLIC_LINK,    // Can be linked globally, but private for semantics (used for externs and imports)
+    PRIVATE
+};
+
 /*******************************************
  *
  * Symbol Definition
@@ -103,9 +110,10 @@ private:
 class DefinitionSymbol : public LocatableSymbol 
 {
 public: 
-    DefinitionSymbol(Identifier * id, const Type *t, bool glob, Scope * s, Scope * i)
+    DefinitionSymbol(VisibilityModifier v, Identifier * id, const Type *t, bool glob, Scope * s, Scope * i)
         : LocatableSymbol(id, t, glob, s)
         , innerScope(i)
+        , visibility(v)
     {} 
 
     DefinitionSymbol(DefinitionSymbol& sym) 
@@ -119,8 +127,11 @@ public:
     bool isDefinition() const override { return true; }
 
     Scope * getInnerScope() const { return innerScope; }
+
+    VisibilityModifier getVisibility() { return visibility; }
 private:
     Scope * innerScope; 
+    VisibilityModifier visibility; 
 };
 
 

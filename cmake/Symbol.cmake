@@ -22,7 +22,6 @@ set (SYMBOL_SOURCES
   ${SYMBOL_DIR}/Type.cpp
   ${SYMBOL_DIR}/Protocol.cpp
   ${SYMBOL_DIR}/Context.cpp
-  ${SYMBOL_DIR}/RawAST.cpp
   ${SYMBOL_DIR}/TypedAST.cpp
   ${SYMBOL_DIR}/SymbolUtils.cpp
 )

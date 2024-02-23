@@ -46,16 +46,16 @@ public:
 
 class DefinitionNode : public TypedNode 
 {
-// private: 
-public:
-    Symbol * symbol; 
-    // std::optional<std::string> llvmName;
+private: 
+    DefinitionSymbol * symbol; 
 
 public: 
     virtual ~DefinitionNode() = default; 
-    DefinitionNode(Symbol * s, antlr4::Token *tok) : TypedNode(tok), symbol(s) {}
+    DefinitionNode(DefinitionSymbol * s, antlr4::Token *tok) : TypedNode(tok), symbol(s) {}
 
-    Symbol * getSymbol() { return symbol; }
+    DefinitionSymbol * getSymbol() { return symbol; }
+
+    VisibilityModifier getVisibility() { return symbol->getVisibility(); }
 };
 
 // From C++ Documentation for visitors
@@ -343,7 +343,7 @@ public:
     TBlockNode *block;
     const TypeFunc *type;
 
-    TLambdaConstNode(Symbol * sym, vector<Symbol *> p, const Type *r, TBlockNode *b, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    TLambdaConstNode(DefinitionSymbol * sym, vector<Symbol *> p, const Type *r, TBlockNode *b, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         // paramList = p;
         paramSymbols = p;
@@ -384,7 +384,7 @@ public:
     // TypeChannel * channelType;
     TBlockNode *block;
 
-    TProgramDefNode(Symbol * sym,  Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    TProgramDefNode(DefinitionSymbol * sym,  Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         channelSymbol = cn;
         // channelType = ct;
@@ -690,7 +690,7 @@ class TDefineEnumNode : public DefinitionNode
 public:
     const TypeSum *sum;
 
-    TDefineEnumNode(Symbol * sym, const TypeSum *s, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    TDefineEnumNode(DefinitionSymbol * sym, const TypeSum *s, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         sum = s;
     }
@@ -705,24 +705,24 @@ public:
 };
 
 
-class TDefineTemplateNode : public DefinitionNode // FIXME: ADD TO VISITORS AND SUCH
+class TDefineTemplateNode : public DefinitionNode
 {
 private: 
     const TypeTemplate * type; // Used to figure out what versions we need to generate
-    // DefinitionNode * templatedNodes; 
-    TypedNode * templatedNodes; 
+    DefinitionNode * templatedNodes; 
+    // TypedNode * templatedNodes; 
 
     // TODO track templated names generated?
 
 public:
-    TDefineTemplateNode(Symbol * sym, const TypeTemplate * t, TypedNode * n, antlr4::Token *tok) : DefinitionNode(sym, tok), type(t), templatedNodes(n) //t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
+    TDefineTemplateNode(DefinitionSymbol * sym, const TypeTemplate * t, DefinitionNode * n, antlr4::Token *tok) : DefinitionNode(sym, tok), type(t), templatedNodes(n) //t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
     {}
 
     std::string toString() const override { return "DEF TEMPLATE NODE"; }
 
     const TypeTemplate * getType() override { return type; }
-    // DefinitionNode * getTemplatedNodes() { return templatedNodes; }
-    TypedNode * getTemplatedNodes() { return templatedNodes; }
+    DefinitionNode * getTemplatedNodes() { return templatedNodes; }
+    // TypedNode * getTemplatedNodes() { return templatedNodes; }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
@@ -732,7 +732,7 @@ class TDefineStructNode : public DefinitionNode
 public:
     const TypeStruct *product;
 
-    TDefineStructNode(Symbol * sym, const TypeStruct *p, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    TDefineStructNode(DefinitionSymbol * sym, const TypeStruct *p, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         product = p;
     }

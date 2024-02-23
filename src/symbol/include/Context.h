@@ -59,7 +59,7 @@ class Context {
      */
     std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool glob); // Symbol* symbol);
 
-    std::optional<DefinitionSymbol *> addDefinition(std::string id, const Type * t, bool glob); 
+    std::optional<DefinitionSymbol *> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
 
     std::optional<AliasSymbol *> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
 
@@ -129,7 +129,7 @@ class Context {
       return !currentScope.value()->getParent().has_value(); //->getId() == 0; 
     }
 
-    std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps);
+    std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m);
     
 
     Scope * getGlobalScope() { return globalScope; }

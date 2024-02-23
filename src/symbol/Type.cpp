@@ -601,7 +601,7 @@ const Type * TypeProgram::getCopySubst(std::map<const Type *, const Type *> exis
 
     existing.insert({this, ans});
 
-    // FIXME: NEED TO IMPL THIS!!!
+    // FIXME: NEED TO IMPL THIS!!! -> but it seems to work? though we don't have generics for programs
 
     // TODO: use ->define() func!
     // for(auto ty : this->paramTypes)
@@ -715,6 +715,7 @@ const TypeFunc * TypeFunc::getCopy() const { return this; };
 
 bool TypeFunc::isSupertypeFor(const Type *other) const
 {
+    std::cout << "FUNC EQ? " << toString(C_STYLE) << "==" << other->toString(C_STYLE) << std::endl; 
     // Checks that the other type is also a function
     if (const TypeFunc *p = dynamic_cast<const TypeFunc *>(other))
     {
@@ -1183,8 +1184,17 @@ const TypeStruct * TypeStruct::getCopy() const { return this; };
 
 bool TypeStruct::isSupertypeFor(const Type *other) const
 {
-    // PLAN: allow for extern/import structs
-    return this == other; // FIXME: DO BETTER
+    // FIXME: Do better implementation for  TypeStruct::isSupertypeFor
+    if(const TypeStruct * oStruct = dynamic_cast<const TypeStruct *>(other))
+    {
+        if(this->hasName() == oStruct->hasName())
+        {
+            if(this->hasName())
+                return this->getIdentifier().value()->getFullyQualifiedName() == oStruct->getIdentifier().value()->getFullyQualifiedName();
+            return this == other; 
+        }
+    }
+    return false;
 }
 
 const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> existing) const { 
@@ -1212,6 +1222,7 @@ const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> exist
 
     ans->elements = elements; 
 
+    std::cout << "1217CS " << this << "->" << ans << std::endl; 
     return ans; 
 }
 
@@ -1252,7 +1263,7 @@ std::optional<const NameableType*> TypeTemplate::getValueType() const { return v
 
 std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<const Type *> subs) const {
 
-    std::cout << "1173 Apply template W/ "; 
+    std::cout << "1173 Apply template @" << this << " W/ "; 
 
     for(auto itr : subs)
     {
@@ -1292,6 +1303,11 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
                 areEqual = false; 
                 break; 
             }
+
+            // if(dynamic_cast<const TypeGeneric *>(subs.at(i)))
+            // {
+            //     subs.at(i) = ids.at(i).second; 
+            // }
         }
         if(areEqual)
             return this->getValueType(); 
@@ -1302,8 +1318,9 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
         std::pair<std::string, TypeGeneric *> id = ids.at(i); 
         TypeGeneric * gen = id.second; 
 
+
+
         subst.insert({gen, subs.at(i)});
-        // std::cout << "1205 "  << (gen != subs.at(i)) << std::endl; 
         if(gen != subs.at(i))
             gen->setActingType(subs.at(i));
     } 
@@ -1376,7 +1393,7 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
     // ans->setIdentifier(new Identifier(this->getIdentifier().value()));
     // if(ans->getIdentifier())
 
-    std::cout << "1274 " << ans->toString(DisplayMode::C_STYLE) << std::endl; 
+    std::cout << "1274 " << ans->toString(DisplayMode::C_STYLE) << "@" << ans << std::endl; 
     // ans->setMeta([meta](){ return meta; }); //parent->templateString(DisplayMode::C_STYLE); });
 
 
@@ -1441,6 +1458,7 @@ const TypeTemplate * TypeTemplate::getCopy() const
 
 bool TypeTemplate::isSupertypeFor(const Type *other) const
 {
+    std::cout << "TEMPLATE EQ? " << toString(C_STYLE) << "==" << other->toString(C_STYLE) << std::endl; 
     // FIXME: DO BETTER!
     if (const TypeTemplate *p = dynamic_cast<const TypeTemplate *>(other))
     {
@@ -1450,6 +1468,8 @@ bool TypeTemplate::isSupertypeFor(const Type *other) const
 }
 
 const Type * TypeTemplate::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    
+    std::cout << "1464 TypeTemplate::getCopySubst " << this << std::endl; 
     // FIXME: WRONG IMPL -> Seems to be working though?
     if(existing.contains(this))
         return existing.find(this)->second; 
