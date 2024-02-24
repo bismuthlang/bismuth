@@ -132,12 +132,9 @@ std::optional<AliasSymbol *> Context::addAlias(std::string id, const Type * t, I
     // TODO: why are we doing uniqueName? I guess it shouldnt ever happen tho given lookup in currentScope?
     std::string uniqName = getUniqNameFor(currentScope.value(), id); 
 
-    // std::cout << "END W/ " << uniqName << " for " << id << std::endl; 
-
     AliasSymbol * alias = new AliasSymbol(
         new Identifier(id, uniqName, currentScope.value()->getIdentifier()),
         currentScope.value(),
-        // a
         t, 
         a
     );
@@ -349,7 +346,6 @@ std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> ste
 
     for(std::string s : steps)
     {
-        std::cout << "STEP " << s << std::endl; 
         std::optional<Symbol *> symOpt = lookup(s);
         if(!symOpt)
         {

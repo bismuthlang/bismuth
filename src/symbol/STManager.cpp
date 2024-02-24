@@ -21,21 +21,6 @@ std::optional<Symbol *> STManager::addSymbol(std::string id, const Type * t, boo
 {
     // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elimination.
     std::optional<Symbol *> symOpt = context.addSymbol(id, t, g);
-
-    // if(symOpt && d) 
-    // {
-    //     Symbol * sym = symOpt.value(); 
-    //     // std::cout << "75 " << sym->toString() << std::endl; 
-    //     if(const NameableType * nameable = dynamic_cast<const NameableType *>(sym->getType()))
-    //     {
-    //         if(!nameable->getIdentifier())
-    //         {
-    //             nameable->setIdentifier(sym->getIdentifier());
-    //             std::cout << "82 SET " << sym->getIdentifier()->getFullyQualifiedName() << std::endl; 
-    //         }
-    //     }
-    // }
-
     return symOpt;
 }
 
@@ -46,7 +31,7 @@ std::optional<AliasSymbol *> STManager::addAlias(std::string id, const Type * t,
 
 std::optional<DefinitionSymbol *> STManager::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
 {
-    
+
     std::optional<DefinitionSymbol *> symOpt = context.addDefinition(m, id, t, glob);
 
     if(symOpt)
@@ -57,7 +42,6 @@ std::optional<DefinitionSymbol *> STManager::addDefinition(VisibilityModifier m,
             if(!nameable->getIdentifier())
             {
                 nameable->setIdentifier(sym->getIdentifier());
-                std::cout << "82 SET " << sym->getIdentifier()->getFullyQualifiedName() << std::endl; 
             }
         }
     }
@@ -159,9 +143,8 @@ bool STManager::isGlobalScope()
 }
 
 std::string STManager::getUniqNameFor(Scope * parent, std::string inScope) {
-    // TODO: not sure if getting FQN here will break some stuff wrt generics... -> Seems to be fine!
     std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
-    // std::cout << "Find " << id << std::endl; 
+
     auto itr = nameCounter->find(id);
     if(itr == nameCounter->end())
     {

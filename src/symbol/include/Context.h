@@ -141,7 +141,7 @@ class Context {
     std::string getUniqNameFor(Scope * parent, std::string inScope) {
       // TODO: not sure if getting FQN here will break some stuff wrt generics...
       std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
-      std::cout << "Find " << id << std::endl; 
+      
       auto itr = nameCounter->find(id);
       if(itr == nameCounter->end())
       {

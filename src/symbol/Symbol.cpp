@@ -15,19 +15,8 @@ const Type * Symbol::getType() const { return type; }
 bool Symbol::isGlobal() const { return global; }
 bool Symbol::isDefinition() const { return false; }
 
-std::string Symbol::getUniqueNameInScope() const { 
-    // if(const NameableType * t = dynamic_cast<const NameableType *>(getType()))
-    // {
-    //     std::cout << "21 " << t->toString(DisplayMode::C_STYLE) << std::endl; 
-    // }
-    // if(const TypeTemplate * t = dynamic_cast<const TypeTemplate *>(getType()))
-    // {
-    //     return uniqueNameInScope + t->templateString(DisplayMode::C_STYLE);
-    // }
-    // return uniqueNameInScope; 
+std::string Symbol::getUniqueNameInScope() const { return identifier->getUniqueNameInScope(); }
 
-    return identifier->getUniqueNameInScope(); 
-}
 std::string Symbol::getScopedIdentifier() const { return identifier->getScopedIdentifier(); } //identifier; }
 
 void Symbol::updateIdentifier(Identifier * nxt) 

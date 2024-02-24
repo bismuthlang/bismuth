@@ -33,13 +33,7 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             return errorHandler.addCompilerError(ctx->getStart(), "Failed to enter scope for compilation unit!"); 
         }
 
-        stmgr->enterScope(
-            scopeOpt.value()
-        );
-
-
-        std::cout << "254 " << stmgr->getCurrentScope().value()->getIdentifier()->getFullyQualifiedName() << std::endl; 
-
+        stmgr->enterScope(scopeOpt.value());
     }
 
     std::vector<TExternNode *> externs;
@@ -139,7 +133,6 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         defineAndGetSymbolFor(e, VisibilityModifier::PUBLIC); 
     }
 
-std::cout <<" 99" << std::endl; 
     // Visit the statements contained in the unit
     std::vector<DefinitionNode *> defs;
     for (auto e : ctx->defs)
@@ -385,8 +378,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     
     if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(defSym->getType()))
     {
-        std::cout << "340!?!" << std::endl; 
-
         std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam, defSym);
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&lamOpt))
@@ -417,7 +408,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
 
-    std::cout << "337!!! " << lam->type->toString(C_STYLE) << std::endl; 
     /*
      *  Check if this is a template or not, and handle it accordingly
      */
@@ -994,7 +984,6 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     std::optional<Symbol *> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
     if (!opt)
     {
-        std::cout << stmgr->toString() << std::endl; 
         return errorHandler.addError(ctx->getStart(), "Undefined variable reference: " + ctx->VARIABLE().at(0)->getText());
     }
     Symbol *sym = opt.value();
@@ -1212,7 +1201,6 @@ std::variant<ParameterNode, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     }
 
     const Type *paramType = std::get<const Type *>(paramTypeOpt);
-    std::cout << "1250 PARAM " << paramType->toString(C_STYLE) << "@" << paramType << " " << ctx->name->getText() << std::endl; 
     return ParameterNode(paramType, ctx->name->getText());
 }
 
@@ -1406,7 +1394,6 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
                 const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType;
 
-                std::cout << "1425 " << id << " : " << newAssignType->toString(toStringMode) << " vs " << newExprType->toString(toStringMode) << std::endl; 
                 // Done with exprType for later type inference purposes
                 // .value() should be safe as we already checked name uniqueness
                 // FIXME: isGlobalScope probably doesnt work anymore with paths and namespaces. Revise it!
@@ -1837,10 +1824,8 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 {
     // FIXME: technically could be bad opt access, but should never happen
     DefinitionSymbol * sym = lazy_value_or<DefinitionSymbol *>(symOpt, 
-        [this]() { 
-            std::cout << "1922aaa" << std::endl; 
-            
-            return stmgr->addAnonymousDefinition("lambda", new TypeFunc()).value(); });
+        [this]() {return stmgr->addAnonymousDefinition("lambda", new TypeFunc()).value(); });
+
     Scope * origScope = stmgr->getCurrentScope().value(); // TODO: BAD OPT ACCESS BUT SHOULD NEVER HAPPEN 
     stmgr->enterScope(sym->getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
 
@@ -2014,11 +1999,10 @@ SemanticVisitor::visitCtx(BismuthParser::TemplatedTypeContext *ctx)
         std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
 
 
-        std::cout << "2015 visitTemplateCTX" << ctx->getStart()->getLine() << " " << ctx->getText() << std::endl;
         std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
         if(!appliedOpt)
             return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-        std::cout << "2016a " << appliedOpt.value()->toString(DisplayMode::C_STYLE) << "@" << appliedOpt.value() << std::endl; 
+        
         return appliedOpt.value(); 
     }
 
@@ -2116,7 +2100,6 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
         std::optional<Symbol *> opt = stmgr->lookup(name);
         if (!opt)
         {
-            std::cout << stmgr->toString() << std::endl; 
             return errorHandler.addError(pCtx->getStart(), "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
         }
 
@@ -2142,11 +2125,10 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
                 std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
 
 
-                std::cout << "2015 visitTemplateCTX" << ctx->getStart()->getLine() << " " << ctx->getText() << std::endl;
                 std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys); 
                 if(!appliedOpt)
                     return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-                std::cout << "2016b " << appliedOpt.value()->toString(DisplayMode::C_STYLE) << "@" << appliedOpt.value() << std::endl; 
+
                 return appliedOpt.value();
             }
             return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + sym->getType()->toString(toStringMode));
@@ -2207,7 +2189,6 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
             {
                 if(pCtx->genericSpecifier())
                 {
-                    std::cout << "982" << std::endl;
                     if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(symType))
                     {
                         std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
@@ -2226,7 +2207,6 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
                             return errorHandler.addError(pCtx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
                         symType = appliedOpt.value(); 
                         pathVar = appliedOpt.value(); 
-                        std::cout << "1001 Applied template: " << symType->toString(C_STYLE) << std::endl;
                     }
                     else 
                     {
@@ -3091,7 +3071,6 @@ std::optional<ErrorChain *> SemanticVisitor::TVisitImportStatement(BismuthParser
             return errorHandler.addCompilerError(ctx->getStart(), "Imported type does not have a name");
         }
 
-        std::cout << "adding alias for " << ty->toString(C_STYLE) << "@" << ty << std::endl; 
         stmgr->addAlias(
             aliasStr, 
             nt, 
@@ -3410,10 +3389,8 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             el.insert({caseName, caseTy});
 
-            // std::cout << "3216 CASE " << caseName << " : " << caseTy->toString(DisplayMode::C_STYLE) << " " << caseTy  << " in " << structType <<  std::endl; 
         }
         structType->define(el);
-        std::cout << "3218 " << structType->toString(C_STYLE) << std::endl;
         return std::nullopt; 
     };
 
@@ -3524,7 +3501,6 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             if(optErr) return optErr.value();
 
-            std::cout << "3380 generated generic symbol: " << defSym->toString() << " --- " << defSym->getUniqueNameInScope() << std::endl; 
             return defSym;
         }
 
@@ -3554,8 +3530,6 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                             false).value(); //should be safe as we checked for redeclarations
                     });
 
-                // std::cout << "3379 opt hs val " << opt.has_value() <<  " for sym " << sym->toString() << std::endl; 
-
                 if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
                 {
                     std::optional<ErrorChain *> optErr = defineTemplate(fnCtx, templateTy, sym);
@@ -3569,7 +3543,6 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
     
                     if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
                     {
-                        std::cout << "3421 generated generic symbol: " << sym->toString() << std::endl; 
                         return sym;
                     }
                     // TODO: print templateTy->getValueType().value()? 

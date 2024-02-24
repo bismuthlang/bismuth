@@ -418,7 +418,6 @@ struct TypeCompare
 {
     bool operator()(const Type *a, const Type *b) const
     {
-        // std::cout << "COMP:: " << a->toString(C_STYLE) << " < " << b->toString(C_STYLE) << std::endl; 
         return a->toString(C_STYLE) < b->toString(C_STYLE);
     }
 };

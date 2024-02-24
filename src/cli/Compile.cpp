@@ -159,7 +159,6 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
     // For each input...
     for (auto input : inputs)
     {
-        std::cout << "2253" << input.inputStream->getSourceName() << std::endl;
         /*******************************************************************
          * Create the Lexer from the input.
          * ================================================================
@@ -264,7 +263,6 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
         if (!noCode)
         {
             std::string irFileName = input.outputPath.replace_extension(".ll");
-            std::cout << "outpath " << input.outputPath << std::endl;
             std::error_code ec;
             llvm::raw_fd_ostream irFileStream(irFileName, ec);
             module->print(irFileStream, nullptr);
@@ -333,7 +331,6 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
         std::string ext = compileWith == clangll ? ".ll" : ".o";
         for (auto input : inputs)
         {
-            std::cout << "477!!! " << input.outputPath << std::endl;
             cmd << input.outputPath.replace_extension(ext) << " ";
         }
 
@@ -344,9 +341,8 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
         {
             cmd << "-o " << outputFileName;
         }
-        std::cout << cmd.str() << std::endl;
 
-        std::cout << exec(cmd.str()) << std::endl;
+        exec(cmd.str());
     }
 
     return 0;

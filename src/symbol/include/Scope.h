@@ -218,13 +218,8 @@ public:
             {
                 scopeCpy->setParent(scope->getParent().value());
             }
-
-            // std::cout << "211 ---- COPIED SCOPE " << scope->toString() << " as ---" << scopeCpy->toString() << std::endl; 
             return ans.value(); 
         }
-        
-        
-        // std::cout << "219 ---- COPIED SCOPE " << scope->toString() << " as ---" << scopeCpy->toString() << std::endl; 
 
         prev = scopeCpy; 
         scopeOpt = scope->getParent(); 

@@ -465,13 +465,10 @@ const Type * TypeBox::getCopySubst(std::map<const Type *, const Type *> existing
     if(existing.contains(this))
         return existing.find(this)->second; 
 
-    std::cout << "468" << std::endl;
     TypeBox * ans = new TypeBox(nullptr);
-std::cout << "470" << std::endl;
     existing.insert({this, ans});
-std::cout << "472" << std::endl;
     ans->innerType = this->innerType->getCopySubst(existing);
-std::cout << "474" << std::endl;
+
     return ans; 
 }
 
@@ -715,7 +712,6 @@ const TypeFunc * TypeFunc::getCopy() const { return this; };
 
 bool TypeFunc::isSupertypeFor(const Type *other) const
 {
-    std::cout << "FUNC EQ? " << toString(C_STYLE) << "==" << other->toString(C_STYLE) << std::endl; 
     // Checks that the other type is also a function
     if (const TypeFunc *p = dynamic_cast<const TypeFunc *>(other))
     {
@@ -920,18 +916,12 @@ std::set<const Type *, TypeCompare> TypeSum::getCases() const {
 
 unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
 {
-    std::string type_str;
-    llvm::raw_string_ostream rso(type_str);
-    toFind->print(rso);
-    std::cout << "TOFIND: " << rso.str() << " in " << this->toString(C_STYLE) << std::endl; 
-
     unsigned i = 1;
 
     for (auto e : getCases())
     {
         if (e->getLLVMType(M) == toFind)
         {
-            std::cout << "922 " << e->toString(C_STYLE) << " @ " << i << std::endl; 
             return i;
         }
         i++;
@@ -968,7 +958,7 @@ llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
 {
     // FIXME: I THINK WE HAVE TO CHANGE TOSTRING BC IF WE DONT, THEN canApplyTemplate SHOULD BREAK AS IT WONT USE FQNS! 
     std::string name =  this->hasName() ? this->getIdentifier().value()->getFullyQualifiedName() :  getTypeRepresentation(DisplayMode::C_STYLE);
-    std::cout << "937 " << name << " " << this << std::endl; 
+
     llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), name);
     if (ty)
         return ty;
@@ -1125,7 +1115,6 @@ optional<unsigned int> TypeStruct::getElementIndex(std::string k) const { return
 
 std::string TypeStruct::getTypeRepresentation(DisplayMode mode) const
 {
-    // std::cout << "HAS REP? " << this->hasName() << std::endl; 
     std::ostringstream description;
 
     description << "(";
@@ -1149,8 +1138,6 @@ llvm::StructType *TypeStruct::getLLVMType(llvm::Module *M) const
     // PLAN: have to use this vs tostring bc tostring isnt fqn. Maybe change tostring to fqn?
     std::string name =  this->hasName() ? this->getIdentifier().value()->getFullyQualifiedName() :  getTypeRepresentation(DisplayMode::C_STYLE);
 
-    std::cout << "struct name is " << name << std::endl; 
-
     llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), name);
     if (ty)
         return ty;
@@ -1161,7 +1148,6 @@ llvm::StructType *TypeStruct::getLLVMType(llvm::Module *M) const
 
     for (auto ty : elements.getElements())
     {
-        // std::cout << "1116 " << name << " has " << ty.second->toString(C_STYLE) << " " << ty.second  << " in " << this << std::endl; 
         typeVec.push_back(ty.second->getLLVMType(M));
     }
 
@@ -1222,7 +1208,6 @@ const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> exist
 
     ans->elements = elements; 
 
-    std::cout << "1217CS " << this << "->" << ans << std::endl; 
     return ans; 
 }
 
@@ -1262,14 +1247,6 @@ void TypeTemplate::setIdentifier(std::optional<Identifier *> nxt) const {
 std::optional<const NameableType*> TypeTemplate::getValueType() const { return valueType; }
 
 std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<const Type *> subs) const {
-
-    std::cout << "1173 Apply template @" << this << " W/ "; 
-
-    for(auto itr : subs)
-    {
-        std::cout << itr->toString(DisplayMode::C_STYLE) << ", ";
-    }
-    std::cout << std::endl; 
 
     auto it = registeredTemplates.find(subs);
 
@@ -1355,9 +1332,6 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
 
     if(this->getIdentifier())
     {
-        std::cout << "!!!1304 "<< this->getIdentifier().value()->getFullyQualifiedName() << std::endl;
-        std::cout << "META = " << meta << std::endl; 
-
         Identifier * templateId = this->getIdentifier().value(); 
         Identifier * copyId = new Identifier(*templateId);
         ans->setIdentifier(copyId);
@@ -1365,37 +1339,6 @@ std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<co
         templateId->meta = [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };
         ans->getIdentifier().value()->meta = metaFn; // [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };;
     }
-    // std::cout << "1222 meta = " << meta << std::endl; 
-    /*
-    if(this->getIdentifier())
-    {
-        Identifier * templateId = this->getIdentifier().value(); 
-        Identifier * copyId = new Identifier(*templateId);
-
-        ans->setIdentifier(copyId);
-        if(dynamic_cast<const TypeSum *>(valueType.value()) || dynamic_cast<const TypeStruct *>(valueType.value()))
-        {
-            std::cout << "USE META " << std::endl; 
-            // ans->setIdentifier(new Identifier(*templateId));
-            // ans->getIdentifier().value()->meta = [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };
-            
-            // if()
-            ans->getIdentifier().value()->meta = [meta](){ return meta; };
-        }
-        else
-        {
-            ans->setIdentifier(copyId);
-            ans->getIdentifier().value()->meta = [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };
-        }
-        std::cout << "1279 " << copyId->getFullyQualifiedName() << std::endl; 
-    }
-    */
-    // ans->setIdentifier(new Identifier(this->getIdentifier().value()));
-    // if(ans->getIdentifier())
-
-    std::cout << "1274 " << ans->toString(DisplayMode::C_STYLE) << "@" << ans << std::endl; 
-    // ans->setMeta([meta](){ return meta; }); //parent->templateString(DisplayMode::C_STYLE); });
-
 
     registeredTemplates.insert({subs, ans}); 
 
@@ -1458,7 +1401,6 @@ const TypeTemplate * TypeTemplate::getCopy() const
 
 bool TypeTemplate::isSupertypeFor(const Type *other) const
 {
-    std::cout << "TEMPLATE EQ? " << toString(C_STYLE) << "==" << other->toString(C_STYLE) << std::endl; 
     // FIXME: DO BETTER!
     if (const TypeTemplate *p = dynamic_cast<const TypeTemplate *>(other))
     {
@@ -1468,9 +1410,7 @@ bool TypeTemplate::isSupertypeFor(const Type *other) const
 }
 
 const Type * TypeTemplate::getCopySubst(std::map<const Type *, const Type *> existing) const { 
-    
-    std::cout << "1464 TypeTemplate::getCopySubst " << this << std::endl; 
-    // FIXME: WRONG IMPL -> Seems to be working though?
+    // FIXME: WRONG IMPL -> Seems to be working though? -> This should never get called 
     if(existing.contains(this))
         return existing.find(this)->second; 
 

@@ -111,8 +111,6 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode *n)
     {
         Symbol *localSym = caseNode.first;
 
-        std::cout << "104-------- " << localSym->getIdentifier()->getFullyQualifiedName() << std::endl; 
-
         llvm::Type *toFind = getLLVMType(localSym);
 
         unsigned int index = sumType->getIndex(module, toFind);
@@ -702,7 +700,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TDefineEnumNode *n)
 {
-    std::cout << "GETTING THE SUM?" << std::endl; 
     n->sum->getLLVMType(module);
     return std::nullopt;
 }
@@ -710,9 +707,6 @@ std::optional<Value *> CodegenVisitor::visit(TDefineEnumNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TDefineStructNode *n) 
 {
-    std::cout << "GET struct w/ sym = " << n->getSymbol()->getFullyQualifiedName() << std::endl; 
-    if(n->product->getIdentifier())
-        std::cout << "GET struct w/ type id = " << n->product->getIdentifier().value()->getFullyQualifiedName() << std::endl; 
     n->product->getLLVMType(module);
     return std::nullopt;
 }
@@ -1100,8 +1094,6 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
 
 
 
-
-    // std::cout << n->getRValueType()->toString(DisplayMode::C_STYLE) << std::endl; 
     auto ptr = correctSumAssignment(n->getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();
@@ -1439,7 +1431,6 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
     }
 
     const Type *ty = n->getSymbolType(); //sym->getType();
-    std::cout << "1414!!!! " << ty->toString(DisplayMode::C_STYLE) << std::endl; 
     std::optional<Value *> baseOpt = visit(n->getIdentifier()); 
 
     if (!baseOpt)
@@ -1513,7 +1504,6 @@ std::optional<Value *> CodegenVisitor::visit(TIdentifier *n)
         errorHandler.addError(n->getStart(), "Unable to find type for variable: " + getCodegenID(sym));
         return std::nullopt;
     }
-std::cout << "1510! " << std::endl; 
 
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
@@ -1522,24 +1512,14 @@ std::cout << "1510! " << std::endl;
         // TODO: better erro checking (as seen later)
         if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->getType()))
         {
-            std::cout << "1514! " << std::endl; 
-            Function *fn = module->getFunction(getCodegenID(sym));
-
-            return fn;
+            return module->getFunction(getCodegenID(sym));
         }
         else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
         {
-            std::cout << "1521! " << std::endl; 
-            std::cout << "1521!a " << getCodegenID(sym) << std::endl; 
-            Function *fn = module->getFunction(getCodegenID(sym));
-
-            std::cout << "1529 " << fn << std::endl; 
-
-            return fn;
+            return module->getFunction(getCodegenID(sym));
         }
         else if(sym->isGlobal())
         {
-            std::cout << "1528! " << std::endl; 
             // TODO: not sure if this could cause problems in the future by not differentiating lvalue vs rvalue
             // Lookup the global var for the symbol
             llvm::GlobalVariable *glob = module->getNamedGlobal(getCodegenID(sym));
@@ -1574,7 +1554,6 @@ std::optional<Value *> CodegenVisitor::visit(TPathNode *n)
 {
     if(const NameableType * nt = dynamic_cast<const NameableType *>(n->getType()))
     {
-        std::cout << "1560! " << std::endl; 
 
         if(const TypeProgram * prog = dynamic_cast<const TypeProgram *>(nt))
         {
@@ -1820,15 +1799,8 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode *n)
         // For each of the variables being assigned to that value
         for (Symbol *varSymbol : e->syms)
         {
-            std::cout << "1677 " << varSymbol->toString() << " --- " << varSymbol->getUniqueNameInScope() << " TYPE " << varSymbol->getType()->toString(C_STYLE) << std::endl; 
             //  Get the type of the symbol
             llvm::Type *ty = getLLVMType(varSymbol);
-
-            std::string type_str;
-            llvm::raw_string_ostream rso(type_str);
-            ty->print(rso);
-            std::cout<< "LLVM TYPE = " << rso.str() << std::endl;
-
 
 
             // Branch depending on if the var is global or not
@@ -2191,9 +2163,6 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
 
     llvm::FunctionType *fnType = type->getLLVMFunctionType(module);
 
-    std::cout << "2040TLambdaConstNode " << n->getSymbol()->toString() << std::endl; 
-    if(n->getType()->getIdentifier())
-        std::cout << "2041 " << n->getType()->getIdentifier().value()->getFullyQualifiedName() << std::endl; 
     std::string funcFullName = getCodegenID(n->getSymbol());
 
     Function *fn = module->getFunction(funcFullName);
@@ -2201,11 +2170,9 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode *n)
         fn = Function::Create(
             fnType, 
             getLinkageType(n->getVisibility()),
-            // GlobalValue::PrivateLinkage,
             funcFullName,
             module
         );
-    // type->setName(fn->getName().str()); // Note: NOT ALWAYS NEEDED -> Probably not needed
 
     std::vector<Symbol *> paramList = n->paramSymbols;
 
@@ -2320,8 +2287,6 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
     for(auto t : n->getType()->getRegisteredTemplates())
     {
         // FIXME: CHECK BOUNDS ARE SAME FOR BOTH?
-        
-        // std::cout << "2174 ";
         for(unsigned int i = 0; i < info.templates.size(); i++)
         {
             // info.templates.at(i).second->actingType = t.first.at(i); 
@@ -2330,19 +2295,14 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode *n)
 
         if(DefinitionNode * defNode = dynamic_cast<DefinitionNode *>(n->getTemplatedNodes()))
         {
-            std::cout << "2166 " << defNode->getSymbol()->getIdentifier()->getFullyQualifiedName() << std::endl;
             if(t.second->getIdentifier())
             {
                 defNode->getSymbol()->updateIdentifier(t.second->getIdentifier().value());
-                // if(const NameableType * nt = dynamic_cast<const NameableType *>(defNode->getType()))
             }
-            // std::cout << "2172 " << defNode->symbol->getIdentifier()->getFullyQualifiedName() << std::endl;
         }
 
         // substitute each 
         AcceptType(this, n->getTemplatedNodes());
-        std::cout << "2166 " << n->getSymbol()->toString() << std::endl; 
-        // std::cout << "2167 " << t.second->toString(C_STYLE) << std::endl; 
     }
 
     return std::nullopt; 
