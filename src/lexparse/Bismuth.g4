@@ -71,6 +71,7 @@ lValue              : deref=dereferenceExpr
  *      11-14. Typical boolean and variable constants. 
  */
 expression          : LPAR ex=expression RPAR                                                       # ParenExpr
+                    | VARIABLE                                     # IdentifierExpr
                     | fieldAccessExpr                                                               # FieldAccess
                     | path                                         # PathExpr
                     | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 

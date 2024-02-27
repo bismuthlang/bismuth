@@ -270,94 +270,89 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
             (ctx->path()) ? ctx->path()->getText() // TODO:Verify this case is correct
             : ctx->field->getText();
         std::optional<const TypeFunc *> funcTyOpt = type_cast<TypeFunc>(tn->getType());
-        if (funcTyOpt)
-        {
-            const TypeFunc *funcTy = funcTyOpt.value();
-            /*
-             * The symbol is something we can invoke, so check that we provide it with valid parameters
-             */
-            std::vector<const Type *> fnParams = funcTy->getParamTypes();
+        if (!funcTyOpt)
+            return errorHandler.addError(ctx->getStart(), "Can only invoke functions, not " + tn->getType()->toString(toStringMode));
+        
+        const TypeFunc *funcTy = funcTyOpt.value();
+        /*
+         * The symbol is something we can invoke, so check that we provide it with valid parameters
+         */
+        std::vector<const Type *> fnParams = funcTy->getParamTypes();
 
-            /*
-             *  If the symbol is NOT a variadic and the number of arguments we provide
-             *      are not the same as the number in the function's definition
-             *  OR the symbol IS a variadic and the number of arguments in the
-             *      function's definition is greater than the number we provide,
-             *
-             * THEN we have an error as we do not provide a valid number of arguments
-             * to allow for this invocation.
-             */
-            if (
-                (!funcTy->isVariadic() && fnParams.size() != iArgs->args.size()) || (funcTy->isVariadic() && fnParams.size() > iArgs->args.size()))
+        /*
+         *  If the symbol is NOT a variadic and the number of arguments we provide
+         *      are not the same as the number in the function's definition
+         *  OR the symbol IS a variadic and the number of arguments in the
+         *      function's definition is greater than the number we provide,
+         *
+         * THEN we have an error as we do not provide a valid number of arguments
+         * to allow for this invocation.
+         */
+        if (
+            (!funcTy->isVariadic() && fnParams.size() != iArgs->args.size()) || (funcTy->isVariadic() && fnParams.size() > iArgs->args.size()))
+        {
+            std::ostringstream errorMsg;
+            errorMsg << "Invocation of " << name << " expected " << fnParams.size() << " argument(s), but got " << iArgs->args.size();
+            return errorHandler.addError(ctx->getStart(), errorMsg.str());
+        }
+
+        std::vector<TypedNode *> args;
+        std::vector<const Type *> actualTypes;
+        /*
+         * Now that we have a valid number of parameters, we can make sure that
+         * they have the correct types as per our arguments.
+         *
+         * To do this, we first loop through the number of parameters that WE provide
+         * as this should be AT LEAST the same number as in the definition.
+         */
+        for (unsigned int i = 0; i < iArgs->args.size(); i++)
+        {
+            // Get the type of the current argument
+            std::variant<TypedNode *, ErrorChain *> providedOpt = anyOpt2VarError<TypedNode>(errorHandler, iArgs->args.at(i)->accept(this));
+
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&providedOpt))
+            {
+                return (*e)->addError(iArgs->args.at(i)->getStart(), "Unable to generate argument");
+            }
+
+            TypedNode *provided = std::get<TypedNode *>(providedOpt);
+
+            args.push_back(provided);
+
+            const Type *providedType = provided->getType();
+
+            // If the function is variadic and has no specified type parameters, then we can
+            // skip over subsequent checks--we just needed to run type checking on each parameter.
+            if (funcTy->isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
+            {
+                if (type_cast<TypeBottom>(providedType) || type_cast<TypeAbsurd>(providedType) || type_cast<TypeUnit>(providedType))
+                {
+                    errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType->toString(toStringMode) + " to a function");
+                }
+                continue;
+            }
+
+            // Loop up the expected type. This is either the type at the
+            // ith index OR the last type specified by the function
+            // if i > fnParams.size() as that would imply we are
+            // checking a variadic
+            const Type *expectedType = fnParams.at(
+                i < fnParams.size() ? i : (fnParams.size() - 1)); // FIXME: ternary NEVER FULLY evaluated DUE TO CONTINUE!
+
+            actualTypes.push_back(expectedType);
+
+            // If the types do not match, report an error.
+            if (providedType->isNotSubtype(expectedType))
             {
                 std::ostringstream errorMsg;
-                errorMsg << "Invocation of " << name << " expected " << fnParams.size() << " argument(s), but got " << iArgs->args.size();
-                return errorHandler.addError(ctx->getStart(), errorMsg.str());
+                errorMsg << "Argument " << i << " provided to " << name << " expected " << expectedType->toString(toStringMode) << " but got " << providedType->toString(toStringMode);
+
+                errorHandler.addError(ctx->getStart(), errorMsg.str());
             }
-
-            std::vector<TypedNode *> args;
-            std::vector<const Type *> actualTypes;
-            /*
-             * Now that we have a valid number of parameters, we can make sure that
-             * they have the correct types as per our arguments.
-             *
-             * To do this, we first loop through the number of parameters that WE provide
-             * as this should be AT LEAST the same number as in the definition.
-             */
-            for (unsigned int i = 0; i < iArgs->args.size(); i++)
-            {
-                // Get the type of the current argument
-                std::variant<TypedNode *, ErrorChain *> providedOpt = anyOpt2VarError<TypedNode>(errorHandler, iArgs->args.at(i)->accept(this));
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&providedOpt))
-                {
-                    return (*e)->addError(iArgs->args.at(i)->getStart(), "Unable to generate argument");
-                }
-
-                TypedNode *provided = std::get<TypedNode *>(providedOpt);
-
-                args.push_back(provided);
-
-                const Type *providedType = provided->getType();
-
-                // If the function is variadic and has no specified type parameters, then we can
-                // skip over subsequent checks--we just needed to run type checking on each parameter.
-                if (funcTy->isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
-                {
-                    if (type_cast<TypeBottom>(providedType) || type_cast<TypeAbsurd>(providedType) || type_cast<TypeUnit>(providedType))
-                    {
-                        errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType->toString(toStringMode) + " to a function");
-                    }
-                    continue;
-                }
-
-                // Loop up the expected type. This is either the type at the
-                // ith index OR the last type specified by the function
-                // if i > fnParams.size() as that would imply we are
-                // checking a variadic
-                const Type *expectedType = fnParams.at(
-                    i < fnParams.size() ? i : (fnParams.size() - 1)); // FIXME: ternary NEVER FULLY evaluated DUE TO CONTINUE!
-
-                actualTypes.push_back(expectedType);
-
-                // If the types do not match, report an error.
-                if (providedType->isNotSubtype(expectedType))
-                {
-                    std::ostringstream errorMsg;
-                    errorMsg << "Argument " << i << " provided to " << name << " expected " << expectedType->toString(toStringMode) << " but got " << providedType->toString(toStringMode);
-
-                    errorHandler.addError(ctx->getStart(), errorMsg.str());
-                }
-            }
-
-            tn = new TInvocationNode(tn, args, actualTypes, ctx->getStart());
-            // return new TInvocationNode(tn, args, actualTypes, ctx->getStart());
         }
-        else
-        {
-            // Symbol was not an function type, so report an error & return UNDEFINED.
-            return errorHandler.addError(ctx->getStart(), "Can only invoke functions, not " + name + " : " + tn->getType()->toString(toStringMode));
-        }
+
+        tn = new TInvocationNode(tn, args, actualTypes, ctx->getStart());
+        // return new TInvocationNode(tn, args, actualTypes, ctx->getStart());
     }
     // return new TInvocationNode(tn, args, actualTypes, ctx->getStart());
     return (TInvocationNode *)tn;
@@ -980,6 +975,16 @@ std::variant<TPathNode *, ErrorChain*> SemanticVisitor::visitCtx(BismuthParser::
  */
 std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::FieldAccessExprContext *ctx, bool is_rvalue)
 {
+    // std::variant<TIdentifier *, ErrorChain *> = visitCtx()
+
+    // // Determine the type of the expression we are visiting
+    // if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
+    // {
+    //     return (*e)->addError(ctx->getStart(), "Unable to type check dereference expression");
+    // }
+
+    // TypedNode *expr = std::get<TypedNode *>(exprOpt);
+
     // Determine the type of the expression we are visiting
     std::optional<Symbol *> opt = stmgr->lookup(ctx->VARIABLE().at(0)->getText());
     if (!opt)
@@ -1055,6 +1060,33 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     TIdentifier * pathNode = new TIdentifier(ctx->getStart(), sym,  a.size() == 0 ? is_rvalue : false);
     return new TFieldAccessNode(ctx->getStart(), pathNode, is_rvalue, a);
+}
+
+
+std::variant<TIdentifier *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IdentifierExprContext * ctx, bool is_rvalue)
+{
+    // Determine the type of the expression we are visiting
+    std::optional<Symbol *> opt = stmgr->lookup(ctx->VARIABLE()->getText());
+    if (!opt)
+    {
+        return errorHandler.addError(ctx->getStart(), "Undefined variable reference: " + ctx->VARIABLE()->getText());
+    }
+    Symbol *sym = opt.value();
+
+    if (sym->getType()->isLinear())
+    {
+        if (!is_rvalue)
+        {
+            errorHandler.addError(ctx->getStart(), "Cannot redefine linear variable!");
+        }
+
+        if (!stmgr->removeSymbol(sym))
+        {
+            errorHandler.addError(ctx->getStart(), "Failed to unbind local var: " + sym->toString());
+        }
+    }
+
+    return new TIdentifier(ctx->getStart(), sym, is_rvalue);
 }
 
 std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DereferenceExprContext *ctx, bool is_rvalue)

@@ -340,7 +340,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Can only invoke functions, not x : str");
+    "Can only invoke functions, not str");
 }
 
 // FIXME: TYPE INFERENCE ON FUNCTIONS? AND TEST FUNCTION SUBTYPER!
@@ -355,7 +355,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""",
-    "Can only invoke functions, not x : int");
+    "Can only invoke functions, not int");
 }
 
 TEST_CASE("Redeclaration of function 1", "[semantic][program]")
@@ -2074,7 +2074,7 @@ TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[
 TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[semantic]")
 {
     EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg2.bismuth"))),
-      "Can only invoke functions, not foo : PROGRAM : +int");
+      "Can only invoke functions, not foo");
 }
 
 
