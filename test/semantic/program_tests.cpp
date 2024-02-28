@@ -327,7 +327,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "Argument 0 provided to foo expected int but got str");
+    "Argument 0 expected int but got str");
 }
 
 TEST_CASE("Invoke on Non-Function (str)", "[semantic][program]")
@@ -1639,7 +1639,7 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
     )"""", 
-    "Argument 0 provided to test expected ((boolean + str) + boolean + int) but got str");
+    "Argument 0 expected ((boolean + str) + boolean + int) but got str");
 }
 
 TEST_CASE("Channel Assignment 1", "[semantic]")
@@ -2150,5 +2150,5 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
 TEST_CASE("A Level Negative Test #2", "[semantic]")
 {
   EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/ANegative2.bismuth"))),
-                          "Invocation of add expected 2 argument(s), but got 3");
+                          "Expected 2 argument(s), but got 3");
 }

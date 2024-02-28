@@ -985,9 +985,7 @@ public:
 class TFieldAccessNode : public TypedNode
 {
 private:
-    // Symbol *symbol;
-    // const Type * symType; 
-    TIdentifier * id; 
+    TypedNode * expr; 
     const Type * resultType; 
 
 
@@ -995,24 +993,25 @@ public:
     bool is_rvalue;
     vector<pair<string, const Type *>> accesses;
 
-    TFieldAccessNode(antlr4::Token *tok, TIdentifier * i, bool rv, vector<pair<string, const Type *>> r = {}) 
+    TFieldAccessNode(antlr4::Token *tok, TypedNode * e, bool rv, vector<pair<string, const Type *>> r = {}) 
         : TypedNode(tok)
-        , id(i)
-        // , symbol(s)
-        // , symType(st)
+        , expr(e)
         , is_rvalue(rv)
         , accesses(r)
     {
-        resultType = r.empty() ? id->getType() : r.at(r.size() - 1).second;
+        // FIXME: assert r is not empty! It cant be by syntax, but still. This is a potential source of errors
+        resultType = r.at(r.size() - 1).second;
     }
 
     const Type *getType() override { return resultType; }
 
     const Type * getResultantType() { return resultType; }
 
-    const Type * getSymbolType() { return id->getType(); }
+    // const Type * getSymbolType() { return id->getType(); }
+    const Type * getExprType() { return expr->getType(); }
 
-    TIdentifier * getIdentifier() { return id; }
+    TypedNode * getExpr() { return expr; }
+    // TIdentifier * getIdentifier() { return id; }
 
     // Symbol * getSymbol() { return symbol; }
 
@@ -1028,13 +1027,13 @@ public:
 class TArrayAccessNode : public TypedNode
 {
 public:
-    TFieldAccessNode *field;
+    TypedNode *expr;
     TypedNode *indexExpr;
     bool is_rvalue;
 
-    TArrayAccessNode(TFieldAccessNode *f, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
+    TArrayAccessNode(TypedNode *e, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
     {
-        field = f;
+        expr = e;
         indexExpr = i;
         is_rvalue = r;
     }
@@ -1042,7 +1041,7 @@ public:
     // TODO: allow for modulo get so that way we can access fields more directly?
     const Type *getType() override
     {
-        const Type * arrayType = dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * arrayType = dynamic_cast<const TypeArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
 
         if(!is_rvalue)
         {
@@ -1054,13 +1053,13 @@ public:
     }
 
     const TypeSum* getRValueType() {
-        const Type * arrayType = dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * arrayType = dynamic_cast<const TypeArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
         std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
         return new TypeSum(cases);
     }
 
     uint32_t length() const {
-        return dynamic_cast<const TypeArray *>(field->getType())->getLength();
+        return dynamic_cast<const TypeArray *>(expr->getType())->getLength();
     }
 
     std::string toString() const override {
@@ -1073,13 +1072,13 @@ public:
 class TDynArrayAccessNode : public TypedNode
 {
 public:
-    TFieldAccessNode *field;
+    TypedNode *expr;
     TypedNode *indexExpr;
     bool is_rvalue;
 
-    TDynArrayAccessNode(TFieldAccessNode *f, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
+    TDynArrayAccessNode(TypedNode *e, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
     {
-        field = f;
+        expr = e;
         indexExpr = i;
         is_rvalue = r;
     }
@@ -1087,7 +1086,7 @@ public:
     // TODO: allow for modulo get so that way we can access fields more directly?
     const Type *getType() override
     {
-        const Type * arrayType = dynamic_cast<const TypeDynArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * arrayType = dynamic_cast<const TypeDynArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
 
         if(!is_rvalue)
         {
@@ -1099,7 +1098,7 @@ public:
     }
 
     const TypeSum* getRValueType() {
-        const Type * arrayType = dynamic_cast<const TypeDynArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * arrayType = dynamic_cast<const TypeDynArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
         std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
         return new TypeSum(cases);
     }

@@ -36,18 +36,8 @@ path            : eles+=pathElement ('::' eles+=pathElement)* ;
 importStatement : IMPORT path ('as' alias=VARIABLE)? ';'? ; 
 
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
-invocation          :  (field=fieldAccessExpr | lam=lambdaConstExpr | path)  inv_args+;
 
-fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  ;
-dereferenceExpr     : MULTIPLY expr=expression                  ;
-
-//Helps allow us to use VARIABLE or arrayAccess and not other expressions (such as for assignments)
-arrayAccess         : field=fieldAccessExpr '[' index=expression ']'; 
-
-lValue              : deref=dereferenceExpr
-                    | var=fieldAccessExpr 
-                    | array=arrayAccess  
-                    ;
+// fieldAccessExpr     : fields+=VARIABLE ('.' fields+=VARIABLE)*  ;
 
 /*
  * Expressions return values. These can be: 
@@ -70,34 +60,35 @@ lValue              : deref=dereferenceExpr
  *              the use of variables instead of expressions for array access
  *      11-14. Typical boolean and variable constants. 
  */
-expression          : LPAR ex=expression RPAR                                                       # ParenExpr
-                    | VARIABLE                                     # IdentifierExpr
-                    | fieldAccessExpr                                                               # FieldAccess
-                    | path                                         # PathExpr
-                    | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 
-                    | left=expression op=(MULTIPLY | DIVIDE | MOD) right=expression                 # BinaryArithExpr
-                    | left=expression op=(PLUS | MINUS) right=expression                            # BinaryArithExpr
-                    | left=expression op=(LESS | LESS_EQ | GREATER | GREATER_EQ) right=expression   # BinaryRelExpr 
-                    | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression         # EqExpr
-                    | exprs+=expression (AND exprs+=expression)+                                    # LogAndExpr 
-                    | exprs+=expression (OR  exprs+=expression)+                                    # LogOrExpr
-                    | call=invocation                                                               # CallExpr
-                    | path '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')'     # InitProduct
-                    | 'Box'     LESS ty=type GREATER '::init' '(' expr=expression ')'               # InitBox
-                    | dereferenceExpr                               # Deref
-                    | arrayAccess                                   # ArrayAccessExpr
-                    | booleanConst                                  # BConstExpr 
-                    | i=integerValue                                # IConstExpr
-                    | s=STRING                                      # SConstExpr 
-                    | lambdaConstExpr                               # LambdaExpr
-                    | channel=VARIABLE '.recv' LPAR RPAR            # AssignableRecv
-                    | channel=VARIABLE '.is_present' LPAR RPAR      # AssignableIsPresent
-                    | EXEC prog=expression                          # AssignableExec
-                    | COPY LPAR expr=expression RPAR                # CopyExpr
-                    | COPY expr=expression                          # CopyExpr
-                    | 'asChannel' LPAR expr=expression RPAR         # AsChannelExpr
-                    | '[' ((elements+=expression ',')* elements+=expression)? ']'   # ArrayExpression
-                    ;
+expression  
+    : LPAR ex=expression RPAR                      # ParenExpr
+    | <assoc=left>expr=expression inv_args         # CallExpr
+    | expr=expression '[' index=expression ']'     # ArrayAccess
+    | '[' ((elements+=expression ',')* elements+=expression)? ']'   # ArrayExpression
+    | VARIABLE                                     # IdentifierExpr
+    | expr=expression ('.' fields+=VARIABLE)+      # FieldAccessExpr
+    | path                                         # PathExpr
+    | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 
+    | left=expression op=(MULTIPLY | DIVIDE | MOD) right=expression                 # BinaryArithExpr
+    | left=expression op=(PLUS | MINUS) right=expression                            # BinaryArithExpr
+    | left=expression op=(LESS | LESS_EQ | GREATER | GREATER_EQ) right=expression   # BinaryRelExpr 
+    | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression         # EqExpr
+    | exprs+=expression (AND exprs+=expression)+                                    # LogAndExpr 
+    | exprs+=expression (OR  exprs+=expression)+                                    # LogOrExpr
+    | path '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')'           # InitProduct
+    | MULTIPLY expr=expression                      # Deref
+    | 'Box'     LESS ty=type GREATER '::init' '(' expr=expression ')'               # InitBox
+    | booleanConst                                  # BConstExpr 
+    | i=integerValue                                # IConstExpr
+    | s=STRING                                      # SConstExpr 
+    | lambdaConstExpr                               # LambdaExpr
+    | channel=VARIABLE '.recv' LPAR RPAR            # AssignableRecv
+    | channel=VARIABLE '.is_present' LPAR RPAR      # AssignableIsPresent
+    | EXEC prog=expression                          # AssignableExec
+    | COPY LPAR expr=expression RPAR                # CopyExpr
+    | COPY expr=expression                          # CopyExpr
+    | 'asChannel' LPAR expr=expression RPAR         # AsChannelExpr
+    ;
 
 lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
 
@@ -143,13 +134,12 @@ assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
 
 
 statement           : defineType                                                                                            # TypeDef
-                    | assignmentStatement  ';'?                                                                             # AssignStatement 
                     | variableDeclaration  ';'?                                                                             # VarDeclStatement
+                    | assignmentStatement  ';'?                                                                             # AssignStatement 
                     | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                            # ConditionalStatement
                     | SELECT LSQB (cases+=selectAlternative)* RSQB (rest+=statement)*                                       # SelectStatement     
                     | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                                # MatchStatement   
                     | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*                                   # MatchStatement   
-                    | call=invocation  ';'?                                                                                 # CallStatement 
                     | RETURN expression? ';'                                                                                # ReturnStatement 
                     | EXIT                                                                                                  # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
                     | 'skip'                                                                                                # SkipStatement //FIXME: ENABLE
@@ -168,10 +158,11 @@ statement           : defineType                                                
                     | 'acceptIf' '(' channel=VARIABLE ',' check=expression ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf
                     | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  // FIXME: ENABLE
                     | 'cancel' '(' channel=VARIABLE ')' ';'?                                # ProgramCancel
+                    | expression ';'?        # ExpressionStatement
                     ; 
                     
 
-assignmentStatement : <assoc=right> to=lValue ASSIGN a=expression                                        ;
+assignmentStatement : <assoc=right> to=expression ASSIGN a=expression                                        ;
 variableDeclaration : <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)*  ;
 
 //Operators

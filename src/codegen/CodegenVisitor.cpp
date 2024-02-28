@@ -870,7 +870,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode *n) // TODO: COnsi
         return std::nullopt;
     }
 
-    std::optional<Value *> arrayPtrOpt = AcceptType(this, n->field);
+    std::optional<Value *> arrayPtrOpt = AcceptType(this, n->expr);
     if (!arrayPtrOpt)
     {
         errorHandler.addError(n->getStart(), "Failed to locate array in access");
@@ -959,7 +959,7 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode *n) // TODO: CO
         return std::nullopt;
     }
 
-    std::optional<Value *> structOpt = AcceptType(this, n->field);
+    std::optional<Value *> structOpt = AcceptType(this, n->expr);
     if (!structOpt)
     {
         errorHandler.addError(n->getStart(), "Failed to locate array in access");
@@ -1406,17 +1406,11 @@ std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode *n)
 
 std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
 {
-    // Symbol *sym = n->symbol;
+    assert(n->accesses.size() > 0); // FIXME: DO BETTER, USE ERRORS! SHOULD ALWAYS BE TRUE THOUGH
 
-    // if (!sym->getType()) // TODO: symbol or use local type on typed ast node?
-    // {
-    //     errorHandler.addError(n->getStart(), "Improperly initialized symbol in field access: " + getCodegenID(n->symbol));
-    //     return std::nullopt;
-    // }
-
-    if (n->accesses.size() > 0 && n->accesses.at(n->accesses.size() - 1).first == "length")
+    if (n->accesses.at(n->accesses.size() - 1).first == "length")
     {
-        const Type *modOpt = (n->accesses.size() > 1) ? n->accesses.at(n->accesses.size() - 2).second : n->getSymbolType(); //sym->getType();
+        const Type *modOpt = (n->accesses.size() > 1) ? n->accesses.at(n->accesses.size() - 2).second : n->getExprType(); //sym->getType();
         if (std::optional<const TypeArray *> arOpt = type_cast<TypeArray>(modOpt))
         {
             // If it is, correctly, an array type, then we can get the array's length (this is the only operation currently, so we can just do thus)
@@ -1430,8 +1424,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
         // Can't throw error b/c length could be field of struct
     }
 
-    const Type *ty = n->getSymbolType(); //sym->getType();
-    std::optional<Value *> baseOpt = visit(n->getIdentifier()); 
+    std::optional<Value *> baseOpt = AcceptType(this, n->getExpr());
 
     if (!baseOpt)
     {
@@ -1440,11 +1433,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode *n)
     }
 
     Value *baseValue = baseOpt.value();
-
-    if (n->accesses.size() == 0)
-    {
-        return baseValue;
-    }
+    const Type *ty = n->getExprType();
 
     std::vector<Value *> addresses = {Int32Zero};
 
