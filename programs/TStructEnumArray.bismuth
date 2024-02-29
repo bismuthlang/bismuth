@@ -31,7 +31,6 @@ define foo :: c : Channel<+ETIBBOB;-int;+int> = {
     TIBB iPtr => {
         # var iPtr := c.recv(); 
         printTIBB("iPtr (orig/5)", iPtr);
-        # **iPtr.b[0] := 7; # FIXME: SHOULD THIS BE ALLOWED?
       
         match iPtr.b[0]
           | Unit u => printf("ERROR!!!!\n");
