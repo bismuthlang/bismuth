@@ -119,6 +119,7 @@ ChangeLog
   - Added --display-mode to enable error messages to show types as they would appear in-code instead of mathematical representation
   - Now displaying number of errors on compile failure
 
+  - Improved syntax and handling of l-values to enable expressions like improved syntax to allow *(expr).<field> syntax, 
   - Fixed bug where nested control flow would incorrectly process use of linear resources
   - Fixed typos in generated IR files, error messages, and compiler internals
 

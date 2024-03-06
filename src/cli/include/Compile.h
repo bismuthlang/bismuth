@@ -57,7 +57,6 @@ std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath);
 
 struct CompilerInput {
     antlr4::ANTLRInputStream * inputStream; 
-    // std::string outputPath; 
     std::filesystem::path outputPath; 
 
     std::vector<std::string> pathSteps; 
@@ -67,6 +66,72 @@ struct CompilerInput {
         , outputPath(o)
         , pathSteps(ps)
     {}
+
+    std::variant<llvm::raw_pwrite_stream *, std::error_code> getIROut() 
+    {
+        std::string irFileName = outputPath.replace_extension(".ll");
+        std::error_code ec;
+        llvm::raw_fd_ostream * irFileStream = new llvm::raw_fd_ostream(irFileName, ec);
+
+        if(ec) return ec; 
+        return irFileStream;
+    }
+
+    std::variant<llvm::raw_pwrite_stream *, std::error_code> getObjectOut() 
+    {
+        std::string filename = outputPath.replace_extension(".o");
+        std::error_code ec;
+        llvm::raw_fd_ostream * fileStream = new llvm::raw_fd_ostream(filename, ec, llvm::sys::fs::OF_None);;
+
+        if(ec) return ec; 
+        return fileStream;
+    }
+
 };
+
+// struct SemanticInput {
+//     BismuthParser::CompilationUnitContext * ctx; 
+//     CompilerInput io;
+
+//     SemanticInput(BismuthParser::CompilationUnitContext * c, CompilerInput i)
+//         : ctx(c)
+//         , io(i)
+//     {}
+// };
+
+// class CodeGenInput {
+//     TCompilationUnitNode * node; 
+//     CompilerInput io; 
+
+// public: 
+//     CodeGenInput(TCompilationUnitNode * n, CompilerInput i)
+//         : node(n)
+//         , io(i)
+//     {}
+
+//     virtual llvm::raw_pwrite_stream getIROut() const = 0; 
+// };
+
+// class CodeGenFileInput : public CodeGenInput {
+
+// public: 
+//     CodeGenFileInput(TCompilationUnitNode * n, CompilerInput i)
+//         : node(n)
+//         , io(i)
+//     {}
+
+//     virtual llvm::raw_pwrite_stream getIROut() const = 0; 
+// };
+
+std::vector<CompilerInput> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName);
+
+llvm::TargetMachine * getTargetMachine();
+
+
+
+std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> Stage_lexParse(std::vector<CompilerInput> inputs);
+std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> Stage_Semantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode);
+void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
+
 
 int compile(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);

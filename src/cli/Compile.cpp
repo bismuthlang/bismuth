@@ -31,36 +31,8 @@ std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath)//
     return parts; 
 } 
 
-int compile(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
+std::vector<CompilerInput> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::vector<std::string> inputFileName)
 {
-    // FIXME: ENABLE SEPARATELY?
-    llvm::InitializeAllTargetInfos();
-    llvm::InitializeAllTargets();
-    llvm::InitializeAllTargetMCs();
-    llvm::InitializeAllAsmParsers();
-    llvm::InitializeAllAsmPrinters();
-
-    auto TargetTriple = llvm::sys::getDefaultTargetTriple();
-
-    std::string Error;
-    auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
-
-    // Print an error and exit if we couldn't find the requested target.
-    // This generally occurs if we've forgotten to initialise the
-    // TargetRegistry or we have a bogus target triple.
-    if (!Target)
-    {
-        std::cerr << Error << std::endl;
-        return 1;
-    }
-
-    auto CPU = "generic";
-    auto Features = "";
-
-    llvm::TargetOptions opt;
-    auto RM = llvm::Optional<llvm::Reloc::Model>();
-    auto TheTargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
-
     // TODO: need to verify canonical src starts with current path? maybe? probably not
     auto currentPath = std::filesystem::current_path();
     auto providedSrc = currentPath / argSrcPath;
@@ -70,7 +42,7 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
     if (pathEc)
     {
         std::cerr << pathEc.message() << std::endl;
-        return -1;
+        std::exit(-1); // TODO: do something better than exit
     }
 
     // TODO: a bit inefficient in teh case that build is "" as we already calculated src
@@ -79,7 +51,7 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
     if (pathEc)
     {
         std::cerr << pathEc.message() << std::endl;
-        return -1;
+        std::exit(-1);
     }
 
     if (inputFileName.empty())
@@ -107,7 +79,7 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
     std::set<std::filesystem::path> visitedPaths; // TODO: verify & do better, Tracking that we dont have duplicate paths
     std::vector<CompilerInput> inputs;
 
-    bool useOutputFileName = outputFileName != "-.ll";
+    // bool useOutputFileName = outputFileName != "-.ll";
 
     // For each file name, make sure the file exist. If so, create an input stream to it
     // and set its output filename to be the provided name (if we are compiling just
@@ -120,13 +92,13 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
         if (pathEc)
         {
             std::cerr << pathEc.message() << std::endl;
-            return -1;
+            std::exit(-1);
         }
 
         if (visitedPaths.contains(canonicalPath))
         {
             std::cerr << "File provided to compiler multiple times: " << fileName << " at " << canonicalPath << std::endl;
-            return -1;
+            std::exit(-1);
         }
 
         visitedPaths.insert(canonicalPath);
@@ -143,20 +115,48 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
         ));
     }
 
+    return inputs; 
+}
 
-    /*
-     * Sets up compiler flags. These need to be sent to the visitors.
-     */
+llvm::TargetMachine * getTargetMachine()
+{
+    llvm::InitializeAllTargetInfos();
+    llvm::InitializeAllTargets();
+    llvm::InitializeAllTargetMCs();
+    llvm::InitializeAllAsmParsers();
+    llvm::InitializeAllAsmPrinters();
 
-    int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
+    auto TargetTriple = llvm::sys::getDefaultTargetTriple();
 
-    bool isValid = true; // FIXME: DONT CODEGEN IF NOT VALID?
-    STManager *stm = new STManager();
+    std::string Error;
+    auto Target = llvm::TargetRegistry::lookupTarget(TargetTriple, Error);
+
+    // Print an error and exit if we couldn't find the requested target.
+    // This generally occurs if we've forgotten to initialise the
+    // TargetRegistry or we have a bogus target triple.
+    if (!Target)
+    {
+        std::cerr << Error << std::endl;
+        std::exit(-1);
+    }
+
+    auto CPU = "generic";
+    auto Features = "";
+
+    llvm::TargetOptions opt;
+    auto RM = llvm::Optional<llvm::Reloc::Model>();
+    auto TheTargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
+    return TheTargetMachine; 
+}
 
 
-    std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> toCodegen;
 
-    // For each input...
+std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> Stage_lexParse(std::vector<CompilerInput> inputs)
+{
+    bool valid = true; // FIXME: DONT CODEGEN IF NOT VALID?
+
+    std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> ans;
+
     for (auto input : inputs)
     {
         /*******************************************************************
@@ -165,8 +165,8 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
          *
          * Run the lexer on the input
          *******************************************************************/
-        BismuthLexer lexer(input.inputStream); // TODO: Do there need to be leer errors -> Doesn't seem like it?
-        antlr4::CommonTokenStream tokens(&lexer);
+        BismuthLexer * lexer = new BismuthLexer(input.inputStream); // TODO: Do there need to be lexer errors -> Doesn't seem like it?
+        antlr4::CommonTokenStream * tokens = new antlr4::CommonTokenStream(lexer);
 
         /*******************************************************************
          * Create + Run the Parser
@@ -174,31 +174,55 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
          *
          * Run the parser on our previously generated tokens
          *******************************************************************/
-        BismuthParser parser(&tokens);
-        parser.removeErrorListeners();
+        BismuthParser * parser = new BismuthParser(tokens);
+        parser->removeErrorListeners();
         BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
-        parser.addErrorListener(syntaxListener);
+        parser->addErrorListener(syntaxListener);
         // delete syntaxListener;
 
         // Run The parser
-        BismuthParser::CompilationUnitContext *tree = NULL;
-        tree = parser.compilationUnit();
+        BismuthParser::CompilationUnitContext * tree = nullptr;
+        tree = parser->compilationUnit();
 
         if (syntaxListener->hasErrors(0)) // Want to see all errors.
         {
             std::cerr << syntaxListener->errorList() << std::endl;
-            isValid = false; // Shouldn't be needed
-            return -1;
+            valid = false; // Shouldn't be needed
         }
+        ans.push_back({tree, input});
+    }
+    
+    if(!valid) std::exit(-1);
 
-        /*******************************************************************
-         * Semantic Analysis
-         * ================================================================
-         *
-         * Perform semantic analysis and populate the symbol table
-         * and bind nodes to Symbols using the property manager. If
-         * there are any errors we print them out and exit.
-         *******************************************************************/
+    return ans; 
+}
+
+/*******************************************************************
+ * Semantic Analysis
+ * ================================================================
+ *
+ * Perform semantic analysis and populate the symbol table
+ * and bind nodes to Symbols using the property manager. If
+ * there are any errors we print them out and exit.
+ *******************************************************************/
+std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> Stage_Semantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
+{
+    /*
+     * Sets up compiler flags. These need to be sent to the visitors.
+     */
+
+    int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
+
+    bool valid = true;
+    STManager *stm = new STManager();
+
+
+    std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> ans;
+
+    for (auto i : inputs)
+    {
+        auto [tree, input] = i;
+        
         SemanticVisitor *sv = new SemanticVisitor(stm, toStringMode, flags);
         auto TypedOpt = sv->visitCtx(tree, input.pathSteps);
 
@@ -206,7 +230,7 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
         {
             std::cerr << "Semantic analysis completed for " << input.outputPath << " with errors: " << std::endl;
             std::cerr << sv->getErrors() << std::endl;
-            isValid = false;
+            valid = false;
             continue;
         }
 
@@ -215,7 +239,7 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
             // SHouldn't be possible, but somehow it cah happen....?)
             std::cerr << "Failed to generate Typed AST" << std::endl;
             std::cerr << std::get<ErrorChain *>(TypedOpt)->toString() << std::endl;
-            isValid = false;
+            valid = false;
             continue;
         }
 
@@ -226,11 +250,27 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
             std::cout << "Semantic analysis completed for " << input.outputPath << " without errors. Starting code generation..." << std::endl;
         }
 
-        toCodegen.push_back({cu, input});
+        ans.push_back({cu, input});
     }
 
+    if(!valid) std::exit(-1);
 
-    for(auto entry : toCodegen)
+    return ans; 
+}
+
+void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
+{
+    bool isValid = true;
+    bool useOutputFileName = outputFileName != "-.ll";
+
+    /*
+     * Sets up compiler flags. These need to be sent to the visitors.
+     */
+    int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
+    auto TheTargetMachine = (compileWith != none)  ? getTargetMachine() : nullptr; 
+
+
+    for(auto entry : inputs)
     {
         auto [cu, input] = entry; 
         /*******************************************************************
@@ -262,21 +302,22 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
         // Dump the code to an output file
         if (!noCode)
         {
-            std::string irFileName = input.outputPath.replace_extension(".ll");
-            std::error_code ec;
-            llvm::raw_fd_ostream irFileStream(irFileName, ec);
-            module->print(irFileStream, nullptr);
-            irFileStream.flush();
-
-            if (ec)
+            auto irOutOpt = input.getIROut(); 
+            if (std::error_code *ec = std::get_if<std::error_code>(&irOutOpt))
             {
-                std::cerr << ec.message() << std::endl;
-                return -1;
+                std::cerr << ec->message() << std::endl; 
+                return; 
             }
+            
+            llvm::raw_pwrite_stream * stream = std::get<llvm::raw_pwrite_stream *>(irOutOpt);
+
+            module->print(*stream, nullptr);
+            stream->flush();
         }
 
         if (isVerbose)
         {
+            // should be output.getInputName()
             std::cout << "Code generation completed for " << input.outputPath << "." << std::endl;
         }
 
@@ -284,30 +325,28 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
         {
             module->setDataLayout(TheTargetMachine->createDataLayout());
 
-            std::string Filename = input.outputPath.replace_extension(".o");
-            std::cout << "Filename " << Filename << std::endl;
-            std::error_code EC;
-            llvm::raw_fd_ostream dest(Filename, EC, llvm::sys::fs::OF_None);
-
-            if (EC)
+            auto objOutOpt = input.getObjectOut(); 
+             if (std::error_code *ec = std::get_if<std::error_code>(&objOutOpt))
             {
-                std::cerr << "Could not open file: " << EC.message() << std::endl;
-                return 1;
+                std::cerr << ec->message() << std::endl; 
+                return; 
             }
+
+            llvm::raw_pwrite_stream * stream = std::get<llvm::raw_pwrite_stream *>(objOutOpt);
 
             llvm::legacy::PassManager pass;
             auto FileType = llvm::CGFT_ObjectFile;
 
-            if (TheTargetMachine->addPassesToEmitFile(pass, dest, nullptr, FileType))
+            if (TheTargetMachine->addPassesToEmitFile(pass, *stream, nullptr, FileType))
             {
                 std::cerr << "TheTargetMachine can't emit a file of this type" << std::endl;
-                return 1;
+                return;
             }
 
             pass.run(*module);
-            dest.flush();
+            stream->flush();
 
-            std::cout << "Wrote " << Filename << std::endl;
+            std::cout << "Wrote " << input.outputPath << std::endl;
         }
     }
 
@@ -325,13 +364,13 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
             cmd << "g++ ";
             break;
         case none:
-            return -1; // Not even possible
+            return; // Not even possible
         }
 
         std::string ext = compileWith == clangll ? ".ll" : ".o";
         for (auto input : inputs)
         {
-            cmd << input.outputPath.replace_extension(ext) << " ";
+            cmd << input.second.outputPath.replace_extension(ext) << " ";
         }
 
         // cmd << "./runtime.o -no-pie ";
@@ -344,6 +383,46 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
 
         exec(cmd.str());
     }
+
+}
+
+int compile(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
+{
+    /******************************************************************
+     * Now that we have the input, we can perform the first stage:
+     * 1. Create the lexer from the input.
+     * 2. Create the parser with the lexer's token stream as input.
+     * 3. Parse the input and get the parse tree for then exit stage.
+     * 4. TBD: handle errors
+     ******************************************************************/
+
+    /*******************************************************************
+     * Prepare Input
+     * ================================================================
+     *
+     * To do this, we  must first check if we were given a string
+     * input or file(s). To make both cases easy to handle later on,
+     * we create a vector of input streams/output file pairs.
+     *******************************************************************/
+    std::vector<CompilerInput> inputs = getInputsFromFiles(argSrcPath, argBuildPath, inputFileName);
+
+    auto toCodegen = Stage_Semantic(
+        Stage_lexParse(inputs),
+        demoMode, 
+        isVerbose,
+        toStringMode
+    );
+
+    Stage_CodeGen(
+        toCodegen,
+        outputFileName,
+        demoMode,
+        isVerbose,
+        toStringMode,
+        printOutput,
+        noCode,
+        compileWith
+    );
 
     return 0;
 }
