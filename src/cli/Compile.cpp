@@ -31,7 +31,7 @@ std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath)//
     return parts; 
 } 
 
-std::vector<CompilerInput> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::vector<std::string> inputFileName)
+std::vector<CompilerInput *> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::vector<std::string> inputFileName)
 {
     // TODO: need to verify canonical src starts with current path? maybe? probably not
     auto currentPath = std::filesystem::current_path();
@@ -77,7 +77,7 @@ std::vector<CompilerInput> getInputsFromFiles(std::string argSrcPath, std::strin
      * we create a vector of input streams/output file pairs.
      *******************************************************************/
     std::set<std::filesystem::path> visitedPaths; // TODO: verify & do better, Tracking that we dont have duplicate paths
-    std::vector<CompilerInput> inputs;
+    std::vector<CompilerInput *> inputs;
 
     // bool useOutputFileName = outputFileName != "-.ll";
 
@@ -108,10 +108,10 @@ std::vector<CompilerInput> getInputsFromFiles(std::string argSrcPath, std::strin
         auto a = new antlr4::ANTLRFileStream();
         a->loadFromFile(canonicalPath);
         inputs.push_back(
-            CompilerInput(
+            new FileInput(
                 a,
-                canonicalDst / fileName,
-                pathToIdentifierSteps(relInputPath)
+                pathToIdentifierSteps(relInputPath),
+                canonicalDst / fileName
         ));
     }
 
@@ -151,11 +151,11 @@ llvm::TargetMachine * getTargetMachine()
 
 
 
-std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> Stage_lexParse(std::vector<CompilerInput> inputs)
+std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> Stage_lexParse(std::vector<CompilerInput *> inputs)
 {
     bool valid = true; // FIXME: DONT CODEGEN IF NOT VALID?
 
-    std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> ans;
+    std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> ans;
 
     for (auto input : inputs)
     {
@@ -165,7 +165,7 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> S
          *
          * Run the lexer on the input
          *******************************************************************/
-        BismuthLexer * lexer = new BismuthLexer(input.inputStream); // TODO: Do there need to be lexer errors -> Doesn't seem like it?
+        BismuthLexer * lexer = new BismuthLexer(input->getInputStream()); // TODO: Do there need to be lexer errors -> Doesn't seem like it?
         antlr4::CommonTokenStream * tokens = new antlr4::CommonTokenStream(lexer);
 
         /*******************************************************************
@@ -205,7 +205,7 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> S
  * and bind nodes to Symbols using the property manager. If
  * there are any errors we print them out and exit.
  *******************************************************************/
-std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> Stage_Semantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
+std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_Semantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
 {
     /*
      * Sets up compiler flags. These need to be sent to the visitors.
@@ -217,18 +217,18 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> Stage_Semantic(std
     STManager *stm = new STManager();
 
 
-    std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> ans;
+    std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> ans;
 
     for (auto i : inputs)
     {
         auto [tree, input] = i;
         
         SemanticVisitor *sv = new SemanticVisitor(stm, toStringMode, flags);
-        auto TypedOpt = sv->visitCtx(tree, input.pathSteps);
+        auto TypedOpt = sv->visitCtx(tree, input->getPathSteps());
 
         if (sv->hasErrors(0)) // Want to see all errors
         {
-            std::cerr << "Semantic analysis completed for " << input.outputPath << " with errors: " << std::endl;
+            std::cerr << "Semantic analysis completed for " << input->getSourceName() << " with errors: " << std::endl;
             std::cerr << sv->getErrors() << std::endl;
             valid = false;
             continue;
@@ -247,7 +247,7 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> Stage_Semantic(std
 
         if (isVerbose)
         {
-            std::cout << "Semantic analysis completed for " << input.outputPath << " without errors. Starting code generation..." << std::endl;
+            std::cout << "Semantic analysis completed for " << input->getSourceName() << " without errors. Starting code generation..." << std::endl;
         }
 
         ans.push_back({cu, input});
@@ -258,7 +258,7 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> Stage_Semantic(std
     return ans; 
 }
 
-void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
+void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
 {
     bool isValid = true;
     bool useOutputFileName = outputFileName != "-.ll";
@@ -302,7 +302,7 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput>>
         // Dump the code to an output file
         if (!noCode)
         {
-            auto irOutOpt = input.getIROut(); 
+            auto irOutOpt = input->getIROut(); 
             if (std::error_code *ec = std::get_if<std::error_code>(&irOutOpt))
             {
                 std::cerr << ec->message() << std::endl; 
@@ -318,14 +318,14 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput>>
         if (isVerbose)
         {
             // should be output.getInputName()
-            std::cout << "Code generation completed for " << input.outputPath << "." << std::endl;
+            std::cout << "Code generation completed for " << input->getSourceName() << "." << std::endl;
         }
 
         if (compileWith != none)
         {
             module->setDataLayout(TheTargetMachine->createDataLayout());
 
-            auto objOutOpt = input.getObjectOut(); 
+            auto objOutOpt = input->getObjectOut(); 
              if (std::error_code *ec = std::get_if<std::error_code>(&objOutOpt))
             {
                 std::cerr << ec->message() << std::endl; 
@@ -346,10 +346,11 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput>>
             pass.run(*module);
             stream->flush();
 
-            std::cout << "Wrote " << input.outputPath << std::endl;
+            // std::cout << "Wrote " << input.outputPath << std::endl;
         }
     }
 
+    // TODO: Separate out into separate stage
     if (isValid && compileWith != none)
     {
         std::ostringstream cmd;
@@ -370,7 +371,8 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput>>
         std::string ext = compileWith == clangll ? ".ll" : ".o";
         for (auto input : inputs)
         {
-            cmd << input.second.outputPath.replace_extension(ext) << " ";
+            assert(input.second->getOutputPath().has_value()); // TODO: better error!
+            cmd << input.second->getOutputPath().value().replace_extension(ext) << " ";
         }
 
         // cmd << "./runtime.o -no-pie ";
@@ -404,7 +406,7 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
      * input or file(s). To make both cases easy to handle later on,
      * we create a vector of input streams/output file pairs.
      *******************************************************************/
-    std::vector<CompilerInput> inputs = getInputsFromFiles(argSrcPath, argBuildPath, inputFileName);
+    std::vector<CompilerInput *> inputs = getInputsFromFiles(argSrcPath, argBuildPath, inputFileName);
 
     auto toCodegen = Stage_Semantic(
         Stage_lexParse(inputs),

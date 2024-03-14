@@ -7,6 +7,7 @@ include(Semantic)
 include(Utility)
 include(Codegen)
 include(LLVM)
+include(CLI)
 
 find_package(LLVM REQUIRED CONFIG)
 list(APPEND CMAKE_MODULE_PATH ${LLVM_DIR})
@@ -38,13 +39,14 @@ add_dependencies(tests
   )
 
 target_include_directories(tests PUBLIC 
-  ${ANTLR_INCLUDE} ${ANTLR_GENERATED_DIR}
-  ${SYMBOL_INCLUDE} 
-  ${SEMANTIC_INCLUDE}
-  ${UTILITY_INCLUDE}
-  ${CODEGEN_INCLUDE}
-  ${LLVM_BINARY_DIR}/include
-  ${LLVM_INCLUDE_DIR}
+    ${ANTLR_INCLUDE} ${ANTLR_GENERATED_DIR}
+    ${SYMBOL_INCLUDE} 
+    ${SEMANTIC_INCLUDE}
+    ${UTILITY_INCLUDE}
+    ${CODEGEN_INCLUDE}
+    ${LLVM_BINARY_DIR}/include
+    ${LLVM_INCLUDE_DIR}
+    ${CLI_INCLUDE}
   )
 
 target_link_libraries(tests 

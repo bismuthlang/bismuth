@@ -55,19 +55,49 @@ std::filesystem::path getRelativePath(std::filesystem::path& currentPath, std::f
 std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath);
 
 
-struct CompilerInput {
-    antlr4::ANTLRInputStream * inputStream; 
-    std::filesystem::path outputPath; 
+class CompilerInput {
 
+private: 
+    antlr4::ANTLRInputStream * inputStream; 
     std::vector<std::string> pathSteps; 
 
-    CompilerInput(antlr4::ANTLRInputStream * i, std::filesystem::path o, std::vector<std::string> ps)
+public: 
+    CompilerInput(
+        antlr4::ANTLRInputStream * i, 
+        std::vector<std::string> ps)
         : inputStream(i)
-        , outputPath(o)
         , pathSteps(ps)
     {}
 
-    std::variant<llvm::raw_pwrite_stream *, std::error_code> getIROut() 
+    virtual ~CompilerInput() = default;
+
+    antlr4::ANTLRInputStream * getInputStream() { return inputStream; }
+    std::vector<std::string> getPathSteps() { return pathSteps; }
+    std::string getSourceName() { return inputStream->getSourceName(); }
+
+    virtual std::variant<llvm::raw_pwrite_stream *, std::error_code> getIROut() = 0;
+    virtual std::variant<llvm::raw_pwrite_stream *, std::error_code> getObjectOut() = 0;
+    virtual std::optional<std::filesystem::path> getOutputPath() = 0;
+    
+
+};
+
+class FileInput : public CompilerInput {
+
+private: 
+    std::filesystem::path outputPath; 
+
+public: 
+    FileInput(
+        antlr4::ANTLRInputStream * i, 
+        std::vector<std::string> ps,
+        std::filesystem::path o)
+        : CompilerInput(i, ps)
+        , outputPath(o)
+    {}
+
+    
+    std::variant<llvm::raw_pwrite_stream *, std::error_code> getIROut() override
     {
         std::string irFileName = outputPath.replace_extension(".ll");
         std::error_code ec;
@@ -77,7 +107,7 @@ struct CompilerInput {
         return irFileStream;
     }
 
-    std::variant<llvm::raw_pwrite_stream *, std::error_code> getObjectOut() 
+    std::variant<llvm::raw_pwrite_stream *, std::error_code> getObjectOut() override
     {
         std::string filename = outputPath.replace_extension(".o");
         std::error_code ec;
@@ -87,51 +117,53 @@ struct CompilerInput {
         return fileStream;
     }
 
+    std::optional<std::filesystem::path> getOutputPath() override { return outputPath; }
 };
 
-// struct SemanticInput {
-//     BismuthParser::CompilationUnitContext * ctx; 
-//     CompilerInput io;
+class VirtualInput : public CompilerInput {
 
-//     SemanticInput(BismuthParser::CompilationUnitContext * c, CompilerInput i)
-//         : ctx(c)
-//         , io(i)
-//     {}
-// };
+private:
+    std::string irStr; 
+    std::string objStr; 
 
-// class CodeGenInput {
-//     TCompilationUnitNode * node; 
-//     CompilerInput io; 
+public: 
+    VirtualInput(
+        antlr4::ANTLRInputStream * i, 
+        std::vector<std::string> ps,
+        std::filesystem::path o)
+        : CompilerInput(i, ps)
+        // , outputPath(o)
+    {}
 
-// public: 
-//     CodeGenInput(TCompilationUnitNode * n, CompilerInput i)
-//         : node(n)
-//         , io(i)
-//     {}
+    std::variant<llvm::raw_pwrite_stream *, std::error_code> getIROut() override 
+    {
+        return new llvm::buffer_unique_ostream(
+            std::make_unique<llvm::raw_string_ostream>(irStr)
+        );
+    }
 
-//     virtual llvm::raw_pwrite_stream getIROut() const = 0; 
-// };
+    std::variant<llvm::raw_pwrite_stream *, std::error_code> getObjectOut() override 
+    {
+        return new llvm::buffer_unique_ostream(
+            std::make_unique<llvm::raw_string_ostream>(objStr)
+        );
+    }
 
-// class CodeGenFileInput : public CodeGenInput {
+    std::optional<std::filesystem::path> getOutputPath() override { return std::nullopt; }
 
-// public: 
-//     CodeGenFileInput(TCompilationUnitNode * n, CompilerInput i)
-//         : node(n)
-//         , io(i)
-//     {}
+    std::string getIrStr() { return irStr; }
+    std::string getObjStr() { return objStr; }
+};
 
-//     virtual llvm::raw_pwrite_stream getIROut() const = 0; 
-// };
-
-std::vector<CompilerInput> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName);
+std::vector<CompilerInput *> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName);
 
 llvm::TargetMachine * getTargetMachine();
 
 
 
-std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> Stage_lexParse(std::vector<CompilerInput> inputs);
-std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> Stage_Semantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode);
-void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
+std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> Stage_lexParse(std::vector<CompilerInput *> inputs);
+std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_Semantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode);
+void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
 
 
 int compile(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
