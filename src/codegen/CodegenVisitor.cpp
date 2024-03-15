@@ -1225,6 +1225,18 @@ std::optional<Value *> CodegenVisitor::visit(TBinaryArithNode *n)
     // FIXME: VERIFY NSW vs NUW!
     switch (n->op)
     {
+    case BINARY_LOG_RIGHT_SHIFT: 
+        return builder->CreateLShr(lhs.value(), rhs.value());
+    case BINARY_ARITH_RIGHT_SHIFT: 
+        return builder->CreateAShr(lhs.value(), rhs.value());
+    case BINARY_LEFT_SHIFT: 
+        return builder->CreateShl(lhs.value(), rhs.value());
+    case BIT_AND: 
+        return builder->CreateAnd(lhs.value(), rhs.value());
+    case BIT_OR: 
+        return builder->CreateOr(lhs.value(), rhs.value());
+    case BIT_XOR: 
+        return builder->CreateXor(lhs.value(), rhs.value());
     case BINARY_ARITH_PLUS:
         return builder->CreateNSWAdd(lhs.value(), rhs.value());
     case BINARY_ARITH_MINUS:
