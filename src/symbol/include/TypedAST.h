@@ -1168,7 +1168,13 @@ enum BinaryArithOperator
     BINARY_ARITH_MINUS,
     BINARY_ARITH_MULT,
     BINARY_ARITH_DIV,
-    BINARY_ARITH_MOD
+    BINARY_ARITH_MOD,
+    BINARY_LOG_RIGHT_SHIFT,
+    BINARY_ARITH_RIGHT_SHIFT,
+    BINARY_LEFT_SHIFT, 
+    BIT_AND,
+    BIT_OR,
+    BIT_XOR
 };
 
 class TBinaryArithNode : public TypedNode

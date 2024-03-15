@@ -65,6 +65,7 @@ define program :: c : Channel<-int> {
 
     fill<int> d := fill<int>; 
 
+    # FIXME: This test is kinda wrong. It doesn't do what you think it does due to stack...
     fill<int>(a, 2, 5); 
     printf("Size: %u\n", a.length);
 

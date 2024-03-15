@@ -341,11 +341,5 @@ private:
         builder->CreateRet(v);
         builder->SetInsertPoint(ins);
         return builder->CreateCall(fn, {stoVal, addrMap});
-
-        // Value * alloc = runGCMalloc(getSizeForType(llvmType));
-
-        // Value *casted = builder->CreateBitCast(alloc, llvmType->getPointerTo());
-        // builder->CreateStore(loaded, casted);
-        // v = casted;
     }
 };

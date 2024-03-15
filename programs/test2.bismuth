@@ -15,7 +15,7 @@ Output:
     a = 0, b = 1, c = 0
     b := b | c
     a = 0, b = 1, c = 0
-    c := !a & !b
+    c := !a && !b
     a = 0, b = 1, c = 0
     bool equality test II: 0, 1, 1
     a = String One, b = String One, c = String Two
@@ -67,8 +67,8 @@ define program :: io : Channel<-int> = {
 
         printf("a = %d, b = %d, c = %d\n", a, b, c);
 
-        c := !a & !b; 
-        printf("c := !a & !b\n");
+        c := !a && !b; 
+        printf("c := !a & !b\n"); # TODO: CHANGE STR TO && FOR ACCURACY
 
         printf("a = %d, b = %d, c = %d\n", a, b, c);
 

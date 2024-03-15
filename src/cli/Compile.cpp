@@ -153,7 +153,7 @@ llvm::TargetMachine * getTargetMachine()
 
 std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> Stage_lexParse(std::vector<CompilerInput *> inputs)
 {
-    bool valid = true; // FIXME: DONT CODEGEN IF NOT VALID?
+    bool valid = true;
 
     std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> ans;
 

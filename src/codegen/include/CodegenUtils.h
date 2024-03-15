@@ -201,6 +201,23 @@ public:
                 false));
     }
 
+    // Allocates on the heap, returns 
+    // a pointer casted to the specified type. 
+    llvm::Value * TypedGCHeapAlloc(
+        llvm::Value * allocArg, 
+        llvm::Type * castTy
+    ){
+        Value *allocated = builder->CreateCall(
+            getGCMalloc(), 
+            {
+                allocArg
+            }
+        );
+
+
+        return builder->CreateBitCast(allocated, castTy);
+    }
+
     llvm::FunctionCallee getWeakenChannel()
     {
         return module->getOrInsertFunction(

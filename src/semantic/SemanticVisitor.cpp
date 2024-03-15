@@ -769,11 +769,17 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     // TODO: Allow operations on sumtype as syntactic sugar if
     // operation allowed on all elements in the sum? 
 
-    std::string opStr = ctx->MULTIPLY() ?  "*" 
-                                        : ctx->DIVIDE()   ? "/"
-                                        : ctx->MOD()      ? "%"
-                                        : ctx->PLUS()     ? "+"
-                                                          : "-";
+    std::string opStr = ctx->BIT_AND()  ? "&"
+                      : ctx->BIT_OR()   ? "|"
+                      : ctx->BIT_XOR()  ? "^"
+                      : ctx->LOG_RSH()  ? ">>>"
+                      : ctx->ARITH_RSH()? ">>"
+                      : ctx->LSH()      ? "<<"
+                      : ctx->MULTIPLY() ? "*" 
+                      : ctx->DIVIDE()   ? "/"
+                      : ctx->MOD()      ? "%"
+                      : ctx->PLUS()     ? "+"
+                                        : "-";
     
     auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
@@ -802,10 +808,17 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     }
 
     return new TBinaryArithNode(
-        ctx->MULTIPLY() ? BINARY_ARITH_MULT : ctx->DIVIDE() ? BINARY_ARITH_DIV
-                                          : ctx->MOD()      ? BINARY_ARITH_MOD
-                                          : ctx->PLUS()     ? BINARY_ARITH_PLUS
-                                                            : BINARY_ARITH_MINUS,
+        ctx->BIT_AND()  ? BIT_AND
+      : ctx->BIT_OR()   ? BIT_OR
+      : ctx->BIT_XOR()  ? BIT_XOR 
+      : ctx->LOG_RSH()  ? BINARY_LOG_RIGHT_SHIFT
+      : ctx->ARITH_RSH()? BINARY_ARITH_RIGHT_SHIFT
+      : ctx->LSH()      ? BINARY_LEFT_SHIFT
+      : ctx->MULTIPLY() ? BINARY_ARITH_MULT 
+      : ctx->DIVIDE()   ? BINARY_ARITH_DIV
+      : ctx->MOD()      ? BINARY_ARITH_MOD
+      : ctx->PLUS()     ? BINARY_ARITH_PLUS
+      : BINARY_ARITH_MINUS,
         left,
         right,
         ctx->getStart());
@@ -1462,7 +1475,13 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
                 if (!sumType->contains(caseType))
                 {
-                    errorHandler.addError(altCtx->type()->getStart(), "Impossible case for " + sumType->toString(toStringMode) + " to act as " + caseType->toString(toStringMode));
+                    errorHandler.addError(
+                        altCtx->type()->getStart(),
+                        "Impossible case for " + 
+                        sumType->toString(toStringMode) + 
+                        " to act as " + 
+                        caseType->toString(toStringMode)
+                    );
                 }
 
                 if (foundCaseTypes.count(caseType))

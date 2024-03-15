@@ -105,7 +105,7 @@ int main(int argc, const char *argv[])
 =========================================================================
 Bismuth Process Calculus Compiler - Created by Alex Friedman (https://ahfriedman.com)
 Website: https://bismuth-lang.org
-Version: Pre-Alpha 1.3.3 @ )"""" << GIT_COMMIT_HASH
+Version: Pre-Alpha 1.3.4 @ )"""" << GIT_COMMIT_HASH
                                     << R""""(
 
 ChangeLog
@@ -119,6 +119,7 @@ ChangeLog
   - Added --display-mode to enable error messages to show types as they would appear in-code instead of mathematical representation
   - Now displaying number of errors on compile failure
 
+  - Fixed bug wherein T_1 -> T_2[] is ambiguous by allowing (T_1 -> T_2)[]
   - Improved syntax and handling of l-values to enable expressions like improved syntax to allow *(expr).<field> syntax, 
   - Fixed bug where nested control flow would incorrectly process use of linear resources
   - Fixed typos in generated IR files, error messages, and compiler internals

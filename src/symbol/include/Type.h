@@ -418,6 +418,12 @@ struct TypeCompare
 {
     bool operator()(const Type *a, const Type *b) const
     {
+        // Only needed b/c of int types giving 
+        // type infer due to trying to allow for 
+        // inference of specific int type... 
+        // if(const TypeInfer * infA = dynamic_cast<const TypeInfer *>(a))
+        // {
+        // }
         return a->toString(C_STYLE) < b->toString(C_STYLE);
     }
 };

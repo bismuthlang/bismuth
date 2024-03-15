@@ -71,10 +71,12 @@ expression
     | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 
     | left=expression op=(MULTIPLY | DIVIDE | MOD) right=expression                 # BinaryArithExpr
     | left=expression op=(PLUS | MINUS) right=expression                            # BinaryArithExpr
+    | left=expression op=(LOG_RSH | ARITH_RSH | LSH) right=expression               # BinaryArithExpr
     | left=expression op=(LESS | LESS_EQ | GREATER | GREATER_EQ) right=expression   # BinaryRelExpr 
+    | left=expression op=(BIT_AND | BIT_OR | BIT_XOR) right=expression              # BinaryArithExpr
     | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression         # EqExpr
-    | exprs+=expression (AND exprs+=expression)+                                    # LogAndExpr 
-    | exprs+=expression (OR  exprs+=expression)+                                    # LogOrExpr
+    | exprs+=expression (LOG_AND exprs+=expression)+                                # LogAndExpr 
+    | exprs+=expression (LOG_OR  exprs+=expression)+                                # LogOrExpr
     | path '::init' '(' (exprs+=expression (',' exprs+=expression)*)? ')'           # InitProduct
     | MULTIPLY expr=expression                      # Deref
     | 'Box'     LESS ty=type GREATER '::init' '(' expr=expression ')'               # InitBox
@@ -179,8 +181,14 @@ GREATER_EQ  :       '>='    ;
 GREATER     :       '>'     ;
 EQUAL       :       '=='    ;
 NOT_EQUAL   :       '!='    ;
-AND         :       '&'     ;
-OR          :       '|'     ;
+BIT_AND         :       '&'     ;
+BIT_OR          :       '|'     ;
+LOG_AND         :       '&&'    ;
+LOG_OR          :       '||'    ;
+BIT_XOR         :       '^'     ;
+LOG_RSH         :       '>>>'   ;
+ARITH_RSH       :       '>>'    ;
+LSH             :       '<<'    ;
 MAPS_TO     :       '->'    ;
 
 
@@ -224,18 +232,20 @@ protoBranch     : protocol
 
 
 //Allows us to have a type of ints, bools, or strings with the option for them to become 1d arrays. 
-type            :    ty=type LBRC len=DEC_LITERAL RBRC                                          # ArrayType
-                |    ty=type LBRC RBRC                                                      # DynArrayType
-                |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT | TYPE_U32 | TYPE_I64 | TYPE_U64)                       # BaseType
-                |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
-                |    LPAR (paramTypes+=type (COMMA paramTypes+=type)*)? RPAR MAPS_TO (returnType=type | LPAR RPAR) # LambdaType
-                |    LPAR type (PLUS type)+ RPAR                                            # SumType 
-                |    TYPE_CHANNEL LESS proto=protocol GREATER                               # ChannelType
-                |    TYPE_PROGRAM LESS proto=protocol GREATER                               # ProgramType
-                |    TYPE_BOX     LESS ty=type GREATER                                      # BoxType
-                |    ty=type  genericSpecifier                                              # TemplatedType
-                |    path                                                                   # CustomType
-                ;
+type    :    ty=type LBRC len=DEC_LITERAL RBRC                                          # ArrayType
+        |    ty=type LBRC RBRC                                                      # DynArrayType
+        |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT | TYPE_U32 | TYPE_I64 | TYPE_U64)                       # BaseType
+        |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
+        |    LPAR (paramTypes+=type (COMMA paramTypes+=type)*)? RPAR MAPS_TO (returnType=type | LPAR RPAR) # LambdaType
+        |    LPAR (paramTypes+=type (COMMA paramTypes+=type)*)? MAPS_TO (returnType=type | LPAR RPAR) RPAR # LambdaType
+        |    LPAR LPAR (paramTypes+=type (COMMA paramTypes+=type)*)? RPAR MAPS_TO (returnType=type | LPAR RPAR) RPAR # LambdaType
+        |    LPAR type (PLUS type)+ RPAR                                            # SumType 
+        |    TYPE_CHANNEL LESS proto=protocol GREATER                               # ChannelType
+        |    TYPE_PROGRAM LESS proto=protocol GREATER                               # ProgramType
+        |    TYPE_BOX     LESS ty=type GREATER                                      # BoxType
+        |    ty=type  genericSpecifier                                              # TemplatedType
+        |    path                                                                   # CustomType
+        ;
 
 // TODO: not convinced about the whole {u,i}{32,64} thing as it kinda seems like needing to know more metaphors.. and lower level?
 

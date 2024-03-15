@@ -789,7 +789,8 @@ std::string TypeInfer::toString(DisplayMode mode) const
 {
     if (hasBeenInferred())
     {
-        return "{VAR/" + valueType->value()->toString(mode) + "}";
+        // return "{VAR/" + valueType->value()->toString(mode) + "}";
+        return valueType->value()->toString(mode); 
     }
     return "VAR";
 }
@@ -903,6 +904,12 @@ bool TypeSum::isDefined() const { return defined; }
 
 bool TypeSum::contains(const Type *ty) const
 {
+    if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(ty))
+    {
+        if(!infType->hasBeenInferred()) return false; 
+
+        return this->contains(infType->getValueType().value());
+    }
     return cases.count(ty);
 }
 

@@ -18,7 +18,7 @@ define program :: c : Channel<-int> {
 }
 
 define func XOR (boolean a, boolean b) : boolean {
-    return (a & !b) | (!a & b);
+    return (a && !b) | (!a && b);
 }
 
 define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> {
@@ -34,10 +34,10 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
         boolean looped2, val2 := false; 
         acceptWhile(i2, !looped2) {val2 := i2.recv(); looped2 := true;}
 
-        shouldLoop := looped1 & looped2; 
+        shouldLoop := looped1 && looped2; 
         boolean xor := XOR(val1, val2); 
         boolean sum := XOR(xor, carry); 
-        boolean car := (xor & carry) | (val1 & val2);
+        boolean car := (xor && carry) | (val1 && val2);
         more(c);
         c.send(sum);
         carry := car;  
@@ -47,13 +47,13 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
         boolean val := i1.recv(); 
         more(c); 
         c.send(XOR(val, carry));
-        carry := val & carry; 
+        carry := val && carry; 
     }
     accept(i2) {
         boolean val := i2.recv(); 
         more(c); 
         c.send(XOR(val, carry));
-        carry := val & carry; 
+        carry := val && carry; 
     }
     if carry {
         more(c); 

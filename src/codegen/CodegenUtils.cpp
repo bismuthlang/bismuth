@@ -14,27 +14,19 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, uint32_t len)// Const
 
     // Allocate the vector 
     {
-        // FIXME: MAKE A GCMALLOC + CAST ALL IN ONE!
-
-        Value *vecPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-
         llvm::Type * storeType =  alloc->getAllocatedType()->getStructElementType(0)->getPointerElementType();
-        Value *allocated = builder->CreateCall(
-            getGCMalloc(), 
-            {
+        builder->CreateStore(
+            TypedGCHeapAlloc(
                 builder->CreateNSWMul(
                     builder->CreateSExtOrBitCast(capacity, Int64Ty), 
                     builder->getInt64(
                         getSizeForType(storeType)
                     )
-                )
-            }
+                ),
+                storeType->getPointerTo()
+            ),
+            builder->CreateGEP(alloc, {Int32Zero, Int32Zero})
         );
-
-
-        Value *casted = builder->CreateBitCast(allocated, storeType->getPointerTo());
-
-        builder->CreateStore(casted, vecPtr);
     }
 
     Value *lenPtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
@@ -90,19 +82,28 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
     Value * loadedArray = builder->CreateLoad(vecPtr, vecPtr->getType()->getPointerElementType());
     // Value * indexPtr = builder->CreateGEP(loadedArray, indexValue);
 
-    Value *newData_i8ptr = builder->CreateCall(
-        getGCMalloc(), 
-        {
-            builder->CreateNSWMul(
-                builder->CreateSExtOrBitCast(newCapacity, Int64Ty), 
-                builder->getInt64(
-                    getSizeForType(loadedArray->getType()->getPointerElementType())
-                )
-            )
-        }
-    );
+    // Value *newData_i8ptr = builder->CreateCall(
+    //     getG_CMalloc(), 
+    //     {
+    //         builder->CreateNSWMul(
+    //             builder->CreateSExtOrBitCast(newCapacity, Int64Ty), 
+    //             builder->getInt64(
+    //                 getSizeForType(loadedArray->getType()->getPointerElementType())
+    //             )
+    //         )
+    //     }
+    // );
 
-    Value * newData = builder->CreateBitCast(newData_i8ptr, loadedArray->getType());
+    // Value * newData = builder->CreateBitCast(newData_i8ptr, loadedArray->getType());
+    Value * newData = TypedGCHeapAlloc(
+        builder->CreateNSWMul(
+            builder->CreateSExtOrBitCast(newCapacity, Int64Ty), 
+            builder->getInt64(
+                getSizeForType(loadedArray->getType()->getPointerElementType())
+            )
+        ),
+        loadedArray->getType()
+    ); 
 
 
     {

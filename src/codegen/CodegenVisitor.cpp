@@ -851,10 +851,18 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode *n)
         stoVal = correctSumAssignment(sumOpt.value(), stoVal);
     }
 
-    Value *v = builder->CreateCall(getGCMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
-    Value *casted = builder->CreateBitCast(v, box->getLLVMType(module));
+    // Value *v = builder->CreateCall(getG_CMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
+    // Value *casted = builder->CreateBitCast(v, box->getLLVMType(module));
 
-    builder->CreateStore(stoVal, casted);
+    Value * casted = TypedGCHeapAlloc(
+        builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType())),
+        box->getLLVMType(module)
+    );
+
+    builder->CreateStore(
+        stoVal, 
+        casted
+    );
 
     // Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
     return casted;
