@@ -4,7 +4,7 @@ extern func printf(...) : int;
 define fib :: c : Channel<+int;-int> = {
   int n := c.recv(); 
 
-  if(n == 0 | n == 1) {
+  if(n == 0 || n == 1) {
     # return n;
     c.send(1) exit
   }

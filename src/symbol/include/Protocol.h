@@ -13,17 +13,12 @@
 #include <string>  //Includes strings
 #include <sstream> //Used for string streams
 
-// #include <any>      // Needed for anycasts
-// #include <utility>  // Needed for anycasts
 #include <vector>   // Vectors
 #include <optional> // Optionals
 
 #include <set> // Sets
 
-// #include <climits> // Max & Min
-
 #include <variant>
-// #include <memory> // Smart pointers
 
 
 #include "Type.h"
@@ -366,11 +361,11 @@ struct BranchOptCompare
             if(b->label)
                 return a->label.value() < b->label.value(); 
 
-            return true; // TODO: verify 
+            return true;
         }
         
         if(b->label)
-            return false; // TODO: verify 
+            return false; 
 
         return a->seq->toString(DisplayMode::C_STYLE) < b->seq->toString(DisplayMode::C_STYLE);
     }

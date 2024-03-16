@@ -73,7 +73,7 @@ TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)"
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test2.bismuth"))),
-        "4d88224546db13f2f2c789787ea7809d1b5f7546075f0b255bc0f497b57c41a4");
+        "deda2b1706e713a7b0a541e2b6dd3fa1a29154f935171f573b64381b62a76607");
 }
 
 TEST_CASE("programs/test3 - If w/o else", "[codegen]")
@@ -186,7 +186,7 @@ TEST_CASE("programs/test-shortcircuit-rt - Basic Short Circuit (and + or) w/ Run
 {
     EnsureCompilesTo(
         new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test-shortcircuit-rt.bismuth"))),
-        "d08aaae5cb44110528effe572fc9f6159e2f3e8d52acdfdc3764c42222582d8f");
+        "1672ece7fc52f430c079da6a3721f6b42a754d6703af9ac6ae9608c53c9fb20b");
 }
 
 TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editing arrays in functions", "[codegen]")

@@ -112,6 +112,7 @@ class TInt32ConstExprNode;
 class TInt64ConstExprNode;
 class TIntU32ConstExprNode;
 class TIntU64ConstExprNode;
+class TNumConstExprNode; // For numbers we don't yet know the size of
 class TCompilationUnitNode;
 
 class TVarDeclNode;
@@ -179,6 +180,7 @@ public:
     virtual std::optional<Value *> visit(TInt64ConstExprNode *n) = 0;
     virtual std::optional<Value *> visit(TIntU32ConstExprNode *n) = 0;
     virtual std::optional<Value *> visit(TIntU64ConstExprNode *n) = 0;
+    virtual std::optional<Value *> visit(TNumConstExprNode *n) = 0; 
     virtual std::optional<Value *> visit(TCompilationUnitNode *n) = 0;
     virtual std::optional<Value *> visit(TVarDeclNode *n) = 0;
     virtual std::optional<Value *> visit(TMatchStatementNode *n) = 0;
@@ -237,6 +239,7 @@ public:
     std::any any_visit(TInt64ConstExprNode *n) { return this->visit(n); }
     std::any any_visit(TIntU32ConstExprNode *n) { return this->visit(n); }
     std::any any_visit(TIntU64ConstExprNode *n) { return this->visit(n); }
+    std::any any_visit(TNumConstExprNode *n) { return this->visit(n); }
     std::any any_visit(TCompilationUnitNode *n) { return this->visit(n); }
     std::any any_visit(TVarDeclNode *n) { return this->visit(n); }
     std::any any_visit(TMatchStatementNode *n) { return this->visit(n); }
@@ -1231,7 +1234,8 @@ public:
 enum UnaryOperator
 {
     UNARY_MINUS,
-    UNARY_NOT
+    UNARY_NOT,
+    UNARY_BIT_NOT,
 };
 
 class TUnaryExprNode : public TypedNode
@@ -1251,6 +1255,7 @@ public:
         switch (op)
         {
         case UNARY_MINUS:
+        case UNARY_BIT_NOT:
             return Types::DYN_INT;
         case UNARY_NOT:
             return Types::DYN_BOOL;
@@ -1344,24 +1349,35 @@ public:
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
 
-class TInt32ConstExprNode : public TypedNode
+class TNumConstExprNode : public TypedNode
 {
 public:
-    int32_t value;
+    std::string value_str;
+    TypeInfer * infTy; 
 
-    TInt32ConstExprNode(int32_t v, antlr4::Token *tok) : TypedNode(tok)
+    TNumConstExprNode(std::string s, antlr4::Token *tok) : TypedNode(tok)
     {
-        value = v;
+        value_str = s;
+        infTy = new TypeInfer({
+            Types::DYN_INT, 
+            Types::DYN_U32, 
+            Types::DYN_I64, 
+            Types::DYN_U64
+        });
     }
 
-    const TypeInt *getType() override { return Types::DYN_INT; }
+    const Type *getType() override 
+    { 
+        return infTy; 
+    }
 
     std::string toString() const override {
-        return "i32 CONST";
+        return "Num CONST";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
 };
+
 
 class TInt64ConstExprNode : public TypedNode
 {
@@ -1415,6 +1431,26 @@ public:
 
     std::string toString() const override {
         return "u64 CONST";
+    }
+
+    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+};
+
+
+class TInt32ConstExprNode : public TypedNode
+{
+public:
+    int32_t value;
+
+    TInt32ConstExprNode(int32_t v, antlr4::Token *tok) : TypedNode(tok)
+    {
+        value = v;
+    }
+
+    const TypeInt *getType() override { return Types::DYN_INT; }
+
+    std::string toString() const override {
+        return "i32 CONST";
     }
 
     virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }

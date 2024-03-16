@@ -776,7 +776,7 @@ TEST_CASE("Wrong LogAnd LHS", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 define program :: c : Channel<-int> {
-    boolean a := 1 & false; 
+    boolean a := 1 && false; 
     c.send(0)
 }
     )"""",
@@ -788,7 +788,7 @@ TEST_CASE("Wrong LogAnd RHS", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 define program :: c : Channel<-int> {
-    boolean a := false & 1; 
+    boolean a := false && 1; 
     c.send(0)
 }
     )"""", 
@@ -800,7 +800,7 @@ TEST_CASE("Wrong LogOr LHS", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 define program :: c : Channel<-int> {
-    boolean a := 1 | false; 
+    boolean a := 1 || false; 
     c.send(0)
 }
     )"""", 
@@ -812,7 +812,7 @@ TEST_CASE("Wrong LogOr RHS", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 define program :: c : Channel<-int> {
-    boolean a := false | 1; 
+    boolean a := false || 1; 
     c.send(0)
 }
     )"""",
@@ -853,7 +853,7 @@ TEST_CASE("ArrayAccess - Wrong Type", "[semantic][program]")
       R""""(
 define program :: c : Channel<-int> {
     int [5] a;
-    var b := a[true | false];
+    var b := a[true || false];
     c.send(0)
 }
     )"""",
@@ -922,7 +922,7 @@ define program :: c : Channel<-int> = {
   c.send(0)
 }
     )"""", 
-    "PROC cannot return value, yet it was given a int to return!");
+    "Expected return type of Unit but got int");
 }
 
 TEST_CASE("Function return nothing", "[semantic][program]")

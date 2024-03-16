@@ -72,10 +72,11 @@ std::optional<Symbol *> STManager::lookup(std::string id)
     // Also, ensure this doesn't mess w/ error messages by 
     // making it seem like stuff isn't unbound. 
     // Ie, while isBound will help, we may use lookup in field access!
-    if(nonLinearOnly && sym.has_value() && sym.value()->getType()->isLinear())
+    if(nonLinearOnly 
+        && sym.has_value() 
+        && sym.value()->getType()->isLinear())
       return std::nullopt; 
     return sym; 
-    // return context.lookup(id);
 }
 
 void STManager::enterNonlinearScope(std::function<void()> func)

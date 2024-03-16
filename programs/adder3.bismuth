@@ -12,7 +12,7 @@ define program :: c : Channel<-int> {
 }
 
 define func XOR (boolean a, boolean b) : boolean {
-    return (a && !b) | (!a && b);
+    return (a && !b) || (!a && b);
 }
 
 define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> {
@@ -28,7 +28,7 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
 
         boolean xor := XOR(val, val2); 
         boolean sum := XOR(xor, carry); 
-        boolean car := (xor && carry) | (val && val2);
+        boolean car := (xor && carry) || (val && val2);
         more(c);
         c.send(sum);
         carry := car; 

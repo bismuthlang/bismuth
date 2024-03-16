@@ -134,6 +134,7 @@ public:
     std::optional<Value *> visit(TInt64ConstExprNode *n) override;
     std::optional<Value *> visit(TIntU32ConstExprNode *n) override;
     std::optional<Value *> visit(TIntU64ConstExprNode *n) override;
+    std::optional<Value *> visit(TNumConstExprNode *n) override;
     std::optional<Value *> visit(TCompilationUnitNode *n) override;
     std::optional<Value *> visit(TVarDeclNode *n) override;
     std::optional<Value *> visit(TMatchStatementNode *n) override;

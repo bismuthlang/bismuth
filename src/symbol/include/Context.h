@@ -16,17 +16,17 @@
 #include <stack>
 
 class Context {
-  private: 
+private: 
     std::map<std::string, uint32_t> * nameCounter; 
     Scope * globalScope; 
 
-  public:
+public:
     Context(std::map<std::string, uint32_t> * nc) 
-      : nameCounter(nc) 
+        : nameCounter(nc) 
     {
-      // Maybe add a global scope for all files? 
-      enterScope();
-      globalScope = getCurrentScope().value(); 
+        // Maybe add a global scope for all files? 
+        enterScope();
+        globalScope = getCurrentScope().value(); 
     }
 
     /**
@@ -35,7 +35,7 @@ class Context {
      * @return Scope& the scope we entered
      */
     Scope& enterScope(std::optional<Identifier *> idOpt = std::nullopt) { //std::string id, std::optional<std::function<std::string()>> meta = std::nullopt) {
-      return enterScope(false, idOpt); //id, meta);
+        return enterScope(false, idOpt); //id, meta);
     }
 
     Scope& enterScope(bool insertStop, std::optional<Identifier *> idOpt  = std::nullopt); // std::string id, std::optional<std::function<std::string()>> meta = std::nullopt);
@@ -122,11 +122,11 @@ class Context {
      * @return false if the current scope is not the global scope
      */
     bool isGlobalScope() {
-      // if(scopes.size() == 0) return false; 
+        // if(scopes.size() == 0) return false; 
 
-      if(!currentScope) return false; 
+        if(!currentScope) return false; 
 
-      return !currentScope.value()->getParent().has_value(); //->getId() == 0; 
+        return !currentScope.value()->getParent().has_value(); //->getId() == 0; 
     }
 
     std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m);
@@ -139,18 +139,18 @@ class Context {
     int scopeNumber = 0;
 
     std::string getUniqNameFor(Scope * parent, std::string inScope) {
-      // TODO: not sure if getting FQN here will break some stuff wrt generics...
-      std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
+        // TODO: not sure if getting FQN here will break some stuff wrt generics...
+        std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
       
-      auto itr = nameCounter->find(id);
-      if(itr == nameCounter->end())
-      {
-          nameCounter->insert({id, 0});
-          return inScope;
-      }
-      std::ostringstream nextName; 
-      nextName << inScope << "." << itr->second; 
-      nameCounter->insert({id, itr->second++});
-      return nextName.str(); 
+        auto itr = nameCounter->find(id);
+        if(itr == nameCounter->end())
+        {
+            nameCounter->insert({id, 0});
+            return inScope;
+        }
+        std::ostringstream nextName; 
+        nextName << inScope << "." << itr->second; 
+        nameCounter->insert({id, itr->second++});
+        return nextName.str(); 
     }
 };

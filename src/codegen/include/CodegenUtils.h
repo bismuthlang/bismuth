@@ -107,8 +107,7 @@ public:
         flags = f;
 
         // LLVM Stuff
-        // context = new LLVMContext();
-        module = m; // new Module(moduleName, *context);
+        module = m;
 
         // Use the NoFolder to turn off constant folding
         builder = new IRBuilder<NoFolder>(module->getContext());

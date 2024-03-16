@@ -341,7 +341,8 @@ public:
 
     // TODO: refactor into general saveVisit!
     /**
-     * @brief Used to safely enter a block. This is used to ensure there aren't FUNC/PROC definitions / code following returns in it.
+     * @brief Used to safely enter a block. This is used to ensure that there isn't code following returns and that 
+     * variables are inferred, and that linears are used. 
      *
      * @param ctx The BlockContext to visit
      * @param newScope  true if we should enter a new scope, false otherwise
@@ -606,7 +607,22 @@ private:
         {
             // Get the Scope* and check for any uninferred symbols
             Scope *scope = res.value();
-            std::vector<Symbol *> uninf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
+
+            // Try to unify symbols (really needed for things like nums wherein
+            // we know what types are possible to infer, so we can just 
+            // pick one if the code doesn't make it clear which variant we need)
+            for(Symbol * sym : scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE))
+            {
+                // Should always be inferrable
+                if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym->getType()))
+                {
+                    std::cout << "PRE Unify " << sym->toString() << std::endl;
+                    inf->unify(); 
+                    std::cout << "POST Unify " << sym->toString() << std::endl;
+                }
+            }
+
+            std::vector<Symbol *> unInf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
 
             // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
             // due to the var leaving the scope

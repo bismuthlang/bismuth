@@ -228,7 +228,27 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
     }
     
 
-    std::vector<Symbol *> unInf = stmgr->getCurrentScope().value()->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: shouldn't ever be an issue, but still.
+    // Should be impossible
+    if(!stmgr->getCurrentScope())
+    {
+        return errorHandler.addCompilerError(ctx->getStart(), "No current scope for the compilation unit!");
+    }
+
+    Scope * scope = stmgr->getCurrentScope().value();
+
+    // Try to unify symbols (really needed for things like nums wherein
+    // we know what types are possible to infer, so we can just 
+    // pick one if the code doesn't make it clear which variant we need)
+    for(Symbol * sym : scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE))
+    {
+        // Should always be inferrable
+        if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym->getType()))
+        {
+            inf->unify(); 
+        }
+    }
+
+    std::vector<Symbol *> unInf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE);
 
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
@@ -382,7 +402,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
         TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
 
-        // TODO: change definitions to have defSymbols instead of regular?
         TDefineTemplateNode * templateNode = new TDefineTemplateNode(
             defSym, 
             templateTy, 
@@ -623,6 +642,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
 
 std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IConstExprContext *ctx)
 {
+
     auto tyModifier = ctx->i->ty ? ctx->i->ty->getText() : "i32"; 
     std::optional<std::pair<int, std::string>> datOpt = [ctx]() -> std::optional<std::pair<int, std::string>> {
         if(ctx->i->DEC_LITERAL())
@@ -640,6 +660,12 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     }
 
     std::pair<int, std::string> dat = datOpt.value(); 
+
+    // FIXME: FORWARD BASE!
+    if(!ctx->i->ty)
+    {
+        return TNVariantCast<TNumConstExprNode>(new TNumConstExprNode(dat.second, ctx->getStart()));
+    }
 
     // https://en.cppreference.com/w/cpp/string/basic_string/stol
 
@@ -668,10 +694,8 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
         uint64_t val = static_cast<uint64_t>(std::stoull(text, &pos, base)); 
         return TNVariantCast<TIntU64ConstExprNode>(new TIntU64ConstExprNode(val, ctx->getStart()));
     }
-    // else 
-    // {
-    return errorHandler.addError(ctx->i->getStart(), "Unknown integer type modifier: " + ctx->i->ty->getText() + ". This is likely a complier error. Please report it."); // TODO: REPORT TO?
-    // }
+    
+    return errorHandler.addCompilerError(ctx->i->getStart(), "Unknown integer type modifier: " + ctx->i->ty->getText());
 }
 
 std::variant<TStringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SConstExprContext *ctx)
@@ -747,6 +771,13 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
             return errorHandler.addError(ctx->getStart(), "int expected in unary minus, but got " + innerType->toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
+    case BismuthParser::BIT_NOT: 
+        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64}))
+        {
+            // TODO: int/i64 expected?
+            return errorHandler.addError(ctx->getStart(), "int expected in unary minus, but got " + innerType->toString(toStringMode));
+        }
+        return new TUnaryExprNode(UNARY_BIT_NOT, innerNode, ctx->getStart());
     case BismuthParser::NOT:
         if (innerType->isNotSubtype(Types::DYN_BOOL))
         {
@@ -772,9 +803,12 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     std::string opStr = ctx->BIT_AND()  ? "&"
                       : ctx->BIT_OR()   ? "|"
                       : ctx->BIT_XOR()  ? "^"
-                      : ctx->LOG_RSH()  ? ">>>"
-                      : ctx->ARITH_RSH()? ">>"
-                      : ctx->LSH()      ? "<<"
+                      : (ctx->shiftOp() && ctx->shiftOp()->GREATER().size() == 3) ? ">>>"
+                    //   : ctx->LOG_RSH()  ? ">>>"
+                      : (ctx->shiftOp() && ctx->shiftOp()->GREATER().size() == 2) ? ">>"
+                    //   : ctx->ARITH_RSH()? ">>"
+                      : (ctx->shiftOp() && ctx->shiftOp()->LESS().size() == 2) ? "<<"
+                    //   : ctx->LSH()      ? "<<"
                       : ctx->MULTIPLY() ? "*" 
                       : ctx->DIVIDE()   ? "/"
                       : ctx->MOD()      ? "%"
@@ -811,9 +845,9 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         ctx->BIT_AND()  ? BIT_AND
       : ctx->BIT_OR()   ? BIT_OR
       : ctx->BIT_XOR()  ? BIT_XOR 
-      : ctx->LOG_RSH()  ? BINARY_LOG_RIGHT_SHIFT
-      : ctx->ARITH_RSH()? BINARY_ARITH_RIGHT_SHIFT
-      : ctx->LSH()      ? BINARY_LEFT_SHIFT
+      : (ctx->shiftOp() && ctx->shiftOp()->GREATER().size() == 3) ? BINARY_LOG_RIGHT_SHIFT
+      : (ctx->shiftOp() && ctx->shiftOp()->GREATER().size() == 2) ? BINARY_ARITH_RIGHT_SHIFT
+      : (ctx->shiftOp() && ctx->shiftOp()->LESS().size() == 2) ? BINARY_LEFT_SHIFT
       : ctx->MULTIPLY() ? BINARY_ARITH_MULT 
       : ctx->DIVIDE()   ? BINARY_ARITH_DIV
       : ctx->MOD()      ? BINARY_ARITH_MOD
@@ -1767,14 +1801,14 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ReturnStatementContext *ctx)
 {
     /*
-     * Lookup the @RETURN symbol which can ONLY be defined by entering FUNC/PROC
+     * Lookup the @RETURN symbol which can ONLY be defined by entering a function
      */
     std::optional<Symbol *> symOpt = stmgr->lookup("@RETURN");
 
     // If we don't have the symbol, we're not in a place that we can return from.
     if (!symOpt)
     {
-        return errorHandler.addError(ctx->getStart(), "Cannot use return outside of FUNC or PROC");
+        return errorHandler.addError(ctx->getStart(), "Cannot use return outside of a function");
     }
 
     Symbol *sym = symOpt.value();
@@ -1794,14 +1828,8 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
         const Type *valType = val->getType();
 
-        // If the type of the return symbol is a BOT, then we must be in a PROC and, thus, we cannot return anything
-        if (sym->getType()->isSubtype(Types::UNIT))
-        {
-            return errorHandler.addError(ctx->getStart(), "PROC cannot return value, yet it was given a " + valType->toString(toStringMode) + " to return!");
-        }
-
-        // As the return type is not a BOT, we have to make sure that it is the correct type to return
-
+        // Check return type. 
+        // TODO: improve error as if the return type is Unit, then simply return; is valid. 
         if (valType->isNotSubtype(sym->getType()))
         {
             return errorHandler.addError(ctx->getStart(), "Expected return type of " + sym->getType()->toString(toStringMode) + " but got " + valType->toString(toStringMode));
@@ -1856,7 +1884,9 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     DefinitionSymbol * sym = lazy_value_or<DefinitionSymbol *>(symOpt, 
         [this]() {return stmgr->addAnonymousDefinition("lambda", new TypeFunc()).value(); });
 
-    Scope * origScope = stmgr->getCurrentScope().value(); // TODO: BAD OPT ACCESS BUT SHOULD NEVER HAPPEN 
+    if(!stmgr->getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of lambda constexpr!");
+
+    Scope * origScope = stmgr->getCurrentScope().value(); 
     stmgr->enterScope(sym->getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
 
     std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->parameterList());
@@ -2054,7 +2084,9 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
     {
-        Scope * origScope = stmgr->getCurrentScope().value(); // TODO: BAD OPT ACCESS BUT SHOULD NEVER HAPPEN 
+        if(!stmgr->getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of enum definition!");
+
+        Scope * origScope = stmgr->getCurrentScope().value(); 
         stmgr->enterScope(sym->getInnerScope());
         TDefineEnumNode * enumNode = new TDefineEnumNode(
             sym, 
@@ -3074,8 +3106,10 @@ std::optional<ErrorChain *> SemanticVisitor::TVisitImportStatement(BismuthParser
 {
     if(ctx->path()->eles.size() < 2)
     {
-        // TODO: make error on last path element?
-        return errorHandler.addError(ctx->path()->getStart(), "Path too short for import."); // FIXME: Better error message
+        return errorHandler.addCompilerError(
+            ctx->path()->eles.back()->getStart(),
+            "Paths must have 2 or more elements in them."
+        );
     }
 
     std::string aliasStr = ctx->alias ? ctx->alias->getText() : ctx->path()->eles.at(ctx->path()->eles.size() - 1)->getText();
@@ -3428,10 +3462,11 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
     auto defineTemplate = [this, m, defineFunction, defineProgram, defineEnum, defineStruct](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol * defSym) -> std::optional<ErrorChain *> {
         if (templateTy->isDefined()) return std::nullopt; 
 
-        auto applyTemplate = [this, m, defSym](TemplateInfo info, std::function<std::optional<ErrorChain *>()> fn) -> std::optional<ErrorChain *> {
-            Scope * origScope = stmgr->getCurrentScope().value(); // TODO: BAD OPT VALUE BUT SHOULDNT HAPPEN 
+        auto applyTemplate = [this, m, defSym, ctx](TemplateInfo info, std::function<std::optional<ErrorChain *>()> fn) -> std::optional<ErrorChain *> {
+            if(!stmgr->getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of define Template!");
+
+            Scope * origScope = stmgr->getCurrentScope().value(); 
             stmgr->enterScope(defSym->getInnerScope()); 
-            // std::vector<Symbol *> templateSyms; 
 
             // FIXME: verify these bindings all go through (they should as we've entered the inner scope, unless there are duplicates?)
             for(auto i : info.templates)

@@ -896,6 +896,7 @@ public:
     // FIXME: IMPL!
     // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    bool unify() const; 
 protected:
     /**
      * @brief Internal helper function used to try updating the type that this inference represents
@@ -1057,6 +1058,7 @@ inline std::optional<const T*> type_cast(const Type * ty)
 
     if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(ty))
     {
+        inf->unify(); // TODO: maybe move unify call to getValueType()?
         std::optional<const Type *> opt = inf->getValueType(); 
         if(!opt) return std::nullopt; //TODO: Handle better? Challenging for things like Struct... (ie, multiplicities), but may be less of a problem, perhaps, when we disable nulls.
         return type_cast<T>(opt.value()); 

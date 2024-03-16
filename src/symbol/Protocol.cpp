@@ -868,11 +868,7 @@ void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const
  * *******************************************/
 std::string ProtocolClose::as_str(DisplayMode mode) const
 {
-    // TODO: CHANGE SYMBOLS?
-    std::ostringstream description;
-    description << "Cancelable<" << proto->toString(mode) << ">";
-
-    return description.str();
+    return "Cancelable<" +  proto->toString(mode) + ">";
 }
 const Protocol *ProtocolClose::getInverse() const
 {

@@ -298,7 +298,7 @@ bool TypeDynArray::isSupertypeFor(const Type *other) const
             */
         return p->valueType->isSubtype(valueType);
     }
-    // TODO: allow unsized arrays to become sized!
+    // TODO: allow unsized arrays to become sized! (I think you mean the opposite!)
 
     return false;
 }
@@ -343,11 +343,17 @@ std::string TypeChannel::toString(DisplayMode mode) const
 llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
 {
     // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), "_Channel");
+    llvm::StructType *ty = llvm::StructType::getTypeByName(
+        M->getContext(),
+        "_Channel"
+    );
+
     if (ty)
         return ty->getPointerTo();
 
-    return llvm::StructType::create(M->getContext(), "_Channel")->getPointerTo();
+    return llvm::StructType::create(
+        M->getContext(),
+        "_Channel")->getPointerTo();
 }
 
 // Note rhetoric of how we could group each type by fn. ie keep the deep copies together
@@ -434,10 +440,7 @@ bool TypeChannel::isSupertypeFor(const Type *other) const
  *******************************************/
 std::string TypeBox::toString(DisplayMode mode) const
 {
-    std::ostringstream description;
-    description << "Box<" << innerType->toString(mode) << ">"; // TODO: remove ostringstream?
-
-    return description.str();
+    return "Box<" + innerType->toString(mode) + ">";
 }
 
 const Type *TypeBox::getInnerType() const { return innerType; }
@@ -822,11 +825,29 @@ bool TypeInfer::setValue(const Type *other) const
     {
         return other->isSubtype(valueType->value()); // NOTE: CONDITION INVERSED BECAUSE WE CALL IT INVERSED IN SYMBOL.CPP!
     }
-
     if(possibleTypes.size())
     {
-        if(!possibleTypes.contains(other)) return false; 
+        // Note: this process cannot be recursive as 
+        // we'd have to insert a match on the sum.
+        // Ie. we allow A, (B + C) to be assigned to (A + (B + C)) 
+        // but not B, C.
+        if(!possibleTypes.contains(other))
+        {
+            if(const TypeSum * sum = dynamic_cast<const TypeSum*>(other))
+            {
+                for(const Type * t : sum->getCases())
+                {
+                    if(possibleTypes.contains(t))
+                    {
+                        other = t; 
+                        goto valid; 
+                    }
+                }
+            }
+            return false; 
+        }
     }
+valid: 
 
     // Set our valueType to be the provided type to see if anything breaks...
     TypeInfer *u_this = const_cast<TypeInfer *>(this);
@@ -849,12 +870,14 @@ bool TypeInfer::setValue(const Type *other) const
 
 bool TypeInfer::isSupertypeFor(const Type *other) const
 {
+    std::cout << "858 " << this->toString(C_STYLE) << " VS " << other->toString(C_STYLE) << std::endl; 
     // If we already have an inferred type, we can simply
     // check if that type is a subtype of other.
     if (valueType->has_value())
-        // return other->isSubtype(valueType->value());
+    {
+        std::cout << "881" << std::endl; 
         return valueType->value()->isSubtype(other);
-
+    }
     /*
         * If the other type is also an inference type...
         */
@@ -863,7 +886,12 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
         // If the other inference type has a value determined, try using that
         if (oInf->valueType->has_value())
         {
-            return setValue(oInf->valueType->value());
+            // If we fail the update, try to unify so that way 
+            // we can get a type for this. After all, the program
+            // is going to error anyways. We won't want to show this as a var. 
+            bool ans = setValue(oInf->valueType->value());
+            if(!ans) unify();
+            return ans; 
         }
 
         // Otherwise, add the types to be dependencies of each other, and return true.
@@ -876,9 +904,38 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
     }
 
     // Try to update this type's inferred value with the other type
-    return setValue(other);
+    
+    bool ans = setValue(other); 
+    // If we fail the update, try to unify so that way 
+    // we can get a type for this. After all, the program
+    // is going to error anyways. We won't want to show this as a var. 
+    if(!ans) unify(); 
+
+    std::cout << "910!" << std::endl; 
+    return ans; 
 }
 
+bool TypeInfer::unify() const 
+{
+    std::cout << "909 " << this->hasBeenInferred() << " " << possibleTypes.size() << std::endl;
+    if(this->hasBeenInferred()) return true;
+    if(possibleTypes.size() != 0)
+    {
+        std::cout << "912 " << (*(possibleTypes.begin()))->toString(C_STYLE) << std::endl;
+        return this->isSupertypeFor(*(possibleTypes.begin()));
+    }
+
+    for (const TypeInfer *ty : infTypes)
+    {
+        // ty->unify(); 
+        if(ty->possibleTypes.size() != 0)
+        {
+            return this->isSupertypeFor(*(ty->possibleTypes.begin()));
+        }
+    }
+
+    return this->hasBeenInferred(); 
+}
 
 /*******************************************
  *
@@ -1062,12 +1119,9 @@ const Type * TypeSum::getCopySubst(std::map<const Type *, const Type *> existing
 
     std::set<const Type *, TypeCompare> cases = {};
     // TODO: refactor getting a stub into a method like freshStub() ? 
-    TypeSum * ans = new TypeSum(cases, this->getIdentifier()); //this->getName());
+    TypeSum * ans = new TypeSum(cases, this->getIdentifier());
     {
         ans->setIdentifier(this->getIdentifier());
-        // auto m = this->getMeta(); 
-        // if(m)
-        //     ans->setMeta(m.value());
     }
 
     existing.insert({this, ans});

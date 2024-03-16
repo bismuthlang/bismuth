@@ -1150,6 +1150,45 @@ std::optional<Value *> CodegenVisitor::visit(TIntU64ConstExprNode *n)
     return getU64(n->value);
 }
 
+std::optional<Value *> CodegenVisitor::visit(TNumConstExprNode *n)
+{
+    std::size_t pos{};
+    int base = 10; //dat.first; 
+    std::string text = n->value_str; // dat.second; 
+
+    if(n->infTy->hasBeenInferred())
+    {   
+        const Type * inferred = n->infTy->getValueType().value(); 
+        if(dynamic_cast<const TypeInt*>(inferred))
+        {
+            // TODO: what happens if these fail? Ie, what if num too large?
+            int32_t val = static_cast<int32_t>(std::stol(text, &pos, base)); 
+            return getI32(val);
+        }
+        if(dynamic_cast<const TypeU32*>(inferred))
+        {
+            uint32_t val = static_cast<uint32_t>(std::stoul(text, &pos, base)); 
+            return getU32(val);
+        }
+        if(dynamic_cast<const TypeI64*>(inferred))
+        {
+            int64_t val = static_cast<int64_t>(std::stoll(text, &pos, base)); 
+            return getI64(val);
+        }
+        if(dynamic_cast<const TypeU64*>(inferred))
+        {
+            uint64_t val = static_cast<uint64_t>(std::stoull(text, &pos, base)); 
+            return getU64(val);
+        }
+        // FIXME: ADDD ERROR, DONT ASSERT
+        assert(false && "Expected a num type (i32/u32/i64/u64), but got something else");
+        return std::nullopt; 
+    }
+
+    int32_t val = static_cast<int32_t>(std::stol(text, &pos, base)); 
+    return getI32(val);
+}
+
 std::optional<Value *> CodegenVisitor::visit(TStringConstNode *n)
 {
     // Create a constant to represent our string (now with the escape characters corrected)
@@ -1196,13 +1235,14 @@ std::optional<Value *> CodegenVisitor::visit(TUnaryExprNode *n)
         return builder->CreateNSWSub(Int32Zero, innerVal.value());
     }
 
+    case UNARY_BIT_NOT:
     case UNARY_NOT:
     {
         std::optional<Value *> innerVal = AcceptType(this, n->value);
 
         if (!innerVal)
         {
-            errorHandler.addError(n->getStart(), "Failed to generate code for: unary not");
+            errorHandler.addError(n->getStart(), "Failed to generate code for: unary (bit) not");
             return std::nullopt;
         }
 

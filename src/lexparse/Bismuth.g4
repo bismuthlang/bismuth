@@ -68,10 +68,10 @@ expression
     | VARIABLE                                     # IdentifierExpr
     | expr=expression ('.' fields+=VARIABLE)+      # FieldAccessExpr
     | path                                         # PathExpr
-    | <assoc=right> op=(MINUS | NOT) ex=expression                                  # UnaryExpr 
+    | <assoc=right> op=(MINUS | NOT | BIT_NOT) ex=expression                        # UnaryExpr 
     | left=expression op=(MULTIPLY | DIVIDE | MOD) right=expression                 # BinaryArithExpr
     | left=expression op=(PLUS | MINUS) right=expression                            # BinaryArithExpr
-    | left=expression op=(LOG_RSH | ARITH_RSH | LSH) right=expression               # BinaryArithExpr
+    | left=expression shiftOp right=expression                                      # BinaryArithExpr
     | left=expression op=(LESS | LESS_EQ | GREATER | GREATER_EQ) right=expression   # BinaryRelExpr 
     | left=expression op=(BIT_AND | BIT_OR | BIT_XOR) right=expression              # BinaryArithExpr
     | <assoc=right> left=expression op=(EQUAL | NOT_EQUAL) right=expression         # EqExpr
@@ -167,6 +167,11 @@ statement           : defineType                                                
 assignmentStatement : <assoc=right> to=expression ASSIGN a=expression                                        ;
 variableDeclaration : <assoc=right> ty=typeOrVar assignments+=assignment (',' assignments+=assignment)*  ;
 
+shiftOp     :  GREATER GREATER GREATER
+            |  GREATER GREATER
+            |  LESS LESS
+            ;
+
 //Operators
 ASSIGN      :       ':='    ; 
 MINUS       :       '-'     ;
@@ -181,14 +186,15 @@ GREATER_EQ  :       '>='    ;
 GREATER     :       '>'     ;
 EQUAL       :       '=='    ;
 NOT_EQUAL   :       '!='    ;
-BIT_AND         :       '&'     ;
-BIT_OR          :       '|'     ;
-LOG_AND         :       '&&'    ;
-LOG_OR          :       '||'    ;
-BIT_XOR         :       '^'     ;
-LOG_RSH         :       '>>>'   ;
-ARITH_RSH       :       '>>'    ;
-LSH             :       '<<'    ;
+BIT_NOT     :       '~'     ;
+BIT_AND     :       '&'     ;
+BIT_OR      :       '|'     ;
+LOG_AND     :       '&&'    ;
+LOG_OR      :       '||'    ;
+BIT_XOR     :       '^'     ;
+// LOG_RSH         :       '>>>'   ;
+// ARITH_RSH       :       '>>'    ;
+// LSH             :       '<<'    ;
 MAPS_TO     :       '->'    ;
 
 
