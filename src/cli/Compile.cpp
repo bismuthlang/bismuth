@@ -258,6 +258,119 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_Semantic(s
     return ans; 
 }
 
+std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
+{
+    // auto printErrors = [](ErrorChain *) {
+    //     std::cerr << "Semantic analysis completed for " << input->getSourceName() << " with errors: " << std::endl;
+    //     std::cerr << sv->getErrors() << std::endl;
+    //     valid = false;
+    //     // continue;
+    // }
+    /*
+     * Sets up compiler flags. These need to be sent to the visitors.
+     */
+
+    int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
+
+    bool valid = true;
+    STManager *stm = new STManager();
+
+
+    SemanticVisitor * sv = new SemanticVisitor(stm, toStringMode, flags);
+
+    // I wish there was an easy way to write programs (perhaps with constraints)
+    // which is able to generate the following code, as it really is all algorithmic.
+    // Eg, with Type T do XYZ
+    std::vector<SemanticVisitor::ImportPhaseClosure> importClosures; 
+    for(auto [tree, input] : inputs)
+    {
+        std::variant<
+            SemanticVisitor::ImportPhaseClosure,
+            ErrorChain *
+        > opt = sv->phasedVisit(tree, input->getPathSteps());
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+        {
+            // return (*e);
+            valid = false; 
+        }
+
+        SemanticVisitor::ImportPhaseClosure clos = std::get<SemanticVisitor::ImportPhaseClosure>(opt);
+        importClosures.push_back(clos); 
+    }
+
+    if(!valid || sv->hasErrors(0))
+    {
+        std::cerr << sv->getErrors() << std::endl;
+        std::exit(-1);
+    }
+
+    std::vector<SemanticVisitor::DefineFwdDeclsPhaseClosure> fwdDeclClosures; 
+    for(auto importClos : importClosures)
+    {
+        std::variant<SemanticVisitor::DefineFwdDeclsPhaseClosure, ErrorChain *> opt = importClos(); 
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+        {
+            // return (*e);
+            valid = false; 
+        }
+
+        fwdDeclClosures.push_back(std::get<SemanticVisitor::DefineFwdDeclsPhaseClosure>(opt));
+    }
+
+    if(!valid || sv->hasErrors(0))
+    {
+        std::cerr << sv->getErrors() << std::endl;
+        std::exit(-1);
+    }
+
+    std::vector<SemanticVisitor::PhaseNClosure> nClosures; 
+    for(auto fwdClos : fwdDeclClosures)
+    {
+        nClosures.push_back(
+            fwdClos()
+        ); 
+    }
+
+    if(!valid || sv->hasErrors(0))
+    {
+        std::cerr << sv->getErrors() << std::endl;
+        std::exit(-1);
+    }
+
+    // Interesting how when we copy paste, we really would benefit from var renaming
+    // to get compiler errors. 
+
+    std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> ans;
+    // for(auto nClos : nClosures)
+    for(unsigned int i = 0; i < nClosures.size(); i++)
+    {
+        auto nClos = nClosures.at(i); 
+        CompilerInput * input = inputs.at(i).second; 
+        std::variant<TCompilationUnitNode *, ErrorChain *> opt = nClos(); 
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
+        {
+            // return (*e);
+            valid = false; 
+        }
+
+        ans.push_back({
+            std::get<TCompilationUnitNode *>(opt),
+            input
+        });
+    }
+
+    if(!valid || sv->hasErrors(0))
+    {
+        std::cerr << sv->getErrors() << std::endl;
+        std::exit(-1);
+    }
+
+    return ans; 
+}
+
 void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
 {
     bool isValid = true;
@@ -408,7 +521,7 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
      *******************************************************************/
     std::vector<CompilerInput *> inputs = getInputsFromFiles(argSrcPath, argBuildPath, inputFileName);
 
-    auto toCodegen = Stage_Semantic(
+    auto toCodegen = Stage_PSemantic(
         Stage_lexParse(inputs),
         demoMode, 
         isVerbose,

@@ -1,73 +1,9 @@
 #include "SemanticVisitor.h"
 
 
-std::optional<ErrorChain *> SemanticVisitor::definePredeclarations(BismuthParser::CompilationUnitContext *ctx)
+std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx)
 {
     // Enter initial scope
-    // stmgr->enterScope(StopType::NONE);
-
-    // TODO: refactor to use defineAndGetSymbolFor for each, then can remove defineTypeCase and replace with single function call.
-    for (auto e : ctx->defs)
-    {
-        // Wastes a bit of memory in allocating type even for duplicates
-        defineAndGetSymbolFor(e, VisibilityModifier::PUBLIC); 
-    }
-
-    return std::nullopt; 
-}
-
-
-std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps)
-{
-    // Enter initial scope
-    if(steps.empty())
-    {
-        stmgr->enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
-    }
-    else 
-    {
-        std::optional<Scope *> scopeOpt = stmgr->getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
-
-        if(!scopeOpt)
-        {
-            return errorHandler.addCompilerError(ctx->getStart(), "Failed to enter scope for compilation unit!"); 
-        }
-
-        stmgr->enterScope(scopeOpt.value());
-    }
-
-    std::vector<TExternNode *> externs;
-
-    // Visit externs first; they will report any errors if they have any.
-    for (auto e : ctx->externs)
-    {
-        std::variant<TExternNode *, ErrorChain *> extOpt = this->visitCtx(e);
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&extOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Error in definition of extern");
-        }
-        TExternNode *node = std::get<TExternNode *>(extOpt);
-
-        if (flags & CompilerFlags::DEMO_MODE)
-        {
-            if (!(node->getSymbol()->getScopedIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::DYN_STR) && node->getType()->getReturnType()->isSubtype(Types::DYN_INT) && node->getType()->isVariadic()))
-            {
-                errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
-            }
-        }
-
-        externs.push_back(node);
-    }
-
-    for(auto i : ctx->imports)
-    {
-        std::optional<ErrorChain *> errOpt = this->TVisitImportStatement(i);
-        if(errOpt)
-            return errOpt.value(); 
-    }
-
-
     for (auto e : ctx->defs)
     {
         // Wastes a bit of memory in allocating type even for duplicates
@@ -121,19 +57,28 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
 
         symBindings->bind(e, symOpt.value());
-
     }
+    return std::nullopt; 
+}
 
-    // Auto forward decl
-    // FIXME: ERROR CHECK!
+std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx)
+{
+    // Enter initial scope
+    // stmgr->enterScope(StopType::NONE);
 
+    // TODO: refactor to use defineAndGetSymbolFor for each, then can remove defineTypeCase and replace with single function call.
     for (auto e : ctx->defs)
     {
         // Wastes a bit of memory in allocating type even for duplicates
         defineAndGetSymbolFor(e, VisibilityModifier::PUBLIC); 
     }
 
-    // Visit the statements contained in the unit
+    return std::nullopt; 
+}
+
+
+std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visitFwdDecls(BismuthParser::CompilationUnitContext *ctx)
+{
     std::vector<DefinitionNode *> defs;
     for (auto e : ctx->defs)
     {
@@ -184,6 +129,42 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         }
     }
 
+    return defs; 
+}
+
+
+std::variant<std::vector<TExternNode *>, ErrorChain *> SemanticVisitor::visitExterns(BismuthParser::CompilationUnitContext *ctx)
+{
+    std::vector<TExternNode *> externs;
+
+    // Visit externs first; they will report any errors if they have any.
+    for (auto e : ctx->externs)
+    {
+        std::variant<TExternNode *, ErrorChain *> extOpt = this->visitCtx(e);
+
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&extOpt))
+        {
+            return (*e)->addError(ctx->getStart(), "Error in definition of extern");
+        }
+        TExternNode *node = std::get<TExternNode *>(extOpt);
+
+        if (flags & CompilerFlags::DEMO_MODE)
+        {
+            if (!(node->getSymbol()->getScopedIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::DYN_STR) && node->getType()->getReturnType()->isSubtype(Types::DYN_INT) && node->getType()->isVariadic()))
+            {
+                errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
+            }
+        }
+
+        externs.push_back(node);
+    }
+
+    return externs;
+}
+
+
+std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::CompilationUnitContext *ctx)
+{
     /*******************************************
      * Extra checks depending on compiler flags
      *******************************************/
@@ -263,10 +244,199 @@ std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
         errorHandler.addError(ctx->getStart(), "230 Uninferred types in context: " + details.str());
     }
+    return std::nullopt; 
+}
+
+std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps)
+{
+    /*
+    // Enter initial scope
+    if(steps.empty())
+    {
+        stmgr->enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
+    }
+    else 
+    {
+        std::optional<Scope *> scopeOpt = stmgr->getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
+
+        if(!scopeOpt)
+        {
+            return errorHandler.addCompilerError(ctx->getStart(), "Failed to enter scope for compilation unit!"); 
+        }
+
+        stmgr->enterScope(scopeOpt.value());
+    }
+
+    provisionFwdDeclSymbols(ctx);
+
+    for(auto i : ctx->imports)
+    {
+        std::optional<ErrorChain *> errOpt = this->TVisitImportStatement(i);
+        if(errOpt)
+            return errOpt.value(); 
+    }
+
+    auto externsOpt = visitExterns(ctx); 
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&externsOpt))
+    {
+        return (*e);
+    }
+
+    std::vector<TExternNode *> externs = std::get<std::vector<TExternNode *>>(externsOpt);
+
+
+    // FIXME: ERROR CHECK!
+    defineFwdDeclSymbols(ctx);
+
+    auto nodeOpts = visitFwdDecls(ctx);
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&nodeOpts))
+    {
+        return (*e);
+    }
+
+    std::vector<DefinitionNode *> defs = std::get<std::vector<DefinitionNode *>>(nodeOpts);
+
+    // Visit the statements contained in the unit
+
+    auto errOpt = postCUVisitChecks(ctx); 
+    if(errOpt) return errOpt.value(); 
+   
      
     // Return UNDEFINED as this should be viewed as a statement and not something assignable
     return new TCompilationUnitNode(externs, defs);
+    */
+
+    auto phasedVisitor0 = phasedVisit(ctx, steps);
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&phasedVisitor0))
+    {
+        return (*e);
+    }
+    auto phasedVisitor1 = std::get<std::function<std::variant<
+            std::function<std::function<std::variant<TCompilationUnitNode *, ErrorChain *>()>()>,
+            ErrorChain *
+    >()>>(phasedVisitor0);
+
+    auto res1 = phasedVisitor1(); 
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&res1))
+    {
+        return (*e);
+    }
+    auto phasedVisitor2 = std::get<
+                std::function<
+                    std::function<
+                        std::variant<TCompilationUnitNode *,
+                        ErrorChain *>()>
+                    ()>>(res1);
+
+
+    auto res3 = phasedVisitor2()(); 
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&res3))
+    {
+        return (*e);
+    }
+
+    return std::get<TCompilationUnitNode *>(res3); 
+
+
+    // (
+    //     res: (() -> 
+    //         (
+    //             res: (() ->
+    //                     (() -> (res: TCompilationUnitNode * + err: ErrorChain *))
+    //             )
+    //             +
+    //             err: ErrorChain *
+    //         )
+    //     )
+    //     + 
+    //     err: ErrorChain *
+    // )
 }
+
+
+std::variant<
+    SemanticVisitor::ImportPhaseClosure,
+    ErrorChain *
+>
+SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps)
+{
+    // Enter initial scope
+    Scope * cuScope; 
+    if(steps.empty())
+    {
+        stmgr->enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
+        cuScope = stmgr->getCurrentScope().value(); 
+    }
+    else 
+    {
+        std::optional<Scope *> scopeOpt = stmgr->getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
+
+        if(!scopeOpt)
+        {
+            return errorHandler.addCompilerError(ctx->getStart(), "Failed to enter scope for compilation unit!"); 
+        }
+
+        cuScope = scopeOpt.value();
+
+        stmgr->enterScope(cuScope);
+    }
+
+    
+    
+    provisionFwdDeclSymbols(ctx);
+
+    return [this, ctx, cuScope]() -> 
+        std::variant<
+            std::function<std::function<std::variant<TCompilationUnitNode *, ErrorChain *>()>()>,
+            ErrorChain *
+    >{
+        stmgr->enterScope(cuScope);
+        for(auto i : ctx->imports)
+        {
+            std::optional<ErrorChain *> errOpt = this->TVisitImportStatement(i);
+            if(errOpt)
+                return errOpt.value(); 
+        }
+
+        
+        auto externsOpt = visitExterns(ctx); 
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&externsOpt))
+        {
+            return (*e);
+        }
+        std::vector<TExternNode *> externs = std::get<std::vector<TExternNode *>>(externsOpt);
+
+
+        return [this, ctx, cuScope, externs]() -> std::function<std::variant<TCompilationUnitNode *, ErrorChain *>()>{
+            stmgr->enterScope(cuScope);
+            // FIXME: ERROR CHECK!
+            defineFwdDeclSymbols(ctx);
+
+            return [this, ctx, cuScope, externs]() -> std::variant<TCompilationUnitNode *, ErrorChain *> {
+                stmgr->enterScope(cuScope);
+                auto nodeOpts = visitFwdDecls(ctx);
+
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&nodeOpts))
+                {
+                    return (*e);
+                }
+
+                std::vector<DefinitionNode *> defs = std::get<std::vector<DefinitionNode *>>(nodeOpts);
+
+                // Visit the statements contained in the unit
+
+                auto errOpt = postCUVisitChecks(ctx); 
+                if(errOpt) return errOpt.value(); 
+            
+                
+                // Return UNDEFINED as this should be viewed as a statement and not something assignable
+                return new TCompilationUnitNode(externs, defs);
+            };
+        };
+    };
+}
+
 
 std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CallExprContext *ctx)
 {

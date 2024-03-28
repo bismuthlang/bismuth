@@ -270,7 +270,22 @@ public:
     std::any visitTemplatedType(BismuthParser::TemplatedTypeContext * ctx) override { return visitCtx(ctx); }
 
     // std::optional<ErrorChain *> calculatePredeclarations(BismuthParser::CompilationUnitContext *ctx);
-    std::optional<ErrorChain *> definePredeclarations(BismuthParser::CompilationUnitContext *ctx);
+    std::optional<ErrorChain *> provisionFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx);
+    std::optional<ErrorChain *> defineFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx);
+    std::variant<std::vector<DefinitionNode *>, ErrorChain *> visitFwdDecls(BismuthParser::CompilationUnitContext *ctx);
+    std::variant<std::vector<TExternNode *>, ErrorChain *> visitExterns(BismuthParser::CompilationUnitContext *ctx);
+    std::optional<ErrorChain *> postCUVisitChecks(BismuthParser::CompilationUnitContext *ctx);
+
+    // typedef unsigned long ulong;
+    typedef std::function<std::variant<TCompilationUnitNode *, ErrorChain *>()> PhaseNClosure; 
+    typedef std::function<PhaseNClosure()> DefineFwdDeclsPhaseClosure; 
+    typedef std::function<std::variant<DefineFwdDeclsPhaseClosure, ErrorChain *>()> ImportPhaseClosure; 
+
+std::variant<
+    ImportPhaseClosure,
+    ErrorChain *
+>
+    phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps);
 
     /*
      *  Protocols
