@@ -1,18 +1,28 @@
 #include "Type.h"
 
-bool Type::isSubtype(const Type *other) const
+bool Type::isSubtype(const Type *other, InferenceMode mode) const
 {
+    std::cout << "5 " << this->toString(C_STYLE) << " <: " << other->toString(C_STYLE) << std::endl; 
     if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(this))
     {
         // return false;
         // return inf->isSupertype(this);
-        return inf->isSupertype(other);
+        return inf->isSupertypeFor(other, mode);
     }
 
     if(other->isLinear() && !this->isLinear()) return false;  //FIXME: VERIFY WORKS WITH TYPE INF!
 
     return other->isSupertypeFor(this);
 }
+
+
+bool Type::isNotSubtype(std::vector<const Type *> others, InferenceMode mode) const {
+    for(auto a : others)
+        if(isSubtype(a, mode))
+            return false; 
+    return true; 
+} 
+
 
 /*******************************************
  *
@@ -411,24 +421,7 @@ bool TypeChannel::isSupertypeFor(const Type *other) const
 
     if (const TypeChannel *p = dynamic_cast<const TypeChannel *>(other))
     {
-        // return p->isSubtype(protocol);
-        return toString(C_STYLE) == other->toString(C_STYLE); // FIXME: DO BETTER
-    //     // Makes sure that both functions have the same number of parameters
-    //     if (p->paramTypes.size() != this->paramTypes.size())
-    //         return false;
-
-    //     // Makes sure both functions have the same variadic status
-    //     if (this->variadic != p->variadic)
-    //         return false;
-
-    //     // Checks that the parameters of this function are all subtypes of the other
-    //     for (unsigned int i = 0; i < this->paramTypes.size(); i++)
-    //     {
-    //         if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
-    //             return false;
-    //     }
-    //     // Makes sure that the return type of this function is a subtype of the other
-    //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
+        return this->protocol->isSubtype(p->protocol);
     }
     return false;
 }
@@ -578,7 +571,8 @@ bool TypeProgram::isSupertypeFor(const Type *other) const
         
         if(this->hasName() && !p->hasName()) return false; 
 
-        return this->getTypeRepresentation(C_STYLE) == p->getTypeRepresentation(C_STYLE);
+        return this->protocol->isSubtype(p->protocol);
+        // return this->getTypeRepresentation(C_STYLE) == p->getTypeRepresentation(C_STYLE);
         // return toString(C_STYLE) == other->toString(C_STYLE); // FIXME: DO BETTER
         // return protocol->isSubtype(p->protocol);
     }
@@ -812,8 +806,9 @@ bool TypeInfer::requiresDeepCopy() const { return valueType->value()->requiresDe
 
 const TypeInfer * TypeInfer::getCopy() const { return this; };
 
-bool TypeInfer::setValue(const Type *other) const
+bool TypeInfer::setValue(const Type *other, InferenceMode mode) const
 {
+    std::cout << "844 " << this->toString(C_STYLE) << " " << (mode == InferenceMode::QUERY) << std::endl; 
     // Prevent us from being sent another TypeInfer. There's no reason for this to happen
     // as it should have been added as a dependency (and doing this would break things)
     if (dynamic_cast<const TypeInfer *>(other))
@@ -840,6 +835,9 @@ bool TypeInfer::setValue(const Type *other) const
                     if(possibleTypes.contains(t))
                     {
                         other = t; 
+
+                        if(mode == InferenceMode::QUERY) // TODO: is this needed given we propogate mode in set value?
+                            return true; 
                         goto valid; 
                     }
                 }
@@ -848,7 +846,9 @@ bool TypeInfer::setValue(const Type *other) const
         }
     }
 valid: 
-
+    if(mode != InferenceMode::SET)
+        return true; 
+std::cout << "883" << std::endl; 
     // Set our valueType to be the provided type to see if anything breaks...
     TypeInfer *u_this = const_cast<TypeInfer *>(this);
     *u_this->valueType = other;
@@ -858,7 +858,7 @@ valid:
     bool valid = true;
     for (const TypeInfer *ty : infTypes)
     {
-        if (!ty->setValue(other))
+        if (!ty->setValue(other, mode))
         {
             valid = false;
         }
@@ -868,9 +868,14 @@ valid:
     return valid;
 }
 
-bool TypeInfer::isSupertypeFor(const Type *other) const
+bool TypeInfer::isSupertypeFor(const Type *other) const 
 {
-    std::cout << "858 " << this->toString(C_STYLE) << " VS " << other->toString(C_STYLE) << std::endl; 
+    return this->isSupertypeFor(other, InferenceMode::SET);
+}
+
+bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
+{
+    std::cout << "858 " << this->toString(C_STYLE) << " VS " << other->toString(C_STYLE) << " " << (mode == InferenceMode::QUERY) << std::endl; 
     // If we already have an inferred type, we can simply
     // check if that type is a subtype of other.
     if (valueType->has_value())
@@ -889,8 +894,8 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
             // If we fail the update, try to unify so that way 
             // we can get a type for this. After all, the program
             // is going to error anyways. We won't want to show this as a var. 
-            bool ans = setValue(oInf->valueType->value());
-            if(!ans) unify();
+            bool ans = setValue(oInf->valueType->value(), mode);
+            if(!ans && mode == InferenceMode::SET) unify();
             return ans; 
         }
 
@@ -905,13 +910,13 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
 
     // Try to update this type's inferred value with the other type
     
-    bool ans = setValue(other); 
+    bool ans = setValue(other, mode); 
     // If we fail the update, try to unify so that way 
     // we can get a type for this. After all, the program
     // is going to error anyways. We won't want to show this as a var. 
-    if(!ans) unify(); 
+    if(!ans && mode == InferenceMode::SET) unify(); 
 
-    std::cout << "910!" << std::endl; 
+    std::cout << "910!" << this->toString(C_STYLE) << std::endl; 
     return ans; 
 }
 

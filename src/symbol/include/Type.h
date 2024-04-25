@@ -36,6 +36,13 @@
 #include "FQN.h"
 
 class ProtocolSequence;
+
+enum InferenceMode {
+    SET, 
+    QUERY,
+    // RESTRICT
+};
+
 /*******************************************
  *
  * Top Type Definition
@@ -61,16 +68,12 @@ public:
      * @return true If the current type is a subtype of other
      * @return false If the current type is not a subtype of other.
      */
-    virtual bool isSubtype(const Type *other) const;
-    virtual bool isNotSubtype(const Type *other) const { return !(isSubtype(other)); }
-    
+    virtual bool isSubtype(const Type *other, InferenceMode mode=InferenceMode::SET) const;
+    // virtual bool isSubtype(std::vector<const Type *> others) const; 
+
+    virtual bool isNotSubtype(const Type *other, InferenceMode mode=InferenceMode::SET) const { return !(isSubtype(other, mode)); }
     // TODO: probably doesn't work nicely with inference
-    virtual bool isNotSubtype(std::vector<const Type *> others) const {
-        for(auto a : others) // FIXME: HOW TO SPECIFY I32 VS u32 etc
-            if(isSubtype(a))
-                return false; 
-        return true; 
-    } 
+    virtual bool isNotSubtype(std::vector<const Type *> others, InferenceMode mode=InferenceMode::SET) const; 
 
     /**
      * @brief Determines if this type is a supertype of another
@@ -905,7 +908,7 @@ protected:
      * @return true If this type is already a subtype other, or this type can be updated to have the type of other
      * @return false If this type cannot be of type other.
      */
-    bool setValue(const Type *other) const;
+    bool setValue(const Type *other, InferenceMode mode) const;
 
     /**
      * @brief Determines if this is a supertype of another type (and thus, also performs type inferencing).
@@ -915,6 +918,8 @@ protected:
      * @return false
      */
     bool isSupertypeFor(const Type *other) const override;
+friend class Type; 
+    bool isSupertypeFor(const Type *other, InferenceMode mode) const;
 
 };
 

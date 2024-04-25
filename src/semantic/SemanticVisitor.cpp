@@ -249,64 +249,6 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
 
 std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps)
 {
-    /*
-    // Enter initial scope
-    if(steps.empty())
-    {
-        stmgr->enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
-    }
-    else 
-    {
-        std::optional<Scope *> scopeOpt = stmgr->getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
-
-        if(!scopeOpt)
-        {
-            return errorHandler.addCompilerError(ctx->getStart(), "Failed to enter scope for compilation unit!"); 
-        }
-
-        stmgr->enterScope(scopeOpt.value());
-    }
-
-    provisionFwdDeclSymbols(ctx);
-
-    for(auto i : ctx->imports)
-    {
-        std::optional<ErrorChain *> errOpt = this->TVisitImportStatement(i);
-        if(errOpt)
-            return errOpt.value(); 
-    }
-
-    auto externsOpt = visitExterns(ctx); 
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&externsOpt))
-    {
-        return (*e);
-    }
-
-    std::vector<TExternNode *> externs = std::get<std::vector<TExternNode *>>(externsOpt);
-
-
-    // FIXME: ERROR CHECK!
-    defineFwdDeclSymbols(ctx);
-
-    auto nodeOpts = visitFwdDecls(ctx);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&nodeOpts))
-    {
-        return (*e);
-    }
-
-    std::vector<DefinitionNode *> defs = std::get<std::vector<DefinitionNode *>>(nodeOpts);
-
-    // Visit the statements contained in the unit
-
-    auto errOpt = postCUVisitChecks(ctx); 
-    if(errOpt) return errOpt.value(); 
-   
-     
-    // Return UNDEFINED as this should be viewed as a statement and not something assignable
-    return new TCompilationUnitNode(externs, defs);
-    */
-
     auto phasedVisitor0 = phasedVisit(ctx, steps);
     if (ErrorChain **e = std::get_if<ErrorChain *>(&phasedVisitor0))
     {
@@ -541,9 +483,13 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     if(!dynamic_cast<BismuthParser::CallExprContext *>(ctx->expression()))
         return errorHandler.addError(ctx->getStart(), "Using an expression as statement in a manner that results in dead code.");
 
-    // FIXME: linear check 
-
     std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expression()->accept(this));
+
+    if (TypedNode **n = std::get_if<TypedNode *>(&opt))
+    {
+        if((*n)->getType()->isLinear())
+            return errorHandler.addError(ctx->getStart(), "Evaluation of expression would result in introducing a linear resource that is impossible to use."); // TODO: better error. 
+    }
 
     return opt; 
 }
@@ -935,14 +881,14 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     switch (ctx->op->getType())
     {
     case BismuthParser::MINUS:
-        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64}))
+        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64}, InferenceMode::QUERY))
         {
             // TODO: int/i64 expected?
             return errorHandler.addError(ctx->getStart(), "int expected in unary minus, but got " + innerType->toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
     case BismuthParser::BIT_NOT: 
-        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64}))
+        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64}, InferenceMode::QUERY))
         {
             // TODO: int/i64 expected?
             return errorHandler.addError(ctx->getStart(), "int expected in unary minus, but got " + innerType->toString(toStringMode));
@@ -993,7 +939,7 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
     auto left = std::get<TypedNode *>(leftOpt);
 
-    if (left->getType()->isNotSubtype({Types::DYN_INT, Types::DYN_U32, Types::DYN_I64, Types::DYN_U64}))
+    if (left->getType()->isNotSubtype({Types::DYN_INT, Types::DYN_U32, Types::DYN_I64, Types::DYN_U64}, InferenceMode::QUERY))
     {
         return errorHandler.addError(ctx->getStart(), "Cannot apply " + opStr + " to " + left->getType()->toString(toStringMode));
     }
@@ -1341,7 +1287,7 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     auto left = std::get<TypedNode *>(leftOpt);
 
-    if (left->getType()->isNotSubtype({Types::DYN_INT, Types::DYN_U32, Types::DYN_I64, Types::DYN_U64}))
+    if (left->getType()->isNotSubtype({Types::DYN_INT, Types::DYN_U32, Types::DYN_I64, Types::DYN_U64}, InferenceMode::QUERY))
     {
         return errorHandler.addError(ctx->getStart(), "Cannot apply " + opStr + " to " + left->getType()->toString(toStringMode) + ". Expected a number.");
     }
@@ -1843,18 +1789,19 @@ std::variant<TBlockNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
 
 std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ConditionalStatementContext *ctx)
 {
+    std::cout << "1846" << std::endl; 
     // Automatically handles checking that we have a valid condition
     std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCtx(ctx->check);
+std::cout << "1854" << std::endl; 
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
     {
+std::cout << "1858" << std::endl; 
         return (*e)->addErrorAt(ctx->getStart());
     }
-
     std::vector<BismuthParser::BlockContext *> blksCtx = {ctx->trueBlk};
     if (ctx->falseBlk)
         blksCtx.push_back(ctx->falseBlk);
-
     std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ConditionalStatementContext, BismuthParser::BlockContext>(
         ctx,
         [this, blksCtx](std::deque<DeepRestData *> *rest) {
@@ -1873,17 +1820,17 @@ std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCt
             // Scopes automatically handled, have to use false bc we can't have the block automatically scope otherwise we might throw an error before we get the chance to realize that we use all linear resources.
             return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
         });
-
+std::cout << "1877" << std::endl; 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         return errorHandler.addError(ctx->getStart(), "Failed to generate one or more cases in if statement");
-
+std::cout << "1880" << std::endl; 
     ConditionalData dat = std::get<ConditionalData>(branchOpt);
-
+std::cout << "1882" << std::endl; 
     if (ctx->falseBlk)
     {
         return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post, (TBlockNode *)dat.cases.at(1));
     }
-
+std::cout << "1887" << std::endl; 
     return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post);
 }
 

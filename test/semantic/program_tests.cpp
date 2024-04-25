@@ -2128,6 +2128,30 @@ define loopBreaker :: c : Channel<?+int> {
       "Could not find channel: c");
 }
 
+
+TEST_CASE("Linear returns are prohibited when unused", "[semantic]")
+{
+  EnsureErrorsWithMessage(
+      R""""(
+define progFoo :: c : Channel<-int> {
+    c.send(20);
+}
+
+define func getChannel() : Channel<+int> {
+    var c := exec progFoo; 
+    return c; 
+}
+
+define program :: c : Channel<-int> {
+
+    c.send(0);
+
+    getChannel();
+}
+    )"""",
+      "Evaluation of expression would result in introducing a linear resource that is impossible to use");
+}
+
 /*********************************
  * B-Level Example tests
  *********************************/

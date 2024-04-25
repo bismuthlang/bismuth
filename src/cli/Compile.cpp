@@ -355,11 +355,13 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
             // return (*e);
             valid = false; 
         }
-
-        ans.push_back({
-            std::get<TCompilationUnitNode *>(opt),
-            input
-        });
+        else 
+        {
+            ans.push_back({
+                std::get<TCompilationUnitNode *>(opt),
+                input
+            });
+        }
     }
 
     if(!valid || sv->hasErrors(0))

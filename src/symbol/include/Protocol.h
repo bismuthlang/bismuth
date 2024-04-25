@@ -94,6 +94,10 @@ public:
         guardCount = guardCount - 1;
         return true;
     }
+
+    bool isSubtype(const Protocol * other) const; 
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const = 0; 
 };
 
 // FIXME: DO BETTER, can probably be removed
@@ -190,6 +194,9 @@ public:
     void guard() const override;
     bool unguard() const override;
 
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override; 
+
 private:
     // void append(const ProtocolSequence *proto) const;
 
@@ -230,6 +237,9 @@ public:
     const Protocol *getCopy() const override;
 
     const Type* getRecvType() const { return recvType; }
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -253,6 +263,9 @@ public:
     const Protocol *getCopy() const override;
 
     const Type *getSendType() const { return sendType; }
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -276,6 +289,9 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -299,6 +315,9 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 
@@ -393,6 +412,9 @@ public:
 
     std::set<const ProtocolBranchOption *, BranchOptCompare> getOptions() const { return opts; }
     std::optional<const ProtocolBranchOption *> lookup(std::variant<const ProtocolSequence *, std::string> opt) const; 
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -416,6 +438,9 @@ public:
     const Protocol *getCopy() const override;
 
     std::set<const ProtocolBranchOption *, BranchOptCompare> getOptions() const { return opts; }
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -446,4 +471,7 @@ public:
 
     void guard() const override;
     bool unguard() const override;
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };

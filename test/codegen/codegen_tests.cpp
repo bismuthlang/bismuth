@@ -780,6 +780,16 @@ TEST_CASE("programs/generics/ReferenceGenericS - Co-dependent structs", "[codege
         "950b9c5cf40bd673a8250726ae932b20089332f552fae683d85a402f471e054c"); 
 }
 
+
+TEST_CASE("programs/inferint - Infer the type of a number", "[codegen][infer integers]")
+{
+    // TODO: technically we should do this as a semantic test---just to be sure
+    EnsureCompilesTo(
+        new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/inferint.bismuth"))),
+        "8dd735fc9876c12cd87b7bddcb2e39e9808f9ff1e3bfd3ad2fcc7dc099bcfa93"); 
+}
+
+
 /************************************
  * Example C-Level Tests
  ************************************/
