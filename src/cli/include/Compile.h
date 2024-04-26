@@ -34,7 +34,6 @@
 #include "llvm/Target/TargetMachine.h"
 #include "llvm/IR/LegacyPassManager.h"
 
-#include "ExecUtils.h"
 #include <sstream> //String stream
 
 using std::unique_ptr; 
@@ -72,10 +71,18 @@ public:
     virtual ~CompilerInput() = default;
 
     antlr4::ANTLRInputStream * getInputStream() { return inputStream; }
-    std::vector<std::string> getPathSteps() { return pathSteps; }
-    std::string getSourceName() { return inputStream->getSourceName(); }
+    std::vector<std::string> getPathSteps() { 
+        std::string ans = ""; 
+        for(auto s : pathSteps)
+        {
+            ans += "::" + s;
+        } 
+        std::cout << "80 PS " << ans << std::endl; 
+        return pathSteps; 
+    }
+    virtual std::string getSourceName() { return inputStream->getSourceName(); }
 
-    virtual std::variant<llvm::raw_pwrite_stream *, std::error_code> getIROut() = 0;
+    virtual std::variant<llvm::raw_ostream *, std::error_code> getIROut() = 0;
     virtual std::variant<llvm::raw_pwrite_stream *, std::error_code> getObjectOut() = 0;
     virtual std::optional<std::filesystem::path> getOutputPath() = 0;
     
@@ -97,7 +104,7 @@ public:
     {}
 
     
-    std::variant<llvm::raw_pwrite_stream *, std::error_code> getIROut() override
+    std::variant<llvm::raw_ostream *, std::error_code> getIROut() override
     {
         std::string irFileName = outputPath.replace_extension(".ll");
         std::error_code ec;
@@ -129,17 +136,25 @@ private:
 public: 
     VirtualInput(
         antlr4::ANTLRInputStream * i, 
-        std::vector<std::string> ps,
-        std::filesystem::path o)
+        std::vector<std::string> ps)
         : CompilerInput(i, ps)
-        // , outputPath(o)
     {}
 
-    std::variant<llvm::raw_pwrite_stream *, std::error_code> getIROut() override 
+    std::string getSourceName() override 
     {
-        return new llvm::buffer_unique_ostream(
-            std::make_unique<llvm::raw_string_ostream>(irStr)
-        );
+        std::string ans = "<virtual>"; 
+        for(auto s : getPathSteps())
+        {
+            ans += "::" + s;
+        } 
+        return ans; 
+        // return inputStream->getSourceName(); 
+    }
+
+    std::variant<llvm::raw_ostream *, std::error_code> getIROut() override 
+    { 
+        return new llvm::raw_string_ostream(irStr);
+        // return new llvm::buffer_ostream(*irStream);
     }
 
     std::variant<llvm::raw_pwrite_stream *, std::error_code> getObjectOut() override 
@@ -155,6 +170,7 @@ public:
     std::string getObjStr() { return objStr; }
 };
 
+
 std::vector<CompilerInput *> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName);
 
 llvm::TargetMachine * getTargetMachine();
@@ -165,5 +181,5 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>>
 std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_Semantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode);
 void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
 
-
-int compile(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
+int compile(std::vector<CompilerInput *> inputs, std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
+int compileFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);

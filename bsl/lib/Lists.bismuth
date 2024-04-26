@@ -1,0 +1,143 @@
+
+import bsl::lib::Types::Empty; 
+
+define struct LinkedList<T> {
+    (Empty + Box<LinkedList<T>>) next;
+    T value;
+}
+
+define func length<T>(LinkedList<T> list) : int {
+    int len := 0; 
+
+    var ptr := Box<LinkedList<T>>::init(list); # Huh, I guess, in practice, this ptr could be on the stack....
+
+    var shouldLoop := true; 
+
+    while(shouldLoop) {
+        match (*ptr).next
+            |   Box<LinkedList<T>> nxt => {
+                    ptr := nxt; 
+                    len := len + 1; 
+                }
+            |   Empty e => {
+                    shouldLoop := false; 
+                }
+    }
+
+    return len; 
+}
+
+define func map<I, O>(
+    LinkedList<I> array, 
+    ((I) -> O + (I, int) -> O) mapper) : LinkedList<O>
+
+{
+    match mapper 
+        |   I -> O m1 => {
+                var ans := LinkedList<O>::init(
+                    Empty::init(), 
+                    m1(array.value)
+                ); 
+
+                var ansPtr := Box<LinkedList<O>>::init(ans); 
+                var origPtr := array.next; 
+            
+                var shouldLoop := true; 
+
+                while(shouldLoop)
+                {
+                    match origPtr
+                        |   Box<LinkedList<I>> nxt => {
+                                LinkedList<I> i := *nxt; 
+                                
+                                var ele := Box<LinkedList<O>>::init(
+                                    LinkedList<O>::init(
+                                        Empty::init(),
+                                        m1(i.value)
+                                    )
+                                );
+
+                                LinkedList<O> a := *ansPtr
+                                a.next := ele; 
+                                ansPtr := ele; 
+
+                                origPtr := i.next; 
+                            }
+                        |   Empty e => { shouldLoop := false; }
+                }
+
+                return ans; 
+            }
+        |   (I, int) -> O m2 => {
+                # LinkedList<O> ans := LinkedList<O>::init(
+                #     Empty::init(), 
+                #     m2(array.value, 0)
+                # );  
+
+                var ansPtr := Box<LinkedList<O>>::init(
+                    LinkedList<O>::init(
+                        Empty::init(), 
+                        m2(array.value, 0)
+                )); 
+
+                var ansConstPtr := ansPtr; 
+                var origPtr := array.next; 
+                var idx := 1; 
+            
+                var shouldLoop := true; 
+
+                while(shouldLoop)
+                {
+                    match origPtr
+                        |   Box<LinkedList<I>> nxt => {
+                                LinkedList<I> i := *nxt; 
+                                
+                                var ele := Box<LinkedList<O>>::init(
+                                    LinkedList<O>::init(
+                                        Empty::init(),
+                                        m2(i.value, idx)
+                                    )
+                                );
+
+                                idx := idx + 1; 
+
+
+                                (*ansPtr).next := ele; 
+                                ansPtr := ele;
+
+                                origPtr := i.next; 
+                            }
+                        |   Empty e => { shouldLoop := false; }
+                }
+
+                /*
+                while(shouldLoop)
+                {
+                    match origPtr
+                        |   Box<LinkedList<I>> nxt => {
+                                LinkedList<I> i := *nxt; 
+                                
+                                var ele := Box<LinkedList<O>>::init(
+                                    LinkedList<O>::init(
+                                        Empty::init(),
+                                        m2(i.value, idx)
+                                    )
+                                );
+
+                                idx := idx + 1; 
+
+                                # FIXME: PROBLEM IS THAT BC WE KEEP PUTTING IT ON THE STACK, WE CAN'T ACTUALLY EDIT THE THING BC IT BECOMES A COPY
+                                # LinkedList<O> a := *ansPtr
+                                # *ansPtr.next := ele; 
+                                ansPtr := ele; 
+                                # return ans; 
+
+                                origPtr := i.next; 
+                            }
+                        |   Empty e => { shouldLoop := false; }
+                }
+                */
+
+                return *ansConstPtr; 
+            }
+}

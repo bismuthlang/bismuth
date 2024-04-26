@@ -15,7 +15,7 @@
  * @brief Used to execute a command and get its results back 
  * 
  */
-std::string exec(std::string cmd)
+inline std::string exec(std::string cmd)
 {
     const char * cmd_char = cmd.c_str(); 
 

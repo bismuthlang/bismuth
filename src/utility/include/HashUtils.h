@@ -7,7 +7,7 @@
  * @param module The llvm::Module where codegen has occurred
  * @return std::string the SHA256 hash of the program
  */
-std::string llvmIrToSHA256(llvm::Module *module)
+inline std::string llvmIrToSHA256(llvm::Module *module)
 {
     //Create a random file name
     std::string fileName = std::tmpnam(nullptr);

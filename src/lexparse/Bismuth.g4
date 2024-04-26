@@ -92,7 +92,8 @@ expression
     | 'asChannel' LPAR expr=expression RPAR         # AsChannelExpr
     ;
 
-lambdaConstExpr     : LPAR parameterList RPAR (COLON ret=type)? block ;
+lambdaConstExpr 
+    : LPAR parameterList RPAR (COLON ret=type)? block ;
 
 /* 
  * Keeping block as its own rule so that way we can re-use it as
@@ -121,9 +122,9 @@ protoElse           : ELSE '=>' eval=statement              ;
  *
  * Parameter defines a parameter: its just a type and name.
  */
-parameterList       : (params+=parameter (',' params+=parameter)*)?;
-parameter           : ty=type name=VARIABLE ;
-VariadicParam       : ',' [ \t]* '...'; //For some reason, need to match the whitespace so that way we can allow spaces between the two...
+parameterList   : (params+=parameter (',' params+=parameter)*)?;
+parameter       : ty=type name=VARIABLE ;
+VariadicParam   : ',' [ \t]* '...'; //For some reason, need to match the whitespace so that way we can allow spaces between the two...
 
 /*
  * Assignment fragment: this contains the information about variables
@@ -132,36 +133,36 @@ VariadicParam       : ',' [ \t]* '...'; //For some reason, need to match the whi
  * assigments. Ie those of the form:   var a := 1, b := 2, ... 
  */
 // assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=assignable)? ;
-assignment : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
+assignment  : v+=VARIABLE (',' v+=VARIABLE)* (ASSIGN a=expression)? ;
 
 
-statement           : defineType                                                                                            # TypeDef
-                    | variableDeclaration  ';'?                                                                             # VarDeclStatement
-                    | assignmentStatement  ';'?                                                                             # AssignStatement 
-                    | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                            # ConditionalStatement
-                    | SELECT LSQB (cases+=selectAlternative)* RSQB (rest+=statement)*                                       # SelectStatement     
-                    | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                                # MatchStatement   
-                    | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*                                   # MatchStatement   
-                    | RETURN expression? ';'                                                                                # ReturnStatement 
-                    | EXIT                                                                                                  # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
-                    | 'skip'                                                                                                # SkipStatement //FIXME: ENABLE
-                    | block                                                                                                 # BlockStatement
-                    | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                 # ProgramSend
-                    | WHILE check=condition block                                                                           # ProgramLoop
-                    | 'for' '(' (decl=variableDeclaration | assign=assignmentStatement) ';' check=condition ';' expr=statement ')' blk=block   # ForStatement
-                    | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ protoElse? ')' (rest+=statement)*  # ProgramCase  
-                    | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ ('|' protoElse?)? (rest+=statement)*                   # ProgramCase   
-                    | channel=VARIABLE LBRC (lbl=VARIABLE | sel=protocol) RBRC                                                               # ProgramProject
-                    | 'more' '(' channel=VARIABLE ')'   ';'?                                # ProgramContract 
-                    | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 
-                    | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
-                    | 'accept' '(' channel=VARIABLE ')' block                               # ProgramAccept
-                    | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block        # ProgramAcceptWhile
-                    | 'acceptIf' '(' channel=VARIABLE ',' check=expression ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf
-                    | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  // FIXME: ENABLE
-                    | 'cancel' '(' channel=VARIABLE ')' ';'?                                # ProgramCancel
-                    | expression ';'?        # ExpressionStatement
-                    ; 
+statement   : defineType                                                                                            # TypeDef
+            | variableDeclaration  ';'?                                                                             # VarDeclStatement
+            | assignmentStatement  ';'?                                                                             # AssignStatement 
+            | IF check=condition trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*                            # ConditionalStatement
+            | SELECT LSQB (cases+=selectAlternative)* RSQB (rest+=statement)*                                       # SelectStatement     
+            | MATCH check=condition LSQB (matchAlternative)* RSQB (rest+=statement)*                                # MatchStatement   
+            | MATCH check=condition ('|' matchAlternative)*    (rest+=statement)*                                   # MatchStatement   
+            | RETURN expression? ';'                                                                                # ReturnStatement 
+            | EXIT                                                                                                  # ExitStatement // Should we add sugar thatd allow {c.send(..); exit} to be written as exit c.send() ?
+            | 'skip'                                                                                                # SkipStatement //FIXME: ENABLE
+            | block                                                                                                 # BlockStatement
+            | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                 # ProgramSend
+            | WHILE check=condition block                                                                           # ProgramLoop
+            | 'for' '(' (decl=variableDeclaration | assign=assignmentStatement) ';' check=condition ';' expr=statement ')' blk=block   # ForStatement
+            | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ protoElse? ')' (rest+=statement)*  # ProgramCase  
+            | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ ('|' protoElse?)? (rest+=statement)*                   # ProgramCase   
+            | channel=VARIABLE LBRC (lbl=VARIABLE | sel=protocol) RBRC                                                               # ProgramProject
+            | 'more' '(' channel=VARIABLE ')'   ';'?                                # ProgramContract 
+            | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 
+            | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
+            | 'accept' '(' channel=VARIABLE ')' block                               # ProgramAccept
+            | 'acceptWhile' '(' channel=VARIABLE ',' ex=expression ')' block        # ProgramAcceptWhile
+            | 'acceptIf' '(' channel=VARIABLE ',' check=expression ')' trueBlk=block (ELSE falseBlk=block)? (rest+=statement)*  # ProgramAcceptIf
+            | 'close' '(' channel=VARIABLE ')'  ';'?                                # ProgramClose  // FIXME: ENABLE
+            | 'cancel' '(' channel=VARIABLE ')' ';'?                                # ProgramCancel
+            | expression ';'?        # ExpressionStatement
+            ; 
                     
 
 assignmentStatement : <assoc=right> to=expression ASSIGN a=expression                                        ;
@@ -240,7 +241,15 @@ protoBranch     : protocol
 //Allows us to have a type of ints, bools, or strings with the option for them to become 1d arrays. 
 type    :    ty=type LBRC len=DEC_LITERAL RBRC                                          # ArrayType
         |    ty=type LBRC RBRC                                                      # DynArrayType
-        |    ty=(TYPE_INT | TYPE_BOOL | TYPE_STR | TYPE_UNIT | TYPE_U32 | TYPE_I64 | TYPE_U64)                       # BaseType
+        |    ty=(
+                  TYPE_INT 
+                | TYPE_I32
+                | TYPE_BOOL 
+                | TYPE_STR 
+                | TYPE_UNIT 
+                | TYPE_U32 
+                | TYPE_I64 
+                | TYPE_U64)                       # BaseType
         |    paramTypes+=type (COMMA paramTypes+=type)* MAPS_TO returnType=type     # LambdaType
         |    LPAR (paramTypes+=type (COMMA paramTypes+=type)*)? RPAR MAPS_TO (returnType=type | LPAR RPAR) # LambdaType
         |    LPAR (paramTypes+=type (COMMA paramTypes+=type)*)? MAPS_TO (returnType=type | LPAR RPAR) RPAR # LambdaType
@@ -256,7 +265,7 @@ type    :    ty=type LBRC len=DEC_LITERAL RBRC                                  
 // TODO: not convinced about the whole {u,i}{32,64} thing as it kinda seems like needing to know more metaphors.. and lower level?
 
 //Integer 
-integerValue        :   (DEC_LITERAL | HEX_LITERAL | BIN_LITERAL) ty=('i32' | TYPE_U32 | TYPE_I64 | TYPE_U64)?   ;  //Negative numbers handled by unary minus 
+integerValue        :   (DEC_LITERAL | HEX_LITERAL | BIN_LITERAL) ty=(TYPE_I32 | TYPE_U32 | TYPE_I64 | TYPE_U64)?   ;  //Negative numbers handled by unary minus 
 
 DEC_LITERAL         :  DEC_DIGIT+               ;
 fragment DEC_DIGIT  :  [0-9]                    ;
@@ -270,6 +279,7 @@ fragment BIN_DIGIT  : [01]                      ;
 
 
 TYPE_INT        :   'int'       ; 
+TYPE_I32        :   'i32'       ;
 TYPE_U32        :   'u32'       ;
 TYPE_I64        :   'i64'       ;
 TYPE_U64        :   'u64'       ; 

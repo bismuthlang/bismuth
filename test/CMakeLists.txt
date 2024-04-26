@@ -20,6 +20,7 @@ include(HandleLLVMOptions)
 include(cmake/SymbolTests.cmake)
 include(cmake/SemanticTests.cmake)
 include(cmake/CodegenTests.cmake)
+include(cmake/CliTests.cmake)
 
 ### Set up all tests to be run
 add_executable(
@@ -28,6 +29,7 @@ add_executable(
   # ${SYMBOL_TESTS} # FIXME: ENABLE SYMBOL TESTS!
   ${SEMANTIC_TESTS}
   ${CODEGEN_TESTS}
+  ${CLI_TESTS}
 )
 
 add_dependencies(tests 
@@ -36,16 +38,21 @@ add_dependencies(tests
   semantic_lib
   utility_lib
   codegen_lib
-  )
+  cli_lib
+)
+
+llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_TARGETS_TO_BUILD} support core irreader codegen mc mcparser option)
 
 target_include_directories(tests PUBLIC 
-    ${ANTLR_INCLUDE} ${ANTLR_GENERATED_DIR}
+    ${ANTLR_INCLUDE} 
+    ${ANTLR_GENERATED_DIR}
     ${SYMBOL_INCLUDE} 
     ${SEMANTIC_INCLUDE}
     ${UTILITY_INCLUDE}
     ${CODEGEN_INCLUDE}
     ${LLVM_BINARY_DIR}/include
     ${LLVM_INCLUDE_DIR}
+    ${LLVM_TARGETS_TO_BUILD}
     ${CLI_INCLUDE}
   )
 
@@ -58,6 +65,7 @@ target_link_libraries(tests
   semantic_lib
   utility_lib
   codegen_lib
+  cli_lib
   ${LLVM_LIBS}
   Catch2::Catch2WithMain
 )

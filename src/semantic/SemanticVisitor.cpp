@@ -1426,12 +1426,15 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
             variadic
     );
 
-    DefinitionSymbol * sym = stmgr->addDefinition(
+    std::optional<DefinitionSymbol *> symOpt = stmgr->addDefinition(
         VisibilityModifier::PUBLIC_LINK,
-        id,         // FIXME: CHECK THIS GOES THROUGH (THOUGH IT SHOULD ALWAYS)
+        id,
         funcTy,
         true
-    ).value();
+    );
+
+    if(!symOpt) return errorHandler.addCompilerError(ctx->getStart(), "Could not add definition for " + id);
+    Symbol * sym = symOpt.value(); 
 
     // TODO: Promoting externs to global is a bit hacky and probably 
     // allows them to be referenced by other files (eg  <foo>::<some extern>)
@@ -1440,7 +1443,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     // This would also be more accurate as externs wouldn't belong to a scope per say
     sym->getIdentifier()->promoteToGlobal(); 
 
-    TExternNode *node = new TExternNode(sym, funcTy, ctx->getStart());
+    TExternNode *node = new TExternNode(symOpt.value(), funcTy, ctx->getStart());
 
     return node;
 };
@@ -2327,6 +2330,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
 
         if(!opt)
         {
+            std::cout << stmgr->toString() << std::endl; 
             return errorHandler.addError(pCtx->getStart(), "Could not find " + stepId + " in " + lookupScope->getIdentifier()->getFullyQualifiedName());
         }
 
@@ -2455,7 +2459,7 @@ SemanticVisitor::visitCtx(BismuthParser::ArrayTypeContext *ctx)
 std::variant<const Type *, ErrorChain *>
 SemanticVisitor::visitCtx(BismuthParser::BaseTypeContext *ctx)
 {
-    if (ctx->TYPE_INT())
+    if (ctx->TYPE_INT() || ctx->TYPE_I32())
     {
         return (const Type *)Types::DYN_INT;
     }
@@ -3585,7 +3589,6 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
             Scope * origScope = stmgr->getCurrentScope().value(); 
             stmgr->enterScope(defSym->getInnerScope()); 
 
-            // FIXME: verify these bindings all go through (they should as we've entered the inner scope, unless there are duplicates?)
             for(auto i : info.templates)
             {
                 std::optional<DefinitionSymbol *> symOpt =  stmgr->addDefinition(m, i.first, i.second, false);
@@ -3594,7 +3597,6 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                 if(!symOpt)
                     return errorHandler.addError(nullptr, "Failed to get template symbol for " + i.first); 
 
-                // templateSyms.push_back(symOpt.value());
             }
 
             std::optional<ErrorChain *> ans = fn();

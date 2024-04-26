@@ -146,7 +146,7 @@ ChangeLog
 )""""; });
     llvm::cl::ParseCommandLineOptions(argc, argv);
 
-    compile(
+    compileFiles(
         argSrcPath, 
         argBuildPath, 
         outputFileName, 

@@ -11,6 +11,8 @@
 
 #include "Compile.h"
 
+#include "ExecUtils.h"
+
 std::filesystem::path getRelativePath(std::filesystem::path& currentPath, std::filesystem::path& given)
 {
     return given.string().starts_with(currentPath.string()) 
@@ -25,8 +27,10 @@ std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath)//
 
     for(auto it : relPath)
     {
+        std::cout << "::" << it; 
         parts.push_back(it);
     }
+    std::cout << std::endl; 
 
     return parts; 
 } 
@@ -294,9 +298,11 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
             // return (*e);
             valid = false; 
         }
-
-        SemanticVisitor::ImportPhaseClosure clos = std::get<SemanticVisitor::ImportPhaseClosure>(opt);
-        importClosures.push_back(clos); 
+        else
+        {
+            SemanticVisitor::ImportPhaseClosure clos = std::get<SemanticVisitor::ImportPhaseClosure>(opt);
+            importClosures.push_back(clos); 
+        }
     }
 
     if(!valid || sv->hasErrors(0))
@@ -315,8 +321,10 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
             // return (*e);
             valid = false; 
         }
-
-        fwdDeclClosures.push_back(std::get<SemanticVisitor::DefineFwdDeclsPhaseClosure>(opt));
+        else
+        {
+            fwdDeclClosures.push_back(std::get<SemanticVisitor::DefineFwdDeclsPhaseClosure>(opt));
+        }
     }
 
     if(!valid || sv->hasErrors(0))
@@ -417,6 +425,7 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
         // Dump the code to an output file
         if (!noCode)
         {
+            std::cout << "428 WRITE CODE!?!?" << std::endl; 
             auto irOutOpt = input->getIROut(); 
             if (std::error_code *ec = std::get_if<std::error_code>(&irOutOpt))
             {
@@ -424,10 +433,19 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
                 return; 
             }
             
-            llvm::raw_pwrite_stream * stream = std::get<llvm::raw_pwrite_stream *>(irOutOpt);
+            llvm::raw_ostream * stream = std::get<llvm::raw_ostream *>(irOutOpt);
 
             module->print(*stream, nullptr);
             stream->flush();
+
+            // std::string irStr; 
+            // llvm::raw_string_ostream * irStream = new llvm::raw_string_ostream(irStr);
+            // llvm::buffer_ostream * str2 =  new llvm::buffer_ostream(*irStream);
+            // module->print(*str2, nullptr);
+            // // str2->flush(); 
+            // // str2->flush();
+            // std::cout << "445 " << str2->str().str() << std::endl;
+
         }
 
         if (isVerbose)
@@ -503,7 +521,66 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
 
 }
 
-int compile(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
+int compile(
+    std::vector<CompilerInput *> inputs, 
+    std::string outputFileName, 
+    bool demoMode, 
+    bool isVerbose,
+    DisplayMode toStringMode, 
+    bool printOutput, 
+    bool noCode, 
+    CompileType compileWith)
+{
+
+    std::cout << "517 compile w/ " << std::endl; 
+    std::cout << "\t inputs : " << std::endl; 
+    std::cout << "\t outputFileName : " << outputFileName << std::endl; 
+    std::cout << "\t demoMode : " << demoMode << std::endl; 
+    std::cout << "\t isVerbose : " << isVerbose << std::endl; 
+    std::cout << "\t toStringMode : " << toStringMode << std::endl; 
+    std::cout << "\t printOutput : " << printOutput << std::endl; 
+    std::cout << "\t noCode : " << noCode << std::endl; 
+    std::cout << "\t compileWith : " << compileWith << std::endl; 
+
+    /******************************************************************
+     * Now that we have the input, we can perform the first stage:
+     * 1. Create the lexer from the input.
+     * 2. Create the parser with the lexer's token stream as input.
+     * 3. Parse the input and get the parse tree for then exit stage.
+     * 4. TBD: handle errors
+     ******************************************************************/
+
+    /*******************************************************************
+     * Prepare Input
+     * ================================================================
+     *
+     * To do this, we  must first check if we were given a string
+     * input or file(s). To make both cases easy to handle later on,
+     * we create a vector of input streams/output file pairs.
+     *******************************************************************/
+
+    auto toCodegen = Stage_PSemantic(
+        Stage_lexParse(inputs),
+        demoMode, 
+        isVerbose,
+        toStringMode
+    );
+
+    Stage_CodeGen(
+        toCodegen,
+        outputFileName,
+        demoMode,
+        isVerbose,
+        toStringMode,
+        printOutput,
+        noCode,
+        compileWith
+    );
+
+    return 0;
+}
+
+int compileFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
 {
     /******************************************************************
      * Now that we have the input, we can perform the first stage:
@@ -523,15 +600,8 @@ int compile(std::string argSrcPath, std::string argBuildPath, std::string output
      *******************************************************************/
     std::vector<CompilerInput *> inputs = getInputsFromFiles(argSrcPath, argBuildPath, inputFileName);
 
-    auto toCodegen = Stage_PSemantic(
-        Stage_lexParse(inputs),
-        demoMode, 
-        isVerbose,
-        toStringMode
-    );
-
-    Stage_CodeGen(
-        toCodegen,
+    compile(
+        inputs,
         outputFileName,
         demoMode,
         isVerbose,

@@ -544,26 +544,6 @@ const TypeProgram * TypeProgram::getCopy() const { return this; };
 
 bool TypeProgram::isSupertypeFor(const Type *other) const
 {
-    // // Checks that the other type is also a function
-    // if (const TypeFunc *p = dynamic_cast<const TypeFunc *>(other))
-    // {
-    //     // Makes sure that both functions have the same number of parameters
-    //     if (p->paramTypes.size() != this->paramTypes.size())
-    //         return false;
-
-    //     // Makes sure both functions have the same variadic status
-    //     if (this->variadic != p->variadic)
-    //         return false;
-
-    //     // Checks that the parameters of this function are all subtypes of the other
-    //     for (unsigned int i = 0; i < this->paramTypes.size(); i++)
-    //     {
-    //         if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
-    //             return false;
-    //     }
-    //     // Makes sure that the return type of this function is a subtype of the other
-    //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
-    // }
     if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
     {
         if(this->hasName() && p->hasName())
@@ -572,9 +552,6 @@ bool TypeProgram::isSupertypeFor(const Type *other) const
         if(this->hasName() && !p->hasName()) return false; 
 
         return this->protocol->isSubtype(p->protocol);
-        // return this->getTypeRepresentation(C_STYLE) == p->getTypeRepresentation(C_STYLE);
-        // return toString(C_STYLE) == other->toString(C_STYLE); // FIXME: DO BETTER
-        // return protocol->isSubtype(p->protocol);
     }
     return false;
 }
