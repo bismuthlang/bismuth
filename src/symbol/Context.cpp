@@ -1,12 +1,5 @@
 #include "Context.h"
 
-// enum InsertStopType
-// {
-//     NONE,
-//     LINEAR,
-//     GLOBAL
-// };
-
 Scope &Context::enterScope(bool insertStop, std::optional<Identifier *> idOpt)  //std::string id, std::optional<std::function<std::string()>> meta)
 {
     // This is safe because we use optionals
@@ -39,20 +32,6 @@ void Context::enterScope(Scope * scope)
 
 Scope * Context::createNamespace(Identifier * id)
 {
-    // This is safe because we use optionals
-    // Identifier * id = [this, idOpt](){
-    //     if(idOpt) return idOpt.value(); 
-
-    //     std::optional<Identifier *> parentOpt = this->currentScope ? (std::optional<Identifier *>) this->currentScope.value()->getIdentifier() : (std::optional<Identifier *>) std::nullopt; 
-    //     Identifier * i = new Identifier("", "", parentOpt);
-    //     // i->meta = meta;
-
-    //     return i; 
-        
-    // }(); 
-
-
-
     Scope *next = new Scope(this->currentScope, id, true);
     next->setId(this->scopeNumber++);
 
@@ -86,11 +65,17 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
 
 
     // Note: this is safe as we previously check that currentScope exists
-    return currentScope.value()->addSymbol(new LocatableSymbol(new Identifier(
-        id, 
-        uniqName, 
-        currentScope.value()->getIdentifier()
-    ), t, glob, currentScope.value()));
+    return currentScope.value()->addSymbol(
+        new LocatableSymbol(
+            new Identifier(
+                id, 
+                uniqName, 
+                currentScope.value()->getIdentifier()
+            ), 
+            t, 
+            glob, 
+            currentScope.value()
+        ));
 }
 
 std::optional<DefinitionSymbol *> Context::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
@@ -120,7 +105,6 @@ std::optional<DefinitionSymbol *> Context::addDefinition(VisibilityModifier m, s
     delete sym; 
 
     return std::nullopt; 
-    // return currentScope.value()->addSymbol(new Symbol());
 }
 
 std::optional<AliasSymbol *> Context::addAlias(std::string id, const Type * t, Identifier * a)

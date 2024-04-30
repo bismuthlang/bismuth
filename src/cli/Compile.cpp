@@ -169,8 +169,8 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>>
          *
          * Run the lexer on the input
          *******************************************************************/
-        BismuthLexer * lexer = new BismuthLexer(input->getInputStream()); // TODO: Do there need to be lexer errors -> Doesn't seem like it?
-        antlr4::CommonTokenStream * tokens = new antlr4::CommonTokenStream(lexer);
+        BismuthLexer lexer = BismuthLexer(input->getInputStream()); // TODO: Do there need to be lexer errors -> Doesn't seem like it?
+        antlr4::CommonTokenStream * tokens = new antlr4::CommonTokenStream(&lexer);
 
         /*******************************************************************
          * Create + Run the Parser
@@ -182,7 +182,6 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>>
         parser->removeErrorListeners();
         BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
         parser->addErrorListener(syntaxListener);
-        // delete syntaxListener;
 
         // Run The parser
         BismuthParser::CompilationUnitContext * tree = nullptr;
@@ -194,6 +193,7 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>>
             valid = false; // Shouldn't be needed
         }
         ans.push_back({tree, input});
+        delete syntaxListener;
     }
     
     if(!valid) std::exit(-1);
@@ -218,7 +218,7 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_Semantic(s
     int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
 
     bool valid = true;
-    STManager *stm = new STManager();
+    STManager stm = STManager();
 
 
     std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> ans;
@@ -227,13 +227,13 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_Semantic(s
     {
         auto [tree, input] = i;
         
-        SemanticVisitor *sv = new SemanticVisitor(stm, toStringMode, flags);
-        auto TypedOpt = sv->visitCtx(tree, input->getPathSteps());
+        SemanticVisitor sv = SemanticVisitor(&stm, toStringMode, flags);
+        auto TypedOpt = sv.visitCtx(tree, input->getPathSteps());
 
-        if (sv->hasErrors(0)) // Want to see all errors
+        if (sv.hasErrors(0)) // Want to see all errors
         {
             std::cerr << "Semantic analysis completed for " << input->getSourceName() << " with errors: " << std::endl;
-            std::cerr << sv->getErrors() << std::endl;
+            std::cerr << sv.getErrors() << std::endl;
             valid = false;
             continue;
         }
@@ -266,7 +266,7 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
 {
     // auto printErrors = [](ErrorChain *) {
     //     std::cerr << "Semantic analysis completed for " << input->getSourceName() << " with errors: " << std::endl;
-    //     std::cerr << sv->getErrors() << std::endl;
+    //     std::cerr << sv.getErrors() << std::endl;
     //     valid = false;
     //     // continue;
     // }
@@ -277,10 +277,10 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
     int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
 
     bool valid = true;
-    STManager *stm = new STManager();
+    STManager stm = STManager();
 
 
-    SemanticVisitor * sv = new SemanticVisitor(stm, toStringMode, flags);
+    SemanticVisitor sv = SemanticVisitor(&stm, toStringMode, flags);
 
     // I wish there was an easy way to write programs (perhaps with constraints)
     // which is able to generate the following code, as it really is all algorithmic.
@@ -291,7 +291,7 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
         std::variant<
             SemanticVisitor::ImportPhaseClosure,
             ErrorChain *
-        > opt = sv->phasedVisit(tree, input->getPathSteps());
+        > opt = sv.phasedVisit(tree, input->getPathSteps());
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
         {
@@ -305,9 +305,9 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
         }
     }
 
-    if(!valid || sv->hasErrors(0))
+    if(!valid || sv.hasErrors(0))
     {
-        std::cerr << sv->getErrors() << std::endl;
+        std::cerr << sv.getErrors() << std::endl;
         std::exit(-1);
     }
 
@@ -327,9 +327,9 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
         }
     }
 
-    if(!valid || sv->hasErrors(0))
+    if(!valid || sv.hasErrors(0))
     {
-        std::cerr << sv->getErrors() << std::endl;
+        std::cerr << sv.getErrors() << std::endl;
         std::exit(-1);
     }
 
@@ -341,9 +341,9 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
         ); 
     }
 
-    if(!valid || sv->hasErrors(0))
+    if(!valid || sv.hasErrors(0))
     {
-        std::cerr << sv->getErrors() << std::endl;
+        std::cerr << sv.getErrors() << std::endl;
         std::exit(-1);
     }
 
@@ -372,9 +372,9 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
         }
     }
 
-    if(!valid || sv->hasErrors(0))
+    if(!valid || sv.hasErrors(0))
     {
-        std::cerr << sv->getErrors() << std::endl;
+        std::cerr << sv.getErrors() << std::endl;
         std::exit(-1);
     }
 
@@ -403,23 +403,23 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
          * If we have yet to receive any errors for the file, then
          * generate code for it.
          *******************************************************************/
-        CodegenVisitor *cv = new CodegenVisitor("BismuthProgram", toStringMode, flags);
-        cv->visitCompilationUnit(cu);
-        if (cv->hasErrors(0)) // Want to see all errors
+        CodegenVisitor cv = CodegenVisitor("BismuthProgram", toStringMode, flags);
+        cv.visitCompilationUnit(*cu);
+        if (cv.hasErrors(0)) // Want to see all errors
         {
-            std::cerr << cv->getErrors() << std::endl;
+            std::cerr << cv.getErrors() << std::endl;
             isValid = false;
             continue;
         }
 
         // Print out the module contents.
-        llvm::Module *module = cv->getModule();
+        llvm::Module *module = cv.getModule();
 
         if (printOutput)
         {
             std::cout << std::endl
                       << std::endl;
-            cv->modPrint();
+            cv.modPrint();
         }
 
         // Dump the code to an output file
@@ -437,15 +437,6 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
 
             module->print(*stream, nullptr);
             stream->flush();
-
-            // std::string irStr; 
-            // llvm::raw_string_ostream * irStream = new llvm::raw_string_ostream(irStr);
-            // llvm::buffer_ostream * str2 =  new llvm::buffer_ostream(*irStream);
-            // module->print(*str2, nullptr);
-            // // str2->flush(); 
-            // // str2->flush();
-            // std::cout << "445 " << str2->str().str() << std::endl;
-
         }
 
         if (isVerbose)
@@ -481,6 +472,7 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
 
             // std::cout << "Wrote " << input.outputPath << std::endl;
         }
+        delete cu;
     }
 
     // TODO: Separate out into separate stage

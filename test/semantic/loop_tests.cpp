@@ -21,22 +21,24 @@
 //   );
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   STManager stmgr = STManager();
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   CHECK(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   CHECK(sv.hasErrors(ERROR));
 // }
 
 
@@ -51,22 +53,24 @@
 //   );
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   STManager stmgr = STManager();
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   CHECK(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   CHECK(sv.hasErrors(ERROR));
 // }
 
 
@@ -81,22 +85,24 @@
 //   );
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   STManager stmgr = STManager();
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   CHECK_FALSE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   CHECK_FALSE(sv.hasErrors(ERROR));
 // }
 
 // TEST_CASE("Check example - adv", "[semantic][loop]")
@@ -111,23 +117,25 @@
 //   );
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   STManager stmgr = STManager();
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
+//   sv.visitCompilationUnit(tree);
 
-//   CHECK_FALSE(sv->hasErrors(ERROR));
+//   CHECK_FALSE(sv.hasErrors(ERROR));
 
 //   {
 //     std::optional<SymbolContext> opt = stmgr->lookup("a");
@@ -161,22 +169,24 @@
 //   );
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   STManager stmgr = STManager();
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   CHECK_FALSE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   CHECK_FALSE(sv.hasErrors(ERROR));
 // }
 
 // TEST_CASE("Int condition", "[semantic][loop]")
@@ -187,23 +197,25 @@
 //   );
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   STManager stmgr = STManager();
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
+//   sv.visitCompilationUnit(tree);
 
-//   CHECK(sv->hasErrors(ERROR));
+//   CHECK(sv.hasErrors(ERROR));
 // }
 
 // TEST_CASE("Int condition 2", "[semantic][loop]")
@@ -214,23 +226,25 @@
 //   );
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   STManager stmgr = STManager();
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
+//   sv.visitCompilationUnit(tree);
 
-//   CHECK(sv->hasErrors(ERROR));
+//   CHECK(sv.hasErrors(ERROR));
 // }
 
 // TEST_CASE("str condition", "[semantic][loop]")
@@ -241,23 +255,25 @@
 //   );
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   STManager stmgr = STManager();
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
+//   sv.visitCompilationUnit(tree);
 
-//   CHECK(sv->hasErrors(ERROR));
+//   CHECK(sv.hasErrors(ERROR));
 // }
 
 // TEST_CASE("Boolean Expr", "[semantic][loop]")
@@ -268,21 +284,23 @@
 //   );
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   STManager stmgr = STManager();
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
+//   sv.visitCompilationUnit(tree);
 
-//   CHECK_FALSE(sv->hasErrors(ERROR));
+//   CHECK_FALSE(sv.hasErrors(ERROR));
 // }

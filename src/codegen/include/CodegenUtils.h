@@ -73,7 +73,7 @@ public:
 
 public:
     /**
-     * @brief Construct a new Codegen Visitor object
+     * @brief Construct a Codegen Visitor object
      *
      * @param p Property manager to use
      * @param moduleName LLVM Module name to use

@@ -35,7 +35,7 @@ private:
 
 public:
   STManager()
-    : nameCounter(new std::map<std::string, uint32_t>())
+    : nameCounter(std::map<std::string, uint32_t>())
     , context(Context(nameCounter))
   {}
 
@@ -142,11 +142,6 @@ private:
   std::string getUniqNameFor(Scope * parent, std::string inScope); 
 
 private:
-  std::map<std::string, uint32_t> * nameCounter;
+  std::map<std::string, uint32_t> nameCounter;
   Context context;
-
-  STManager(Context ctx, std::map<std::string, uint32_t> * nc) 
-    : nameCounter(nc)
-    , context(ctx)
-  {}
 };

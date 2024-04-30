@@ -46,11 +46,7 @@ class DeepCopyVisitor : public CodegenModule
 public:
     DeepCopyVisitor(Module *m, DisplayMode mode, int f, BismuthErrorHandler e) : CodegenModule(m, mode, f, e)
     {
-        // module = m;
         errorHandler = e;
-
-        // Use the NoFolder to turn off constant folding
-        // builder = new IRBuilder<NoFolder>(module->getContext());
     }
 
     Value *runGCMalloc(IRBuilder<NoFolder> *builder, llvm::TypeSize size)

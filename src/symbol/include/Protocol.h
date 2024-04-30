@@ -11,7 +11,6 @@
  *
  */
 #include <string>  //Includes strings
-#include <sstream> //Used for string streams
 
 #include <vector>   // Vectors
 #include <optional> // Optionals
@@ -183,7 +182,7 @@ public:
 
     unsigned int project(const ProtocolSequence *ps) const;
     unsigned int project(std::string label) const; 
-    // optional<vector<const ProtocolSequence *>>  
+    
     optional<CaseMetadata>
     caseAnalysis(vector<variant<const ProtocolSequence *, string>> testOpts) const;
 

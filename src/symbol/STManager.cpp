@@ -146,14 +146,14 @@ bool STManager::isGlobalScope()
 std::string STManager::getUniqNameFor(Scope * parent, std::string inScope) {
     std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
 
-    auto itr = nameCounter->find(id);
-    if(itr == nameCounter->end())
+    auto itr = nameCounter.find(id);
+    if(itr == nameCounter.end())
     {
-        nameCounter->insert({id, 0});
+        nameCounter.insert({id, 0});
         return inScope;
     }
     std::ostringstream nextName; 
     nextName << inScope << "." << itr->second; 
-    nameCounter->insert({id, itr->second++});
+    nameCounter.insert({id, itr->second++});
     return nextName.str(); 
 }

@@ -56,7 +56,7 @@ std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthPars
             return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
         }
 
-        symBindings->bind(e, symOpt.value());
+        symBindings.bind(e, symOpt.value());
     }
     return std::nullopt; 
 }
@@ -189,7 +189,7 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
         {
             const TypeProgram *inv = progOpt.value();
             // FIXME: DO SUBTYPING BETTER!
-            if (!(new TypeChannel(inv->getProtocol()))->isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
+            if (!(TypeChannel(inv->getProtocol())).isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
             {
                 errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
             }
@@ -1199,8 +1199,6 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
             return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString(toStringMode));
         }
     }
-
-    // TIdentifier * pathNode = new TIdentifier(ctx->getStart(), sym,  a.size() == 0 ? is_rvalue : false);
     return new TFieldAccessNode(ctx->getStart(), expr, is_rvalue, a);
 }
 
@@ -1580,7 +1578,6 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Does assignment node need to be list?
             }
         }
-        // a.push_back(new AssignmentNode(s, exprOpt));
     }
     return new TVarDeclNode(a, ctx->getStart());
 }
@@ -1600,12 +1597,11 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
     if (sumTypeOpt)
     {
         const TypeSum *sumType = sumTypeOpt.value();
-        std::vector<std::pair<Symbol *, TypedNode *>> cases;
 
         std::set<const Type *> foundCaseTypes = {};
         // TODO: Maybe make so these can return values?
 
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::MatchStatementContext, BismuthParser::MatchAlternativeContext>(
+        auto branchOpt = checkBranch<BismuthParser::MatchStatementContext, BismuthParser::MatchAlternativeContext, std::pair<Symbol *, TypedNode *>>(
             ctx,
             [this, ctx](std::deque<DeepRestData *> *rest) {
                 for (auto b : ctx->matchAlternative())
@@ -1615,7 +1611,8 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
             },
             ctx->matchAlternative(),
             false,
-            [this, ctx, &cases, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<TypedNode *, ErrorChain *>
+            [](std::pair<Symbol *, TypedNode *> pair) -> TypedNode * { return pair.second; },
+            [this, ctx, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<std::pair<Symbol *, TypedNode *>, ErrorChain *>
             {
                 std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, altCtx->type()->accept(this));
 
@@ -1669,9 +1666,8 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
 
                 TypedNode *ans = std::get<TypedNode *>(tnOpt);
 
-                cases.push_back({local, ans});
+                return std::make_pair(local, ans);
 
-                return ans;
             });
 
         if (foundCaseTypes.size() != sumType->getCases().size())
@@ -1684,9 +1680,9 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
             return (*e)->addError(ctx->getStart(), "Failed to type check match statement");
         }
 
-        ConditionalData dat = std::get<ConditionalData>(branchOpt);
+        ConditionalData<std::pair<Symbol *, TypedNode *>> dat = std::get<ConditionalData<std::pair<Symbol *, TypedNode *>>>(branchOpt);
 
-        return new TMatchStatementNode(sumType, cond, cases, dat.post, ctx->getStart());
+        return new TMatchStatementNode(sumType, cond, dat.cases, dat.post, ctx->getStart());
     }
 
     return errorHandler.addError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString(toStringMode));
@@ -1792,20 +1788,18 @@ std::variant<TBlockNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
 
 std::variant<TConditionalStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ConditionalStatementContext *ctx)
 {
-    std::cout << "1846" << std::endl; 
     // Automatically handles checking that we have a valid condition
     std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCtx(ctx->check);
-std::cout << "1854" << std::endl; 
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
     {
-std::cout << "1858" << std::endl; 
         return (*e)->addErrorAt(ctx->getStart());
     }
     std::vector<BismuthParser::BlockContext *> blksCtx = {ctx->trueBlk};
     if (ctx->falseBlk)
         blksCtx.push_back(ctx->falseBlk);
-    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ConditionalStatementContext, BismuthParser::BlockContext>(
+
+    auto branchOpt = checkBranch<BismuthParser::ConditionalStatementContext, BismuthParser::BlockContext, TBlockNode *>(
         ctx,
         [this, blksCtx](std::deque<DeepRestData *> *rest) {
             for (auto b : blksCtx)
@@ -1818,23 +1812,24 @@ std::cout << "1858" << std::endl;
         },
         blksCtx,
         blksCtx.size() == 1,
-        [this](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
+        [](TBlockNode * n) -> TypedNode * { return n; },
+        [this](BismuthParser::BlockContext *blk) -> std::variant<TBlockNode *, ErrorChain *>
         {
             // Scopes automatically handled, have to use false bc we can't have the block automatically scope otherwise we might throw an error before we get the chance to realize that we use all linear resources.
-            return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
+            return this->safeVisitBlock(blk, false);
         });
-std::cout << "1877" << std::endl; 
+
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
         return errorHandler.addError(ctx->getStart(), "Failed to generate one or more cases in if statement");
-std::cout << "1880" << std::endl; 
-    ConditionalData dat = std::get<ConditionalData>(branchOpt);
-std::cout << "1882" << std::endl; 
+
+    ConditionalData<TBlockNode *> dat = std::get<ConditionalData<TBlockNode *>>(branchOpt);
+
     if (ctx->falseBlk)
     {
-        return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post, (TBlockNode *)dat.cases.at(1));
+        return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), dat.cases.at(0), dat.post, dat.cases.at(1));
     }
-std::cout << "1887" << std::endl; 
-    return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post);
+
+    return new TConditionalStatementNode(ctx->getStart(), std::get<TypedNode *>(condOpt), dat.cases.at(0), dat.post);
 }
 
 std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::SelectStatementContext *ctx)
@@ -1847,9 +1842,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
     unsigned int case_count = 0;
 
-    std::vector<TSelectAlternativeNode *> alts;
-
-    std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::SelectStatementContext, BismuthParser::SelectAlternativeContext>(
+    auto branchOpt = checkBranch<BismuthParser::SelectStatementContext, BismuthParser::SelectAlternativeContext, TSelectAlternativeNode *>(
         ctx,
         [this, ctx](std::deque<DeepRestData *> *rest) {
             for (auto b : ctx->cases)
@@ -1859,7 +1852,8 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         },
         ctx->cases,
         true,
-        [this, ctx, &case_count, &alts](BismuthParser::SelectAlternativeContext *e) -> std::variant<TypedNode *, ErrorChain *>
+        [](TSelectAlternativeNode * n) -> TypedNode * { return n; },
+        [this, ctx, &case_count](BismuthParser::SelectAlternativeContext *e) -> std::variant<TSelectAlternativeNode *, ErrorChain *>
         {
             /*
              *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
@@ -1904,9 +1898,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 return (*e)->addErrorAt(ctx->getStart());
             }
 
-            TSelectAlternativeNode *ans = new TSelectAlternativeNode(check, std::get<TypedNode *>(evalOpt), ctx->getStart());
-            alts.push_back(ans);
-            return ans; // FIXME: DONT DO PUSH BACK AND RETURN!
+            return new TSelectAlternativeNode(check, std::get<TypedNode *>(evalOpt), ctx->getStart());
         });
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
@@ -1914,8 +1906,8 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         return (*e)->addError(ctx->getStart(), "Failed to type check select statement");
     }
 
-    ConditionalData dat = std::get<ConditionalData>(branchOpt);
-    return new TSelectStatementNode(ctx->getStart(), alts, dat.post);
+    ConditionalData<TSelectAlternativeNode *> dat = std::get<ConditionalData<TSelectAlternativeNode *>>(branchOpt);
+    return new TSelectStatementNode(ctx->getStart(), dat.cases, dat.post);
 }
 
 std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ReturnStatementContext *ctx)
@@ -2061,7 +2053,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     TBlockNode *blk = std::get<TBlockNode *>(blkOpt);
 
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
-    if (!endsInReturn(blk))
+    if (!TypedAST::endsInReturn(*blk))
     {
         errorHandler.addError(ctx->getStart(), "Lambda must end in return statement");
     }
@@ -2750,7 +2742,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
         }
 
         unsigned int branch = 0;
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ProgramCaseContext, BismuthParser::StatementContext>(
+        auto branchOpt = checkBranch<BismuthParser::ProgramCaseContext, BismuthParser::StatementContext, TypedNode *>(
             ctx,
             [this, ctx](std::deque<DeepRestData *> *rest) {
                 for (auto b : ctx->protoAlternative())
@@ -2760,6 +2752,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             },
             alternatives,
             false, // TODO: make this (isInCloseable && !ctx->protoElse()). The challenge is making it follow the correct protocol in the case when it skips to rest as we don't currently support skipping ops like that
+            [](TypedNode * n) -> TypedNode * { return n; },
             [this, fullSequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
             {
                 const ProtocolSequence *proto = fullSequences.at(branch++);
@@ -2789,7 +2782,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
             return (*e)->addError(ctx->getStart(), "Failed to type check external choice");
         }
 
-        ConditionalData dat = std::get<ConditionalData>(branchOpt);
+        ConditionalData<TypedNode *> dat = std::get<ConditionalData<TypedNode *>>(branchOpt);
 
         return new TChannelCaseStatementNode(sym, isInCloseable, ctx->protoElse(), dat.cases, dat.post, ctx->getStart());
     }
@@ -3113,7 +3106,7 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
 
         unsigned int idx = 0;
 
-        std::variant<ConditionalData, ErrorChain *> branchOpt = checkBranch<BismuthParser::ProgramAcceptIfContext, BismuthParser::BlockContext>(
+        auto branchOpt = checkBranch<BismuthParser::ProgramAcceptIfContext, BismuthParser::BlockContext, TBlockNode *>(
             ctx,
             [this, blksCtx](std::deque<DeepRestData *> *rest) {
                 for (auto b : blksCtx) // TODO: Methodize this w/ other conditions?
@@ -3126,7 +3119,8 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
             },
             blksCtx,
             blksCtx.size() == 1, // TODO: VERIFY
-            [this, &idx, id, acceptOpt](BismuthParser::BlockContext *blk) -> std::variant<TypedNode *, ErrorChain *>
+            [](TBlockNode * blk) -> TypedNode * { return (TypedNode*) blk; }, 
+            [this, &idx, id, acceptOpt](BismuthParser::BlockContext *blk) -> std::variant<TBlockNode *, ErrorChain *>
             {
                 if (idx == 0)
                 {
@@ -3144,24 +3138,24 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
                     {
                         const TypeChannel *channel = channelOpt.value();
                         channel->setProtocol(acceptOpt.value());
-                        return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
+                        return this->safeVisitBlock(blk, false);
                     }
 
                     return errorHandler.addError(blk->getStart(), "Channel identifier does not have a channel type in accept if.");
                 }
-                return TNVariantCast<TBlockNode>(this->safeVisitBlock(blk, false));
+                return this->safeVisitBlock(blk, false);
             });
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
             return errorHandler.addError(ctx->getStart(), "Failed to generate one or more branches in acceptIf");
 
-        ConditionalData dat = std::get<ConditionalData>(branchOpt);
+        ConditionalData<TBlockNode *> dat = std::get<ConditionalData<TBlockNode *>>(branchOpt);
         if (ctx->falseBlk)
         {
-            return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post, (TBlockNode *)dat.cases.at(1));
+            return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, std::get<TypedNode *>(condOpt),dat.cases.at(0), dat.post, dat.cases.at(1));
         }
 
-        return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, std::get<TypedNode *>(condOpt), (TBlockNode *)dat.cases.at(0), dat.post);
+        return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, std::get<TypedNode *>(condOpt), dat.cases.at(0), dat.post);
     }
 
     return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
@@ -3306,18 +3300,19 @@ TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTempla
     return TemplateInfo(syms);
 }
 
-template <RestRuleContext R, typename T>
-inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisitor::checkBranch(
+template <RestRuleContext R, typename T, typename Y>
+inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticVisitor::checkBranch(
     R *ctx,
     std::function<void(std::deque<DeepRestData *> *)> forwardBindings, 
     std::vector<T *> ctxCases,
     bool checkRestIndependently,
-    std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck)
+    std::function<TypedNode *(Y)> getNode,
+    std::function<std::variant<Y, ErrorChain *>(T *)> typeCheck)
 {
 
     DeepRestData *restDat = new DeepRestData(ctx->rest);
     std::deque<DeepRestData *> *rest = new std::deque<DeepRestData *>();
-    std::optional<std::deque<DeepRestData *> *> bindings = restBindings->getBinding(ctx);
+    std::optional<std::deque<DeepRestData *> *> bindings = restBindings.getBinding(ctx);
     if (bindings.has_value())
     {
         for (auto a : *bindings.value())
@@ -3331,9 +3326,9 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
 
 
 
-    std::optional<std::deque<DeepRestData *> *> deepRest = restBindings->getBinding(ctx);
+    std::optional<std::deque<DeepRestData *> *> deepRest = restBindings.getBinding(ctx);
 
-    std::vector<TypedNode *> cases;
+    std::vector<Y> cases;
 
     // STManager *origStmgr = this->stmgr;
 
@@ -3366,7 +3361,7 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
         }
 
         // FIXME: WILL NEED TO RUN THIS CHECK ON EACH ITERATION!
-        if (deepRest && !endsInReturn(restDat->post) && !endsInBranch(restDat->post))
+        if (deepRest && !TypedAST::endsInReturn(restDat->post) && !TypedAST::endsInBranch(restDat->post))
         {
             for (auto r : *(deepRest.value()))
             {
@@ -3427,17 +3422,25 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
         }
 
         stmgr->enterScope(StopType::NONE);
-        std::variant<TypedNode *, ErrorChain *> optEval = typeCheck(alt);
+        std::variant<Y, ErrorChain *> optEval = typeCheck(alt);
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
         {
             return (*e)->addErrorAt(ctx->getStart());
         }
 
-        TypedNode *caseNode = std::get<TypedNode *>(optEval);
-        cases.push_back(caseNode);
+        Y caseVal = std::get<Y>(optEval);
+        cases.push_back(caseVal);
 
-        std::optional<ErrorChain *> errorOpt = checkCase(alt->getStart(), !endsInReturn(caseNode) && !endsInBranch(caseNode), "Failed to type check code following branch", "Failed to type check when no branch followed");
+        TypedNode * caseNode = getNode(caseVal); 
+
+        std::optional<ErrorChain *> errorOpt = checkCase(
+            alt->getStart(),
+            !TypedAST::endsInReturn(*caseNode) && !TypedAST::endsInBranch(*caseNode),
+            "Failed to type check code following branch",
+            "Failed to type check when no branch followed"
+        );
+
         if(errorOpt) return errorOpt.value();
     }
 
@@ -3451,7 +3454,7 @@ inline std::variant<SemanticVisitor::ConditionalData, ErrorChain *> SemanticVisi
         if(errorOpt) return errorOpt.value();
     }
 
-    return ConditionalData(cases, restDat->post);
+    return ConditionalData<Y>(cases, restDat->post);
 }
 
 
@@ -3695,7 +3698,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
     return defineTypeCase<std::variant<DefinitionSymbol *, ErrorChain *>>(ctx, 
         [this, m, defineTemplate, defineFunction](BismuthParser::DefineFunctionContext * fnCtx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
             
-            std::optional<DefinitionSymbol *> opt = symBindings->getBinding(fnCtx);
+            std::optional<DefinitionSymbol *> opt = symBindings.getBinding(fnCtx);
 
             if (!opt && stmgr->lookupInCurrentScope(fnCtx->name->getText()))
             {
@@ -3757,7 +3760,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         },
 
         [this, m, getTemplateSymbol, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
-            std::optional<DefinitionSymbol *> opt = symBindings->getBinding((BismuthParser::DefineTypeContext *)ctx);
+            std::optional<DefinitionSymbol *> opt = symBindings.getBinding((BismuthParser::DefineTypeContext *)ctx);
 
             if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
             {
@@ -3790,7 +3793,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         },
 
         [this, m, getTemplateSymbol, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
-            std::optional<DefinitionSymbol *> opt = symBindings->getBinding(ctx);
+            std::optional<DefinitionSymbol *> opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
             {
@@ -3825,7 +3828,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         },
 
         [this, m, getTemplateSymbol, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
-            std::optional<DefinitionSymbol *> opt = symBindings->getBinding(ctx);
+            std::optional<DefinitionSymbol *> opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
             {

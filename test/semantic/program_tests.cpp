@@ -12,34 +12,37 @@
 
 using Catch::Matchers::ContainsSubstring;
 
-void EnsureErrorsWithMessage(antlr4::ANTLRInputStream *input, std::string message)
+void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message)
 {
-  BismuthLexer lexer(input);
+  BismuthLexer lexer(&input);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
-  STManager *stm = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stm, DisplayMode::C_STYLE, 0);
-  auto cuOpt = sv->visitCtx(tree);
+  STManager stm = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, 0);
+  auto cuOpt = sv.visitCtx(tree);
 
-  REQUIRE(sv->hasErrors(0));
-  REQUIRE_THAT(sv->getErrors(), ContainsSubstring(message));
+  REQUIRE(sv.hasErrors(0));
+  REQUIRE_THAT(sv.getErrors(), ContainsSubstring(message));
 }
 
 void EnsureErrorsWithMessage(std::string program, std::string message)
 {
   antlr4::ANTLRInputStream input(program);
-  EnsureErrorsWithMessage(&input, message);
+  EnsureErrorsWithMessage(input, message);
 }
 
 // TODO: does this use excess memory bc we dont free news?
 TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test4.bismuth"))),
-                          "Cannot provide Unit to a function");
+  auto stream = std::fstream("/home/shared/programs/test4.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Cannot provide Unit to a function"
+  );
 }
 
 TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
@@ -55,20 +58,29 @@ define func foo (int a, int a, int b) {
 
 TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/doubleArg2.bismuth"))),
-                          "Re-use of previously defined parameter a");
+  auto stream = std::fstream("/home/shared/programs/doubleArg2.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Re-use of previously defined parameter a"
+  );
 }
 
 TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don't crash", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/doubleArg3.bismuth"))),
-                          "Re-use of previously defined parameter a");
+  auto stream = std::fstream("/home/shared/programs/doubleArg3.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Re-use of previously defined parameter a"
+  );
 }
 
 TEST_CASE("programs/test15 - No array equalities", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test15.bismuth"))),
-                          "Cannot perform equality operation on arrays; they are always seen as unequal!");
+  auto stream = std::fstream("/home/shared/programs/test15.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Cannot perform equality operation on arrays; they are always seen as unequal!"
+  );
 }
 
 TEST_CASE("Comment EOF", "[semantic]")
@@ -77,11 +89,13 @@ TEST_CASE("Comment EOF", "[semantic]")
       "# Hello # there!");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto listener = TestErrorListener();
+  parser.addErrorListener(&listener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
@@ -90,73 +104,94 @@ TEST_CASE("Comment EOF", "[semantic]")
   // Any errors should be syntax errors.
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  CHECK_FALSE(sv->hasErrors(0));
+  CHECK_FALSE(sv.hasErrors(0));
 }
 
 TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test16.bismuth"))),
-                          "Redeclaration of c");
+  auto stream = std::fstream("/home/shared/programs/test16.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Redeclaration of c"
+  );
 }
 
 TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test16a.bismuth"))),
-                          "Redeclaration of c");
+  auto stream = std::fstream("/home/shared/programs/test16a.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Redeclaration of c"
+  );
 }
 
 TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test16c.bismuth"))),
-                          "Redeclaration of c");
+  auto stream = std::fstream("/home/shared/programs/test16c.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Redeclaration of c"
+  );
 }
 
 TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test16c-1.bismuth"))),
-                          "Redeclaration of c");
+  auto stream = std::fstream("/home/shared/programs/test16c-1.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Redeclaration of c"
+  );
 }
 
 TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test16c-2.bismuth"))),
-                          "Redeclaration of c");
+  auto stream = std::fstream("/home/shared/programs/test16c-2.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Redeclaration of c"
+  );
 }
 
 TEST_CASE("programs/test16d - chain var", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test16d.bismuth"))),
-                          "Redeclaration of c");
+  auto stream = std::fstream("/home/shared/programs/test16d.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Redeclaration of c"
+  );
 }
 
 TEST_CASE("programs/test16e - chain var 2", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/test16e.bismuth"))),
-                          "Uninferred types in context: [b, VAR]; [c, VAR]; [d, VAR]");
+  auto stream = std::fstream("/home/shared/programs/test16e.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Uninferred types in context: [b, VAR]; [c, VAR]; [d, VAR]"
+  );
 }
 
 TEST_CASE("programs/test16f - var loop", "[semantic]")
 {
-  std::fstream *inStream = new std::fstream("/home/shared/programs/test16f.bismuth");
-  antlr4::ANTLRInputStream *input = new antlr4::ANTLRInputStream(*inStream);
+  std::fstream inStream = std::fstream("/home/shared/programs/test16f.bismuth");
+  antlr4::ANTLRInputStream input = antlr4::ANTLRInputStream(inStream);
 
-  BismuthLexer lexer(input);
+  BismuthLexer lexer(&input);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
-  STManager *stm = new STManager();
+  STManager stm = STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stm, DisplayMode::C_STYLE);
-  sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(0));
+  SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE);
+  sv.visitCompilationUnit(tree);
+  REQUIRE_FALSE(sv.hasErrors(0));
 }
 
 // FIXME: REENABLE AGAIN!
@@ -171,23 +206,25 @@ TEST_CASE("Test program() should return int warning", "[semantic][conditional]")
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-  sv->visitCompilationUnit(tree);
-  CHECK_FALSE(sv->hasErrors(ERROR));
-  CHECK(sv->hasErrors(CRITICAL_WARNING));
+  sv.visitCompilationUnit(tree);
+  CHECK_FALSE(sv.hasErrors(ERROR));
+  CHECK(sv.hasErrors(CRITICAL_WARNING));
 }
 
 TEST_CASE("Test program() should not have parameters warning", "[semantic][conditional]")
@@ -200,23 +237,25 @@ TEST_CASE("Test program() should not have parameters warning", "[semantic][condi
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-  sv->visitCompilationUnit(tree);
-  CHECK_FALSE(sv->hasErrors(ERROR));
-  CHECK(sv->hasErrors(CRITICAL_WARNING));
+  sv.visitCompilationUnit(tree);
+  CHECK_FALSE(sv.hasErrors(ERROR));
+  CHECK(sv.hasErrors(CRITICAL_WARNING));
 }
 */
 
@@ -294,22 +333,24 @@ define program :: c : Channel<-int> = {
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(ERROR));
+  sv.visitCompilationUnit(tree);
+  REQUIRE_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
@@ -425,23 +466,25 @@ define program :: c : Channel<-int> = {
 //     )"""");
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE(sv.hasErrors(ERROR));
 // }
 
 TEST_CASE("Redeclaration of function 3", "[semantic][program]")
@@ -581,23 +624,25 @@ define func foo (str a) {
 //     )"""");
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE(sv.hasErrors(ERROR));
 // }
 
 TEST_CASE("Forward Decl with Variadic", "[semantic][program][function][forward-decl]")
@@ -674,23 +719,25 @@ define func foo (str a, int b) : int {
 
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE(sv.hasErrors(ERROR));
 // }
 
 // UNUSED: SEEMS REDUNDANT
@@ -716,23 +763,25 @@ define func foo (str a, int b) : int {
 
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE(sv.hasErrors(ERROR));
 // }
 
 TEST_CASE("Wrong UnaryNot", "[semantic][program][bool]")
@@ -1004,24 +1053,26 @@ define program :: c : Channel<-int> = {
 //     )"""");
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE_FALSE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE_FALSE(sv.hasErrors(ERROR));
 // }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2f", "[semantic][program][local-function]")
@@ -1043,23 +1094,25 @@ define program :: c : Channel<-int> = {
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
+  STManager stmgr = STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(ERROR));
+  sv.visitCompilationUnit(tree);
+  REQUIRE_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2p", "[semantic][program][local-function]")
@@ -1082,23 +1135,25 @@ define program :: c : Channel<-int> = {
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
+  STManager stmgr = STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(ERROR));
+  sv.visitCompilationUnit(tree);
+  REQUIRE_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][program][local-function]")
@@ -1122,25 +1177,27 @@ define program :: c : Channel<-int> = {
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener(); 
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
+  STManager stmgr = STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  // sv->visitCompilationUnit(tree);
-  // REQUIRE_FALSE(sv->hasErrors(ERROR));
-  auto TypedOpt = sv->visitCtx(tree);
-  REQUIRE_FALSE(sv->hasErrors(ERROR));
+  // sv.visitCompilationUnit(tree);
+  // REQUIRE_FALSE(sv.hasErrors(ERROR));
+  auto TypedOpt = sv.visitCtx(tree);
+  REQUIRE_FALSE(sv.hasErrors(ERROR));
   REQUIRE(std::holds_alternative<TCompilationUnitNode *>(TypedOpt));
 }
 
@@ -1165,24 +1222,26 @@ define program :: c : Channel<-int> = {
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  //   // auto lListener = TestErrorListener();
+  //   // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
+  STManager stmgr = STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  auto TypedOpt = sv->visitCtx(tree);
-  // sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(ERROR));
+  auto TypedOpt = sv.visitCtx(tree);
+  // sv.visitCompilationUnit(tree);
+  REQUIRE_FALSE(sv.hasErrors(ERROR));
   REQUIRE(std::holds_alternative<TCompilationUnitNode *>(TypedOpt));
 }
 
@@ -1308,24 +1367,26 @@ define program :: c : Channel<-int> = {
 //     )"""");
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE(sv.hasErrors(ERROR));
 // }
 
 // TEST_CASE("Nested Local Functions - Disallow Local vars 5", "[semantic][program][local-function]")
@@ -1347,24 +1408,26 @@ define program :: c : Channel<-int> = {
 //     )"""");
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE_FALSE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE_FALSE(sv.hasErrors(ERROR));
 // }
 
 // TEST_CASE("Nested Local Functions - Disallow Local vars 6", "[semantic][program][local-function]")
@@ -1387,24 +1450,26 @@ define program :: c : Channel<-int> = {
 //     )"""");
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE(sv.hasErrors(ERROR));
 // }
 
 TEST_CASE("Nested Enums - Disallow Local Assign", "[semantic][program][enum]")
@@ -1532,24 +1597,26 @@ define struct Inner {
 //     )"""");
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE(sv.hasErrors(ERROR));
 // }
 
 // TEST_CASE("Global sum def", "[semantic][program][sum]")
@@ -1560,24 +1627,26 @@ define struct Inner {
 //     )"""");
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE(sv.hasErrors(ERROR));
 // }
 
 // TEST_CASE("Global lambda def", "[semantic][program][lambda]")
@@ -1590,24 +1659,26 @@ define struct Inner {
 //     )"""");
 //   BismuthLexer lexer(&input);
 //   // lexer.removeErrorListeners();
-//   // lexer.addErrorListener(new TestErrorListener());
+//   // auto lListener = TestErrorListener();
+//   // lexer.addErrorListener(&lListener);
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   parser.addErrorListener(new TestErrorListener());
+//   auto pListener = TestErrorListener(); 
+//   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
 //   REQUIRE_NOTHROW(tree = parser.compilationUnit());
 //   REQUIRE(tree != NULL);
 //   REQUIRE(tree->getText() != "");
 
-//   STManager *stmgr = new STManager();
+//   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor *sv = new SemanticVisitor(stmgr);
+//   SemanticVisitor sv = SemanticVisitor(&stmgr);
 
-//   sv->visitCompilationUnit(tree);
-//   REQUIRE(sv->hasErrors(ERROR));
+//   sv.visitCompilationUnit(tree);
+//   REQUIRE(sv.hasErrors(ERROR));
 // }
 
 TEST_CASE("Bad Enum pass", "[semantic][program][lambda][enum]")
@@ -1665,23 +1736,25 @@ define foo :: c : Channel<+int> = {
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
+  STManager stmgr = STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(ERROR));
+  sv.visitCompilationUnit(tree);
+  REQUIRE_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("No Weaken in loop", "[semantic]")
@@ -1737,23 +1810,25 @@ define program :: c : Channel<-int> = {
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener(); 
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
+  STManager stmgr = STManager();
 
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv->hasErrors(ERROR));
+  sv.visitCompilationUnit(tree);
+  REQUIRE_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Links3 - 1", "[semantic]")
@@ -2067,14 +2142,20 @@ define program :: c : Channel<?Cancelable<-int>> {
 
 TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg.bismuth"))),
-      "Unsupported redeclaration of foo");
+  auto stream = std::fstream("/home/shared/programs/forwardWrongArg.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Unsupported redeclaration of foo"
+  );
 }
 
 TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[semantic]")
 {
-    EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/forwardWrongArg2.bismuth"))),
-      "Can only invoke functions, not foo");
+  auto stream = std::fstream("/home/shared/programs/forwardWrongArg2.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Can only invoke functions, not foo"
+  );
 }
 
 
@@ -2157,14 +2238,20 @@ define program :: c : Channel<-int> {
  *********************************/
 TEST_CASE("B Level Negative Test #1", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BNegative1.bismuth"))),
-                          "Undefined variable reference: getIntArg");
+  auto stream = std::fstream("/home/shared/programs/BLevel/BNegative1.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Undefined variable reference: getIntArg"
+  );
 }
 
 TEST_CASE("B Level Negative Test #2", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/BLevel/BNegative2.bismuth"))),
-                          "Expression of type boolean cannot be assigned to int");
+  auto stream = std::fstream("/home/shared/programs/BLevel/BNegative2.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Expression of type boolean cannot be assigned to int"
+  );
 }
 
 /*********************************
@@ -2173,6 +2260,9 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
 
 TEST_CASE("A Level Negative Test #2", "[semantic]")
 {
-  EnsureErrorsWithMessage(new antlr4::ANTLRInputStream(*(new std::fstream("/home/shared/programs/ALevel/ANegative2.bismuth"))),
-                          "Expected 2 argument(s), but got 3");
+  auto stream = std::fstream("/home/shared/programs/ALevel/ANegative2.bismuth");
+  EnsureErrorsWithMessage(
+    antlr4::ANTLRInputStream(stream),
+    "Expected 2 argument(s), but got 3"
+  );
 }

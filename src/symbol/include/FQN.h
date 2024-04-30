@@ -36,8 +36,6 @@ class Identifier
 private: 
     std::string identifier;         // The name as seen in code (usually local to the scope)
     std::string uniqueNameInScope;  // Unique name for the symbol in its scope
-    // Scope * scope; 
-
     optional<Identifier *> parent; 
 
 

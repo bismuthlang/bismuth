@@ -28,7 +28,7 @@ class SemanticVisitor : public BismuthBaseVisitor
 
 public:
     /**
-     * @brief Construct a new Semantic Visitor object
+     * @brief Construct a Semantic Visitor object
      *
      * @param s Symbol table manager to use
      * @param p Property manager to use
@@ -288,18 +288,6 @@ std::variant<
     phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps);
 
     /*
-     *  Protocols
-     */
-    // std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return ProtoVariantCast<ProtocolSequence>(visitProto(ctx)); } //{ return visitProto(ctx); }
-    // std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { return visitProto(ctx); }
-    // std::any visitSendType(BismuthParser::SendTypeContext *ctx) override { return visitProto(ctx); }
-    // std::any visitWnProto(BismuthParser::WnProtoContext *ctx) override { return visitProto(ctx); }
-    // std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { return visitProto(ctx); }
-    // std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { return visitProto(ctx); }
-    // std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return visitProto(ctx); }
-    // std::any visitCloseableProto(BismuthParser::CloseableProtoContext *ctx) override { return visitProto(ctx); }
-
-    /*
      * Traditional visitor methods all overridden with our typed versions
      */
     // std::any visitVariableExpr(BismuthParser::VariableExprContext *ctx) override { return visitCtx(ctx); }
@@ -415,7 +403,7 @@ std::cout << "399" << std::endl;
     // check later code... 
     std::variant<TBlockNode *, ErrorChain *> safeVisit(std::vector<antlr4::ParserRuleContext *> exprs, bool newScope)
     {
-        assert(exprs.size() > 0); // TODO: do better?
+        if(exprs.size() == 0) return errorHandler.addCompilerError(nullptr, "safeVisit was called; however, exprs was an empty list.");
 
         // Enter a new scope if desired
         if (newScope)
@@ -556,14 +544,16 @@ std::cout << "399" << std::endl;
         }
     };
 
+    template <typename T>
     struct ConditionalData
     {
-        vector<TypedNode *> cases;
+        vector<T> cases;
         vector<TypedNode *> post;
 
-        ConditionalData(vector<TypedNode *> cases, vector<TypedNode *> post) : cases(cases), post(post)
-        {
-        }
+        ConditionalData(vector<T> cases, vector<TypedNode *> post) 
+            : cases(cases)
+            , post(post)
+        {}
     };
 
     //FIXME: WHAT AB Ext<A,B>;!P;Ext<A,B>?
@@ -577,13 +567,14 @@ std::cout << "399" << std::endl;
     };
 
 
-    template <RestRuleContext R, typename T>
-    inline std::variant<ConditionalData, ErrorChain *> checkBranch(
+    template <RestRuleContext R, typename T, typename Y>
+    inline std::variant<ConditionalData<Y>, ErrorChain *> checkBranch(
         R *ctx,
         std::function<void(std::deque<DeepRestData *> *)> forwardBindings, 
         std::vector<T *> ctxCases,
         bool checkRestIndependently,
-        std::function<std::variant<TypedNode *, ErrorChain *>(T *)> typeCheck);
+        std::function<TypedNode *(Y)> getNode, 
+        std::function<std::variant<Y, ErrorChain *>(T *)> typeCheck);
 
 private:
     DisplayMode toStringMode; 
@@ -593,8 +584,8 @@ public:
 
 private:
     STManager *stmgr;
-    PropertyManager<DefinitionSymbol> *symBindings = new PropertyManager<DefinitionSymbol>();
-    PropertyManager<std::deque<DeepRestData *>> *restBindings = new PropertyManager<std::deque<DeepRestData *>>();
+    PropertyManager<DefinitionSymbol> symBindings = PropertyManager<DefinitionSymbol>();
+    PropertyManager<std::deque<DeepRestData *>> restBindings = PropertyManager<std::deque<DeepRestData *>>();
     BismuthErrorHandler errorHandler = BismuthErrorHandler(SEMANTIC);
 
 
@@ -724,7 +715,7 @@ private:
             // for(auto b : cs->block()) {
             //     bindRestData(b, rd);
             // }
-            restBindings->bind(cs, rd);
+            restBindings.bind(cs, rd);
             return;
         }
 
@@ -733,7 +724,7 @@ private:
             // for(auto c : sel->cases) {
             //     bindRestData(c->eval, rd);
             // }
-            restBindings->bind(sel, rd);
+            restBindings.bind(sel, rd);
             return;
         }
 
@@ -742,7 +733,7 @@ private:
             // for(auto c : mc->cases) {
             //     bindRestData(c->eval, rd);
             // }
-            restBindings->bind(mc, rd);
+            restBindings.bind(mc, rd);
             return;
         }
 
@@ -751,7 +742,7 @@ private:
             // for(auto o : cc->opts) {
             //     bindRestData(o->eval, rd);
             // }
-            restBindings->bind(cc, rd);
+            restBindings.bind(cc, rd);
             return;
         }
     }

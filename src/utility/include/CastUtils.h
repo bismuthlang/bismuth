@@ -2,6 +2,19 @@
 #include <optional>
 #include <variant>
 #include "TypedAST.h"
+#include "BismuthErrorHandler.h"
+
+// template<typename I, typename E>
+// std::optional<E&> cast_ref(I& i)
+// {
+//     try {
+//         E& val = dynamic_cast<E&>(i);
+//         return val; 
+//     }
+//     catch(const std::bad_cast& e) {
+//         return std::nullopt; 
+//     }
+// }
 
 template <typename T>
 std::optional<T> anyOpt2Val(const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available

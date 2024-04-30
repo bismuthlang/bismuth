@@ -469,7 +469,7 @@ private:
 
 public:
     /**
-     * @brief Construct a new TypeArray
+     * @brief Construct a TypeArray
      *
      * @param v The type of the array elements
      * @param l The length of the array. NOTE: THIS SHOULD ALWAYS BE AT LEAST ONE!
@@ -532,7 +532,7 @@ private:
 
 public:
     /**
-     * @brief Construct a new TypeArray
+     * @brief Construct a TypeArray
      *
      * @param v The type of the array elements
      */
@@ -587,7 +587,7 @@ private:
 
 public:
     /**
-     * @brief Construct a new Type Channel object
+     * @brief Construct a Type Channel object
      * 
      * @param proto The protocol sequence for the channel to follow
      */
@@ -686,7 +686,7 @@ public:
     {}
 
     /**
-     * @brief Construct a new Type Program object
+     * @brief Construct a Type Program object
      * 
      * @param p The protocol sequence for the program's main channel to follow
      */
@@ -773,7 +773,7 @@ public:
     {}
 
     /**
-     * @brief Construct a new TypeFunc object
+     * @brief Construct a TypeFunc object
      *
      * @param p List of type parameters
      * @param v Determines if this should be a variadic
@@ -946,7 +946,7 @@ public:
         , defined(true)
     {}
 
-    TypeSum(std::optional<Identifier *> n = {}) // Identifier * n) 
+    TypeSum(std::optional<Identifier *> n = {})
         : NameableType(false, n)
         , defined(false)
     {}

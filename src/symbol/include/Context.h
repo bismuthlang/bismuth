@@ -17,11 +17,11 @@
 
 class Context {
 private: 
-    std::map<std::string, uint32_t> * nameCounter; 
+    std::map<std::string, uint32_t> & nameCounter; 
     Scope * globalScope; 
 
 public:
-    Context(std::map<std::string, uint32_t> * nc) 
+    Context(std::map<std::string, uint32_t> & nc) 
         : nameCounter(nc) 
     {
         // Maybe add a global scope for all files? 
@@ -142,15 +142,15 @@ public:
         // TODO: not sure if getting FQN here will break some stuff wrt generics...
         std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
       
-        auto itr = nameCounter->find(id);
-        if(itr == nameCounter->end())
+        auto itr = nameCounter.find(id);
+        if(itr == nameCounter.end())
         {
-            nameCounter->insert({id, 0});
+            nameCounter.insert({id, 0});
             return inScope;
         }
         std::ostringstream nextName; 
         nextName << inScope << "." << itr->second; 
-        nameCounter->insert({id, itr->second++});
+        nameCounter.insert({id, itr->second++});
         return nextName.str(); 
     }
 };

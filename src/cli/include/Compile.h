@@ -154,7 +154,6 @@ public:
     std::variant<llvm::raw_ostream *, std::error_code> getIROut() override 
     { 
         return new llvm::raw_string_ostream(irStr);
-        // return new llvm::buffer_ostream(*irStream);
     }
 
     std::variant<llvm::raw_pwrite_stream *, std::error_code> getObjectOut() override 
