@@ -599,28 +599,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     // Symbol *funcSym = symScope.first; //std::get<Symbol *>(funcSymOpt);
     // Scope * funcScope = symScope.second; 
-    
-    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(defSym->getType()))
-    {
-        std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam, defSym);
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&lamOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Unable to generate lambda");
-        }
-
-        TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
-
-        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
-            defSym, 
-            templateTy, 
-            lam, 
-            ctx->getStart()
-        );
-
-        return templateNode; 
-
-    }
 
     std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam, defSym);
 
@@ -634,6 +612,18 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     /*
      *  Check if this is a template or not, and handle it accordingly
      */
+    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(defSym->getType()))
+    {
+        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
+            defSym, 
+            templateTy, 
+            lam, 
+            ctx->getStart()
+        );
+
+        return templateNode; 
+
+    }
 
     return lam; 
 }
