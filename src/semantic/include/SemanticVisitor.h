@@ -140,6 +140,7 @@ public:
 
     std::any visitTypeDef(BismuthParser::TypeDefContext *ctx) override { return ctx->defineType()->accept(this); }
 
+    std::variant<TProgramDefNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx);
     std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitCtx(ctx)); }
 
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineFunctionContext *ctx);
@@ -442,67 +443,6 @@ std::cout << "399" << std::endl;
 
         return new TBlockNode(nodes, exprs.at(0)->getStart()); // FIXME: DO BETTER< HANDLE ERRORS! CURRENTLY ALWAYS RETURNS NODE
     }
-    
-    /**
-     * @brief Visits a program definition
-     *
-     * @param ctx The parser rule context
-     * @return TProgramDefNode * if successful, ErrorChain * if error
-     */
-    std::variant<TProgramDefNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx)
-    {
-        std::variant<DefinitionSymbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        DefinitionSymbol * defSym = std::get<DefinitionSymbol*>(symOpt);
-
-        // Symbol * sym = symScope.first; 
-        // Scope * innerScope = symScope.second; 
-
-
-        if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym->getType()))
-        {
-            std::string funcId = ctx->name->getText();
-            // Lookup the function in the current scope and prevent re-declarations
-
-            // Add the symbol to the stmgr and enter the scope. -> Already done
-            // TODO: BAD OPT VALUE (should never really happen though)
-            Scope * orig = stmgr->getCurrentScope().value(); 
-            stmgr->enterScope(defSym->getInnerScope());
-
-            Symbol *channelSymbol = stmgr->addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
-            // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
-            stmgr->addSymbol("@EXIT", Types::UNIT, false);
-
-            // Safe visit the program block without creating a new scope (as we are managing the scope)
-            std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
-            {
-                std::cout << "497" << std::endl; 
-                return (*e)->addError(ctx->getStart(), "Failed to safe visit block");
-            }
-
-            // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
-            // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<BismuthParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
-            // {
-            //     errorHandler.addError(ctx->getStart(), "Function must end in return statement");
-            // }
-
-            // Safe exit the scope.
-            safeExitScope(ctx);
-            stmgr->enterScope(orig); 
-
-            return new TProgramDefNode(defSym, channelSymbol, std::get<TBlockNode *>(blkOpt), progType, ctx->getStart());
-        }
-        else
-        {
-            return errorHandler.addError(ctx->getStart(), "Cannot execute " + defSym->toString());
-        }
-    }
 
     struct ProtocolCompareInv
     {
@@ -524,23 +464,6 @@ std::cout << "399" << std::endl;
                 return false; // TODO: verify 
 
             return std::get<const ProtocolSequence *>(a)->toString(DisplayMode::C_STYLE) < std::get<const ProtocolSequence *>(b)->toString(DisplayMode::C_STYLE);
-
-            // const ProtocolBranchOption * a = ap.first; 
-            // const ProtocolBranchOption * b = bp.first; 
-            
-            // if(a->label)
-            // {
-            //     if(b->label)
-            //         return a->label.value() < b->label.value(); 
-
-            //     return true; // TODO: verify 
-            // }
-            
-            // if(b->label)
-            //     return false; // TODO: verify 
-
-            // return a->seq->toString(DisplayMode::C_STYLE) < b->seq->toString(DisplayMode::C_STYLE);
-            // return //a.first->toString(C_STYLE) < b.first->toString(C_STYLE);
         }
     };
 

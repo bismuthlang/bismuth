@@ -209,59 +209,6 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>>
  * and bind nodes to Symbols using the property manager. If
  * there are any errors we print them out and exit.
  *******************************************************************/
-std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_Semantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
-{
-    /*
-     * Sets up compiler flags. These need to be sent to the visitors.
-     */
-
-    int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
-
-    bool valid = true;
-    STManager stm = STManager();
-
-
-    std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> ans;
-
-    for (auto i : inputs)
-    {
-        auto [tree, input] = i;
-        
-        SemanticVisitor sv = SemanticVisitor(&stm, toStringMode, flags);
-        auto TypedOpt = sv.visitCtx(tree, input->getPathSteps());
-
-        if (sv.hasErrors(0)) // Want to see all errors
-        {
-            std::cerr << "Semantic analysis completed for " << input->getSourceName() << " with errors: " << std::endl;
-            std::cerr << sv.getErrors() << std::endl;
-            valid = false;
-            continue;
-        }
-
-        if (std::holds_alternative<ErrorChain *>(TypedOpt))
-        {
-            // SHouldn't be possible, but somehow it cah happen....?)
-            std::cerr << "Failed to generate Typed AST" << std::endl;
-            std::cerr << std::get<ErrorChain *>(TypedOpt)->toString() << std::endl;
-            valid = false;
-            continue;
-        }
-
-        TCompilationUnitNode *cu = std::get<TCompilationUnitNode *>(TypedOpt); // TypedOpt.value();
-
-        if (isVerbose)
-        {
-            std::cout << "Semantic analysis completed for " << input->getSourceName() << " without errors. Starting code generation..." << std::endl;
-        }
-
-        ans.push_back({cu, input});
-    }
-
-    if(!valid) std::exit(-1);
-
-    return ans; 
-}
-
 std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
 {
     // auto printErrors = [](ErrorChain *) {
