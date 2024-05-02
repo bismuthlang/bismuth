@@ -76,8 +76,7 @@ public:
         for(auto s : pathSteps)
         {
             ans += "::" + s;
-        } 
-        std::cout << "80 PS " << ans << std::endl; 
+        }
         return pathSteps; 
     }
     virtual std::string getSourceName() { return inputStream->getSourceName(); }

@@ -2,7 +2,6 @@
 
 bool Type::isSubtype(const Type *other, InferenceMode mode) const
 {
-    std::cout << "5 " << this->toString(C_STYLE) << " <: " << other->toString(C_STYLE) << std::endl; 
     if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(this))
     {
         // return false;
@@ -572,6 +571,10 @@ const Type * TypeProgram::getCopySubst(std::map<const Type *, const Type *> exis
 
     existing.insert({this, ans});
 
+    ans->setProtocol(
+        protocol->getCopySubst(existing)
+    );
+
     // FIXME: NEED TO IMPL THIS!!! -> but it seems to work? though we don't have generics for programs
 
     // TODO: use ->define() func!
@@ -785,7 +788,6 @@ const TypeInfer * TypeInfer::getCopy() const { return this; };
 
 bool TypeInfer::setValue(const Type *other, InferenceMode mode) const
 {
-    std::cout << "844 " << this->toString(C_STYLE) << " " << (mode == InferenceMode::QUERY) << std::endl; 
     // Prevent us from being sent another TypeInfer. There's no reason for this to happen
     // as it should have been added as a dependency (and doing this would break things)
     if (dynamic_cast<const TypeInfer *>(other))
@@ -825,7 +827,7 @@ bool TypeInfer::setValue(const Type *other, InferenceMode mode) const
 valid: 
     if(mode != InferenceMode::SET)
         return true; 
-std::cout << "883" << std::endl; 
+
     // Set our valueType to be the provided type to see if anything breaks...
     TypeInfer *u_this = const_cast<TypeInfer *>(this);
     *u_this->valueType = other;
@@ -852,12 +854,20 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
 
 bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
 {
-    std::cout << "858 " << this->toString(C_STYLE) << " VS " << other->toString(C_STYLE) << " " << (mode == InferenceMode::QUERY) << std::endl; 
+    std::cout << "857 " << this->toString(C_STYLE) << ".isSupertypeFor " << other->toString(C_STYLE) << std::endl;
+    if(possibleTypes.size())
+    {
+        std::cout << "POSSIBLE TYPES: "; 
+        for(auto t : possibleTypes)
+        {
+            std::cout << t->toString(C_STYLE) << ", "; 
+        }
+        std::cout << endl; 
+    }
     // If we already have an inferred type, we can simply
     // check if that type is a subtype of other.
     if (valueType->has_value())
     {
-        std::cout << "881" << std::endl; 
         return valueType->value()->isSubtype(other);
     }
     /*
@@ -882,6 +892,13 @@ bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
 
         TypeInfer *moth = const_cast<TypeInfer *>(oInf);
         moth->infTypes.push_back(this);
+
+        // TODO: handle this better so that way we can compare and unify across
+        // the two when both are non-empty (DO AN INTERSECT!)
+        if(moth->possibleTypes.empty() && !this->possibleTypes.empty())
+        {
+            moth->possibleTypes = this->possibleTypes; 
+        }
         return true;
     }
 
@@ -893,17 +910,14 @@ bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
     // is going to error anyways. We won't want to show this as a var. 
     if(!ans && mode == InferenceMode::SET) unify(); 
 
-    std::cout << "910!" << this->toString(C_STYLE) << std::endl; 
     return ans; 
 }
 
 bool TypeInfer::unify() const 
 {
-    std::cout << "909 " << this->hasBeenInferred() << " " << possibleTypes.size() << std::endl;
     if(this->hasBeenInferred()) return true;
     if(possibleTypes.size() != 0)
     {
-        std::cout << "912 " << (*(possibleTypes.begin()))->toString(C_STYLE) << std::endl;
         return this->isSupertypeFor(*(possibleTypes.begin()));
     }
 
@@ -945,7 +959,16 @@ bool TypeSum::contains(const Type *ty) const
 {
     if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(ty))
     {
-        if(!infType->hasBeenInferred()) return false; 
+        if(!infType->hasBeenInferred())
+            return false; 
+        // {
+        //     for(const Type * t : this->cases)
+        //     {
+        //         if(t->isSubtype(infType))
+        //             return true; 
+        //     }
+        //     return false;
+        // } 
 
         return this->contains(infType->getValueType().value());
     }
@@ -1517,4 +1540,18 @@ const Type * TypeModule::getCopySubst(std::map<const Type *, const Type *> exist
 bool TypeModule::isSupertypeFor(const Type * other) const 
 {
     return this == other; 
+}
+
+
+bool TypeCompare::operator()(const Type *a, const Type *b) const
+{
+    // Only needed b/c of int types giving 
+    // type infer due to trying to allow for 
+    // inference of specific int type... 
+    // if(const TypeInfer * infA = dynamic_cast<const TypeInfer *>(a))
+    // {
+    //     infA->isSubtype(b);
+    // }
+    if(dynamic_cast<const TypeInfer *>(a)) b->isSubtype(a, InferenceMode::QUERY); 
+    return a->toString(C_STYLE) < b->toString(C_STYLE);
 }

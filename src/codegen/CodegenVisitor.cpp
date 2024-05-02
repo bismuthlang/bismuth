@@ -2295,13 +2295,10 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode & n)
     if(!fn)
         fn = Function::Create(
             fnType,
-            // GlobalValue::PrivateLinkage,
             getLinkageType(n.getVisibility()),
             funcFullName, 
             module
         );
-
-    // prog->setName(fn.getName().str());// Note: NOT ALWAYS NEEDED -> Probably not needed
 
     // Create basic block
     BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);

@@ -117,14 +117,14 @@ std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visit
         // Note: re-applying template symbols happens in each visitor for now!
         if (BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
-            std::variant<TProgramDefNode *, ErrorChain *> progOpt = visitCtx(progCtx);
+            std::variant<DefinitionNode *, ErrorChain *> progOpt = visitCtx(progCtx);
 
             if (ErrorChain **e = std::get_if<ErrorChain *>(&progOpt))
             {
                 return (*e)->addError(ctx->getStart(), "Failed to type check program");
             }
 
-            defs.push_back(std::get<TProgramDefNode *>(progOpt));
+            defs.push_back(std::get<DefinitionNode *>(progOpt));
         }
         else if (BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
@@ -223,7 +223,7 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
             // FIXME: DO SUBTYPING BETTER!
             if (!(TypeChannel(inv->getProtocol())).isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
             {
-                errorHandler.addError(ctx->getStart(), "Program must recognize a channel of protocol -int, not " + inv->toString(toStringMode));
+                errorHandler.addError(ctx->getStart(), "In demo mode, 'program' must recognize a channel of protocol -int, not " + inv->getProtocol()->toString(toStringMode));
             }
             else 
             {
@@ -232,7 +232,7 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
         }
         else if(demoMode)
         {
-            errorHandler.addError(ctx->getStart(), "When compiling in demo, 'program :: * : Channel<-int>' (the entry point) is required");
+            errorHandler.addError(ctx->getStart(), "When compiling in demo mode identifier 'program' must be defined as 'program :: * : Channel<-int>' (the entry point)");
         }
     }
     else if(demoMode)
@@ -414,7 +414,6 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
 
 std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CallExprContext *ctx)
 {
-    std::cout << "253 " << ctx->getText() << std::endl; 
     // Need RValue
     std::variant<TypedNode *, ErrorChain *> typeOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
     if (ErrorChain **e = std::get_if<ErrorChain *>(&typeOpt))
@@ -511,7 +510,6 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
 std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExpressionStatementContext *ctx)
 {
-    std::cout << "350 " << ctx->getText() << std::endl; 
     if(!dynamic_cast<BismuthParser::CallExprContext *>(ctx->expression()))
         return errorHandler.addError(ctx->getStart(), "Using an expression as statement in a manner that results in dead code.");
 
@@ -532,7 +530,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
  * @param ctx The parser rule context
  * @return TProgramDefNode * if successful, ErrorChain * if error
  */
-std::variant<TProgramDefNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineProgramContext *ctx)
+std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineProgramContext *ctx)
 {
     std::variant<DefinitionSymbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
 
@@ -543,12 +541,7 @@ std::variant<TProgramDefNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
     DefinitionSymbol * defSym = std::get<DefinitionSymbol*>(symOpt);
 
-    // Symbol * sym = symScope.first; 
-    // Scope * innerScope = symScope.second; 
-
-
-    if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym->getType()))
-    {
+    auto generateProgram = [this, ctx, defSym](const TypeProgram * progType) -> std::variant<DefinitionNode *, ErrorChain *> {
         std::string funcId = ctx->name->getText();
         // Lookup the function in the current scope and prevent re-declarations
 
@@ -565,7 +558,6 @@ std::variant<TProgramDefNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
         if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
         {
-            std::cout << "497" << std::endl; 
             return (*e)->addError(ctx->getStart(), "Failed to safe visit block");
         }
 
@@ -580,11 +572,35 @@ std::variant<TProgramDefNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         stmgr->enterScope(orig); 
 
         return new TProgramDefNode(defSym, channelSymbol, std::get<TBlockNode *>(blkOpt), progType, ctx->getStart());
-    }
-    else
+    }; 
+
+    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate*>(defSym->getType()))
     {
-        return errorHandler.addError(ctx->getStart(), "Cannot execute " + defSym->toString());
+        if(!templateTy->getValueType())
+            return errorHandler.addCompilerError(ctx->getStart(), "template type does not have value type to template");
+        
+        if(const TypeProgram * progTy = dynamic_cast<const TypeProgram *>(templateTy->getValueType().value()))
+        {
+            auto progNodeOpt = generateProgram(progTy);
+            if (ErrorChain **e = std::get_if<ErrorChain *>(&progNodeOpt))
+            {
+                return (*e); //->addError(ctx->getStart(), "Failed to safe visit block");
+            }
+
+            return new TDefineTemplateNode(
+                defSym, 
+                templateTy, 
+                std::get<DefinitionNode *>(progNodeOpt),
+                ctx->getStart()
+            );
+        }
     }
+    else if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym->getType()))
+    {
+        return generateProgram(progType);
+    }
+    
+    return errorHandler.addError(ctx->getStart(), "Cannot execute " + defSym->toString());
 }
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
@@ -622,7 +638,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         );
 
         return templateNode; 
-
     }
 
     return lam; 
@@ -1645,6 +1660,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 }
 
                 // Note: This automatically performs checks to prevent issues with setting VAR = VAR
+                std::cout << "1663 " << exprType->toString(C_STYLE) << " <: " << newAssignType->toString(C_STYLE) << std::endl; 
                 if (e->a && exprType->isNotSubtype(newAssignType))
                 {
                     return errorHandler.addError(e->getStart(), "Expression of type " + exprType->toString(toStringMode) + " cannot be assigned to " + newAssignType->toString(toStringMode));
@@ -2138,7 +2154,15 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
     if (!TypedAST::endsInReturn(*blk))
     {
-        errorHandler.addError(ctx->getStart(), "Lambda must end in return statement");
+        if(retType->isNotSubtype(Types::UNIT))
+        {
+            errorHandler.addError(ctx->getStart(), "Expected function to return type of " + retType->toString(toStringMode) + "; however, no return instruction was provided.");
+        }
+        else
+        {
+            // One of the first bits of syntactic sugar in bismuth!
+            blk->exprs.push_back(new TReturnNode(nullptr, std::nullopt));
+        }
     }
     safeExitScope(ctx);
     stmgr->enterScope(origScope);
@@ -2405,7 +2429,6 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
 
         if(!opt)
         {
-            std::cout << stmgr->toString() << std::endl; 
             return errorHandler.addError(pCtx->getStart(), "Could not find " + stepId + " in " + lookupScope->getIdentifier()->getFullyQualifiedName());
         }
 

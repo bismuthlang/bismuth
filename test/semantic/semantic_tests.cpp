@@ -78,7 +78,7 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
   SECTION("Bot Type Tests")
   {
     REQUIRE(BotTy->isSubtype(TopTy));
-    REQUIRE_FALSE(BotTy->isSubtype(IntTy)); //FIXME: THESE SEEM WRONG.... MAYBE?
+    REQUIRE_FALSE(BotTy->isSubtype(IntTy));
     REQUIRE_FALSE(BotTy->isSubtype(StrTy));
     REQUIRE_FALSE(BotTy->isSubtype(BoolTy));
     REQUIRE_FALSE(BotTy->isSubtype(BotTy));

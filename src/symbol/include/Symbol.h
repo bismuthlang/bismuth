@@ -134,8 +134,6 @@ private:
     VisibilityModifier visibility; 
 };
 
-
-// FIXME: finish this and impl paths!
 class AliasSymbol : public LocatableSymbol 
 {
 public:
@@ -155,5 +153,4 @@ public:
 
     private:
         Identifier * orig; 
-    //     Symbol * orig; 
 };

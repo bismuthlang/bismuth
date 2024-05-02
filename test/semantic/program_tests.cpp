@@ -12,7 +12,7 @@
 
 using Catch::Matchers::ContainsSubstring;
 
-void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message)
+void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message, int flags=0)
 {
   BismuthLexer lexer(&input);
   antlr4::CommonTokenStream tokens(&lexer);
@@ -22,17 +22,17 @@ void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager stm = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, 0);
+  SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, flags);
   auto cuOpt = sv.visitCtx(tree);
 
   REQUIRE(sv.hasErrors(0));
   REQUIRE_THAT(sv.getErrors(), ContainsSubstring(message));
 }
 
-void EnsureErrorsWithMessage(std::string program, std::string message)
+void EnsureErrorsWithMessage(std::string program, std::string message, int flags=0)
 {
   antlr4::ANTLRInputStream input(program);
-  EnsureErrorsWithMessage(input, message);
+  EnsureErrorsWithMessage(input, message, flags);
 }
 
 // TODO: does this use excess memory bc we dont free news?
@@ -194,70 +194,41 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
   REQUIRE_FALSE(sv.hasErrors(0));
 }
 
-// FIXME: REENABLE AGAIN!
-/*
-TEST_CASE("Test program() should return int warning", "[semantic][conditional]")
+TEST_CASE("Demo Mode: Program is required", "[semantic][conditional]")
 {
-  antlr4::ANTLRInputStream input(
-      R""""(
-      define func program () {
-        return; # FIXME: DO THESE HAVE TO END IN RETURN?
-      }
-    )"""");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
-  parser.addErrorListener(&pListener);
-
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
-
-  STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr);
-
-  sv.visitCompilationUnit(tree);
-  CHECK_FALSE(sv.hasErrors(ERROR));
-  CHECK(sv.hasErrors(CRITICAL_WARNING));
+  EnsureErrorsWithMessage(
+    R""""(
+    )"""", 
+    "When compiling in demo mode, 'program :: * : Channel<-int>' (the entry point) must be defined", 
+    DEMO_MODE
+  );
 }
 
-TEST_CASE("Test program() should not have parameters warning", "[semantic][conditional]")
+TEST_CASE("Demo Mode: Program is wrong type", "[semantic][conditional]")
 {
-  antlr4::ANTLRInputStream input(
-      R""""(
-      int func program (int a) {
-        return 0;
-      }
-    )"""");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
-  parser.addErrorListener(&pListener);
-
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
-
-  STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr);
-
-  sv.visitCompilationUnit(tree);
-  CHECK_FALSE(sv.hasErrors(ERROR));
-  CHECK(sv.hasErrors(CRITICAL_WARNING));
+  EnsureErrorsWithMessage(
+    R""""(
+define func program () {
+  return; 
 }
-*/
+    )"""", 
+    "When compiling in demo mode identifier 'program' must be defined as 'program :: * : Channel<-int>' (the entry point)", 
+    DEMO_MODE
+  );
+}
+
+TEST_CASE("Demo Mode: Program follows wrong protocol", "[semantic][conditional]")
+{
+  EnsureErrorsWithMessage(
+    R""""(
+define program :: c : Channel<-boolean> {
+  c.send(false)
+}
+    )"""", 
+    "In demo mode, 'program' must recognize a channel of protocol -int, not -boolean",
+    DEMO_MODE
+  );
+}
 
 TEST_CASE("Dead code in program block", "[semantic][program]")
 {
@@ -670,8 +641,6 @@ define foo :: c : Channel<+int> = {
     )"""", 
     "Unsupported redeclaration of foo");
 }
-
-// FIXME: TEST EXTERN PROGRAMS?
 
 TEST_CASE("Forward Decl with wrong num args", "[semantic][program][function][forward-decl]")
 {
@@ -2231,6 +2200,19 @@ define program :: c : Channel<-int> {
 }
     )"""",
       "Evaluation of expression would result in introducing a linear resource that is impossible to use");
+}
+
+
+TEST_CASE("Error message during inference of number reports proper type mismatch", "[semantic][program]")
+{
+  EnsureErrorsWithMessage(
+      R""""(
+define program :: c : Channel<-int> {
+    str[4] arr := [0, 1, 2, 3];
+    c.send(0);
+}
+    )"""", 
+    "Expression of type int[4] cannot be assigned to str[4]");
 }
 
 /*********************************

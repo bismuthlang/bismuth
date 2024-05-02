@@ -883,6 +883,14 @@ TEST_CASE("programs/generics/ReferenceGenericS - Co-dependent structs", "[codege
         "950b9c5cf40bd673a8250726ae932b20089332f552fae683d85a402f471e054c"); 
 }
 
+TEST_CASE("programs/generics/GenericProg - Generic Program", "[codegen][generic]")
+{
+    auto stream = std::fstream("/home/shared/programs/generics/GenericProg.bismuth");
+    EnsureCompilesTo(
+        antlr4::ANTLRInputStream(stream),
+        "4d1e7ff027a665ed171e1e338f9a1d2e3fe0c972b854219acf505a7b5670c86c"); 
+}
+
 
 TEST_CASE("programs/inferint - Infer the type of a number", "[codegen][infer integers]")
 {
@@ -893,6 +901,20 @@ TEST_CASE("programs/inferint - Infer the type of a number", "[codegen][infer int
         "8dd735fc9876c12cd87b7bddcb2e39e9808f9ff1e3bfd3ad2fcc7dc099bcfa93"); 
 }
 
+
+TEST_CASE("programs/cursed - Binary Operators, Functions with inferred returns, and inference of ints through array matching", "[codegen]")
+{
+    std::string hash = "0df6327622a38a2a07439f1ed3caee1dc9cdc35f5887d231b5393fde3aacf37a";
+    auto stream = std::fstream("/home/shared/programs/cursed/cursed.bismuth");
+    EnsureCompilesTo(
+        antlr4::ANTLRInputStream(stream),
+        hash); 
+
+    auto stream2 = std::fstream("/home/shared/programs/cursed/cursed-no-ret.bismuth");
+    EnsureCompilesTo(
+        antlr4::ANTLRInputStream(stream2),
+        hash);
+}
 
 /************************************
  * Example C-Level Tests

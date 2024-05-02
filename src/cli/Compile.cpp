@@ -27,10 +27,8 @@ std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath)//
 
     for(auto it : relPath)
     {
-        std::cout << "::" << it; 
         parts.push_back(it);
     }
-    std::cout << std::endl; 
 
     return parts; 
 } 
@@ -372,7 +370,6 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
         // Dump the code to an output file
         if (!noCode)
         {
-            std::cout << "428 WRITE CODE!?!?" << std::endl; 
             auto irOutOpt = input->getIROut(); 
             if (std::error_code *ec = std::get_if<std::error_code>(&irOutOpt))
             {
@@ -471,15 +468,15 @@ int compile(
     CompileType compileWith)
 {
 
-    std::cout << "517 compile w/ " << std::endl; 
-    std::cout << "\t inputs : " << std::endl; 
-    std::cout << "\t outputFileName : " << outputFileName << std::endl; 
-    std::cout << "\t demoMode : " << demoMode << std::endl; 
-    std::cout << "\t isVerbose : " << isVerbose << std::endl; 
-    std::cout << "\t toStringMode : " << toStringMode << std::endl; 
-    std::cout << "\t printOutput : " << printOutput << std::endl; 
-    std::cout << "\t noCode : " << noCode << std::endl; 
-    std::cout << "\t compileWith : " << compileWith << std::endl; 
+    // std::cout << "517 compile w/ " << std::endl; 
+    // std::cout << "\t inputs : " << std::endl; 
+    // std::cout << "\t outputFileName : " << outputFileName << std::endl; 
+    // std::cout << "\t demoMode : " << demoMode << std::endl; 
+    // std::cout << "\t isVerbose : " << isVerbose << std::endl; 
+    // std::cout << "\t toStringMode : " << toStringMode << std::endl; 
+    // std::cout << "\t printOutput : " << printOutput << std::endl; 
+    // std::cout << "\t noCode : " << noCode << std::endl; 
+    // std::cout << "\t compileWith : " << compileWith << std::endl; 
 
     /******************************************************************
      * Now that we have the input, we can perform the first stage:

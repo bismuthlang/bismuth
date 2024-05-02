@@ -111,6 +111,7 @@ Version: Pre-Alpha 1.3.4 @ )"""" << GIT_COMMIT_HASH
 ChangeLog
 =========
 1.3.4 - XXX: 
+  - Return statements can be omitted in functions that return Unit. 
   - Added Logical & Arithmetic Right Bit Shift, Left Bit Shift, Bit XOR/AND/OR
   - Added imports, basic name mangling, and generics/templates
   - Added u32, i64, and u64

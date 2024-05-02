@@ -140,8 +140,8 @@ public:
 
     std::any visitTypeDef(BismuthParser::TypeDefContext *ctx) override { return ctx->defineType()->accept(this); }
 
-    std::variant<TProgramDefNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx);
-    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<TProgramDefNode>(visitCtx(ctx)); }
+    std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx);
+    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineFunctionContext *ctx);
     std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
@@ -324,26 +324,22 @@ std::variant<
 
     std::variant<TypedNode *, ErrorChain *> visitCondition(BismuthParser::ExpressionContext *ex)
     {
-        std::cout << "338" << std::endl;
         auto a =  ex->accept(this); 
-        std::cout << "340-pre" << std::endl; 
-        std::cout << a.type().name() << std::endl; 
         std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, a);
-std::cout << "340" << std::endl;
+
         if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
         {
-            std::cout << "346" << std::endl;
             return (*e)->addError(ex->getStart(), "Unable to type check condition expression");
         }
-std::cout << "345" << std::endl;
+
         TypedNode *cond = std::get<TypedNode *>(condOpt);
         const Type *conditionType = cond->getType();
-std::cout << "348" << std::endl;
+
         if (conditionType->isNotSubtype(Types::DYN_BOOL))
         {
             return errorHandler.addError(ex->getStart(), "Condition expected boolean, but was given " + conditionType->toString(toStringMode));
         }
-std::cout << "353" << std::endl;
+
         return cond;
     }
 
@@ -369,16 +365,14 @@ std::cout << "353" << std::endl;
         bool foundReturn = false;
         for (auto e : ctx->stmts)
         {
-            std::cout << "383 " << e->getText() << std::endl; 
             // Visit all the statements in the block
             std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
-std::cout << "386" << std::endl;
+
             if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
             {
-                std::cout << "389" << std::endl;
                 return (*e)->addError(ctx->getStart(), "Failed to type check statement in block");
             }
-std::cout << "391" << std::endl;
+
             nodes.push_back(std::get<TypedNode *>(tnOpt));
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
@@ -386,7 +380,7 @@ std::cout << "391" << std::endl;
                 errorHandler.addError(ctx->getStart(), "Dead code");
                 break;
             }
-std::cout << "399" << std::endl;
+
             // If the current statement is a return, set foundReturn = true
             if (dynamic_cast<BismuthParser::ReturnStatementContext *>(e))
                 foundReturn = true;
@@ -553,9 +547,7 @@ private:
                 // Should always be inferrable
                 if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym->getType()))
                 {
-                    std::cout << "PRE Unify " << sym->toString() << std::endl;
                     inf->unify(); 
-                    std::cout << "POST Unify " << sym->toString() << std::endl;
                 }
             }
 

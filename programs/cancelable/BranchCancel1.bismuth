@@ -61,7 +61,7 @@ define c2 :: c : Channel<
     c.send(2); 
     var b := c.recv(); 
 
-    cancel(c); # FIXME: when missing, errors are misleading!
+    cancel(c); # FIXME: when missing, errors are misleading! -> Part of it is that we can visit branches in an ext choice out of order relative to how they are written in code (so if you get an error on branch 2 only, you may think branch 1 is fine)
 
     # match a 
     #     |   Unit u => printf("WRONG! Got unit!\n");
