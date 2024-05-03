@@ -3507,11 +3507,13 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
             // SUM TYPE: ALLOW OPS THAT COULD BE POSSIBLE BOTH WAYS?
             // But problem here is that we need the whole environment to converge.... and not just subtypes, but exactly the same.... but then why would the channels be allowed to be sums>
 
-            errorHandler.addError(branchToken, "588 Unused linear types in context: " + details.str());
+            return errorHandler.addError(branchToken, "588 Unused linear types in context: " + details.str());
         }
 
         return std::nullopt; 
     };
+
+    std::vector<ErrorChain *> errors; 
 
     for (unsigned int i = 0; i < ctxCases.size(); i++)
     {
@@ -3532,7 +3534,10 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
         {
-            return (*e)->addErrorAt(ctx->getStart());
+            // TODO: add to error vec--only limitation is that doing
+            // so may break later checking of branches due to not
+            // exiting the scope -> Shouldnt be due to get cpy of curr scope
+            return (*e)->addErrorAt(ctx->getStart()); 
         }
 
         Y caseVal = std::get<Y>(optEval);
@@ -3547,7 +3552,8 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
             "Failed to type check when no branch followed"
         );
 
-        if(errorOpt) return errorOpt.value();
+        // if(errorOpt) return errorOpt.value();
+        if(errorOpt) errors.push_back(*errorOpt);
     }
 
     if (checkRestIndependently)
@@ -3557,7 +3563,20 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
         stmgr->enterScope(StopType::NONE); // Why? This doesn't make sense.. oh it does, but should ideally refactor!
 
         std::optional<ErrorChain *> errorOpt = checkCase(ctx->getStart(), true, "Failed to type check code when conditional skipped over", "Failed to type check when skipped over and no branch followed");
-        if(errorOpt) return errorOpt.value();
+        // if(errorOpt) return errorOpt.value();
+        if(errorOpt) errors.push_back(*errorOpt);
+    }
+
+    if(errors.size())
+    {
+        // Basically a reduce
+        ErrorChain * chain = errors.at(0); 
+        for(unsigned int i = 1; i < errors.size(); i++)
+        {
+            chain->addBranch(errors.at(i));
+        }
+
+        return chain; 
     }
 
     return ConditionalData<Y>(cases, restDat->post);

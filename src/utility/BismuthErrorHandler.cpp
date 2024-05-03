@@ -8,15 +8,63 @@
  *******************************************/
 std::string BismuthError::toString()
 {
-    if (!token)
-        return message; // TODO: DO BETTER and use SymbolUtils::tokenToLineChar
     std::ostringstream e;
-    // token->getInputStream()->getSourceName()
-    if(!message.empty())
-        e << token->getInputStream()->getSourceName() << ":" << token->getLine() << ':' << token->getCharPositionInLine() << ": " << message;
-    else 
-        e << "at " << token->getInputStream()->getSourceName() << ":" << token->getLine() << ':' << token->getCharPositionInLine();
+    auto trace = this->asTrace(); 
+
+    for(auto t : trace)
+    {
+        e << t << std::endl; 
+    }
+
     return e.str();
+}
+
+// WHat if we could have recursive types to make trees
+// easier. Eg, vector<....<vector<std::string>>
+// What would that look like? 
+std::vector<std::string> BismuthError::asTrace() 
+{
+    std::vector<std::string> ans; 
+
+    if(errorType != COMBO)
+    {
+        ans.push_back(
+            BismuthError::getStringForSeverity(errorSeverity) + " (" + BismuthError::getStringForErrorType(errorType) + "): "
+        );
+    }
+    
+    for (auto [token, message] : trace)
+    {
+
+        // What if we could write this like: 
+        /*
+        match 
+            | !token => 
+            | ...
+
+        I guess we kinda have that with select in bismuth... but not quite as pattern-matchey 
+        */
+        if(!token)
+        {
+
+            ans.push_back(message); 
+            continue; 
+        }
+
+        std::ostringstream e;
+        if(!message.empty())
+        {
+            e << token->getInputStream()->getSourceName() << ":" << token->getLine() << ':' << token->getCharPositionInLine() << ": " << message; 
+            ans.push_back(e.str());
+            continue; 
+        }
+
+        
+        e << "at " << token->getInputStream()->getSourceName() << ":" << token->getLine() << ':' << token->getCharPositionInLine();
+        ans.push_back(e.str());
+    }
+
+    return ans;
 }
 
 
@@ -27,50 +75,154 @@ std::string BismuthError::toString()
  *  Error Chain
  * 
  *******************************************/
-
-
 ErrorChain * ErrorChain::addErrorAt(antlr4::Token *t)
 {
-    BismuthError *e = new BismuthError(t, "");
-    chain.push_back(e);
+    if(branches.size() > 1)
+    {
+        ErrorChain * pre = new ErrorChain(*this);
+        // this->chain.clear();
+        this->error.reset(); 
+        this->branches.clear(); 
+        this->branches.push_back(pre); 
+    }
+
+    if(!this->error)
+    {
+        this->error = new BismuthError(COMBO, ERROR, t, "");
+        return this; 
+    }
+
+    (*error)->addTrace(t, "");
+    // BismuthError *e = new BismuthError(t, "");
+    // chain.push_back(e);
+    
+
+
     return this; 
 }
 
 
 ErrorChain * ErrorChain::addError(antlr4::Token *t, std::string msg)
 {
-    BismuthError *e = new BismuthError(t, msg);
-    chain.push_back(e);
+    if(branches.size() > 1)
+    {
+        ErrorChain * pre = new ErrorChain(*this);
+        // this->chain.clear();
+        this->error.reset(); 
+        this->branches.clear(); 
+        this->branches.push_back(pre); 
+    }
+
+    if(!this->error)
+    {
+        this->error = new BismuthError(COMBO, ERROR, t, msg);
+        return this; 
+    }
+
+    (*error)->addTrace(t, msg);
+
+
+    // BismuthError *e = new BismuthError(t, msg);
+
+    // chain.push_back(e);
     return this; 
 }
 
-ErrorChain * ErrorChain::addCritWarning(antlr4::Token *t, std::string msg)
+// ErrorChain * ErrorChain::addCritWarning(antlr4::Token *t, std::string msg)
+// {
+//     // TODO: this doesnt actually track the status of crit warn?
+//     BismuthError *e = new BismuthError(t, msg);
+//     chain.push_back(e);
+//     return this;
+// }
+
+ErrorChain * ErrorChain::addBranch(ErrorChain * other)
 {
-    BismuthError *e = new BismuthError(t, msg);
-    chain.push_back(e);
-    return this;
+    if(error)//chain.size())
+    {
+        ErrorChain * pre = new ErrorChain(*this);
+        this->error.reset(); 
+        this->branches.clear(); 
+        this->branches.push_back(pre);  
+    }
+
+    branches.push_back(other);
+    severity |= other->severity; 
+    return this; 
+}
+
+std::vector<std::string> ErrorChain::asTrace() 
+{
+    std::vector<std::string> ans; 
+    std::string spacer = "";
+    for(unsigned int i = 0; i < this->branches.size(); i++)
+    {
+        for(std::string s : branches.at(i)->asTrace())
+        {
+            std::string gen = "";
+            for(unsigned int j = 0; j < i; j++)
+            {
+                gen += "| ";
+            }
+            gen  += s; 
+            ans.push_back(gen);
+        }
+
+        if(i > 0)
+            spacer += " ┘";
+    }
+
+    if(ans.size())
+        ans.push_back("|" + spacer);
+    else 
+        ans.push_back(spacer);
+    // if(ans.size())
+        // ans.push_back(spacer);
+
+    if(error)
+    {
+        for(auto s : (*error)->asTrace())
+        {
+            // if(this->branches.size())
+            //     ans.push_back("| " + s);
+            // else 
+                ans.push_back(s);
+        }
+    }
+
+    return ans;
+
 }
 
 std::string ErrorChain::toString()
 {
     std::ostringstream e;
 
-    e << ErrorChain::getStringForSeverity(errSev) << " (" << ErrorChain::getStringForErrorType(errType) << "): " << std::endl;
-
-    if (chain.size() == 0)
+    for(auto s : this->asTrace())
     {
-        e << "UNKNOWN ERROR" << std::endl; // Shouldn't be possible anymore
-    }
-
-    for (BismuthError *error : chain)
-    {
-        e << error->toString() << std::endl;
+        e << s << std::endl; 
     }
 
     return e.str();
+
+    // if(!)
+
+    // e << BismuthError::getStringForSeverity(errSev) << " (" << BismuthError::getStringForErrorType(errType) << "): " << std::endl;
+
+    // if (chain.size() == 0)
+    // {
+    //     e << "UNKNOWN ERROR" << std::endl; // Shouldn't be possible anymore
+    // }
+
+    // for (BismuthError *error : chain)
+    // {
+    //     e << error->toString() << std::endl;
+    // }
+
+    // return e.str();
 }
 
-ErrSev ErrorChain::getSeverity() { return errSev; }
+uint32_t ErrorChain::getSeverity() { return severity; }
 
 
 
@@ -87,10 +239,12 @@ ErrSev ErrorChain::getSeverity() { return errSev; }
 ErrorChain * BismuthErrorHandler::addCompilerError(antlr4::Token *t, std::string msg)
 {
     // TODO: where to report error to?
-    ErrorChain *e = new ErrorChain(t,
-                                    msg + ". This is likely an error with the compiler. Please report it.",
-                                    errType,
-                                    COMPILER);
+    ErrorChain *e = new ErrorChain(
+        t,
+        msg + ". This is likely an error with the compiler. Please report it.",
+        errType,
+        COMPILER
+    );
     errors.push_back(e);
 
     return e;
@@ -141,4 +295,39 @@ bool BismuthErrorHandler::hasErrors(int errorFlags)
     }
 
     return false; //! errors.empty();
+}
+
+
+
+
+std::string BismuthError::getStringForErrorType(ErrType e)
+{
+    switch (e)
+    {
+    case SYNTAX:
+        return "SYNTAX";
+    case SEMANTIC:
+        return "SEMANTIC";
+    case CODEGEN:
+        return "CODEGEN";
+    case COMBO: 
+        return "COMBO";
+    }
+}
+
+std::string BismuthError::getStringForSeverity(ErrSev e)
+{
+    switch (e)
+    {
+    case ERROR:
+        return "Error";
+    case CRITICAL_WARNING:
+        return "Critical Warning";
+    case WARNING:
+        return "Warning";
+    case INFO:
+        return "Informational";
+    case COMPILER:
+        return "Compiler Error";
+    }
 }
