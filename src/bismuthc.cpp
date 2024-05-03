@@ -110,7 +110,9 @@ Version: Pre-Alpha 1.3.4 @ )"""" << GIT_COMMIT_HASH
 
 ChangeLog
 =========
-1.3.4 - 2024-05-XX: 
+1.3.4 - 2024-05-03: 
+Features
+  - Added ability to use labels for describing internal and external choice alternatives
   - Added dynamically sized arrays
   - Added `Cancelable<>` session type modality
   - Return statements can be omitted in functions that return `Unit`. 
@@ -123,11 +125,13 @@ ChangeLog
   - Added `--display-mode` CLI option to enable error messages to show types as they would appear in-code instead of mathematical representation
   - Now displaying number of errors on compile failure
 
+Bugs 
   - Fixed bug wherein `T_1 -> T_2[]` is ambiguous by allowing `(T_1 -> T_2)[]`
   - Improved syntax and handling of l-values to enable expressions like improved syntax to allow *(expr).<field> syntax, 
   - Fixed bug where nested control flow would incorrectly process use of linear resources
   - Fixed typos in generated IR files, error messages, and compiler internals
 
+Compiler Internals
   - Reorganized compiler internals to separate CLI elements and support generics
   - Refactored symbol/allocation handling by connecting them to FQNs instead of symbols
   - Reorganized compilation order to conduct codegen after all of semantic analysis
@@ -136,6 +140,7 @@ ChangeLog
   - Improved efficiency of IPC by removing state to eliminate additional lookup step
   - Refactored code internals to promote compile speed (of Bismuth, not the Bismuth compiler)
   - Added ProtocolVisitor.cpp/.h and moved code relating to visiting protocols to there from SemanticVisitor.cpp/.h
+
 
 1.3.3 - 2023-06-04:
   - Added ability to nest all type defs (struct, enum) in addition to programs and functions. 
