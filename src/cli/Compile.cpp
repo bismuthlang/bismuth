@@ -467,17 +467,6 @@ int compile(
     bool noCode, 
     CompileType compileWith)
 {
-
-    // std::cout << "517 compile w/ " << std::endl; 
-    // std::cout << "\t inputs : " << std::endl; 
-    // std::cout << "\t outputFileName : " << outputFileName << std::endl; 
-    // std::cout << "\t demoMode : " << demoMode << std::endl; 
-    // std::cout << "\t isVerbose : " << isVerbose << std::endl; 
-    // std::cout << "\t toStringMode : " << toStringMode << std::endl; 
-    // std::cout << "\t printOutput : " << printOutput << std::endl; 
-    // std::cout << "\t noCode : " << noCode << std::endl; 
-    // std::cout << "\t compileWith : " << compileWith << std::endl; 
-
     /******************************************************************
      * Now that we have the input, we can perform the first stage:
      * 1. Create the lexer from the input.

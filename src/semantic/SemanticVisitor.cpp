@@ -1660,7 +1660,6 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
                 }
 
                 // Note: This automatically performs checks to prevent issues with setting VAR = VAR
-                std::cout << "1663 " << exprType->toString(C_STYLE) << " <: " << newAssignType->toString(C_STYLE) << std::endl; 
                 if (e->a && exprType->isNotSubtype(newAssignType))
                 {
                     return errorHandler.addError(e->getStart(), "Expression of type " + exprType->toString(toStringMode) + " cannot be assigned to " + newAssignType->toString(toStringMode));

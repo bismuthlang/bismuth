@@ -854,16 +854,6 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
 
 bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
 {
-    std::cout << "857 " << this->toString(C_STYLE) << ".isSupertypeFor " << other->toString(C_STYLE) << std::endl;
-    if(possibleTypes.size())
-    {
-        std::cout << "POSSIBLE TYPES: "; 
-        for(auto t : possibleTypes)
-        {
-            std::cout << t->toString(C_STYLE) << ", "; 
-        }
-        std::cout << endl; 
-    }
     // If we already have an inferred type, we can simply
     // check if that type is a subtype of other.
     if (valueType->has_value())

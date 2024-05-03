@@ -110,18 +110,20 @@ Version: Pre-Alpha 1.3.4 @ )"""" << GIT_COMMIT_HASH
 
 ChangeLog
 =========
-1.3.4 - XXX: 
-  - Return statements can be omitted in functions that return Unit. 
+1.3.4 - 2024-05-XX: 
+  - Added dynamically sized arrays
+  - Added `Cancelable<>` session type modality
+  - Return statements can be omitted in functions that return `Unit`. 
   - Added Logical & Arithmetic Right Bit Shift, Left Bit Shift, Bit XOR/AND/OR
   - Added imports, basic name mangling, and generics/templates
-  - Added u32, i64, and u64
+  - Added `u32`, `i64`, and `u64` (`int` and `i32` are now interchangeable)
   - Added ability to specify integer values in hex via 0x and binary via 0b prefixes
   - Added for loops
-  - Added toChannel function to convert ty -> Channel<!+ty>
-  - Added --display-mode to enable error messages to show types as they would appear in-code instead of mathematical representation
+  - Added `toChannel` function to convert `ty` -> `Channel<!+ty>` or `ty[]` -> `Channel<!+ty>` in the case of arrays
+  - Added `--display-mode` CLI option to enable error messages to show types as they would appear in-code instead of mathematical representation
   - Now displaying number of errors on compile failure
 
-  - Fixed bug wherein T_1 -> T_2[] is ambiguous by allowing (T_1 -> T_2)[]
+  - Fixed bug wherein `T_1 -> T_2[]` is ambiguous by allowing `(T_1 -> T_2)[]`
   - Improved syntax and handling of l-values to enable expressions like improved syntax to allow *(expr).<field> syntax, 
   - Fixed bug where nested control flow would incorrectly process use of linear resources
   - Fixed typos in generated IR files, error messages, and compiler internals
@@ -129,7 +131,7 @@ ChangeLog
   - Reorganized compiler internals to separate CLI elements and support generics
   - Refactored symbol/allocation handling by connecting them to FQNs instead of symbols
   - Reorganized compilation order to conduct codegen after all of semantic analysis
-  - Removed CLI feature -s to supply input string instead of file location; makes more sense to re-add in future as REPL.
+  - Removed CLI feature `-s` to supply input string instead of file location; makes more sense to re-add in future as REPL.
   - Added new error type for internal/compiler errors. 
   - Improved efficiency of IPC by removing state to eliminate additional lookup step
   - Refactored code internals to promote compile speed (of Bismuth, not the Bismuth compiler)
