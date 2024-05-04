@@ -1,7 +1,9 @@
+# Simple test of how an extern generates.
+# Note, this does not attempt to use the externed value
 extern func foo (int a, int b) : Unit;
 
 define program :: c : Channel<-int> = {
-    var current := 1;        # TODO: is this testing what its supposed to? see extern lambda...
+    var current := 1;
     
     c.send(-1)
 }

@@ -11,19 +11,13 @@
  *
  */
 #include <string>  //Includes strings
-#include <sstream> //Used for string streams
 
-// #include <any>      // Needed for anycasts
-// #include <utility>  // Needed for anycasts
 #include <vector>   // Vectors
 #include <optional> // Optionals
 
 #include <set> // Sets
 
-// #include <climits> // Max & Min
-
 #include <variant>
-// #include <memory> // Smart pointers
 
 
 #include "Type.h"
@@ -99,6 +93,12 @@ public:
         guardCount = guardCount - 1;
         return true;
     }
+
+    bool isSubtype(const Protocol * other) const; 
+
+    virtual const Protocol * getCopySubst(std::map<const Type *, const Type *> & existing) const = 0;
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const = 0; 
 };
 
 // FIXME: DO BETTER, can probably be removed
@@ -184,7 +184,7 @@ public:
 
     unsigned int project(const ProtocolSequence *ps) const;
     unsigned int project(std::string label) const; 
-    // optional<vector<const ProtocolSequence *>>  
+    
     optional<CaseMetadata>
     caseAnalysis(vector<variant<const ProtocolSequence *, string>> testOpts) const;
 
@@ -194,6 +194,10 @@ public:
 
     void guard() const override;
     bool unguard() const override;
+
+    const ProtocolSequence * getCopySubst(std::map<const Type *, const Type *> & existing) const override;
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override; 
 
 private:
     // void append(const ProtocolSequence *proto) const;
@@ -235,6 +239,10 @@ public:
     const Protocol *getCopy() const override;
 
     const Type* getRecvType() const { return recvType; }
+
+    const ProtocolRecv * getCopySubst(std::map<const Type *, const Type *> & existing) const override;
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -258,6 +266,10 @@ public:
     const Protocol *getCopy() const override;
 
     const Type *getSendType() const { return sendType; }
+
+    const ProtocolSend * getCopySubst(std::map<const Type *, const Type *> & existing) const override;
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -281,6 +293,11 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
+
+    const ProtocolWN * getCopySubst(std::map<const Type *, const Type *> & existing) const override;
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -304,6 +321,11 @@ public:
     const Protocol *getCopy() const override;
 
     const ProtocolSequence *getInnerProtocol() const { return proto; }
+
+    const ProtocolOC * getCopySubst(std::map<const Type *, const Type *> & existing) const override;
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 
@@ -353,6 +375,13 @@ public:
             seq->getCopy()
         );
     }
+
+    const ProtocolBranchOption * getCopySubst(std::map<const Type *, const Type *> & existing) const {
+        return new ProtocolBranchOption(
+            label, 
+            seq->getCopySubst(existing)
+        );
+    }
 };
 
 
@@ -366,11 +395,11 @@ struct BranchOptCompare
             if(b->label)
                 return a->label.value() < b->label.value(); 
 
-            return true; // TODO: verify 
+            return true;
         }
         
         if(b->label)
-            return false; // TODO: verify 
+            return false; 
 
         return a->seq->toString(DisplayMode::C_STYLE) < b->seq->toString(DisplayMode::C_STYLE);
     }
@@ -398,6 +427,10 @@ public:
 
     std::set<const ProtocolBranchOption *, BranchOptCompare> getOptions() const { return opts; }
     std::optional<const ProtocolBranchOption *> lookup(std::variant<const ProtocolSequence *, std::string> opt) const; 
+
+    const ProtocolEChoice * getCopySubst(std::map<const Type *, const Type *> & existing) const override;
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -421,6 +454,9 @@ public:
     const Protocol *getCopy() const override;
 
     std::set<const ProtocolBranchOption *, BranchOptCompare> getOptions() const { return opts; }
+    const ProtocolIChoice * getCopySubst(std::map<const Type *, const Type *> & existing) const override;
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };
 
 /*******************************************
@@ -451,4 +487,9 @@ public:
 
     void guard() const override;
     bool unguard() const override;
+
+    const ProtocolClose * getCopySubst(std::map<const Type *, const Type *> & existing) const override;
+
+protected: 
+    virtual bool isSupertypeFor(const Protocol *other) const override;
 };

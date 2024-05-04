@@ -2,6 +2,19 @@
 #include <optional>
 #include <variant>
 #include "TypedAST.h"
+#include "BismuthErrorHandler.h"
+
+// template<typename I, typename E>
+// std::optional<E&> cast_ref(I& i)
+// {
+//     try {
+//         E& val = dynamic_cast<E&>(i);
+//         return val; 
+//     }
+//     catch(const std::bad_cast& e) {
+//         return std::nullopt; 
+//     }
+// }
 
 template <typename T>
 std::optional<T> anyOpt2Val(const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available
@@ -32,8 +45,8 @@ std::variant<T *, ErrorChain*> anyOpt2VarError(BismuthErrorHandler& errorHandler
     }
 
     std::ostringstream details;
-    details << "Unable to cast " << a.type().name() << " to Variant<" << typeid(T).name() << "*, ErrorChain*>. This most likely an internal compiler error.";
-    return errorHandler.addError(nullptr, details.str());
+    details << "Unable to cast " << a.type().name() << " to Variant<" << typeid(T).name() << "*, ErrorChain*>.";
+    return errorHandler.addCompilerError(nullptr, details.str());
 }
 
 template<typename T, typename std::enable_if<std::is_base_of<TypedNode, T>::value>::type* = nullptr>

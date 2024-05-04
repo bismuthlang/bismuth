@@ -48,7 +48,7 @@ entry:
 define %Unit @foo(%_Channel* %0) {
 entry:
   %i = alloca i32, align 4
-  %b1 = alloca i1, align 1
+  %b.0 = alloca i1, align 1
   %b = alloca %_Channel*, align 8
   %a = alloca %_Channel*, align 8
   %c = alloca %_Channel*, align 8
@@ -78,7 +78,7 @@ tagBranch1:                                       ; preds = %entry
   %15 = bitcast i8* %14 to i1*
   %16 = load i1, i1* %15, align 1
   %17 = call %Unit @free(i8* %14)
-  store i1 %16, i1* %b1, align 1
+  store i1 %16, i1* %b.0, align 1
   %18 = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([16 x i8], [16 x i8]* @0, i32 0, i32 0))
   br label %match-cont
 

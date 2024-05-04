@@ -28,6 +28,7 @@
 #include <optional>
 
 #include "TypedAST.h"
+#include "Symbol.h" // Only for VisibilityModifier
 
 // using namespace llvm;
 using llvm::ArrayRef;
@@ -47,12 +48,32 @@ using llvm::PHINode;
 using llvm::StringRef;
 using llvm::Value;
 
+
+inline GlobalValue::LinkageTypes getLinkageType(VisibilityModifier m)
+{
+    switch(m)
+    {
+        case VisibilityModifier::PUBLIC:
+            return GlobalValue::ExternalLinkage; 
+
+        case VisibilityModifier::PUBLIC_LINK:
+            return GlobalValue::AvailableExternallyLinkage;
+
+        case VisibilityModifier::PRIVATE:
+            return GlobalValue::PrivateLinkage; 
+    }
+}
+
+
 class CodegenModule
 {
+public: 
+    const unsigned int DYN_ARRAY_GROW_FACTOR = 2; // FIXME: DO BETTER
+
 
 public:
     /**
-     * @brief Construct a new Codegen Visitor object
+     * @brief Construct a Codegen Visitor object
      *
      * @param p Property manager to use
      * @param moduleName LLVM Module name to use
@@ -86,8 +107,7 @@ public:
         flags = f;
 
         // LLVM Stuff
-        // context = new LLVMContext();
-        module = m; // new Module(moduleName, *context);
+        module = m;
 
         // Use the NoFolder to turn off constant folding
         builder = new IRBuilder<NoFolder>(module->getContext());
@@ -178,6 +198,23 @@ public:
                 i8p,
                 {Int64Ty},
                 false));
+    }
+
+    // Allocates on the heap, returns 
+    // a pointer casted to the specified type. 
+    llvm::Value * TypedGCHeapAlloc(
+        llvm::Value * allocArg, 
+        llvm::Type * castTy
+    ){
+        Value *allocated = builder->CreateCall(
+            getGCMalloc(), 
+            {
+                allocArg
+            }
+        );
+
+
+        return builder->CreateBitCast(allocated, castTy);
     }
 
     llvm::FunctionCallee getWeakenChannel()
@@ -388,12 +425,39 @@ public:
         return tempBuilder.CreateAlloca(ty, 0, identifier);
     }
 
+
+    /******************************
+     * 
+     * Dynamic Arrays Section
+     * 
+     ******************************/
+
+    // llvm::AllocaInst * CreateDynArrayAlloc(TypeDynArray * array, std::string identifier)
+    // {
+
+    // }
+    
+    void InitDynArray(llvm::AllocaInst * alloc, uint32_t len); //ConstantInt * len);
+
+    void ReallocateDynArray(llvm::Value * alloc, llvm::Value * newLen32); 
+
+
 private:
     DisplayMode toStringMode; 
 
 public:
     DisplayMode getToStringMode() { return toStringMode; }
 
+protected: 
+    llvm::TypeSize getSizeForType(llvm::Type *type)
+    {
+        return module->getDataLayout().getTypeAllocSize(type);
+    }
+
+    llvm::TypeSize getSizeForValue(Value *val)
+    {
+        return getSizeForType(val->getType());
+    }
 
 protected:
     int flags; 
@@ -415,4 +479,10 @@ protected:
     llvm::Type *Int8PtrPtrTy;
     Constant *Int32Zero;
     Constant *Int32One;
+
+protected:
+    llvm::ConstantInt * getI32(int32_t value) { return ConstantInt::get(Int32Ty, value, true); }
+    llvm::ConstantInt * getU32(uint32_t value) { return ConstantInt::get(Int32Ty, value, false); }
+    llvm::ConstantInt * getI64(int64_t value) { return ConstantInt::get(Int64Ty, value, true); }
+    llvm::ConstantInt * getU64(uint64_t value) { return ConstantInt::get(Int64Ty, value, false); }
 };

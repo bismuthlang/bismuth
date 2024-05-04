@@ -1,0 +1,24 @@
+# define struct Empty {}
+
+define struct Bar<K> {
+    K k; 
+}
+
+define struct Foo<V> {
+    V v; 
+    # int i;
+    Bar<V> bar;
+    # Optional<V> opt; 
+}
+
+define program :: c : Channel<-int> {
+    Foo<str> foo; 
+    Foo<boolean> foo2; 
+
+    define struct VVV {}
+    # define func VVV () { return; }
+
+    VVV v; 
+    
+    c.send(0); 
+}

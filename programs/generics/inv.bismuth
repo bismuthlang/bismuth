@@ -1,0 +1,40 @@
+
+define struct LAM {}
+
+define program :: c : Channel<-int> {
+    var a := LAM::init(); 
+    c.send(0);
+    
+    foo<int> hmm;
+    foo<boolean> hmm2;
+    foo<str> hmm3; 
+}
+
+define func foo<T>(T t) {
+
+    (boolean + T) sum;
+
+    T[] abc;
+
+
+    var lambda3 := (T t)  { 
+        int a := 0; 
+        return; 
+    }
+
+
+    define func nested<V>(V param) {
+
+        var a := 0; 
+        return; 
+    }
+
+    nested<str> idk;
+    nested<int> idk2; 
+
+    # nested();
+
+    var lambda := (int i) : int { return i; }
+    var lambda2 := (int i) : int { return i; }
+    return;
+}

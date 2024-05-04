@@ -16,8 +16,7 @@ std::variant<const ProtocolSequence *, ErrorChain *> ProtocolVisitor::visitProto
         std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, e->accept(this));
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
-            (*e)->addError(ctx->getStart(), "Error in protocol sequence");
-            return *e;
+            return (*e)->addError(ctx->getStart(), "Error in protocol sequence");
         }
 
         const Protocol *proto = std::get<const Protocol *>(protoOpt);
@@ -33,8 +32,7 @@ std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(Bis
     
     if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
     {
-        (*e)->addError(ctx->getStart(), "Failed to generate receive type");
-        return *e;
+        return (*e)->addError(ctx->getStart(), "Failed to generate receive type");
     }
 
     const Type * ty = std::get<const Type*>(tyOpt);
@@ -55,8 +53,7 @@ std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(Bis
     
     if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
     {
-        (*e)->addError(ctx->getStart(), "Failed to generate send type");
-        return *e;
+        return (*e)->addError(ctx->getStart(), "Failed to generate send type");
     }
 
     const Type * ty = std::get<const Type*>(tyOpt);
@@ -78,8 +75,7 @@ std::variant<const ProtocolWN *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        (*e)->addError(ctx->getStart(), "Error in ? loop protocol");  // PLAN: refactor symbols into constants/pull from parser rule?
-        return *e;
+        return (*e)->addError(ctx->getStart(), "Error in ? loop protocol");  // PLAN: refactor symbols into constants/pull from parser rule?
     }
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);
@@ -95,8 +91,7 @@ std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        (*e)->addError(ctx->getStart(), "Error in ! loop protocol");
-        return *e;
+        return (*e)->addError(ctx->getStart(), "Error in ! loop protocol");
     }
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);
@@ -118,8 +113,7 @@ std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
-            (*e)->addError(ctx->getStart(), "Error in external choice branch");
-            return *e;
+            return (*e)->addError(ctx->getStart(), "Error in external choice branch");
         }
 
         const Protocol *proto = std::get<const Protocol *>(protoOpt);
@@ -164,8 +158,7 @@ std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
-            (*e)->addError(ctx->getStart(), "Error in internal choice branch");
-            return *e;
+            return (*e)->addError(ctx->getStart(), "Error in internal choice branch");
         }
 
         const Protocol *proto = std::get<const Protocol *>(protoOpt);
@@ -209,8 +202,7 @@ std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(Bi
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        (*e)->addError(ctx->getStart(), "Error in close protocol");
-        return *e;
+        return (*e)->addError(ctx->getStart(), "Error in close protocol");
     }
 
     const Protocol *proto = std::get<const Protocol *>(protoOpt);

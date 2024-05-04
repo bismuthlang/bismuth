@@ -11,4 +11,5 @@ set (CODEGEN_SOURCES
   ${CODEGEN_DIR}/CodegenUtils.cpp
   ${CODEGEN_DIR}/CodegenVisitor.cpp
   ${CODEGEN_DIR}/DeepCopyVisitor.cpp
+  ${CODEGEN_DIR}/DynArrayVisitor.cpp
 )

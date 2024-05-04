@@ -27,7 +27,9 @@ enum SymbolLookupFlags
 class Scope
 {
 public:
-    Scope()
+    Scope(Identifier * n, bool s)
+        : id(n)
+        , stop(s)
     {
         // By default, we set parent to be empty
     }
@@ -37,15 +39,19 @@ public:
      *
      * @param p The parent to the current scope
      */
-    Scope(std::optional<Scope *> p)
+    Scope(std::optional<Scope *> p, Identifier * n, bool s)
     {
         parent = p;
+        id = n; 
+        stop = s; 
     }
 
-    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms)
+    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms, Identifier * n, bool s)
     {
         parent = p;
         symbols = syms;
+        id = n; 
+        stop = s; 
     }
 
     /**
@@ -55,7 +61,7 @@ public:
      * @return true If successful
      * @return false If this could not be done (ie, due to a redeclaration)
      */
-    bool addSymbol(Symbol *symbol);
+    std::optional<Symbol *> addSymbol(Symbol *symbol);
 
     bool removeSymbol(const Symbol *symbol);
 
@@ -83,6 +89,8 @@ public:
      * @return std::optional<Scope*> Empty no parent; present with value if has parent
      */
     std::optional<Scope *> getParent() { return parent; }
+
+    void setParent(Scope * scope) { parent = scope; } // FIXME: MAKE PRIVATE?
 
     /**
      * @brief Set the Id object
@@ -127,16 +135,16 @@ public:
         {
             if (include_uninferred)
             {
-                if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->type))
+                if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->getType()))
                 {
                     if (!inf->hasBeenInferred())
                         ans.push_back(item.second);
                 }
             }
 
-            if (include_linear && item.second->type->isLinear() && !(item.second->getIdentifier() == "@RETURN"))
+            if (include_linear && item.second->getType()->isLinear() && !(item.second->getScopedIdentifier() == "@RETURN"))
             {
-                if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->type))
+                if (const TypeChannel *inf = dynamic_cast<const TypeChannel *>(item.second->getType()))
                 {
                     if (
                         (include_complete || !inf->getProtocol()->isComplete()) &&
@@ -159,14 +167,73 @@ public:
 
         for (auto itr : symbols)
         {
-            ans.insert({itr.first, new Symbol(*itr.second)});
+            if(itr.second->isDefinition())
+                ans.insert({
+                    itr.first, 
+                    new DefinitionSymbol(*dynamic_cast<DefinitionSymbol *>(itr.second)) // TODO: not exactly the safest, but should be fine as its the only current way to get definition symbols 
+                });
+            else
+                ans.insert({itr.first, new Symbol(*itr.second)});
         }
 
         return ans;
+    }
+
+    Identifier * getIdentifier() { return id; }
+
+    // std::string getName() {
+    //     return nameGenerator(); // TODO: Do better & use mangler 
+    // }
+
+
+    bool isStop() { return stop; }
+
+
+    Scope * copyToStop() {
+      std::optional<Scope *> scopeOpt = this;
+      std::optional<Scope *> ans = std::nullopt; 
+      std::optional<Scope *> prev = std::nullopt;
+
+      while(scopeOpt)
+      {
+        Scope * scope = scopeOpt.value(); 
+
+        Scope * scopeCpy = new Scope(std::nullopt, scope->copySymbols(), scope->getIdentifier(), scope->isStop());
+
+        scopeCpy->setId(10 * scope->getId());
+
+        if(!ans)
+        {
+          ans = scopeCpy;
+        }
+
+        if(prev)
+        {
+          prev.value()->setParent(scopeCpy); 
+        }
+
+        if(scope->isStop())
+        {
+            if(scope->getParent())
+            {
+                scopeCpy->setParent(scope->getParent().value());
+            }
+            return ans.value(); 
+        }
+
+        prev = scopeCpy; 
+        scopeOpt = scope->getParent(); 
+      }
+
+        return ans.value(); 
     }
 
 private:
     int scopeId = -1;
     std::optional<Scope *> parent = {};
     std::map<std::string, Symbol *> symbols;
+
+    Identifier * id; 
+
+    bool stop; // FIXME: Switch to visibility modifiers?
 };

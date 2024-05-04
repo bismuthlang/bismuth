@@ -27,23 +27,25 @@ TEST_CASE("Basic select", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  CHECK_FALSE(sv->hasErrors(ERROR));
+  CHECK_FALSE(sv.hasErrors(ERROR));
 }
 
 
@@ -60,23 +62,25 @@ TEST_CASE("Select without any cases", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  REQUIRE(sv->hasErrors(ERROR));
+  REQUIRE(sv.hasErrors(ERROR));
 }
 
 
@@ -100,22 +104,24 @@ TEST_CASE("Basic select inf error 1", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
-  CHECK(sv->hasErrors(ERROR));
+  sv.visitCompilationUnit(tree);
+  CHECK(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Basic select inf 1", "[semantic][conditional]")
@@ -137,23 +143,25 @@ TEST_CASE("Basic select inf 1", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  CHECK_FALSE(sv->hasErrors(ERROR));
+  CHECK_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Basic select inf 2", "[semantic][conditional]")
@@ -175,24 +183,26 @@ TEST_CASE("Basic select inf 2", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  // std::cout << sv->getErrors() << std::endl; 
-  CHECK_FALSE(sv->hasErrors(ERROR));
+  // std::cout << sv.getErrors() << std::endl; 
+  CHECK_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Basic select inf 3", "[semantic][conditional]")
@@ -214,23 +224,25 @@ TEST_CASE("Basic select inf 3", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  CHECK_FALSE(sv->hasErrors(ERROR));
+  CHECK_FALSE(sv.hasErrors(ERROR));
 }
 
 
@@ -251,23 +263,25 @@ TEST_CASE("Basic select - Dead Code - var", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  REQUIRE(sv->hasErrors(ERROR));
+  REQUIRE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Basic select - Dead Code - proc", "[semantic][conditional]")
@@ -286,23 +300,25 @@ TEST_CASE("Basic select - Dead Code - proc", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  REQUIRE(sv->hasErrors(ERROR));
+  REQUIRE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Basic select - Dead Code - func", "[semantic][conditional]")
@@ -321,23 +337,25 @@ TEST_CASE("Basic select - Dead Code - func", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  REQUIRE(sv->hasErrors(ERROR));
+  REQUIRE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Wrong case Type in Select", "[semantic][conditional]")
@@ -359,21 +377,23 @@ TEST_CASE("Wrong case Type in Select", "[semantic][conditional]")
   );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  REQUIRE(sv->hasErrors(ERROR));
+  REQUIRE(sv.hasErrors(ERROR));
 }

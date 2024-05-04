@@ -14,28 +14,9 @@
 
 using Catch::Matchers::ContainsSubstring;
 
-void EnsureErrorsWithMessage(antlr4::ANTLRInputStream *input, std::string message);
-// {
-//   BismuthLexer lexer(input);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   STManager *stm = new STManager();
-//   SemanticVisitor *sv = new SemanticVisitor(stm, 0);
-//   auto cuOpt = sv->visitCtx(tree);
+void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message, int flags=0);
 
-//   REQUIRE(sv->hasErrors(0));
-//   REQUIRE_THAT(sv->getErrors(), ContainsSubstring(message));
-// }
-
-void EnsureErrorsWithMessage(std::string program, std::string message);
-// {
-//   antlr4::ANTLRInputStream input(program);
-//   EnsureErrorsWithMessage(&input, message);
-// }
+void EnsureErrorsWithMessage(std::string program, std::string message, int flags=0);
 
 
 TEST_CASE("Inference If Errors - 1", "[semantic]")
@@ -54,7 +35,7 @@ define program :: c : Channel<-int> {
   c.send(0)
 }
       )"""",
-      "Assignment statement expected {VAR/boolean} but got int"
+      "Assignment statement expected boolean but got int"
     );
 }
 
@@ -77,11 +58,13 @@ define program :: c : Channel<-int> {
     );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
@@ -90,12 +73,12 @@ define program :: c : Channel<-int> {
   // Any errors should be syntax errors.
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
 
-  CHECK_FALSE(sv->hasErrors(0));
+  CHECK_FALSE(sv.hasErrors(0));
 }
 
 TEST_CASE("Inference If - 2", "[semantic]")
@@ -117,11 +100,13 @@ define program :: c : Channel<-int> {
     );
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // lexer.addErrorListener(new TestErrorListener());
+  // auto lListener = TestErrorListener();
+  // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  parser.addErrorListener(new TestErrorListener());
+  auto pListener = TestErrorListener(); 
+  parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
@@ -130,10 +115,10 @@ define program :: c : Channel<-int> {
   // Any errors should be syntax errors.
   REQUIRE(tree->getText() != "");
 
-  STManager *stmgr = new STManager();
-  SemanticVisitor *sv = new SemanticVisitor(stmgr, DisplayMode::C_STYLE);
+  STManager stmgr = STManager();
+  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv->visitCompilationUnit(tree);
+  sv.visitCompilationUnit(tree);
   
-  CHECK_FALSE(sv->hasErrors(0));
+  CHECK_FALSE(sv.hasErrors(0));
 }

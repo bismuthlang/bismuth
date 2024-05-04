@@ -2,6 +2,8 @@
 
 #include "Symbol.h" //Should give us symbols and yyues...
 #include <variant>
+#include <functional> // std::function
+
 
 #include "antlr4-runtime.h" //For token
 
@@ -37,10 +39,25 @@ public:
 
     virtual std::string toString() const = 0;  
 
-    virtual std::any accept(TypedASTVisitor *a) = 0;
+    virtual std::any accept(TypedASTVisitor &a) = 0;
 
     antlr4::Token *getStart() { return token; }
 };
+
+class DefinitionNode : public TypedNode 
+{
+private: 
+    DefinitionSymbol * symbol; 
+
+public: 
+    virtual ~DefinitionNode() = default; 
+    DefinitionNode(DefinitionSymbol * s, antlr4::Token *tok) : TypedNode(tok), symbol(s) {}
+
+    DefinitionSymbol * getSymbol() { return symbol; }
+
+    VisibilityModifier getVisibility() { return symbol->getVisibility(); }
+};
+
 // From C++ Documentation for visitors
 template <class... Ts>
 struct overloaded : Ts...
@@ -69,15 +86,19 @@ class TProgramAcceptNode;
 class TProgramAcceptWhileNode; 
 class TProgramAcceptIfNode; 
 class TDefineEnumNode;
+class TDefineTemplateNode; 
 class TDefineStructNode;
 class TInitProductNode;
+class TArrayRValue; 
 class TInitBoxNode;
 class TDerefBoxNode;
 class TWhileLoopNode;
 class TExternNode;
 class TInvocationNode;
 class TFieldAccessNode;
+class TPathNode; 
 class TArrayAccessNode;
+class TDynArrayAccessNode; 
 class TAssignNode;
 class TBinaryRelNode;
 class TBinaryArithNode;
@@ -87,7 +108,11 @@ class TLogAndExprNode;
 class TLogOrExprNode;
 class TStringConstNode;
 class TBooleanConstNode;
-class TIntConstExprNode;
+class TInt32ConstExprNode;
+class TInt64ConstExprNode;
+class TIntU32ConstExprNode;
+class TIntU64ConstExprNode;
+class TNumConstExprNode; // For numbers we don't yet know the size of
 class TCompilationUnitNode;
 
 class TVarDeclNode;
@@ -101,118 +126,142 @@ class TExprCopyNode;
 
 class TAsChannelNode; 
 
+class CompCodeWrapper; 
+
+class TIdentifier; 
+
 class TypedASTVisitor
 {
 public:
     virtual ~TypedASTVisitor() = default;
 
-    // virtual std::optional<Value *> visit(TSelectAlternativeNode *n) = 0;
-    virtual std::optional<Value *> visit(TSelectStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(TBlockNode *n) = 0;
-    virtual std::optional<Value *> visit(TLambdaConstNode *n) = 0;
-    virtual std::optional<Value *> visit(TProgramDefNode *n) = 0;
-    virtual std::optional<Value *> visit(TConditionalStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(TReturnNode *n) = 0;
-    virtual std::optional<Value *> visit(TProgramSendNode *n) = 0;
-    virtual std::optional<Value *> visit(TProgramRecvNode *n) = 0;
-    virtual std::optional<Value *> visit(TProgramIsPresetNode *n) = 0; 
-    virtual std::optional<Value *> visit(TProgramContractNode *n) = 0;
-    virtual std::optional<Value *> visit(TProgramWeakenNode *n) = 0;
-    virtual std::optional<Value *> visit(TProgramCancelNode *n) = 0; 
-    virtual std::optional<Value *> visit(TProgramExecNode *n) = 0;
-    virtual std::optional<Value *> visit(TProgramAcceptNode *n) = 0;
-    virtual std::optional<Value *> visit(TProgramAcceptWhileNode *n) = 0; 
-    virtual std::optional<Value *> visit(TProgramAcceptIfNode *n) = 0; 
-    // virtual std::optional<Value *> visit(TDefineEnumNode *n) = 0;
-    // virtual std::optional<Value *> visit(TDefineStructNode *n) = 0;
-    virtual std::optional<Value *> visit(TInitProductNode *n) = 0;
-    virtual std::optional<Value *> visit(TInitBoxNode *n) = 0; 
-    virtual std::optional<Value *> visit(TDerefBoxNode *n) = 0; 
-    virtual std::optional<Value *> visit(TWhileLoopNode *n) = 0;
-    virtual std::optional<Value *> visit(TExternNode *n) = 0;
-    virtual std::optional<Value *> visit(TInvocationNode *n) = 0;
-    virtual std::optional<Value *> visit(TFieldAccessNode *n) = 0;
-    virtual std::optional<Value *> visit(TArrayAccessNode *n) = 0;
-    virtual std::optional<Value *> visit(TAssignNode *n) = 0;
-    virtual std::optional<Value *> visit(TBinaryRelNode *n) = 0;
-    virtual std::optional<Value *> visit(TBinaryArithNode *n) = 0;
-    virtual std::optional<Value *> visit(TEqExprNode *n) = 0;
-    virtual std::optional<Value *> visit(TUnaryExprNode *n) = 0;
-    virtual std::optional<Value *> visit(TLogAndExprNode *n) = 0;
-    virtual std::optional<Value *> visit(TLogOrExprNode *n) = 0;
-    virtual std::optional<Value *> visit(TStringConstNode *n) = 0;
-    virtual std::optional<Value *> visit(TBooleanConstNode *n) = 0;
-    virtual std::optional<Value *> visit(TIntConstExprNode *n) = 0;
-    virtual std::optional<Value *> visit(TCompilationUnitNode *n) = 0;
-    virtual std::optional<Value *> visit(TVarDeclNode *n) = 0;
-    virtual std::optional<Value *> visit(TMatchStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(TExitNode *n) = 0;
-    virtual std::optional<Value *> visit(TChannelCaseStatementNode *n) = 0;
-    virtual std::optional<Value *> visit(TProgramProjectNode *n) = 0;
-    virtual std::optional<Value *> visit(TExprCopyNode *n) = 0; 
-    virtual std::optional<Value *> visit(TAsChannelNode *n) = 0; 
+    // virtual std::optional<Value *> visit(TSelectAlternativeNode & n) = 0;
+    virtual std::optional<Value *> visit(TSelectStatementNode & n) = 0;
+    virtual std::optional<Value *> visit(TBlockNode & n) = 0;
+    virtual std::optional<Value *> visit(TLambdaConstNode & n) = 0;
+    virtual std::optional<Value *> visit(TProgramDefNode & n) = 0;
+    virtual std::optional<Value *> visit(TConditionalStatementNode & n) = 0;
+    virtual std::optional<Value *> visit(TReturnNode & n) = 0;
+    virtual std::optional<Value *> visit(TProgramSendNode & n) = 0;
+    virtual std::optional<Value *> visit(TProgramRecvNode & n) = 0;
+    virtual std::optional<Value *> visit(TProgramIsPresetNode & n) = 0; 
+    virtual std::optional<Value *> visit(TProgramContractNode & n) = 0;
+    virtual std::optional<Value *> visit(TProgramWeakenNode & n) = 0;
+    virtual std::optional<Value *> visit(TProgramCancelNode & n) = 0; 
+    virtual std::optional<Value *> visit(TProgramExecNode & n) = 0;
+    virtual std::optional<Value *> visit(TProgramAcceptNode & n) = 0;
+    virtual std::optional<Value *> visit(TProgramAcceptWhileNode & n) = 0; 
+    virtual std::optional<Value *> visit(TProgramAcceptIfNode & n) = 0; 
+    virtual std::optional<Value *> visit(TDefineEnumNode & n) = 0;
+    virtual std::optional<Value *> visit(TDefineStructNode & n) = 0;
+    virtual std::optional<Value *> visit(TDefineTemplateNode & n) = 0; 
+    virtual std::optional<Value *> visit(TInitProductNode & n) = 0;
+    virtual std::optional<Value *> visit(TArrayRValue & n) = 0; 
+    virtual std::optional<Value *> visit(TInitBoxNode & n) = 0; 
+    virtual std::optional<Value *> visit(TDerefBoxNode & n) = 0; 
+    virtual std::optional<Value *> visit(TWhileLoopNode & n) = 0;
+    virtual std::optional<Value *> visit(TExternNode & n) = 0;
+    virtual std::optional<Value *> visit(TInvocationNode & n) = 0;
+    virtual std::optional<Value *> visit(TFieldAccessNode & n) = 0;
+    virtual std::optional<Value *> visit(TIdentifier & n) = 0; 
+    virtual std::optional<Value *> visit(TPathNode & n) = 0; 
+    virtual std::optional<Value *> visit(TArrayAccessNode & n) = 0;
+    virtual std::optional<Value *> visit(TDynArrayAccessNode & n) = 0; 
+    virtual std::optional<Value *> visit(TAssignNode & n) = 0;
+    virtual std::optional<Value *> visit(TBinaryRelNode & n) = 0;
+    virtual std::optional<Value *> visit(TBinaryArithNode & n) = 0;
+    virtual std::optional<Value *> visit(TEqExprNode & n) = 0;
+    virtual std::optional<Value *> visit(TUnaryExprNode & n) = 0;
+    virtual std::optional<Value *> visit(TLogAndExprNode & n) = 0;
+    virtual std::optional<Value *> visit(TLogOrExprNode & n) = 0;
+    virtual std::optional<Value *> visit(TStringConstNode & n) = 0;
+    virtual std::optional<Value *> visit(TBooleanConstNode & n) = 0;
+    virtual std::optional<Value *> visit(TInt32ConstExprNode & n) = 0;
+    virtual std::optional<Value *> visit(TInt64ConstExprNode & n) = 0;
+    virtual std::optional<Value *> visit(TIntU32ConstExprNode & n) = 0;
+    virtual std::optional<Value *> visit(TIntU64ConstExprNode & n) = 0;
+    virtual std::optional<Value *> visit(TNumConstExprNode & n) = 0; 
+    virtual std::optional<Value *> visit(TCompilationUnitNode & n) = 0;
+    virtual std::optional<Value *> visit(TVarDeclNode & n) = 0;
+    virtual std::optional<Value *> visit(TMatchStatementNode & n) = 0;
+    virtual std::optional<Value *> visit(TExitNode & n) = 0;
+    virtual std::optional<Value *> visit(TChannelCaseStatementNode & n) = 0;
+    virtual std::optional<Value *> visit(TProgramProjectNode & n) = 0;
+    virtual std::optional<Value *> visit(TExprCopyNode & n) = 0; 
+    virtual std::optional<Value *> visit(TAsChannelNode & n) = 0; 
+    std::optional<Value *> visit(CompCodeWrapper & n);  // TODO: why don't we directly call the generator? 
 
     // virtual std::optional<Value
 
     // private:
-    std::any any_visit(TSelectAlternativeNode *n) { return this->visit(n); }
-    std::any any_visit(TSelectStatementNode *n) { return this->visit(n); }
-    std::any any_visit(TBlockNode *n) { return this->visit(n); }
-    std::any any_visit(TLambdaConstNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramDefNode *n) { return this->visit(n); }
-    std::any any_visit(TConditionalStatementNode *n) { return this->visit(n); }
-    std::any any_visit(TReturnNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramSendNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramRecvNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramIsPresetNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramContractNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramWeakenNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramCancelNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramExecNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramAcceptNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramAcceptWhileNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramAcceptIfNode *n) { return this->visit(n); }
-    std::any any_visit(TDefineEnumNode *n) { return this->visit(n); }
-    std::any any_visit(TDefineStructNode *n) { return this->visit(n); }
-    std::any any_visit(TInitProductNode *n) { return this->visit(n); }
-    std::any any_visit(TInitBoxNode *n) { return this->visit(n); }
-    std::any any_visit(TDerefBoxNode *n) { return this->visit(n); }
-    std::any any_visit(TWhileLoopNode *n) { return this->visit(n); }
-    std::any any_visit(TExternNode *n) { return this->visit(n); }
-    std::any any_visit(TInvocationNode *n) { return this->visit(n); }
-    std::any any_visit(TFieldAccessNode *n) { return this->visit(n); }
-    std::any any_visit(TArrayAccessNode *n) { return this->visit(n); }
-    std::any any_visit(TAssignNode *n) { return this->visit(n); }
-    std::any any_visit(TBinaryRelNode *n) { return this->visit(n); }
-    std::any any_visit(TBinaryArithNode *n) { return this->visit(n); }
-    std::any any_visit(TEqExprNode *n) { return this->visit(n); }
-    std::any any_visit(TUnaryExprNode *n) { return this->visit(n); }
-    std::any any_visit(TLogAndExprNode *n) { return this->visit(n); }
-    std::any any_visit(TLogOrExprNode *n) { return this->visit(n); }
-    std::any any_visit(TStringConstNode *n) { return this->visit(n); }
-    std::any any_visit(TBooleanConstNode *n) { return this->visit(n); }
-    std::any any_visit(TIntConstExprNode *n) { return this->visit(n); }
-    std::any any_visit(TCompilationUnitNode *n) { return this->visit(n); }
-    std::any any_visit(TVarDeclNode *n) { return this->visit(n); }
-    std::any any_visit(TMatchStatementNode *n) { return this->visit(n); }
-    std::any any_visit(TExitNode *n) { return this->visit(n); }
-    std::any any_visit(TChannelCaseStatementNode *n) { return this->visit(n); }
-    std::any any_visit(TProgramProjectNode *n) { return this->visit(n); }
-    std::any any_visit(TExprCopyNode *n) {return this->visit(n); }
-    std::any any_visit(TAsChannelNode *n) { return this->visit(n); }
+    std::any any_visit(TSelectAlternativeNode & n) { return std::nullopt; } // this->visit(n); }
+    std::any any_visit(TSelectStatementNode & n) { return this->visit(n); }
+    std::any any_visit(TBlockNode & n) { return this->visit(n); }
+    std::any any_visit(TLambdaConstNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramDefNode & n) { return this->visit(n); }
+    std::any any_visit(TConditionalStatementNode & n) { return this->visit(n); }
+    std::any any_visit(TReturnNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramSendNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramRecvNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramIsPresetNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramContractNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramWeakenNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramCancelNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramExecNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramAcceptNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramAcceptWhileNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramAcceptIfNode & n) { return this->visit(n); }
+    std::any any_visit(TDefineEnumNode & n) { return this->visit(n); }
+    std::any any_visit(TDefineTemplateNode & n) { return this->visit(n); }
+    std::any any_visit(TDefineStructNode & n) { return this->visit(n); }
+    std::any any_visit(TInitProductNode & n) { return this->visit(n); }
+    std::any any_visit(TArrayRValue & n) { return this->visit(n); }
+    std::any any_visit(TInitBoxNode & n) { return this->visit(n); }
+    std::any any_visit(TDerefBoxNode & n) { return this->visit(n); }
+    std::any any_visit(TWhileLoopNode & n) { return this->visit(n); }
+    std::any any_visit(TExternNode & n) { return this->visit(n); }
+    std::any any_visit(TInvocationNode & n) { return this->visit(n); }
+    std::any any_visit(TFieldAccessNode & n) { return this->visit(n); }
+    std::any any_visit(TIdentifier & n) { return this->visit(n); }
+    std::any any_visit(TPathNode & n) { return this->visit(n); }
+    std::any any_visit(TArrayAccessNode & n) { return this->visit(n); }
+    std::any any_visit(TDynArrayAccessNode & n) { return this->visit(n); }
+    std::any any_visit(TAssignNode & n) { return this->visit(n); }
+    std::any any_visit(TBinaryRelNode & n) { return this->visit(n); }
+    std::any any_visit(TBinaryArithNode & n) { return this->visit(n); }
+    std::any any_visit(TEqExprNode & n) { return this->visit(n); }
+    std::any any_visit(TUnaryExprNode & n) { return this->visit(n); }
+    std::any any_visit(TLogAndExprNode & n) { return this->visit(n); }
+    std::any any_visit(TLogOrExprNode & n) { return this->visit(n); }
+    std::any any_visit(TStringConstNode & n) { return this->visit(n); }
+    std::any any_visit(TBooleanConstNode & n) { return this->visit(n); }
+    std::any any_visit(TInt32ConstExprNode & n) { return this->visit(n); }
+    std::any any_visit(TInt64ConstExprNode & n) { return this->visit(n); }
+    std::any any_visit(TIntU32ConstExprNode & n) { return this->visit(n); }
+    std::any any_visit(TIntU64ConstExprNode & n) { return this->visit(n); }
+    std::any any_visit(TNumConstExprNode & n) { return this->visit(n); }
+    std::any any_visit(TCompilationUnitNode & n) { return this->visit(n); }
+    std::any any_visit(TVarDeclNode & n) { return this->visit(n); }
+    std::any any_visit(TMatchStatementNode & n) { return this->visit(n); }
+    std::any any_visit(TExitNode & n) { return this->visit(n); }
+    std::any any_visit(TChannelCaseStatementNode & n) { return this->visit(n); }
+    std::any any_visit(TProgramProjectNode & n) { return this->visit(n); }
+    std::any any_visit(TExprCopyNode & n) {return this->visit(n); }
+    std::any any_visit(TAsChannelNode & n) { return this->visit(n); }
+    std::any any_visit(CompCodeWrapper & n) { return this->visit(n); }
 
-    std::any visit(std::any n) { return "FIXME"; }
-    std::any accept(TypedNode *n)
+    std::any visit(std::any & n) { return std::nullopt; } //return "FIXME"; }
+    std::any accept(TypedNode & n)
     {
-        return n->accept(this);
+        return n.accept(*this);
         // return dynamic_cast<T>(n->accept(this)); // Hacky, but completely safe
         // return n->accept(this);
     }
 };
 
-inline std::optional<Value *> AcceptType(TypedASTVisitor *visitor, TypedNode *n)
+inline std::optional<Value *> AcceptType(TypedASTVisitor & visitor, TypedNode & n)
 {
-    return any_cast<std::optional<Value *>>(n->accept(visitor));
+    return any_cast<std::optional<Value *>>(n.accept(visitor));
 }
 
 class TSelectAlternativeNode : public TypedNode
@@ -229,7 +278,7 @@ public:
 
     const TypeUnit *getType() override { return Types::UNIT; }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 
     std::string toString() const override {
         return "SEL ALT";
@@ -249,7 +298,7 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 
     std::string toString() const override {
         return "SEL STMT NODE";
@@ -269,7 +318,7 @@ public:
     vector<TypedNode *> getExprs() { return exprs; }
 
     const TypeUnit *getType() override { return Types::UNIT; } // PLAN: Change this to allow for more functional style? 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 
     std::string toString() const override {
         return "BLK NODE";
@@ -287,33 +336,32 @@ public:
 
 typedef vector<ParameterNode> ParameterListNode;
 
-class TLambdaConstNode : public TypedNode
+class TLambdaConstNode : public DefinitionNode
 {
     // private:
 
 public:
-    string name;
     vector<Symbol *> paramSymbols;
     const Type *retType;
     TBlockNode *block;
-    TypeFunc *type;
+    const TypeFunc *type;
 
-    TLambdaConstNode(antlr4::Token *tok, vector<Symbol *> p, const Type *r, TBlockNode *b, string n = "LAM") : TypedNode(tok)
+    TLambdaConstNode(DefinitionSymbol * sym, vector<Symbol *> p, const Type *r, TBlockNode *b, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         // paramList = p;
         paramSymbols = p;
         retType = r;
         block = b;
 
-        name = n;
 
         vector<const Type *> paramTypes;
 
         for (Symbol *p : paramSymbols)
         {
-            paramTypes.push_back(p->type);
+            paramTypes.push_back(p->getType());
         }
 
+        // FIXME: REMOVE AS ALREADY CALCULATED?
         type = new TypeFunc(paramTypes, retType);
     }
 
@@ -326,28 +374,25 @@ public:
         return "LAMBDA CONST";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
-class TProgramDefNode : public TypedNode
+class TProgramDefNode : public DefinitionNode
 {
 private:
     const TypeProgram *type;
 
 public:
-    string name;
     Symbol *channelSymbol;
     // TypeChannel * channelType;
     TBlockNode *block;
 
-    TProgramDefNode(string n, Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : TypedNode(tok)
+    TProgramDefNode(DefinitionSymbol * sym,  Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
-        name = n;
         channelSymbol = cn;
         // channelType = ct;
         block = b;
         type = ty;
-        // type = new TypeFunc(paramTypes, retType);
     }
 
     const TypeProgram *getType() override
@@ -359,7 +404,7 @@ public:
         return "PROG DEF";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TConditionalStatementNode : public TypedNode
@@ -384,7 +429,7 @@ public:
     std::string toString() const override {
         return "COND STATEMENT NODE";
     }
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TReturnNode : public TypedNode
@@ -404,7 +449,7 @@ public:
         return "RETURN NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TExitNode : public TypedNode
@@ -420,7 +465,7 @@ public:
         return "EXIT NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TProgramSendNode : public TypedNode, public ProtocolOpNode
@@ -443,7 +488,7 @@ public:
         return "SEND NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TProgramRecvNode : public TypedNode, public ProtocolOpNode
@@ -467,7 +512,7 @@ public:
         return "RECV NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 
@@ -487,7 +532,7 @@ public:
         return "IS PRESENT NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 class TProgramContractNode : public TypedNode
 {
@@ -505,7 +550,7 @@ public:
         return "CONTRACT NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TProgramWeakenNode : public TypedNode // FIXME: COMBINE THIS WITH PREV AND USE ENUM FOR OP?
@@ -524,7 +569,7 @@ public:
         return "WEAKEN NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 
@@ -546,7 +591,7 @@ public:
         return "CANCEL NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TProgramExecNode : public TypedNode
@@ -567,7 +612,7 @@ public:
         return "EXEC NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TProgramAcceptNode : public TypedNode, public ProtocolOpNode
@@ -588,7 +633,7 @@ public:
         return "ACCEPT NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TProgramAcceptWhileNode : public TypedNode, public ProtocolOpNode
@@ -611,7 +656,7 @@ public:
         return "ACCEPT WHILE NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 
@@ -639,19 +684,16 @@ public:
         return "ACCEPT IF NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
-class TDefineEnumNode : public TypedNode
+class TDefineEnumNode : public DefinitionNode
 {
 public:
-    string name;
     const TypeSum *sum;
 
-    TDefineEnumNode(string n, const TypeSum *s, antlr4::Token *tok) : TypedNode(tok)
+    TDefineEnumNode(DefinitionSymbol * sym, const TypeSum *s, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
-        name = n;
-        // cases = c;
         sum = s;
     }
 
@@ -661,19 +703,39 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
-class TDefineStructNode : public TypedNode
+
+class TDefineTemplateNode : public DefinitionNode
+{
+private: 
+    const TypeTemplate * type; // Used to figure out what versions we need to generate
+    DefinitionNode * templatedNodes; 
+    // TypedNode * templatedNodes; 
+
+    // TODO track templated names generated?
+
+public:
+    TDefineTemplateNode(DefinitionSymbol * sym, const TypeTemplate * t, DefinitionNode * n, antlr4::Token *tok) : DefinitionNode(sym, tok), type(t), templatedNodes(n) //t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
+    {}
+
+    std::string toString() const override { return "DEF TEMPLATE NODE"; }
+
+    const TypeTemplate * getType() override { return type; }
+    DefinitionNode * getTemplatedNodes() { return templatedNodes; }
+    // TypedNode * getTemplatedNodes() { return templatedNodes; }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
+
+class TDefineStructNode : public DefinitionNode
 {
 public:
-    string name;
     const TypeStruct *product;
 
-    TDefineStructNode(string n, const TypeStruct *p, antlr4::Token *tok) : TypedNode(tok)
+    TDefineStructNode(DefinitionSymbol * sym, const TypeStruct *p, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
-        name = n;
-        // cases = c;
         product = p;
     }
 
@@ -684,7 +746,7 @@ public:
     }
 
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TInitProductNode : public TypedNode
@@ -705,9 +767,43 @@ public:
         return "INIT PRODUCT";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
+
+class TArrayRValue : public TypedNode
+{
+public:
+    std::variant<const TypeArray *, const TypeDynArray *> type; 
+    vector<TypedNode *> exprs;
+
+    TArrayRValue(const TypeArray *p, vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
+    {
+        type = p;
+        exprs = e;
+    }
+
+    TArrayRValue(const TypeDynArray *p, vector<TypedNode *> e, antlr4::Token *tok) : TypedNode(tok)
+    {
+        type = p;
+        exprs = e;
+    }
+
+    const Type *getType() override { 
+        // return type;  // Wish we could do this
+        if(std::holds_alternative<const TypeArray *>(type))
+            return std::get<const TypeArray *>(type); 
+        return std::get<const TypeDynArray*>(type); 
+    }
+
+    std::variant<const TypeArray *, const TypeDynArray*> getTypeVariant() { return type; }
+
+    std::string toString() const override {
+        return "ARRAY RVALUE";
+    }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
 
 class TInitBoxNode : public TypedNode
 {
@@ -725,7 +821,7 @@ public:
         return "INIT BOX";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 
     const TypeBox *getType() override { return boxType; }
 };
@@ -748,7 +844,7 @@ public:
         return "Deref BOX";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 
     const Type *getType() override { return boxType->getInnerType(); }
 };
@@ -771,7 +867,7 @@ public:
         return "WHILE LOOP";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TExternNode : public TypedNode
@@ -781,18 +877,8 @@ private:
     const TypeFunc *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
-    TExternNode(std::string id, ParameterListNode p, const Type *r, bool v, antlr4::Token *tok) : TypedNode(tok)
-    {
-        vector<const Type *> paramTypes;
-
-        for (ParameterNode param : p)
-        {
-            paramTypes.push_back(param.type);
-        }
-
-        ty = new TypeFunc(paramTypes, r, v);
-        sym = new Symbol(id, ty, true, true);
-    }
+    TExternNode(Symbol * s, TypeFunc * func, antlr4::Token *tok) : TypedNode(tok), sym(s), ty(func)
+    {}
 
     const TypeFunc *getType() override
     {
@@ -804,7 +890,7 @@ public:
     }
 
     Symbol *getSymbol() { return sym; } // WHY AREN'T THINGS LIKE THIS CONST?
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TInvocationNode : public TypedNode
@@ -831,57 +917,121 @@ public:
         return "INVOKE NODE " + fn->toString();
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
+
+
+class TPathNode: public TypedNode
+{
+public:
+    // std::variant<Symbol *, const NameableType *> var; //const TypeProgram *, const TypeFunc *, const TypeStruct *, const TypeSum *> var; 
+    const Type * ty; 
+    bool is_rvalue;
+
+public:
+    TPathNode(antlr4::Token *tok, 
+            //   std::variant<Symbol *, const NameableType *> v,
+                const Type * t, 
+                bool rv) 
+        : TypedNode(tok)
+        , ty(t)
+        , is_rvalue(rv)
+    {
+    }
+
+    const Type *getType() override {
+        return ty; 
+    //    return std::visit(overloaded{[](Symbol * sym)
+    //             { return sym->getType(); },
+    //             [](const NameableType * nt)
+    //             { return (const Type *) nt; }},
+    //             var);
+    }
+
+    std::string toString() const override {
+        return "PATH NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
+
+class TIdentifier : public TypedNode 
+{
+private:
+    Symbol * sym; // Variant with this + Nameable type? 
+    bool rvalue;
+
+public:
+
+    TIdentifier(antlr4::Token *tok, 
+                Symbol * s, 
+                bool rv) 
+        : TypedNode(tok)
+        , sym(s)
+        , rvalue(rv)
+    {}
+
+    Symbol * getSymbol() { return sym; }
+    const Type *getType() override { return sym->getType(); }
+
+    bool isRValue() { return rvalue; }
+
+    std::string toString() const override {
+        return "IDENTIFIER  NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
+
 
 class TFieldAccessNode : public TypedNode
 {
 private:
-    const Type *type;
+    TypedNode * expr; 
+    const Type * resultType; 
+
 
 public:
-    Symbol *symbol;
-    vector<pair<string, const Type *>> accesses;
     bool is_rvalue;
+    vector<pair<string, const Type *>> accesses;
 
-    TFieldAccessNode(antlr4::Token *tok, Symbol *f, bool rv, vector<pair<string, const Type *>> r = {}) : TypedNode(tok)
+    TFieldAccessNode(antlr4::Token *tok, TypedNode * e, bool rv, vector<pair<string, const Type *>> r = {}) 
+        : TypedNode(tok)
+        , expr(e)
+        , is_rvalue(rv)
+        , accesses(r)
     {
-        symbol = f;
-        is_rvalue = rv;
-        accesses = r;
-
-        if (r.empty())
-        {
-            type = symbol->type;
-        }
-        else
-        {
-            type = r.at(r.size() - 1).second;
-        }
+        // FIXME: assert r is not empty! It cant be by syntax, but still. This is a potential source of errors
+        resultType = r.at(r.size() - 1).second;
     }
 
-    const Type *getType() override
-    {
-        return type;
-    }
+    const Type *getType() override { return resultType; }
+
+    const Type * getResultantType() { return resultType; }
+
+    // const Type * getSymbolType() { return id->getType(); }
+    const Type * getExprType() { return expr->getType(); }
+    
+    TypedNode * getExpr() { return expr; }
 
     std::string toString() const override {
-        return "FIELD ACCESS NODE " + symbol->toString();
+        return "FIELD ACCESS NODE "; // + symbol->toString();
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
+
 
 class TArrayAccessNode : public TypedNode
 {
 public:
-    TFieldAccessNode *field;
+    TypedNode *expr;
     TypedNode *indexExpr;
     bool is_rvalue;
 
-    TArrayAccessNode(TFieldAccessNode *f, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
+    TArrayAccessNode(TypedNode *e, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
     {
-        field = f;
+        expr = e;
         indexExpr = i;
         is_rvalue = r;
     }
@@ -889,7 +1039,7 @@ public:
     // TODO: allow for modulo get so that way we can access fields more directly?
     const Type *getType() override
     {
-        const Type * arrayType = dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * arrayType = dynamic_cast<const TypeArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
 
         if(!is_rvalue)
         {
@@ -901,20 +1051,61 @@ public:
     }
 
     const TypeSum* getRValueType() {
-        const Type * arrayType = dynamic_cast<const TypeArray *>(field->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * arrayType = dynamic_cast<const TypeArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
         std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
         return new TypeSum(cases);
     }
 
-    int length() const {
-        return dynamic_cast<const TypeArray *>(field->getType())->getLength();
+    uint32_t length() const {
+        return dynamic_cast<const TypeArray *>(expr->getType())->getLength();
     }
 
     std::string toString() const override {
         return "Array Access Node";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
+
+class TDynArrayAccessNode : public TypedNode
+{
+public:
+    TypedNode *expr;
+    TypedNode *indexExpr;
+    bool is_rvalue;
+
+    TDynArrayAccessNode(TypedNode *e, TypedNode *i, bool r, antlr4::Token *tok) : TypedNode(tok)
+    {
+        expr = e;
+        indexExpr = i;
+        is_rvalue = r;
+    }
+
+    // TODO: allow for modulo get so that way we can access fields more directly?
+    const Type *getType() override
+    {
+        const Type * arrayType = dynamic_cast<const TypeDynArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+
+        if(!is_rvalue)
+        {
+            return arrayType;
+        }
+
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        return new TypeSum(cases);
+    }
+
+    const TypeSum* getRValueType() {
+        const Type * arrayType = dynamic_cast<const TypeDynArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        return new TypeSum(cases);
+    }
+
+    std::string toString() const override {
+        return "Dynamic Array Access Node";
+    }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TAssignNode : public TypedNode
@@ -935,7 +1126,7 @@ public:
         return "ASSIGN NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 enum BinaryRelOperator
@@ -966,7 +1157,7 @@ public:
         return "BINARY REL ";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 enum BinaryArithOperator
@@ -975,14 +1166,20 @@ enum BinaryArithOperator
     BINARY_ARITH_MINUS,
     BINARY_ARITH_MULT,
     BINARY_ARITH_DIV,
-    BINARY_ARITH_MOD
+    BINARY_ARITH_MOD,
+    BINARY_LOG_RIGHT_SHIFT,
+    BINARY_ARITH_RIGHT_SHIFT,
+    BINARY_LEFT_SHIFT, 
+    BIT_AND,
+    BIT_OR,
+    BIT_XOR
 };
 
 class TBinaryArithNode : public TypedNode
 {
 public:
     BinaryArithOperator op;
-    TypedNode *lhs;
+    TypedNode *lhs; // Wish we could specify type of TypedNode was a number
     TypedNode *rhs;
 
     TBinaryArithNode(BinaryArithOperator o, TypedNode *l, TypedNode *r, antlr4::Token *tok) : TypedNode(tok)
@@ -996,8 +1193,8 @@ public:
         return "BINARY ARITH";
     }
 
-    const TypeInt *getType() override { return Types::DYN_INT; }
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    const Type *getType() override { return lhs->getType(); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 enum EqExprOperator
@@ -1026,13 +1223,14 @@ public:
         return "EQ EXPR";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 enum UnaryOperator
 {
     UNARY_MINUS,
-    UNARY_NOT
+    UNARY_NOT,
+    UNARY_BIT_NOT,
 };
 
 class TUnaryExprNode : public TypedNode
@@ -1052,6 +1250,7 @@ public:
         switch (op)
         {
         case UNARY_MINUS:
+        case UNARY_BIT_NOT:
             return Types::DYN_INT;
         case UNARY_NOT:
             return Types::DYN_BOOL;
@@ -1062,7 +1261,7 @@ public:
         return "UNARY";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TLogAndExprNode : public TypedNode
@@ -1083,7 +1282,7 @@ public:
         return "LOG AND";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TLogOrExprNode : public TypedNode
@@ -1104,7 +1303,7 @@ public:
         return "LOG OR";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TStringConstNode : public TypedNode
@@ -1123,7 +1322,7 @@ public:
         return "StrConst";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TBooleanConstNode : public TypedNode
@@ -1142,15 +1341,103 @@ public:
         return "Boolean CONST";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
-class TIntConstExprNode : public TypedNode
+class TNumConstExprNode : public TypedNode
 {
 public:
-    int value;
+    std::string value_str;
+    TypeInfer * infTy; 
 
-    TIntConstExprNode(int v, antlr4::Token *tok) : TypedNode(tok)
+    TNumConstExprNode(std::string s, antlr4::Token *tok) : TypedNode(tok)
+    {
+        value_str = s;
+        infTy = new TypeInfer({
+            Types::DYN_INT, 
+            Types::DYN_U32, 
+            Types::DYN_I64, 
+            Types::DYN_U64
+        });
+    }
+
+    const Type *getType() override 
+    { 
+        return infTy; 
+    }
+
+    std::string toString() const override {
+        return "Num CONST";
+    }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
+
+
+class TInt64ConstExprNode : public TypedNode
+{
+public:
+    int64_t value;
+
+    TInt64ConstExprNode(int64_t v, antlr4::Token *tok) : TypedNode(tok)
+    {
+        value = v;
+    }
+
+    const TypeI64 *getType() override { return Types::DYN_I64; }
+
+    std::string toString() const override {
+        return "i64 CONST";
+    }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
+
+class TIntU32ConstExprNode : public TypedNode
+{
+public:
+    uint32_t value;
+
+    TIntU32ConstExprNode(uint32_t v, antlr4::Token *tok) : TypedNode(tok)
+    {
+        value = v;
+    }
+
+    const TypeU32 *getType() override { return Types::DYN_U32; }
+
+    std::string toString() const override {
+        return "u32 CONST";
+    }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
+
+class TIntU64ConstExprNode : public TypedNode
+{
+public:
+    uint64_t value;
+
+    TIntU64ConstExprNode(uint64_t v, antlr4::Token *tok) : TypedNode(tok)
+    {
+        value = v;
+    }
+
+    const TypeU64 *getType() override { return Types::DYN_U64; }
+
+    std::string toString() const override {
+        return "u64 CONST";
+    }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
+
+
+class TInt32ConstExprNode : public TypedNode
+{
+public:
+    int32_t value;
+
+    TInt32ConstExprNode(int32_t v, antlr4::Token *tok) : TypedNode(tok)
     {
         value = v;
     }
@@ -1158,29 +1445,28 @@ public:
     const TypeInt *getType() override { return Types::DYN_INT; }
 
     std::string toString() const override {
-        return "I CONST";
+        return "i32 CONST";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 /////////////////////
 
-typedef variant<TDefineEnumNode *, TDefineStructNode *, TProgramDefNode *, TLambdaConstNode *> DefinitionNode;
 
 class TCompilationUnitNode
 {
 public:
     vector<TExternNode *> externs;
-    vector<DefinitionNode> defs;
+    vector<DefinitionNode *> defs;
 
-    TCompilationUnitNode(vector<TExternNode *> e, vector<DefinitionNode> d)
+    TCompilationUnitNode(vector<TExternNode *> e, vector<DefinitionNode *> d)
     {
         externs = e;
         defs = d;
     }
 
-    std::any accept(TypedASTVisitor *a) { return a->any_visit(this); }
+    std::any accept(TypedASTVisitor & a) { return a.any_visit(*this); }
 };
 
 class AssignmentNode
@@ -1213,7 +1499,7 @@ public:
     }
 
 
-    std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TMatchStatementNode : public TypedNode
@@ -1234,7 +1520,7 @@ public:
         post = p;
     }
 
-    std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 
     const TypeUnit *getType() override
     {
@@ -1266,7 +1552,7 @@ public:
         post = p;
     }
 
-    std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 
     const TypeUnit *getType() override
     {
@@ -1292,7 +1578,7 @@ public:
     }
 
     const TypeUnit *getType() override { return Types::UNIT; }
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 
     std::string toString() const override {
         return "PROJECT NODE";
@@ -1316,7 +1602,7 @@ public:
         return "COPY NODE";
     }
 
-    virtual std::any accept(TypedASTVisitor *a) override { return a->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 };
 
 class TAsChannelNode : public TypedNode 
@@ -1345,122 +1631,38 @@ public:
 
     const Type* getType() override { return nodeType; } 
     std::string toString() const override { return "AsChannel(" + expr->toString() + ")"; } 
-    virtual std::any accept(TypedASTVisitor * a) override { return a ->any_visit(this); }
+    virtual std::any accept(TypedASTVisitor & a) override { return a.any_visit(*this); }
 };
+
+
+class CompCodeWrapper : public TypedNode
+{
+public: 
+    std::function<std::optional<Value *>()> generator; 
+
+public:
+    CompCodeWrapper(std::function<std::optional<Value *>()> gen) : TypedNode(nullptr), generator(gen)
+    {
+    }
+
+    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+
+    std::string toString() const override {
+        return "GENERATOR NODE";
+    }
+
+    virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
+};
+
 
 /**************************************************
  *
  * UTILITIES
  *
  **************************************************/
-inline bool
-endsInReturn(TypedNode *n);
-
-inline bool endsInReturn(vector<TypedNode *> n)
-{
-    if (n.size() == 0)
-        return false;
-    return endsInReturn(n.at(n.size() - 1));
-}
-
-inline bool endsInReturn(TypedNode *n)
-{
-    if (dynamic_cast<TReturnNode *>(n))
-        return true;
-    if (dynamic_cast<TExitNode *>(n))
-        return true;
-
-    if (TBlockNode *bn = dynamic_cast<TBlockNode *>(n))
-    {
-        return endsInReturn(bn->exprs);
-    }
-
-    if (TConditionalStatementNode *cn = dynamic_cast<TConditionalStatementNode *>(n))
-    {
-        if(cn->post.size())
-            return endsInReturn(cn->post);
-        
-        if(cn->falseOpt) 
-        {
-            return endsInReturn(cn->falseOpt.value()) && endsInReturn(cn->trueBlk);
-        }
-
-        return false; 
-    }
-
-    if (TMatchStatementNode *cn = dynamic_cast<TMatchStatementNode *>(n))
-    {
-        if(cn->post.size())
-            return endsInReturn(cn->post);
-        
-        for(auto branch : cn->cases)
-            if(!endsInReturn(branch.second))
-                return false; 
-        return true; 
-    }
-
-    if (TSelectStatementNode *cn = dynamic_cast<TSelectStatementNode *>(n))
-    {
-        if(cn->post.size())
-            return endsInReturn(cn->post);
-        
-        for(auto branch : cn->nodes)
-            if(!endsInReturn(branch))
-                return false; 
-        return true; 
-    }
-
-    if(TSelectAlternativeNode * cn = dynamic_cast<TSelectAlternativeNode*>(n))
-    {
-        return endsInReturn(cn->eval);
-    }
-    
-    return false;
-}
-
-inline bool
-endsInBranch(TypedNode *n);
-
-inline bool endsInBranch(vector<TypedNode *> n)
-{
-    if (n.size() == 0)
-        return false;
-    return endsInBranch(n.at(n.size() - 1));
-}
-
-inline bool endsInBranch(TypedNode *n)
-{
-    if (TBlockNode *bn = dynamic_cast<TBlockNode *>(n))
-    {
-        return endsInBranch(bn->exprs);
-    }
-
-    // FIXME: DO THESE BETTER!
-    if (TConditionalStatementNode *cn = dynamic_cast<TConditionalStatementNode *>(n))
-    {
-        return true; 
-    }
-
-    if (TMatchStatementNode *cn = dynamic_cast<TMatchStatementNode *>(n))
-    {
-        return true; 
-    }
-
-    if (TSelectStatementNode *cn = dynamic_cast<TSelectStatementNode *>(n))
-    {
-        return true; 
-    }
-
-    if (TSelectAlternativeNode *cn = dynamic_cast<TSelectAlternativeNode *>(n))
-    {
-        return endsInBranch(cn->eval);
-        // return true; 
-    }
-
-    if(TChannelCaseStatementNode * sn = dynamic_cast<TChannelCaseStatementNode*>(n))
-    {
-        return true; 
-    }
-
-    return false;
-}
+namespace TypedAST {
+    bool endsInReturn(vector<TypedNode *> n);
+    bool endsInReturn(TypedNode & n);
+    bool endsInBranch(vector<TypedNode *> n);
+    bool endsInBranch(TypedNode &n);
+};

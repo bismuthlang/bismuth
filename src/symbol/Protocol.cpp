@@ -1,5 +1,11 @@
 #include "Protocol.h"
 
+bool Protocol::isSubtype(const Protocol *other) const
+{
+    return other->isSupertypeFor(this);
+}
+
+
 /*********************************************
  *
  *  ProtocolRecv
@@ -28,6 +34,23 @@ const Protocol *ProtocolRecv::getCopy() const
     return ans;
 }
 
+bool ProtocolRecv::isSupertypeFor(const Protocol *other) const
+{
+    if(const ProtocolRecv * pOther = dynamic_cast<const ProtocolRecv *>(other))
+    {
+        return this->recvType->isSubtype(pOther->recvType);
+    }
+
+    return false;
+}
+
+const ProtocolRecv * ProtocolRecv::getCopySubst(std::map<const Type *, const Type *> & existing) const
+{
+    return new ProtocolRecv(
+        this->isInCloseable(), 
+        recvType->getCopySubst(existing)
+    );
+}
 /*********************************************
  *
  *  ProtocolSend
@@ -52,6 +75,24 @@ const Protocol *ProtocolSend::getCopy() const
     return ans;
 }
 
+bool ProtocolSend::isSupertypeFor(const Protocol *other) const
+{
+    if(const ProtocolSend * pOther = dynamic_cast<const ProtocolSend *>(other))
+    {
+        return this->sendType->isSubtype(pOther->sendType);
+    }
+
+    return false;
+}
+
+
+const ProtocolSend * ProtocolSend::getCopySubst(std::map<const Type *, const Type *> & existing) const
+{
+    return new ProtocolSend(
+        this->isInCloseable(), 
+        sendType->getCopySubst(existing)
+    );
+}
 /*********************************************
  *
  *  ProtocolWN
@@ -74,6 +115,25 @@ const Protocol *ProtocolWN::getCopy() const
     return ans;
 }
 
+bool ProtocolWN::isSupertypeFor(const Protocol *other) const
+{
+    if(const ProtocolWN * pOther = dynamic_cast<const ProtocolWN *>(other))
+    {
+        return this->proto->isSubtype(pOther->proto);
+        // return this->sendType->isSubtype(pOther->sendType);
+    }
+
+    return false;
+}
+
+const ProtocolWN * ProtocolWN::getCopySubst(std::map<const Type *, const Type *> & existing) const
+{
+    return new ProtocolWN(
+        this->isInCloseable(),
+        proto->getCopySubst(existing)
+    );
+}
+
 /*********************************************
  *
  *  ProtocolOC
@@ -93,6 +153,25 @@ const Protocol *ProtocolOC::getCopy() const
     auto ans = new ProtocolOC(this->inCloseable, this->proto->getCopy());
     ans->guardCount = this->guardCount;
     return ans;
+}
+
+bool ProtocolOC::isSupertypeFor(const Protocol *other) const
+{
+    if(const ProtocolOC * pOther = dynamic_cast<const ProtocolOC *>(other))
+    {
+        return this->proto->isSubtype(pOther->proto);
+        // return this->sendType->isSubtype(pOther->sendType);
+    }
+
+    return false;
+}
+
+const ProtocolOC * ProtocolOC::getCopySubst(std::map<const Type *, const Type *> & existing) const
+{
+    return new ProtocolOC(
+        this->isInCloseable(),
+        proto->getCopySubst(existing)
+    );
 }
 
 /*********************************************
@@ -157,6 +236,38 @@ const Protocol *ProtocolIChoice::getCopy() const
     for (auto p : this->opts)
     {
         opts.insert(p->getCopy());
+    }
+
+    auto ans = new ProtocolIChoice(this->inCloseable, opts);
+    ans->guardCount = this->guardCount;
+    return ans;
+}
+
+bool ProtocolIChoice::isSupertypeFor(const Protocol *other) const
+{
+    if(const ProtocolIChoice * pOther = dynamic_cast<const ProtocolIChoice *>(other))
+    {
+        // TODO: subtype branches properly instead of via equality 
+        if(this->opts.size() != pOther->opts.size()) return false; 
+
+        for(const ProtocolBranchOption * branch : opts)
+        {
+            if(!pOther->opts.contains(branch)) return false; 
+        }
+
+        return true; 
+    }
+
+    return false;
+}
+
+const ProtocolIChoice * ProtocolIChoice::getCopySubst(std::map<const Type *, const Type *> & existing) const
+{
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
+
+    for (auto p : this->opts)
+    {
+        opts.insert(p->getCopySubst(existing));
     }
 
     auto ans = new ProtocolIChoice(this->inCloseable, opts);
@@ -264,6 +375,38 @@ ProtocolEChoice::lookup(std::variant<const ProtocolSequence *, std::string> opt)
     }
 
     return std::nullopt; 
+}
+
+bool ProtocolEChoice::isSupertypeFor(const Protocol *other) const
+{
+    if(const ProtocolEChoice * pOther = dynamic_cast<const ProtocolEChoice *>(other))
+    {
+        // TODO: subtype branches properly instead of via equality 
+        if(this->opts.size() != pOther->opts.size()) return false; 
+
+        for(const ProtocolBranchOption * branch : opts)
+        {
+            if(!pOther->opts.contains(branch)) return false; 
+        }
+
+        return true; 
+    }
+
+    return false;
+}
+
+const ProtocolEChoice * ProtocolEChoice::getCopySubst(std::map<const Type *, const Type *> & existing) const
+{
+    std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
+
+    for (auto p : this->opts)
+    {
+        opts.insert(p->getCopySubst(existing));
+    }
+
+    auto ans = new ProtocolEChoice(this->inCloseable, opts);
+    ans->guardCount = this->guardCount;
+    return ans;
 }
 /*********************************************
  *
@@ -861,6 +1004,39 @@ void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const
     return; // true;
 }
 
+bool ProtocolSequence::isSupertypeFor(const Protocol *other) const
+{
+    if(const ProtocolSequence * pOther = dynamic_cast<const ProtocolSequence *>(other))
+    {
+        if(pOther->steps.size() != this->steps.size())
+            return false; 
+
+        for(unsigned int i = 0; i < this->steps.size(); i++)
+        {
+            if(!this->steps.at(i)->isSubtype(pOther->steps.at(i)))
+                return false;
+        }
+
+        return true;
+    }
+
+    return false;
+}
+
+const ProtocolSequence * ProtocolSequence::getCopySubst(std::map<const Type *, const Type *> & existing) const
+{
+    std::vector<const Protocol *> substSteps; 
+
+    for(auto step : this->steps)
+    {
+        substSteps.push_back(
+            step->getCopySubst(existing)
+        );
+    }
+
+    return new ProtocolSequence(this->isInCloseable(), substSteps);
+}
+
 /*********************************************
  *
  *  ProtocolClose
@@ -868,11 +1044,7 @@ void ProtocolSequence::insertSteps(vector<const Protocol *> ins) const
  * *******************************************/
 std::string ProtocolClose::as_str(DisplayMode mode) const
 {
-    // TODO: CHANGE SYMBOLS?
-    std::ostringstream description;
-    description << "Cancelable<" << proto->toString(mode) << ">";
-
-    return description.str();
+    return "Cancelable<" +  proto->toString(mode) + ">";
 }
 const Protocol *ProtocolClose::getInverse() const
 {
@@ -934,4 +1106,24 @@ bool ProtocolClose::unguard() const // FIXME: DO BETTER
     proto->unguard(); 
     return true; 
     // return steps.front()->unguard();
+}
+
+bool ProtocolClose::isSupertypeFor(const Protocol *other) const
+{
+    if(const ProtocolClose * pOther = dynamic_cast<const ProtocolClose *>(other))
+    {
+        return this->proto->isSubtype(pOther->proto);
+        // return this->sendType->isSubtype(pOther->sendType);
+    }
+
+    return false;
+}
+
+const ProtocolClose * ProtocolClose::getCopySubst(std::map<const Type *, const Type *> & existing) const
+{
+    return new ProtocolClose(
+        this->isInCloseable(), 
+        proto->getCopySubst(existing),
+        closeNumber
+    );
 }

@@ -1,18 +1,27 @@
 #include "Type.h"
 
-bool Type::isSubtype(const Type *other) const
+bool Type::isSubtype(const Type *other, InferenceMode mode) const
 {
     if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(this))
     {
         // return false;
         // return inf->isSupertype(this);
-        return inf->isSupertype(other);
+        return inf->isSupertypeFor(other, mode);
     }
 
     if(other->isLinear() && !this->isLinear()) return false;  //FIXME: VERIFY WORKS WITH TYPE INF!
 
     return other->isSupertypeFor(this);
 }
+
+
+bool Type::isNotSubtype(std::vector<const Type *> others, InferenceMode mode) const {
+    for(auto a : others)
+        if(isSubtype(a, mode))
+            return false; 
+    return true; 
+} 
+
 
 /*******************************************
  *
@@ -29,6 +38,58 @@ std::string TypeInt::toString(DisplayMode) const { return "int"; }
 llvm::IntegerType *TypeInt::getLLVMType(llvm::Module *M) const
 {
     return llvm::Type::getInt32Ty(M->getContext());
+}
+
+/*******************************************
+ *
+ * Integer (32 bit, unsigned) Type Definition
+ *
+ *******************************************/
+bool TypeU32::isSupertypeFor(const Type *other) const
+{
+    return dynamic_cast<const TypeU32 *>(other);
+}
+
+std::string TypeU32::toString(DisplayMode) const { return "u32"; }
+
+llvm::IntegerType *TypeU32::getLLVMType(llvm::Module *M) const
+{
+    return llvm::Type::getInt32Ty(M->getContext());
+}
+
+
+/*******************************************
+ *
+ * Integer (64 bit, signed) Type Definition
+ *
+ *******************************************/
+bool TypeI64::isSupertypeFor(const Type *other) const
+{
+    return dynamic_cast<const TypeI64 *>(other);
+}
+
+std::string TypeI64::toString(DisplayMode) const { return "i64"; }
+
+llvm::IntegerType *TypeI64::getLLVMType(llvm::Module *M) const
+{
+    return llvm::Type::getInt64Ty(M->getContext());
+}
+
+/*******************************************
+ *
+ * Integer (64 bit, unsigned) Type Definition
+ *
+ *******************************************/
+bool TypeU64::isSupertypeFor(const Type *other) const
+{
+    return dynamic_cast<const TypeU64 *>(other);
+}
+
+std::string TypeU64::toString(DisplayMode) const { return "u64"; }
+
+llvm::IntegerType *TypeU64::getLLVMType(llvm::Module *M) const
+{
+    return llvm::Type::getInt64Ty(M->getContext());
 }
 
 
@@ -152,7 +213,7 @@ std::string TypeArray::toString(DisplayMode mode) const
 
 const Type *TypeArray::getValueType() const { return valueType; }
 
-int TypeArray::getLength() const { return length; }
+uint32_t TypeArray::getLength() const { return length; }
 
 llvm::ArrayType *TypeArray::getLLVMType(llvm::Module *M) const
 {
@@ -169,7 +230,7 @@ bool TypeArray::isSupertypeFor(const Type *other) const
 {
     // An array can only be a supertype of another array
     if (const TypeArray *p = dynamic_cast<const TypeArray *>(other))
-    {
+{
         /*
             * If the other array's value type is a subtype of the current
             * array's type AND their lengths match, then we can consider
@@ -181,7 +242,89 @@ bool TypeArray::isSupertypeFor(const Type *other) const
     return false;
 }
 
+const Type * TypeArray::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
 
+    
+    TypeArray * ans = new TypeArray(nullptr, length);
+
+    existing.insert({this, ans});
+
+    ans->valueType = this->valueType->getCopySubst(existing);
+
+    return ans; 
+}
+
+/*******************************************
+ *
+ * Dynamic-Length Array Type Definition
+ *
+ *******************************************/
+
+std::string TypeDynArray::toString(DisplayMode mode=C_STYLE) const
+{
+    return valueType->toString(mode) + "[]";
+}
+
+const Type *TypeDynArray::getValueType() const { return valueType; }
+
+llvm::StructType *TypeDynArray::getLLVMType(llvm::Module *M) const
+{
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+    if (ty)
+        return ty;
+
+    ty = llvm::StructType::create(M->getContext(), toString());
+
+    std::vector<llvm::Type *> typeVec = {
+        valueType->getLLVMType(M)->getPointerTo(), // Pointer
+        llvm::Type::getInt32Ty(M->getContext()),   // Length
+        llvm::Type::getInt32Ty(M->getContext())    // Capacity
+    };
+
+
+    llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
+    ty->setBody(ref); // Done like this to enable recursive types
+
+    return ty;
+}
+
+// FIXME: VERIFY, THIS PROBS DOENST WORK BC WILL HAVE TO COPY OVER THE MALLOCED DATA!!!
+bool TypeDynArray::requiresDeepCopy() const { return valueType->requiresDeepCopy(); }
+
+const TypeDynArray * TypeDynArray::getCopy() const { return this; };
+
+bool TypeDynArray::isSupertypeFor(const Type *other) const
+{
+    // An array can only be a supertype of another array
+    if (const TypeDynArray *p = dynamic_cast<const TypeDynArray *>(other))
+    {
+        /*
+            * If the other array's value type is a subtype of the current
+            * array's type AND their lengths match, then we can consider
+            * this to be a supertype of the other array.
+            */
+        return p->valueType->isSubtype(valueType);
+    }
+    // TODO: allow unsized arrays to become sized! (I think you mean the opposite!)
+
+    return false;
+}
+
+const Type * TypeDynArray::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    
+    TypeDynArray * ans = new TypeDynArray(nullptr);
+
+    existing.insert({this, ans});
+
+    ans->valueType = this->valueType->getCopySubst(existing);
+
+    return ans; 
+}
 
 /*******************************************
  *
@@ -208,13 +351,18 @@ std::string TypeChannel::toString(DisplayMode mode) const
 
 llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
 {
-    // return llvm::Type::getInt32Ty(M->getContext());
     // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), "_Channel");
+    llvm::StructType *ty = llvm::StructType::getTypeByName(
+        M->getContext(),
+        "_Channel"
+    );
+
     if (ty)
         return ty->getPointerTo();
 
-    return llvm::StructType::create(M->getContext(), "_Channel")->getPointerTo();
+    return llvm::StructType::create(
+        M->getContext(),
+        "_Channel")->getPointerTo();
 }
 
 // Note rhetoric of how we could group each type by fn. ie keep the deep copies together
@@ -272,24 +420,7 @@ bool TypeChannel::isSupertypeFor(const Type *other) const
 
     if (const TypeChannel *p = dynamic_cast<const TypeChannel *>(other))
     {
-        // return p->isSubtype(protocol);
-        return toString(C_STYLE) == other->toString(C_STYLE); // FIXME: DO BETTER
-    //     // Makes sure that both functions have the same number of parameters
-    //     if (p->paramTypes.size() != this->paramTypes.size())
-    //         return false;
-
-    //     // Makes sure both functions have the same variadic status
-    //     if (this->variadic != p->variadic)
-    //         return false;
-
-    //     // Checks that the parameters of this function are all subtypes of the other
-    //     for (unsigned int i = 0; i < this->paramTypes.size(); i++)
-    //     {
-    //         if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
-    //             return false;
-    //     }
-    //     // Makes sure that the return type of this function is a subtype of the other
-    //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
+        return this->protocol->isSubtype(p->protocol);
     }
     return false;
 }
@@ -301,10 +432,7 @@ bool TypeChannel::isSupertypeFor(const Type *other) const
  *******************************************/
 std::string TypeBox::toString(DisplayMode mode) const
 {
-    std::ostringstream description;
-    description << "Box<" << innerType->toString(mode) << ">"; // TODO: remove ostringstream?
-
-    return description.str();
+    return "Box<" + innerType->toString(mode) + ">";
 }
 
 const Type *TypeBox::getInnerType() const { return innerType; }
@@ -328,6 +456,17 @@ bool TypeBox::isSupertypeFor(const Type *other) const
 }
 
 
+const Type * TypeBox::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    TypeBox * ans = new TypeBox(nullptr);
+    existing.insert({this, ans});
+    ans->innerType = this->innerType->getCopySubst(existing);
+
+    return ans; 
+}
+
 /*******************************************
  *
  * Program Type Definition
@@ -345,9 +484,11 @@ bool TypeProgram::setProtocol(const ProtocolSequence * p) const
     return true;
 }
 
-// FIXME: should this and function return the actual name of the type, not just the representation (like what happens with structs and such)
-// SHould also greatly improve this
-std::string TypeProgram::toString(DisplayMode mode) const
+
+
+// FIXME: SHould also greatly improve these two naming functions for programs
+
+std::string TypeProgram::getTypeRepresentation(DisplayMode mode) const 
 {
     std::ostringstream description;
     description << "PROGRAM : " << (protocol ? protocol->toString(mode) : "PARTIAL DEFINITION");
@@ -379,16 +520,16 @@ llvm::PointerType *TypeProgram::getLLVMType(llvm::Module *M) const
 
 bool TypeProgram::requiresDeepCopy() const { return false; }
 
-std::optional<std::string> TypeProgram::getLLVMName() const { return name; }
+// std::optional<std::string> TypeProgram::getLLVMName() const { return name; }
 
-bool TypeProgram::setName(std::string n) const
-{
-    if (name)
-        return false;
-    TypeProgram *u_this = const_cast<TypeProgram *>(this);
-    u_this->name = n;
-    return true;
-}
+// bool TypeProgram::setName(std::string n) const
+// {
+//     if (name)
+//         return false;
+//     TypeProgram *u_this = const_cast<TypeProgram *>(this);
+//     u_this->name = n;
+//     return true;
+// }
 
 bool TypeProgram::isDefined() const { return defined; }
 
@@ -402,32 +543,52 @@ const TypeProgram * TypeProgram::getCopy() const { return this; };
 
 bool TypeProgram::isSupertypeFor(const Type *other) const
 {
-    // // Checks that the other type is also a function
-    // if (const TypeFunc *p = dynamic_cast<const TypeFunc *>(other))
-    // {
-    //     // Makes sure that both functions have the same number of parameters
-    //     if (p->paramTypes.size() != this->paramTypes.size())
-    //         return false;
-
-    //     // Makes sure both functions have the same variadic status
-    //     if (this->variadic != p->variadic)
-    //         return false;
-
-    //     // Checks that the parameters of this function are all subtypes of the other
-    //     for (unsigned int i = 0; i < this->paramTypes.size(); i++)
-    //     {
-    //         if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
-    //             return false;
-    //     }
-    //     // Makes sure that the return type of this function is a subtype of the other
-    //     return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeBot *>(this->retType) && dynamic_cast<const TypeBot *>(p->retType));
-    // }
     if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
     {
-        return toString(C_STYLE) == other->toString(C_STYLE); // FIXME: DO BETTER
-        // return protocol->isSubtype(p->protocol);
+        if(this->hasName() && p->hasName())
+            return this->getIdentifier().value()->getFullyQualifiedName() == p->getIdentifier().value()->getFullyQualifiedName();
+        
+        if(this->hasName() && !p->hasName()) return false; 
+
+        return this->protocol->isSubtype(p->protocol);
     }
     return false;
+}
+
+const Type * TypeProgram::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    
+    TypeProgram * ans = new TypeProgram();
+    // Needed to make nested generics work :D
+    {
+        ans->setIdentifier(this->getIdentifier());
+        // auto m = this->getMeta(); 
+        // if(m)
+        //     ans->setMeta(m.value());
+    }
+
+    existing.insert({this, ans});
+
+    ans->setProtocol(
+        protocol->getCopySubst(existing)
+    );
+
+    // FIXME: NEED TO IMPL THIS!!! -> but it seems to work? though we don't have generics for programs
+
+    // TODO: use ->define() func!
+    // for(auto ty : this->paramTypes)
+    //     ans->paramTypes.push_back(
+    //         ty->getCopySubst(existing)
+    //     );
+
+    // ans->retType = retType->getCopySubst(existing);
+
+    // ans->defined = true; 
+
+
+    return ans; 
 }
 
 /*******************************************
@@ -450,8 +611,9 @@ bool TypeFunc::setInvoke(std::vector<const Type *> p, const Type *r, bool v) con
 }
 
 // PLAN: should improve tostring, make it match syntax + math
-std::string TypeFunc::toString(DisplayMode mode) const
+std::string TypeFunc::getTypeRepresentation(DisplayMode mode) const 
 {
+    if(!isDefined()) return "Undefined Function"; // FIXME: ADD SUCH CHECKS EVERYWHERE!
     std::ostringstream description;
 
     if (paramTypes.size() == 0)
@@ -470,11 +632,13 @@ std::string TypeFunc::toString(DisplayMode mode) const
     if (variadic)
         description << ", ... ";
 
-    description << "-> ";
+    description << " -> ";
 
     description << retType->toString(mode);
     return description.str();
 }
+
+
 
 llvm::FunctionType *TypeFunc::getLLVMFunctionType(llvm::Module *M) const
 {
@@ -503,16 +667,15 @@ llvm::PointerType *TypeFunc::getLLVMType(llvm::Module *M) const
 
 bool TypeFunc::requiresDeepCopy() const { return false; }
 
-std::optional<std::string> TypeFunc::getLLVMName() const { return name; }
-bool TypeFunc::setName(std::string n) const
-{
-    if (name)
-        return false;
-    TypeFunc *u_this = const_cast<TypeFunc *>(this);
-    u_this->name = n;
-    // name = n;
-    return true;
-}
+// bool TypeFunc::setName(std::string n) const
+// {
+//     if (name)
+//         return false;
+//     TypeFunc *u_this = const_cast<TypeFunc *>(this);
+//     u_this->name = n;
+//     // name = n;
+//     return true;
+// }
 
 std::vector<const Type *> TypeFunc::getParamTypes() const { return paramTypes; }
 
@@ -552,6 +715,35 @@ bool TypeFunc::isSupertypeFor(const Type *other) const
 }
 
 
+const Type * TypeFunc::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    
+    TypeFunc * ans = new TypeFunc();
+    {
+        ans->setIdentifier(this->getIdentifier());
+        // auto m = this->getMeta(); 
+        // if(m)
+        //     ans->setMeta(m.value());
+    }
+
+    existing.insert({this, ans});
+
+    // TODO: use ->define() func!
+    for(auto ty : this->paramTypes)
+        ans->paramTypes.push_back(
+            ty->getCopySubst(existing)
+        );
+
+    ans->retType = retType->getCopySubst(existing);
+
+    ans->defined = true; 
+
+    return ans; 
+}
+
+
 /*******************************************
  *
  * Type used for Type Inference
@@ -574,7 +766,8 @@ std::string TypeInfer::toString(DisplayMode mode) const
 {
     if (hasBeenInferred())
     {
-        return "{VAR/" + valueType->value()->toString(mode) + "}";
+        // return "{VAR/" + valueType->value()->toString(mode) + "}";
+        return valueType->value()->toString(mode); 
     }
     return "VAR";
 }
@@ -593,7 +786,7 @@ bool TypeInfer::requiresDeepCopy() const { return valueType->value()->requiresDe
 
 const TypeInfer * TypeInfer::getCopy() const { return this; };
 
-bool TypeInfer::setValue(const Type *other) const
+bool TypeInfer::setValue(const Type *other, InferenceMode mode) const
 {
     // Prevent us from being sent another TypeInfer. There's no reason for this to happen
     // as it should have been added as a dependency (and doing this would break things)
@@ -606,6 +799,34 @@ bool TypeInfer::setValue(const Type *other) const
     {
         return other->isSubtype(valueType->value()); // NOTE: CONDITION INVERSED BECAUSE WE CALL IT INVERSED IN SYMBOL.CPP!
     }
+    if(possibleTypes.size())
+    {
+        // Note: this process cannot be recursive as 
+        // we'd have to insert a match on the sum.
+        // Ie. we allow A, (B + C) to be assigned to (A + (B + C)) 
+        // but not B, C.
+        if(!possibleTypes.contains(other))
+        {
+            if(const TypeSum * sum = dynamic_cast<const TypeSum*>(other))
+            {
+                for(const Type * t : sum->getCases())
+                {
+                    if(possibleTypes.contains(t))
+                    {
+                        other = t; 
+
+                        if(mode == InferenceMode::QUERY) // TODO: is this needed given we propogate mode in set value?
+                            return true; 
+                        goto valid; 
+                    }
+                }
+            }
+            return false; 
+        }
+    }
+valid: 
+    if(mode != InferenceMode::SET)
+        return true; 
 
     // Set our valueType to be the provided type to see if anything breaks...
     TypeInfer *u_this = const_cast<TypeInfer *>(this);
@@ -616,7 +837,7 @@ bool TypeInfer::setValue(const Type *other) const
     bool valid = true;
     for (const TypeInfer *ty : infTypes)
     {
-        if (!ty->setValue(other))
+        if (!ty->setValue(other, mode))
         {
             valid = false;
         }
@@ -626,14 +847,19 @@ bool TypeInfer::setValue(const Type *other) const
     return valid;
 }
 
-bool TypeInfer::isSupertypeFor(const Type *other) const
+bool TypeInfer::isSupertypeFor(const Type *other) const 
+{
+    return this->isSupertypeFor(other, InferenceMode::SET);
+}
+
+bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
 {
     // If we already have an inferred type, we can simply
     // check if that type is a subtype of other.
     if (valueType->has_value())
-        // return other->isSubtype(valueType->value());
+    {
         return valueType->value()->isSubtype(other);
-
+    }
     /*
         * If the other type is also an inference type...
         */
@@ -642,7 +868,12 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
         // If the other inference type has a value determined, try using that
         if (oInf->valueType->has_value())
         {
-            return setValue(oInf->valueType->value());
+            // If we fail the update, try to unify so that way 
+            // we can get a type for this. After all, the program
+            // is going to error anyways. We won't want to show this as a var. 
+            bool ans = setValue(oInf->valueType->value(), mode);
+            if(!ans && mode == InferenceMode::SET) unify();
+            return ans; 
         }
 
         // Otherwise, add the types to be dependencies of each other, and return true.
@@ -651,13 +882,46 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
 
         TypeInfer *moth = const_cast<TypeInfer *>(oInf);
         moth->infTypes.push_back(this);
+
+        // TODO: handle this better so that way we can compare and unify across
+        // the two when both are non-empty (DO AN INTERSECT!)
+        if(moth->possibleTypes.empty() && !this->possibleTypes.empty())
+        {
+            moth->possibleTypes = this->possibleTypes; 
+        }
         return true;
     }
 
     // Try to update this type's inferred value with the other type
-    return setValue(other);
+    
+    bool ans = setValue(other, mode); 
+    // If we fail the update, try to unify so that way 
+    // we can get a type for this. After all, the program
+    // is going to error anyways. We won't want to show this as a var. 
+    if(!ans && mode == InferenceMode::SET) unify(); 
+
+    return ans; 
 }
 
+bool TypeInfer::unify() const 
+{
+    if(this->hasBeenInferred()) return true;
+    if(possibleTypes.size() != 0)
+    {
+        return this->isSupertypeFor(*(possibleTypes.begin()));
+    }
+
+    for (const TypeInfer *ty : infTypes)
+    {
+        // ty->unify(); 
+        if(ty->possibleTypes.size() != 0)
+        {
+            return this->isSupertypeFor(*(ty->possibleTypes.begin()));
+        }
+    }
+
+    return this->hasBeenInferred(); 
+}
 
 /*******************************************
  *
@@ -683,10 +947,31 @@ bool TypeSum::isDefined() const { return defined; }
 
 bool TypeSum::contains(const Type *ty) const
 {
+    if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(ty))
+    {
+        if(!infType->hasBeenInferred())
+            return false; 
+        // {
+        //     for(const Type * t : this->cases)
+        //     {
+        //         if(t->isSubtype(infType))
+        //             return true; 
+        //     }
+        //     return false;
+        // } 
+
+        return this->contains(infType->getValueType().value());
+    }
     return cases.count(ty);
 }
 
-std::set<const Type *, TypeCompare> TypeSum::getCases() const { return cases; }
+std::set<const Type *, TypeCompare> TypeSum::getCases() const { 
+    // Hacky thing needed to refresh sort order when generics are used
+    std::set<const Type *, TypeCompare> resorted; 
+    for(auto a : this->cases)
+        resorted.insert(a); 
+    return resorted; 
+}
 
 unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
 {
@@ -703,12 +988,12 @@ unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
     return (unsigned int)0;
 }
 
-// TODO: Improve tostring to make it match syntax?
-std::string TypeSum::toString(DisplayMode mode) const
-{
-    if (name)
-        return name.value();
 
+
+// TODO: Improve tostring to make it match syntax?
+
+std::string TypeSum::getTypeRepresentation(DisplayMode mode) const
+{
     std::ostringstream description;
 
     description << "(";
@@ -716,7 +1001,7 @@ std::string TypeSum::toString(DisplayMode mode) const
     unsigned int ctr = 0;
     unsigned int size = cases.size();
 
-    for (const Type *el : cases)
+    for (const Type *el : getCases())
     {
         description << el->toString(mode);
         if (++ctr != size)
@@ -727,9 +1012,13 @@ std::string TypeSum::toString(DisplayMode mode) const
     return description.str();
 }
 
+
 llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
 {
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString(C_STYLE));
+    // FIXME: I THINK WE HAVE TO CHANGE TOSTRING BC IF WE DONT, THEN canApplyTemplate SHOULD BREAK AS IT WONT USE FQNS! 
+    std::string name =  this->hasName() ? this->getIdentifier().value()->getFullyQualifiedName() :  getTypeRepresentation(DisplayMode::C_STYLE);
+
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), name);
     if (ty)
         return ty;
 
@@ -755,9 +1044,10 @@ llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
         }
     }
 
+    // FIXME: WHY DO WE DO THIS TWICE?
     // Probably not needed in struct, but might be. 
     // Needed in the case that we generate the type while generating one of the subtypes...
-    ty = llvm::StructType::getTypeByName(M->getContext(), toString(C_STYLE));
+    ty = llvm::StructType::getTypeByName(M->getContext(), name);
     if (ty)
         return ty;
 
@@ -769,7 +1059,7 @@ llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
     std::vector<llvm::Type *> typeVec = {llvm::Type::getInt32Ty(M->getContext()), arr};
 
     llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-    auto ans = llvm::StructType::create(M->getContext(), ref, toString(C_STYLE));
+    auto ans = llvm::StructType::create(M->getContext(), ref, name);
     
     return ans;
 }
@@ -818,6 +1108,31 @@ bool TypeSum::isSupertypeFor(const Type *other) const
     return false;
 }
 
+const Type * TypeSum::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    std::set<const Type *, TypeCompare> cases = {};
+    // TODO: refactor getting a stub into a method like freshStub() ? 
+    TypeSum * ans = new TypeSum(cases, this->getIdentifier());
+    {
+        ans->setIdentifier(this->getIdentifier());
+    }
+
+    existing.insert({this, ans});
+
+    for(auto ty : this->cases)
+        cases.insert(
+            ty->getCopySubst(existing)
+        );
+
+    ans->cases = cases; 
+
+    return ans; 
+}
+
+
+
 
 /*******************************************
  *
@@ -853,11 +1168,9 @@ bool TypeStruct::isDefined() const { return defined; }
 vector<pair<std::string, const Type *>> TypeStruct::getElements() const { return elements.getElements(); }
 optional<unsigned int> TypeStruct::getElementIndex(std::string k) const { return elements.getIndex(k); }
 
-std::string TypeStruct::toString(DisplayMode mode=C_STYLE) const
-{
-    if (name)
-        return name.value();
 
+std::string TypeStruct::getTypeRepresentation(DisplayMode mode) const
+{
     std::ostringstream description;
 
     description << "(";
@@ -878,11 +1191,14 @@ std::string TypeStruct::toString(DisplayMode mode=C_STYLE) const
 
 llvm::StructType *TypeStruct::getLLVMType(llvm::Module *M) const
 {
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
+    // PLAN: have to use this vs tostring bc tostring isnt fqn. Maybe change tostring to fqn?
+    std::string name =  this->hasName() ? this->getIdentifier().value()->getFullyQualifiedName() :  getTypeRepresentation(DisplayMode::C_STYLE);
+
+    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), name);
     if (ty)
         return ty;
 
-    ty = llvm::StructType::create(M->getContext(), toString());
+    ty = llvm::StructType::create(M->getContext(), name);
 
     std::vector<llvm::Type *> typeVec;
 
@@ -910,6 +1226,322 @@ const TypeStruct * TypeStruct::getCopy() const { return this; };
 
 bool TypeStruct::isSupertypeFor(const Type *other) const
 {
-    // PLAN: allow for extern/import structs
-    return this == other; // FIXME: DO BETTER
+    // FIXME: Do better implementation for  TypeStruct::isSupertypeFor
+    if(const TypeStruct * oStruct = dynamic_cast<const TypeStruct *>(other))
+    {
+        if(this->hasName() == oStruct->hasName())
+        {
+            if(this->hasName())
+                return this->getIdentifier().value()->getFullyQualifiedName() == oStruct->getIdentifier().value()->getFullyQualifiedName();
+            return this == other; 
+        }
+    }
+    return false;
+}
+
+const Type * TypeStruct::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    LinkedMap<std::string, const Type *> elements;
+    TypeStruct * ans = new TypeStruct(elements, this->getIdentifier()); //this->getName());
+    {
+        // ans->setIdentifier(this->getIdentifier());
+
+        // auto m = this->getMeta(); 
+        // if(m)
+        //     ans->setMeta(m.value());
+    }
+
+    existing.insert({this, ans});
+
+    for(auto ty : this->getElements())
+    {
+        elements.insert(
+            {ty.first, ty.second->getCopySubst(existing)}
+        );
+    }
+
+    ans->elements = elements; 
+
+    return ans; 
+}
+
+
+/*******************************************
+ *
+ * Type used for Generics Inference
+ *
+ *******************************************/
+
+bool TypeTemplate::define(std::optional<TemplateInfo> i, const NameableType * vt) const
+{
+    if(defined) return false; 
+
+    TypeTemplate *u_this = const_cast<TypeTemplate *>(this);
+    u_this->defined = true; 
+    u_this->info = i; 
+    u_this->valueType = vt; 
+
+    // Needed to ensure things like recursive structs get their name set (and thus preventing infinite recursion & crashes if their names are accessed)
+    if(this->getIdentifier())
+    {
+        vt->setIdentifier(this->getIdentifier().value());
+    }
+
+    return true; 
+}
+
+void TypeTemplate::setIdentifier(std::optional<Identifier *> nxt) const {
+    identifier = nxt;
+
+    // propagate name info to subtype for structs and enums to work
+    if(valueType)
+        valueType.value()->setIdentifier(nxt);
+}
+
+std::optional<const NameableType*> TypeTemplate::getValueType() const { return valueType; }
+
+std::optional<const NameableType*> TypeTemplate::canApplyTemplate(std::vector<const Type *> subs) const {
+
+    auto it = registeredTemplates.find(subs);
+
+    if(it != registeredTemplates.end())
+        return it->second; 
+    if(!this->getTemplateInfo()) // || this->getTemplateInfo().value().templates.size() == 0)
+    {
+        
+        if(subs.size() != 0)
+            return std::nullopt; // Cannot apply template to untemplated type
+
+        return this->getValueType(); // TODO: will need to change the name of the type... 
+    }
+
+    std::vector<std::pair<std::string, TypeGeneric *>> ids = this->getTemplateInfo().value().templates;
+
+    if(ids.size() != subs.size())
+    {
+        return std::nullopt; // Wrong number of template params
+    }
+
+    std::map<const Type *, const Type *> subst; 
+    // May have to change later when we get in session types!
+
+    {
+        bool areEqual = true; 
+        for(unsigned int i = 0; i < ids.size(); i++)
+        {
+            if(ids.at(i).second != subs.at(i))
+            {
+                areEqual = false; 
+                break; 
+            }
+
+            // if(dynamic_cast<const TypeGeneric *>(subs.at(i)))
+            // {
+            //     subs.at(i) = ids.at(i).second; 
+            // }
+        }
+        if(areEqual)
+            return this->getValueType(); 
+    }
+
+    for(unsigned int i = 0; i < ids.size(); i++)
+    {
+        std::pair<std::string, TypeGeneric *> id = ids.at(i); 
+        TypeGeneric * gen = id.second; 
+
+
+
+        subst.insert({gen, subs.at(i)});
+        if(gen != subs.at(i))
+            gen->setActingType(subs.at(i));
+    } 
+
+    assert(valueType.has_value()); // FIXME: Do better, use errors instead of asserts?
+
+    const NameableType * ans = dynamic_cast<const NameableType *>(valueType.value()->getCopySubst(subst));
+    auto metaFn =  [subs](){
+        std::ostringstream description;
+        // std::optional<TemplateInfo> infoOpt = this->getTemplateInfo(); 
+
+        description << "<";
+        // if(infoOpt)
+        // {
+            unsigned int ctr = 0;
+            unsigned int size = subs.size(); // infoOpt.value().templates.size();
+            for (auto t : subs)
+            {
+                description << t->toString(C_STYLE);
+                if (++ctr != size)
+                    description << ", ";
+            }
+
+        // }
+
+        description << ">";
+        return description.str(); 
+    };
+
+
+    std::string meta = this->templateString(DisplayMode::C_STYLE); 
+
+    if(this->getIdentifier())
+    {
+        Identifier * templateId = this->getIdentifier().value(); 
+        Identifier * copyId = new Identifier(*templateId);
+        ans->setIdentifier(copyId);
+
+        templateId->meta = [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };
+        ans->getIdentifier().value()->meta = metaFn; // [this](){ return this->templateString(DisplayMode::C_STYLE); }; //[meta](){ return meta; };;
+    }
+
+    registeredTemplates.insert({subs, ans}); 
+
+    return ans;
+}
+
+std::string TypeTemplate::templateString(DisplayMode mode) const
+{
+    std::ostringstream description;
+    std::optional<TemplateInfo> infoOpt = this->getTemplateInfo(); 
+
+    description << "<";
+    if(infoOpt)
+    {
+        unsigned int ctr = 0;
+        unsigned int size = infoOpt.value().templates.size();
+        for (auto t : infoOpt.value().templates)
+        {
+            description << t.second->toString(mode);
+            if (++ctr != size)
+                description << ", ";
+        }
+
+    }
+
+    description << ">";
+
+    return description.str(); 
+}
+
+std::string TypeTemplate::getTypeRepresentation(DisplayMode mode) const 
+{
+    // FIXME: DO BETTER!
+    // FIXME: BAD OPTIONAL ACCESS SHOULDNT BE A PROBLEM, BUT VERIFY!
+    return this->templateString(mode)  + 
+        (this->isDefined() ? this->valueType.value()->toString(mode) : "?"); 
+
+    // return description.str();
+}
+
+llvm::Type *TypeTemplate::getLLVMType(llvm::Module *M) const 
+{
+    return llvm::Type::getVoidTy(M->getContext()); // TODO: DO BETTER!
+}
+
+bool TypeTemplate::requiresDeepCopy() const 
+{
+    if(valueType)
+        return valueType.value()->requiresDeepCopy(); 
+    
+    std::cerr << "Attempted to determine if a template needs a deep copy, but it was given no value type!" << std::endl; 
+    return false; 
+    // return valueType->requiresDeepCopy(); 
+}
+
+const TypeTemplate * TypeTemplate::getCopy() const
+{
+    return this; 
+}
+
+bool TypeTemplate::isSupertypeFor(const Type *other) const
+{
+    // FIXME: DO BETTER!
+    if (const TypeTemplate *p = dynamic_cast<const TypeTemplate *>(other))
+    {
+        return toString(C_STYLE) == other->toString(C_STYLE); 
+    }
+    return false; 
+}
+
+const Type * TypeTemplate::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    // FIXME: WRONG IMPL -> Seems to be working though? -> This should never get called 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+/*
+    TypeTemplate * ans = new TypeTemplate(); 
+    existing.insert({this, ans});
+
+
+
+    // std::vector<std::pair<std::string, TypeGeneric *>> t;
+
+    // for(auto a : this->getTemplateInfo().value().templates)
+    // {
+    //     t.push_back({
+    //         a.first, 
+    //         const_cast<TypeGeneric *>(dynamic_cast<const TypeGeneric *>(a.second->getCopySubst(existing)))
+    //     });
+    // }
+
+
+    // FIXME: DO BETTR PROBS CANT USE  getTemplateInfo!!
+    ans->define(this->getTemplateInfo().value(),//TemplateInfo(t), 
+                dynamic_cast<const NameableType *>(this->valueType->getCopySubst(existing)));
+
+
+
+*/
+    return this; 
+}
+
+
+/*******************************************
+ *
+ * Type used for files/namespaces/modules  
+ *
+ *******************************************/
+
+std::string TypeModule::getTypeRepresentation(DisplayMode mode) const 
+{
+    // FIXME: Implement type representation for Modules!
+    return "Module";
+}
+
+
+// This shouldn't ever show up in codegen
+llvm::Type *TypeModule::getLLVMType(llvm::Module *M) const
+{
+    assert(false && "Attempted to get LLVM type for module"); 
+    return nullptr; 
+}
+
+// Should never be copied anyhow 
+bool TypeModule::requiresDeepCopy() const { return false; }
+
+const TypeModule * TypeModule::getCopy() const { return this; }
+
+const Type * TypeModule::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    return this; // FIXME: Implement getCopySubst for module! Shouldn't be needed yet though....
+}
+
+bool TypeModule::isSupertypeFor(const Type * other) const 
+{
+    return this == other; 
+}
+
+
+bool TypeCompare::operator()(const Type *a, const Type *b) const
+{
+    // Only needed b/c of int types giving 
+    // type infer due to trying to allow for 
+    // inference of specific int type... 
+    // if(const TypeInfer * infA = dynamic_cast<const TypeInfer *>(a))
+    // {
+    //     infA->isSubtype(b);
+    // }
+    if(dynamic_cast<const TypeInfer *>(a)) b->isSubtype(a, InferenceMode::QUERY); 
+    return a->toString(C_STYLE) < b->toString(C_STYLE);
 }

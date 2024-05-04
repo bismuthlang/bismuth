@@ -1,0 +1,34 @@
+
+define struct Empty {}
+
+# So on the template, we need to check for a specific given template combination first, and then run things!
+# Otherwise, its recursive!
+define struct LinkedList<T> {
+    (Empty + Box<LinkedList<T>>) next;
+    T value; 
+    # Box<LinkedList<T>> next; 
+    (Empty + LinkedList<str> + T) sumty; # Note: this is an important test. Need to ensure that the parameters are the correct type
+    (Empty + LinkedList<str>) sumty2;
+}
+
+define program :: c : Channel<-int> {
+
+    # LL2 Is used to ensure that name mangaling applies to nested structs
+    define struct LL2<V> {
+        int a; 
+        (Empty + Box<LL2<V>>) next;
+    }
+
+    LinkedList<int> ll;
+    LinkedList<boolean> ll2;
+
+    LL2<int> ll3; 
+
+    /*
+    := LinkedList<int>::init(
+        Empty::init(), 
+        -1
+    );
+    */
+    c.send(0); 
+}

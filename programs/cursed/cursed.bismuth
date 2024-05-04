@@ -1,0 +1,227 @@
+extern func printf(str s, ...) : int; # Import printf
+
+define func more_cursed(int i) : Unit {
+    var r0 := i & ~3; #0b11;       // Get the number w/o the last 2 bits
+    var r1 := r0 | (r0 >> 1);  #// Group each 2 bits 
+    var r2 := r1 | (r1 >> 2);  #// Groups of 4 bits
+    var r3 := r2 | (r2 >> 4);  #// Groups of 8 bits
+    var r4 := r3 | (r3 >> 8);  #// Groups of 16 bits
+    var r5 := r4 | (r4 >> 16); #// Groups of 32 bits
+    var r6 := (r5 & 0b1) << 2; #// Isolate the last bit, and shift it such that the number is 4
+    
+    # // r5 will be all 1s IFF i > 3. So ~r5 & i ensures we combine r6 with i such that: 
+    # // r7 = i > 3 ? 4 : i; 
+    var r7 := r6 | (~r5 & i);  
+
+    var arr := [
+       (int i) : Unit { printf("Never");   return; },
+       (int i) : Unit { printf("Once");    return; },
+       (int i) : Unit { printf("Twice");   return; },
+       (int i) : Unit { printf("Thrice");  return; },
+       (int i) : Unit { printf("%uth", i); return; }
+    ];
+
+    match arr[r7]
+        | Unit u => printf("IMPOSSIBLE");
+        | (int -> Unit) fn => fn(i); 
+    return; 
+}
+
+define func less_cursed(int i) : Unit {
+    var idx := i;
+    if i > 3 {
+        idx := 4
+    }
+
+    var arr := [
+       (int i) : Unit { printf("Never");   return; },
+       (int i) : Unit { printf("Once");    return; },
+       (int i) : Unit { printf("Twice");   return; },
+       (int i) : Unit { printf("Thrice");  return; },
+       (int i) : Unit { printf("%uth", i); return; }
+    ];
+
+    match arr[idx]
+        | Unit u => printf("IMPOSSIBLE");
+        | (int -> Unit) fn => fn(i); 
+    return; 
+}
+
+# TODO: ALLOW ["Never", "Once", "Twice", "Thrice"][i]
+define func sel_array(int i) : Unit {
+    var arr := ["Never", "Once", "Twice", "Thrice"];
+    select {
+        i < 4: match arr[i] 
+                | str s => printf(s); 
+                | Unit u => printf("IMPOSSIBLE");
+        true: printf("%uth", i);
+    }
+
+    return; 
+}
+
+# Define the main program in the system. 
+# - c is the name of the channel used by the program 
+# - -int indicates that we have to send an int over the channel.
+define program :: c : Channel<-int> {
+    printf("Hello, World!\n");
+    c.send(0)
+
+    for(int i := 0; i < 500000; i := i + 1) {
+        /*
+        500000
+        real    =   [1.496s, 1.245s, 1.235s, 1.243s]
+        user    =   [0.319s, 0.265s, 0.190s, 0.210s]
+        sys     =   [0.859s, 0.668s, 0.777s, 0.720s]
+
+        500000 % 5
+        real    =   [1.057s, 1.071s, 1.116s, 1.022s]
+        user    =   [0.212s, 0.229s, 0.172s, 0.191s]
+        sys     =   [0.685s, 0.668s, 0.730s, 0.735s]
+        */
+        
+        # less_cursed(i % 5);
+
+        /*
+        500000
+        real    =   [1.200s, 1.201s, 1.258s, 1.312s]
+        user    =   [0.233s, 0.231s, 0.229s, 0.260s]
+        sys     =   [0.768s, 0.727s, 0.778s, 0.676s]
+
+        500000 % 5
+        real    =   [1.076s, 1.054s, 1.075s, 1.126s]
+        user    =   [0.212s, 0.221s, 0.191s, 0.265s]
+        sys     =   [0.711s, 0.702s, 0.760s, 0.675s]
+        */
+
+        # more_cursed(i % 5); 
+
+        /*
+        500000
+        real    =   [0.042s, 0.044s, 0.016s, 0.041s]
+        user    =   [0.034s, 0.035s, 0.016s, 0.037s]
+        sys     =   [0.008s, 0.008s, 0.000s, 0.004s]
+
+        500000 % 5
+
+        real    =   [0.035s, 0.047s, 0.049s, 0.053s]
+        user    =   [0.035s, 0.046s, 0.041s, 0.052s]
+        sys     =   [0.000s, 0.001s, 0.009s, 0.001s]
+        */
+
+        # sil_more_cursed(i % 5); 
+
+
+        /*
+        500000
+        real    =   [1.389s, 1.100s, 1.209s, 1.532s]
+        user    =   [0.184s, 0.211s, 0.223s, 0.270s]
+        sys     =   [0.803s, 0.711s, 0.687s, 0.928s]
+
+        500000 % 5
+        real    =   [1.061s, 1.099s, 1.014s, 1.033s]
+        user    =   [0.186s, 0.175s, 0.184s, 0.219s]
+        sys     =   [0.694s, 0.729s, 0.689s, 0.702s]
+        */
+
+        # sel_array(i)
+
+        /*
+        500000
+        real    =   [0.006s, 0.020s, 0.017s, 0.018s]
+        user    =   [0.005s, 0.015s, 0.013s, 0.008s]
+        sys     =   [0.000s, 0.004s, 0.004s, 0.010s]
+
+        500000 % 5
+        real    =   [0.033s, 0.033s, 0.014s, 0.012s]
+        user    =   [0.025s, 0.028s, 0.014s, 0.012s]
+        sys     =   [0.009s, 0.005s, 0.000s, 0.001s]
+        */
+
+        # sil_sel_array(i % 5);
+        # printf("\n");  
+
+        /*
+        500000
+        real    =   [0.016s, 0.020s, 0.011s, 0.017s]
+        user    =   [0.012s, 0.016s, 0.004s, 0.013s]
+        sys     =   [0.004s, 0.005s, 0.008s, 0.004s]
+
+        500000 % 5
+        real    =   [0.009s, 0.020s, 0.004s, 0.018s]
+        user    =   [0.009s, 0.014s, 0.000s, 0.018s]
+        sys     =   [0.001s, 0.006s, 0.004s, 0.001s]
+        */
+        
+
+        sil_sel_each(i % 5); 
+    }
+
+    printf("%d\n", ~0);
+}
+
+
+define func sil_more_cursed(int i) : int {
+    var r0 := i & ~3; #0b11;       // Get the number w/o the last 2 bits
+    var r1 := r0 | (r0 >> 1);  #// Group each 2 bits 
+    var r2 := r1 | (r1 >> 2);  #// Groups of 4 bits
+    var r3 := r2 | (r2 >> 4);  #// Groups of 8 bits
+    var r4 := r3 | (r3 >> 8);  #// Groups of 16 bits
+    var r5 := r4 | (r4 >> 16); #// Groups of 32 bits
+    var r6 := (r5 & 0b1) << 2; #// Isolate the last bit, and shift it such that the number is 4
+    
+    # // r5 will be all 1s IFF i > 3. So ~r5 & i ensures we combine r6 with i such that: 
+    # // r7 = i > 3 ? 4 : i; 
+    var r7 := r6 | (~r5 & i);  
+
+    var arr := [
+       (int i) : int { return 0; },
+       (int i) : int { return 1; },
+       (int i) : int { return 2; },
+       (int i) : int { return 3; },
+       (int i) : int { return i; }
+    ];
+
+    match arr[r7]
+        | Unit u => return -1;
+        | (int -> int) fn => return fn(i); 
+}
+
+define func sil_less_cursed(int i) : int {
+    var idx := i;
+    if i > 3 {
+        idx := 4
+    }
+
+     var arr := [
+       (int i) : int { return 0; },
+       (int i) : int { return 1; },
+       (int i) : int { return 2; },
+       (int i) : int { return 3; },
+       (int i) : int { return i; }
+    ];
+
+    match arr[idx]
+        | Unit u => return -1;
+        | (int -> int) fn => return fn(i); 
+}
+
+define func sil_sel_array(int i) : int {
+    var arr := [0, 1, 2, 3];
+    select {
+        i < 4: match arr[i] 
+                | int s => return s; 
+                | Unit u => return -1; 
+        true: return i;
+    }
+}
+
+define func sil_sel_each(int i) : int {
+    select {
+        i == 0: return 0; 
+        i == 1: return 1; 
+        i == 2: return 2; 
+        i == 3: return 3; 
+        true: return i;
+    }
+}

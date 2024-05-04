@@ -1,0 +1,16 @@
+define func foo<T>(T t, int i) : T {
+
+    foo<T> a; #  := foo<T>; 
+    if(i <= 0) {
+        return t;
+    }
+    # return t; 
+    return t; 
+    # return a(t, i - 1); # foo<T>(i - 1);
+}
+
+define program :: c : Channel<-int> {
+    
+    foo<int> b; 
+    c.send(0)
+}

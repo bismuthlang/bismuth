@@ -1,8 +1,11 @@
 #pragma once
 
+#include "Compile.cpp"
+
 #include <iostream>
 #include <fstream>
 #include <memory> // Smart pointers 
+#include <filesystem> // Current path 
 
 #include "antlr4-runtime.h"
 #include "BismuthLexer.h"

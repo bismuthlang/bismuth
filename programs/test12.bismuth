@@ -23,7 +23,7 @@ define isPrime :: c : Channel<+int;-boolean> = {
   int n := c.recv();
   var i := 3, done := false, ans := true;
 
-  while (!done & i < n) { 
+  while (!done && i < n) { 
     if (n / i * i == n) { 
       done := true; 
       ans := false; 

@@ -20,53 +20,137 @@
 
 #include "Type.h"
 
+// #include "Scope.h"
+
+#include "FQN.h"
+
+class Scope; 
+
 // using namespace Types; 
+
+// FIXME: Make these apply directly in semantic analysis---particularly with paths!
+enum VisibilityModifier {
+    PUBLIC,         // Globally accessible
+    PUBLIC_LINK,    // Can be linked globally, but private for semantics (used for externs and imports)
+    PRIVATE
+};
 
 /*******************************************
  *
  * Symbol Definition
  *
  *******************************************/
-struct Symbol
+class Symbol
 {
-    std::string identifier; // Mostly needed for our tostring function
-    const Type *type;       // Keeps track of the symbol's type
+// public: 
+private:
+    Identifier * identifier; 
+    const Type *type;               // The symbol's type
 
-    bool isGlobal;
+    bool global;                    // Determines if the symbol is globally defined or not
 
-    /**
-     * @brief Tracks if symbol cna be modified at all or if it is a definition
-     * 
-     */
-    bool isDefinition; 
-
+public:
     // Constructs a symbol from an ID and symbol type.
-    Symbol(std::string id, const Type *t, bool definition, bool glob)
+    Symbol(Identifier * id, const Type *t, bool glob) 
     {
-        identifier = id;
+        identifier = id; 
         type = t;
-        isGlobal = glob;
-        isDefinition = definition; 
-
-        // val = {};
-        val = new std::optional<llvm::AllocaInst *>(); 
+        global = glob;
     }
 
     Symbol(Symbol& sym)
     {
         identifier = sym.identifier; 
         type = sym.type->getCopy(); 
-        isGlobal = sym.isGlobal;
-        isDefinition = sym.isDefinition;
-        val = sym.val; 
+        global = sym.global;
+        // FIXME: is this constructor needed? If so, do we need to add uniqName and scope?
     }
 
-    std::string getIdentifier() const; 
-    std::string toString() const;
+    virtual ~Symbol() = default; 
 
-    std::optional<llvm::AllocaInst *> getAllocation(); 
-    void setAllocation(llvm::AllocaInst * a); 
+    std::string toString() const;
+    const Type * getType() const; 
+
+    bool isGlobal() const; 
+    virtual bool isDefinition() const; 
+
+    virtual std::string getUniqueNameInScope() const; 
+    virtual std::string getScopedIdentifier() const; 
+    virtual std::string getFullyQualifiedName() const { return identifier->getFullyQualifiedName(); }
+
+    Identifier * getIdentifier() const { return identifier; }
+
+    
+
+
+    void updateIdentifier(Identifier * nxt); // TODO: DO BETTER, USED ONLY FOR TEMPLATES!
+};
+
+class LocatableSymbol : public Symbol 
+{
+public: 
+    LocatableSymbol(Identifier * id, const Type *t, bool glob, Scope * s)
+        : Symbol(id, t, glob)
+        , scope(s)
+    {}
+
+    LocatableSymbol(LocatableSymbol& sym) 
+        : Symbol(sym)
+    {
+        sym.scope = scope;  
+    }
+
+
+    Scope * getScope() const; 
 
 private: 
-    std::optional<llvm::AllocaInst *> * val;
+    Scope * scope; 
+};
+
+class DefinitionSymbol : public LocatableSymbol 
+{
+public: 
+    DefinitionSymbol(VisibilityModifier v, Identifier * id, const Type *t, bool glob, Scope * s, Scope * i)
+        : LocatableSymbol(id, t, glob, s)
+        , innerScope(i)
+        , visibility(v)
+    {} 
+
+    DefinitionSymbol(DefinitionSymbol& sym) 
+        : LocatableSymbol(sym)
+    {
+        sym.innerScope = this->innerScope; 
+    }
+
+    virtual ~DefinitionSymbol() = default; 
+
+    bool isDefinition() const override { return true; }
+
+    Scope * getInnerScope() const { return innerScope; }
+
+    VisibilityModifier getVisibility() { return visibility; }
+private:
+    Scope * innerScope; 
+    VisibilityModifier visibility; 
+};
+
+class AliasSymbol : public LocatableSymbol 
+{
+public:
+    AliasSymbol(Identifier * id, Scope * s, const Type * t, Identifier * a)//Symbol * a)
+        : LocatableSymbol(id, t, true, s)
+        , orig(a)
+    {}
+
+    virtual std::string getFullyQualifiedName() const override {
+        return orig->getFullyQualifiedName(); 
+    }
+    // std::string getUniqueNameInScope() const override {
+    //     return orig->getUniqueNameInScope();
+    // }
+
+    bool isDefinition() const override { return true; }
+
+    private:
+        Identifier * orig; 
 };

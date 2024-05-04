@@ -16,20 +16,33 @@
 #include <stack>
 
 class Context {
-  public:
-    Context(){};
+private: 
+    std::map<std::string, uint32_t> & nameCounter; 
+    Scope * globalScope; 
+
+public:
+    Context(std::map<std::string, uint32_t> & nc) 
+        : nameCounter(nc) 
+    {
+        // Maybe add a global scope for all files? 
+        enterScope();
+        globalScope = getCurrentScope().value(); 
+    }
 
     /**
      * @brief Enter a new scope
      * 
      * @return Scope& the scope we entered
      */
-    Scope& enterScope() {
-      return enterScope(false);
-    };
+    Scope& enterScope(std::optional<Identifier *> idOpt = std::nullopt) { //std::string id, std::optional<std::function<std::string()>> meta = std::nullopt) {
+        return enterScope(false, idOpt); //id, meta);
+    }
 
-    Scope& enterScope(bool insertStop);
+    Scope& enterScope(bool insertStop, std::optional<Identifier *> idOpt  = std::nullopt); // std::string id, std::optional<std::function<std::string()>> meta = std::nullopt);
     
+    Scope * createNamespace(Identifier * id);
+
+    void enterScope(Scope * scope);
     /**
      * @brief Exit the current scope and move up one level
      * 
@@ -44,7 +57,14 @@ class Context {
      * @return true if successful
      * @return false if unsuccessful (ie, name already bound to another symbol)
      */
-    bool addSymbol(Symbol* symbol);
+    std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool glob); // Symbol* symbol);
+
+    std::optional<DefinitionSymbol *> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
+
+    std::optional<AliasSymbol *> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
+
+    std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t); 
+    std::optional<DefinitionSymbol *> addAnonymousDefinition(std::string id, const Type * t); 
 
     /**
      * @brief Removes a symbol from the scope
@@ -60,6 +80,8 @@ class Context {
      * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found. 
      */
     std::optional<Symbol*> lookup(std::string id);
+
+    std::optional<std::pair<Symbol *, Scope *>> lookupWithScope(std::string id); 
 
     std::vector<Symbol *> getSymbols(int flags);
 
@@ -90,7 +112,7 @@ class Context {
      * 
      * @return int 
      */
-    int scopeCount() { return scopes.size(); }
+    int scopeCount() { return scopeNumber; } // return scopes.size(); }
     std::string toString() const;
 
     /**
@@ -100,66 +122,35 @@ class Context {
      * @return false if the current scope is not the global scope
      */
     bool isGlobalScope() {
-      if(scopes.size() == 0) return false; 
+        // if(scopes.size() == 0) return false; 
 
-      if(!currentScope) return false; 
+        if(!currentScope) return false; 
 
-      return currentScope.value()->getId() == 0; 
+        return !currentScope.value()->getParent().has_value(); //->getId() == 0; 
     }
 
-    int getCurrentStop() {
-      return getCurrentStop(stops);
-    }
+    std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m);
+    
 
-    std::optional<Context> getCopy() {
-      std::map<Scope*, Scope*> copies; 
-      std::vector<Scope*> newScopes; 
-
-      for(Scope * orig : scopes)
-      {
-        std::optional<Scope *> optParent = orig->getParent();
-
-        if(!optParent)
-        {
-          Scope * ans = new Scope({}, orig->copySymbols());
-          ans->setId(orig->getId());
-          copies.insert({orig, ans});
-          newScopes.push_back(ans); 
-        }
-        else if(copies.find(optParent.value()) != copies.end())
-        {
-          Scope * ans = new Scope(copies[optParent.value()], orig->copySymbols());
-          ans->setId(orig->getId());
-          copies.insert({orig, ans});
-          newScopes.push_back(ans); 
-        }
-        else 
-        {
-          return std::nullopt; 
-        }
-      }
-
-      Context c; 
-      c.scopes = newScopes; 
-      if(currentScope)
-      {
-        c.currentScope = copies[currentScope.value()];
-      }
-      // c.currentScope = currentScope ? copies[currentScope.value()] : std::nullopt; 
-      c.scopeNumber = scopeNumber;
-      c.stops = stops; 
-      return c; 
-    }
-
+    Scope * getGlobalScope() { return globalScope; }
   private:
     std::vector<Scope*> scopes;
     std::optional<Scope*> currentScope = {}; 
     int scopeNumber = 0;
 
-    std::stack<int> stops; 
-
-    int getCurrentStop(std::stack<int> st)
-    {
-      return st.size() == 0 ? 0 : st.top(); 
+    std::string getUniqNameFor(Scope * parent, std::string inScope) {
+        // TODO: not sure if getting FQN here will break some stuff wrt generics...
+        std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
+      
+        auto itr = nameCounter.find(id);
+        if(itr == nameCounter.end())
+        {
+            nameCounter.insert({id, 0});
+            return inScope;
+        }
+        std::ostringstream nextName; 
+        nextName << inScope << "." << itr->second; 
+        nameCounter.insert({id, itr->second++});
+        return nextName.str(); 
     }
 };
