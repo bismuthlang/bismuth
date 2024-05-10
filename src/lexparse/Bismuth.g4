@@ -152,7 +152,7 @@ statement   : defineType                                                        
             | 'for' '(' (decl=variableDeclaration | assign=assignmentStatement) ';' check=condition ';' expr=statement ')' blk=block   # ForStatement
             | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ protoElse? ')' (rest+=statement)*  # ProgramCase  
             | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ ('|' protoElse?)? (rest+=statement)*                   # ProgramCase   
-            | channel=VARIABLE LBRC (lbl=VARIABLE | sel=protocol) RBRC                                                               # ProgramProject
+            | channel=VARIABLE LBRC (lbl=VARIABLE | sel=protocol) RBRC ';'?                                                    # ProgramProject
             | 'more' '(' channel=VARIABLE ')'   ';'?                                # ProgramContract 
             | 'unfold' '(' channel=VARIABLE ')'   ';'?                              # ProgramContract 
             | 'weaken' '(' channel=VARIABLE ')' ';'?                                # ProgramWeaken
