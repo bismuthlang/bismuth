@@ -1251,7 +1251,8 @@ public:
         {
         case UNARY_MINUS:
         case UNARY_BIT_NOT:
-            return Types::DYN_INT;
+            // return Types::DYN_INT;
+            return value->getType(); 
         case UNARY_NOT:
             return Types::DYN_BOOL;
         }

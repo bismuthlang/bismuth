@@ -43,7 +43,7 @@ define idk :: c : Channel<-int> = {
 
 # int func branchtest() {
 define branchtest :: c : Channel<-int> = {
-    int[5] a; 
+    u32[5] a; 
 
     var count := 0; 
 
@@ -138,7 +138,15 @@ define program :: io : Channel<-int> = {
     a[3] := 4; 
     a[4] := 5; 
 
-    printf("C is: %i; a = [%i, %i, %i, %i, %i]\n", c, a[0], a[1], a[2], a[3], a[4]);
+    # printf("C is: %i; a = [%i, %i, %i, %i, %i]\n", c, a[0], a[1], a[2], a[3], a[4]);
+    printf("C is %i; a = [", c);
+    for(var i := 0; i < 5; i := i + 1)
+    {
+        match a[i]
+            |   Unit u => printf("ERROR, ");
+            |   int v => printf("%i, ", v); 
+    }
+    printf("]\n");
 
     
     Channel<+int> t1 := exec branchtest; 

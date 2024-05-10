@@ -774,7 +774,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""", 
-    "int expected in unary minus, but got str");
+    "Signed number (e.g., int or i64) expected in unary minus, but got str");
 }
 
 TEST_CASE("Wrong RHS Arithmetic", "[semantic][program]")
@@ -875,7 +875,7 @@ define program :: c : Channel<-int> {
     c.send(0)
 }
     )"""",
-    "Array access index expected type int but got boolean");
+    "Array access index expected type u32 but got boolean");
 }
 
 TEST_CASE("Field Access - Unsupported/Undefined", "[semantic][program]")
