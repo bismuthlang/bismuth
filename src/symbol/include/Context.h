@@ -15,6 +15,8 @@
 
 #include <stack>
 
+#include <memory>
+
 class Context {
 private: 
     std::map<std::string, uint32_t> & nameCounter; 
@@ -57,21 +59,18 @@ public:
      * @return true if successful
      * @return false if unsuccessful (ie, name already bound to another symbol)
      */
-    std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool glob); // Symbol* symbol);
-
-    std::optional<DefinitionSymbol *> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
-
-    std::optional<AliasSymbol *> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
-
-    std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t); 
-    std::optional<DefinitionSymbol *> addAnonymousDefinition(std::string id, const Type * t); 
+    std::optional<SymbolRef> addSymbol(std::string id, const Type * t, bool glob);
+    std::optional<std::reference_wrapper<DefinitionSymbol>> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
+    std::optional<std::reference_wrapper<AliasSymbol>> addAlias(std::string id, const Type * t, Identifier * a);
+    std::optional<SymbolRef> addAnonymousSymbol(std::string id, const Type * t); 
+    std::optional<std::reference_wrapper<DefinitionSymbol>> addAnonymousDefinition(std::string id, const Type * t); 
 
     /**
      * @brief Removes a symbol from the scope
      * 
      * @param symbol 
      */
-    bool removeSymbol(Symbol* symbol);
+    bool removeSymbol(Symbol& symbol);
     
     /**
      * @brief Lookup a symbol across all scopes returning the first definition found
@@ -79,11 +78,9 @@ public:
      * @param id The symbol name to lookup
      * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found. 
      */
-    std::optional<Symbol*> lookup(std::string id);
+    std::optional<SymbolRef> lookup(std::string id);
 
-    std::optional<std::pair<Symbol *, Scope *>> lookupWithScope(std::string id); 
-
-    std::vector<Symbol *> getSymbols(int flags);
+    std::vector<SymbolRef> findSymbols(int flags);
 
     /**
      * @brief Lookup a symbol only in the current scope. 
@@ -91,7 +88,7 @@ public:
      * @param id The symbol name to lookup
      * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found. 
      */
-    std::optional<Symbol*> lookupInCurrentScope(std::string id);
+    std::optional<SymbolRef> lookupInCurrentScope(std::string id);
 
     /****************************************
      * Miscellaneous (useful for testing)

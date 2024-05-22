@@ -34,13 +34,11 @@ public:
      * @param p Property manager to use
      * @param f Compiler flags
      */
-    SemanticVisitor(STManager *s, DisplayMode mode, int f = 0)
-    {
-        stmgr = s;
-
-        toStringMode = mode; 
-        flags = f;
-    }
+    SemanticVisitor(STManager& s, DisplayMode mode, int f = 0)
+        : stmgr(s)
+        , toStringMode(mode)
+        , flags(f)
+    {}
 
     std::string getErrors() { return errorHandler.errorList(); }
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
@@ -108,7 +106,7 @@ public:
     std::optional<ParameterListNode> visitCtx(BismuthParser::ParameterListContext *ctx);
     std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { return visitCtx(ctx); }
 
-    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<DefinitionSymbol *> sym);
+    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<std::reference_wrapper<DefinitionSymbol>> sym);
     std::any visitLambdaConstExpr(BismuthParser::LambdaConstExprContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx, std::nullopt)); }
 
     std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::BlockStatementContext *ctx) { return this->visitCtx(ctx->block()); }
@@ -357,7 +355,7 @@ std::variant<
     {
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
+            stmgr.enterScope(StopType::NONE); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -402,7 +400,7 @@ std::variant<
 
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
+            stmgr.enterScope(StopType::NONE); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -494,16 +492,16 @@ std::variant<
         std::function<std::variant<Y, ErrorChain *>(T *)> typeCheck);
 
 private:
+    STManager& stmgr;
+    PropertyManager<std::reference_wrapper<DefinitionSymbol>> symBindings = PropertyManager<std::reference_wrapper<DefinitionSymbol>>();
+    PropertyManager<std::deque<DeepRestData *>*> restBindings = PropertyManager<std::deque<DeepRestData *>*>();
+    BismuthErrorHandler errorHandler = BismuthErrorHandler(SEMANTIC);
     DisplayMode toStringMode; 
 
 public:
     DisplayMode getToStringMode() { return toStringMode; }
 
 private:
-    STManager *stmgr;
-    PropertyManager<DefinitionSymbol> symBindings = PropertyManager<DefinitionSymbol>();
-    PropertyManager<std::deque<DeepRestData *>> restBindings = PropertyManager<std::deque<DeepRestData *>>();
-    BismuthErrorHandler errorHandler = BismuthErrorHandler(SEMANTIC);
 
 
     int flags; // Compiler flags
@@ -513,7 +511,7 @@ private:
 
     // void safeVisitScope(antlr4::ParserRuleContext *ctx, StopType stopType, void (*visitor)())
     // {
-    //     stmgr->enterScope(stopType);
+    //     stmgr.enterScope(stopType);
     //     visitor();
     //     safeExitScope(ctx);
     // }
@@ -521,17 +519,17 @@ private:
     // template<typename T> 
     // safeVisitScope(StopType stopType, T (*visitor)())
     // {
-    //     stmgr->enterScope(stopType);
+    //     stmgr.enterScope(stopType);
     //     visitor();
     //     // safeExitScope(ctx);
-    //     stmgr->exitScope(); 
+    //     stmgr.exitScope(); 
     // }
 
 
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
         // First, try exiting the scope
-        std::optional<Scope *> res = stmgr->exitScope();
+        std::optional<Scope *> res = stmgr.exitScope();
 
         // If we did so and got a value back, then we can do type inferencing.
         if (res)
@@ -542,16 +540,16 @@ private:
             // Try to unify symbols (really needed for things like nums wherein
             // we know what types are possible to infer, so we can just 
             // pick one if the code doesn't make it clear which variant we need)
-            for(Symbol * sym : scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE))
+            for(auto sym : scope->findSymbols(SymbolLookupFlags::UNINFERRED_TYPE))
             {
                 // Should always be inferrable
-                if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym->getType()))
+                if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym.get().getType()))
                 {
                     inf->unify(); 
                 }
             }
 
-            std::vector<Symbol *> unInf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
+            auto unInf = scope->findSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
 
             // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -561,13 +559,13 @@ private:
 
                 for (auto e : unInf)
                 {
-                    details << e->toString() << "; ";
+                    details << e.get().toString() << "; ";
                 }
 
                 errorHandler.addError(ctx->getStart(), "700 Uninferred types in context: " + details.str());
             }
 
-            std::vector<Symbol *> lins = scope->getSymbols(SymbolLookupFlags::PENDING_LINEAR);
+            auto lins = scope->findSymbols(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -577,7 +575,7 @@ private:
 
                 for (auto e : lins)
                 {
-                    details << e->toString() << "; ";
+                    details << e.get().toString() << "; ";
                 }
 
                 errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
@@ -608,7 +606,7 @@ private:
     }
 
 
-    std::variant<DefinitionSymbol *, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m = VisibilityModifier::PRIVATE);
+    std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m = VisibilityModifier::PRIVATE);
 
     void bindRestData(antlr4::ParserRuleContext *ctx, std::deque<DeepRestData *> *rd)
     { // DeepRestData * rd) {

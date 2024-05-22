@@ -74,7 +74,7 @@ define program :: c : Channel<-int> {
   REQUIRE(tree->getText() != "");
 
   STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv.visitCompilationUnit(tree);
 
@@ -116,7 +116,7 @@ define program :: c : Channel<-int> {
   REQUIRE(tree->getText() != "");
 
   STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv.visitCompilationUnit(tree);
   

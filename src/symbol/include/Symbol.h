@@ -86,6 +86,8 @@ public:
     void updateIdentifier(Identifier * nxt); // TODO: DO BETTER, USED ONLY FOR TEMPLATES!
 };
 
+using SymbolRef = std::reference_wrapper<Symbol>;
+
 class LocatableSymbol : public Symbol 
 {
 public: 
@@ -137,7 +139,7 @@ private:
 class AliasSymbol : public LocatableSymbol 
 {
 public:
-    AliasSymbol(Identifier * id, Scope * s, const Type * t, Identifier * a)//Symbol * a)
+    AliasSymbol(Identifier * id, Scope * s, const Type * t, Identifier * a)
         : LocatableSymbol(id, t, true, s)
         , orig(a)
     {}

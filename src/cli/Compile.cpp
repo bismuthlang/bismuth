@@ -225,7 +225,7 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
     STManager stm = STManager();
 
 
-    SemanticVisitor sv = SemanticVisitor(&stm, toStringMode, flags);
+    SemanticVisitor sv = SemanticVisitor(stm, toStringMode, flags);
 
     // I wish there was an easy way to write programs (perhaps with constraints)
     // which is able to generate the following code, as it really is all algorithmic.

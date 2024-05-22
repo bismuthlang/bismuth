@@ -107,17 +107,18 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n.cases.size()); // sumType->getCases().size());
 
-    for (std::pair<Symbol *, TypedNode *> caseNode : n.cases)
+    for (auto [symRef, node] : n.cases)
     {
-        Symbol *localSym = caseNode.first;
-
-        llvm::Type *toFind = getLLVMType(localSym);
+        llvm::Type *toFind = getLLVMType(symRef.get());
 
         unsigned int index = sumType->getIndex(module, toFind);
 
         if (index == 0)
         {
-            errorHandler.addError(n.getStart(), "Unable to find key for type " + localSym->getType()->toString(getToStringMode()) + " in sum"); 
+            errorHandler.addError(
+                n.getStart(),
+                "Unable to find key for type " + symRef.get().getType()->toString(getToStringMode()) + " in sum"
+            ); 
             return std::nullopt;
         }
 
@@ -129,10 +130,10 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
         origParent->getBasicBlockList().push_back(matchBlk);
 
         //  Get the type of the symbol // FIXME: WHY IS THIS SAME AS TOFIND?
-        llvm::Type *ty = getLLVMType(localSym);
+        llvm::Type *ty = getLLVMType(symRef);
 
         // Can skip global stuff
-        llvm::AllocaInst *v = CreateAndLinkEntryBlockAlloc(ty, localSym);
+        llvm::AllocaInst *v = CreateAndLinkEntryBlockAlloc(ty, symRef);
 
         // Now to store the var
         Value *valuePtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32One});
@@ -143,9 +144,9 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
         builder->CreateStore(val, v);
 
         // altCtx->eval->accept(this);
-        AcceptType(*this, *caseNode.second);
+        AcceptType(*this, *node);
 
-        if (TBlockNode *blkStmtCtx = dynamic_cast<TBlockNode *>(caseNode.second))
+        if (TBlockNode *blkStmtCtx = dynamic_cast<TBlockNode *>(node))
         {
             if (!TypedAST::endsInReturn(*blkStmtCtx))
             {
@@ -153,7 +154,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
             }
             // if it ends in a return, we're good!
         }
-        else if (TReturnNode *retCtx = dynamic_cast<TReturnNode *>(caseNode.second))
+        else if (TReturnNode *retCtx = dynamic_cast<TReturnNode *>(node))
         {
             // Similarly, we don't need to generate the branch
         }
@@ -180,12 +181,14 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode & n)
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
 
     // Attempt to cast the check; if this fails, then codegen for the check failed
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in case: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(), 
+            "Could not find value for channel in case: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -199,7 +202,6 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode & n)
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n.cases.size());
 
-    // for (std::pair<Symbol *, TypedNode *> caseNode : n.cases)
     for (unsigned int i = 0; i < n.cases.size(); i++)
     {
         // TODO: find a way to error handle cases where correct block DNE or something
@@ -251,12 +253,14 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TProgramProjectNode & n)
 {
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in case: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(), 
+            "Could not find value for channel in case: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -326,12 +330,14 @@ std::optional<Value *> CodegenVisitor::visit(TInvocationNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode & n)
 {
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in recv: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(),
+            "Could not find value for channel in recv: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -352,7 +358,10 @@ std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode & n)
         std::optional<Value *> castedOpt = correctNullOptionalToSum(n.meta, casted);
         if (!castedOpt)
         {
-            errorHandler.addError(n.getStart(), "Failed to correct null optional for: " + getCodegenID(n.sym));
+            errorHandler.addError(
+                n.getStart(), 
+                "Failed to correct null optional for: " + getCodegenID(n.sym)
+            );
             return std::nullopt;
         }
         casted = castedOpt.value();
@@ -368,12 +377,14 @@ std::optional<Value *> CodegenVisitor::visit(TProgramRecvNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TProgramIsPresetNode & n)
 {
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in recv: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(),
+            "Could not find value for channel in recv: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -420,8 +431,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode & n)
         return std::nullopt;
     }
 
-    Symbol *sym = n.sym;
-
     Value *stoVal = valOpt.value();
 
     // Same as return node's
@@ -436,10 +445,13 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode & n)
     builder->CreateStore(stoVal, casted);
     Value *corrected = builder->CreateBitCast(v, i8p);
 
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in send: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(),
+            "Could not find value for channel in send: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -450,12 +462,14 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TProgramContractNode & n)
 {
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in contract: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(), 
+            "Could not find value for channel in contract: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -468,12 +482,14 @@ std::optional<Value *> CodegenVisitor::visit(TProgramContractNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TProgramWeakenNode & n)
 {
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in weaken: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(), 
+            "Could not find value for channel in weaken: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -486,12 +502,14 @@ std::optional<Value *> CodegenVisitor::visit(TProgramWeakenNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TProgramCancelNode & n)
 {
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in cancel: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(),
+            "Could not find value for channel in cancel: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -504,13 +522,14 @@ std::optional<Value *> CodegenVisitor::visit(TProgramCancelNode & n)
 std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode & n)
 {
     // Very similar to regular loop
-
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in accept: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(),
+            "Could not find value for channel in accept: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -554,12 +573,14 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode & n)
 std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode & n)
 {
     // Very similar to regular loop & Accept while
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in accept: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(),
+            "Could not find value for channel in accept: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -631,12 +652,14 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode & n)
         return std::nullopt;
     }
 
-    Symbol *sym = n.sym;
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.sym);
 
     if (!optVal)
     {
-        errorHandler.addError(n.getStart(), "Could not find value for channel in acceptIf: " + getCodegenID(n.sym));
+        errorHandler.addError(
+            n.getStart(),
+            "Could not find value for channel in acceptIf: " + getCodegenID(n.sym)
+        );
         return std::nullopt;
     }
 
@@ -1180,7 +1203,7 @@ std::optional<Value *> CodegenVisitor::visit(TNumConstExprNode & n)
             uint64_t val = static_cast<uint64_t>(std::stoull(text, &pos, base)); 
             return getU64(val);
         }
-        // FIXME: ADDD ERROR, DONT ASSERT
+        // FIXME: ADD ERROR, DONT ASSERT
         assert(false && "Expected a num type (i32/u32/i64/u64), but got something else");
         return std::nullopt; 
     }
@@ -1554,38 +1577,39 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TIdentifier & n)
 {
-    Symbol * sym = n.getSymbol(); 
-
-    llvm::Type *type = sym->getType()->getLLVMType(module);
+    llvm::Type *type = n.getSymbol().getType()->getLLVMType(module);
     if (!type)
     {
-        errorHandler.addError(n.getStart(), "Unable to find type for variable: " + getCodegenID(sym));
+        errorHandler.addError(
+            n.getStart(), 
+            "Unable to find type for variable: " + getCodegenID(n.getSymbol())
+        );
         return std::nullopt;
     }
 
-    std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
+    std::optional<llvm::AllocaInst *> optVal = getAllocation(n.getSymbol());
 
     if(!optVal)
     {
         // TODO: better erro checking (as seen later)
-        if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->getType()))
+        if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(n.getSymbol().getType()))
         {
-            return module->getFunction(getCodegenID(sym));
+            return module->getFunction(getCodegenID(n.getSymbol()));
         }
-        else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
+        else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(n.getSymbol().getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
         {
-            return module->getFunction(getCodegenID(sym));
+            return module->getFunction(getCodegenID(n.getSymbol()));
         }
-        else if(sym->isGlobal())
+        else if(n.getSymbol().isGlobal())
         {
             // TODO: not sure if this could cause problems in the future by not differentiating lvalue vs rvalue
             // Lookup the global var for the symbol
-            llvm::GlobalVariable *glob = module->getNamedGlobal(getCodegenID(sym));
+            llvm::GlobalVariable *glob = module->getNamedGlobal(getCodegenID(n.getSymbol()));
 
             // Check that we found the variable. If not, throw an error.
             if (!glob)
             {
-                errorHandler.addError(n.getStart(),"Unable to find global variable: " + getCodegenID(sym) + " " + sym->toString());
+                errorHandler.addError(n.getStart(),"Unable to find global variable: " + getCodegenID(n.getSymbol()) + " " + n.getSymbol().toString());
                 return std::nullopt;
             }
 
@@ -1594,7 +1618,7 @@ std::optional<Value *> CodegenVisitor::visit(TIdentifier & n)
             return val;
         }
 
-        errorHandler.addError(nullptr, "Unable to find allocation for variable: " + getCodegenID(sym));
+        errorHandler.addError(nullptr, "Unable to find allocation for variable: " + getCodegenID(n.getSymbol()));
         return std::nullopt;
     }
 
@@ -1604,7 +1628,7 @@ std::optional<Value *> CodegenVisitor::visit(TIdentifier & n)
         return val;
 
     // // Otherwise, we are a local variable with an allocation and, thus, can simply load it.
-    Value *v = builder->CreateLoad(type, val, getCodegenID(sym));
+    Value *v = builder->CreateLoad(type, val, getCodegenID(n.getSymbol()));
     return v;
 }
 
@@ -1715,9 +1739,9 @@ std::optional<Value *> CodegenVisitor::visit(TBinaryRelNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TExternNode & n)
 {
-    Symbol *symbol = n.getSymbol(); // WHY ARE SOME PRIVATE AND OTHERS PUBLIC?
+    Symbol & symbol = n.getSymbol(); // WHY ARE SOME PRIVATE AND OTHERS PUBLIC?
 
-    if (!symbol->getType())
+    if (!symbol.getType())
     {
         errorHandler.addCompilerError(n.getStart(), "Type for extern statement not correctly bound.");
         return std::nullopt;
@@ -1757,7 +1781,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode & n)
     }
 
     // Lookup the binding for the variable we are assigning to and and ensure that we find it
-    // std::optional<Symbol *> varSymOpt = props->getBinding(ctx->to);
+    // std::optional<SymbolRef> varSymOpt = props->getBinding(ctx->to);
     // if (!varSymOpt)
     // {
     //     errorHandler.addError(n.getStart(), "Incorrectly processed variable in assignment: " + ctx->to->getText());
@@ -1765,7 +1789,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode & n)
     // }
 
     /*
-    Symbol *varSym = varSymOpt.value();
+    SymbolRef varSym = varSymOpt.value();
     */
     // Get the allocation instruction for the symbol
 
@@ -1855,14 +1879,14 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode & n)
         }
 
         // For each of the variables being assigned to that value
-        for (Symbol *varSymbol : e->syms)
+        for (auto varSymbol : e->syms)
         {
             //  Get the type of the symbol
             llvm::Type *ty = getLLVMType(varSymbol);
 
 
             // Branch depending on if the var is global or not
-            if (varSymbol->isGlobal())
+            if (varSymbol.get().isGlobal())
             {
                 // If it is global, then we need to insert a new global variable of this type.
                 // A lot of these options are done to make it match what a C program would
@@ -1904,7 +1928,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode & n)
                 if (e->val)
                 {
                     Value *stoVal = exVal.value();
-                    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol->getType()))
+                    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol.get().getType()))
                     {
                         uint32_t index = sumOpt.value()->getIndex(module, stoVal->getType());
 
@@ -1928,7 +1952,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode & n)
                         builder->CreateStore(stoVal, v);
                     }
                 }
-                else if(const TypeDynArray * dynArray = dynamic_cast<const TypeDynArray*>(varSymbol->getType()))
+                else if(const TypeDynArray * dynArray = dynamic_cast<const TypeDynArray*>(varSymbol.get().getType()))
                 {
                     InitDynArray(v, 1); // FIXME: change to 0 and add push_back
                 }
@@ -2232,7 +2256,7 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode & n)
             module
         );
 
-    std::vector<Symbol *> paramList = n.paramSymbols;
+    auto paramList = n.paramSymbols;
 
     // Create basic block
     BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
@@ -2248,7 +2272,7 @@ std::optional<Value *> CodegenVisitor::visit(TLambdaConstNode & n)
         llvm::Type *type = fnType->params()[argNumber];
 
         // Get the argument name (This even works for arrays!)
-        Symbol *param = paramList.at(argNumber);
+        auto param = paramList.at(argNumber);
 
         // Create an allocation for the argument
         llvm::AllocaInst *v = CreateAndLinkEntryBlockAlloc(type, param);
@@ -2357,7 +2381,7 @@ std::optional<Value *> CodegenVisitor::visit(TDefineTemplateNode & n)
         {
             if(t.second->getIdentifier())
             {
-                defNode->getSymbol()->updateIdentifier(t.second->getIdentifier().value());
+                defNode->getSymbol().updateIdentifier(t.second->getIdentifier().value());
             }
         }
 
@@ -2588,38 +2612,38 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 }
 
 
-std::string CodegenVisitor::getCodegenAllocationID(Symbol * sym)
+std::string CodegenVisitor::getCodegenAllocationID(const Symbol& sym)
 {
-    return sym->getFullyQualifiedName(); 
+    return sym.getFullyQualifiedName(); 
 }
 
-std::string CodegenVisitor::getCodegenID(Symbol * sym)
+std::string CodegenVisitor::getCodegenID(const Symbol& sym)
 {
-    if(!sym->isDefinition())
-        return sym->getUniqueNameInScope();
+    if(!sym.isDefinition())
+        return sym.getUniqueNameInScope();
 
     return getCodegenAllocationID(sym); 
 }
 
-void CodegenVisitor::setAllocation(Symbol * sym, llvm::AllocaInst * a)
+void CodegenVisitor::setAllocation(Symbol& sym, llvm::AllocaInst * a)
 {
     allocations.insert({getCodegenAllocationID(sym), a});
 }
 
-std::optional<llvm::AllocaInst *> CodegenVisitor::getAllocation(Symbol * sym) {
+std::optional<llvm::AllocaInst *> CodegenVisitor::getAllocation(const Symbol& sym) {
     auto it = allocations.find(getCodegenAllocationID(sym)); 
     if(it == allocations.end()) return std::nullopt; 
     return it->second; 
 }
 
-llvm::AllocaInst * CodegenVisitor::CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol * sym)
+llvm::AllocaInst * CodegenVisitor::CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol & sym)
 {
     llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, getCodegenID(sym));
     setAllocation(sym, v); 
     return v; 
 }
 
-llvm::Type * CodegenVisitor::getLLVMType(Symbol * sym)
+llvm::Type * CodegenVisitor::getLLVMType(const Symbol & sym)
 {
-    return sym->getType()->getLLVMType(module); 
+    return sym.getType()->getLLVMType(module); 
 }

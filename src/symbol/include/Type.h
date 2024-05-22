@@ -1117,7 +1117,7 @@ protected:
 
 class  TemplateInfo {
 public: // TODO CHANGE
-//     std::vector<Symbol *> templates; 
+//     std::vector<SymbolRef> templates; 
     std::vector<std::pair<std::string, TypeGeneric *>> templates; 
 
 public: 

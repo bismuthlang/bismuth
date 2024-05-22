@@ -62,17 +62,17 @@ private:
     // std::string currentNamespacePath; 
     std::map<std::string, llvm::AllocaInst *> allocations; 
 
-    std::string getCodegenID(Symbol * sym);
+    std::string getCodegenID(const Symbol& sym);
 
-    std::string getCodegenAllocationID(Symbol * sym);
+    std::string getCodegenAllocationID(const Symbol& sym);
 
-    void setAllocation(Symbol * sym, llvm::AllocaInst * a);
+    void setAllocation(Symbol& sym, llvm::AllocaInst * a);
 
-    std::optional<llvm::AllocaInst *> getAllocation(Symbol * sym);
+    std::optional<llvm::AllocaInst *> getAllocation(const Symbol& sym);
 
-    llvm::AllocaInst * CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol * sym);
+    llvm::AllocaInst * CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol& sym);
 
-    llvm::Type * getLLVMType(Symbol * sym);
+    llvm::Type * getLLVMType(const Symbol& sym);
 
 public:
     /**

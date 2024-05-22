@@ -17,31 +17,30 @@ std::optional<Scope *> STManager::exitScope()
     return context.exitScope();
 }
 
-std::optional<Symbol *> STManager::addSymbol(std::string id, const Type * t, bool g) // TODO: automatically determine g?
+std::optional<SymbolRef> STManager::addSymbol(std::string id, const Type * t, bool g) // TODO: automatically determine g?
 {
     // Latter condition needed to prevent return types from being tracked as linear. see getBinaryStreamFor in adder5. PLAN: handle this better, should probably make return a linear type in general to make it so that way we can have better dead code detection/elimination.
-    std::optional<Symbol *> symOpt = context.addSymbol(id, t, g);
-    return symOpt;
+    return context.addSymbol(id, t, g);
 }
 
-std::optional<AliasSymbol *> STManager::addAlias(std::string id, const Type * t, Identifier * a)//Symbol * a)
+std::optional<std::reference_wrapper<AliasSymbol>> STManager::addAlias(std::string id, const Type * t, Identifier * a)
 {
     return context.addAlias(id, t, a);
 }
 
-std::optional<DefinitionSymbol *> STManager::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
+std::optional<std::reference_wrapper<DefinitionSymbol>> STManager::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
 {
 
-    std::optional<DefinitionSymbol *> symOpt = context.addDefinition(m, id, t, glob);
+    auto symOpt = context.addDefinition(m, id, t, glob);
 
     if(symOpt)
     {
-        DefinitionSymbol * sym = symOpt.value(); 
-        if(const NameableType * nameable = dynamic_cast<const NameableType *>(sym->getType()))
+        DefinitionSymbol & sym = symOpt.value().get(); 
+        if(const NameableType * nameable = dynamic_cast<const NameableType *>(sym.getType()))
         {
             if(!nameable->getIdentifier())
             {
-                nameable->setIdentifier(sym->getIdentifier());
+                nameable->setIdentifier(sym.getIdentifier());
             }
         }
     }
@@ -49,34 +48,34 @@ std::optional<DefinitionSymbol *> STManager::addDefinition(VisibilityModifier m,
     return symOpt; // context.addDefinition(id, t, glob);
 }
 
-std::optional<Symbol *> STManager::addAnonymousSymbol(std::string id, const Type * t)
+std::optional<SymbolRef> STManager::addAnonymousSymbol(std::string id, const Type * t)
 {
     return context.addAnonymousSymbol(id, t); 
 }
 
-std::optional<DefinitionSymbol *> STManager::addAnonymousDefinition(std::string id, const Type * t)
+std::optional<std::reference_wrapper<DefinitionSymbol>> STManager::addAnonymousDefinition(std::string id, const Type * t)
 {
     return context.addAnonymousDefinition(id, t); 
 }
 
-bool STManager::removeSymbol(Symbol *symbol)
+bool STManager::removeSymbol(Symbol& symbol)
 {
     return context.removeSymbol(symbol);
 }
 
-std::optional<Symbol *> STManager::lookup(std::string id)
+std::optional<SymbolRef> STManager::lookup(std::string id)
 {
-    std::optional<Symbol *> sym = context.lookup(id); 
+    auto symOpt = context.lookup(id); 
     // TODO: propagate this data down so we don't have 
     // to do excess branching checks. 
     // Also, ensure this doesn't mess w/ error messages by 
     // making it seem like stuff isn't unbound. 
     // Ie, while isBound will help, we may use lookup in field access!
     if(nonLinearOnly 
-        && sym.has_value() 
-        && sym.value()->getType()->isLinear())
+        && symOpt.has_value() 
+        && symOpt.value().get().getType()->isLinear())
       return std::nullopt; 
-    return sym; 
+    return symOpt; 
 }
 
 void STManager::enterNonlinearScope(std::function<void()> func)
@@ -92,7 +91,7 @@ bool STManager::isBound(std::string id)
     return context.lookup(id).has_value(); 
 }
 
-std::optional<Symbol *> STManager::lookupInCurrentScope(std::string id)
+std::optional<SymbolRef> STManager::lookupInCurrentScope(std::string id)
 {
     return context.lookupInCurrentScope(id);
 }
@@ -102,25 +101,25 @@ std::optional<Scope *> STManager::getCurrentScope()
     return context.getCurrentScope();
 }
 
-std::vector<Symbol *> STManager::getLinears(int flags) { return context.getSymbols(flags); }
+std::vector<SymbolRef> STManager::getLinears(int flags) { return context.findSymbols(flags); }
 
 
 void STManager::guard()
 {
-    for (Symbol *sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))
+    for (auto sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))
     {
-      if(sym->getType()->isLinear())
-        sym->getType()->guard(); 
+      if(sym.get().getType()->isLinear())
+        sym.get().getType()->guard(); 
     }
 }
 
 bool STManager::unguard() 
 {
-    for (Symbol *sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))
+    for (auto sym : getLinears(SymbolLookupFlags::COMPLETE_LINEAR | SymbolLookupFlags::GUARDED_LINEAR | SymbolLookupFlags::PENDING_LINEAR))
     {
-        if(sym->getType()->isLinear() && !sym->getType()->unguard())
+        if(sym.get().getType()->isLinear() && !sym.get().getType()->unguard())
         {
-          std::cout << "Failed to unguard " << sym->toString() << std::endl; 
+          std::cout << "Failed to unguard " << sym.get().toString() << std::endl; 
           return false; 
         }
     }

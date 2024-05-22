@@ -22,7 +22,7 @@ void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message
   REQUIRE_NOTHROW(tree = parser.compilationUnit());
   REQUIRE(tree != NULL);
   STManager stm = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, flags);
+  SemanticVisitor sv = SemanticVisitor(stm, DisplayMode::C_STYLE, flags);
   auto cuOpt = sv.visitCtx(tree);
 
   REQUIRE(sv.hasErrors(0));
@@ -105,7 +105,7 @@ TEST_CASE("Comment EOF", "[semantic]")
   REQUIRE(tree->getText() != "");
 
   STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv.visitCompilationUnit(tree);
 
@@ -189,7 +189,7 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
   REQUIRE(tree != NULL);
   STManager stm = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stm, DisplayMode::C_STYLE);
   sv.visitCompilationUnit(tree);
   REQUIRE_FALSE(sv.hasErrors(0));
 }
@@ -318,7 +318,7 @@ define program :: c : Channel<-int> = {
   REQUIRE(tree->getText() != "");
 
   STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv.visitCompilationUnit(tree);
   REQUIRE_FALSE(sv.hasErrors(ERROR));
@@ -452,7 +452,7 @@ define program :: c : Channel<-int> = {
 
 //   STManager stmgr = STManager();
 //
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE(sv.hasErrors(ERROR));
@@ -610,7 +610,7 @@ define func foo (str a) {
 
 //   STManager stmgr = STManager();
 //
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE(sv.hasErrors(ERROR));
@@ -703,7 +703,7 @@ define func foo (str a, int b) : int {
 
 //   STManager stmgr = STManager();
 //
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE(sv.hasErrors(ERROR));
@@ -747,7 +747,7 @@ define func foo (str a, int b) : int {
 
 //   STManager stmgr = STManager();
 //
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE(sv.hasErrors(ERROR));
@@ -1038,7 +1038,7 @@ define program :: c : Channel<-int> = {
 //   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE_FALSE(sv.hasErrors(ERROR));
@@ -1078,7 +1078,7 @@ define program :: c : Channel<-int> = {
 
   STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv.visitCompilationUnit(tree);
   REQUIRE_FALSE(sv.hasErrors(ERROR));
@@ -1119,7 +1119,7 @@ define program :: c : Channel<-int> = {
 
   STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv.visitCompilationUnit(tree);
   REQUIRE_FALSE(sv.hasErrors(ERROR));
@@ -1161,7 +1161,7 @@ define program :: c : Channel<-int> = {
 
   STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   // sv.visitCompilationUnit(tree);
   // REQUIRE_FALSE(sv.hasErrors(ERROR));
@@ -1206,7 +1206,7 @@ define program :: c : Channel<-int> = {
 
   STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   auto TypedOpt = sv.visitCtx(tree);
   // sv.visitCompilationUnit(tree);
@@ -1352,7 +1352,7 @@ define program :: c : Channel<-int> = {
 //   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE(sv.hasErrors(ERROR));
@@ -1393,7 +1393,7 @@ define program :: c : Channel<-int> = {
 //   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE_FALSE(sv.hasErrors(ERROR));
@@ -1435,7 +1435,7 @@ define program :: c : Channel<-int> = {
 //   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE(sv.hasErrors(ERROR));
@@ -1582,7 +1582,7 @@ define struct Inner {
 //   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE(sv.hasErrors(ERROR));
@@ -1612,7 +1612,7 @@ define struct Inner {
 //   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE(sv.hasErrors(ERROR));
@@ -1644,7 +1644,7 @@ define struct Inner {
 //   STManager stmgr = STManager();
 //
 
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   REQUIRE(sv.hasErrors(ERROR));
@@ -1720,7 +1720,7 @@ define foo :: c : Channel<+int> = {
 
   STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv.visitCompilationUnit(tree);
   REQUIRE_FALSE(sv.hasErrors(ERROR));
@@ -1794,7 +1794,7 @@ define program :: c : Channel<-int> = {
 
   STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  SemanticVisitor sv = SemanticVisitor(stmgr, DisplayMode::C_STYLE);
 
   sv.visitCompilationUnit(tree);
   REQUIRE_FALSE(sv.hasErrors(ERROR));

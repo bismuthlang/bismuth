@@ -13,6 +13,8 @@
 #include "Symbol.h"
 #include <map>
 #include <optional>
+#include <memory>
+#include <functional>
 // #include <assert.h>
 
 enum SymbolLookupFlags
@@ -46,10 +48,19 @@ public:
         stop = s; 
     }
 
-    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms, Identifier * n, bool s)
+    Scope(
+        std::optional<Scope *> p,
+        std::map<std::string, Symbol*> syms,
+        Identifier * n,
+        bool s
+    )
+        : parent(p)
+        , symbols(std::move(syms))
     {
-        parent = p;
-        symbols = syms;
+        // symbols.merge(syms);
+        
+        // parent = p;
+        // symbols = syms;
         id = n; 
         stop = s; 
     }
@@ -61,9 +72,25 @@ public:
      * @return true If successful
      * @return false If this could not be done (ie, due to a redeclaration)
      */
-    std::optional<Symbol *> addSymbol(Symbol *symbol);
+    template<typename T, typename std::enable_if<std::is_base_of<Symbol, T>::value>::type* = nullptr>
+    std::optional<std::reference_wrapper<T>> addSymbol(T* symbol)
+    {
+        std::string id = symbol->getScopedIdentifier();
+        if (symbols.find(id) != symbols.end())
+        {
+            // Symbol already defined
+            return std::nullopt;
+        }
 
-    bool removeSymbol(const Symbol *symbol);
+        T& ans = *symbol;
+        symbols[id] = std::move(symbol);
+        // symbols.swap(id, symbol);
+        // auto ret = symbols.emplace(id, symbol).first;
+        // return *ret->second.get();
+        return ans; //std::nullopt;
+    }
+
+    bool removeSymbol(const Symbol& symbol);
 
     /**
      * @brief Add a symbol to the current scope
@@ -81,7 +108,7 @@ public:
      * @param id Name of the symbol
      * @return std::optional<Symbol*> Empty if could not be found; present with value if symbol found.
      */
-    std::optional<Symbol *> lookup(std::string id);
+    std::optional<SymbolRef> lookup(std::string id);
 
     /**
      * @brief Get the Parent object
@@ -114,10 +141,10 @@ public:
     std::string toString() const;
 
     
-    std::vector<Symbol *> getSymbols(int flags)
+    std::vector<SymbolRef> findSymbols(int flags)
     {
         // Create an answer vector
-        std::vector<Symbol *> ans;
+        std::vector<SymbolRef> ans;
 
         // if(flags & SymbolLookupFlags::NON_LINEAR)
         // {
@@ -131,14 +158,14 @@ public:
 
         bool include_uninferred = flags & SymbolLookupFlags::UNINFERRED_TYPE;
         // Iterate through the symbols looking for TypeInfers which have not been inferred
-        for (auto item : symbols)
+        for (auto& item : symbols)
         {
             if (include_uninferred)
             {
                 if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->getType()))
                 {
                     if (!inf->hasBeenInferred())
-                        ans.push_back(item.second);
+                        ans.push_back(*item.second);
                 }
             }
 
@@ -149,11 +176,11 @@ public:
                     if (
                         (include_complete || !inf->getProtocol()->isComplete()) &&
                         (include_guarded || !inf->getProtocol()->isGuarded()))
-                        ans.push_back(item.second);
+                        ans.push_back(*item.second);
                 }
                 else
                 {
-                    ans.push_back(item.second);
+                    ans.push_back(*item.second);
                 }
             }
         }
@@ -161,19 +188,19 @@ public:
         return ans;
     }
 
-    std::map<std::string, Symbol *> copySymbols()
+    std::map<std::string, Symbol*> copySymbols()
     {
-        std::map<std::string, Symbol *> ans;
+        std::map<std::string, Symbol*> ans;
 
-        for (auto itr : symbols)
+        for (auto& itr : symbols)
         {
             if(itr.second->isDefinition())
-                ans.insert({
+                ans.emplace(
                     itr.first, 
                     new DefinitionSymbol(*dynamic_cast<DefinitionSymbol *>(itr.second)) // TODO: not exactly the safest, but should be fine as its the only current way to get definition symbols 
-                });
+                );
             else
-                ans.insert({itr.first, new Symbol(*itr.second)});
+                ans.emplace(itr.first, new Symbol(*itr.second));
         }
 
         return ans;

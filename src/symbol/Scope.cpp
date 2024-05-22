@@ -8,23 +8,23 @@
  * @return true If the symbol was added
  * @return false If the symbol was already defined
  */
-std::optional<Symbol *> Scope::addSymbol(Symbol *symbol)
-{
-  std::string id = symbol->getScopedIdentifier();
-  if (symbols.find(id) != symbols.end())
-  {
-    // Symbol already defined
-    delete symbol; // Save the memory FIXME: IS THIS UNSAFE? It should be safe now that we create the symbol in context and only return it to user if valid
-    return std::nullopt;
-  }
+// std::optional<SymbolRef> Scope::addSymbol(std::unique_ptr<T> symbol)
+// {
+//   std::string id = symbol->getScopedIdentifier();
+//   if (symbols.find(id) != symbols.end())
+//   {
+//     // Symbol already defined
+//     delete symbol; // Save the memory FIXME: IS THIS UNSAFE? It should be safe now that we create the symbol in context and only return it to user if valid
+//     return std::nullopt;
+//   }
 
-  auto ret = symbols.insert({id, symbol}).first;
-  return ret->second;
-}
+//   auto ret = symbols.insert({id, symbol}).first;
+//   return *ret->second;
+// }
 
-bool Scope::removeSymbol(const Symbol *symbol)
+bool Scope::removeSymbol(const Symbol& symbol)
 {
-  std::string id = symbol->getScopedIdentifier();
+  std::string id = symbol.getScopedIdentifier();
   if (symbols.find(id) != symbols.end())
   {
     symbols.erase(symbols.find(id));
@@ -40,12 +40,12 @@ bool Scope::removeSymbol(const Symbol *symbol)
  * @param id The identifier of the token to search for
  * @return std::optional<Symbol*> - Empty if not found; value provided if found.
  */
-std::optional<Symbol *> Scope::lookup(std::string id)
+std::optional<SymbolRef> Scope::lookup(std::string id)
 {
   auto symbol = symbols.find(id);
   if (symbol == symbols.end())
     return std::nullopt;
-  return symbol->second;
+  return *symbol->second;
 }
 
 // Modified from starter
@@ -77,7 +77,7 @@ std::string Scope::toString() const
     description << "\tparent: " << parent.value()->scopeId << ", " << std::endl; 
   description << "\tsymbols: {" << std::endl; 
 
-  for (auto sym : symbols)
+  for (auto& sym : symbols)
   {
     description << "\t\t" << sym.second->toString() << ", " << std::endl;
   }

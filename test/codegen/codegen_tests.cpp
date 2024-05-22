@@ -28,7 +28,7 @@ void EnsureCompilesTo(antlr4::ANTLRInputStream input, string hash)
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager stm = STManager();
-    SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, 0);
+    SemanticVisitor sv = SemanticVisitor(stm, DisplayMode::C_STYLE, 0);
     auto cuOpt = sv.visitCtx(tree);
     REQUIRE_FALSE(sv.hasErrors(0));
     REQUIRE(std::holds_alternative<TCompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
@@ -51,7 +51,7 @@ void EnsureErrors(antlr4::ANTLRInputStream input)
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
     STManager stm = STManager();
-    SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, 0);
+    SemanticVisitor sv = SemanticVisitor(stm, DisplayMode::C_STYLE, 0);
     auto cuOpt = sv.visitCtx(tree);
 
     REQUIRE(sv.hasErrors(0));

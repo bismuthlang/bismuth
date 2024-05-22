@@ -17,6 +17,8 @@
 
 #include <functional>
 
+#include <memory>
+
 using std::optional; 
 
 // using namespace Types; 

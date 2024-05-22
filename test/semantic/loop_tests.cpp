@@ -35,7 +35,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   CHECK(sv.hasErrors(ERROR));
@@ -67,7 +67,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   CHECK(sv.hasErrors(ERROR));
@@ -99,7 +99,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   CHECK_FALSE(sv.hasErrors(ERROR));
@@ -131,7 +131,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 
@@ -183,7 +183,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 //   CHECK_FALSE(sv.hasErrors(ERROR));
@@ -211,7 +211,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 
@@ -240,7 +240,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 
@@ -269,7 +269,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 
@@ -298,7 +298,7 @@
 //   REQUIRE(tree->getText() != "");
 
 //   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+//   SemanticVisitor sv = SemanticVisitor(stmgr);
 
 //   sv.visitCompilationUnit(tree);
 
