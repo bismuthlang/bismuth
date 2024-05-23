@@ -60,10 +60,10 @@ public:
      * @return false if unsuccessful (ie, name already bound to another symbol)
      */
     std::optional<SymbolRef> addSymbol(std::string id, const Type * t, bool glob);
-    std::optional<std::reference_wrapper<DefinitionSymbol>> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
-    std::optional<std::reference_wrapper<AliasSymbol>> addAlias(std::string id, const Type * t, Identifier * a);
+    std::optional<DefinitionSymbolRef> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
+    std::optional<AliasSymbolRef> addAlias(std::string id, const Type * t, Identifier * a);
     std::optional<SymbolRef> addAnonymousSymbol(std::string id, const Type * t); 
-    std::optional<std::reference_wrapper<DefinitionSymbol>> addAnonymousDefinition(std::string id, const Type * t); 
+    std::optional<DefinitionSymbolRef> addAnonymousDefinition(std::string id, const Type * t); 
 
     /**
      * @brief Removes a symbol from the scope
@@ -135,19 +135,5 @@ public:
     std::optional<Scope*> currentScope = {}; 
     int scopeNumber = 0;
 
-    std::string getUniqNameFor(Scope * parent, std::string inScope) {
-        // TODO: not sure if getting FQN here will break some stuff wrt generics...
-        std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
-      
-        auto itr = nameCounter.find(id);
-        if(itr == nameCounter.end())
-        {
-            nameCounter.insert({id, 0});
-            return inScope;
-        }
-        std::ostringstream nextName; 
-        nextName << inScope << "." << itr->second; 
-        nameCounter.insert({id, itr->second++});
-        return nextName.str(); 
-    }
+    std::string getUniqNameFor(Scope& parent, std::string inScope);
 };

@@ -61,12 +61,12 @@ std::optional<SymbolRef> Context::addSymbol(std::string id, const Type * t, bool
 
     // Find a unique name for the symbol within the current stop
     uint32_t idNum = 0; 
-    std::string uniqName = getUniqNameFor(currentScope.value(), id); 
+    std::string uniqName = getUniqNameFor(*currentScope.value(), id); 
 
 
     // Note: this is safe as we previously check that currentScope exists
     return currentScope.value()->addSymbol<Symbol>(
-        new LocatableSymbol(
+        std::make_unique<LocatableSymbol>(
             new Identifier(
                 id, 
                 uniqName, 
@@ -78,14 +78,14 @@ std::optional<SymbolRef> Context::addSymbol(std::string id, const Type * t, bool
         ));
 }
 
-std::optional<std::reference_wrapper<DefinitionSymbol>> Context::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
+std::optional<DefinitionSymbolRef> Context::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
 {
     // Check that the exact same identifier doesn't already exist in the current scope
     if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
 
     // Find a unique name for the symbol within the current stop
     uint32_t idNum = 0; 
-    std::string uniqName = getUniqNameFor(currentScope.value(), id); 
+    std::string uniqName = getUniqNameFor(*currentScope.value(), id); 
 
     auto identifier = new Identifier(
         id, 
@@ -96,7 +96,7 @@ std::optional<std::reference_wrapper<DefinitionSymbol>> Context::addDefinition(V
     Scope* innerScope = this->createNamespace(identifier);
 
     return currentScope.value()->addSymbol(
-        new DefinitionSymbol(
+        std::make_unique<DefinitionSymbol>(
             m, 
             identifier, 
             t, 
@@ -107,17 +107,17 @@ std::optional<std::reference_wrapper<DefinitionSymbol>> Context::addDefinition(V
     );
 }
 
-std::optional<std::reference_wrapper<AliasSymbol>> Context::addAlias(std::string id, const Type * t, Identifier * a)
+std::optional<AliasSymbolRef> Context::addAlias(std::string id, const Type * t, Identifier * a)
 {
     // Check that the exact same identifier doesn't already exist in the current scope
     if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
 
 
     // TODO: why are we doing uniqueName? I guess it shouldnt ever happen tho given lookup in currentScope?
-    std::string uniqName = getUniqNameFor(currentScope.value(), id); 
+    std::string uniqName = getUniqNameFor(*currentScope.value(), id); 
 
     return currentScope.value()->addSymbol(
-        new AliasSymbol(
+        std::make_unique<AliasSymbol>(
             new Identifier(id, uniqName, currentScope.value()->getIdentifier()),
             currentScope.value(),
             t, 
@@ -132,22 +132,22 @@ std::optional<SymbolRef> Context::addAnonymousSymbol(std::string wantedId, const
     // Check that the exact same identifier doesn't already exist in the current scope
     if(!currentScope) return std::nullopt;
     // Find a unique name for the symbol within the current stop
-    id = getUniqNameFor(currentScope.value(), id);
+    id = getUniqNameFor(*currentScope.value(), id);
 
     // Note: this is safe as we previously check that currentScope exists
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
     return currentScope.value()->addSymbol(
-        new LocatableSymbol(
+        std::make_unique<LocatableSymbol>(
         new Identifier(id, id, currentScope.value()->getIdentifier()), t, false, currentScope.value()));
 }
 
-std::optional<std::reference_wrapper<DefinitionSymbol>> Context::addAnonymousDefinition(std::string wantedId, const Type * t)
+std::optional<DefinitionSymbolRef> Context::addAnonymousDefinition(std::string wantedId, const Type * t)
 {
     std::string id = "#" + wantedId; // TODO: Better symbol to indicate anon. @ reserved for compiler internals
     // Check that the exact same identifier doesn't already exist in the current scope
     if(!currentScope) return std::nullopt;
     // Find a unique name for the symbol within the current stop
-    id = getUniqNameFor(currentScope.value(), id);
+    id = getUniqNameFor(*currentScope.value(), id);
 
     Identifier * identifier = new Identifier(id, id, currentScope.value()->getIdentifier());
 
@@ -155,7 +155,7 @@ std::optional<std::reference_wrapper<DefinitionSymbol>> Context::addAnonymousDef
 
     // Note: this is safe as we previously check that currentScope exists
     return currentScope.value()->addSymbol(
-        new DefinitionSymbol(
+        std::make_unique<DefinitionSymbol>(
             VisibilityModifier::PRIVATE,
             identifier, 
             t, 
@@ -301,4 +301,20 @@ std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> ste
     Scope * ans = this->currentScope.value(); 
     this->currentScope = origScope; 
     return ans; 
+}
+
+std::string Context::getUniqNameFor(Scope& parent, std::string inScope) {
+    // TODO: not sure if getting FQN here will break some stuff wrt generics...
+    std::string id = parent.getIdentifier()->getFullyQualifiedName() + "::" + inScope;
+    
+    auto itr = nameCounter.find(id);
+    if(itr == nameCounter.end())
+    {
+        nameCounter.insert({id, 0});
+        return inScope;
+    }
+    std::ostringstream nextName; 
+    nextName << inScope << "." << itr->second; 
+    nameCounter.insert({id, itr->second++});
+    return nextName.str(); 
 }

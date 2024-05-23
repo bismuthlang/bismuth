@@ -23,12 +23,12 @@ std::optional<SymbolRef> STManager::addSymbol(std::string id, const Type * t, bo
     return context.addSymbol(id, t, g);
 }
 
-std::optional<std::reference_wrapper<AliasSymbol>> STManager::addAlias(std::string id, const Type * t, Identifier * a)
+std::optional<AliasSymbolRef> STManager::addAlias(std::string id, const Type * t, Identifier * a)
 {
     return context.addAlias(id, t, a);
 }
 
-std::optional<std::reference_wrapper<DefinitionSymbol>> STManager::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
+std::optional<DefinitionSymbolRef> STManager::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
 {
 
     auto symOpt = context.addDefinition(m, id, t, glob);
@@ -53,7 +53,7 @@ std::optional<SymbolRef> STManager::addAnonymousSymbol(std::string id, const Typ
     return context.addAnonymousSymbol(id, t); 
 }
 
-std::optional<std::reference_wrapper<DefinitionSymbol>> STManager::addAnonymousDefinition(std::string id, const Type * t)
+std::optional<DefinitionSymbolRef> STManager::addAnonymousDefinition(std::string id, const Type * t)
 {
     return context.addAnonymousDefinition(id, t); 
 }
@@ -142,8 +142,8 @@ bool STManager::isGlobalScope()
     return context.isGlobalScope();
 }
 
-std::string STManager::getUniqNameFor(Scope * parent, std::string inScope) {
-    std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
+std::string STManager::getUniqNameFor(Scope& parent, std::string inScope) {
+    std::string id = parent.getIdentifier()->getFullyQualifiedName() + "::" + inScope;
 
     auto itr = nameCounter.find(id);
     if(itr == nameCounter.end())

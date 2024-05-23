@@ -25,9 +25,11 @@
 bool Scope::removeSymbol(const Symbol& symbol)
 {
   std::string id = symbol.getScopedIdentifier();
-  if (symbols.find(id) != symbols.end())
+  if (auto symItr = symbols.find(id); symItr != symbols.end())
   {
-    symbols.erase(symbols.find(id));
+    // Lifetimes of all symbols must be preserved throughout
+    removed.push_back(std::move(symItr->second));
+    symbols.erase(symItr);
     return true;
   }
 
@@ -38,7 +40,7 @@ bool Scope::removeSymbol(const Symbol& symbol)
  * @brief Searches for a token in the given scope.
  *
  * @param id The identifier of the token to search for
- * @return std::optional<Symbol*> - Empty if not found; value provided if found.
+ * @return std::optional<std::unique_ptr<Symbol>> - Empty if not found; value provided if found.
  */
 std::optional<SymbolRef> Scope::lookup(std::string id)
 {

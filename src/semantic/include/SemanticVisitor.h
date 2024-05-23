@@ -106,7 +106,7 @@ public:
     std::optional<ParameterListNode> visitCtx(BismuthParser::ParameterListContext *ctx);
     std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { return visitCtx(ctx); }
 
-    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<std::reference_wrapper<DefinitionSymbol>> sym);
+    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<DefinitionSymbolRef> sym);
     std::any visitLambdaConstExpr(BismuthParser::LambdaConstExprContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx, std::nullopt)); }
 
     std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::BlockStatementContext *ctx) { return this->visitCtx(ctx->block()); }
@@ -493,7 +493,7 @@ std::variant<
 
 private:
     STManager& stmgr;
-    PropertyManager<std::reference_wrapper<DefinitionSymbol>> symBindings = PropertyManager<std::reference_wrapper<DefinitionSymbol>>();
+    PropertyManager<DefinitionSymbolRef> symBindings = PropertyManager<DefinitionSymbolRef>();
     PropertyManager<std::deque<DeepRestData *>*> restBindings = PropertyManager<std::deque<DeepRestData *>*>();
     BismuthErrorHandler errorHandler = BismuthErrorHandler(SEMANTIC);
     DisplayMode toStringMode; 
@@ -606,7 +606,7 @@ private:
     }
 
 
-    std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m = VisibilityModifier::PRIVATE);
+    std::variant<DefinitionSymbolRef, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m = VisibilityModifier::PRIVATE);
 
     void bindRestData(antlr4::ParserRuleContext *ctx, std::deque<DeepRestData *> *rd)
     { // DeepRestData * rd) {

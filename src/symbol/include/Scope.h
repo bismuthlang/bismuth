@@ -50,7 +50,7 @@ public:
 
     Scope(
         std::optional<Scope *> p,
-        std::map<std::string, Symbol*> syms,
+        std::map<std::string, std::unique_ptr<Symbol>> syms,
         Identifier * n,
         bool s
     )
@@ -73,7 +73,7 @@ public:
      * @return false If this could not be done (ie, due to a redeclaration)
      */
     template<typename T, typename std::enable_if<std::is_base_of<Symbol, T>::value>::type* = nullptr>
-    std::optional<std::reference_wrapper<T>> addSymbol(T* symbol)
+    std::optional<std::reference_wrapper<T>> addSymbol(std::unique_ptr<T> symbol)
     {
         std::string id = symbol->getScopedIdentifier();
         if (symbols.find(id) != symbols.end())
@@ -106,7 +106,7 @@ public:
      * @brief Looks up a symbol in the current scope
      *
      * @param id Name of the symbol
-     * @return std::optional<Symbol*> Empty if could not be found; present with value if symbol found.
+     * @return std::optional<std::unique_ptr<Symbol>> Empty if could not be found; present with value if symbol found.
      */
     std::optional<SymbolRef> lookup(std::string id);
 
@@ -165,7 +165,7 @@ public:
                 if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->getType()))
                 {
                     if (!inf->hasBeenInferred())
-                        ans.push_back(*item.second);
+                        ans.push_back(*item.second.get());
                 }
             }
 
@@ -188,19 +188,22 @@ public:
         return ans;
     }
 
-    std::map<std::string, Symbol*> copySymbols()
+    std::map<std::string, std::unique_ptr<Symbol>> copySymbols()
     {
-        std::map<std::string, Symbol*> ans;
+        std::map<std::string, std::unique_ptr<Symbol>> ans;
 
+        // TODO: this will probably break if we ever have to copy an 
+        // alias as they're also seen as definitions, but aren't
+        // DefinitionSymbols!
         for (auto& itr : symbols)
         {
             if(itr.second->isDefinition())
                 ans.emplace(
                     itr.first, 
-                    new DefinitionSymbol(*dynamic_cast<DefinitionSymbol *>(itr.second)) // TODO: not exactly the safest, but should be fine as its the only current way to get definition symbols 
+                    std::make_unique<DefinitionSymbol>(*dynamic_cast<DefinitionSymbol *>(itr.second.get())) // TODO: not exactly the safest, but should be fine as its the only current way to get definition symbols 
                 );
             else
-                ans.emplace(itr.first, new Symbol(*itr.second));
+                ans.emplace(itr.first, std::make_unique<Symbol>(*itr.second));
         }
 
         return ans;
@@ -258,7 +261,8 @@ public:
 private:
     int scopeId = -1;
     std::optional<Scope *> parent = {};
-    std::map<std::string, Symbol *> symbols;
+    std::map<std::string, std::unique_ptr<Symbol>> symbols;
+    std::vector<std::unique_ptr<Symbol>> removed;
 
     Identifier * id; 
 

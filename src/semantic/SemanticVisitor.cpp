@@ -534,14 +534,14 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
  */
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineProgramContext *ctx)
 {
-    std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
+    std::variant<DefinitionSymbolRef, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
     {
         return (*e)->addErrorAt(ctx->getStart());
     }
 
-    auto defSym = std::get<std::reference_wrapper<DefinitionSymbol>>(symOpt);
+    auto defSym = std::get<DefinitionSymbolRef>(symOpt);
 
     auto generateProgram = [this, ctx, defSym](const TypeProgram * progType) -> std::variant<DefinitionNode *, ErrorChain *> {
         std::string funcId = ctx->name->getText();
@@ -607,13 +607,13 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
-    std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> funcSymOpt = defineAndGetSymbolFor(ctx);
+    std::variant<DefinitionSymbolRef, ErrorChain *> funcSymOpt = defineAndGetSymbolFor(ctx);
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&funcSymOpt))
     {
         return (*e)->addErrorAt(ctx->getStart());
     }
-    auto defSym = std::get<std::reference_wrapper<DefinitionSymbol>>(funcSymOpt);
+    auto defSym = std::get<DefinitionSymbolRef>(funcSymOpt);
 
     std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam, defSym);
 
@@ -2089,10 +2089,10 @@ SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
     return anyOpt2VarError<const Type>(errorHandler, ctx->type()->accept(this));
 }
 
-std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<std::reference_wrapper<DefinitionSymbol>> symOpt)
+std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<DefinitionSymbolRef> symOpt)
 {
     // FIXME: technically could be bad opt access, but should never happen
-    DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(symOpt, 
+    DefinitionSymbol& sym = lazy_value_or<DefinitionSymbolRef>(symOpt, 
         [this]() {return stmgr.addAnonymousDefinition("lambda", new TypeFunc()).value(); });
 
     if(!stmgr.getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of lambda constexpr!");
@@ -2298,7 +2298,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return (*e)->addErrorAt(ctx->getStart());
     }
 
-    auto sym = std::get<std::reference_wrapper<DefinitionSymbol>>(symOpt);
+    auto sym = std::get<DefinitionSymbolRef>(symOpt);
 
 
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.get().getType()))
@@ -2350,7 +2350,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     }
 
     // FIXME: ENTER SCOPE!!
-    auto sym = std::get<std::reference_wrapper<DefinitionSymbol>>(symOpt);
+    auto sym = std::get<DefinitionSymbolRef>(symOpt);
 
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.get().getType()))
     {
@@ -3594,7 +3594,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 }
 
 
-std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m)
+std::variant<DefinitionSymbolRef, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m)
 {
     // TODO: maybe refactor with visitCtx for Lambda?
     auto defineFunction = [this](BismuthParser::DefineFunctionContext *ctx, const TypeFunc *funcType) -> std::optional<ErrorChain *> {
@@ -3719,7 +3719,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
     };
 
 
-    auto defineTemplate = [this, m, defineFunction, defineProgram, defineEnum, defineStruct](BismuthParser::DefineTypeContext *ctx, const TypeTemplate * templateTy, std::reference_wrapper<DefinitionSymbol> defSym) -> std::optional<ErrorChain *> {
+    auto defineTemplate = [this, m, defineFunction, defineProgram, defineEnum, defineStruct](BismuthParser::DefineTypeContext *ctx, const TypeTemplate * templateTy, DefinitionSymbolRef defSym) -> std::optional<ErrorChain *> {
         if (templateTy->isDefined()) return std::nullopt; 
 
         auto applyTemplate = [this, m, defSym, ctx](TemplateInfo info, std::function<std::optional<ErrorChain *>()> fn) -> std::optional<ErrorChain *> {
@@ -3811,8 +3811,8 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
 
 
-    auto getTemplateSymbol = [this, m, defineTemplate](std::optional<std::reference_wrapper<DefinitionSymbol>> opt, std::string symName, BismuthParser::DefineTypeContext* innerCtx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
-        auto defSym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt, 
+    auto getTemplateSymbol = [this, m, defineTemplate](std::optional<DefinitionSymbolRef> opt, std::string symName, BismuthParser::DefineTypeContext* innerCtx) -> std::variant<DefinitionSymbolRef, ErrorChain *> {
+        auto defSym = lazy_value_or<DefinitionSymbolRef>(opt, 
             [this, m, symName]() {
                 return stmgr.addDefinition(m, symName, new TypeTemplate(), false).value(); //should be safe as we checked for redeclarations
             });
@@ -3830,8 +3830,8 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
     };
 
     // Essentially a type-case
-    return defineTypeCase<std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>>(ctx, 
-        [this, m, defineTemplate, defineFunction](BismuthParser::DefineFunctionContext * fnCtx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+    return defineTypeCase<std::variant<DefinitionSymbolRef, ErrorChain *>>(ctx, 
+        [this, m, defineTemplate, defineFunction](BismuthParser::DefineFunctionContext * fnCtx) -> std::variant<DefinitionSymbolRef, ErrorChain *> {
             
             auto opt = symBindings.getBinding(fnCtx);
 
@@ -3843,7 +3843,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if(isTemplate)
             {
-                auto sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt, 
+                auto sym = lazy_value_or<DefinitionSymbolRef>(opt, 
                     [this, m, fnCtx](){
                         return stmgr.addDefinition(
                             m, 
@@ -3874,7 +3874,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
                 return errorHandler.addError(fnCtx->getStart(), "Expected template but got: " + sym.get().getType()->toString(toStringMode));
             }
  
-            auto sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt, 
+            auto sym = lazy_value_or<DefinitionSymbolRef>(opt, 
                 [this, m, fnCtx]() {
                     return stmgr.addDefinition(
                         m, 
@@ -3894,7 +3894,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
             return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym.get().getType()->toString(toStringMode));       
         },
 
-        [this, m, getTemplateSymbol, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+        [this, m, getTemplateSymbol, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::variant<DefinitionSymbolRef, ErrorChain *> {
             auto opt = symBindings.getBinding((BismuthParser::DefineTypeContext *)ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
@@ -3908,7 +3908,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
             }
 
 
-            auto sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt, 
+            auto sym = lazy_value_or<DefinitionSymbolRef>(opt, 
                 [this, m, ctx]() { return stmgr.addDefinition(
                     m,
                     ctx->name->getText(), 
@@ -3927,7 +3927,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
             return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym.get().getType()->toString(toStringMode));
         },
 
-        [this, m, getTemplateSymbol, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+        [this, m, getTemplateSymbol, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::variant<DefinitionSymbolRef, ErrorChain *> {
             auto opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
@@ -3942,7 +3942,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
                 return getTemplateSymbol(opt, name, ctx);
             }
 
-            auto sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt, 
+            auto sym = lazy_value_or<DefinitionSymbolRef>(opt, 
                 [this, m, name]() { return stmgr.addDefinition(
                     m,
                     name, 
@@ -3962,7 +3962,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
             return errorHandler.addError(ctx->getStart(), "Expected struct/product but got: " + sym.get().getType()->toString(toStringMode));
         },
 
-        [this, m, getTemplateSymbol, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+        [this, m, getTemplateSymbol, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::variant<DefinitionSymbolRef, ErrorChain *> {
             auto opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
@@ -3977,7 +3977,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
                 return getTemplateSymbol(opt, name, ctx);
             }
 
-            auto sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt, 
+            auto sym = lazy_value_or<DefinitionSymbolRef>(opt, 
                 [this, m, name](){
                     return stmgr.addDefinition(
                         m, 
@@ -3998,7 +3998,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
             return errorHandler.addError(ctx->getStart(), "Expected enum/sum but got: " + sym.get().getType()->toString(toStringMode));
         },
 
-        [this](BismuthParser::DefineTypeContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>{
+        [this](BismuthParser::DefineTypeContext * ctx) -> std::variant<DefinitionSymbolRef, ErrorChain *>{
             return errorHandler.addCompilerError(ctx->getStart(), "Failed to generate the type for a definition; Unknown and unimplemented case for define type.");
         }
 

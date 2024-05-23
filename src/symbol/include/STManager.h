@@ -66,13 +66,13 @@ public:
    */
   std::optional<SymbolRef> addSymbol(std::string id, const Type * t, bool g); 
 
-  std::optional<std::reference_wrapper<DefinitionSymbol>> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
+  std::optional<DefinitionSymbolRef> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
 
-  std::optional<std::reference_wrapper<AliasSymbol>> addAlias(std::string id, const Type * t, Identifier * a);
+  std::optional<AliasSymbolRef> addAlias(std::string id, const Type * t, Identifier * a);
 
   std::optional<SymbolRef> addAnonymousSymbol(std::string id, const Type * t);
 
-  std::optional<std::reference_wrapper<DefinitionSymbol>> addAnonymousDefinition(std::string id, const Type * t);
+  std::optional<DefinitionSymbolRef> addAnonymousDefinition(std::string id, const Type * t);
 
   bool removeSymbol(Symbol& symbol);
 
@@ -139,7 +139,7 @@ public:
   Scope * getGlobalScope() { return context.getGlobalScope(); }
 
 private: 
-  std::string getUniqNameFor(Scope * parent, std::string inScope); 
+  std::string getUniqNameFor(Scope& parent, std::string inScope); 
 
 private:
   std::map<std::string, uint32_t> nameCounter;

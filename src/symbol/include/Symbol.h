@@ -136,6 +136,8 @@ private:
     VisibilityModifier visibility; 
 };
 
+using DefinitionSymbolRef = std::reference_wrapper<DefinitionSymbol>;
+
 class AliasSymbol : public LocatableSymbol 
 {
 public:
@@ -156,3 +158,5 @@ public:
     private:
         Identifier * orig; 
 };
+
+using AliasSymbolRef = std::reference_wrapper<AliasSymbol>;
