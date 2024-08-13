@@ -1,5 +1,6 @@
 #pragma once
 #include "ExecUtils.h" //TODO: Warning to prevent circular dependencies?
+#include "llvm/IR/Module.h"
 
 /**
  * @brief Determines the SHA256 hash of a program (NOTE: REQUIRES sha256sum TO BE INSTALLED!)

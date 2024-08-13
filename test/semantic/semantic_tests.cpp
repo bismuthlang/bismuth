@@ -1,11 +1,6 @@
+#include "Type.h"
 #include <catch2/catch_test_macros.hpp>
-#include "antlr4-runtime.h"
-#include "BismuthLexer.h"
-#include "BismuthParser.h"
-#include "BismuthErrorHandler.h"
-#include "SemanticVisitor.h"
 
-#include "test_error_handlers.h"
 
 TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 {

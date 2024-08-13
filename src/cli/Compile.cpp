@@ -11,7 +11,14 @@
 
 #include "Compile.h"
 
+#include "BismuthLexer.h"
+#include "CompilerFlags.h"
+#include "SemanticVisitor.h"
+#include "CodegenVisitor.h"
 #include "ExecUtils.h"
+
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Support/TargetSelect.h"
 
 std::filesystem::path getRelativePath(std::filesystem::path& currentPath, std::filesystem::path& given)
 {

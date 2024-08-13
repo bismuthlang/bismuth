@@ -1,5 +1,7 @@
 # Top-level CMake file for Bismiuth
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 cmake_minimum_required(VERSION 3.20.0)
 project(BISMUTH_COMPILER 
   LANGUAGES CXX C

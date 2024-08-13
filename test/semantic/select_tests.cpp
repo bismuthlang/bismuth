@@ -1,5 +1,4 @@
 #include <catch2/catch_test_macros.hpp>
-#include "antlr4-runtime.h"
 #include "BismuthLexer.h"
 #include "BismuthParser.h"
 #include "BismuthErrorHandler.h"

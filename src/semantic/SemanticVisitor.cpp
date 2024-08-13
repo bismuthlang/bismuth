@@ -1,5 +1,8 @@
 #include "SemanticVisitor.h"
 
+#include "CUtils.h"
+#include "CompilerFlags.h"
+#include <regex>
 
 std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx)
 {
@@ -715,8 +718,6 @@ std::variant<TArrayRValue *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     const Type * innerTy = new TypeInfer(); 
 
     vector<TypedNode *> elements; 
-
-    bool isValid = true; 
 
     for(auto eleCtx : ctx->elements)
     {

@@ -1,6 +1,7 @@
 #pragma once
-#include "Symbol.h"
-#include "antlr4-runtime.h"
+
+#include "tree/ParseTree.h"
+#include <optional>
 
 template <typename T>
 class PropertyManager {

@@ -8,6 +8,7 @@
  */
 
 #include "bismuthc.h"
+#include "llvm/Support/CommandLine.h"
 
 llvm::cl::OptionCategory CLIOptions("Bismuth CLI Options");
 static llvm::cl::list<std::string>

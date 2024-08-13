@@ -1,12 +1,11 @@
 #include <catch2/catch_test_macros.hpp>
 #include <catch2/matchers/catch_matchers_string.hpp>
-#include "antlr4-runtime.h"
+
 #include "BismuthLexer.h"
 #include "BismuthParser.h"
 #include "BismuthErrorHandler.h"
+#include "CompilerFlags.h"
 #include "SemanticVisitor.h"
-
-#include "CodegenVisitor.h"
 
 #include "test_error_handlers.h"
 
@@ -23,7 +22,7 @@ void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message
   REQUIRE(tree != NULL);
   STManager stm = STManager();
   SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, flags);
-  auto cuOpt = sv.visitCtx(tree);
+  sv.visitCtx(tree);
 
   REQUIRE(sv.hasErrors(0));
   REQUIRE_THAT(sv.getErrors(), ContainsSubstring(message));

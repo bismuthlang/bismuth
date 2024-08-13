@@ -12,21 +12,11 @@
  */
 
 #include <string>  //Includes strings
-#include <sstream> //Used for string streams
-#include "llvm/IR/Value.h"
-
-#include <optional> // Optionals
-
 
 #include "Type.h"
-
-// #include "Scope.h"
-
 #include "FQN.h"
 
 class Scope; 
-
-// using namespace Types; 
 
 // FIXME: Make these apply directly in semantic analysis---particularly with paths!
 enum VisibilityModifier {

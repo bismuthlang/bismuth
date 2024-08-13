@@ -24,7 +24,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode & n)
         {
             const TypeProgram *type = octx->getType();
 
-            Function *fn = Function::Create(
+            Function::Create(
                 type->getLLVMFunctionType(module),
                 getLinkageType(e->getVisibility()),
                 getCodegenID(octx->getSymbol()),
@@ -36,7 +36,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode & n)
         {
             const TypeFunc *type = octx->getType();
 
-            Function *fn = Function::Create(
+            Function::Create(
                 type->getLLVMFunctionType(module), 
                 getLinkageType(e->getVisibility()),
                 getCodegenID(octx->getSymbol()),
@@ -1093,7 +1093,7 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
     Value *vecPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32Zero});
     Value *vec = builder->CreateLoad(vecPtr->getType()->getPointerElementType(), vecPtr);
     
-    Value * valuePtr = builder->CreateGEP(vec, {indexValue});
+    Value * valuePtr = builder->CreateGEP(vec, indexValue);
     Value * value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
 
     // FIXME: NULLABILITY CHECKS + FIX BUG WHERE DYN ARRAY CAN BE USED W/ LINEAR RESOURCES 
@@ -1720,12 +1720,12 @@ std::optional<Value *> CodegenVisitor::visit(TExternNode & n)
 
     const TypeFunc *type = n.getType();
 
-    Function *fn = Function::Create(
+    Function::Create(
         type->getLLVMFunctionType(module),
         GlobalValue::ExternalLinkage, // FIXME: USE getLinkageType(e->getVisibility()),? 
         getCodegenID(symbol),
-        module);
-    // type->setName(fn.getName().str());
+        module
+    );
 
     return std::nullopt;
 }

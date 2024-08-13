@@ -15,8 +15,6 @@
 #include <vector>
 #include <optional>
 
-#include <stack>
-#include <iostream>
 
 #include <functional> // std::function
 
