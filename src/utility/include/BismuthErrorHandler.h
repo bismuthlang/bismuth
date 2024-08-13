@@ -9,7 +9,8 @@
  *
  */
 #pragma once
-#include "antlr4-runtime.h"
+#include "BaseErrorListener.h"
+#include "Token.h"
 #include <string>
 #include <vector>
 // #include <source_location> // TODO: Upgrade to clang 15 or 16 and use https://en.cppreference.com/w/cpp/compiler_support/20#C.2B.2B20_library_features

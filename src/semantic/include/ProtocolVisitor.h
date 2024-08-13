@@ -9,7 +9,6 @@
  *
  */
 #pragma once
-#include "antlr4-runtime.h"
 #include "BismuthBaseVisitor.h"
 #include "BismuthErrorHandler.h"
 #include "CastUtils.h"

@@ -15,17 +15,9 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
-#include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/NoFolder.h"
 
-// #include "CastUtils.h"
-
-// #include <any>
 #include <string>
-// #include <regex>
-
-#include <variant>
-#include <optional>
 
 #include "TypedAST.h"
 #include "Symbol.h" // Only for VisibilityModifier

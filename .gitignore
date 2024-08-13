@@ -20,7 +20,8 @@ Thumbs.db
 *.wmv
 
 ## expression-compiler specific
-
+.cache/
+cmake/compile_commands.json
 build/
 cov/
 antlr4-cpp-runtime/

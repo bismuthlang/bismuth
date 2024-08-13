@@ -11,29 +11,23 @@
  *
  */
 
-#include <string>  //Includes strings
-#include <sstream> //Used for string streams
+#include "llvm/IR/Module.h"
+#include "llvm/IR/Type.h"
 #include "llvm/IR/Value.h"
-#include "llvm/IR/IRBuilder.h"
-#include "llvm/IR/NoFolder.h"
 
-#include <any>      // Needed for anycasts
+#include <climits>  // Max & min
+#include <iostream> // cout
+#include <optional> // Optionals
+#include <set>      // Sets
+#include <string> 
 #include <utility>  // Needed for anycasts
 #include <vector>   // Vectors
-#include <optional> // Optionals
-
-#include <set> // Sets
-
-#include <climits> // Max & Min
-
-#include "LinkedMap.h"
-#include "Protocol.h"
-
-#include "SymbolUtils.h"
-
-#include <iostream> // cout
 
 #include "FQN.h"
+#include "LinkedMap.h"
+#include "Protocol.h"
+#include "SymbolUtils.h"
+
 
 class ProtocolSequence;
 

@@ -9,10 +9,6 @@
  *
  */
 #pragma once
-#include "antlr4-runtime.h"
-#include <string>
-#include <vector>
-#include <sstream>
 
 /**
  * @brief Enum containing information that we may need to send to the compiler to make it perform specific operations.

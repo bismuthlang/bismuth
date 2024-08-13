@@ -9,11 +9,10 @@
  *
  */
 #pragma once
-#include "antlr4-runtime.h"
-#include "BismuthBaseVisitor.h"
-#include "CompilerFlags.h"
 
 #include "BismuthErrorHandler.h"
+#include "CodegenUtils.h"
+#include "TypedAST.h"
 #include "DeepCopyVisitor.h"
 
 #include "llvm/ADT/StringRef.h"
@@ -23,18 +22,9 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/NoFolder.h"
 
-#include "CastUtils.h"
 
-// #include <any>
 #include <string>
-// #include <regex>
-
-#include <variant>
 #include <optional>
-
-#include "TypedAST.h"
-#include "CodegenUtils.h"
-#include "Scope.h"
 
 // using namespace llvm;
 using llvm::ArrayRef;

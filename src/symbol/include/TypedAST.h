@@ -5,8 +5,6 @@
 #include <functional> // std::function
 
 
-#include "antlr4-runtime.h" //For token
-
 using namespace std;
 using llvm::Value;
 

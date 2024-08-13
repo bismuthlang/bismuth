@@ -3,6 +3,9 @@
 // #define SAFE_DYNAMIC_CAST(id, type, expr, ctx, message)\
 //     auto id = dynamic_cast<type>(expr);\
 //     if(!id) return errorHandler.addError(ctx, message);
+#include "CUtils.h"
+#include "CompilerFlags.h"
+#include <regex>
 
 std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx)
 {
@@ -718,8 +721,6 @@ std::variant<TArrayRValue *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     const Type * innerTy = new TypeInfer(); 
 
     vector<TypedNode *> elements; 
-
-    bool isValid = true; 
 
     for(auto eleCtx : ctx->elements)
     {
