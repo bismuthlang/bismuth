@@ -23,6 +23,5 @@ include_directories(cli_lib
     ${SEMANTIC_INCLUDE}
     ${CODEGEN_INCLUDE}
     ${UTILITY_INCLUDE}
-    ${LLVM_BINARY_DIR}/include
     ${LLVM_INCLUDE_DIR}
 )

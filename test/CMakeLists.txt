@@ -50,7 +50,6 @@ target_include_directories(tests PUBLIC
     ${SEMANTIC_INCLUDE}
     ${UTILITY_INCLUDE}
     ${CODEGEN_INCLUDE}
-    ${LLVM_BINARY_DIR}/include
     ${LLVM_INCLUDE_DIR}
     ${LLVM_TARGETS_TO_BUILD}
     ${CLI_INCLUDE}

@@ -14,6 +14,10 @@ include(CLI)
 ####################################################################
 find_package(LLVM REQUIRED CONFIG)
 list(APPEND CMAKE_MODULE_PATH ${LLVM_DIR})
+
+message(STATUS "Found LLVM (${LLVM_DIR} and ${LLVM_INCLUDE_DIR}) ${LLVM_PACKAGE_VERSION}")
+message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
+
 include(AddLLVM)
 include(HandleLLVMOptions)
 
@@ -31,6 +35,8 @@ add_executable(bismuthc bismuthc.cpp)
 
 llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_TARGETS_TO_BUILD} support core irreader codegen mc mcparser option)
 
+message(STATUS "LLVM ${LLVM_BINARY_DIR} COMPONENTS ${LLVM_LIBS}")
+ 
 add_dependencies(bismuthc 
     parser_lib 
     sym_lib 
@@ -47,7 +53,6 @@ target_include_directories(bismuthc PUBLIC
     ${SEMANTIC_INCLUDE}
     ${UTILITY_INCLUDE}
     ${CODEGEN_INCLUDE}
-    ${LLVM_BINARY_DIR}/include
     ${LLVM_INCLUDE_DIR}
     ${LLVM_TARGETS_TO_BUILD}
     ${CLI_INCLUDE}
