@@ -179,7 +179,7 @@ private:
             /*
              * Insert the else block (same as rest if no else branch)
              */
-            parentFn->getBasicBlockList().push_back(elseBlk);
+            parentFn->insert(parentFn->end(), elseBlk);
             builder->SetInsertPoint(elseBlk);
 
             // // Generate the code for the else block; follows the same logic as the then block.
@@ -205,7 +205,7 @@ private:
             elseBlk = builder->GetInsertBlock();
 
             // As we have an else block, rest and else are different, so we have to merge back in.
-            parentFn->getBasicBlockList().push_back(restBlk);
+            parentFn->insert(parentFn->end(), restBlk);
             builder->SetInsertPoint(restBlk);
 
             llvm::PHINode *phi = builder->CreatePHI(type->getLLVMType(module), 2, "phi");
@@ -221,7 +221,7 @@ private:
 
                 if (localTy->requiresDeepCopy())
                 {
-                    Value *memLoc = builder->CreateGEP(v, {Int32Zero,
+                    Value *memLoc = builder->CreateGEP(nullptr, v, {Int32Zero,
                                                            getU32(structType->getElementIndex(eleItr.first).value()) // In theory, bad opt access, but should never happen
                                             });
                     Value *loaded = builder->CreateLoad(eleItr.second->getLLVMType(module), memLoc);
@@ -240,9 +240,9 @@ private:
 
             BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
 
-            Value *memLoc = builder->CreateGEP(v, {Int32Zero, Int32One});
-            Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
-            Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
+            Value *memLoc = builder->CreateGEP(nullptr, v, {Int32Zero, Int32One});
+            Value *tagPtr = builder->CreateGEP(nullptr, v, {Int32Zero, Int32Zero});
+            Value *tag = builder->CreateLoad(tagPtr->getType()->getArrayElementType(), tagPtr);
             SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
 
             uint32_t index = 0;
@@ -253,7 +253,7 @@ private:
                 builder->SetInsertPoint(matchBlk);
                 
                 switchInst->addCase(getU32(index), matchBlk);
-                origParent->getBasicBlockList().push_back(matchBlk);
+                origParent->insert(origParent->end(), matchBlk);
 
                 Value *corrected = builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
                 Value *loaded = builder->CreateLoad(caseNode->getLLVMType(module), corrected);
@@ -266,7 +266,7 @@ private:
                 builder->CreateBr(mergeBlk);
             }
 
-            origParent->getBasicBlockList().push_back(mergeBlk);
+            origParent->insert(origParent->end(), mergeBlk);
             builder->SetInsertPoint(mergeBlk);
             v = builder->CreateLoad(llvmType, v);
         }
@@ -291,7 +291,7 @@ private:
             builder->CreateCondBr(builder->CreateICmpSLT(builder->CreateLoad(Int32Ty, loop_index), builder->CreateLoad(Int32Ty, loop_len)), loopBlk, restBlk);
             condBlk = builder->GetInsertBlock();
 
-            parent->getBasicBlockList().push_back(loopBlk);
+            parent->insert(parent->end(), loopBlk);
             builder->SetInsertPoint(loopBlk);
 
             /******************Loop Body********************/
@@ -300,7 +300,7 @@ private:
             /**/
             /**/
             {
-                Value *memLoc = builder->CreateGEP(v, {Int32Zero,
+                Value *memLoc = builder->CreateGEP(nullptr, v, {Int32Zero,
                                                               builder->CreateLoad(Int32Ty, loop_index)});
 
                 Value *loaded = builder->CreateLoad(valueType->getLLVMType(module), memLoc);
@@ -321,7 +321,7 @@ private:
             builder->CreateBr(condBlk);
             loopBlk = builder->GetInsertBlock();
 
-            parent->getBasicBlockList().push_back(restBlk);
+            parent->insert(parent->end(), restBlk);
             builder->SetInsertPoint(restBlk);
             v = builder->CreateLoad(llvmType, v);
 

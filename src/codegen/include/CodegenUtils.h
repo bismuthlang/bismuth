@@ -90,7 +90,7 @@ public:
         Int8Ty = llvm::Type::getInt8Ty(module->getContext());
         Int32Zero = ConstantInt::get(Int32Ty, 0, true);
         Int32One = ConstantInt::get(Int32Ty, 1, true);
-        i8p = llvm::Type::getInt8PtrTy(module->getContext());
+        i8p = llvm::Type::getInt8Ty(module->getContext())->getPointerTo();
         Int8PtrPtrTy = i8p->getPointerTo();
     }
 
@@ -112,7 +112,7 @@ public:
         Int8Ty = llvm::Type::getInt8Ty(module->getContext());
         Int32Zero = ConstantInt::get(Int32Ty, 0, true);
         Int32One = ConstantInt::get(Int32Ty, 1, true);
-        i8p = llvm::Type::getInt8PtrTy(module->getContext());
+        i8p = llvm::Type::getInt8Ty(module->getContext())->getPointerTo();
         Int8PtrPtrTy = i8p->getPointerTo();
     }
 

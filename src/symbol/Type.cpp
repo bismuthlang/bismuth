@@ -116,7 +116,7 @@ llvm::Type *TypeBool::getLLVMType(llvm::Module *M) const
  *
  *********************************************/
 std::string TypeStr::toString(DisplayMode) const { return "str"; }
-llvm::Type *TypeStr::getLLVMType(llvm::Module *M) const { return llvm::Type::getInt8PtrTy(M->getContext()); }
+llvm::Type *TypeStr::getLLVMType(llvm::Module *M) const { return llvm::Type::getInt8Ty(M->getContext())->getPointerTo(); }
 bool TypeStr::isSupertypeFor(const Type *other) const
 {
     return dynamic_cast<const TypeStr *>(other);

@@ -11,10 +11,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// The program entry function
-void program(unsigned int i);
 
 extern struct _Channel; 
+
+// The program entry function
+void program(struct _Channel *);
 
 struct _Channel * _Execute(void (*func)(struct _Channel *));
 void *_ReadLinearChannel(struct _Channel *);
