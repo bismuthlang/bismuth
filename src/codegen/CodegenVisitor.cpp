@@ -784,8 +784,8 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
 
         InitDynArray(ans, (n.exprs.size()));
 
-        Value * vecPtr = builder->CreateGEP(nullptr, ans, {Int32Zero, Int32Zero});
-        writeTo = builder->CreateLoad(nullptr, vecPtr, vecPtr->getType()->getArrayElementType());
+        Value * vecPtr = builder->CreateGEP(LegacyGEPType(ans), ans, {Int32Zero, Int32Zero});
+        writeTo = builder->CreateLoad(LegacyGEPType(ans), vecPtr, vecPtr->getType()->getArrayElementType());
 
         stoType = const_cast<Type *>(ty->getValueType()); 
     }
@@ -815,7 +815,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
         {
             a = correctSumAssignment(sumTy, a);
 
-            Value *ptr = builder->CreateGEP(nullptr, writeTo, {Int32Zero, getU32(i)});
+            Value *ptr = builder->CreateGEP(LegacyGEPType(writeTo), writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
             i++;
         }
@@ -824,7 +824,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
     {
         for(Value * a : args)
         {
-            Value *ptr = builder->CreateGEP(nullptr, writeTo, {Int32Zero, getU32(i)});
+            Value *ptr = builder->CreateGEP(LegacyGEPType(writeTo), writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
             i++;   
         }
@@ -893,7 +893,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
     if (!n.is_rvalue)
     {
         // If its an lvalue,need the pointer!
-        return builder->CreateGEP(nullptr, arrayPtr, {Int32Zero, indexValue});
+        return builder->CreateGEP(LegacyGEPType(arrayPtr), arrayPtr, {Int32Zero, indexValue});
     }
 
     // TODO: SIGNED VS UNSIGNED? AND LENGTH! NUM ELEMENTS IS 64!!
@@ -929,7 +929,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
      */
     parentFn->insert(parentFn->end(), gtzBlk);
     builder->SetInsertPoint(gtzBlk);
-    Value *valuePtr = builder->CreateGEP(nullptr, arrayPtr, {Int32Zero, indexValue});
+    Value *valuePtr = builder->CreateGEP(LegacyGEPType(arrayPtr), arrayPtr, {Int32Zero, indexValue});
     Value *value = builder->CreateLoad(valuePtr->getType()->getArrayElementType(), valuePtr);
     auto ptr = correctSumAssignment(n.getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
@@ -981,7 +981,7 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
 
 
 
-    Value *lengthPtr = builder->CreateGEP(nullptr, structPtr, {Int32Zero, Int32One});
+    Value *lengthPtr = builder->CreateGEP(LegacyGEPType(structPtr), structPtr, {Int32Zero, Int32One});
     Value *length = builder->CreateLoad(lengthPtr->getType()->getArrayElementType(), lengthPtr); 
 
     if (!n.is_rvalue)
@@ -999,7 +999,7 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
             new TBlockNode({
                 new CompCodeWrapper([this, lengthPtr, length, structPtr, indexValue](){
 
-                    Value *capPtr = builder->CreateGEP(nullptr, structPtr, {Int32Zero, Int32One});
+                    Value *capPtr = builder->CreateGEP(LegacyGEPType(structPtr), structPtr, {Int32Zero, Int32One});
                     Value *cap =    builder->CreateLoad(Int32Ty, capPtr);
 
                     // TODO: does this memory leak?
@@ -1049,11 +1049,11 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
 
 
         // If its an lvalue,need the pointer!
-        Value * arrayPtr = builder->CreateGEP(nullptr, structPtr, {Int32Zero, Int32Zero});
-        Value * loadedArray = builder->CreateLoad(nullptr, arrayPtr, arrayPtr->getType()->getArrayElementType());
-        Value * indexPtr = builder->CreateGEP(nullptr, loadedArray, indexValue);
+        Value * arrayPtr = builder->CreateGEP(LegacyGEPType(structPtr), structPtr, {Int32Zero, Int32Zero});
+        Value * loadedArray = builder->CreateLoad(LegacyGEPType(arrayPtr), arrayPtr, arrayPtr->getType()->getArrayElementType());
+        Value * indexPtr = builder->CreateGEP(LegacyGEPType(loadedArray), loadedArray, indexValue);
 
-        return indexPtr; //builder->CreateGEP(nullptr, arrayPtr, {Int32Zero, indexValue});
+        return indexPtr;
     }
 
     
@@ -1091,10 +1091,10 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
      */
     parentFn->insert(parentFn->end(), gtzBlk);
     builder->SetInsertPoint(gtzBlk);
-    Value *vecPtr = builder->CreateGEP(nullptr, structPtr, {Int32Zero, Int32Zero});
+    Value *vecPtr = builder->CreateGEP(LegacyGEPType(structPtr), structPtr, {Int32Zero, Int32Zero});
     Value *vec = builder->CreateLoad(vecPtr->getType()->getArrayElementType(), vecPtr);
     
-    Value * valuePtr = builder->CreateGEP(nullptr, vec, indexValue);
+    Value * valuePtr = builder->CreateGEP(LegacyGEPType(vec), vec, indexValue);
     Value * value = builder->CreateLoad(valuePtr->getType()->getArrayElementType(), valuePtr);
 
     // FIXME: NULLABILITY CHECKS + FIX BUG WHERE DYN ARRAY CAN BE USED W/ LINEAR RESOURCES 
@@ -1483,7 +1483,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode & n)
         }
         // else if(std::optional<const TypeDynArray *> dynArOpt = type_cast<TypeDynArray>(modOpt))
         // {
-            // Value *lenPtr = builder->CreateGEP(nullptr, dynArOpt.value(), {Int32Zero, Int32One});
+            // Value *lenPtr = builder->CreateGEP(LegacyGEPType(fixme), dynArOpt.value(), {Int32Zero, Int32One});
         // }
 
         // Can't throw error b/c length could be field of struct
@@ -1523,7 +1523,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode & n)
         }
         else if (type_cast<TypeDynArray>(ty) &&  i + 1 == n.accesses.size() && n.accesses.at(n.accesses.size() - 1).first == "length")
         {
-            // Value *lenPtr = builder->CreateGEP(nullptr, dynArOpt.value(), {Int32Zero, Int32One});
+            // Value *lenPtr = builder->CreateGEP(LegacyGEPType(fixme), dynArOpt.value(), {Int32Zero, Int32One});
             addresses.push_back(Int32One);
             ty = Types::DYN_U32; 
         }
@@ -1539,7 +1539,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode & n)
         }
     }
 
-    Value *valPtr = builder->CreateGEP(nullptr, baseValue, addresses);
+    Value *valPtr = builder->CreateGEP(LegacyGEPType(baseValue), baseValue, addresses);
 
     if (n.is_rvalue)
     {
@@ -1804,7 +1804,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode & n)
         }
 
         // Create a GEP to the index based on our previously calculated value and index
-        Value *built = builder->CreateGEP(nullptr, val.value(), {Int32Zero, index.value()});
+        Value *built = builder->CreateGEP(LegacyGEPType(fixme), val.value(), {Int32Zero, index.value()});
         val = built;
     }
     */
@@ -1824,10 +1824,10 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode & n)
             builder->CreateStore(stoVal, corrected);
             return std::nullopt;
         }
-        Value *tagPtr = builder->CreateGEP(nullptr, v, {Int32Zero, Int32Zero});
+        Value *tagPtr = builder->CreateGEP(LegacyGEPType(v), v, {Int32Zero, Int32Zero});
 
         builder->CreateStore(getU32(index), tagPtr);
-        Value *valuePtr = builder->CreateGEP(nullptr, v, {Int32Zero, Int32One});
+        Value *valuePtr = builder->CreateGEP(LegacyGEPType(v), v, {Int32Zero, Int32One});
 
         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
         builder->CreateStore(stoVal, corrected);
@@ -1916,10 +1916,10 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode & n)
                             return std::nullopt;
                         }
 
-                        Value *tagPtr = builder->CreateGEP(nullptr, v, {Int32Zero, Int32Zero});
+                        Value *tagPtr = builder->CreateGEP(LegacyGEPType(v), v, {Int32Zero, Int32Zero});
 
                         builder->CreateStore(getU32(index), tagPtr);
-                        Value *valuePtr = builder->CreateGEP(nullptr, v, {Int32Zero, Int32One});
+                        Value *valuePtr = builder->CreateGEP(LegacyGEPType(v), v, {Int32Zero, Int32One});
 
                         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
                         builder->CreateStore(stoVal, corrected);
@@ -2420,7 +2420,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
         // TODO: Remove Array and make things use pointers?
         AllocaInst *saveBlock = CreateEntryBlockAlloc(arrTy.getLLVMType(module), "createdArray");
 
-        Value *stoLoc = builder->CreateGEP(nullptr, saveBlock, {Int32Zero, Int32Zero});
+        Value *stoLoc = builder->CreateGEP(LegacyGEPType(saveBlock), saveBlock, {Int32Zero, Int32Zero});
         builder->CreateStore(loadedVal, stoLoc);
 
         loadedVal = saveBlock; // builder->CreateLoad(saveBlock->getType(), saveBlock);
@@ -2462,10 +2462,10 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
     /**/
     /**/
     {
-        Value *stoLoc = builder->CreateGEP(nullptr, saveBlock, {Int32Zero,
+        Value *stoLoc = builder->CreateGEP(LegacyGEPType(saveBlock), saveBlock, {Int32Zero,
                                                        builder->CreateLoad(Int32Ty, loop_index)});
 
-        Value *readLoc = builder->CreateGEP(nullptr, loadedVal, {Int32Zero,
+        Value *readLoc = builder->CreateGEP(LegacyGEPType(loadedVal), loadedVal, {Int32Zero,
                                                         builder->CreateLoad(Int32Ty, loop_index)});
 
         Value *read = builder->CreateLoad(readLoc->getType()->getArrayElementType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
@@ -2494,7 +2494,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
 
     // Convert [n x i8*] to i8**
     Value *arrayStart = builder->CreateBitCast(
-        builder->CreateGEP(nullptr, saveBlock, {Int32Zero, Int32Zero}),
+        builder->CreateGEP(LegacyGEPType(saveBlock), saveBlock, {Int32Zero, Int32Zero}),
         Int8PtrPtrTy);
 
     // return saveBlock;
@@ -2539,7 +2539,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     llvm::Type *sumTy = sum->getLLVMType(module);
     llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
 
-    Value *tagPtr = builder->CreateGEP(nullptr, alloc, {Int32Zero, Int32Zero});
+    Value *tagPtr = builder->CreateGEP(LegacyGEPType(alloc), alloc, {Int32Zero, Int32Zero});
 
     builder->CreateStore(getU32(unitIndex), tagPtr); // TODO: IS THIS WASTEFUL AS OPPOSED TO BRANCH?
 
@@ -2567,7 +2567,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     builder->SetInsertPoint(thenBlk);
     builder->CreateStore(getU32(valueIndex), tagPtr);
 
-    Value *valuePtr = builder->CreateGEP(nullptr, alloc, {Int32Zero, Int32One});
+    Value *valuePtr = builder->CreateGEP(LegacyGEPType(alloc), alloc, {Int32Zero, Int32One});
 
     Value *corrected = builder->CreateBitCast(valuePtr, valueType->getPointerTo());
     Value *castedValue = builder->CreateBitCast(original, valueType->getPointerTo());
