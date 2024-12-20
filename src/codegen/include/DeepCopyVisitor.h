@@ -221,7 +221,7 @@ private:
 
                 if (localTy->requiresDeepCopy())
                 {
-                    Value *memLoc = builder->CreateGEP(nullptr, v, {Int32Zero,
+                    Value *memLoc = builder->CreateGEP(v->getType(), v, {Int32Zero,
                                                            getU32(structType->getElementIndex(eleItr.first).value()) // In theory, bad opt access, but should never happen
                                             });
                     Value *loaded = builder->CreateLoad(eleItr.second->getLLVMType(module), memLoc);
@@ -240,8 +240,8 @@ private:
 
             BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
 
-            Value *memLoc = builder->CreateGEP(nullptr, v, {Int32Zero, Int32One});
-            Value *tagPtr = builder->CreateGEP(nullptr, v, {Int32Zero, Int32Zero});
+            Value *memLoc = builder->CreateGEP(v->getType(), v, {Int32Zero, Int32One});
+            Value *tagPtr = builder->CreateGEP(v->getType(), v, {Int32Zero, Int32Zero});
             Value *tag = builder->CreateLoad(tagPtr->getType()->getArrayElementType(), tagPtr);
             SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
 
@@ -300,7 +300,7 @@ private:
             /**/
             /**/
             {
-                Value *memLoc = builder->CreateGEP(nullptr, v, {Int32Zero,
+                Value *memLoc = builder->CreateGEP(v->getType(), v, {Int32Zero,
                                                               builder->CreateLoad(Int32Ty, loop_index)});
 
                 Value *loaded = builder->CreateLoad(valueType->getLLVMType(module), memLoc);

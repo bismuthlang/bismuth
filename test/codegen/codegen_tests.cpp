@@ -782,51 +782,33 @@ TEST_CASE("programs/generics/inv - Various generic functions including nested", 
 
 TEST_CASE("programs/generics/Lists - Various complex generic structures including recursive", "[codegen][generic]")
 {
-    auto stream = std::fstream("../../programs/generics/Lists.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "63f891cda9e80a7e41e577b84490171356854c84ea531882a783d0671ad23c11"); 
+    ExpectOutput("programs/generics/Lists.bismuth");
 }
 
 TEST_CASE("programs/generics/Optional - Optional as a means to test templated sum type", "[codegen][generic]")
 {
-    auto stream = std::fstream("../../programs/generics/Optional.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "406731ff15472ffc3c9e9dd71d9d08e08985de0fddc219018fc2de59e094bf1c"); 
+    ExpectOutput("programs/generics/Optional.bismuth");
 }
 
 TEST_CASE("programs/generics/recfunctemplate - Recursive templated functions", "[codegen][generic]")
 {
-    auto stream = std::fstream("../../programs/generics/recfunctemplate.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "0ce78bb4b0b746a703d869cd97d4d02f6e1bd2e723a6b79ed21022c94983c70d"); 
+    ExpectOutput("programs/generics/recfunctemplate.bismuth");
 }
 
 TEST_CASE("programs/generics/ReferenceGeneric - Co-dependent structs", "[codegen][generic]")
 {
-    auto stream = std::fstream("../../programs/generics/ReferenceGeneric.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "7632d226bf1087a674e91b6e4f8765f9ffc86e14ef2f57a533ccdad04904e7d9"); 
+    ExpectOutput("programs/generics/ReferenceGeneric.bismuth");
 }
 
 
 TEST_CASE("programs/generics/ReferenceGenericS - Co-dependent structs", "[codegen][generic]")
 {
-    auto stream = std::fstream("../../programs/generics/ReferenceGenericS.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "950b9c5cf40bd673a8250726ae932b20089332f552fae683d85a402f471e054c"); 
+    ExpectOutput("programs/generics/ReferenceGenericS.bismuth");
 }
 
 TEST_CASE("programs/generics/GenericProg - Generic Program", "[codegen][generic]")
 {
-    auto stream = std::fstream("../../programs/generics/GenericProg.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "4d1e7ff027a665ed171e1e338f9a1d2e3fe0c972b854219acf505a7b5670c86c"); 
+    ExpectOutput("programs/generics/GenericProg.bismuth");
 }
 
 
