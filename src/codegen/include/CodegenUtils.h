@@ -434,10 +434,10 @@ public:
     void ReallocateDynArray(llvm::Value * alloc, llvm::Value * newLen32); 
 
 
-    // DEPRECATED: Wrapper for determining the type of a resource as used in <=llvm-12; from llvm-12 Instructions.h; lines 931--945
+    // DEPRECATED:
     llvm::Type * 
     LegacyGEPType(llvm::Value * Ptr) {
-        return llvm::cast<llvm::PointerType>(Ptr->getType()->getScalarType())->getArrayElementType();
+        return Ptr->getType();
     }
 
 

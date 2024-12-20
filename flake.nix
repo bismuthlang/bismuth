@@ -8,6 +8,10 @@
     let 
       system = "x86_64-linux";
       pkgs = nixpkgs.legacyPackages.${system};
+      llvm = pkgs.llvmPackages_19; 
+      libllvm = llvm.libllvm.override {
+        pkgsBuildBuild.targetPackages.stdenv.cc = pkgs.llvm.libcxxClang;
+      }; 
 #      llvmEnv = pkgs.overrideCC pkgs.stdenv (
 #        pkgs.llvmPackages_19.libcxxStdenv.cc.override { 
 #           inherit (pkgs.llvmPackages_19) bintools;

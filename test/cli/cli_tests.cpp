@@ -1,12 +1,13 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include "Compile.h"
-
+#include <filesystem>
 // TODO: Note: this doesn't compile all bsl functions due to them being templated. 
 // Ensure we have coverage on the standard library!
 
 TEST_CASE("BSL - Compile 1", "[cli]")
 {
+  std::cout << std::filesystem::current_path() << std::endl;
     auto getVI = [](std::string path, std::vector<std::string> steps){
         return new VirtualInput(
             new antlr4::ANTLRInputStream(*(new std::fstream(path))),
@@ -33,10 +34,10 @@ TEST_CASE("BSL - Compile 1", "[cli]")
     */
 
 
-    VirtualInput * bsl_lib_types = getVI("/home/shared/bsl/lib/Types.bismuth", {"bsl", "lib", "Types"});
-    VirtualInput * bsl_lib_lists = getVI("/home/shared/bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"});
-    VirtualInput * bsl_lib_optional = getVI("/home/shared/bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"});
-    VirtualInput * bsl_lib_arrays = getVI("/home/shared/bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"});
+    VirtualInput * bsl_lib_types = getVI("../../bsl/lib/Types.bismuth", {"bsl", "lib", "Types"});
+    VirtualInput * bsl_lib_lists = getVI("../../bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"});
+    VirtualInput * bsl_lib_optional = getVI("../../bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"});
+    VirtualInput * bsl_lib_arrays = getVI("../../bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"});
 
     VirtualInput * temp = new VirtualInput(
         new antlr4::ANTLRInputStream(R""""(
@@ -489,10 +490,10 @@ TEST_CASE("BSL - Compile 3", "[cli]")
     */
 
 
-    VirtualInput * bsl_lib_types = getVI("/home/shared/bsl/lib/Types.bismuth", {"bsl", "lib", "Types"});
-    VirtualInput * bsl_lib_lists = getVI("/home/shared/bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"});
-    VirtualInput * bsl_lib_optional = getVI("/home/shared/bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"});
-    VirtualInput * bsl_lib_arrays = getVI("/home/shared/bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"});
+    VirtualInput * bsl_lib_types = getVI("../../bsl/lib/Types.bismuth", {"bsl", "lib", "Types"});
+    VirtualInput * bsl_lib_lists = getVI("../../bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"});
+    VirtualInput * bsl_lib_optional = getVI("../../bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"});
+    VirtualInput * bsl_lib_arrays = getVI("../../bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"});
 
     VirtualInput * temp = new VirtualInput(
         new antlr4::ANTLRInputStream(R""""(

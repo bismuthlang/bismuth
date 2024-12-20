@@ -37,7 +37,7 @@ void EnsureErrorsWithMessage(std::string program, std::string message, int flags
 // TODO: does this use excess memory bc we dont free news?
 TEST_CASE("programs/test4 - Don't allow void to be sent to fn", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/test4.bismuth");
+  auto stream = std::fstream("../../programs/test4.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Cannot provide Unit to a function"
@@ -57,7 +57,7 @@ define func foo (int a, int a, int b) {
 
 TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/doubleArg2.bismuth");
+  auto stream = std::fstream("../../programs/doubleArg2.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Re-use of previously defined parameter a"
@@ -66,7 +66,7 @@ TEST_CASE("programs/doubleArg2 - Prevent Argument reuse in extern", "[semantic]"
 
 TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don't crash", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/doubleArg3.bismuth");
+  auto stream = std::fstream("../../programs/doubleArg3.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Re-use of previously defined parameter a"
@@ -75,7 +75,7 @@ TEST_CASE("programs/doubleArg3 - Prevent Argument reuse in func and that we don'
 
 TEST_CASE("programs/test15 - No array equalities", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/test15.bismuth");
+  auto stream = std::fstream("../../programs/test15.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Cannot perform equality operation on arrays; they are always seen as unequal!"
@@ -113,7 +113,7 @@ TEST_CASE("Comment EOF", "[semantic]")
 
 TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/test16.bismuth");
+  auto stream = std::fstream("../../programs/test16.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Redeclaration of c"
@@ -122,7 +122,7 @@ TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
 
 TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/test16a.bismuth");
+  auto stream = std::fstream("../../programs/test16a.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Redeclaration of c"
@@ -131,7 +131,7 @@ TEST_CASE("programs/test16a - overwrite lhs var - other way", "[semantic]")
 
 TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/test16c.bismuth");
+  auto stream = std::fstream("../../programs/test16c.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Redeclaration of c"
@@ -140,7 +140,7 @@ TEST_CASE("programs/test16c - overwrite rhs var", "[semantic]")
 
 TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/test16c-1.bismuth");
+  auto stream = std::fstream("../../programs/test16c-1.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Redeclaration of c"
@@ -149,7 +149,7 @@ TEST_CASE("programs/test16c-1 - overwrite rhs var - bubble up!", "[semantic]")
 
 TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/test16c-2.bismuth");
+  auto stream = std::fstream("../../programs/test16c-2.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Redeclaration of c"
@@ -158,7 +158,7 @@ TEST_CASE("programs/test16c-2 - overwrite rhs var", "[semantic]")
 
 TEST_CASE("programs/test16d - chain var", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/test16d.bismuth");
+  auto stream = std::fstream("../../programs/test16d.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Redeclaration of c"
@@ -167,7 +167,7 @@ TEST_CASE("programs/test16d - chain var", "[semantic]")
 
 TEST_CASE("programs/test16e - chain var 2", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/test16e.bismuth");
+  auto stream = std::fstream("../../programs/test16e.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Uninferred types in context: [b, VAR]; [c, VAR]; [d, VAR]"
@@ -176,7 +176,7 @@ TEST_CASE("programs/test16e - chain var 2", "[semantic]")
 
 TEST_CASE("programs/test16f - var loop", "[semantic]")
 {
-  std::fstream inStream = std::fstream("/home/shared/programs/test16f.bismuth");
+  std::fstream inStream = std::fstream("../../programs/test16f.bismuth");
   antlr4::ANTLRInputStream input = antlr4::ANTLRInputStream(inStream);
 
   BismuthLexer lexer(&input);
@@ -2110,7 +2110,7 @@ define program :: c : Channel<?Cancelable<-int>> {
 
 TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/forwardWrongArg.bismuth");
+  auto stream = std::fstream("../../programs/forwardWrongArg.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Unsupported redeclaration of foo"
@@ -2119,7 +2119,7 @@ TEST_CASE("programs/forwardWrongArg - Forward Declaration w/ wrong arg name", "[
 
 TEST_CASE("programs/forwardWrongArg2 - Function syntax on process", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/forwardWrongArg2.bismuth");
+  auto stream = std::fstream("../../programs/forwardWrongArg2.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Can only invoke functions, not foo"
@@ -2219,7 +2219,7 @@ define program :: c : Channel<-int> {
  *********************************/
 TEST_CASE("B Level Negative Test #1", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/BLevel/BNegative1.bismuth");
+  auto stream = std::fstream("../../programs/BLevel/BNegative1.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Undefined variable reference: getIntArg"
@@ -2228,7 +2228,7 @@ TEST_CASE("B Level Negative Test #1", "[semantic]")
 
 TEST_CASE("B Level Negative Test #2", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/BLevel/BNegative2.bismuth");
+  auto stream = std::fstream("../../programs/BLevel/BNegative2.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Expression of type boolean cannot be assigned to int"
@@ -2241,7 +2241,7 @@ TEST_CASE("B Level Negative Test #2", "[semantic]")
 
 TEST_CASE("A Level Negative Test #2", "[semantic]")
 {
-  auto stream = std::fstream("/home/shared/programs/ALevel/ANegative2.bismuth");
+  auto stream = std::fstream("../../programs/ALevel/ANegative2.bismuth");
   EnsureErrorsWithMessage(
     antlr4::ANTLRInputStream(stream),
     "Expected 2 argument(s), but got 3"
