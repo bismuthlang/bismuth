@@ -15,7 +15,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define i32 @"recfunctemplate::foo<int>"(i32 %0, i32 %1) {
+define i32 @"foo<int>"(i32 %0, i32 %1) {
 entry:
   %a = alloca ptr, align 8
   %i = alloca i32, align 4

@@ -2,16 +2,16 @@
 source_filename = "BismuthProgram"
 
 %Unit = type {}
-%"Optional::Foo<str>" = type { ptr, %"Optional::Bar<str>" }
-%"Optional::Bar<str>" = type { ptr }
-%"Optional::Optional<boolean>" = type { i32, [1 x i8] }
-%"Optional::Optional<int>" = type { i32, [4 x i8] }
+%"Foo<str>" = type { ptr, %"Bar<str>" }
+%"Bar<str>" = type { ptr }
+%"Optional<boolean>" = type { i32, [1 x i8] }
+%"Optional<int>" = type { i32, [4 x i8] }
 
 define %Unit @program(ptr %0) {
 entry:
-  %foo = alloca %"Optional::Foo<str>", align 8
-  %optBool = alloca %"Optional::Optional<boolean>", align 8
-  %optInt = alloca %"Optional::Optional<int>", align 8
+  %foo = alloca %"Foo<str>", align 8
+  %optBool = alloca %"Optional<boolean>", align 8
+  %optInt = alloca %"Optional<int>", align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
   %1 = call ptr @malloc(i32 4)

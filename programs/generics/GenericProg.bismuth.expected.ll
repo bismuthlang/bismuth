@@ -10,7 +10,7 @@ entry:
   %c1 = alloca ptr, align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
-  %1 = call ptr @_Execute(ptr @"GenericProg::foo<int>")
+  %1 = call ptr @_Execute(ptr @"foo<int>")
   store ptr %1, ptr %c1, align 8
   %2 = call ptr @malloc(i32 4)
   store i32 5, ptr %2, align 4
@@ -30,7 +30,7 @@ entry:
 
 declare %Unit @printf(ptr, ...)
 
-define %Unit @"GenericProg::foo<int>"(ptr %0) {
+define %Unit @"foo<int>"(ptr %0) {
 entry:
   %t = alloca i32, align 4
   %c = alloca ptr, align 8

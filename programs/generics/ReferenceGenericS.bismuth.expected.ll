@@ -2,15 +2,15 @@
 source_filename = "BismuthProgram"
 
 %Unit = type {}
-%"ReferenceGenericS::Bar<boolean>" = type { i1 }
-%"ReferenceGenericS::Bar<str>" = type { ptr }
+%"Bar<boolean>" = type { i1 }
+%"Bar<str>" = type { ptr }
 
 define %Unit @program(ptr %0) {
 entry:
   %f2 = alloca ptr, align 8
   %f1 = alloca ptr, align 8
-  %b2 = alloca %"ReferenceGenericS::Bar<boolean>", align 8
-  %b1 = alloca %"ReferenceGenericS::Bar<str>", align 8
+  %b2 = alloca %"Bar<boolean>", align 8
+  %b1 = alloca %"Bar<str>", align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
   %1 = call ptr @malloc(i32 4)
@@ -20,7 +20,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define i1 @"ReferenceGenericS::foo<boolean>"(i1 %0) {
+define i1 @"foo<boolean>"(i1 %0) {
 entry:
   %k = alloca i1, align 1
   store i1 %0, ptr %k, align 1
@@ -28,7 +28,7 @@ entry:
   ret i1 %k1
 }
 
-define ptr @"ReferenceGenericS::foo<str>"(ptr %0) {
+define ptr @"foo<str>"(ptr %0) {
 entry:
   %k = alloca ptr, align 8
   store ptr %0, ptr %k, align 8

@@ -242,7 +242,7 @@ private:
 
             Value *memLoc = builder->CreateGEP(v->getType(), v, {Int32Zero, Int32One});
             Value *tagPtr = builder->CreateGEP(v->getType(), v, {Int32Zero, Int32Zero});
-            Value *tag = builder->CreateLoad(tagPtr->getType()->getArrayElementType(), tagPtr);
+            Value *tag = builder->CreateLoad(tagPtr->getType(), tagPtr);
             SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
 
             uint32_t index = 0;
