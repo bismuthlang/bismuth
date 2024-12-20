@@ -844,6 +844,7 @@ public:
 
     virtual std::any accept(TypedASTVisitor &a) override { return a.any_visit(*this); }
 
+    // FIXME: why is this innerType? shouldnt that be separate?
     const Type *getType() override { return boxType->getInnerType(); }
 };
 
@@ -906,9 +907,14 @@ public:
         paramType = p;
     }
 
+    const TypeFunc* getFuncType()
+    {
+        return dynamic_cast<const TypeFunc *>(fn->getType());
+    }
+
     const Type *getType() override
     {
-        return dynamic_cast<const TypeFunc *>(fn->getType())->getReturnType();
+        return getFuncType()->getReturnType();
     }
 
     std::string toString() const override {
@@ -1034,10 +1040,16 @@ public:
         is_rvalue = r;
     }
 
+    // The stored type of the array
+    const Type * getLValueType() 
+    {
+        return dynamic_cast<const TypeArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+    }
+
     // TODO: allow for modulo get so that way we can access fields more directly?
     const Type *getType() override
     {
-        const Type * arrayType = dynamic_cast<const TypeArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * arrayType = getLValueType();
 
         if(!is_rvalue)
         {
@@ -1049,8 +1061,7 @@ public:
     }
 
     const TypeSum* getRValueType() {
-        const Type * arrayType = dynamic_cast<const TypeArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
-        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, getLValueType()};
         return new TypeSum(cases);
     }
 
@@ -1079,23 +1090,32 @@ public:
         is_rvalue = r;
     }
 
+    const TypeDynArray * getArrayType() 
+    {
+        return dynamic_cast<const TypeDynArray *>(expr->getType()); // FIXME: POTENTIAL ERROR?
+    }
+
+    const Type * getStoredType()
+    {
+        return getArrayType()->getValueType(); // FIXME: POTENTIAL ERROR?
+    }
+
     // TODO: allow for modulo get so that way we can access fields more directly?
     const Type *getType() override
     {
-        const Type * arrayType = dynamic_cast<const TypeDynArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        const Type * stored_type = getStoredType();
 
         if(!is_rvalue)
         {
-            return arrayType;
+            return stored_type;
         }
 
-        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, stored_type};
         return new TypeSum(cases);
     }
 
     const TypeSum* getRValueType() {
-        const Type * arrayType = dynamic_cast<const TypeDynArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
-        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, getStoredType()};
         return new TypeSum(cases);
     }
 

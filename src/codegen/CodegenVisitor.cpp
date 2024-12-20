@@ -103,8 +103,8 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
     builder->CreateStore(sumVal, SumPtr);
 
     Value *tagPtr = builder->CreateGEP(sum_type, SumPtr, {Int32Zero, Int32Zero});
-
-    Value *tag = builder->CreateLoad(tagPtr->getType()->getArrayElementType(), tagPtr);
+    const llvm::GEPOperator * GEP = dyn_cast<llvm::GEPOperator>(tagPtr);
+    Value *tag = builder->CreateLoad(GEP->getSourceElementType(), tagPtr);
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n.cases.size()); // sumType->getCases().size());
 
@@ -319,9 +319,11 @@ std::optional<Value *> CodegenVisitor::visit(TInvocationNode & n)
         return val;
     }
 
-    llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(ty->getArrayElementType());
-
-    Value *val = builder->CreateCall(fnType, fnVal, ref);
+    Value *val = builder->CreateCall(
+        n.getFuncType()->getLLVMFunctionType(module),
+        fnVal, 
+        ref
+    );
     return val;
 }
 
@@ -752,10 +754,9 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode & n)
 
             i++;
         }
-    }
+    };
 
-    Value *loaded = builder->CreateLoad(v->getType()->getArrayElementType(), v);
-    return loaded;
+    return builder->CreateLoad(v->getAllocatedType(), v);
 }
 
 std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
@@ -782,9 +783,10 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
 
         ans = CreateEntryBlockAlloc(ty->getLLVMType(module), ""); // TODO: this isn't always needed
 
-        InitDynArray(ans, (n.exprs.size()));
+        InitDynArray(ty, ans, (n.exprs.size()));
 
         Value * vecPtr = builder->CreateGEP(LegacyGEPType(ans), ans, {Int32Zero, Int32Zero});
+        std::cout << "791" << std::endl;
         writeTo = builder->CreateLoad(LegacyGEPType(ans), vecPtr, vecPtr->getType()->getArrayElementType());
 
         stoType = const_cast<Type *>(ty->getValueType()); 
@@ -830,8 +832,8 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
         }
     }
 
-
-    Value *loaded = builder->CreateLoad(ans->getType()->getArrayElementType(), ans);
+std::cout << "837" << std::endl;
+    Value *loaded = builder->CreateLoad(ans->getAllocatedType(), ans);
     return loaded;
 }
 
@@ -866,7 +868,6 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode & n)
         casted
     );
 
-    // Value *loaded = builder->CreateLoad(v->getType()->getArrayElementType(), v);
     return casted;
 }
 
@@ -893,7 +894,11 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
     if (!n.is_rvalue)
     {
         // If its an lvalue,need the pointer!
-        return builder->CreateGEP(LegacyGEPType(arrayPtr), arrayPtr, {Int32Zero, indexValue});
+        return builder->CreateGEP(
+            n.getLValueType()->getLLVMType(module),
+            arrayPtr,
+            {Int32Zero, indexValue}
+        );
     }
 
     // TODO: SIGNED VS UNSIGNED? AND LENGTH! NUM ELEMENTS IS 64!!
@@ -929,8 +934,14 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
      */
     parentFn->insert(parentFn->end(), gtzBlk);
     builder->SetInsertPoint(gtzBlk);
-    Value *valuePtr = builder->CreateGEP(LegacyGEPType(arrayPtr), arrayPtr, {Int32Zero, indexValue});
-    Value *value = builder->CreateLoad(valuePtr->getType()->getArrayElementType(), valuePtr);
+    auto *valuePtr = builder->CreateGEP(
+        n.getLValueType()->getLLVMType(module),
+        arrayPtr, 
+        {Int32Zero, indexValue}
+    );
+    const llvm::GEPOperator * GEP = dyn_cast<llvm::GEPOperator>(valuePtr);
+    // std::cout << "937" << std::endl;
+    Value *value = builder->CreateLoad(GEP->getSourceElementType(), valuePtr);
     auto ptr = correctSumAssignment(n.getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();
@@ -950,6 +961,14 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
      */
     parentFn->insert(parentFn->end(), restBlk);
     builder->SetInsertPoint(restBlk);
+
+    // std::string type_str;
+    // llvm::raw_string_ostream rso(type_str);
+    // ptr->getType()->print(rso);
+    // unitPtr->getType()->print(rso);
+    // std::cout << rso.str() << std::endl;
+
+    // module->dump();
 
     PHINode *phi = builder->CreatePHI(n.getType()->getLLVMType(module), 2, "arrayAccess");
     phi->addIncoming(ptr, gtzBlk);
@@ -978,14 +997,22 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
 
     Value *indexValue = indexOpt.value();
     Value *structPtr = structOpt.value();
+    // llvm::Type * structType = n.expr->getType()->getLLVMType(module); 
 
 
 
-    Value *lengthPtr = builder->CreateGEP(LegacyGEPType(structPtr), structPtr, {Int32Zero, Int32One});
-    Value *length = builder->CreateLoad(lengthPtr->getType()->getArrayElementType(), lengthPtr); 
+    std::cout << "990" << std::endl;
+    Value *lengthPtr = builder->CreateGEP(Int32Ty, structPtr, {Int32Zero, Int32One});
+    Value *length = builder->CreateLoad(Int32Ty, lengthPtr); 
+module->dump();
+
+    auto * ArrayElementType = n.getStoredType()->getLLVMType(module);
+    auto * InnerArrayType = ArrayElementType->getPointerTo();
 
     if (!n.is_rvalue)
     {
+        const auto * array_type = n.getArrayType();
+
         (TConditionalStatementNode(
             nullptr, 
             // Condition
@@ -997,9 +1024,9 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
             ), 
             // True block 
             new TBlockNode({
-                new CompCodeWrapper([this, lengthPtr, length, structPtr, indexValue](){
-
-                    Value *capPtr = builder->CreateGEP(LegacyGEPType(structPtr), structPtr, {Int32Zero, Int32One});
+                new CompCodeWrapper([this, array_type, lengthPtr, length, structPtr, indexValue](){
+std::cout << "1024" << std::endl;
+                    Value *capPtr = builder->CreateGEP(Int32Ty, structPtr, {Int32Zero, Int32One});
                     Value *cap =    builder->CreateLoad(Int32Ty, capPtr);
 
                     // TODO: does this memory leak?
@@ -1014,8 +1041,12 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
                         ), 
                         // True Block 
                         new TBlockNode({
-                            new CompCodeWrapper([this, structPtr, indexValue](){
-                                ReallocateDynArray(structPtr, 
+                            new CompCodeWrapper([this, array_type, structPtr, indexValue](){
+                                std::cout << "1041" << std::endl;
+                                
+                                ReallocateDynArray(
+                                    array_type,
+                                    structPtr, 
                                     builder->CreateNSWMul(indexValue, // TODO: Should really be the max of capacity or len!
                                     getU32(DYN_ARRAY_GROW_FACTOR))
                                 );
@@ -1049,9 +1080,23 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
 
 
         // If its an lvalue,need the pointer!
-        Value * arrayPtr = builder->CreateGEP(LegacyGEPType(structPtr), structPtr, {Int32Zero, Int32Zero});
-        Value * loadedArray = builder->CreateLoad(LegacyGEPType(arrayPtr), arrayPtr, arrayPtr->getType()->getArrayElementType());
-        Value * indexPtr = builder->CreateGEP(LegacyGEPType(loadedArray), loadedArray, indexValue);
+        Value * arrayPtr = builder->CreateGEP(
+            InnerArrayType,
+            structPtr,
+            {Int32Zero, Int32Zero}
+        );
+
+        std::cout << "1059" << std::endl;
+
+        Value * loadedArray = builder->CreateLoad(
+            InnerArrayType,
+            arrayPtr
+        );
+        Value * indexPtr = builder->CreateGEP(
+            ArrayElementType, 
+            loadedArray,
+            indexValue
+        );
 
         return indexPtr;
     }
@@ -1091,11 +1136,30 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
      */
     parentFn->insert(parentFn->end(), gtzBlk);
     builder->SetInsertPoint(gtzBlk);
-    Value *vecPtr = builder->CreateGEP(LegacyGEPType(structPtr), structPtr, {Int32Zero, Int32Zero});
-    Value *vec = builder->CreateLoad(vecPtr->getType()->getArrayElementType(), vecPtr);
+
+    Value *vecPtr = builder->CreateGEP(
+        InnerArrayType,
+        structPtr,
+        {Int32Zero, Int32Zero}
+    );
+
+    std::cout << "1102" << std::endl;
+    Value *vec = builder->CreateLoad(
+        InnerArrayType,
+        vecPtr
+    );
     
-    Value * valuePtr = builder->CreateGEP(LegacyGEPType(vec), vec, indexValue);
-    Value * value = builder->CreateLoad(valuePtr->getType()->getArrayElementType(), valuePtr);
+    Value * valuePtr = builder->CreateGEP(
+        ArrayElementType,
+        vec,
+        indexValue
+    );
+
+    std::cout << "1106" << std::endl;
+    Value * value = builder->CreateLoad(
+        ArrayElementType,
+        valuePtr
+    );
 
     // FIXME: NULLABILITY CHECKS + FIX BUG WHERE DYN ARRAY CAN BE USED W/ LINEAR RESOURCES 
     // FIXME: ALLOW STREAMING OF DYN ARRAYS!
@@ -1667,10 +1731,8 @@ std::optional<Value *> CodegenVisitor::visit(TDerefBoxNode & n)
     }
 
     Value *ptrVal = baseOpt.value();
-    return n.is_rvalue ? builder->CreateLoad(ptrVal->getType()->getArrayElementType(), ptrVal) : ptrVal;
-
-    // return loaded;
-    // return n.is_rvalue ? builder->CreateLoad(loaded->getType()->getArrayElementType(), loaded) : loaded;
+    std::cout << "1679" << std::endl;
+    return n.is_rvalue ? builder->CreateLoad(n.boxType->getInnerType()->getLLVMType(module), ptrVal) : ptrVal;
 }
 
 std::optional<Value *> CodegenVisitor::visit(TBinaryRelNode & n)
@@ -1931,7 +1993,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode & n)
                 }
                 else if(const TypeDynArray * dynArray = dynamic_cast<const TypeDynArray*>(varSymbol->getType()))
                 {
-                    InitDynArray(v, 1); // FIXME: change to 0 and add push_back
+                    InitDynArray(dynArray, v, 1); // FIXME: change to 0 and add push_back
                 }
             }
         }
@@ -2462,12 +2524,19 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
     /**/
     /**/
     {
-        Value *stoLoc = builder->CreateGEP(LegacyGEPType(saveBlock), saveBlock, {Int32Zero,
-                                                       builder->CreateLoad(Int32Ty, loop_index)});
+        Value *stoLoc = builder->CreateGEP(
+            saveBlock->getAllocatedType(), // FIXME: getArrayElementType Its either this  or 
+            saveBlock,
+            {Int32Zero, builder->CreateLoad(Int32Ty, loop_index)}
+        );
 
-        Value *readLoc = builder->CreateGEP(LegacyGEPType(loadedVal), loadedVal, {Int32Zero,
-                                                        builder->CreateLoad(Int32Ty, loop_index)});
+        Value *readLoc = builder->CreateGEP(
+            saveBlock->getAllocatedType(), // FIXME: getArrayElementType this might just be i8p?
+            loadedVal,
+            {Int32Zero, builder->CreateLoad(Int32Ty, loop_index)}
+        );
 
+std::cout << "2478" << std::endl;
         Value *read = builder->CreateLoad(readLoc->getType()->getArrayElementType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
 
         Value *v = builder->CreateCall(getMalloc(), {getU32(getSizeForValue(read))});
