@@ -100,10 +100,7 @@ void EnsureErrors(antlr4::ANTLRInputStream input)
 
 TEST_CASE("programs/test1 - General Overview", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/test1.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "3f62f6bac641013772415de0d8fc0fd5f3c6e9fff28808fa8451c627a0154f16");
+    ExpectOutput("programs/test1.bismuth");
 }
 
 TEST_CASE("programs/test1a", "[codegen]")
@@ -160,10 +157,7 @@ TEST_CASE("programs/testSelectBlock2 - Select with blocks that don't return", "[
 
 TEST_CASE("programs/test7 - Test String equality + Nested Loops", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/test7.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "d205a48dcc3498f6435aa6e5e2016cea7553718a3d6b49d54496f4e579512b34");
+    ExpectOutput("programs/test7.bismuth");
 }
 
 TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
@@ -227,10 +221,7 @@ TEST_CASE("programs/17 - var inf in decl", "[codegen]")
 
 TEST_CASE("programs/test18 - Parody", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/test18.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "7fb3deb5bf652ae42c489488db0bacfb29af9cba521e7edd089dbf44a014a58f");
+    ExpectOutput("programs/test18.bismuth");
 }
 
 TEST_CASE("programs/Lambda1 - Basic lambda Test", "[codegen][lambda]")
@@ -285,34 +276,22 @@ TEST_CASE("programs/adv/StructTest2", "[codegen][struct]")
 
 TEST_CASE("programs/adv/StructTest3", "[codegen][struct]")
 {
-    auto stream = std::fstream("../../programs/adv/StructTest3.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "80e210cd119ba7460d24f5bf2d74d039fb9d7d42ecbae4ad4d9e5f7bdae5bede");
+    ExpectOutput("programs/adv/StructTest3.bismuth");
 }
 
 TEST_CASE("programs/adv/StructTest3a - nested fields", "[codegen][struct]")
 {
-    auto stream = std::fstream("../../programs/adv/StructTest3a.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "62d9681016ac7b288b71019c5a90f7ee97ea6d960dcad430531441391c70d545");
+    ExpectOutput("programs/adv/StructTest3a.bismuth");
 }
 
 TEST_CASE("programs/adv/StructTest3b - nested fields", "[codegen][struct]")
 {
-    auto stream = std::fstream("../../programs/adv/StructTest3b.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "6346532262b50983f60de58a0b1b2f876950045fa53ef69c2d712091202b33fa");
+    ExpectOutput("programs/adv/StructTest3b.bismuth");
 }
 
 TEST_CASE("programs/adv/StructTest4", "[codegen][struct]")
 {
-    auto stream = std::fstream("../../programs/adv/StructTest4.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "1464becd054c0c38fdd00f713b0a11936d78cd4ecbf84f8f2a8ad4210214dcd7");
+    ExpectOutput("programs/adv/StructTest4.bismuth");
 }
 
 TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
@@ -332,18 +311,12 @@ TEST_CASE("programs/dangerLambda-Lambda - lambdas with duplicate function names"
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")
 {
-    auto stream = std::fstream("../../programs/adv/enumPassing.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "9a6147644ed5c0bf801340ff927d2a7d1ba43d01a3c61f0efd951a6e4ff3c542");
+    ExpectOutput("programs/adv/enumPassing.bismuth");
 }
 
 TEST_CASE("programs/adv/enumPassing-fn - passing non-enum as enum argument", "[codegen][struct]")
 {
-    auto stream = std::fstream("../../programs/adv/enumPassing-fn.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "5d9e665a2400efcef812c95005f75d146a7ae54b096d560aa41fba5fbfb588e7");
+    ExpectOutput("programs/adv/enumPassing-fn.bismuth");
 }
 
 TEST_CASE("programs/Lambda2a - More nested lambdas", "[codegen][lambda]")
@@ -353,18 +326,12 @@ TEST_CASE("programs/Lambda2a - More nested lambdas", "[codegen][lambda]")
 
 TEST_CASE("programs/adv/enumPassingInf - Enum passing with Type Inference", "[codegen][enum][type-inf]")
 {
-    auto stream = std::fstream("../../programs/adv/enumPassingInf.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "411607c66135c0db20b703a58ac28d525e905e0582b233c561dbf92a7a8808fc");
+    ExpectOutput("programs/adv/enumPassingInf.bismuth");
 }
 
 TEST_CASE("programs/adv/enumPassingInf-fn - Enum passing with Type Inference", "[codegen][enum][type-inf]")
 {
-    auto stream = std::fstream("../../programs/adv/enumPassingInf-fn.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "49f9366ef5d4ac1f8d588431ca9f04a5efe7983959b577c1307416a9134619de");
+    ExpectOutput("programs/adv/enumPassingInf-fn.bismuth");
 }
 
 TEST_CASE("programs/Lambda2b - More nested lambdas", "[codegen][struct]")
@@ -379,10 +346,7 @@ TEST_CASE("Out of order function", "[codegen][program]")
 
 TEST_CASE("programs/example", "[codegen][program]")
 {
-    auto stream = std::fstream("../../programs/example.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "623a79e0098f08b494043d0490a776686c21fb69405c1d795c57efdcb67fc71f");
+    ExpectOutput("programs/example.bismuth");
 }
 
 TEST_CASE("programs/SendChannel", "[codegen][linear-types]")
@@ -417,10 +381,7 @@ TEST_CASE("programs/doubleArg1c2 - weakening and loops", "[codegen][linear-types
 
 TEST_CASE("programs/enumedit", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/enumedit.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "7c0d836acbadcadc17be9eca1f71a619b8ec1d78ea5567c0d89e40af8d0eea6c");
+    ExpectOutput("programs/enumedit.bismuth");
 }
 
 TEST_CASE("programs/TBox - Parody + Clone w/ boxes", "[codegen][enum]")
@@ -453,25 +414,16 @@ TEST_CASE("programs/TStructEnumGC - Parody + Clone w/ Enum Struct Boxes + GC ", 
 
 TEST_CASE("programs/TArray - Parody + Clone w/ Array", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TArray.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "bb269027cd553f4685f2ed9dd64f338c76f3f717d28eb0295114f628939f3f28");
+    ExpectOutput("programs/TArray.bismuth");
 }
 TEST_CASE("programs/TArray2 - Parody + Clone w/ Array Double box", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TArray2.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "b5e4f1ac9cc7c02c92b4f0fc81d8389cae81afc84e6578d4fd4e1471dc047f81");
+    ExpectOutput("programs/TArray2.bismuth");
 }
 
 TEST_CASE("programs/TStructEnumArray - Parody + Clone w/ Struct Enum Array", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TStructEnumArray.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "bf8c5292b4531a888f9d4347fa20cf8ea4a675934c5c1cf5d9095935b09553e7");
+    ExpectOutput("programs/TStructEnumArray.bismuth");
 }
 
 // TEST_CASE("programs/TStructEnumArrayBlock - TStructEnumArray with blocks to mess with control flow", "[codegen][enum]")
@@ -584,10 +536,7 @@ TEST_CASE("programs/db/db-labels - DB with labels to test parsing bug in 1.3.4",
 
 TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/bt.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "26c95917b8106115569aec55bc226dc29b5605ab4b56cf8dea6e0db60ee14d5b");
+    ExpectOutput("programs/bt.bismuth");
 }
 
 TEST_CASE("programs/bt-walker1 - Basic Binary Tree w/ walker", "[codegen][enum]")
@@ -694,10 +643,7 @@ TEST_CASE("programs/cancelable/BranchCancel1 - Basic cancel w/ branch and repeti
 
 TEST_CASE("programs/BasicForLoop - Basic For loop ", "[codegen][cancel]")
 {
-    auto stream = std::fstream("../../programs/BasicForLoop.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "66ee44669728ed700a85a9823f2f240afc64262fbd08ec2f8c4abda6b22d52dd"); // FIXME: QUITE LIMITED & NEEDS IMPROVEMENTS!
+    ExpectOutput("programs/BasicForLoop.bismuth");
 }
 
 TEST_CASE("programs/generics/Arrays - Non-recursive generic function used for dyn array utils", "[codegen][generic]")

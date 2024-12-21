@@ -19,8 +19,8 @@ entry:
   %sum1 = load %"(boolean + int)", ptr %sum, align 4
   store %"(boolean + int)" %sum1, ptr %1, align 4
   %2 = getelementptr %"(boolean + int)", ptr %1, i32 0, i32 0
-  %3 = load %"(boolean + int)", ptr %2, align 4
-  switch %"(boolean + int)" %3, label %match-cont [
+  %3 = load i32, ptr %2, align 4
+  switch i32 %3, label %match-cont [
     i32 2, label %tagBranch2
     i32 1, label %tagBranch1
   ]
@@ -52,7 +52,7 @@ entry:
   %1 = alloca %"(boolean + int)", align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
-  %2 = getelementptr i32, ptr %1, i32 0, i32 0
+  %2 = getelementptr %"(boolean + int)", ptr %1, i32 0, i32 0
   store i32 2, ptr %2, align 4
   %3 = getelementptr %"(boolean + int)", ptr %1, i32 0, i32 1
   store i32 5, ptr %3, align 4

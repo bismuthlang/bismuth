@@ -51,7 +51,7 @@ accessLTL:                                        ; preds = %entry
 accessGTZ:                                        ; preds = %accessLTL
   %11 = getelementptr [2 x ptr], ptr %b, i32 0, i32 0
   %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr i32, ptr %7, i32 0, i32 0
+  %13 = getelementptr %"(Box<int> + Unit)", ptr %7, i32 0, i32 0
   store i32 1, ptr %13, align 4
   %14 = getelementptr %"(Box<int> + Unit)", ptr %7, i32 0, i32 1
   store ptr %12, ptr %14, align 8
@@ -59,7 +59,7 @@ accessGTZ:                                        ; preds = %accessLTL
   br label %accessAfter
 
 accessBad:                                        ; preds = %accessLTL, %entry
-  %16 = getelementptr i32, ptr %6, i32 0, i32 0
+  %16 = getelementptr %"(Box<int> + Unit)", ptr %6, i32 0, i32 0
   store i32 2, ptr %16, align 4
   %17 = getelementptr %"(Box<int> + Unit)", ptr %6, i32 0, i32 1
   store %Unit zeroinitializer, ptr %17, align 1
@@ -70,8 +70,8 @@ accessAfter:                                      ; preds = %accessBad, %accessG
   %arrayAccess = phi %"(Box<int> + Unit)" [ %15, %accessGTZ ], [ %18, %accessBad ]
   store %"(Box<int> + Unit)" %arrayAccess, ptr %5, align 4
   %19 = getelementptr %"(Box<int> + Unit)", ptr %5, i32 0, i32 0
-  %20 = load %"(Box<int> + Unit)", ptr %19, align 4
-  switch %"(Box<int> + Unit)" %20, label %match-cont [
+  %20 = load i32, ptr %19, align 4
+  switch i32 %20, label %match-cont [
     i32 2, label %tagBranch2
     i32 1, label %tagBranch1
   ]
@@ -103,7 +103,7 @@ accessLTL3:                                       ; preds = %match-cont
 accessGTZ4:                                       ; preds = %accessLTL3
   %30 = getelementptr [2 x ptr], ptr %b, i32 0, i32 1
   %31 = load ptr, ptr %30, align 8
-  %32 = getelementptr i32, ptr %4, i32 0, i32 0
+  %32 = getelementptr %"(Box<int> + Unit)", ptr %4, i32 0, i32 0
   store i32 1, ptr %32, align 4
   %33 = getelementptr %"(Box<int> + Unit)", ptr %4, i32 0, i32 1
   store ptr %31, ptr %33, align 8
@@ -111,7 +111,7 @@ accessGTZ4:                                       ; preds = %accessLTL3
   br label %accessAfter6
 
 accessBad5:                                       ; preds = %accessLTL3, %match-cont
-  %35 = getelementptr i32, ptr %3, i32 0, i32 0
+  %35 = getelementptr %"(Box<int> + Unit)", ptr %3, i32 0, i32 0
   store i32 2, ptr %35, align 4
   %36 = getelementptr %"(Box<int> + Unit)", ptr %3, i32 0, i32 1
   store %Unit zeroinitializer, ptr %36, align 1
@@ -122,8 +122,8 @@ accessAfter6:                                     ; preds = %accessBad5, %access
   %arrayAccess7 = phi %"(Box<int> + Unit)" [ %34, %accessGTZ4 ], [ %37, %accessBad5 ]
   store %"(Box<int> + Unit)" %arrayAccess7, ptr %2, align 4
   %38 = getelementptr %"(Box<int> + Unit)", ptr %2, i32 0, i32 0
-  %39 = load %"(Box<int> + Unit)", ptr %38, align 4
-  switch %"(Box<int> + Unit)" %39, label %match-cont11 [
+  %39 = load i32, ptr %38, align 4
+  switch i32 %39, label %match-cont11 [
     i32 2, label %tagBranch28
     i32 1, label %tagBranch19
   ]
@@ -176,7 +176,7 @@ accessLTL:                                        ; preds = %entry
 accessGTZ:                                        ; preds = %accessLTL
   %11 = getelementptr [2 x ptr], ptr %iPtr, i32 0, i32 0
   %12 = load ptr, ptr %11, align 8
-  %13 = getelementptr i32, ptr %3, i32 0, i32 0
+  %13 = getelementptr %"(Box<int> + Unit)", ptr %3, i32 0, i32 0
   store i32 1, ptr %13, align 4
   %14 = getelementptr %"(Box<int> + Unit)", ptr %3, i32 0, i32 1
   store ptr %12, ptr %14, align 8
@@ -184,7 +184,7 @@ accessGTZ:                                        ; preds = %accessLTL
   br label %accessAfter
 
 accessBad:                                        ; preds = %accessLTL, %entry
-  %16 = getelementptr i32, ptr %2, i32 0, i32 0
+  %16 = getelementptr %"(Box<int> + Unit)", ptr %2, i32 0, i32 0
   store i32 2, ptr %16, align 4
   %17 = getelementptr %"(Box<int> + Unit)", ptr %2, i32 0, i32 1
   store %Unit zeroinitializer, ptr %17, align 1
@@ -195,8 +195,8 @@ accessAfter:                                      ; preds = %accessBad, %accessG
   %arrayAccess = phi %"(Box<int> + Unit)" [ %15, %accessGTZ ], [ %18, %accessBad ]
   store %"(Box<int> + Unit)" %arrayAccess, ptr %1, align 4
   %19 = getelementptr %"(Box<int> + Unit)", ptr %1, i32 0, i32 0
-  %20 = load %"(Box<int> + Unit)", ptr %19, align 4
-  switch %"(Box<int> + Unit)" %20, label %match-cont [
+  %20 = load i32, ptr %19, align 4
+  switch i32 %20, label %match-cont [
     i32 2, label %tagBranch2
     i32 1, label %tagBranch1
   ]

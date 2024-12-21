@@ -1025,7 +1025,8 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
 
 
     std::cout << "990" << std::endl;
-    Value *lengthPtr = builder->CreateGEP(Int32Ty, structPtr, {Int32Zero, Int32One});
+    auto * llvm_dyn_array_type = n.expr->getType()->getLLVMType(module);
+    Value *lengthPtr = builder->CreateGEP(llvm_dyn_array_type, structPtr, {Int32Zero, Int32One});
     Value *length = builder->CreateLoad(Int32Ty, lengthPtr); 
 module->dump();
 
@@ -1047,9 +1048,9 @@ module->dump();
             ), 
             // True block 
             new TBlockNode({
-                new CompCodeWrapper([this, array_type, lengthPtr, length, structPtr, indexValue](){
+                new CompCodeWrapper([this, llvm_dyn_array_type, array_type, lengthPtr, length, structPtr, indexValue](){
 std::cout << "1024" << std::endl;
-                    Value *capPtr = builder->CreateGEP(Int32Ty, structPtr, {Int32Zero, Int32One});
+                    Value *capPtr = builder->CreateGEP(llvm_dyn_array_type, structPtr, {Int32Zero, Int32One});
                     Value *cap =    builder->CreateLoad(Int32Ty, capPtr);
 
                     // TODO: does this memory leak?
@@ -1104,7 +1105,7 @@ std::cout << "1024" << std::endl;
 
         // If its an lvalue,need the pointer!
         Value * arrayPtr = builder->CreateGEP(
-            InnerArrayType,
+            llvm_dyn_array_type,
             structPtr,
             {Int32Zero, Int32Zero}
         );
@@ -1116,7 +1117,7 @@ std::cout << "1024" << std::endl;
             arrayPtr
         );
         Value * indexPtr = builder->CreateGEP(
-            ArrayElementType, 
+            llvm_dyn_array_type, 
             loadedArray,
             indexValue
         );

@@ -59,8 +59,8 @@ then:                                             ; preds = %entry
   %19 = load %"(Box<BinaryTree> + Empty)", ptr %18, align 4
   store %"(Box<BinaryTree> + Empty)" %19, ptr %13, align 4
   %20 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %13, i32 0, i32 0
-  %21 = load %"(Box<BinaryTree> + Empty)", ptr %20, align 4
-  switch %"(Box<BinaryTree> + Empty)" %21, label %match-cont [
+  %21 = load i32, ptr %20, align 4
+  switch i32 %21, label %match-cont [
     i32 2, label %tagBranch2
     i32 1, label %tagBranch1
   ]
@@ -75,14 +75,14 @@ tagBranch2:                                       ; preds = %then
   %26 = load %"programs::bt::Empty", ptr %11, align 1
   %27 = getelementptr %"programs::bt::BinaryTree", ptr %10, i32 0, i32 0
   store i32 %value3, ptr %27, align 4
-  %28 = getelementptr i32, ptr %9, i32 0, i32 0
+  %28 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %9, i32 0, i32 0
   store i32 2, ptr %28, align 4
   %29 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %9, i32 0, i32 1
   store %"programs::bt::Empty" %25, ptr %29, align 1
   %30 = load %"(Box<BinaryTree> + Empty)", ptr %9, align 4
   %31 = getelementptr %"programs::bt::BinaryTree", ptr %10, i32 0, i32 1
   store %"(Box<BinaryTree> + Empty)" %30, ptr %31, align 4
-  %32 = getelementptr i32, ptr %8, i32 0, i32 0
+  %32 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %8, i32 0, i32 0
   store i32 2, ptr %32, align 4
   %33 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %8, i32 0, i32 1
   store %"programs::bt::Empty" %26, ptr %33, align 1
@@ -115,8 +115,8 @@ else:                                             ; preds = %entry
   %44 = load %"(Box<BinaryTree> + Empty)", ptr %43, align 4
   store %"(Box<BinaryTree> + Empty)" %44, ptr %7, align 4
   %45 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %7, i32 0, i32 0
-  %46 = load %"(Box<BinaryTree> + Empty)", ptr %45, align 4
-  switch %"(Box<BinaryTree> + Empty)" %46, label %match-cont11 [
+  %46 = load i32, ptr %45, align 4
+  switch i32 %46, label %match-cont11 [
     i32 2, label %tagBranch26
     i32 1, label %tagBranch18
   ]
@@ -131,14 +131,14 @@ tagBranch26:                                      ; preds = %else
   %51 = load %"programs::bt::Empty", ptr %5, align 1
   %52 = getelementptr %"programs::bt::BinaryTree", ptr %4, i32 0, i32 0
   store i32 %value7, ptr %52, align 4
-  %53 = getelementptr i32, ptr %3, i32 0, i32 0
+  %53 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %3, i32 0, i32 0
   store i32 2, ptr %53, align 4
   %54 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %3, i32 0, i32 1
   store %"programs::bt::Empty" %50, ptr %54, align 1
   %55 = load %"(Box<BinaryTree> + Empty)", ptr %3, align 4
   %56 = getelementptr %"programs::bt::BinaryTree", ptr %4, i32 0, i32 1
   store %"(Box<BinaryTree> + Empty)" %55, ptr %56, align 4
-  %57 = getelementptr i32, ptr %2, i32 0, i32 0
+  %57 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %2, i32 0, i32 0
   store i32 2, ptr %57, align 4
   %58 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %2, i32 0, i32 1
   store %"programs::bt::Empty" %51, ptr %58, align 1
@@ -216,8 +216,8 @@ entry:
   %8 = load %"(Box<BinaryTree> + Empty)", ptr %7, align 4
   store %"(Box<BinaryTree> + Empty)" %8, ptr %2, align 4
   %9 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %2, i32 0, i32 0
-  %10 = load %"(Box<BinaryTree> + Empty)", ptr %9, align 4
-  switch %"(Box<BinaryTree> + Empty)" %10, label %match-cont [
+  %10 = load i32, ptr %9, align 4
+  switch i32 %10, label %match-cont [
     i32 2, label %tagBranch2
     i32 1, label %tagBranch1
   ]
@@ -242,8 +242,8 @@ match-cont:                                       ; preds = %tagBranch1, %tagBra
   %18 = load %"(Box<BinaryTree> + Empty)", ptr %17, align 4
   store %"(Box<BinaryTree> + Empty)" %18, ptr %1, align 4
   %19 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %1, i32 0, i32 0
-  %20 = load %"(Box<BinaryTree> + Empty)", ptr %19, align 4
-  switch %"(Box<BinaryTree> + Empty)" %20, label %match-cont5 [
+  %20 = load i32, ptr %19, align 4
+  switch i32 %20, label %match-cont5 [
     i32 2, label %tagBranch22
     i32 1, label %tagBranch13
   ]
@@ -294,8 +294,8 @@ entry:
   %12 = load %"(Box<BinaryTree> + Empty)", ptr %11, align 4
   store %"(Box<BinaryTree> + Empty)" %12, ptr %4, align 4
   %13 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %4, i32 0, i32 0
-  %14 = load %"(Box<BinaryTree> + Empty)", ptr %13, align 4
-  switch %"(Box<BinaryTree> + Empty)" %14, label %match-cont [
+  %14 = load i32, ptr %13, align 4
+  switch i32 %14, label %match-cont [
     i32 2, label %tagBranch2
     i32 1, label %tagBranch1
   ]
@@ -322,8 +322,8 @@ match-cont:                                       ; preds = %tagBranch1, %tagBra
   %23 = load %"(Box<BinaryTree> + Empty)", ptr %22, align 4
   store %"(Box<BinaryTree> + Empty)" %23, ptr %3, align 4
   %24 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %3, i32 0, i32 0
-  %25 = load %"(Box<BinaryTree> + Empty)", ptr %24, align 4
-  switch %"(Box<BinaryTree> + Empty)" %25, label %match-cont9 [
+  %25 = load i32, ptr %24, align 4
+  switch i32 %25, label %match-cont9 [
     i32 2, label %tagBranch25
     i32 1, label %tagBranch16
   ]
@@ -363,14 +363,14 @@ entry:
   %7 = load %"programs::bt::Empty", ptr %4, align 1
   %8 = getelementptr %"programs::bt::BinaryTree", ptr %3, i32 0, i32 0
   store i32 5, ptr %8, align 4
-  %9 = getelementptr i32, ptr %2, i32 0, i32 0
+  %9 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %2, i32 0, i32 0
   store i32 2, ptr %9, align 4
   %10 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %2, i32 0, i32 1
   store %"programs::bt::Empty" %6, ptr %10, align 1
   %11 = load %"(Box<BinaryTree> + Empty)", ptr %2, align 4
   %12 = getelementptr %"programs::bt::BinaryTree", ptr %3, i32 0, i32 1
   store %"(Box<BinaryTree> + Empty)" %11, ptr %12, align 4
-  %13 = getelementptr i32, ptr %1, i32 0, i32 0
+  %13 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %1, i32 0, i32 0
   store i32 2, ptr %13, align 4
   %14 = getelementptr %"(Box<BinaryTree> + Empty)", ptr %1, i32 0, i32 1
   store %"programs::bt::Empty" %7, ptr %14, align 1

@@ -85,7 +85,7 @@ accessLTL:                                        ; preds = %loop
 accessGTZ:                                        ; preds = %accessLTL
   %23 = getelementptr [3 x %"programs::example::Color"], ptr %samples, i32 0, i32 %i3
   %24 = load %"programs::example::Color", ptr %23, align 4
-  %25 = getelementptr i32, ptr %5, i32 0, i32 0
+  %25 = getelementptr %"(Color + Unit)", ptr %5, i32 0, i32 0
   store i32 1, ptr %25, align 4
   %26 = getelementptr %"(Color + Unit)", ptr %5, i32 0, i32 1
   store %"programs::example::Color" %24, ptr %26, align 4
@@ -93,7 +93,7 @@ accessGTZ:                                        ; preds = %accessLTL
   br label %accessAfter
 
 accessBad:                                        ; preds = %accessLTL, %loop
-  %28 = getelementptr i32, ptr %4, i32 0, i32 0
+  %28 = getelementptr %"(Color + Unit)", ptr %4, i32 0, i32 0
   store i32 2, ptr %28, align 4
   %29 = getelementptr %"(Color + Unit)", ptr %4, i32 0, i32 1
   store %Unit zeroinitializer, ptr %29, align 1
@@ -115,7 +115,7 @@ tagBranch1:                                       ; preds = %accessAfter
   %34 = load %"programs::example::Color", ptr %33, align 4
   store %"programs::example::Color" %34, ptr %c.0, align 4
   %c.04 = load %"programs::example::Color", ptr %c.0, align 4
-  %35 = getelementptr i32, ptr %2, i32 0, i32 0
+  %35 = getelementptr %"(Color + Unit + boolean + int + str)", ptr %2, i32 0, i32 0
   store i32 1, ptr %35, align 4
   %36 = getelementptr %"(Color + Unit + boolean + int + str)", ptr %2, i32 0, i32 1
   store %"programs::example::Color" %c.04, ptr %36, align 4
@@ -131,7 +131,7 @@ tagBranch2:                                       ; preds = %accessAfter
   %42 = load %Unit, ptr %41, align 1
   store %Unit %42, ptr %u, align 1
   %u5 = load %Unit, ptr %u, align 1
-  %43 = getelementptr i32, ptr %1, i32 0, i32 0
+  %43 = getelementptr %"(Color + Unit + boolean + int + str)", ptr %1, i32 0, i32 0
   store i32 2, ptr %43, align 4
   %44 = getelementptr %"(Color + Unit + boolean + int + str)", ptr %1, i32 0, i32 1
   store %Unit %u5, ptr %44, align 1
@@ -311,7 +311,7 @@ tagBranch4:                                       ; preds = %entry
   %23 = load i32, ptr %22, align 4
   store i32 %23, ptr %i, align 4
   %i2 = load i32, ptr %i, align 4
-  %24 = getelementptr i32, ptr %11, i32 0, i32 0
+  %24 = getelementptr %"(boolean + int + str)", ptr %11, i32 0, i32 0
   store i32 2, ptr %24, align 4
   %25 = getelementptr %"(boolean + int + str)", ptr %11, i32 0, i32 1
   store i32 %i2, ptr %25, align 4
@@ -324,7 +324,7 @@ tagBranch3:                                       ; preds = %entry
   %29 = load i1, ptr %28, align 1
   store i1 %29, ptr %b, align 1
   %b3 = load i1, ptr %b, align 1
-  %30 = getelementptr i32, ptr %10, i32 0, i32 0
+  %30 = getelementptr %"(boolean + int + str)", ptr %10, i32 0, i32 0
   store i32 1, ptr %30, align 4
   %31 = getelementptr %"(boolean + int + str)", ptr %10, i32 0, i32 1
   store i1 %b3, ptr %31, align 1
@@ -337,7 +337,7 @@ tagBranch5:                                       ; preds = %entry
   %35 = load ptr, ptr %34, align 8
   store ptr %35, ptr %s, align 8
   %s4 = load ptr, ptr %s, align 8
-  %36 = getelementptr i32, ptr %9, i32 0, i32 0
+  %36 = getelementptr %"(boolean + int + str)", ptr %9, i32 0, i32 0
   store i32 3, ptr %36, align 4
   %37 = getelementptr %"(boolean + int + str)", ptr %9, i32 0, i32 1
   store ptr %s4, ptr %37, align 8
@@ -366,7 +366,7 @@ tagBranch36:                                      ; preds = %tagBranch1
   %46 = call i32 (ptr, ...) @printf(ptr @7)
   %47 = getelementptr %"programs::example::RGBColor", ptr %rgb, i32 0, i32 0
   %48 = load i32, ptr %47, align 4
-  %49 = getelementptr i32, ptr %7, i32 0, i32 0
+  %49 = getelementptr %"(boolean + int + str)", ptr %7, i32 0, i32 0
   store i32 2, ptr %49, align 4
   %50 = getelementptr %"(boolean + int + str)", ptr %7, i32 0, i32 1
   store i32 %48, ptr %50, align 4
@@ -375,7 +375,7 @@ tagBranch36:                                      ; preds = %tagBranch1
   %53 = call i32 (ptr, ...) @printf(ptr @8)
   %54 = getelementptr %"programs::example::RGBColor", ptr %rgb, i32 0, i32 1
   %55 = load i32, ptr %54, align 4
-  %56 = getelementptr i32, ptr %6, i32 0, i32 0
+  %56 = getelementptr %"(boolean + int + str)", ptr %6, i32 0, i32 0
   store i32 2, ptr %56, align 4
   %57 = getelementptr %"(boolean + int + str)", ptr %6, i32 0, i32 1
   store i32 %55, ptr %57, align 4
@@ -384,7 +384,7 @@ tagBranch36:                                      ; preds = %tagBranch1
   %60 = call i32 (ptr, ...) @printf(ptr @9)
   %61 = getelementptr %"programs::example::RGBColor", ptr %rgb, i32 0, i32 2
   %62 = load i32, ptr %61, align 4
-  %63 = getelementptr i32, ptr %5, i32 0, i32 0
+  %63 = getelementptr %"(boolean + int + str)", ptr %5, i32 0, i32 0
   store i32 2, ptr %63, align 4
   %64 = getelementptr %"(boolean + int + str)", ptr %5, i32 0, i32 1
   store i32 %62, ptr %64, align 4
@@ -400,7 +400,7 @@ tagBranch17:                                      ; preds = %tagBranch1
   %70 = call i32 (ptr, ...) @printf(ptr @11)
   %71 = getelementptr %"programs::example::HSVColor", ptr %hsv, i32 0, i32 0
   %72 = load i32, ptr %71, align 4
-  %73 = getelementptr i32, ptr %4, i32 0, i32 0
+  %73 = getelementptr %"(boolean + int + str)", ptr %4, i32 0, i32 0
   store i32 2, ptr %73, align 4
   %74 = getelementptr %"(boolean + int + str)", ptr %4, i32 0, i32 1
   store i32 %72, ptr %74, align 4
@@ -409,7 +409,7 @@ tagBranch17:                                      ; preds = %tagBranch1
   %77 = call i32 (ptr, ...) @printf(ptr @12)
   %78 = getelementptr %"programs::example::HSVColor", ptr %hsv, i32 0, i32 1
   %79 = load i32, ptr %78, align 4
-  %80 = getelementptr i32, ptr %3, i32 0, i32 0
+  %80 = getelementptr %"(boolean + int + str)", ptr %3, i32 0, i32 0
   store i32 2, ptr %80, align 4
   %81 = getelementptr %"(boolean + int + str)", ptr %3, i32 0, i32 1
   store i32 %79, ptr %81, align 4
@@ -418,7 +418,7 @@ tagBranch17:                                      ; preds = %tagBranch1
   %84 = call i32 (ptr, ...) @printf(ptr @13)
   %85 = getelementptr %"programs::example::HSVColor", ptr %hsv, i32 0, i32 2
   %86 = load i32, ptr %85, align 4
-  %87 = getelementptr i32, ptr %2, i32 0, i32 0
+  %87 = getelementptr %"(boolean + int + str)", ptr %2, i32 0, i32 0
   store i32 2, ptr %87, align 4
   %88 = getelementptr %"(boolean + int + str)", ptr %2, i32 0, i32 1
   store i32 %86, ptr %88, align 4
@@ -434,7 +434,7 @@ tagBranch28:                                      ; preds = %tagBranch1
   %94 = call i32 (ptr, ...) @printf(ptr @15)
   %95 = getelementptr %"programs::example::HexColor", ptr %hex, i32 0, i32 0
   %96 = load ptr, ptr %95, align 8
-  %97 = getelementptr i32, ptr %1, i32 0, i32 0
+  %97 = getelementptr %"(boolean + int + str)", ptr %1, i32 0, i32 0
   store i32 3, ptr %97, align 4
   %98 = getelementptr %"(boolean + int + str)", ptr %1, i32 0, i32 1
   store ptr %96, ptr %98, align 8
@@ -486,7 +486,7 @@ entry:
   %17 = getelementptr %"programs::example::RGBColor", ptr %2, i32 0, i32 2
   store i32 %blue3, ptr %17, align 4
   %18 = load %"programs::example::RGBColor", ptr %2, align 4
-  %19 = getelementptr i32, ptr %1, i32 0, i32 0
+  %19 = getelementptr %"programs::example::Color", ptr %1, i32 0, i32 0
   store i32 3, ptr %19, align 4
   %20 = getelementptr %"programs::example::Color", ptr %1, i32 0, i32 1
   store %"programs::example::RGBColor" %18, ptr %20, align 4
@@ -526,7 +526,7 @@ entry:
   %7 = getelementptr %"programs::example::HSVColor", ptr %4, i32 0, i32 2
   store i32 %v3, ptr %7, align 4
   %8 = load %"programs::example::HSVColor", ptr %4, align 4
-  %9 = getelementptr i32, ptr %3, i32 0, i32 0
+  %9 = getelementptr %"programs::example::Color", ptr %3, i32 0, i32 0
   store i32 1, ptr %9, align 4
   %10 = getelementptr %"programs::example::Color", ptr %3, i32 0, i32 1
   store %"programs::example::HSVColor" %8, ptr %10, align 4
@@ -544,7 +544,7 @@ entry:
   %3 = getelementptr %"programs::example::HexColor", ptr %2, i32 0, i32 0
   store ptr %s1, ptr %3, align 8
   %4 = load %"programs::example::HexColor", ptr %2, align 8
-  %5 = getelementptr i32, ptr %1, i32 0, i32 0
+  %5 = getelementptr %"programs::example::Color", ptr %1, i32 0, i32 0
   store i32 2, ptr %5, align 4
   %6 = getelementptr %"programs::example::Color", ptr %1, i32 0, i32 1
   store %"programs::example::HexColor" %4, ptr %6, align 8

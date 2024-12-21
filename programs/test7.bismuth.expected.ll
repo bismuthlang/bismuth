@@ -34,7 +34,7 @@ accessLTL:                                        ; preds = %entry
 accessGTZ:                                        ; preds = %accessLTL
   %7 = getelementptr [4 x ptr], ptr %array, i32 0, i32 %idx1
   %8 = load ptr, ptr %7, align 8
-  %9 = getelementptr i32, ptr %4, i32 0, i32 0
+  %9 = getelementptr %"(Unit + str)", ptr %4, i32 0, i32 0
   store i32 2, ptr %9, align 4
   %10 = getelementptr %"(Unit + str)", ptr %4, i32 0, i32 1
   store ptr %8, ptr %10, align 8
@@ -42,7 +42,7 @@ accessGTZ:                                        ; preds = %accessLTL
   br label %accessAfter
 
 accessBad:                                        ; preds = %accessLTL, %entry
-  %12 = getelementptr i32, ptr %3, i32 0, i32 0
+  %12 = getelementptr %"(Unit + str)", ptr %3, i32 0, i32 0
   store i32 1, ptr %12, align 4
   %13 = getelementptr %"(Unit + str)", ptr %3, i32 0, i32 1
   store %Unit zeroinitializer, ptr %13, align 1

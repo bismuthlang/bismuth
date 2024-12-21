@@ -85,7 +85,7 @@ tagBranch2:                                       ; preds = %entry
   store i32 1, ptr %13, align 4
   %14 = getelementptr %"(int + str)", ptr %a, i32 0, i32 1
   store i32 10, ptr %14, align 4
-  %15 = getelementptr i32, ptr %1, i32 0, i32 0
+  %15 = getelementptr %"(int + str)", ptr %1, i32 0, i32 0
   store i32 1, ptr %15, align 4
   %16 = getelementptr %"(int + str)", ptr %1, i32 0, i32 1
   store i32 10, ptr %16, align 4

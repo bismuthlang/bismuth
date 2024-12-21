@@ -66,7 +66,7 @@ entry:
   %28 = getelementptr %"programs::adv::StructTest3::RGBColor", ptr %6, i32 0, i32 3
   store ptr @"programs::adv::StructTest3::getRGBColor::#lambda.1", ptr %28, align 8
   %29 = load %"programs::adv::StructTest3::RGBColor", ptr %6, align 8
-  %30 = getelementptr i32, ptr %4, i32 0, i32 0
+  %30 = getelementptr %"programs::adv::StructTest3::ColorType", ptr %4, i32 0, i32 0
   store i32 2, ptr %30, align 4
   %31 = getelementptr %"programs::adv::StructTest3::ColorType", ptr %4, i32 0, i32 1
   store %"programs::adv::StructTest3::RGBColor" %29, ptr %31, align 8
@@ -94,7 +94,7 @@ entry:
   %43 = getelementptr %"programs::adv::StructTest3::RGBColor", ptr %3, i32 0, i32 3
   store ptr @"programs::adv::StructTest3::getRGBColor::#lambda.5", ptr %43, align 8
   %44 = load %"programs::adv::StructTest3::RGBColor", ptr %3, align 8
-  %45 = getelementptr i32, ptr %1, i32 0, i32 0
+  %45 = getelementptr %"programs::adv::StructTest3::ColorType", ptr %1, i32 0, i32 0
   store i32 2, ptr %45, align 4
   %46 = getelementptr %"programs::adv::StructTest3::ColorType", ptr %1, i32 0, i32 1
   store %"programs::adv::StructTest3::RGBColor" %44, ptr %46, align 8
@@ -292,7 +292,7 @@ accessLTL:                                        ; preds = %entry
 accessGTZ:                                        ; preds = %accessLTL
   %16 = getelementptr [3 x i32], ptr %channels, i32 0, i32 %12
   %17 = load i32, ptr %16, align 4
-  %18 = getelementptr i32, ptr %3, i32 0, i32 0
+  %18 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 0
   store i32 2, ptr %18, align 4
   %19 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 1
   store i32 %17, ptr %19, align 4
@@ -300,7 +300,7 @@ accessGTZ:                                        ; preds = %accessLTL
   br label %accessAfter
 
 accessBad:                                        ; preds = %accessLTL, %entry
-  %21 = getelementptr i32, ptr %2, i32 0, i32 0
+  %21 = getelementptr %"(Unit + int)", ptr %2, i32 0, i32 0
   store i32 1, ptr %21, align 4
   %22 = getelementptr %"(Unit + int)", ptr %2, i32 0, i32 1
   store %Unit zeroinitializer, ptr %22, align 1

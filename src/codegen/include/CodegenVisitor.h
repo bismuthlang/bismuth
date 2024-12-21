@@ -158,7 +158,7 @@ public:
             llvm::Type *sumTy = sum->getLLVMType(module);
             llvm::AllocaInst * alloc = CreateEntryBlockAlloc(sumTy, "");
 
-            Value *tagPtr = builder->CreateGEP(Int32Ty, alloc, {Int32Zero, Int32Zero});
+            Value *tagPtr = builder->CreateGEP(sumTy, alloc, {Int32Zero, Int32Zero});
 
             builder->CreateStore(getU32(index), tagPtr);
 

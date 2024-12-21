@@ -59,7 +59,7 @@ accessLTL:                                        ; preds = %entry
 accessGTZ:                                        ; preds = %accessLTL
   %14 = getelementptr [5 x i32], ptr %e, i32 0, i32 0
   %15 = load i32, ptr %14, align 4
-  %16 = getelementptr i32, ptr %4, i32 0, i32 0
+  %16 = getelementptr %"(Unit + int)", ptr %4, i32 0, i32 0
   store i32 2, ptr %16, align 4
   %17 = getelementptr %"(Unit + int)", ptr %4, i32 0, i32 1
   store i32 %15, ptr %17, align 4
@@ -67,7 +67,7 @@ accessGTZ:                                        ; preds = %accessLTL
   br label %accessAfter
 
 accessBad:                                        ; preds = %accessLTL, %entry
-  %19 = getelementptr i32, ptr %3, i32 0, i32 0
+  %19 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 0
   store i32 1, ptr %19, align 4
   %20 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 1
   store %Unit zeroinitializer, ptr %20, align 1
@@ -86,7 +86,7 @@ accessLTL10:                                      ; preds = %accessAfter
 accessGTZ11:                                      ; preds = %accessLTL10
   %24 = getelementptr [5 x i32], ptr %f, i32 0, i32 0
   %25 = load i32, ptr %24, align 4
-  %26 = getelementptr i32, ptr %2, i32 0, i32 0
+  %26 = getelementptr %"(Unit + int)", ptr %2, i32 0, i32 0
   store i32 2, ptr %26, align 4
   %27 = getelementptr %"(Unit + int)", ptr %2, i32 0, i32 1
   store i32 %25, ptr %27, align 4
@@ -94,7 +94,7 @@ accessGTZ11:                                      ; preds = %accessLTL10
   br label %accessAfter13
 
 accessBad12:                                      ; preds = %accessLTL10, %accessAfter
-  %29 = getelementptr i32, ptr %1, i32 0, i32 0
+  %29 = getelementptr %"(Unit + int)", ptr %1, i32 0, i32 0
   store i32 1, ptr %29, align 4
   %30 = getelementptr %"(Unit + int)", ptr %1, i32 0, i32 1
   store %Unit zeroinitializer, ptr %30, align 1

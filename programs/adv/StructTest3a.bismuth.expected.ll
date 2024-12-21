@@ -65,7 +65,7 @@ entry:
   %28 = getelementptr %"programs::adv::StructTest3a::RGBColor", ptr %6, i32 0, i32 3
   store ptr @"programs::adv::StructTest3a::getRGBColor::#lambda.1", ptr %28, align 8
   %29 = load %"programs::adv::StructTest3a::RGBColor", ptr %6, align 8
-  %30 = getelementptr i32, ptr %4, i32 0, i32 0
+  %30 = getelementptr %"programs::adv::StructTest3a::ColorType", ptr %4, i32 0, i32 0
   store i32 2, ptr %30, align 4
   %31 = getelementptr %"programs::adv::StructTest3a::ColorType", ptr %4, i32 0, i32 1
   store %"programs::adv::StructTest3a::RGBColor" %29, ptr %31, align 8
@@ -88,7 +88,7 @@ entry:
   %40 = getelementptr %"programs::adv::StructTest3a::RGBColor", ptr %3, i32 0, i32 3
   store ptr @"programs::adv::StructTest3a::getRGBColor::#lambda.5", ptr %40, align 8
   %41 = load %"programs::adv::StructTest3a::RGBColor", ptr %3, align 8
-  %42 = getelementptr i32, ptr %1, i32 0, i32 0
+  %42 = getelementptr %"programs::adv::StructTest3a::ColorType", ptr %1, i32 0, i32 0
   store i32 2, ptr %42, align 4
   %43 = getelementptr %"programs::adv::StructTest3a::ColorType", ptr %1, i32 0, i32 1
   store %"programs::adv::StructTest3a::RGBColor" %41, ptr %43, align 8
@@ -267,7 +267,7 @@ accessLTL:                                        ; preds = %entry
 accessGTZ:                                        ; preds = %accessLTL
   %9 = getelementptr [3 x i32], ptr %channels, i32 0, i32 %c1
   %10 = load i32, ptr %9, align 4
-  %11 = getelementptr i32, ptr %4, i32 0, i32 0
+  %11 = getelementptr %"(Unit + int)", ptr %4, i32 0, i32 0
   store i32 2, ptr %11, align 4
   %12 = getelementptr %"(Unit + int)", ptr %4, i32 0, i32 1
   store i32 %10, ptr %12, align 4
@@ -275,7 +275,7 @@ accessGTZ:                                        ; preds = %accessLTL
   br label %accessAfter
 
 accessBad:                                        ; preds = %accessLTL, %entry
-  %14 = getelementptr i32, ptr %3, i32 0, i32 0
+  %14 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 0
   store i32 1, ptr %14, align 4
   %15 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 1
   store %Unit zeroinitializer, ptr %15, align 1

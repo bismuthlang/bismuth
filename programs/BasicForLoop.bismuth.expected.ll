@@ -46,7 +46,7 @@ accessLTL:                                        ; preds = %loop
 accessGTZ:                                        ; preds = %accessLTL
   %12 = getelementptr [50 x i32], ptr %a, i32 0, i32 %i2
   %13 = load i32, ptr %12, align 4
-  %14 = getelementptr i32, ptr %3, i32 0, i32 0
+  %14 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 0
   store i32 2, ptr %14, align 4
   %15 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 1
   store i32 %13, ptr %15, align 4
@@ -54,7 +54,7 @@ accessGTZ:                                        ; preds = %accessLTL
   br label %accessAfter
 
 accessBad:                                        ; preds = %accessLTL, %loop
-  %17 = getelementptr i32, ptr %2, i32 0, i32 0
+  %17 = getelementptr %"(Unit + int)", ptr %2, i32 0, i32 0
   store i32 1, ptr %17, align 4
   %18 = getelementptr %"(Unit + int)", ptr %2, i32 0, i32 1
   store %Unit zeroinitializer, ptr %18, align 1
@@ -65,8 +65,8 @@ accessAfter:                                      ; preds = %accessBad, %accessG
   %arrayAccess = phi %"(Unit + int)" [ %16, %accessGTZ ], [ %19, %accessBad ]
   store %"(Unit + int)" %arrayAccess, ptr %1, align 4
   %20 = getelementptr %"(Unit + int)", ptr %1, i32 0, i32 0
-  %21 = load %"(Unit + int)", ptr %20, align 4
-  switch %"(Unit + int)" %21, label %match-cont [
+  %21 = load i32, ptr %20, align 4
+  switch i32 %21, label %match-cont [
     i32 1, label %tagBranch1
     i32 2, label %tagBranch2
   ]

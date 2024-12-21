@@ -60,7 +60,7 @@ entry:
   store ptr %0, ptr %c, align 8
   %2 = call ptr @_Execute(ptr @"programs::adv::enumPassing::test")
   store ptr %2, ptr %t, align 8
-  %3 = getelementptr i32, ptr %1, i32 0, i32 0
+  %3 = getelementptr %"(boolean + int)", ptr %1, i32 0, i32 0
   store i32 2, ptr %3, align 4
   %4 = getelementptr %"(boolean + int)", ptr %1, i32 0, i32 1
   store i32 5, ptr %4, align 4

@@ -51,7 +51,7 @@ entry:
   %17 = getelementptr %"programs::adv::StructTest4::RGBColor", ptr %4, i32 0, i32 0
   store %"programs::adv::StructTest4::RGBData" %rgbDat3, ptr %17, align 4
   %18 = load %"programs::adv::StructTest4::RGBColor", ptr %4, align 4
-  %19 = getelementptr i32, ptr %2, i32 0, i32 0
+  %19 = getelementptr %"programs::adv::StructTest4::ColorType", ptr %2, i32 0, i32 0
   store i32 2, ptr %19, align 4
   %20 = getelementptr %"programs::adv::StructTest4::ColorType", ptr %2, i32 0, i32 1
   store %"programs::adv::StructTest4::RGBColor" %18, ptr %20, align 4
@@ -64,8 +64,8 @@ entry:
   %25 = load %"programs::adv::StructTest4::ColorType", ptr %24, align 4
   store %"programs::adv::StructTest4::ColorType" %25, ptr %1, align 4
   %26 = getelementptr %"programs::adv::StructTest4::ColorType", ptr %1, i32 0, i32 0
-  %27 = load %"programs::adv::StructTest4::ColorType", ptr %26, align 4
-  switch %"programs::adv::StructTest4::ColorType" %27, label %match-cont [
+  %27 = load i32, ptr %26, align 4
+  switch i32 %27, label %match-cont [
     i32 2, label %tagBranch2
     i32 1, label %tagBranch1
   ]

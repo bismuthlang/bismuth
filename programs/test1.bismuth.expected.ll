@@ -26,7 +26,7 @@ source_filename = "BismuthProgram"
 @19 = private unnamed_addr constant [22 x i8] c"Other other test, %s\0A\00", align 1
 @20 = private unnamed_addr constant [28 x i8] c"Other other other test, %s\0A\00", align 1
 
-define %Unit @"programs::test1::chayos"(ptr %0) {
+define %Unit @chayos(ptr %0) {
 entry:
   %b = alloca i32, align 4
   %a = alloca i32, align 4
@@ -44,7 +44,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::test1::idk"(ptr %0) {
+define %Unit @idk(ptr %0) {
 entry:
   %x = alloca i32, align 4
   %c = alloca ptr, align 8
@@ -69,7 +69,7 @@ if-cont:                                          ; preds = %else, %then
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::test1::branchtest"(ptr %0) {
+define %Unit @branchtest(ptr %0) {
 entry:
   %count = alloca i32, align 4
   %a = alloca [5 x i32], align 4
@@ -120,7 +120,7 @@ if-cont:                                          ; preds = %else, %then
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::test1::otherbranch"(ptr %0) {
+define %Unit @otherbranch(ptr %0) {
 entry:
   %b = alloca i32, align 4
   %a = alloca i32, align 4
@@ -149,7 +149,7 @@ if-cont:                                          ; preds = %else, %then
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::test1::otherbranchtwo"(ptr %0) {
+define %Unit @otherbranchtwo(ptr %0) {
 entry:
   %b = alloca ptr, align 8
   %a = alloca i32, align 4
@@ -179,7 +179,7 @@ if-cont:                                          ; preds = %else, %then
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::test1::otherbranchthree"(ptr %0) {
+define %Unit @otherbranchthree(ptr %0) {
 entry:
   %cb = alloca ptr, align 8
   %ca = alloca ptr, align 8
@@ -269,7 +269,7 @@ accessLTL:                                        ; preds = %loop
 accessGTZ:                                        ; preds = %accessLTL
   %15 = getelementptr [50 x i32], ptr %a, i32 0, i32 %i4
   %16 = load i32, ptr %15, align 4
-  %17 = getelementptr i32, ptr %3, i32 0, i32 0
+  %17 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 0
   store i32 2, ptr %17, align 4
   %18 = getelementptr %"(Unit + int)", ptr %3, i32 0, i32 1
   store i32 %16, ptr %18, align 4
@@ -277,7 +277,7 @@ accessGTZ:                                        ; preds = %accessLTL
   br label %accessAfter
 
 accessBad:                                        ; preds = %accessLTL, %loop
-  %20 = getelementptr i32, ptr %2, i32 0, i32 0
+  %20 = getelementptr %"(Unit + int)", ptr %2, i32 0, i32 0
   store i32 1, ptr %20, align 4
   %21 = getelementptr %"(Unit + int)", ptr %2, i32 0, i32 1
   store %Unit zeroinitializer, ptr %21, align 1
@@ -319,13 +319,13 @@ match-cont:                                       ; preds = %tagBranch2, %tagBra
 
 rest:                                             ; preds = %match-cont, %entry
   %33 = call i32 (...) @printf(ptr @16)
-  %34 = call ptr @_Execute(ptr @"programs::test1::branchtest")
+  %34 = call ptr @_Execute(ptr @branchtest)
   store ptr %34, ptr %t1, align 8
-  %35 = call ptr @_Execute(ptr @"programs::test1::otherbranch")
+  %35 = call ptr @_Execute(ptr @otherbranch)
   store ptr %35, ptr %t2, align 8
-  %36 = call ptr @_Execute(ptr @"programs::test1::otherbranchtwo")
+  %36 = call ptr @_Execute(ptr @otherbranchtwo)
   store ptr %36, ptr %t3, align 8
-  %37 = call ptr @_Execute(ptr @"programs::test1::otherbranchthree")
+  %37 = call ptr @_Execute(ptr @otherbranchthree)
   store ptr %37, ptr %t4, align 8
   %38 = load ptr, ptr %t1, align 8
   %39 = call ptr @_ReadLinearChannel(ptr %38)
