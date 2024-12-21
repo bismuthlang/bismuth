@@ -4,8 +4,8 @@ source_filename = "BismuthProgram"
 %Unit = type {}
 %"(int + str)" = type { i32, [8 x i8] }
 %"(str -> str + str, int -> str)" = type { i32, [8 x i8] }
-%"programs::enum2::lambdaOp" = type { i32, [8 x i8] }
-%"programs::enum2::a" = type { i32, [12 x i8] }
+%lambdaOp = type { i32, [8 x i8] }
+%a = type { i32, [12 x i8] }
 
 @0 = private unnamed_addr constant [8 x i8] c"msg=%s\0A\00", align 1
 @1 = private unnamed_addr constant [6 x i8] c"Hello\00", align 1
@@ -26,18 +26,18 @@ entry:
   %op2 = alloca %"(str -> str + str, int -> str)", align 8
   %fn.2 = alloca ptr, align 8
   %fn.1 = alloca ptr, align 8
-  %1 = alloca %"programs::enum2::lambdaOp", align 8
-  %s.1 = alloca %"programs::enum2::lambdaOp", align 8
+  %1 = alloca %lambdaOp, align 8
+  %s.1 = alloca %lambdaOp, align 8
   %s.0 = alloca %"(str -> str + str, int -> str)", align 8
   %s = alloca ptr, align 8
   %b = alloca i1, align 1
   %i = alloca i32, align 4
-  %2 = alloca %"programs::enum2::a", align 8
-  %obscured = alloca %"programs::enum2::a", align 8
+  %2 = alloca %a, align 8
+  %obscured = alloca %a, align 8
   %fn.3 = alloca ptr, align 8
   %fn.0 = alloca ptr, align 8
-  %3 = alloca %"programs::enum2::lambdaOp", align 8
-  %op = alloca %"programs::enum2::lambdaOp", align 8
+  %3 = alloca %lambdaOp, align 8
+  %op = alloca %lambdaOp, align 8
   %t2 = alloca ptr, align 8
   %fn = alloca ptr, align 8
   %c = alloca ptr, align 8
@@ -46,13 +46,13 @@ entry:
   %fn1 = load ptr, ptr %fn, align 8
   store ptr %fn1, ptr %t2, align 8
   %fn2 = load ptr, ptr %fn, align 8
-  %4 = getelementptr %"programs::enum2::lambdaOp", ptr %op, i32 0, i32 0
+  %4 = getelementptr %lambdaOp, ptr %op, i32 0, i32 0
   store i32 2, ptr %4, align 4
-  %5 = getelementptr %"programs::enum2::lambdaOp", ptr %op, i32 0, i32 1
+  %5 = getelementptr %lambdaOp, ptr %op, i32 0, i32 1
   store ptr %fn2, ptr %5, align 8
-  %op3 = load %"programs::enum2::lambdaOp", ptr %op, align 4
-  store %"programs::enum2::lambdaOp" %op3, ptr %3, align 4
-  %6 = getelementptr %"programs::enum2::lambdaOp", ptr %3, i32 0, i32 0
+  %op3 = load %lambdaOp, ptr %op, align 4
+  store %lambdaOp %op3, ptr %3, align 4
+  %6 = getelementptr %lambdaOp, ptr %3, i32 0, i32 0
   %7 = load i32, ptr %6, align 4
   switch i32 %7, label %match-cont [
     i32 2, label %tagBranch2
@@ -60,7 +60,7 @@ entry:
   ]
 
 tagBranch2:                                       ; preds = %entry
-  %8 = getelementptr %"programs::enum2::lambdaOp", ptr %3, i32 0, i32 1
+  %8 = getelementptr %lambdaOp, ptr %3, i32 0, i32 1
   %9 = load ptr, ptr %8, align 8
   store ptr %9, ptr %fn.0, align 8
   %fn.04 = load ptr, ptr %fn.0, align 8
@@ -68,7 +68,7 @@ tagBranch2:                                       ; preds = %entry
   br label %match-cont
 
 tagBranch1:                                       ; preds = %entry
-  %11 = getelementptr %"programs::enum2::lambdaOp", ptr %3, i32 0, i32 1
+  %11 = getelementptr %lambdaOp, ptr %3, i32 0, i32 1
   %12 = load ptr, ptr %11, align 8
   store ptr %12, ptr %fn.3, align 8
   %fn.35 = load ptr, ptr %fn.3, align 8
@@ -76,14 +76,14 @@ tagBranch1:                                       ; preds = %entry
   br label %match-cont
 
 match-cont:                                       ; preds = %tagBranch1, %tagBranch2, %entry
-  %op6 = load %"programs::enum2::lambdaOp", ptr %op, align 4
-  %14 = getelementptr %"programs::enum2::a", ptr %obscured, i32 0, i32 0
+  %op6 = load %lambdaOp, ptr %op, align 4
+  %14 = getelementptr %a, ptr %obscured, i32 0, i32 0
   store i32 4, ptr %14, align 4
-  %15 = getelementptr %"programs::enum2::a", ptr %obscured, i32 0, i32 1
-  store %"programs::enum2::lambdaOp" %op6, ptr %15, align 4
-  %obscured7 = load %"programs::enum2::a", ptr %obscured, align 4
-  store %"programs::enum2::a" %obscured7, ptr %2, align 4
-  %16 = getelementptr %"programs::enum2::a", ptr %2, i32 0, i32 0
+  %15 = getelementptr %a, ptr %obscured, i32 0, i32 1
+  store %lambdaOp %op6, ptr %15, align 4
+  %obscured7 = load %a, ptr %obscured, align 4
+  store %a %obscured7, ptr %2, align 4
+  %16 = getelementptr %a, ptr %2, i32 0, i32 0
   %17 = load i32, ptr %16, align 4
   switch i32 %17, label %match-cont19 [
     i32 3, label %tagBranch3
@@ -94,7 +94,7 @@ match-cont:                                       ; preds = %tagBranch1, %tagBra
   ]
 
 tagBranch3:                                       ; preds = %match-cont
-  %18 = getelementptr %"programs::enum2::a", ptr %2, i32 0, i32 1
+  %18 = getelementptr %a, ptr %2, i32 0, i32 1
   %19 = load i32, ptr %18, align 4
   store i32 %19, ptr %i, align 4
   %i8 = load i32, ptr %i, align 4
@@ -102,7 +102,7 @@ tagBranch3:                                       ; preds = %match-cont
   br label %match-cont19
 
 tagBranch29:                                      ; preds = %match-cont
-  %21 = getelementptr %"programs::enum2::a", ptr %2, i32 0, i32 1
+  %21 = getelementptr %a, ptr %2, i32 0, i32 1
   %22 = load i1, ptr %21, align 1
   store i1 %22, ptr %b, align 1
   %b10 = load i1, ptr %b, align 1
@@ -120,7 +120,7 @@ if-cont:                                          ; preds = %else, %then
   br label %match-cont19
 
 tagBranch5:                                       ; preds = %match-cont
-  %25 = getelementptr %"programs::enum2::a", ptr %2, i32 0, i32 1
+  %25 = getelementptr %a, ptr %2, i32 0, i32 1
   %26 = load ptr, ptr %25, align 8
   store ptr %26, ptr %s, align 8
   %s11 = load ptr, ptr %s, align 8
@@ -128,19 +128,19 @@ tagBranch5:                                       ; preds = %match-cont
   br label %match-cont19
 
 tagBranch112:                                     ; preds = %match-cont
-  %28 = getelementptr %"programs::enum2::a", ptr %2, i32 0, i32 1
+  %28 = getelementptr %a, ptr %2, i32 0, i32 1
   %29 = load %"(str -> str + str, int -> str)", ptr %28, align 4
   store %"(str -> str + str, int -> str)" %29, ptr %s.0, align 4
   %30 = call i32 (ptr, ...) @printf(ptr @7)
   br label %match-cont19
 
 tagBranch4:                                       ; preds = %match-cont
-  %31 = getelementptr %"programs::enum2::a", ptr %2, i32 0, i32 1
-  %32 = load %"programs::enum2::lambdaOp", ptr %31, align 4
-  store %"programs::enum2::lambdaOp" %32, ptr %s.1, align 4
-  %s.113 = load %"programs::enum2::lambdaOp", ptr %s.1, align 4
-  store %"programs::enum2::lambdaOp" %s.113, ptr %1, align 4
-  %33 = getelementptr %"programs::enum2::lambdaOp", ptr %1, i32 0, i32 0
+  %31 = getelementptr %a, ptr %2, i32 0, i32 1
+  %32 = load %lambdaOp, ptr %31, align 4
+  store %lambdaOp %32, ptr %s.1, align 4
+  %s.113 = load %lambdaOp, ptr %s.1, align 4
+  store %lambdaOp %s.113, ptr %1, align 4
+  %33 = getelementptr %lambdaOp, ptr %1, i32 0, i32 0
   %34 = load i32, ptr %33, align 4
   switch i32 %34, label %match-cont18 [
     i32 2, label %tagBranch214
@@ -148,7 +148,7 @@ tagBranch4:                                       ; preds = %match-cont
   ]
 
 tagBranch214:                                     ; preds = %tagBranch4
-  %35 = getelementptr %"programs::enum2::lambdaOp", ptr %1, i32 0, i32 1
+  %35 = getelementptr %lambdaOp, ptr %1, i32 0, i32 1
   %36 = load ptr, ptr %35, align 8
   store ptr %36, ptr %fn.1, align 8
   %fn.115 = load ptr, ptr %fn.1, align 8
@@ -156,7 +156,7 @@ tagBranch214:                                     ; preds = %tagBranch4
   br label %match-cont18
 
 tagBranch116:                                     ; preds = %tagBranch4
-  %38 = getelementptr %"programs::enum2::lambdaOp", ptr %1, i32 0, i32 1
+  %38 = getelementptr %lambdaOp, ptr %1, i32 0, i32 1
   %39 = load ptr, ptr %38, align 8
   store ptr %39, ptr %fn.2, align 8
   %fn.217 = load ptr, ptr %fn.2, align 8

@@ -251,7 +251,7 @@ private:
 
             Value *memLoc = builder->CreateGEP(llvm_sum_type, v, {Int32Zero, Int32One});
             Value *tagPtr = builder->CreateGEP(llvm_sum_type, v, {Int32Zero, Int32Zero});
-            Value *tag = builder->CreateLoad(tagPtr->getType(), tagPtr);
+            Value *tag = builder->CreateLoad(Int32Ty, tagPtr);
             SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
 
             uint32_t index = 0;

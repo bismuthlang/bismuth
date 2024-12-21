@@ -2,8 +2,8 @@
 source_filename = "BismuthProgram"
 
 %Unit = type {}
-%"programs::enum1::a" = type { i32, [8 x i8] }
-%"programs::enum1::b" = type { i32, [4 x i8] }
+%a = type { i32, [8 x i8] }
+%b = type { i32, [4 x i8] }
 
 @0 = private unnamed_addr constant [13 x i8] c"hello there!\00", align 1
 @1 = private unnamed_addr constant [9 x i8] c"Integer\0A\00", align 1
@@ -17,36 +17,36 @@ entry:
   %s = alloca ptr, align 8
   %b = alloca i1, align 1
   %a.0 = alloca i32, align 4
-  %1 = alloca %"programs::enum1::a", align 8
+  %1 = alloca %a, align 8
   %b.0 = alloca i1, align 1
   %a = alloca i32, align 4
-  %2 = alloca %"programs::enum1::b", align 8
-  %oth1 = alloca %"programs::enum1::b", align 8
-  %idkStr = alloca %"programs::enum1::a", align 8
-  %idk2 = alloca %"programs::enum1::a", align 8
-  %idk1 = alloca %"programs::enum1::a", align 8
+  %2 = alloca %b, align 8
+  %oth1 = alloca %b, align 8
+  %idkStr = alloca %a, align 8
+  %idk2 = alloca %a, align 8
+  %idk1 = alloca %a, align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
-  %3 = getelementptr %"programs::enum1::a", ptr %idk1, i32 0, i32 0
+  %3 = getelementptr %a, ptr %idk1, i32 0, i32 0
   store i32 2, ptr %3, align 4
-  %4 = getelementptr %"programs::enum1::a", ptr %idk1, i32 0, i32 1
+  %4 = getelementptr %a, ptr %idk1, i32 0, i32 1
   store i32 1, ptr %4, align 4
-  %5 = getelementptr %"programs::enum1::a", ptr %idk2, i32 0, i32 0
+  %5 = getelementptr %a, ptr %idk2, i32 0, i32 0
   store i32 1, ptr %5, align 4
-  %6 = getelementptr %"programs::enum1::a", ptr %idk2, i32 0, i32 1
+  %6 = getelementptr %a, ptr %idk2, i32 0, i32 1
   store i1 false, ptr %6, align 1
-  %7 = getelementptr %"programs::enum1::a", ptr %idkStr, i32 0, i32 0
+  %7 = getelementptr %a, ptr %idkStr, i32 0, i32 0
   store i32 3, ptr %7, align 4
-  %8 = getelementptr %"programs::enum1::a", ptr %idkStr, i32 0, i32 1
+  %8 = getelementptr %a, ptr %idkStr, i32 0, i32 1
   store ptr @0, ptr %8, align 8
   %9 = icmp eq i32 1, 4
-  %10 = getelementptr %"programs::enum1::b", ptr %oth1, i32 0, i32 0
+  %10 = getelementptr %b, ptr %oth1, i32 0, i32 0
   store i32 1, ptr %10, align 4
-  %11 = getelementptr %"programs::enum1::b", ptr %oth1, i32 0, i32 1
+  %11 = getelementptr %b, ptr %oth1, i32 0, i32 1
   store i1 %9, ptr %11, align 1
-  %oth11 = load %"programs::enum1::b", ptr %oth1, align 4
-  store %"programs::enum1::b" %oth11, ptr %2, align 4
-  %12 = getelementptr %"programs::enum1::b", ptr %2, i32 0, i32 0
+  %oth11 = load %b, ptr %oth1, align 4
+  store %b %oth11, ptr %2, align 4
+  %12 = getelementptr %b, ptr %2, i32 0, i32 0
   %13 = load i32, ptr %12, align 4
   switch i32 %13, label %match-cont [
     i32 2, label %tagBranch2
@@ -54,23 +54,23 @@ entry:
   ]
 
 tagBranch2:                                       ; preds = %entry
-  %14 = getelementptr %"programs::enum1::b", ptr %2, i32 0, i32 1
+  %14 = getelementptr %b, ptr %2, i32 0, i32 1
   %15 = load i32, ptr %14, align 4
   store i32 %15, ptr %a, align 4
   %16 = call i32 (ptr, ...) @printf(ptr @1)
   br label %match-cont
 
 tagBranch1:                                       ; preds = %entry
-  %17 = getelementptr %"programs::enum1::b", ptr %2, i32 0, i32 1
+  %17 = getelementptr %b, ptr %2, i32 0, i32 1
   %18 = load i1, ptr %17, align 1
   store i1 %18, ptr %b.0, align 1
   %19 = call i32 (ptr, ...) @printf(ptr @2)
   br label %match-cont
 
 match-cont:                                       ; preds = %tagBranch1, %tagBranch2, %entry
-  %idkStr2 = load %"programs::enum1::a", ptr %idkStr, align 4
-  store %"programs::enum1::a" %idkStr2, ptr %1, align 4
-  %20 = getelementptr %"programs::enum1::a", ptr %1, i32 0, i32 0
+  %idkStr2 = load %a, ptr %idkStr, align 4
+  store %a %idkStr2, ptr %1, align 4
+  %20 = getelementptr %a, ptr %1, i32 0, i32 0
   %21 = load i32, ptr %20, align 4
   switch i32 %21, label %match-cont6 [
     i32 2, label %tagBranch23
@@ -79,21 +79,21 @@ match-cont:                                       ; preds = %tagBranch1, %tagBra
   ]
 
 tagBranch23:                                      ; preds = %match-cont
-  %22 = getelementptr %"programs::enum1::a", ptr %1, i32 0, i32 1
+  %22 = getelementptr %a, ptr %1, i32 0, i32 1
   %23 = load i32, ptr %22, align 4
   store i32 %23, ptr %a.0, align 4
   %24 = call i32 (ptr, ...) @printf(ptr @3)
   br label %match-cont6
 
 tagBranch14:                                      ; preds = %match-cont
-  %25 = getelementptr %"programs::enum1::a", ptr %1, i32 0, i32 1
+  %25 = getelementptr %a, ptr %1, i32 0, i32 1
   %26 = load i1, ptr %25, align 1
   store i1 %26, ptr %b, align 1
   %27 = call i32 (ptr, ...) @printf(ptr @4)
   br label %match-cont6
 
 tagBranch3:                                       ; preds = %match-cont
-  %28 = getelementptr %"programs::enum1::a", ptr %1, i32 0, i32 1
+  %28 = getelementptr %a, ptr %1, i32 0, i32 1
   %29 = load ptr, ptr %28, align 8
   store ptr %29, ptr %s, align 8
   %s5 = load ptr, ptr %s, align 8

@@ -53,8 +53,8 @@ accessAfter:                                      ; preds = %accessBad, %accessG
   %arrayAccess = phi %"(Unit + str)" [ %11, %accessGTZ ], [ %14, %accessBad ]
   store %"(Unit + str)" %arrayAccess, ptr %2, align 4
   %15 = getelementptr %"(Unit + str)", ptr %2, i32 0, i32 0
-  %16 = load %"(Unit + str)", ptr %15, align 4
-  switch %"(Unit + str)" %16, label %match-cont [
+  %16 = load i32, ptr %15, align 4
+  switch i32 %16, label %match-cont [
     i32 1, label %tagBranch1
     i32 2, label %tagBranch2
   ]

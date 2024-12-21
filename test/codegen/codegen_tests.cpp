@@ -260,26 +260,17 @@ TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
 
 TEST_CASE("programs/enum2 - Basic Enum 2 - double cast", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/enum2.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "5ac261ea03d1be20b7328850b7397b425386f76429af9e1f302df9ebceda4f29");
+    ExpectOutput("programs/enum2.bismuth");
 }
 
 TEST_CASE("programs/enumAssign - Same a  Enum 2 but with assignments outside of decl", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/enumAssign.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "b64fc9cc04f4d992a5bd05f1771132c1d96e1363fd6fe131928d1dc4776744b8");
+    ExpectOutput("programs/enumAssign.bismuth");
 }
 
 TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[codegen][enum][lambda]")
 {
-    auto stream = std::fstream("../../programs/enumAssign2.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "2d002078a73da2b21af0b78e6748c07c28f94d382d8010cf8de0c941552e8067");
+    ExpectOutput("programs/enumAssign2.bismuth");;
 }
 
 TEST_CASE("programs/enum3", "[codegen][enum]")
@@ -326,10 +317,7 @@ TEST_CASE("programs/adv/StructTest4", "[codegen][struct]")
 
 TEST_CASE("programs/adv/NestedEnum", "[codegen][struct]")
 {
-    auto stream = std::fstream("../../programs/adv/NestedEnum.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "c834c171a67acadce5336face78547a8010cfd283594a31aacf7f3e330f06975");
+    ExpectOutput("programs/adv/NestedEnum.bismuth");
 }
 
 TEST_CASE("programs/dangerLambda-Program - lambdas with duplicate function names", "[codegen][struct]")
@@ -452,10 +440,7 @@ TEST_CASE("programs/TStruct - Parody + Clone w/ Struct Boxes ", "[codegen][enum]
 
 TEST_CASE("programs/TStructEnum - Parody + Clone w/ Enum Struct Boxes ", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TStructEnum.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "60fbf2fed2f03e8f6e81ec206d621f74f21bc21b6b2ef08740129e82664ece6f");
+    ExpectOutput("programs/TStructEnum.bismuth");
 }
 
 TEST_CASE("programs/TStructEnumGC - Parody + Clone w/ Enum Struct Boxes + GC ", "[codegen][enum]")

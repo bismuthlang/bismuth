@@ -25,8 +25,8 @@ entry:
   %sum1 = load %"(boolean + int)", ptr %sum, align 4
   store %"(boolean + int)" %sum1, ptr %1, align 4
   %6 = getelementptr %"(boolean + int)", ptr %1, i32 0, i32 0
-  %7 = load %"(boolean + int)", ptr %6, align 4
-  switch %"(boolean + int)" %7, label %match-cont [
+  %7 = load i32, ptr %6, align 4
+  switch i32 %7, label %match-cont [
     i32 2, label %tagBranch2
     i32 1, label %tagBranch1
   ]

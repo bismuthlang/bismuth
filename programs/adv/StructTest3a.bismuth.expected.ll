@@ -132,8 +132,8 @@ entry:
   %10 = load %"programs::adv::StructTest3a::ColorType", ptr %9, align 4
   store %"programs::adv::StructTest3a::ColorType" %10, ptr %1, align 4
   %11 = getelementptr %"programs::adv::StructTest3a::ColorType", ptr %1, i32 0, i32 0
-  %12 = load %"programs::adv::StructTest3a::ColorType", ptr %11, align 4
-  switch %"programs::adv::StructTest3a::ColorType" %12, label %match-cont [
+  %12 = load i32, ptr %11, align 4
+  switch i32 %12, label %match-cont [
     i32 2, label %tagBranch2
     i32 1, label %tagBranch1
   ]
@@ -286,8 +286,8 @@ accessAfter:                                      ; preds = %accessBad, %accessG
   %arrayAccess = phi %"(Unit + int)" [ %13, %accessGTZ ], [ %16, %accessBad ]
   store %"(Unit + int)" %arrayAccess, ptr %2, align 4
   %17 = getelementptr %"(Unit + int)", ptr %2, i32 0, i32 0
-  %18 = load %"(Unit + int)", ptr %17, align 4
-  switch %"(Unit + int)" %18, label %match-cont [
+  %18 = load i32, ptr %17, align 4
+  switch i32 %18, label %match-cont [
     i32 1, label %tagBranch1
     i32 2, label %tagBranch2
   ]
