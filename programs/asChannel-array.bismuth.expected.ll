@@ -17,15 +17,15 @@ entry:
   %a = alloca [5 x i32], align 4
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
-  %1 = getelementptr ptr, ptr %a, i32 0, i32 0
+  %1 = getelementptr [5 x i32], ptr %a, i32 0, i32 0
   store i32 1, ptr %1, align 4
-  %2 = getelementptr ptr, ptr %a, i32 0, i32 1
+  %2 = getelementptr [5 x i32], ptr %a, i32 0, i32 1
   store i32 2, ptr %2, align 4
-  %3 = getelementptr ptr, ptr %a, i32 0, i32 2
+  %3 = getelementptr [5 x i32], ptr %a, i32 0, i32 2
   store i32 3, ptr %3, align 4
-  %4 = getelementptr ptr, ptr %a, i32 0, i32 3
+  %4 = getelementptr [5 x i32], ptr %a, i32 0, i32 3
   store i32 4, ptr %4, align 4
-  %5 = getelementptr ptr, ptr %a, i32 0, i32 4
+  %5 = getelementptr [5 x i32], ptr %a, i32 0, i32 4
   store i32 5, ptr %5, align 4
   %6 = call ptr @malloc(i32 4)
   store i32 1, ptr %6, align 4
@@ -45,12 +45,12 @@ loop-cond:                                        ; preds = %loop, %entry
 
 loop:                                             ; preds = %loop-cond
   %12 = load i32, ptr %idx, align 4
-  %13 = getelementptr ptr, ptr %save_blk, i32 0, i32 %12
+  %13 = getelementptr [5 x ptr], ptr %save_blk, i32 0, i32 %12
   %14 = load i32, ptr %idx, align 4
-  %15 = getelementptr ptr, ptr %cast_arr, i32 0, i32 %14
-  %16 = load ptr, ptr %15, align 8
-  %17 = call ptr @malloc(i32 8)
-  store ptr %16, ptr %17, align 8
+  %15 = getelementptr [5 x i32], ptr %cast_arr, i32 0, i32 %14
+  %16 = load i32, ptr %15, align 4
+  %17 = call ptr @malloc(i32 4)
+  store i32 %16, ptr %17, align 4
   store ptr %17, ptr %13, align 8
   %18 = load i32, ptr %idx, align 4
   %19 = add nsw i32 %18, 1
@@ -58,7 +58,7 @@ loop:                                             ; preds = %loop-cond
   br label %loop-cond
 
 rest:                                             ; preds = %loop-cond
-  %20 = getelementptr ptr, ptr %save_blk, i32 0, i32 0
+  %20 = getelementptr [5 x ptr], ptr %save_blk, i32 0, i32 0
   %21 = load i32, ptr %len, align 4
   %22 = call ptr @_ArrayToChannel(ptr %20, i32 %21)
   store ptr %22, ptr %c2, align 8

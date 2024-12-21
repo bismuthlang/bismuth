@@ -556,26 +556,17 @@ TEST_CASE("programs/nested_struct - Definitions within definitions", "[codegen]"
 
 TEST_CASE("programs/asChannel-int - Convert an int into stream", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/asChannel-int.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "6a16488e47843b55af7a7bb1e5f29c1e569418f661606df7196f386061763a23");
+    ExpectOutput("programs/asChannel-int.bismuth");
 }
 
 TEST_CASE("programs/asChannel-array - Convert an array into stream", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/asChannel-array.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "afaa96f5447a3c48adfcb6516a857ed945c764f55ab97f4946b9d4b5a1bc7b26");
+    ExpectOutput("programs/asChannel-array.bismuth");
 }
 
 TEST_CASE("programs/asChannel-channel - Convert regular channel into stream", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/asChannel-channel.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "5770206895e10c63776ef3a8ff55967347bca9db5b4edb416d158860c75e2775");
+    ExpectOutput("programs/asChannel-channel.bismuth");
 }
 
 TEST_CASE("programs/cancelable/BasicCancel - Basic cancel block with two recv", "[codegen][cancel]")

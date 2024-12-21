@@ -23,7 +23,7 @@ entry:
   %2 = load ptr, ptr %c, align 8
   %3 = call %Unit @_WriteChannel(ptr %2, ptr %1)
   %a1 = load i32, ptr %a, align 4
-  %4 = getelementptr ptr, ptr %createdArray, i32 0, i32 0
+  %4 = getelementptr [1 x i32], ptr %createdArray, i32 0, i32 0
   store i32 %a1, ptr %4, align 4
   store i32 0, ptr %idx, align 4
   store i32 1, ptr %len, align 4
@@ -39,10 +39,10 @@ loop:                                             ; preds = %loop-cond
   %8 = load i32, ptr %idx, align 4
   %9 = getelementptr [1 x ptr], ptr %save_blk, i32 0, i32 %8
   %10 = load i32, ptr %idx, align 4
-  %11 = getelementptr [1 x ptr], ptr %createdArray, i32 0, i32 %10
-  %12 = load ptr, ptr %11, align 8
-  %13 = call ptr @malloc(i32 8)
-  store ptr %12, ptr %13, align 8
+  %11 = getelementptr [1 x i32], ptr %createdArray, i32 0, i32 %10
+  %12 = load i32, ptr %11, align 4
+  %13 = call ptr @malloc(i32 4)
+  store i32 %12, ptr %13, align 4
   store ptr %13, ptr %9, align 8
   %14 = load i32, ptr %idx, align 4
   %15 = add nsw i32 %14, 1
@@ -50,7 +50,7 @@ loop:                                             ; preds = %loop-cond
   br label %loop-cond
 
 rest:                                             ; preds = %loop-cond
-  %16 = getelementptr ptr, ptr %save_blk, i32 0, i32 0
+  %16 = getelementptr [1 x ptr], ptr %save_blk, i32 0, i32 0
   %17 = load i32, ptr %len, align 4
   %18 = call ptr @_ArrayToChannel(ptr %16, i32 %17)
   store ptr %18, ptr %c2, align 8

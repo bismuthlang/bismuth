@@ -2505,7 +2505,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
         if (const TypeArray *arrayType = dynamic_cast<const TypeArray *>(ty))
         {
             // FIXME: ONLY NEEDED BC CANT SPECIFY THAT THIS IS AN LVALUE!!!
-            AllocaInst *stoVal = CreateEntryBlockAlloc(loadedVal->getType(), "cast_arr");
+            AllocaInst *stoVal = CreateEntryBlockAlloc(arrayType->getLLVMType(module), "cast_arr");
             builder->CreateStore(loadedVal, stoVal);
             loadedVal = stoVal;
             return *arrayType;
@@ -2517,7 +2517,11 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
         // TODO: Remove Array and make things use pointers?
         AllocaInst *saveBlock = CreateEntryBlockAlloc(arrTy.getLLVMType(module), "createdArray");
 
-        Value *stoLoc = builder->CreateGEP(LegacyGEPType(saveBlock), saveBlock, {Int32Zero, Int32Zero});
+        Value *stoLoc = builder->CreateGEP(
+            arrTy.getLLVMType(module),
+            saveBlock,
+            {Int32Zero, Int32Zero}
+        );
         builder->CreateStore(loadedVal, stoLoc);
 
         loadedVal = saveBlock; // builder->CreateLoad(saveBlock->getType(), saveBlock);
@@ -2560,19 +2564,19 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
     /**/
     {
         Value *stoLoc = builder->CreateGEP(
-            saveBlock->getAllocatedType(), // FIXME: getArrayElementType Its either this  or 
+            arrayPtrTy,
             saveBlock,
             {Int32Zero, builder->CreateLoad(Int32Ty, loop_index)}
         );
 
         Value *readLoc = builder->CreateGEP(
-            saveBlock->getAllocatedType(), // FIXME: getArrayElementType this might just be i8p?
+            arrayType.getLLVMType(module), // FIXME: getArrayElementType this might just be i8p?
             loadedVal,
             {Int32Zero, builder->CreateLoad(Int32Ty, loop_index)}
         );
 
 std::cout << "2478" << std::endl;
-        Value *read = builder->CreateLoad(readLoc->getType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
+        Value *read = builder->CreateLoad(Int32Ty, readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
 
         Value *v = builder->CreateCall(getMalloc(), {getU32(getSizeForValue(read))});
         Value *casted = builder->CreateBitCast(v, read->getType()->getPointerTo());
@@ -2598,7 +2602,7 @@ std::cout << "2478" << std::endl;
 
     // Convert [n x i8*] to i8**
     Value *arrayStart = builder->CreateBitCast(
-        builder->CreateGEP(LegacyGEPType(saveBlock), saveBlock, {Int32Zero, Int32Zero}),
+        builder->CreateGEP(arrayPtrTy, saveBlock, {Int32Zero, Int32Zero}),
         Int8PtrPtrTy);
 
     // return saveBlock;

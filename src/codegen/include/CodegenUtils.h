@@ -433,14 +433,6 @@ public:
 
     void ReallocateDynArray(const TypeDynArray * ty, llvm::Value * alloc, llvm::Value * newLen32); 
 
-
-    // DEPRECATED:
-    llvm::Type * 
-    LegacyGEPType(llvm::Value * Ptr) {
-        return Ptr->getType();
-    }
-
-
 private:
     DisplayMode toStringMode; 
 
