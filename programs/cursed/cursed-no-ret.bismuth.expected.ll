@@ -87,15 +87,15 @@ entry:
   %20 = and i32 %19, %i15
   %21 = or i32 %r613, %20
   store i32 %21, ptr %r7, align 4
-  %22 = getelementptr ptr, ptr %4, i32 0, i32 0
+  %22 = getelementptr [5 x ptr], ptr %4, i32 0, i32 0
   store ptr @"programs::cursed::cursed-no-ret::more_cursed::#lambda", ptr %22, align 8
-  %23 = getelementptr ptr, ptr %4, i32 0, i32 1
+  %23 = getelementptr [5 x ptr], ptr %4, i32 0, i32 1
   store ptr @"programs::cursed::cursed-no-ret::more_cursed::#lambda.0", ptr %23, align 8
-  %24 = getelementptr ptr, ptr %4, i32 0, i32 2
+  %24 = getelementptr [5 x ptr], ptr %4, i32 0, i32 2
   store ptr @"programs::cursed::cursed-no-ret::more_cursed::#lambda.1", ptr %24, align 8
-  %25 = getelementptr ptr, ptr %4, i32 0, i32 3
+  %25 = getelementptr [5 x ptr], ptr %4, i32 0, i32 3
   store ptr @"programs::cursed::cursed-no-ret::more_cursed::#lambda.2", ptr %25, align 8
-  %26 = getelementptr ptr, ptr %4, i32 0, i32 4
+  %26 = getelementptr [5 x ptr], ptr %4, i32 0, i32 4
   store ptr @"programs::cursed::cursed-no-ret::more_cursed::#lambda.3", ptr %26, align 8
   %27 = load [5 x ptr], ptr %4, align 8
   store [5 x ptr] %27, ptr %arr, align 8
@@ -178,15 +178,15 @@ then:                                             ; preds = %entry
   br label %else
 
 else:                                             ; preds = %then, %entry
-  %6 = getelementptr ptr, ptr %4, i32 0, i32 0
+  %6 = getelementptr [5 x ptr], ptr %4, i32 0, i32 0
   store ptr @"programs::cursed::cursed-no-ret::less_cursed::#lambda", ptr %6, align 8
-  %7 = getelementptr ptr, ptr %4, i32 0, i32 1
+  %7 = getelementptr [5 x ptr], ptr %4, i32 0, i32 1
   store ptr @"programs::cursed::cursed-no-ret::less_cursed::#lambda.0", ptr %7, align 8
-  %8 = getelementptr ptr, ptr %4, i32 0, i32 2
+  %8 = getelementptr [5 x ptr], ptr %4, i32 0, i32 2
   store ptr @"programs::cursed::cursed-no-ret::less_cursed::#lambda.1", ptr %8, align 8
-  %9 = getelementptr ptr, ptr %4, i32 0, i32 3
+  %9 = getelementptr [5 x ptr], ptr %4, i32 0, i32 3
   store ptr @"programs::cursed::cursed-no-ret::less_cursed::#lambda.2", ptr %9, align 8
-  %10 = getelementptr ptr, ptr %4, i32 0, i32 4
+  %10 = getelementptr [5 x ptr], ptr %4, i32 0, i32 4
   store ptr @"programs::cursed::cursed-no-ret::less_cursed::#lambda.3", ptr %10, align 8
   %11 = load [5 x ptr], ptr %4, align 8
   store [5 x ptr] %11, ptr %arr, align 8
@@ -257,13 +257,13 @@ entry:
   %4 = alloca [4 x ptr], align 8
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
-  %5 = getelementptr ptr, ptr %4, i32 0, i32 0
+  %5 = getelementptr [4 x ptr], ptr %4, i32 0, i32 0
   store ptr @12, ptr %5, align 8
-  %6 = getelementptr ptr, ptr %4, i32 0, i32 1
+  %6 = getelementptr [4 x ptr], ptr %4, i32 0, i32 1
   store ptr @13, ptr %6, align 8
-  %7 = getelementptr ptr, ptr %4, i32 0, i32 2
+  %7 = getelementptr [4 x ptr], ptr %4, i32 0, i32 2
   store ptr @14, ptr %7, align 8
-  %8 = getelementptr ptr, ptr %4, i32 0, i32 3
+  %8 = getelementptr [4 x ptr], ptr %4, i32 0, i32 3
   store ptr @15, ptr %8, align 8
   %9 = load [4 x ptr], ptr %4, align 8
   store [4 x ptr] %9, ptr %arr, align 8
@@ -429,15 +429,15 @@ entry:
   %20 = and i32 %19, %i15
   %21 = or i32 %r613, %20
   store i32 %21, ptr %r7, align 4
-  %22 = getelementptr ptr, ptr %4, i32 0, i32 0
+  %22 = getelementptr [5 x ptr], ptr %4, i32 0, i32 0
   store ptr @"programs::cursed::cursed-no-ret::sil_more_cursed::#lambda", ptr %22, align 8
-  %23 = getelementptr ptr, ptr %4, i32 0, i32 1
+  %23 = getelementptr [5 x ptr], ptr %4, i32 0, i32 1
   store ptr @"programs::cursed::cursed-no-ret::sil_more_cursed::#lambda.0", ptr %23, align 8
-  %24 = getelementptr ptr, ptr %4, i32 0, i32 2
+  %24 = getelementptr [5 x ptr], ptr %4, i32 0, i32 2
   store ptr @"programs::cursed::cursed-no-ret::sil_more_cursed::#lambda.1", ptr %24, align 8
-  %25 = getelementptr ptr, ptr %4, i32 0, i32 3
+  %25 = getelementptr [5 x ptr], ptr %4, i32 0, i32 3
   store ptr @"programs::cursed::cursed-no-ret::sil_more_cursed::#lambda.2", ptr %25, align 8
-  %26 = getelementptr ptr, ptr %4, i32 0, i32 4
+  %26 = getelementptr [5 x ptr], ptr %4, i32 0, i32 4
   store ptr @"programs::cursed::cursed-no-ret::sil_more_cursed::#lambda.3", ptr %26, align 8
   %27 = load [5 x ptr], ptr %4, align 8
   store [5 x ptr] %27, ptr %arr, align 8
@@ -520,15 +520,15 @@ then:                                             ; preds = %entry
   br label %else
 
 else:                                             ; preds = %then, %entry
-  %6 = getelementptr ptr, ptr %4, i32 0, i32 0
+  %6 = getelementptr [5 x ptr], ptr %4, i32 0, i32 0
   store ptr @"programs::cursed::cursed-no-ret::sil_less_cursed::#lambda", ptr %6, align 8
-  %7 = getelementptr ptr, ptr %4, i32 0, i32 1
+  %7 = getelementptr [5 x ptr], ptr %4, i32 0, i32 1
   store ptr @"programs::cursed::cursed-no-ret::sil_less_cursed::#lambda.0", ptr %7, align 8
-  %8 = getelementptr ptr, ptr %4, i32 0, i32 2
+  %8 = getelementptr [5 x ptr], ptr %4, i32 0, i32 2
   store ptr @"programs::cursed::cursed-no-ret::sil_less_cursed::#lambda.1", ptr %8, align 8
-  %9 = getelementptr ptr, ptr %4, i32 0, i32 3
+  %9 = getelementptr [5 x ptr], ptr %4, i32 0, i32 3
   store ptr @"programs::cursed::cursed-no-ret::sil_less_cursed::#lambda.2", ptr %9, align 8
-  %10 = getelementptr ptr, ptr %4, i32 0, i32 4
+  %10 = getelementptr [5 x ptr], ptr %4, i32 0, i32 4
   store ptr @"programs::cursed::cursed-no-ret::sil_less_cursed::#lambda.3", ptr %10, align 8
   %11 = load [5 x ptr], ptr %4, align 8
   store [5 x ptr] %11, ptr %arr, align 8
@@ -599,13 +599,13 @@ entry:
   %4 = alloca [4 x i32], align 4
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
-  %5 = getelementptr i32, ptr %4, i32 0, i32 0
+  %5 = getelementptr [4 x i32], ptr %4, i32 0, i32 0
   store i32 0, ptr %5, align 4
-  %6 = getelementptr i32, ptr %4, i32 0, i32 1
+  %6 = getelementptr [4 x i32], ptr %4, i32 0, i32 1
   store i32 1, ptr %6, align 4
-  %7 = getelementptr i32, ptr %4, i32 0, i32 2
+  %7 = getelementptr [4 x i32], ptr %4, i32 0, i32 2
   store i32 2, ptr %7, align 4
-  %8 = getelementptr i32, ptr %4, i32 0, i32 3
+  %8 = getelementptr [4 x i32], ptr %4, i32 0, i32 3
   store i32 3, ptr %8, align 4
   %9 = load [4 x i32], ptr %4, align 4
   store [4 x i32] %9, ptr %arr, align 4

@@ -656,16 +656,8 @@ TEST_CASE("programs/inferint - Infer the type of a number", "[codegen][infer int
 
 TEST_CASE("programs/cursed - Binary Operators, Functions with inferred returns, and inference of ints through array matching", "[codegen]")
 {
-    std::string hash = "d1358a7bd97341b3c542f1fefab2147c0df9d9a9acabe488912f09454009ff19";
-    auto stream = std::fstream("../../programs/cursed/cursed.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        hash); 
-
-    auto stream2 = std::fstream("../../programs/cursed/cursed-no-ret.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream2),
-        hash);
+    ExpectOutput("programs/cursed/cursed.bismuth");
+    ExpectOutput("programs/cursed/cursed-no-ret.bismuth");
 }
 
 /************************************

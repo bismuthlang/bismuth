@@ -501,16 +501,18 @@ std::optional<Value *> CodegenVisitor::visit(TProgramCancelNode & n)
 {
     Symbol *sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
-
+std::cout << "504" << std::endl;
     if (!optVal)
     {
         errorHandler.addError(n.getStart(), "Could not find value for channel in cancel: " + getCodegenID(n.sym));
         return std::nullopt;
     }
-
+std::cout << "510" << std::endl;
     Value *chanVal = optVal.value();
-
+std::cout << "512" << std::endl;
     builder->CreateCall(getCancelChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal), getU32(n.closeNumber)});
+    std::cout << "514" << std::endl;
+    module->dump();
     return std::nullopt;
 }
 
@@ -837,7 +839,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
         {
             a = correctSumAssignment(sumTy, ty, a);
 
-            Value *ptr = builder->CreateGEP(stoType->getLLVMType(module), writeTo, {Int32Zero, getU32(i)});
+            Value *ptr = builder->CreateGEP(ans->getAllocatedType(), writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
             i++;
         }
@@ -846,7 +848,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
     {
         for(auto [ ty, a ] : args)
         {
-            Value *ptr = builder->CreateGEP(stoType->getLLVMType(module), writeTo, {Int32Zero, getU32(i)});
+            Value *ptr = builder->CreateGEP(ans->getAllocatedType(), writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
             i++;   
         }
@@ -2429,6 +2431,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode & n)
     }
 
     builder->SetInsertPoint(ins);
+    module->dump();
     return std::nullopt;
 }
 
@@ -2611,6 +2614,7 @@ std::cout << "2478" << std::endl;
 
 std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata meta, Value *original)
 {
+    std::cout << "2617" << std::endl;
     if(!meta.actingType)
     {
          errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but we aren't a null optional");
@@ -2636,7 +2640,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     llvm::Type * valueType = meta.protocolType->getLLVMType(module);
     uint32_t valueIndex = sum->getIndex(meta.protocolType);
-
+std::cout << "2643" << std::endl;
     if (valueIndex == 0)
     {
         errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but the sum doesn't allow for a value case");
@@ -2661,7 +2665,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     Value *cond = builder->CreateZExtOrTrunc(rawEquality, Int1Ty);
 
     // AcceptType(*this, n.cond);
-
+std::cout << "2668" << std::endl;
     /*
      * Generate the basic blocks for then, else, and the remaining code.
      * (NOTE: We set rest to be else if there is no else branch).
@@ -2687,13 +2691,13 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     Value *corrected = builder->CreateBitCast(valuePtr, valueType->getPointerTo());
     Value *castedValue = builder->CreateBitCast(original, valueType->getPointerTo());
-    Value *loadedValue = builder->CreateLoad(nullptr, castedValue);
+    Value *loadedValue = builder->CreateLoad(valueType, castedValue);
     builder->CreateStore(loadedValue, corrected);
 
     builder->CreateBr(restBlk);
 
     thenBlk = builder->GetInsertBlock();
-
+std::cout << "2700" << std::endl;
     /*
      * Insert the else block (same as rest if no else branch)
      */
