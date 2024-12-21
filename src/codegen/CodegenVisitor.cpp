@@ -2572,7 +2572,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
         );
 
 std::cout << "2478" << std::endl;
-        Value *read = builder->CreateLoad(readLoc->getType()->getArrayElementType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
+        Value *read = builder->CreateLoad(readLoc->getType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
 
         Value *v = builder->CreateCall(getMalloc(), {getU32(getSizeForValue(read))});
         Value *casted = builder->CreateBitCast(v, read->getType()->getPointerTo());

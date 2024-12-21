@@ -3,7 +3,7 @@ source_filename = "BismuthProgram"
 
 %Unit = type {}
 %"(Unit + Value)" = type { i32, [4 x i8] }
-%"programs::db::Value" = type { i32 }
+%Value = type { i32 }
 
 @0 = private unnamed_addr constant [5 x i8] c"%u, \00", align 1
 @1 = private unnamed_addr constant [4 x i8] c"*, \00", align 1
@@ -15,18 +15,18 @@ source_filename = "BismuthProgram"
 @7 = private unnamed_addr constant [7 x i8] c"empty\0A\00", align 1
 @8 = private unnamed_addr constant [4 x i8] c"%u\0A\00", align 1
 
-define %Unit @"programs::db::Database"(ptr %0) {
+define %Unit @Database(ptr %0) {
 entry:
   %k = alloca i32, align 4
   %key = alloca i32, align 4
   %1 = alloca %"(Unit + Value)", align 8
   %2 = alloca %"(Unit + Value)", align 8
-  %data = alloca [10 x %"programs::db::Value"], align 8
+  %data = alloca [10 x %Value], align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
   %3 = call i32 (ptr, ...) @printf(ptr @3)
-  %data1 = load [10 x %"programs::db::Value"], ptr %data, align 4
-  %4 = call %Unit @"programs::db::Database::PrintDatabase"([10 x %"programs::db::Value"] %data1)
+  %data1 = load [10 x %Value], ptr %data, align 4
+  %4 = call %Unit @"Database::PrintDatabase"([10 x %Value] %data1)
   %5 = load ptr, ptr %c, align 8
   %6 = call i1 @_ShouldLinearLoop(ptr %5)
   br i1 %6, label %loop, label %rest
@@ -53,12 +53,12 @@ accessLTL:                                        ; preds = %tagBranch1
   br i1 %14, label %accessGTZ, label %accessBad
 
 accessGTZ:                                        ; preds = %accessLTL
-  %15 = getelementptr [10 x %"programs::db::Value"], ptr %data, i32 0, i32 %11
-  %16 = load %"programs::db::Value", ptr %15, align 4
+  %15 = getelementptr [10 x %Value], ptr %data, i32 0, i32 %11
+  %16 = load %Value, ptr %15, align 4
   %17 = getelementptr %"(Unit + Value)", ptr %2, i32 0, i32 0
   store i32 2, ptr %17, align 4
   %18 = getelementptr %"(Unit + Value)", ptr %2, i32 0, i32 1
-  store %"programs::db::Value" %16, ptr %18, align 4
+  store %Value %16, ptr %18, align 4
   %19 = load %"(Unit + Value)", ptr %2, align 4
   br label %accessAfter
 
@@ -85,12 +85,12 @@ tagBranch2:                                       ; preds = %loop
   %29 = call %Unit @free(ptr %27)
   store i32 %28, ptr %key, align 4
   %key2 = load i32, ptr %key, align 4
-  %30 = getelementptr [10 x %"programs::db::Value"], ptr %data, i32 0, i32 %key2
+  %30 = getelementptr [10 x %Value], ptr %data, i32 0, i32 %key2
   %31 = load ptr, ptr %c, align 8
   %32 = call ptr @_ReadLinearChannel(ptr %31)
-  %33 = load %"programs::db::Value", ptr %32, align 4
+  %33 = load %Value, ptr %32, align 4
   %34 = call %Unit @free(ptr %32)
-  store %"programs::db::Value" %33, ptr %30, align 4
+  store %Value %33, ptr %30, align 4
   br label %match-cont
 
 tagBranch3:                                       ; preds = %loop
@@ -102,18 +102,18 @@ tagBranch3:                                       ; preds = %loop
   %39 = load ptr, ptr %c, align 8
   %40 = call %Unit @_WriteProjection(ptr %39, i32 1)
   %k3 = load i32, ptr %k, align 4
-  %41 = getelementptr [10 x %"programs::db::Value"], ptr %data, i32 0, i32 %k3
+  %41 = getelementptr [10 x %Value], ptr %data, i32 0, i32 %k3
   %42 = load ptr, ptr %c, align 8
   %43 = call ptr @_ReadLinearChannel(ptr %42)
-  %44 = load %"programs::db::Value", ptr %43, align 4
+  %44 = load %Value, ptr %43, align 4
   %45 = call %Unit @free(ptr %43)
-  store %"programs::db::Value" %44, ptr %41, align 4
+  store %Value %44, ptr %41, align 4
   br label %match-cont
 
 match-cont:                                       ; preds = %tagBranch3, %tagBranch2, %accessAfter, %loop
   %46 = call i32 (ptr, ...) @printf(ptr @4)
-  %data4 = load [10 x %"programs::db::Value"], ptr %data, align 4
-  %47 = call %Unit @"programs::db::Database::PrintDatabase"([10 x %"programs::db::Value"] %data4)
+  %data4 = load [10 x %Value], ptr %data, align 4
+  %47 = call %Unit @"Database::PrintDatabase"([10 x %Value] %data4)
   %48 = load ptr, ptr %c, align 8
   %49 = call i1 @_ShouldLinearLoop(ptr %48)
   br i1 %49, label %loop, label %rest
@@ -130,11 +130,11 @@ entry:
   %db = alloca ptr, align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
-  %1 = call ptr @_Execute(ptr @"programs::db::Database")
+  %1 = call ptr @_Execute(ptr @Database)
   store ptr %1, ptr %db, align 8
-  %2 = call ptr @_Execute(ptr @"programs::db::requests")
+  %2 = call ptr @_Execute(ptr @requests)
   store ptr %2, ptr %rqs, align 8
-  %3 = call ptr @_Execute(ptr @"programs::db::writeRequest")
+  %3 = call ptr @_Execute(ptr @writeRequest)
   store ptr %3, ptr %setRq, align 8
   br label %aw-cond
 
@@ -161,10 +161,10 @@ loop:                                             ; preds = %aw-then
   %16 = call %Unit @_WriteChannel(ptr %15, ptr %14)
   %17 = load ptr, ptr %setRq, align 8
   %18 = call ptr @_ReadLinearChannel(ptr %17)
-  %19 = load %"programs::db::Value", ptr %18, align 4
+  %19 = load %Value, ptr %18, align 4
   %20 = call %Unit @free(ptr %18)
   %21 = call ptr @malloc(i32 4)
-  store %"programs::db::Value" %19, ptr %21, align 4
+  store %Value %19, ptr %21, align 4
   %22 = load ptr, ptr %db, align 8
   %23 = call %Unit @_WriteChannel(ptr %22, ptr %21)
   br label %aw-cond
@@ -221,10 +221,10 @@ tagBranch2:                                       ; preds = %loop1
   %54 = call %Unit @_WriteChannel(ptr %53, ptr %52)
   %55 = load ptr, ptr %rqs, align 8
   %56 = call ptr @_ReadLinearChannel(ptr %55)
-  %57 = load %"programs::db::Value", ptr %56, align 4
+  %57 = load %Value, ptr %56, align 4
   %58 = call %Unit @free(ptr %56)
   %59 = call ptr @malloc(i32 4)
-  store %"programs::db::Value" %57, ptr %59, align 4
+  store %Value %57, ptr %59, align 4
   %60 = load ptr, ptr %db, align 8
   %61 = call %Unit @_WriteChannel(ptr %60, ptr %59)
   br label %match-cont5
@@ -253,10 +253,10 @@ tagBranch13:                                      ; preds = %tagBranch3
   %75 = call %Unit @_WriteProjection(ptr %74, i32 1)
   %76 = load ptr, ptr %rqs, align 8
   %77 = call ptr @_ReadLinearChannel(ptr %76)
-  %78 = load %"programs::db::Value", ptr %77, align 4
+  %78 = load %Value, ptr %77, align 4
   %79 = call %Unit @free(ptr %77)
   %80 = call ptr @malloc(i32 4)
-  store %"programs::db::Value" %78, ptr %80, align 4
+  store %Value %78, ptr %80, align 4
   %81 = load ptr, ptr %db, align 8
   %82 = call %Unit @_WriteChannel(ptr %81, ptr %80)
   br label %match-cont
@@ -266,18 +266,18 @@ tagBranch24:                                      ; preds = %tagBranch3
   %84 = call %Unit @_WriteProjection(ptr %83, i32 2)
   %85 = load ptr, ptr %db, align 8
   %86 = call ptr @_ReadLinearChannel(ptr %85)
-  %87 = load %"programs::db::Value", ptr %86, align 4
+  %87 = load %Value, ptr %86, align 4
   %88 = call %Unit @free(ptr %86)
   %89 = call ptr @malloc(i32 4)
-  store %"programs::db::Value" %87, ptr %89, align 4
+  store %Value %87, ptr %89, align 4
   %90 = load ptr, ptr %rqs, align 8
   %91 = call %Unit @_WriteChannel(ptr %90, ptr %89)
   %92 = load ptr, ptr %rqs, align 8
   %93 = call ptr @_ReadLinearChannel(ptr %92)
-  %94 = load %"programs::db::Value", ptr %93, align 4
+  %94 = load %Value, ptr %93, align 4
   %95 = call %Unit @free(ptr %93)
   %96 = call ptr @malloc(i32 4)
-  store %"programs::db::Value" %94, ptr %96, align 4
+  store %Value %94, ptr %96, align 4
   %97 = load ptr, ptr %db, align 8
   %98 = call %Unit @_WriteChannel(ptr %97, ptr %96)
   br label %match-cont
@@ -310,10 +310,10 @@ loop7:                                            ; preds = %loop7, %rest6
   %113 = call %Unit @_WriteChannel(ptr %112, ptr %111)
   %114 = load ptr, ptr %setRq, align 8
   %115 = call ptr @_ReadLinearChannel(ptr %114)
-  %116 = load %"programs::db::Value", ptr %115, align 4
+  %116 = load %Value, ptr %115, align 4
   %117 = call %Unit @free(ptr %115)
   %118 = call ptr @malloc(i32 4)
-  store %"programs::db::Value" %116, ptr %118, align 4
+  store %Value %116, ptr %118, align 4
   %119 = load ptr, ptr %db, align 8
   %120 = call %Unit @_WriteChannel(ptr %119, ptr %118)
   %121 = load ptr, ptr %setRq, align 8
@@ -330,9 +330,9 @@ rest8:                                            ; preds = %loop7, %rest6
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::db::requests"(ptr %0) {
+define %Unit @requests(ptr %0) {
 entry:
-  %v = alloca %"programs::db::Value", align 8
+  %v = alloca %Value, align 8
   %e = alloca %Unit, align 8
   %1 = alloca %"(Unit + Value)", align 8
   %opt = alloca %"(Unit + Value)", align 8
@@ -370,9 +370,9 @@ tagBranch1:                                       ; preds = %entry
 
 tagBranch2:                                       ; preds = %entry
   %19 = getelementptr %"(Unit + Value)", ptr %1, i32 0, i32 1
-  %20 = load %"programs::db::Value", ptr %19, align 4
-  store %"programs::db::Value" %20, ptr %v, align 4
-  %21 = getelementptr %"programs::db::Value", ptr %v, i32 0, i32 0
+  %20 = load %Value, ptr %19, align 4
+  store %Value %20, ptr %v, align 4
+  %21 = getelementptr %Value, ptr %v, i32 0, i32 0
   %22 = load i32, ptr %21, align 4
   %23 = call i32 (ptr, ...) @printf(ptr @8, i32 %22)
   br label %match-cont
@@ -383,9 +383,9 @@ match-cont:                                       ; preds = %tagBranch2, %tagBra
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::db::writeRequest"(ptr %0) {
+define %Unit @writeRequest(ptr %0) {
 entry:
-  %1 = alloca %"programs::db::Value", align 8
+  %1 = alloca %Value, align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
   %2 = load ptr, ptr %c, align 8
@@ -394,11 +394,11 @@ entry:
   store i32 4, ptr %4, align 4
   %5 = load ptr, ptr %c, align 8
   %6 = call %Unit @_WriteChannel(ptr %5, ptr %4)
-  %7 = getelementptr %"programs::db::Value", ptr %1, i32 0, i32 0
+  %7 = getelementptr %Value, ptr %1, i32 0, i32 0
   store i32 2, ptr %7, align 4
-  %8 = load %"programs::db::Value", ptr %1, align 4
+  %8 = load %Value, ptr %1, align 4
   %9 = call ptr @malloc(i32 4)
-  store %"programs::db::Value" %8, ptr %9, align 4
+  store %Value %8, ptr %9, align 4
   %10 = load ptr, ptr %c, align 8
   %11 = call %Unit @_WriteChannel(ptr %10, ptr %9)
   %12 = load ptr, ptr %c, align 8
@@ -408,16 +408,16 @@ entry:
 
 declare i32 @printf(ptr, ...)
 
-define private %Unit @"programs::db::Database::PrintDatabase"([10 x %"programs::db::Value"] %0) {
+define private %Unit @"Database::PrintDatabase"([10 x %Value] %0) {
 entry:
   %u = alloca %Unit, align 8
-  %v = alloca %"programs::db::Value", align 8
+  %v = alloca %Value, align 8
   %1 = alloca %"(Unit + Value)", align 8
   %2 = alloca %"(Unit + Value)", align 8
   %3 = alloca %"(Unit + Value)", align 8
   %i = alloca i32, align 4
-  %data = alloca [10 x %"programs::db::Value"], align 8
-  store [10 x %"programs::db::Value"] %0, ptr %data, align 4
+  %data = alloca [10 x %Value], align 8
+  store [10 x %Value] %0, ptr %data, align 4
   store i32 0, ptr %i, align 4
   %i1 = load i32, ptr %i, align 4
   %4 = icmp slt i32 %i1, 10
@@ -433,12 +433,12 @@ accessLTL:                                        ; preds = %loop
   br i1 %6, label %accessGTZ, label %accessBad
 
 accessGTZ:                                        ; preds = %accessLTL
-  %7 = getelementptr [10 x %"programs::db::Value"], ptr %data, i32 0, i32 %i2
-  %8 = load %"programs::db::Value", ptr %7, align 4
+  %7 = getelementptr [10 x %Value], ptr %data, i32 0, i32 %i2
+  %8 = load %Value, ptr %7, align 4
   %9 = getelementptr %"(Unit + Value)", ptr %3, i32 0, i32 0
   store i32 2, ptr %9, align 4
   %10 = getelementptr %"(Unit + Value)", ptr %3, i32 0, i32 1
-  store %"programs::db::Value" %8, ptr %10, align 4
+  store %Value %8, ptr %10, align 4
   %11 = load %"(Unit + Value)", ptr %3, align 4
   br label %accessAfter
 
@@ -462,9 +462,9 @@ accessAfter:                                      ; preds = %accessBad, %accessG
 
 tagBranch2:                                       ; preds = %accessAfter
   %17 = getelementptr %"(Unit + Value)", ptr %1, i32 0, i32 1
-  %18 = load %"programs::db::Value", ptr %17, align 4
-  store %"programs::db::Value" %18, ptr %v, align 4
-  %19 = getelementptr %"programs::db::Value", ptr %v, i32 0, i32 0
+  %18 = load %Value, ptr %17, align 4
+  store %Value %18, ptr %v, align 4
+  %19 = getelementptr %Value, ptr %v, i32 0, i32 0
   %20 = load i32, ptr %19, align 4
   %21 = call i32 (ptr, ...) @printf(ptr @0, i32 %20)
   br label %match-cont

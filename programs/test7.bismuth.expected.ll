@@ -12,7 +12,7 @@ source_filename = "BismuthProgram"
 @5 = private unnamed_addr constant [17 x i8] c"Why hello there!\00", align 1
 @6 = private unnamed_addr constant [14 x i8] c"%d, %d, = %d\0A\00", align 1
 
-define ptr @"programs::test7::accessor"([4 x ptr] %0, i32 %1) {
+define ptr @accessor([4 x ptr] %0, i32 %1) {
 entry:
   %s = alloca ptr, align 8
   %u = alloca %Unit, align 8
@@ -121,11 +121,11 @@ loop:                                             ; preds = %rest, %entry
 loop7:                                            ; preds = %loop7, %loop
   %array8 = load [4 x ptr], ptr %array, align 8
   %x9 = load i32, ptr %x, align 4
-  %8 = call ptr @"programs::test7::accessor"([4 x ptr] %array8, i32 %x9)
+  %8 = call ptr @accessor([4 x ptr] %array8, i32 %x9)
   store ptr %8, ptr %i, align 8
   %array10 = load [4 x ptr], ptr %array, align 8
   %y11 = load i32, ptr %y, align 4
-  %9 = call ptr @"programs::test7::accessor"([4 x ptr] %array10, i32 %y11)
+  %9 = call ptr @accessor([4 x ptr] %array10, i32 %y11)
   store ptr %9, ptr %j, align 8
   %x12 = load i32, ptr %x, align 4
   %y13 = load i32, ptr %y, align 4

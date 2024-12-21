@@ -37,9 +37,9 @@ loop-cond:                                        ; preds = %loop, %entry
 
 loop:                                             ; preds = %loop-cond
   %8 = load i32, ptr %idx, align 4
-  %9 = getelementptr ptr, ptr %save_blk, i32 0, i32 %8
+  %9 = getelementptr [1 x ptr], ptr %save_blk, i32 0, i32 %8
   %10 = load i32, ptr %idx, align 4
-  %11 = getelementptr ptr, ptr %createdArray, i32 0, i32 %10
+  %11 = getelementptr [1 x ptr], ptr %createdArray, i32 0, i32 %10
   %12 = load ptr, ptr %11, align 8
   %13 = call ptr @malloc(i32 8)
   store ptr %12, ptr %13, align 8

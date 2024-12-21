@@ -10,7 +10,7 @@ source_filename = "BismuthProgram"
 @3 = private unnamed_addr constant [7 x i8] c"Error\0A\00", align 1
 @4 = private unnamed_addr constant [4 x i8] c"%s\0A\00", align 1
 
-define %Unit @"programs::enumedit::PrintEnum"(%"(int + str)" %0) {
+define %Unit @PrintEnum(%"(int + str)" %0) {
 entry:
   %s = alloca ptr, align 8
   %i = alloca i32, align 4
@@ -60,7 +60,7 @@ entry:
   %4 = getelementptr %"(int + str)", ptr %a, i32 0, i32 1
   store ptr @2, ptr %4, align 8
   %a1 = load %"(int + str)", ptr %a, align 4
-  %5 = call %Unit @"programs::enumedit::PrintEnum"(%"(int + str)" %a1)
+  %5 = call %Unit @PrintEnum(%"(int + str)" %a1)
   %a2 = load %"(int + str)", ptr %a, align 4
   store %"(int + str)" %a2, ptr %2, align 4
   %6 = getelementptr %"(int + str)", ptr %2, i32 0, i32 0
@@ -90,14 +90,14 @@ tagBranch2:                                       ; preds = %entry
   %16 = getelementptr %"(int + str)", ptr %1, i32 0, i32 1
   store i32 10, ptr %16, align 4
   %17 = load %"(int + str)", ptr %1, align 4
-  %18 = call %Unit @"programs::enumedit::PrintEnum"(%"(int + str)" %17)
+  %18 = call %Unit @PrintEnum(%"(int + str)" %17)
   %s3 = load ptr, ptr %s, align 8
   %19 = call i32 (ptr, ...) @printf(ptr @4, ptr %s3)
   br label %match-cont
 
 match-cont:                                       ; preds = %tagBranch2, %tagBranch1, %entry
   %a4 = load %"(int + str)", ptr %a, align 4
-  %20 = call %Unit @"programs::enumedit::PrintEnum"(%"(int + str)" %a4)
+  %20 = call %Unit @PrintEnum(%"(int + str)" %a4)
   %21 = call ptr @malloc(i32 4)
   store i32 0, ptr %21, align 4
   %22 = load ptr, ptr %c, align 8

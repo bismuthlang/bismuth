@@ -197,10 +197,7 @@ TEST_CASE("programs/test-shortcircuit-rt - Basic Short Circuit (and + or) w/ Run
 
 TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editing arrays in functions", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/test-arrayAssign.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "6639eaebf54412bc4221acb7e8c303a5681b0060f3111495c37530e76aa156c0");
+    ExpectOutput("programs/test-arrayAssign.bismuth");
 }
 
 // FIXME: RENAME AS WE DONT HAVE PROC ANYMORE!
@@ -406,10 +403,7 @@ TEST_CASE("programs/TStructEnum - Parody + Clone w/ Enum Struct Boxes ", "[codeg
 
 TEST_CASE("programs/TStructEnumGC - Parody + Clone w/ Enum Struct Boxes + GC ", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TStructEnumGC.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "96a659b6844ec3def3b280ab7caff2fda6a8061259d894bfbd983418a7f419e1");
+    ExpectOutput("programs/TStructEnumGC.bismuth");
 }
 
 TEST_CASE("programs/TArray - Parody + Clone w/ Array", "[codegen][enum]")
@@ -456,82 +450,52 @@ TEST_CASE("programs/TStructCopy - Basic test of copy", "[codegen][enum]")
 
 TEST_CASE("programs/db/db - Basic DB 1", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "45c97eb4fa2367e9855724642d8afe3186ed75b0802e76de57db10923a2aa571");
+    ExpectOutput("programs/db/db.bismuth");
 }
 
 TEST_CASE("programs/db/db2 - Basic DB 2", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db2.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "e57d059dfcbae73f62d7c5a742355a20db54005d4523172b7fe61c3a79e34562");
+    ExpectOutput("programs/db/db2.bismuth");
 }
 
 TEST_CASE("programs/db/db3 - Basic DB 3", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db3.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "5d228f4f1b6b018de4da09237788eb4ffba1b405f9a66e4be460d0ace0445f83");
+    ExpectOutput("programs/db/db3.bismuth");
 }
 
 TEST_CASE("programs/db/db4 - Basic DB 4", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db4.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "a6d0d53262e7896b7777f51733faf7091acc07b85077a4954ea8613bc2a9f296");
+    ExpectOutput("programs/db/db4.bismuth");
 }
 
 TEST_CASE("programs/db/db5-if - Basic DB 5 - AcceptIf", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db5-if.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "6e0efba029366c392b322e4037f15382d3dc10daf8a1c4e85a37623ea46e0201");
+    ExpectOutput("programs/db/db5-if.bismuth");
 }
 
 TEST_CASE("programs/db/db5-if-present - Basic DB 5 - AcceptIf and is_present", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db5-if-present.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "82c23e4480440aa88cff2c8cdff99170b6aaa7d4c47d634a5b1869f9243bdbfc");
+    ExpectOutput("programs/db/db5-if-present.bismuth");
 }
 
 TEST_CASE("programs/db/db5-if-present-else - Basic DB 5 - AcceptIf with else and is_present", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db5-if-present-else.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "163233f427cd6c2153f09477b9e5f6afc7e7c73999e644843b7561aef519dcd2");
+    ExpectOutput("programs/db/db5-if-present-else.bismuth");
 }
 
 TEST_CASE("programs/db/db5-if-present-else-lbl - Basic DB 5 - AcceptIf with else and is_present and labels", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db5-if-present-else-lbl.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "62ac662f518885727443ee48a2aba551bbc79ca95a54e6f1550cef100fcf6f73");
+    ExpectOutput("programs/db/db5-if-present-else-lbl.bismuth");
 }
 
 TEST_CASE("programs/db/db5-while-present - Basic DB 5 - AcceptWhile and is_present", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db5-while-present.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "f8cd8aab6cffbe4aca4d42c0b88c28ed386ed34ca78bf2eef4f5871e4290b26c");
+    ExpectOutput("programs/db/db5-while-present.bismuth");
 }
 
 TEST_CASE("programs/db/db-labels - DB with labels to test parsing bug in 1.3.4", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/db/db-labels.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "9787b77cba18eba4a6fe8a1f9efb6686887f57340c869bf4f4204142e652563e");
+    ExpectOutput("programs/db/db-labels.bismuth");
 }
 
 TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
@@ -541,10 +505,7 @@ TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
 
 TEST_CASE("programs/bt-walker1 - Basic Binary Tree w/ walker", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/bt-walker1.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "a956abe6c8fcda2733589f787521e0eeb150b4448f55cc41af6d39875825090d");
+    ExpectOutput("programs/bt-walker1.bismuth");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 1", "[codegen][enum]")

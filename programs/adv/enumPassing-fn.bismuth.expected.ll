@@ -9,7 +9,7 @@ source_filename = "BismuthProgram"
 @2 = private unnamed_addr constant [5 x i8] c"true\00", align 1
 @3 = private unnamed_addr constant [6 x i8] c"false\00", align 1
 
-define i32 @"programs::adv::enumPassing-fn::test"(%"(boolean + int)" %0) {
+define i32 @test(%"(boolean + int)" %0) {
 entry:
   %b = alloca i1, align 1
   %i = alloca i32, align 4
@@ -38,7 +38,7 @@ tagBranch1:                                       ; preds = %entry
   %8 = load i1, ptr %7, align 1
   store i1 %8, ptr %b, align 1
   %b3 = load i1, ptr %b, align 1
-  %9 = call ptr @"programs::adv::enumPassing-fn::test::#lambda"(i1 %b3)
+  %9 = call ptr @"test::#lambda"(i1 %b3)
   %10 = call i32 (ptr, ...) @printf(ptr @1, ptr %9)
   br label %match-cont
 
@@ -57,7 +57,7 @@ entry:
   %3 = getelementptr %"(boolean + int)", ptr %1, i32 0, i32 1
   store i32 5, ptr %3, align 4
   %4 = load %"(boolean + int)", ptr %1, align 4
-  %5 = call i32 @"programs::adv::enumPassing-fn::test"(%"(boolean + int)" %4)
+  %5 = call i32 @test(%"(boolean + int)" %4)
   %6 = call ptr @malloc(i32 4)
   store i32 0, ptr %6, align 4
   %7 = load ptr, ptr %c, align 8
@@ -67,7 +67,7 @@ entry:
 
 declare i32 @printf(ptr, ...)
 
-define private ptr @"programs::adv::enumPassing-fn::test::#lambda"(i1 %0) {
+define private ptr @"test::#lambda"(i1 %0) {
 entry:
   %b = alloca i1, align 1
   store i1 %0, ptr %b, align 1

@@ -23,7 +23,7 @@ source_filename = "BismuthProgram"
 @16 = private unnamed_addr constant [13 x i8] c"b (orig/5;5)\00", align 1
 @17 = private unnamed_addr constant [13 x i8] c"b (orig/9;9)\00", align 1
 
-define %Unit @"programs::TArray::print"(ptr %0, [2 x ptr] %1) {
+define %Unit @print(ptr %0, [2 x ptr] %1) {
 entry:
   %i = alloca ptr, align 8
   %u.0 = alloca %Unit, align 8
@@ -148,7 +148,7 @@ match-cont11:                                     ; preds = %tagBranch19, %tagBr
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::TArray::foo"(ptr %0) {
+define %Unit @foo(ptr %0) {
 entry:
   %t = alloca i32, align 4
   %box = alloca ptr, align 8
@@ -165,7 +165,7 @@ entry:
   %7 = call %Unit @free(ptr %5)
   store [2 x ptr] %6, ptr %iPtr, align 8
   %iPtr1 = load [2 x ptr], ptr %iPtr, align 8
-  %8 = call %Unit @"programs::TArray::print"(ptr @5, [2 x ptr] %iPtr1)
+  %8 = call %Unit @print(ptr @5, [2 x ptr] %iPtr1)
   %9 = icmp slt i32 0, 2
   br i1 %9, label %accessLTL, label %accessBad
 
@@ -218,7 +218,7 @@ tagBranch1:                                       ; preds = %accessAfter
 
 match-cont:                                       ; preds = %tagBranch1, %tagBranch2, %accessAfter
   %iPtr3 = load [2 x ptr], ptr %iPtr, align 8
-  %26 = call %Unit @"programs::TArray::print"(ptr @7, [2 x ptr] %iPtr3)
+  %26 = call %Unit @print(ptr @7, [2 x ptr] %iPtr3)
   %27 = sub nsw i32 0, 1
   %28 = call ptr @malloc(i32 4)
   store i32 %27, ptr %28, align 4
@@ -230,7 +230,7 @@ match-cont:                                       ; preds = %tagBranch1, %tagBra
   %34 = call %Unit @free(ptr %32)
   store i32 %33, ptr %t, align 4
   %iPtr4 = load [2 x ptr], ptr %iPtr, align 8
-  %35 = call %Unit @"programs::TArray::print"(ptr @8, [2 x ptr] %iPtr4)
+  %35 = call %Unit @print(ptr @8, [2 x ptr] %iPtr4)
   ret %Unit zeroinitializer
 }
 
@@ -246,7 +246,7 @@ entry:
   %a = alloca ptr, align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
-  %1 = call ptr @_Execute(ptr @"programs::TArray::foo")
+  %1 = call ptr @_Execute(ptr @foo)
   store ptr %1, ptr %a, align 8
   %2 = call ptr @GC_malloc(i64 4)
   store i32 5, ptr %2, align 4
@@ -260,7 +260,7 @@ entry:
   store ptr %5, ptr %4, align 8
   %6 = call %Unit (ptr, ...) @printf(ptr @9)
   %arr2 = load [2 x ptr], ptr %arr, align 8
-  %7 = call %Unit @"programs::TArray::print"(ptr @10, [2 x ptr] %arr2)
+  %7 = call %Unit @print(ptr @10, [2 x ptr] %arr2)
   %arr3 = load [2 x ptr], ptr %arr, align 8
   %8 = call ptr @_address_map_create()
   %9 = call [2 x ptr] @"_clone_Box<int>[2]"([2 x ptr] %arr3, ptr %8)
@@ -275,19 +275,19 @@ entry:
   %17 = call %Unit @free(ptr %15)
   store i32 %16, ptr %u, align 4
   %arr4 = load [2 x ptr], ptr %arr, align 8
-  %18 = call %Unit @"programs::TArray::print"(ptr @11, [2 x ptr] %arr4)
+  %18 = call %Unit @print(ptr @11, [2 x ptr] %arr4)
   %19 = call ptr @GC_malloc(i64 4)
   store i32 9, ptr %19, align 4
   store ptr %19, ptr %shared, align 8
   %arr5 = load [2 x ptr], ptr %arr, align 8
-  %20 = call %Unit @"programs::TArray::print"(ptr @12, [2 x ptr] %arr5)
+  %20 = call %Unit @print(ptr @12, [2 x ptr] %arr5)
   %21 = sub nsw i32 0, 1
   %22 = call ptr @malloc(i32 4)
   store i32 %21, ptr %22, align 4
   %23 = load ptr, ptr %a, align 8
   %24 = call %Unit @_WriteChannel(ptr %23, ptr %22)
   %25 = call %Unit (ptr, ...) @printf(ptr @13)
-  %26 = call ptr @_Execute(ptr @"programs::TArray::foo")
+  %26 = call ptr @_Execute(ptr @foo)
   store ptr %26, ptr %a.0, align 8
   %27 = call ptr @GC_malloc(i64 4)
   store i32 5, ptr %27, align 4
@@ -300,7 +300,7 @@ entry:
   store ptr %shared.07, ptr %29, align 8
   %30 = call %Unit (ptr, ...) @printf(ptr @14)
   %arr.08 = load [2 x ptr], ptr %arr.0, align 8
-  %31 = call %Unit @"programs::TArray::print"(ptr @15, [2 x ptr] %arr.08)
+  %31 = call %Unit @print(ptr @15, [2 x ptr] %arr.08)
   %arr.09 = load [2 x ptr], ptr %arr.0, align 8
   %32 = call ptr @_address_map_create()
   %33 = call [2 x ptr] @"_clone_Box<int>[2]"([2 x ptr] %arr.09, ptr %32)
@@ -315,14 +315,14 @@ entry:
   %41 = call %Unit @free(ptr %39)
   store i32 %40, ptr %u.0, align 4
   %arr.010 = load [2 x ptr], ptr %arr.0, align 8
-  %42 = call %Unit @"programs::TArray::print"(ptr @16, [2 x ptr] %arr.010)
+  %42 = call %Unit @print(ptr @16, [2 x ptr] %arr.010)
   %shared.011 = load ptr, ptr %shared.0, align 8
   store i32 9, ptr %shared.011, align 4
   %43 = call ptr @GC_malloc(i64 4)
   store i32 9, ptr %43, align 4
   store ptr %43, ptr %shared.0, align 8
   %arr.012 = load [2 x ptr], ptr %arr.0, align 8
-  %44 = call %Unit @"programs::TArray::print"(ptr @17, [2 x ptr] %arr.012)
+  %44 = call %Unit @print(ptr @17, [2 x ptr] %arr.012)
   %45 = sub nsw i32 0, 1
   %46 = call ptr @malloc(i32 4)
   store i32 %45, ptr %46, align 4
