@@ -158,11 +158,11 @@ public:
             llvm::Type *sumTy = sum->getLLVMType(module);
             llvm::AllocaInst * alloc = CreateEntryBlockAlloc(sumTy, "");
 
-            Value *tagPtr = builder->CreateGEP(LegacyGEPType(alloc), alloc, {Int32Zero, Int32Zero});
+            Value *tagPtr = builder->CreateGEP(Int32Ty, alloc, {Int32Zero, Int32Zero});
 
             builder->CreateStore(getU32(index), tagPtr);
 
-            Value *valuePtr = builder->CreateGEP(LegacyGEPType(alloc), alloc, {Int32Zero, Int32One});
+            Value *valuePtr = builder->CreateGEP(sum->getLLVMType(module), alloc, {Int32Zero, Int32One});
 
             Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
             builder->CreateStore(original, corrected);

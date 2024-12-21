@@ -173,7 +173,7 @@ TEST_CASE("programs/test8 - Nested Loops", "[codegen]")
 
 TEST_CASE("programs/test11 - Expressions in decl (let*) ", "[codegen]")
 {
-    ExpectOutput("../../programs/test11.bismuth");
+    ExpectOutput("programs/test11.bismuth");
 }
 
 TEST_CASE("programs/test12 - Scopes & Prime Finder Example! ", "[codegen]")
@@ -188,10 +188,7 @@ TEST_CASE("programs/test13 - Recursive Fibonacci", "[codegen]")
 
 TEST_CASE("programs/adv/LambdaDef", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/adv/LambdaDef.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "a60ff5ce79402ac8fa39f841f6adb74a2373fab9fe979bb950908ecd7c680c0e");
+    ExpectOutput("programs/adv/LambdaDef.bismuth");
 }
 
 TEST_CASE("programs/test-shortcircuit - Basic Short Circuit (and)", "[codegen]")
@@ -248,18 +245,12 @@ TEST_CASE("programs/Lambda2 - Basic lambda Test w/ return", "[codegen][lambda]")
 
 TEST_CASE("programs/Lambda3 - Basic lambda Test w/ return and same name", "[codegen][lambda]")
 {
-    auto stream = std::fstream("../../programs/Lambda3.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "d3ded95a6887573b51bde92bb60b72bcd625b32b4b7ce4852ab3e2f355576b96");
+    ExpectOutput("programs/Lambda3.bismuth");
 }
 
 TEST_CASE("programs/externLambda", "[codegen][lambda]")
 {
-    auto stream = std::fstream("../../programs/externLambda.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "8ebad02a01073b7a0dfcc4ca465a4eef4c1cc404b85b731522e7c517f0e93cf0");
+    ExpectOutput("programs/externLambda.bismuth");
 }
 
 TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
@@ -304,10 +295,7 @@ TEST_CASE("programs/enum3", "[codegen][enum]")
 
 TEST_CASE("programs/adv/StructTest2", "[codegen][struct]")
 {
-    auto stream = std::fstream("../../programs/adv/StructTest2.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "7598cdc542ab0ab4ba285bd16f629db78eaf386b8fcf2436c2848cf804948c42");
+    ExpectOutput("programs/adv/StructTest2.bismuth");
 }
 
 TEST_CASE("programs/adv/StructTest3", "[codegen][struct]")
@@ -357,10 +345,7 @@ TEST_CASE("programs/dangerLambda-Program - lambdas with duplicate function names
 
 TEST_CASE("programs/dangerLambda-Lambda - lambdas with duplicate function names", "[codegen][struct]")
 {
-    auto stream = std::fstream("../../programs/dangerLambda-Lambda.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "c65e79e226d0bb05fce0d467ace5c65dde8241cefdbac45a5bdc97033404ec0b");
+    ExpectOutput("programs/dangerLambda-Lambda.bismuth");
 }
 
 TEST_CASE("programs/adv/enumPassing - passing non-enum as enum argument", "[codegen][struct]")
@@ -458,26 +443,17 @@ TEST_CASE("programs/enumedit", "[codegen][enum]")
 
 TEST_CASE("programs/TBox - Parody + Clone w/ boxes", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TBox.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "7dda01623a703aa3f79640e0ba6bec2faea21f744f96f74e95148df60ddea3f0");
+    ExpectOutput("programs/TBox.bismuth");
 }
 
 TEST_CASE("programs/TBox2 - Parody + Clone w/ boxes", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TBox2.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "56e5e59e9b8b311fe8ff3dd3963f0c5ae91e0e75e316af23c395c1bf5c23d0bf");
+    ExpectOutput("programs/TBox2.bismuth");
 }
 
 TEST_CASE("programs/TStruct - Parody + Clone w/ Struct Boxes ", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TStruct.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "af8ed21ebfd19643aeeeb6a004ae630c5e289089dd0bedef5623447fc52a52cc");
+    ExpectOutput("programs/TStruct.bismuth");
 }
 
 TEST_CASE("programs/TStructEnum - Parody + Clone w/ Enum Struct Boxes ", "[codegen][enum]")
@@ -539,18 +515,12 @@ TEST_CASE("programs/GC-test - Basic GC w/ Send", "[codegen][enum]")
 
 TEST_CASE("programs/TStructGC - Basic GC w/ Send and Structs", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TStructGC.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "02698fcd137c5a151a46d119d4b4990aed5b8ae6c057348740d5b719bd31e4ed");
+    ExpectOutput("programs/TStructGC.bismuth");
 }
 
 TEST_CASE("programs/TStructCopy - Basic test of copy", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/TStructCopy.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "d4b33b46f536a4fffc7ec4c959afc5f2cfb46ae0f5a4621365bbf45b1ce47c2a");
+    ExpectOutput("programs/TStructCopy.bismuth");
 }
 
 TEST_CASE("programs/db/db - Basic DB 1", "[codegen][enum]")
@@ -651,26 +621,17 @@ TEST_CASE("programs/bt-walker1 - Basic Binary Tree w/ walker", "[codegen][enum]"
 
 TEST_CASE("programs/parity-check - Parity Check 1", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/parity-check.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "72d8705a4883679ad6a164e9b6db709cd85e8bd14de8c39cc8e4fff4cc1470a0");
+    ExpectOutput("programs/parity-check.bismuth");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 2", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/parity-check2.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "a5815fbd4e40e4f18ddd6b530c62486d2629c07dff8cf744e80b65dc860ccbc1");
+    ExpectOutput("programs/parity-check2.bismuth");
 }
 
 TEST_CASE("programs/parity-check - Parity Check 2a", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/parity-check2a.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "d36b0e1e131e7e5e7a07c06edc1a86b2b51c72380de816ff0a64ed8173752992");
+    ExpectOutput("programs/parity-check2a.bismuth");
 }
 
 
@@ -701,10 +662,7 @@ TEST_CASE("programs/adder5 - Add Stream 4 but using fn that returns linear varia
 
 TEST_CASE("programs/nested_struct - Definitions within definitions", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/nested_struct.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "4d7bc765856fb666a703e19901f6e9fc908f3ab26fbe2742df0408acc561fb0a");
+    ExpectOutput("programs/nested_struct.bismuth");
 }
 
 TEST_CASE("programs/asChannel-int - Convert an int into stream", "[codegen]")
@@ -869,5 +827,5 @@ TEST_CASE("A Level Positive Test #2 - If", "[codegen]")
 
 TEST_CASE("A Level Positive Test #3 - Select", "[codegen]")
 {
-    ExpectOutput("../../programs/ALevel/APositive3.bismuth");
+    ExpectOutput("programs/ALevel/APositive3.bismuth");
 }

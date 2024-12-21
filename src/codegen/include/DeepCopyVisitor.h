@@ -215,15 +215,23 @@ private:
         }
         else if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(type))
         {
+            auto * llvm_struct_type = structType->getLLVMType(module);
+
             for (auto eleItr : structType->getElements())
             {
                 const Type *localTy = eleItr.second;
 
                 if (localTy->requiresDeepCopy())
                 {
-                    Value *memLoc = builder->CreateGEP(v->getType(), v, {Int32Zero,
-                                                           getU32(structType->getElementIndex(eleItr.first).value()) // In theory, bad opt access, but should never happen
-                                            });
+                    Value *memLoc = builder->CreateGEP(
+                        llvm_struct_type,
+                        v,
+                        {   
+                            Int32Zero, 
+                            getU32(structType->getElementIndex(eleItr.first).value()) // In theory, bad opt access, but should never happen
+                        }
+                    );
+
                     Value *loaded = builder->CreateLoad(eleItr.second->getLLVMType(module), memLoc);
 
                     optional<Value *> valOpt = deepCopyHelper(builder, eleItr.second, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
@@ -236,12 +244,13 @@ private:
         }
         else if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(type))
         {
+            auto * llvm_sum_type = sumType->getLLVMType(module);
             auto origParent = builder->GetInsertBlock()->getParent();
 
             BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
 
-            Value *memLoc = builder->CreateGEP(v->getType(), v, {Int32Zero, Int32One});
-            Value *tagPtr = builder->CreateGEP(v->getType(), v, {Int32Zero, Int32Zero});
+            Value *memLoc = builder->CreateGEP(llvm_sum_type, v, {Int32Zero, Int32One});
+            Value *tagPtr = builder->CreateGEP(llvm_sum_type, v, {Int32Zero, Int32Zero});
             Value *tag = builder->CreateLoad(tagPtr->getType(), tagPtr);
             SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
 
@@ -272,6 +281,7 @@ private:
         }
         else if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(type))
         {
+            auto * llvm_array_type = arrayType->getLLVMType(module);
             const Type * valueType = arrayType->getValueType(); 
             
             AllocaInst *loop_index = CreateEntryBlockAlloc(builder,Int32Ty, "idx");
@@ -300,7 +310,7 @@ private:
             /**/
             /**/
             {
-                Value *memLoc = builder->CreateGEP(v->getType(), v, {Int32Zero,
+                Value *memLoc = builder->CreateGEP(llvm_array_type, v, {Int32Zero,
                                                               builder->CreateLoad(Int32Ty, loop_index)});
 
                 Value *loaded = builder->CreateLoad(valueType->getLLVMType(module), memLoc);

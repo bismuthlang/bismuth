@@ -1040,10 +1040,14 @@ public:
         is_rvalue = r;
     }
 
+    const TypeArray * getArrayType() {
+        return dynamic_cast<const TypeArray *>(expr->getType()); // FIXME: POTENTIAL ERROR?
+    }
+
     // The stored type of the array
     const Type * getLValueType() 
     {
-        return dynamic_cast<const TypeArray *>(expr->getType())->getValueType(); // FIXME: POTENTIAL ERROR?
+        return getArrayType()->getValueType();
     }
 
     // TODO: allow for modulo get so that way we can access fields more directly?
