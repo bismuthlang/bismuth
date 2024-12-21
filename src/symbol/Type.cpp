@@ -973,13 +973,14 @@ std::set<const Type *, TypeCompare> TypeSum::getCases() const {
     return resorted; 
 }
 
-unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
+unsigned int TypeSum::getIndex(const Type *toFind) const
 {
     unsigned i = 1;
 
     for (auto e : getCases())
     {
-        if (e->getLLVMType(M) == toFind)
+        // FIXME: THIS MIGHT NOT WORK WITH INF TYPES B/C TOSTRING INCLUDES INFER FOR THOSE
+        if (e->toString(C_STYLE) == toFind->toString(C_STYLE)) //(e->getLLVMType(M) == toFind)
         {
             return i;
         }

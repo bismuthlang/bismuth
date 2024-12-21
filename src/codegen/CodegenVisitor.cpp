@@ -108,8 +108,8 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
         {Int32Zero, Int32Zero}
     );
 
-    const llvm::GEPOperator * GEP = dyn_cast<llvm::GEPOperator>(tagPtr);
-    Value *tag = builder->CreateLoad(GEP->getSourceElementType(), tagPtr);
+    // const llvm::GEPOperator * GEP = dyn_cast<llvm::GEPOperator>(tagPtr);
+    Value *tag = builder->CreateLoad(Int32Ty, tagPtr);
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n.cases.size()); // sumType->getCases().size());
 
@@ -119,7 +119,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
 
         llvm::Type *toFind = getLLVMType(localSym);
 
-        unsigned int index = sumType->getIndex(module, toFind);
+        unsigned int index = sumType->getIndex(localSym->getType());
 
         if (index == 0)
         {
@@ -301,7 +301,7 @@ std::optional<Value *> CodegenVisitor::visit(TInvocationNode & n)
         {
             if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(n.paramType.at(args.size()))) // argNodes.at(args.size())->getType()))
             {
-                val = correctSumAssignment(sumOpt.value(), val);
+                val = correctSumAssignment(sumOpt.value(), e->getType(), val);
             }
         }
 
@@ -440,7 +440,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode & n)
     // Same as return node's
     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(n.lType))
     {
-        stoVal = correctSumAssignment(sumOpt.value(), stoVal);
+        stoVal = correctSumAssignment(sumOpt.value(), copyNode.getType(), stoVal);
     }
 
     Value *v = builder->CreateCall(getMalloc(), {getU32(getSizeForValue(stoVal))});
@@ -727,7 +727,7 @@ std::optional<Value *> CodegenVisitor::visit(TDefineStructNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TInitProductNode & n)
 {
-    std::vector<Value *> args;
+    std::vector<std::pair<const Type *, Value *>> args;
 
     for (TypedNode *e : n.exprs)
     {
@@ -740,7 +740,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode & n)
 
         Value *stoVal = valOpt.value();
 
-        args.push_back(stoVal);
+        args.push_back({e->getType(), stoVal});
     }
 
     const TypeStruct *product = n.product;
@@ -751,11 +751,11 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode & n)
         unsigned i = 0;
         std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
 
-        for (Value *a : args)
+        for (auto [ ty_a, a ] : args)
         {
             if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(elements.at(i).second))
             {
-                a = correctSumAssignment(sumOpt.value(), a);
+                a = correctSumAssignment(sumOpt.value(), ty_a, a);
             }
 
             Value *ptr = builder->CreateGEP(ty, v, {Int32Zero, getU32(i)});
@@ -812,7 +812,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
         stoType = const_cast<Type *>(ty->getValueType()); 
     }
     
-    std::vector<Value *> args;
+    std::vector<std::pair<const Type *, Value *>> args;
 
     for (TypedNode *e : n.exprs)
     {
@@ -825,7 +825,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
 
         Value *stoVal = valOpt.value();
 
-        args.push_back(stoVal);
+        args.push_back({e->getType(), stoVal});
     }
 
     unsigned int i = 0; 
@@ -833,9 +833,9 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
     if(std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(stoType)) // FIXME: WONT WORK FOR [[(A + B)]]
     {
         const TypeSum * sumTy = sumOpt.value();
-        for(Value * a : args)
+        for(auto [ty, a] : args)
         {
-            a = correctSumAssignment(sumTy, a);
+            a = correctSumAssignment(sumTy, ty, a);
 
             Value *ptr = builder->CreateGEP(stoType->getLLVMType(module), writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
@@ -844,7 +844,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
     }
     else 
     {
-        for(Value * a : args)
+        for(auto [ ty, a ] : args)
         {
             Value *ptr = builder->CreateGEP(stoType->getLLVMType(module), writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
@@ -872,7 +872,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode & n)
 
     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(box->getInnerType()))
     {
-        stoVal = correctSumAssignment(sumOpt.value(), stoVal);
+        stoVal = correctSumAssignment(sumOpt.value(), n.expr->getType(), stoVal);
     }
 
     // Value *v = builder->CreateCall(getG_CMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
@@ -965,7 +965,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
     // const llvm::GEPOperator * GEP = dyn_cast<llvm::GEPOperator>(valuePtr);
     // std::cout << "937" << std::endl;
     Value *value = builder->CreateLoad(n.getLValueType()->getLLVMType(module), valuePtr);
-    auto ptr = correctSumAssignment(n.getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
+    auto ptr = correctSumAssignment(n.getRValueType(), n.getLValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();
 
@@ -975,7 +975,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
     parentFn->insert(parentFn->end(), elseBlk);
     builder->SetInsertPoint(elseBlk);
 
-    auto unitPtr = correctSumAssignment(n.getRValueType(), getUnitValue());
+    auto unitPtr = correctSumAssignment(n.getRValueType(), Types::UNIT, getUnitValue());
     builder->CreateBr(restBlk);
     elseBlk = builder->GetInsertBlock();
 
@@ -1190,7 +1190,7 @@ std::cout << "1024" << std::endl;
 
 
 
-    auto ptr = correctSumAssignment(n.getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
+    auto ptr = correctSumAssignment(n.getRValueType(), n.getStoredType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();
 
@@ -1200,7 +1200,7 @@ std::cout << "1024" << std::endl;
     parentFn->insert(parentFn->end(), elseBlk);
     builder->SetInsertPoint(elseBlk);
 
-    auto unitPtr = correctSumAssignment(n.getRValueType(), getUnitValue());
+    auto unitPtr = correctSumAssignment(n.getRValueType(), Types::UNIT, getUnitValue());
     builder->CreateBr(restBlk);
     elseBlk = builder->GetInsertBlock();
 
@@ -1897,7 +1897,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode & n)
     const Type *varSymType = n.var->getType();
     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymType))
     {
-        uint32_t index = sumOpt.value()->getIndex(module, stoVal->getType());
+        uint32_t index = sumOpt.value()->getIndex(n.val->getType());
         auto * sum_type = sumOpt.value()->getLLVMType(module);
 
         if (index == 0)
@@ -1994,7 +1994,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode & n)
                     Value *stoVal = exVal.value();
                     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol->getType()))
                     {
-                        uint32_t index = sumOpt.value()->getIndex(module, stoVal->getType());
+                        uint32_t index = sumOpt.value()->getIndex(e->val.value()->getType());
                         auto * sum_type = sumOpt.value()->getLLVMType(module);
 
                         if (index == 0)
@@ -2277,7 +2277,7 @@ std::optional<Value *> CodegenVisitor::visit(TReturnNode & n)
 
         if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(expr.first))
         {
-            inner = correctSumAssignment(sumOpt.value(), inner);
+            inner = correctSumAssignment(sumOpt.value(), expr.second->getType(), inner);
         }
 
         // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.
@@ -2614,7 +2614,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     const TypeSum * sum = meta.actingType.value(); 
 
-    uint32_t unitIndex = sum->getIndex(module, Types::UNIT->getLLVMType(module));
+    uint32_t unitIndex = sum->getIndex(Types::UNIT);
     
     if (unitIndex == 0) // Shouldn't be a problem...
     {
@@ -2630,7 +2630,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     }
 
     llvm::Type * valueType = meta.protocolType->getLLVMType(module);
-    uint32_t valueIndex = sum->getIndex(module, valueType);
+    uint32_t valueIndex = sum->getIndex(meta.protocolType);
 
     if (valueIndex == 0)
     {

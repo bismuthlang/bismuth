@@ -149,9 +149,9 @@ public:
     template <class... Ts>
     overloaded(Ts...) -> overloaded<Ts...>;
 
-    Value * correctSumAssignment(const TypeSum *sum, Value *original)
+    Value * correctSumAssignment(const TypeSum *sum, const Type * orig_type, Value *original)
     {
-        unsigned int index = sum->getIndex(module, original->getType());
+        unsigned int index = sum->getIndex(orig_type);
 
         if (index != 0)
         {

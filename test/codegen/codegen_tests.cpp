@@ -255,10 +255,7 @@ TEST_CASE("programs/externLambda", "[codegen][lambda]")
 
 TEST_CASE("programs/enum1 - Basic Enum 1", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/enum1.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "02499636cbaee6916dabf3d117d2e0e0de36d12633e4654d1caaf035eecac954");
+    ExpectOutput("programs/enum1.bismuth");
 }
 
 TEST_CASE("programs/enum2 - Basic Enum 2 - double cast", "[codegen][enum]")
@@ -287,10 +284,7 @@ TEST_CASE("programs/enumAssign2 - Returning lambdas, functions, and enums", "[co
 
 TEST_CASE("programs/enum3", "[codegen][enum]")
 {
-    auto stream = std::fstream("../../programs/enum3.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "92f925b85752b4a4cf423522e1c0441d443d20cb8618df80183ee013286fd0f6");
+    ExpectOutput("programs/enum3.bismuth");
 }
 
 TEST_CASE("programs/adv/StructTest2", "[codegen][struct]")
