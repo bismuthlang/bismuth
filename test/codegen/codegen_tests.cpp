@@ -571,26 +571,17 @@ TEST_CASE("programs/asChannel-channel - Convert regular channel into stream", "[
 
 TEST_CASE("programs/cancelable/BasicCancel - Basic cancel block with two recv", "[codegen][cancel]")
 {
-    auto stream = std::fstream("../../programs/cancelable/BasicCancel.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "05186fc6f50aef9b513a346c457fd716f9c9705cab9b7ddedc4862637f7aefc7");
+    ExpectOutput("programs/cancelable/BasicCancel.bismuth");
 }
 
 TEST_CASE("programs/cancelable/DoubleCancel - Basic two blocks with cancel", "[codegen][cancel]")
 {
-    auto stream = std::fstream("../../programs/cancelable/DoubleCancel.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "e3e782b6a0f263cee293a40c0d415ffa304862d73bc518b39505b0dd68d4207c");
+    ExpectOutput("programs/cancelable/DoubleCancel.bismuth");
 }
 
 TEST_CASE("programs/cancelable/BranchCancel1 - Basic cancel w/ branch and repetition", "[codegen][cancel]")
 {
-    auto stream = std::fstream("../../programs/cancelable/BranchCancel1.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "76c7229839d3db33e1a6d8bf3912d49f34bcd3155eb39fa23b9ad224cfa1f62c"); // FIXME: QUITE LIMITED & NEEDS IMPROVEMENTS!
+    ExpectOutput("programs/cancelable/BranchCancel1.bismuth"); // FIXME: QUITE LIMITED & NEEDS IMPROVEMENTS!
 }
 
 TEST_CASE("programs/BasicForLoop - Basic For loop ", "[codegen][cancel]")
@@ -600,19 +591,13 @@ TEST_CASE("programs/BasicForLoop - Basic For loop ", "[codegen][cancel]")
 
 TEST_CASE("programs/generics/Arrays - Non-recursive generic function used for dyn array utils", "[codegen][generic]")
 {
-    auto stream = std::fstream("../../programs/generics/Arrays.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "d5dc0ab70f918d87d7731c99eb149c639b64c25a34ff954c9c2fe3c2e1b19a12"); 
+    ExpectOutput("programs/generics/Arrays.bismuth");
 }
 
 
 TEST_CASE("programs/generics/inv - Various generic functions including nested", "[codegen][generic]")
 {
-    auto stream = std::fstream("../../programs/generics/inv.bismuth");
-    EnsureCompilesTo(
-        antlr4::ANTLRInputStream(stream),
-        "6120dbb49139880092cc6c60e0db4100982b75a9fcc3a6b875d19830059f4b3c"); 
+    ExpectOutput("programs/generics/inv.bismuth");
 }
 
 TEST_CASE("programs/generics/Lists - Various complex generic structures including recursive", "[codegen][generic]")

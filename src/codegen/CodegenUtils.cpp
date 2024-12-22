@@ -83,7 +83,7 @@ void CodegenModule::ReallocateDynArray(const TypeDynArray * ty, llvm::Value * al
      */
     builder->SetInsertPoint(thenBlk);
 
-    Value * vecPtr = builder->CreateGEP(InnerArrayType, alloc, {Int32Zero, Int32Zero});
+    Value * vecPtr = builder->CreateGEP(alloc_type, alloc, {Int32Zero, Int32Zero});
     std::cout << "U83" << std::endl;
     Value * loadedArray = builder->CreateLoad(InnerArrayType, vecPtr);
     // Value * indexPtr = builder->CreateGEP(nullptr, loadedArray, indexValue);

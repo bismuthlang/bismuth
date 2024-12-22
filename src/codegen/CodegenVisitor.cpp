@@ -10,7 +10,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode & n)
      *
      ***********************************/
 
-
+std::cout << "13" << std::endl;
     /***********************************
      *
      *
@@ -20,6 +20,7 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode & n)
      ***********************************/
     for (auto e : n.defs)
     {
+        std::cout << "23 " << std::endl;
         if (TProgramDefNode * octx = dynamic_cast<TProgramDefNode *>(e))
         {
             const TypeProgram *type = octx->getType();
@@ -1119,7 +1120,7 @@ std::cout << "1024" << std::endl;
             arrayPtr
         );
         Value * indexPtr = builder->CreateGEP(
-            llvm_dyn_array_type, 
+            ArrayElementType, 
             loadedArray,
             indexValue
         );
@@ -1164,7 +1165,7 @@ std::cout << "1024" << std::endl;
     builder->SetInsertPoint(gtzBlk);
 
     Value *vecPtr = builder->CreateGEP(
-        InnerArrayType,
+        llvm_dyn_array_type,
         structPtr,
         {Int32Zero, Int32Zero}
     );
@@ -1675,7 +1676,7 @@ std::optional<Value *> CodegenVisitor::visit(TIdentifier & n)
                 errorHandler.addError(n.getStart(),"Unable to find global variable: " + getCodegenID(sym) + " " + sym->toString());
                 return std::nullopt;
             }
-
+std::cout << "1678" << std::endl;
             // Create and return a load for the global var
             Value *val = builder->CreateLoad(nullptr, glob);
             return val;

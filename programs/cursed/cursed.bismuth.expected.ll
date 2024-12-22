@@ -28,7 +28,7 @@ source_filename = "BismuthProgram"
 @18 = private unnamed_addr constant [15 x i8] c"Hello, World!\0A\00", align 1
 @19 = private unnamed_addr constant [4 x i8] c"%d\0A\00", align 1
 
-define %Unit @"programs::cursed::more_cursed"(i32 %0) {
+define %Unit @more_cursed(i32 %0) {
 entry:
   %fn = alloca ptr, align 8
   %u = alloca %Unit, align 8
@@ -88,15 +88,15 @@ entry:
   %21 = or i32 %r613, %20
   store i32 %21, ptr %r7, align 4
   %22 = getelementptr [5 x ptr], ptr %4, i32 0, i32 0
-  store ptr @"programs::cursed::more_cursed::#lambda", ptr %22, align 8
+  store ptr @"more_cursed::#lambda", ptr %22, align 8
   %23 = getelementptr [5 x ptr], ptr %4, i32 0, i32 1
-  store ptr @"programs::cursed::more_cursed::#lambda.0", ptr %23, align 8
+  store ptr @"more_cursed::#lambda.0", ptr %23, align 8
   %24 = getelementptr [5 x ptr], ptr %4, i32 0, i32 2
-  store ptr @"programs::cursed::more_cursed::#lambda.1", ptr %24, align 8
+  store ptr @"more_cursed::#lambda.1", ptr %24, align 8
   %25 = getelementptr [5 x ptr], ptr %4, i32 0, i32 3
-  store ptr @"programs::cursed::more_cursed::#lambda.2", ptr %25, align 8
+  store ptr @"more_cursed::#lambda.2", ptr %25, align 8
   %26 = getelementptr [5 x ptr], ptr %4, i32 0, i32 4
-  store ptr @"programs::cursed::more_cursed::#lambda.3", ptr %26, align 8
+  store ptr @"more_cursed::#lambda.3", ptr %26, align 8
   %27 = load [5 x ptr], ptr %4, align 8
   store [5 x ptr] %27, ptr %arr, align 8
   %r716 = load i32, ptr %r7, align 4
@@ -155,7 +155,7 @@ match-cont:                                       ; preds = %tagBranch2, %tagBra
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::cursed::less_cursed"(i32 %0) {
+define %Unit @less_cursed(i32 %0) {
 entry:
   %fn = alloca ptr, align 8
   %u = alloca %Unit, align 8
@@ -179,15 +179,15 @@ then:                                             ; preds = %entry
 
 else:                                             ; preds = %then, %entry
   %6 = getelementptr [5 x ptr], ptr %4, i32 0, i32 0
-  store ptr @"programs::cursed::less_cursed::#lambda", ptr %6, align 8
+  store ptr @"less_cursed::#lambda", ptr %6, align 8
   %7 = getelementptr [5 x ptr], ptr %4, i32 0, i32 1
-  store ptr @"programs::cursed::less_cursed::#lambda.0", ptr %7, align 8
+  store ptr @"less_cursed::#lambda.0", ptr %7, align 8
   %8 = getelementptr [5 x ptr], ptr %4, i32 0, i32 2
-  store ptr @"programs::cursed::less_cursed::#lambda.1", ptr %8, align 8
+  store ptr @"less_cursed::#lambda.1", ptr %8, align 8
   %9 = getelementptr [5 x ptr], ptr %4, i32 0, i32 3
-  store ptr @"programs::cursed::less_cursed::#lambda.2", ptr %9, align 8
+  store ptr @"less_cursed::#lambda.2", ptr %9, align 8
   %10 = getelementptr [5 x ptr], ptr %4, i32 0, i32 4
-  store ptr @"programs::cursed::less_cursed::#lambda.3", ptr %10, align 8
+  store ptr @"less_cursed::#lambda.3", ptr %10, align 8
   %11 = load [5 x ptr], ptr %4, align 8
   store [5 x ptr] %11, ptr %arr, align 8
   %idx3 = load i32, ptr %idx, align 4
@@ -246,7 +246,7 @@ match-cont:                                       ; preds = %tagBranch2, %tagBra
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::cursed::sel_array"(i32 %0) {
+define %Unit @sel_array(i32 %0) {
 entry:
   %u = alloca %Unit, align 8
   %s = alloca ptr, align 8
@@ -356,7 +356,7 @@ entry:
 loop:                                             ; preds = %loop, %entry
   %i2 = load i32, ptr %i, align 4
   %6 = srem i32 %i2, 5
-  %7 = call i32 @"programs::cursed::sil_sel_each"(i32 %6)
+  %7 = call i32 @sil_sel_each(i32 %6)
   %i3 = load i32, ptr %i, align 4
   %8 = add nsw i32 %i3, 1
   store i32 %8, ptr %i, align 4
@@ -370,7 +370,7 @@ rest:                                             ; preds = %loop, %entry
   ret %Unit zeroinitializer
 }
 
-define i32 @"programs::cursed::sil_more_cursed"(i32 %0) {
+define i32 @sil_more_cursed(i32 %0) {
 entry:
   %fn = alloca ptr, align 8
   %u = alloca %Unit, align 8
@@ -430,15 +430,15 @@ entry:
   %21 = or i32 %r613, %20
   store i32 %21, ptr %r7, align 4
   %22 = getelementptr [5 x ptr], ptr %4, i32 0, i32 0
-  store ptr @"programs::cursed::sil_more_cursed::#lambda", ptr %22, align 8
+  store ptr @"sil_more_cursed::#lambda", ptr %22, align 8
   %23 = getelementptr [5 x ptr], ptr %4, i32 0, i32 1
-  store ptr @"programs::cursed::sil_more_cursed::#lambda.0", ptr %23, align 8
+  store ptr @"sil_more_cursed::#lambda.0", ptr %23, align 8
   %24 = getelementptr [5 x ptr], ptr %4, i32 0, i32 2
-  store ptr @"programs::cursed::sil_more_cursed::#lambda.1", ptr %24, align 8
+  store ptr @"sil_more_cursed::#lambda.1", ptr %24, align 8
   %25 = getelementptr [5 x ptr], ptr %4, i32 0, i32 3
-  store ptr @"programs::cursed::sil_more_cursed::#lambda.2", ptr %25, align 8
+  store ptr @"sil_more_cursed::#lambda.2", ptr %25, align 8
   %26 = getelementptr [5 x ptr], ptr %4, i32 0, i32 4
-  store ptr @"programs::cursed::sil_more_cursed::#lambda.3", ptr %26, align 8
+  store ptr @"sil_more_cursed::#lambda.3", ptr %26, align 8
   %27 = load [5 x ptr], ptr %4, align 8
   store [5 x ptr] %27, ptr %arr, align 8
   %r716 = load i32, ptr %r7, align 4
@@ -497,7 +497,7 @@ match-cont:                                       ; preds = %accessAfter
   unreachable
 }
 
-define i32 @"programs::cursed::sil_less_cursed"(i32 %0) {
+define i32 @sil_less_cursed(i32 %0) {
 entry:
   %fn = alloca ptr, align 8
   %u = alloca %Unit, align 8
@@ -521,15 +521,15 @@ then:                                             ; preds = %entry
 
 else:                                             ; preds = %then, %entry
   %6 = getelementptr [5 x ptr], ptr %4, i32 0, i32 0
-  store ptr @"programs::cursed::sil_less_cursed::#lambda", ptr %6, align 8
+  store ptr @"sil_less_cursed::#lambda", ptr %6, align 8
   %7 = getelementptr [5 x ptr], ptr %4, i32 0, i32 1
-  store ptr @"programs::cursed::sil_less_cursed::#lambda.0", ptr %7, align 8
+  store ptr @"sil_less_cursed::#lambda.0", ptr %7, align 8
   %8 = getelementptr [5 x ptr], ptr %4, i32 0, i32 2
-  store ptr @"programs::cursed::sil_less_cursed::#lambda.1", ptr %8, align 8
+  store ptr @"sil_less_cursed::#lambda.1", ptr %8, align 8
   %9 = getelementptr [5 x ptr], ptr %4, i32 0, i32 3
-  store ptr @"programs::cursed::sil_less_cursed::#lambda.2", ptr %9, align 8
+  store ptr @"sil_less_cursed::#lambda.2", ptr %9, align 8
   %10 = getelementptr [5 x ptr], ptr %4, i32 0, i32 4
-  store ptr @"programs::cursed::sil_less_cursed::#lambda.3", ptr %10, align 8
+  store ptr @"sil_less_cursed::#lambda.3", ptr %10, align 8
   %11 = load [5 x ptr], ptr %4, align 8
   store [5 x ptr] %11, ptr %arr, align 8
   %idx3 = load i32, ptr %idx, align 4
@@ -588,7 +588,7 @@ match-cont:                                       ; preds = %accessAfter
   unreachable
 }
 
-define i32 @"programs::cursed::sil_sel_array"(i32 %0) {
+define i32 @sil_sel_array(i32 %0) {
 entry:
   %u = alloca %Unit, align 8
   %s = alloca i32, align 4
@@ -678,7 +678,7 @@ if-cont:                                          ; preds = %else, %match-cont
   unreachable
 }
 
-define i32 @"programs::cursed::sil_sel_each"(i32 %0) {
+define i32 @sil_sel_each(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -726,7 +726,7 @@ if-cont:                                          ; preds = %else10
 
 declare i32 @printf(ptr, ...)
 
-define private %Unit @"programs::cursed::more_cursed::#lambda"(i32 %0) {
+define private %Unit @"more_cursed::#lambda"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -734,7 +734,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define private %Unit @"programs::cursed::more_cursed::#lambda.0"(i32 %0) {
+define private %Unit @"more_cursed::#lambda.0"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -742,7 +742,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define private %Unit @"programs::cursed::more_cursed::#lambda.1"(i32 %0) {
+define private %Unit @"more_cursed::#lambda.1"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -750,7 +750,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define private %Unit @"programs::cursed::more_cursed::#lambda.2"(i32 %0) {
+define private %Unit @"more_cursed::#lambda.2"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -758,7 +758,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define private %Unit @"programs::cursed::more_cursed::#lambda.3"(i32 %0) {
+define private %Unit @"more_cursed::#lambda.3"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -767,7 +767,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define private %Unit @"programs::cursed::less_cursed::#lambda"(i32 %0) {
+define private %Unit @"less_cursed::#lambda"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -775,7 +775,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define private %Unit @"programs::cursed::less_cursed::#lambda.0"(i32 %0) {
+define private %Unit @"less_cursed::#lambda.0"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -783,7 +783,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define private %Unit @"programs::cursed::less_cursed::#lambda.1"(i32 %0) {
+define private %Unit @"less_cursed::#lambda.1"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -791,7 +791,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define private %Unit @"programs::cursed::less_cursed::#lambda.2"(i32 %0) {
+define private %Unit @"less_cursed::#lambda.2"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -799,7 +799,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define private %Unit @"programs::cursed::less_cursed::#lambda.3"(i32 %0) {
+define private %Unit @"less_cursed::#lambda.3"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -812,35 +812,35 @@ declare ptr @malloc(i32)
 
 declare %Unit @_WriteChannel(ptr, ptr)
 
-define private i32 @"programs::cursed::sil_more_cursed::#lambda"(i32 %0) {
+define private i32 @"sil_more_cursed::#lambda"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
   ret i32 0
 }
 
-define private i32 @"programs::cursed::sil_more_cursed::#lambda.0"(i32 %0) {
+define private i32 @"sil_more_cursed::#lambda.0"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
   ret i32 1
 }
 
-define private i32 @"programs::cursed::sil_more_cursed::#lambda.1"(i32 %0) {
+define private i32 @"sil_more_cursed::#lambda.1"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
   ret i32 2
 }
 
-define private i32 @"programs::cursed::sil_more_cursed::#lambda.2"(i32 %0) {
+define private i32 @"sil_more_cursed::#lambda.2"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
   ret i32 3
 }
 
-define private i32 @"programs::cursed::sil_more_cursed::#lambda.3"(i32 %0) {
+define private i32 @"sil_more_cursed::#lambda.3"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -848,35 +848,35 @@ entry:
   ret i32 %i1
 }
 
-define private i32 @"programs::cursed::sil_less_cursed::#lambda"(i32 %0) {
+define private i32 @"sil_less_cursed::#lambda"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
   ret i32 0
 }
 
-define private i32 @"programs::cursed::sil_less_cursed::#lambda.0"(i32 %0) {
+define private i32 @"sil_less_cursed::#lambda.0"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
   ret i32 1
 }
 
-define private i32 @"programs::cursed::sil_less_cursed::#lambda.1"(i32 %0) {
+define private i32 @"sil_less_cursed::#lambda.1"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
   ret i32 2
 }
 
-define private i32 @"programs::cursed::sil_less_cursed::#lambda.2"(i32 %0) {
+define private i32 @"sil_less_cursed::#lambda.2"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
   ret i32 3
 }
 
-define private i32 @"programs::cursed::sil_less_cursed::#lambda.3"(i32 %0) {
+define private i32 @"sil_less_cursed::#lambda.3"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4

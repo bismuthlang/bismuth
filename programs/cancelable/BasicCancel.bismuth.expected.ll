@@ -16,7 +16,7 @@ entry:
   store i32 0, ptr %1, align 4
   %2 = load ptr, ptr %c, align 8
   %3 = call %Unit @_WriteChannel(ptr %2, ptr %1)
-  %4 = call ptr @_Execute(ptr @"programs::cancelable::BasicCancel::c2")
+  %4 = call ptr @_Execute(ptr @c2)
   store ptr %4, ptr %other, align 8
   %5 = call ptr @malloc(i32 4)
   store i32 1, ptr %5, align 4
@@ -31,7 +31,7 @@ entry:
   ret %Unit zeroinitializer
 }
 
-define %Unit @"programs::cancelable::BasicCancel::c2"(ptr %0) {
+define %Unit @c2(ptr %0) {
 entry:
   %i = alloca i32, align 4
   %u = alloca %Unit, align 8

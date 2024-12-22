@@ -350,6 +350,11 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
     for(auto entry : inputs)
     {
         auto [cu, input] = entry; 
+        if (isVerbose)
+        {
+            // should be output.getInputName()
+            std::cout << "Code generation starting for " << input->getSourceName() << "." << std::endl;
+        }
         /*******************************************************************
          * Code Generation
          * ================================================================
@@ -422,8 +427,10 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
 
             pass.run(*module);
             stream->flush();
-
-            // std::cout << "Wrote " << input.outputPath << std::endl;
+            if (isVerbose)
+            {
+                std::cout << "Wrote code for " << input->getSourceName() << std::endl;
+            }
         }
         delete cu;
     }
