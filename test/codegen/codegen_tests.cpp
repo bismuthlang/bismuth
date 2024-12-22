@@ -62,7 +62,7 @@ TEST_CASE("programs/test1 - General Overview", "[codegen]")
     auto stream = std::fstream("/home/shared/programs/test1.bismuth");
     EnsureCompilesTo(
         antlr4::ANTLRInputStream(stream),
-        "b166f64d6c74d59ebf7a6ef3ba136fa8c54024770638395b68db8c173d45799a");
+        "3f62f6bac641013772415de0d8fc0fd5f3c6e9fff28808fa8451c627a0154f16");
 }
 
 TEST_CASE("programs/test1a", "[codegen]")
@@ -213,7 +213,7 @@ TEST_CASE("programs/test-arrayAssign - Assigning one array to another and editin
     auto stream = std::fstream("/home/shared/programs/test-arrayAssign.bismuth");
     EnsureCompilesTo(
         antlr4::ANTLRInputStream(stream),
-        "730e9b41f50f4c3e74564720d82188ba1f6d64290184a54071696cfe94c00b19");
+        "6639eaebf54412bc4221acb7e8c303a5681b0060f3111495c37530e76aa156c0");
 }
 
 // FIXME: RENAME AS WE DONT HAVE PROC ANYMORE!
@@ -680,6 +680,14 @@ TEST_CASE("programs/db/db5-while-present - Basic DB 5 - AcceptWhile and is_prese
         "f8cd8aab6cffbe4aca4d42c0b88c28ed386ed34ca78bf2eef4f5871e4290b26c");
 }
 
+TEST_CASE("programs/db/db-labels - DB with labels to test parsing bug in 1.3.4", "[codegen][enum]")
+{
+    auto stream = std::fstream("/home/shared/programs/db/db-labels.bismuth");
+    EnsureCompilesTo(
+        antlr4::ANTLRInputStream(stream),
+        "9787b77cba18eba4a6fe8a1f9efb6686887f57340c869bf4f4204142e652563e");
+}
+
 TEST_CASE("programs/bt - Basic Binary Tree", "[codegen][enum]")
 {
     auto stream = std::fstream("/home/shared/programs/bt.bismuth");
@@ -830,7 +838,7 @@ TEST_CASE("programs/generics/Arrays - Non-recursive generic function used for dy
     auto stream = std::fstream("/home/shared/programs/generics/Arrays.bismuth");
     EnsureCompilesTo(
         antlr4::ANTLRInputStream(stream),
-        "da7fde9cb166723bfdaa8a29d21a5c0c369c531d1ba2cbe1d4beed2a5029e354"); 
+        "d5dc0ab70f918d87d7731c99eb149c639b64c25a34ff954c9c2fe3c2e1b19a12"); 
 }
 
 
@@ -904,7 +912,7 @@ TEST_CASE("programs/inferint - Infer the type of a number", "[codegen][infer int
 
 TEST_CASE("programs/cursed - Binary Operators, Functions with inferred returns, and inference of ints through array matching", "[codegen]")
 {
-    std::string hash = "0df6327622a38a2a07439f1ed3caee1dc9cdc35f5887d231b5393fde3aacf37a";
+    std::string hash = "d1358a7bd97341b3c542f1fefab2147c0df9d9a9acabe488912f09454009ff19";
     auto stream = std::fstream("/home/shared/programs/cursed/cursed.bismuth");
     EnsureCompilesTo(
         antlr4::ANTLRInputStream(stream),

@@ -68,7 +68,7 @@ define program :: c : Channel<-int> = {
     Color[3] samples := sampleChannel.recv(); 
 
     # Print out each of the colors 
-    int i := 0;
+    u32 i := 0;
     while i < samples.length {
         # toString(samples[i]);
         Channel<-(Unit + Color + int + boolean + str)> io := exec toString; 

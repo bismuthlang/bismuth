@@ -1,5 +1,8 @@
 #include "SemanticVisitor.h"
 
+// #define SAFE_DYNAMIC_CAST(id, type, expr, ctx, message)\
+//     auto id = dynamic_cast<type>(expr);\
+//     if(!id) return errorHandler.addError(ctx, message);
 #include "CUtils.h"
 #include "CompilerFlags.h"
 #include <regex>
@@ -548,8 +551,8 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         std::string funcId = ctx->name->getText();
         // Lookup the function in the current scope and prevent re-declarations
 
-        // Add the symbol to the stmgr and enter the scope. -> Already done
-        // TODO: BAD OPT VALUE (should never really happen though)
+        // Add the symbol to the stmgr and enter the scope.
+        if(!stmgr->getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "STManager does not have a current scope!");
         Scope * orig = stmgr->getCurrentScope().value(); 
         stmgr->enterScope(defSym->getInnerScope());
 
@@ -804,9 +807,9 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     TypedNode *idxExpr = std::get<TypedNode *>(idxOpt);
 
     const Type *idxType = idxExpr->getType();
-    if (idxType->isNotSubtype(Types::DYN_INT)) //TODO: TYPE uint?
+    if (idxType->isNotSubtype({Types::DYN_INT, Types::DYN_U32}, InferenceMode::QUERY))
     {
-        return errorHandler.addError(ctx->getStart(), "Array access index expected type int but got " + idxType->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Array access index expected type u32 but got " + idxType->toString(toStringMode));
     }
 
     /*
@@ -982,15 +985,13 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     case BismuthParser::MINUS:
         if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64}, InferenceMode::QUERY))
         {
-            // TODO: int/i64 expected?
-            return errorHandler.addError(ctx->getStart(), "int expected in unary minus, but got " + innerType->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Signed number (e.g., int or i64) expected in unary minus, but got " + innerType->toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
     case BismuthParser::BIT_NOT: 
-        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64}, InferenceMode::QUERY))
+        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64, Types::DYN_U32, Types::DYN_U64}, InferenceMode::QUERY))
         {
-            // TODO: int/i64 expected?
-            return errorHandler.addError(ctx->getStart(), "int expected in unary minus, but got " + innerType->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Signed number (e.g., int or i64) expected in unary not, but got " + innerType->toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_BIT_NOT, innerNode, ctx->getStart());
     case BismuthParser::NOT:
@@ -1274,25 +1275,17 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         else if (i + 1 == ctx->fields.size() && (type_cast<TypeArray>(ty) || type_cast<TypeDynArray>(ty)) && ctx->fields.at(i)->getText() == "length")
         {
             a.push_back({"length",
-                         Types::DYN_INT});
+                         Types::DYN_U32});
 
             break; // Shouldn't be needed, but is here anyways
         }
-        // else if (i + 1 == ctx->fields.size() && ctx->fields.at(i)->getText() == "is_present")
-        // {
-        //     std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(ty);
-        //     if (channelOpt)
-        //     {
-        //         const TypeChannel *channel = channelOpt.value();
-        //         if (channel->getProtocol()->isOCorGuarded())
-        //         {
-        //             a.push_back({"is_present",
-        //                          Types::DYN_BOOL}); // TODO: would be a linear fn, but then cant require we use it... maybe should be functional style? idk
-        //             break;                      // Shouldn't be needed, but is here anyways
-        //         }
-        //     }
-        //     return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString());
-        // }
+        else if (i + 1 == ctx->fields.size() && (type_cast<TypeDynArray>(ty)) && ctx->fields.at(i)->getText() == "capacity")
+        {
+            a.push_back({"capacity",
+                         Types::DYN_U32});
+
+            break; // Shouldn't be needed, but is here anyways
+        }
         else
         {
             return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString(toStringMode));
@@ -2303,13 +2296,18 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
     {
+        if(!templateTy->getValueType()) return errorHandler.addCompilerError(ctx->getStart(), "Template has no value type");
+
+        const TypeSum * sumTy = dynamic_cast<const TypeSum *>(templateTy->getValueType().value());
+        if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Template Type Value expected to be sum, but got: " + templateTy->getValueType().value()->toString(toStringMode));
+
         if(!stmgr->getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of enum definition!");
 
         Scope * origScope = stmgr->getCurrentScope().value(); 
         stmgr->enterScope(sym->getInnerScope());
         TDefineEnumNode * enumNode = new TDefineEnumNode(
             sym, 
-            dynamic_cast<const TypeSum *>(templateTy->getValueType().value()), // FIXME: could cause segfault via nullptr
+            sumTy,
             ctx->getStart());
 
         TDefineTemplateNode * templateNode = new TDefineTemplateNode(
@@ -2324,9 +2322,12 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return templateNode; 
     }
 
+    const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym->getType());
+    if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected sum type but got: " + sym->getType()->toString(toStringMode));
+
     TDefineEnumNode * enumNode = new TDefineEnumNode(
         sym, 
-        dynamic_cast<const TypeSum *>(sym->getType()), // FIXME: could cause segfault via nullptr
+        sumTy,
         ctx->getStart());
 
     return enumNode; 
@@ -2346,9 +2347,16 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
     {
+
+        if(!templateTy->getValueType()) return errorHandler.addCompilerError(ctx->getStart(), "Template type does not have a value type"); 
+
+        const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(templateTy->getValueType().value());
+        if(!structTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected template to be applied to a struct type but got: " + templateTy->getValueType().value()->toString(toStringMode));
+
+
         TDefineStructNode * structNode = new TDefineStructNode(
             sym, 
-            dynamic_cast<const TypeStruct *>(templateTy->getValueType().value()), // FIXME: could technically cause segfault via nullptr
+            structTy,
             ctx->getStart());
 
         TDefineTemplateNode * templateNode = new TDefineTemplateNode(
@@ -2361,9 +2369,12 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return templateNode; 
     }
 
+    const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym->getType());
+    if(!structTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected Struct but got: " + sym->getType()->toString(toStringMode));
+
     TDefineStructNode * structNode = new TDefineStructNode(
         sym, 
-        dynamic_cast<const TypeStruct *>(sym->getType()), // FIXME: could technically cause segfault via nullptr
+        structTy,
         ctx->getStart());
 
     return structNode; 
@@ -2462,54 +2473,52 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
         // Or, to allow an inline function to return something, and have that apply 
         // within the bounds of the outside fn
 
+
+        auto defSym = dynamic_cast<const DefinitionSymbol *>(sym);
+        if(!defSym) 
+            return errorHandler.addError(
+                pCtx->getStart(),
+                sym->toString() + " is not a definition."); // TODO: better error! Can only use this on definitions. For instance variables, try . 
+        
+        
         const Type * symType = sym->getType(); 
-
-        if(const DefinitionSymbol * defSym = dynamic_cast<const DefinitionSymbol *>(sym))
+        auto nt = dynamic_cast<const NameableType *>(symType);
+        if(!nt) 
+            return errorHandler.addError(
+                pCtx->getStart(),
+                sym->toString() + " expected a named type."); // TODO: better error! 
+        
+        if(pCtx->genericSpecifier())
         {
-            if(const NameableType * nt = dynamic_cast<const NameableType *>(symType))
+            if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(symType))
             {
-                if(pCtx->genericSpecifier())
+                std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
+
+                if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
                 {
-                    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(symType))
-                    {
-                        std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
-
-                        if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
-                        {
-                            return (*e)->addErrorAt(ctx->getStart());
-                        }
-
-                        std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
-
-
-
-                        std::optional<const NameableType *> appliedOpt = templateTy->canApplyTemplate(innerTys); 
-                        if(!appliedOpt)
-                            return errorHandler.addError(pCtx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-                        symType = appliedOpt.value(); 
-                        pathVar = appliedOpt.value(); 
-                    }
-                    else 
-                    {
-                        return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + symType->toString(toStringMode));
-                    }
+                    return (*e)->addErrorAt(ctx->getStart());
                 }
-                else
-                {
-                    pathVar = nt; 
-                }
-                lookupScope = defSym->getInnerScope(); 
+
+                std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
+
+
+
+                std::optional<const NameableType *> appliedOpt = templateTy->canApplyTemplate(innerTys); 
+                if(!appliedOpt)
+                    return errorHandler.addError(pCtx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
+                symType = appliedOpt.value(); 
+                pathVar = appliedOpt.value(); 
             }
-            else
+            else 
             {
-                return errorHandler.addError(pCtx->getStart(), sym->toString() + " expected a named type."); // TODO: better error!
+                return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + symType->toString(toStringMode));
             }
         }
-        else 
+        else
         {
-            return errorHandler.addError(pCtx->getStart(), sym->toString() + " is not a definition."); // TODO: better error! Can only use this on definitions. For instance variables, try . 
+            pathVar = nt; 
         }
-
+        lookupScope = defSym->getInnerScope(); 
     }
 
     return pathVar;

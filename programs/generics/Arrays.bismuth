@@ -8,9 +8,9 @@ extern func printf(str s, ...) : Unit;
 #     }
 # }
 
-define func fill<T>(T[] array, T value, int num)
+define func fill<T>(T[] array, T value, u32 num)
 {
-    for(int i := 0; i < num; i := i + 1)
+    for(u32 i := 0; i < num; i := i + 1)
     {
         array[i] := value; 
     }
@@ -21,7 +21,7 @@ define func fill<T>(T[] array, T value, int num)
 
 # bsl::arrays::forEach
 define func forEach<T>(T[] array, (T) -> Unit fn) {
-    for(int i := 0; i < array.length; i := i + 1)
+    for(u32 i := 0; i < array.length; i := i + 1)
     {
         # fn(array[i]);
         match array[i]
@@ -34,19 +34,19 @@ define func forEach<T>(T[] array, (T) -> Unit fn) {
 
 
 # bsl::arrays::map
-define func map<I, O>(I[] array, ((I) -> O + (I, int) -> O) mapper) : O[]
+define func map<I, O>(I[] array, ((I) -> O + (I, u32) -> O) mapper) : O[]
 {
     O[] output; 
     match mapper 
         |   I -> O m1 => {
-                for(int i := 0; i < array.length; i := i + 1) {
+                for(u32 i := 0; i < array.length; i := i + 1) {
                     match array[i]
                         |  Unit u => {} # Unreachable
                         |  I ele => output[i] := m1(ele);
                 }
             }
-        |   I, int -> O m2 => {
-                for(int i := 0; i < array.length; i := i + 1) {
+        |   I, u32 -> O m2 => {
+                for(u32 i := 0; i < array.length; i := i + 1) {
                     match array[i]
                         | Unit u => {} # Unreachable
                         | I ele => output[i] := m2(ele, i); 
@@ -56,32 +56,32 @@ define func map<I, O>(I[] array, ((I) -> O + (I, int) -> O) mapper) : O[]
 }
 
 define program :: c : Channel<-int> {
-    int[] a;
+    u32[] a;
     boolean[] b; 
 
 
-    # fill<int> fillInts; 
+    # fill<u32> fillInts; 
     fill<boolean> fillBools; 
 
-    fill<int> d := fill<int>; 
+    fill<u32> d := fill<u32>; 
 
     # FIXME: This test is kinda wrong. It doesn't do what you think it does due to stack...
-    fill<int>(a, 2, 5); 
+    fill<u32>(a, 2, 5); 
     printf("Size: %u\n", a.length);
 
 
-    forEach<int>(a, (int i) : Unit {
+    forEach<u32>(a, (u32 i) : Unit {
         printf("%u, ", i);
         return;
     });
     printf("\n");
 
 
-    int[] a2 := map<int, int>(a, (int ele, int idx) : int{
+    u32[] a2 := map<u32, u32>(a, (u32 ele, u32 idx) : u32{
         return idx; 
     });
 
-    forEach<int>(a2, (int i) : Unit {
+    forEach<u32>(a2, (u32 i) : Unit {
         printf("%u, ", i);
         return;
     });
@@ -96,12 +96,12 @@ define program :: c : Channel<-int> {
 # define func map2<T1, T2>(T1[] a, T2[] b) : (Unit + )
 
 /*
-define func generatorFill<K>(T[] array, (T + Unit -> T) generator, int num)
+define func generatorFill<K>(T[] array, (T + Unit -> T) generator, u32 num)
 {
     match generator 
         |   T val => fill(array, val, num);
         |   Unit -> T gen => {
-                for(int i := 0; i < num; i := i + 1)
+                for(u32 i := 0; i < num; i := i + 1)
                 {
                     array[i] := gen(); 
                 }

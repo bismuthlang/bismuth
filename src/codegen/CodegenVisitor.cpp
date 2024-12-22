@@ -1526,6 +1526,11 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode & n)
             addresses.push_back(Int32One);
             ty = Types::DYN_U32; 
         }
+        else if (type_cast<TypeDynArray>(ty) &&  i + 1 == n.accesses.size() && n.accesses.at(n.accesses.size() - 1).first == "capacity")
+        {
+            addresses.push_back(ConstantInt::get(Int32Ty, 2, true));
+            ty = Types::DYN_U32; 
+        }
         else
         {
             errorHandler.addError(n.getStart(), "Could not perform field access. Got type: " + ty->toString(getToStringMode()));

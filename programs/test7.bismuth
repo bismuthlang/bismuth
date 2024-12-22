@@ -2,7 +2,7 @@ extern func printf(...) : int;
 
 # int a := 10; 
 
-define func accessor (str[4] array, int idx) : str {
+define func accessor (str[4] array, u32 idx) : str {
     match array[idx]
         |   Unit u => return "Bounds Error";
         |   str s => return s;
