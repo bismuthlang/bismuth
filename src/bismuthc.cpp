@@ -106,11 +106,16 @@ int main(int argc, const char *argv[])
 =========================================================================
 Bismuth Process Calculus Compiler - Created by Alex Friedman (https://ahfriedman.com)
 Website: https://bismuth-lang.org
-Version: Pre-Alpha 1.3.4 @ )"""" << GIT_COMMIT_HASH
+Version: Pre-Alpha 1.3.5 @ )"""" << GIT_COMMIT_HASH
                                     << R""""(
 
 ChangeLog
 =========
+1.3.5 - 2024-12-22: 
+Bugs
+  - Corrects array accesses to use unsigned numbers instead of signed
+  - Addresses several small bugs with inferring integer types & improves handling of generics
+
 1.3.4 - 2024-05-03: 
 Features
   - Added ability to use labels for describing internal and external choice alternatives
