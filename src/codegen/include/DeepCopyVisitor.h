@@ -144,7 +144,7 @@ private:
 
         if (const TypeBox *boxType = dynamic_cast<const TypeBox *>(type))
         {
-            Value * loaded_i8p_v = builder->CreateBitCast(builder->CreateLoad(llvmType, v), i8p);
+            Value * loaded_i8p_v = builder->CreateLoad(llvmType, v); //builder->CreateBitCast(builder->CreateLoad(llvmType, v), i8p);
             const Type *innerType = boxType->getInnerType();
 
             Value *hasValPtr = builder->CreateCall(
@@ -170,7 +170,7 @@ private:
              * Then block
              */
             builder->SetInsertPoint(thenBlk);
-            Value *casted = builder->CreateBitCast(hasValPtr, type->getLLVMType(module));
+            Value *casted = hasValPtr;//builder->CreateBitCast(hasValPtr, type->getLLVMType(module));
 
             builder->CreateBr(restBlk);
 
@@ -192,8 +192,8 @@ private:
                 return std::nullopt;
             // Value *cloned = clonedOpt.value();
             Value *alloc = runGCMalloc(builder, getSizeForType(type->getLLVMType(module)));
-            Value *casted2 = builder->CreateBitCast(alloc, type->getLLVMType(module));
-            builder->CreateStore(clonedOpt.value(), casted2);
+            // Value *casted2 = builder->CreateBitCast(alloc, type->getLLVMType(module));
+            builder->CreateStore(clonedOpt.value(), alloc);
             builder->CreateCall(
                 get_address_map_put(),
                 {builder->CreateLoad(i8p, m),
@@ -210,7 +210,7 @@ private:
 
             llvm::PHINode *phi = builder->CreatePHI(type->getLLVMType(module), 2, "phi");
             phi->addIncoming(casted, thenBlk);
-            phi->addIncoming(casted2, elseBlk);
+            phi->addIncoming(alloc, elseBlk);
             v = phi;
         }
         else if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(type))
@@ -264,7 +264,7 @@ private:
                 switchInst->addCase(getU32(index), matchBlk);
                 origParent->insert(origParent->end(), matchBlk);
 
-                Value *corrected = builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
+                Value *corrected = memLoc; //builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
                 Value *loaded = builder->CreateLoad(caseNode->getLLVMType(module), corrected);
 
                 optional<Value *> valOpt = deepCopyHelper(builder, caseNode, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);

@@ -24,31 +24,31 @@ include(platform_settings)      # Platform specific variables
 
 add_subdirectory(src bin)
 
-set (CMAKE_INSTALL_PREFIX ${PROJECT_SOURCE_DIR})
 install(
   TARGETS 
     bismuthc
-  DESTINATION install
+  DESTINATION bin
 )
 install(
   TARGETS 
     bismuth_runtime_archive
-  DESTINATION install/build/bin/runtime
+  DESTINATION bin/build/bin/runtime
 )
 install(
   FILES
     ./bdwgc/libgc.a
     ./bdwgc/libgccpp.a
-    DESTINATION install
+    DESTINATION bin
 )
 install(
   DIRECTORY
     bsl
-    DESTINATION install
+    DESTINATION bin
     FILES_MATCHING PATTERN "*.bismuth"
 )
 
 # include(Install)
+
 
 ### Testing with CTEST
 enable_testing()

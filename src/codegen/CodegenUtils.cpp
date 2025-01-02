@@ -14,7 +14,6 @@ void CodegenModule::InitDynArray(const TypeDynArray * ty, llvm::AllocaInst * all
 
     // Allocate the vector 
     {
-        std::cout << "U17" << std::endl;
         llvm::Type * storeType =  ty->getValueType()->getLLVMType(module);
         builder->CreateStore(
             TypedGCHeapAlloc(
@@ -84,7 +83,6 @@ void CodegenModule::ReallocateDynArray(const TypeDynArray * ty, llvm::Value * al
     builder->SetInsertPoint(thenBlk);
 
     Value * vecPtr = builder->CreateGEP(alloc_type, alloc, {Int32Zero, Int32Zero});
-    std::cout << "U83" << std::endl;
     Value * loadedArray = builder->CreateLoad(InnerArrayType, vecPtr);
     // Value * indexPtr = builder->CreateGEP(nullptr, loadedArray, indexValue);
 
@@ -99,7 +97,6 @@ void CodegenModule::ReallocateDynArray(const TypeDynArray * ty, llvm::Value * al
     //         )
     //     }
     // );
-std::cout << "U98" << std::endl;
     // Value * newData = builder->CreateBitCast(newData_i8ptr, loadedArray->getType());
     Value * newData = TypedGCHeapAlloc(
         builder->CreateNSWMul(
@@ -139,7 +136,7 @@ std::cout << "U98" << std::endl;
         builder->SetInsertPoint(loopBlk);
 
         Value * loopValueLoaded = builder->CreateLoad(Int32Ty, loopValuePtr); 
-        std::cout << "U136" << std::endl;
+
         builder->CreateStore(
             builder->CreateLoad(
                 ArrayElementType,

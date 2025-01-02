@@ -12,7 +12,6 @@ std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthPars
     // Enter initial scope
     for (auto e : ctx->defs)
     {
-        std::cout << "S14" << std::endl;
         // Wastes a bit of memory in allocating type even for duplicates
         std::optional<std::pair<std::string, const Type *>> opt = defineTypeCase<std::optional<std::pair<std::string, const Type *>>>(
             e, 

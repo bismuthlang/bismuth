@@ -1,13 +1,11 @@
 
 #include <catch2/catch_test_macros.hpp>
 #include "Compile.h"
-#include <filesystem>
 // TODO: Note: this doesn't compile all bsl functions due to them being templated. 
 // Ensure we have coverage on the standard library!
 
 TEST_CASE("BSL - Compile 1", "[cli]")
 {
-  std::cout << std::filesystem::current_path() << std::endl;
     auto getVI = [](std::string path, std::vector<std::string> steps){
         return new VirtualInput(
             new antlr4::ANTLRInputStream(*(new std::fstream(path))),
@@ -304,11 +302,11 @@ entry:
   %ans = alloca %"int[]", align 8
   %list = alloca %"bsl::lib::Lists::LinkedList<int>", align 8
   store %"bsl::lib::Lists::LinkedList<int>" %0, ptr %list, align 4
-  %3 = getelementptr %"int[]", ptr %ans, i32 0, i32 0
-  %4 = sext i32 2 to i64
-  %5 = mul nsw i64 %4, 4
-  %6 = call ptr @GC_malloc(i64 %5)
-  store ptr %6, ptr %3, align 8
+  %3 = sext i32 2 to i64
+  %4 = mul nsw i64 %3, 4
+  %5 = call ptr @GC_malloc(i64 %4)
+  %6 = getelementptr %"int[]", ptr %ans, i32 0, i32 0
+  store ptr %5, ptr %6, align 8
   %7 = getelementptr %"int[]", ptr %ans, i32 0, i32 1
   store i32 1, ptr %7, align 4
   %8 = getelementptr %"int[]", ptr %ans, i32 0, i32 2
@@ -358,10 +356,10 @@ then6:                                            ; preds = %then5
 
 loop7:                                            ; preds = %loop7, %then6
   %28 = load i32, ptr %2, align 4
-  %29 = getelementptr ptr, ptr %25, i32 %28
-  %30 = getelementptr i32, ptr %22, i32 %28
-  %31 = load i32, ptr %30, align 4
-  store i32 %31, ptr %29, align 4
+  %29 = getelementptr i32, ptr %22, i32 %28
+  %30 = load i32, ptr %29, align 4
+  %31 = getelementptr ptr, ptr %25, i32 %28
+  store i32 %30, ptr %31, align 4
   %32 = add nsw i32 %28, 1
   store i32 %32, ptr %2, align 4
   %33 = load i32, ptr %2, align 4
@@ -1041,11 +1039,11 @@ entry:
   %ans = alloca %"int[]", align 8
   %list = alloca %"bsl::lib::Lists::LinkedList<int>", align 8
   store %"bsl::lib::Lists::LinkedList<int>" %0, ptr %list, align 4
-  %3 = getelementptr %"int[]", ptr %ans, i32 0, i32 0
-  %4 = sext i32 2 to i64
-  %5 = mul nsw i64 %4, 4
-  %6 = call ptr @GC_malloc(i64 %5)
-  store ptr %6, ptr %3, align 8
+  %3 = sext i32 2 to i64
+  %4 = mul nsw i64 %3, 4
+  %5 = call ptr @GC_malloc(i64 %4)
+  %6 = getelementptr %"int[]", ptr %ans, i32 0, i32 0
+  store ptr %5, ptr %6, align 8
   %7 = getelementptr %"int[]", ptr %ans, i32 0, i32 1
   store i32 1, ptr %7, align 4
   %8 = getelementptr %"int[]", ptr %ans, i32 0, i32 2
@@ -1093,10 +1091,10 @@ then5:                                            ; preds = %then4
 
 loop6:                                            ; preds = %loop6, %then5
   %28 = load i32, ptr %2, align 4
-  %29 = getelementptr ptr, ptr %25, i32 %28
-  %30 = getelementptr i32, ptr %22, i32 %28
-  %31 = load i32, ptr %30, align 4
-  store i32 %31, ptr %29, align 4
+  %29 = getelementptr i32, ptr %22, i32 %28
+  %30 = load i32, ptr %29, align 4
+  %31 = getelementptr ptr, ptr %25, i32 %28
+  store i32 %30, ptr %31, align 4
   %32 = add nsw i32 %28, 1
   store i32 %32, ptr %2, align 4
   %33 = load i32, ptr %2, align 4

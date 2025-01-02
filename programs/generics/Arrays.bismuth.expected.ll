@@ -23,20 +23,20 @@ entry:
   %a = alloca %"u32[]", align 8
   %c = alloca ptr, align 8
   store ptr %0, ptr %c, align 8
-  %2 = getelementptr %"u32[]", ptr %a, i32 0, i32 0
-  %3 = sext i32 2 to i64
-  %4 = mul nsw i64 %3, 4
-  %5 = call ptr @GC_malloc(i64 %4)
-  store ptr %5, ptr %2, align 8
+  %2 = sext i32 2 to i64
+  %3 = mul nsw i64 %2, 4
+  %4 = call ptr @GC_malloc(i64 %3)
+  %5 = getelementptr %"u32[]", ptr %a, i32 0, i32 0
+  store ptr %4, ptr %5, align 8
   %6 = getelementptr %"u32[]", ptr %a, i32 0, i32 1
   store i32 1, ptr %6, align 4
   %7 = getelementptr %"u32[]", ptr %a, i32 0, i32 2
   store i32 2, ptr %7, align 4
-  %8 = getelementptr %"boolean[]", ptr %b, i32 0, i32 0
-  %9 = sext i32 2 to i64
-  %10 = mul nsw i64 %9, 1
-  %11 = call ptr @GC_malloc(i64 %10)
-  store ptr %11, ptr %8, align 8
+  %8 = sext i32 2 to i64
+  %9 = mul nsw i64 %8, 1
+  %10 = call ptr @GC_malloc(i64 %9)
+  %11 = getelementptr %"boolean[]", ptr %b, i32 0, i32 0
+  store ptr %10, ptr %11, align 8
   %12 = getelementptr %"boolean[]", ptr %b, i32 0, i32 1
   store i32 1, ptr %12, align 4
   %13 = getelementptr %"boolean[]", ptr %b, i32 0, i32 2
@@ -119,10 +119,10 @@ then5:                                            ; preds = %then4
 
 loop6:                                            ; preds = %loop6, %then5
   %22 = load i32, ptr %3, align 4
-  %23 = getelementptr ptr, ptr %19, i32 %22
-  %24 = getelementptr i1, ptr %16, i32 %22
-  %25 = load i1, ptr %24, align 1
-  store i1 %25, ptr %23, align 1
+  %23 = getelementptr i1, ptr %16, i32 %22
+  %24 = load i1, ptr %23, align 1
+  %25 = getelementptr ptr, ptr %19, i32 %22
+  store i1 %24, ptr %25, align 1
   %26 = add nsw i32 %22, 1
   store i32 %26, ptr %3, align 4
   %27 = load i32, ptr %3, align 4
@@ -212,10 +212,10 @@ then5:                                            ; preds = %then4
 
 loop6:                                            ; preds = %loop6, %then5
   %22 = load i32, ptr %3, align 4
-  %23 = getelementptr ptr, ptr %19, i32 %22
-  %24 = getelementptr i32, ptr %16, i32 %22
-  %25 = load i32, ptr %24, align 4
-  store i32 %25, ptr %23, align 4
+  %23 = getelementptr i32, ptr %16, i32 %22
+  %24 = load i32, ptr %23, align 4
+  %25 = getelementptr ptr, ptr %19, i32 %22
+  store i32 %24, ptr %25, align 4
   %26 = add nsw i32 %22, 1
   store i32 %26, ptr %3, align 4
   %27 = load i32, ptr %3, align 4
@@ -367,11 +367,11 @@ entry:
   %array = alloca %"u32[]", align 8
   store %"u32[]" %0, ptr %array, align 8
   store %"(u32 -> u32 + u32, u32 -> u32)" %1, ptr %mapper, align 4
-  %11 = getelementptr %"u32[]", ptr %output, i32 0, i32 0
-  %12 = sext i32 2 to i64
-  %13 = mul nsw i64 %12, 4
-  %14 = call ptr @GC_malloc(i64 %13)
-  store ptr %14, ptr %11, align 8
+  %11 = sext i32 2 to i64
+  %12 = mul nsw i64 %11, 4
+  %13 = call ptr @GC_malloc(i64 %12)
+  %14 = getelementptr %"u32[]", ptr %output, i32 0, i32 0
+  store ptr %13, ptr %14, align 8
   %15 = getelementptr %"u32[]", ptr %output, i32 0, i32 1
   store i32 1, ptr %15, align 4
   %16 = getelementptr %"u32[]", ptr %output, i32 0, i32 2
@@ -479,10 +479,10 @@ then7:                                            ; preds = %then6
 
 loop8:                                            ; preds = %loop8, %then7
   %61 = load i32, ptr %6, align 4
-  %62 = getelementptr ptr, ptr %58, i32 %61
-  %63 = getelementptr i32, ptr %55, i32 %61
-  %64 = load i32, ptr %63, align 4
-  store i32 %64, ptr %62, align 4
+  %62 = getelementptr i32, ptr %55, i32 %61
+  %63 = load i32, ptr %62, align 4
+  %64 = getelementptr ptr, ptr %58, i32 %61
+  store i32 %63, ptr %64, align 4
   %65 = add nsw i32 %61, 1
   store i32 %65, ptr %6, align 4
   %66 = load i32, ptr %6, align 4
@@ -620,10 +620,10 @@ then30:                                           ; preds = %then29
 
 loop31:                                           ; preds = %loop31, %then30
   %120 = load i32, ptr %2, align 4
-  %121 = getelementptr ptr, ptr %117, i32 %120
-  %122 = getelementptr i32, ptr %114, i32 %120
-  %123 = load i32, ptr %122, align 4
-  store i32 %123, ptr %121, align 4
+  %121 = getelementptr i32, ptr %114, i32 %120
+  %122 = load i32, ptr %121, align 4
+  %123 = getelementptr ptr, ptr %117, i32 %120
+  store i32 %122, ptr %123, align 4
   %124 = add nsw i32 %120, 1
   store i32 %124, ptr %2, align 4
   %125 = load i32, ptr %2, align 4

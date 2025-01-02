@@ -22,7 +22,7 @@ docker pull ahfriedman/cs544-cs4533-docker
 
 
 ```sh
-docker run -it -v <location of repository>:/home/shared ahfriedman/cs544-cs4533-docker
+source ./docker.sh
 ```
 
 Once you have run the docker image with the shared folder, you should be prompted with a terminal. The terminal will start in the working directory of /home/. The project files (the shared folder) is located at /home/shared. 
@@ -32,32 +32,8 @@ The first time you open the project in the docker image, you'll want to do is co
 ```sh
 cd /home
 cp libantlr4-runtime.a shared/antlr/lib/
-cd shared
 ```
-
-## Step 3. Build the code
-
-Once in the `/home/shared` directory (assuming that it is also the top-level directory of your project), running `./makeBuild.sh` will build the codebase. In very rare circumstances (ie, a change to the docker image's libraries) you may have to delete previously built files (`rm -rf ./build`) prior to running `./makeBuild.sh`
-
-## Step 3. Running tests
-
-From the `/home/shared` directory, running `./runTests.sh` will run all the test cases. 
-
-## Step 4. Running a specific file 
-
-From `/home/shared`, running `./tester.sh <.bismuth file without extension>` will compile the program and run it (if compiling was successful). 
-
-For example, to run `./programs/example.bismuth`, one could run the command `./tester.sh ./programs/example` .
-
-## Step 5. Generating code coverage
-*Note: This process may take a while to run*
-
-From the `/home/shared` directory, running `./coverage.sh` will: 
-1. Delete the `./cov` folder
-2. Build the code into the `./cov` folder
-3. Run all tests *(Note: all tests must pass for coverage to generate!)*
-4. Output html files displaying code coverage to `./cov/coverage` *(Note: you may have to run `sudo chown -R $USER ./cov` from a terminal on your host to be able to view the files in a browser)*
-
+You can then `cd /home/shared` and proceed with the rest of the development steps in the README file. **NOTE: You will have to cd into the `/home/shared` folder each time you start the image. 
 
 
 # Common Issues

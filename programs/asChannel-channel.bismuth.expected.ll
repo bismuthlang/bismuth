@@ -21,9 +21,9 @@ entry:
   br label %loop-cond
 
 loop-cond:                                        ; preds = %loop, %entry
-  %2 = load i32, ptr %len, align 4
-  %3 = load i32, ptr %idx, align 4
-  %4 = icmp slt i32 %3, %2
+  %2 = load i32, ptr %idx, align 4
+  %3 = load i32, ptr %len, align 4
+  %4 = icmp slt i32 %2, %3
   br i1 %4, label %loop, label %rest
 
 loop:                                             ; preds = %loop-cond

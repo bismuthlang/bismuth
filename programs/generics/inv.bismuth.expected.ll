@@ -43,11 +43,11 @@ entry:
   %sum = alloca %"(boolean + int)", align 8
   %t = alloca i32, align 4
   store i32 %0, ptr %t, align 4
-  %1 = getelementptr %"int[]", ptr %abc, i32 0, i32 0
-  %2 = sext i32 2 to i64
-  %3 = mul nsw i64 %2, 4
-  %4 = call ptr @GC_malloc(i64 %3)
-  store ptr %4, ptr %1, align 8
+  %1 = sext i32 2 to i64
+  %2 = mul nsw i64 %1, 4
+  %3 = call ptr @GC_malloc(i64 %2)
+  %4 = getelementptr %"int[]", ptr %abc, i32 0, i32 0
+  store ptr %3, ptr %4, align 8
   %5 = getelementptr %"int[]", ptr %abc, i32 0, i32 1
   store i32 1, ptr %5, align 4
   %6 = getelementptr %"int[]", ptr %abc, i32 0, i32 2
@@ -114,11 +114,11 @@ entry:
   %sum = alloca %"(boolean + )", align 8
   %t = alloca i1, align 1
   store i1 %0, ptr %t, align 1
-  %1 = getelementptr %"boolean[]", ptr %abc, i32 0, i32 0
-  %2 = sext i32 2 to i64
-  %3 = mul nsw i64 %2, 1
-  %4 = call ptr @GC_malloc(i64 %3)
-  store ptr %4, ptr %1, align 8
+  %1 = sext i32 2 to i64
+  %2 = mul nsw i64 %1, 1
+  %3 = call ptr @GC_malloc(i64 %2)
+  %4 = getelementptr %"boolean[]", ptr %abc, i32 0, i32 0
+  store ptr %3, ptr %4, align 8
   %5 = getelementptr %"boolean[]", ptr %abc, i32 0, i32 1
   store i32 1, ptr %5, align 4
   %6 = getelementptr %"boolean[]", ptr %abc, i32 0, i32 2
@@ -183,11 +183,11 @@ entry:
   %sum = alloca %"(boolean + str)", align 8
   %t = alloca ptr, align 8
   store ptr %0, ptr %t, align 8
-  %1 = getelementptr %"str[]", ptr %abc, i32 0, i32 0
-  %2 = sext i32 2 to i64
-  %3 = mul nsw i64 %2, 8
-  %4 = call ptr @GC_malloc(i64 %3)
-  store ptr %4, ptr %1, align 8
+  %1 = sext i32 2 to i64
+  %2 = mul nsw i64 %1, 8
+  %3 = call ptr @GC_malloc(i64 %2)
+  %4 = getelementptr %"str[]", ptr %abc, i32 0, i32 0
+  store ptr %3, ptr %4, align 8
   %5 = getelementptr %"str[]", ptr %abc, i32 0, i32 1
   store i32 1, ptr %5, align 4
   %6 = getelementptr %"str[]", ptr %abc, i32 0, i32 2

@@ -1,5 +1,6 @@
 # Test CMakeLists.txt file
 #
+include(CPM)
 include(Testing)
 include(ANTLR)
 include(Symbol)

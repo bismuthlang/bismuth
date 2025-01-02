@@ -10,7 +10,6 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode & n)
      *
      ***********************************/
 
-std::cout << "13" << std::endl;
     /***********************************
      *
      *
@@ -20,7 +19,6 @@ std::cout << "13" << std::endl;
      ***********************************/
     for (auto e : n.defs)
     {
-        std::cout << "23 " << std::endl;
         if (TProgramDefNode * octx = dynamic_cast<TProgramDefNode *>(e))
         {
             const TypeProgram *type = octx->getType();
@@ -502,18 +500,13 @@ std::optional<Value *> CodegenVisitor::visit(TProgramCancelNode & n)
 {
     Symbol *sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
-std::cout << "504" << std::endl;
     if (!optVal)
     {
         errorHandler.addError(n.getStart(), "Could not find value for channel in cancel: " + getCodegenID(n.sym));
         return std::nullopt;
     }
-std::cout << "510" << std::endl;
     Value *chanVal = optVal.value();
-std::cout << "512" << std::endl;
     builder->CreateCall(getCancelChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal), getU32(n.closeNumber)});
-    std::cout << "514" << std::endl;
-    module->dump();
     return std::nullopt;
 }
 
@@ -805,7 +798,6 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
             {Int32Zero, Int32Zero}
         );
 
-        std::cout << "791" << std::endl;
         writeTo = builder->CreateLoad(
             ArrayElementType,
             vecPtr
@@ -855,7 +847,6 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
         }
     }
 
-std::cout << "837" << std::endl;
     Value *loaded = builder->CreateLoad(ans->getAllocatedType(), ans);
     return loaded;
 }
@@ -923,7 +914,6 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
             {Int32Zero, indexValue}
         );
 
-        // module->dump();
         return ans; 
     }
 
@@ -966,7 +956,6 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
         {Int32Zero, indexValue}
     );
     // const llvm::GEPOperator * GEP = dyn_cast<llvm::GEPOperator>(valuePtr);
-    // std::cout << "937" << std::endl;
     Value *value = builder->CreateLoad(n.getLValueType()->getLLVMType(module), valuePtr);
     auto ptr = correctSumAssignment(n.getRValueType(), n.getLValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
@@ -987,14 +976,6 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
      */
     parentFn->insert(parentFn->end(), restBlk);
     builder->SetInsertPoint(restBlk);
-
-    // std::string type_str;
-    // llvm::raw_string_ostream rso(type_str);
-    // ptr->getType()->print(rso);
-    // unitPtr->getType()->print(rso);
-    // std::cout << rso.str() << std::endl;
-
-    module->dump();
 
     PHINode *phi = builder->CreatePHI(n.getType()->getLLVMType(module), 2, "arrayAccess");
     phi->addIncoming(ptr, gtzBlk);
@@ -1027,11 +1008,10 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
 
 
 
-    std::cout << "990" << std::endl;
     auto * llvm_dyn_array_type = n.expr->getType()->getLLVMType(module);
     Value *lengthPtr = builder->CreateGEP(llvm_dyn_array_type, structPtr, {Int32Zero, Int32One});
     Value *length = builder->CreateLoad(Int32Ty, lengthPtr); 
-module->dump();
+
 
     auto * ArrayElementType = n.getStoredType()->getLLVMType(module);
     auto * InnerArrayType = ArrayElementType->getPointerTo();
@@ -1052,7 +1032,6 @@ module->dump();
             // True block 
             new TBlockNode({
                 new CompCodeWrapper([this, llvm_dyn_array_type, array_type, lengthPtr, length, structPtr, indexValue](){
-std::cout << "1024" << std::endl;
                     Value *capPtr = builder->CreateGEP(llvm_dyn_array_type, structPtr, {Int32Zero, Int32One});
                     Value *cap =    builder->CreateLoad(Int32Ty, capPtr);
 
@@ -1069,7 +1048,6 @@ std::cout << "1024" << std::endl;
                         // True Block 
                         new TBlockNode({
                             new CompCodeWrapper([this, array_type, structPtr, indexValue](){
-                                std::cout << "1041" << std::endl;
                                 
                                 ReallocateDynArray(
                                     array_type,
@@ -1112,8 +1090,6 @@ std::cout << "1024" << std::endl;
             structPtr,
             {Int32Zero, Int32Zero}
         );
-
-        std::cout << "1059" << std::endl;
 
         Value * loadedArray = builder->CreateLoad(
             InnerArrayType,
@@ -1170,7 +1146,6 @@ std::cout << "1024" << std::endl;
         {Int32Zero, Int32Zero}
     );
 
-    std::cout << "1102" << std::endl;
     Value *vec = builder->CreateLoad(
         InnerArrayType,
         vecPtr
@@ -1182,7 +1157,6 @@ std::cout << "1024" << std::endl;
         indexValue
     );
 
-    std::cout << "1106" << std::endl;
     Value * value = builder->CreateLoad(
         ArrayElementType,
         valuePtr
@@ -1676,7 +1650,7 @@ std::optional<Value *> CodegenVisitor::visit(TIdentifier & n)
                 errorHandler.addError(n.getStart(),"Unable to find global variable: " + getCodegenID(sym) + " " + sym->toString());
                 return std::nullopt;
             }
-std::cout << "1678" << std::endl;
+
             // Create and return a load for the global var
             Value *val = builder->CreateLoad(nullptr, glob);
             return val;
@@ -1754,7 +1728,6 @@ std::optional<Value *> CodegenVisitor::visit(TDerefBoxNode & n)
     }
 
     Value *ptrVal = baseOpt.value();
-    std::cout << "1679" << std::endl;
     return n.is_rvalue ? builder->CreateLoad(n.boxType->getInnerType()->getLLVMType(module), ptrVal) : ptrVal;
 }
 
@@ -2432,7 +2405,6 @@ std::optional<Value *> CodegenVisitor::visit(TProgramDefNode & n)
     }
 
     builder->SetInsertPoint(ins);
-    module->dump();
     return std::nullopt;
 }
 
@@ -2579,7 +2551,6 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
             {Int32Zero, builder->CreateLoad(Int32Ty, loop_index)}
         );
 
-std::cout << "2478" << std::endl;
         Value *read = builder->CreateLoad(Int32Ty, readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
 
         Value *v = builder->CreateCall(getMalloc(), {getU32(getSizeForValue(read))});
@@ -2615,7 +2586,6 @@ std::cout << "2478" << std::endl;
 
 std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata meta, Value *original)
 {
-    std::cout << "2617" << std::endl;
     if(!meta.actingType)
     {
          errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but we aren't a null optional");
@@ -2641,7 +2611,6 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     llvm::Type * valueType = meta.protocolType->getLLVMType(module);
     uint32_t valueIndex = sum->getIndex(meta.protocolType);
-std::cout << "2643" << std::endl;
     if (valueIndex == 0)
     {
         errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but the sum doesn't allow for a value case");
@@ -2666,7 +2635,6 @@ std::cout << "2643" << std::endl;
     Value *cond = builder->CreateZExtOrTrunc(rawEquality, Int1Ty);
 
     // AcceptType(*this, n.cond);
-std::cout << "2668" << std::endl;
     /*
      * Generate the basic blocks for then, else, and the remaining code.
      * (NOTE: We set rest to be else if there is no else branch).
@@ -2698,7 +2666,6 @@ std::cout << "2668" << std::endl;
     builder->CreateBr(restBlk);
 
     thenBlk = builder->GetInsertBlock();
-std::cout << "2700" << std::endl;
     /*
      * Insert the else block (same as rest if no else branch)
      */

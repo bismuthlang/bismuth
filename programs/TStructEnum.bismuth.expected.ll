@@ -310,10 +310,10 @@ then:                                             ; preds = %entry
   br label %if-cont
 
 else:                                             ; preds = %entry
-  %6 = load ptr, ptr %m, align 8
-  %7 = load ptr, ptr %v, align 8
-  %8 = load ptr, ptr %7, align 8
-  %9 = call ptr @"_clone_Box<int>"(ptr %8, ptr %6)
+  %6 = load ptr, ptr %v, align 8
+  %7 = load ptr, ptr %6, align 8
+  %8 = load ptr, ptr %m, align 8
+  %9 = call ptr @"_clone_Box<int>"(ptr %7, ptr %8)
   %10 = call ptr @GC_malloc(i64 8)
   store ptr %9, ptr %10, align 8
   %11 = load ptr, ptr %m, align 8
@@ -343,11 +343,11 @@ then:                                             ; preds = %entry
   br label %if-cont
 
 else:                                             ; preds = %entry
-  %6 = load ptr, ptr %m, align 8
-  %7 = load ptr, ptr %v, align 8
-  %8 = load i32, ptr %7, align 4
+  %6 = load ptr, ptr %v, align 8
+  %7 = load i32, ptr %6, align 4
+  %8 = load ptr, ptr %m, align 8
   %9 = call ptr @GC_malloc(i64 8)
-  store i32 %8, ptr %9, align 4
+  store i32 %7, ptr %9, align 4
   %10 = load ptr, ptr %m, align 8
   %11 = call %Unit @_address_map_put(ptr %10, ptr %2, ptr %9)
   br label %if-cont
