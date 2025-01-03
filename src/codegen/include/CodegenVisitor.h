@@ -149,20 +149,20 @@ public:
     template <class... Ts>
     overloaded(Ts...) -> overloaded<Ts...>;
 
-    Value * correctSumAssignment(const TypeSum *sum, Value *original)
+    Value * correctSumAssignment(const TypeSum *sum, const Type * orig_type, Value *original)
     {
-        unsigned int index = sum->getIndex(module, original->getType());
+        unsigned int index = sum->getIndex(orig_type);
 
         if (index != 0)
         {
             llvm::Type *sumTy = sum->getLLVMType(module);
             llvm::AllocaInst * alloc = CreateEntryBlockAlloc(sumTy, "");
 
-            Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+            Value *tagPtr = builder->CreateGEP(sumTy, alloc, {Int32Zero, Int32Zero});
 
             builder->CreateStore(getU32(index), tagPtr);
 
-            Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+            Value *valuePtr = builder->CreateGEP(sum->getLLVMType(module), alloc, {Int32Zero, Int32One});
 
             Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
             builder->CreateStore(original, corrected);

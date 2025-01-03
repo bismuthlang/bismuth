@@ -946,7 +946,7 @@ public:
 
     std::set<const Type *, TypeCompare> getCases() const;
 
-    unsigned int getIndex(llvm::Module *M, llvm::Type *toFind) const;
+    unsigned int getIndex(const Type* ty) const;
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
 

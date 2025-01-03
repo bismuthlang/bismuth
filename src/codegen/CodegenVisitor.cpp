@@ -10,7 +10,6 @@ std::optional<Value *> CodegenVisitor::visit(TCompilationUnitNode & n)
      *
      ***********************************/
 
-
     /***********************************
      *
      *
@@ -97,13 +96,19 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
     }
 
     Value *sumVal = optVal.value();
+    auto * sum_type =  sumVal->getType();
 
-    llvm::AllocaInst *SumPtr = CreateEntryBlockAlloc(sumVal->getType(), "");
+    llvm::AllocaInst *SumPtr = CreateEntryBlockAlloc(sum_type, "");
     builder->CreateStore(sumVal, SumPtr);
 
-    Value *tagPtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32Zero});
+    Value *tagPtr = builder->CreateGEP(
+        sum_type,
+        SumPtr,
+        {Int32Zero, Int32Zero}
+    );
 
-    Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
+    // const llvm::GEPOperator * GEP = dyn_cast<llvm::GEPOperator>(tagPtr);
+    Value *tag = builder->CreateLoad(Int32Ty, tagPtr);
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n.cases.size()); // sumType->getCases().size());
 
@@ -113,7 +118,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
 
         llvm::Type *toFind = getLLVMType(localSym);
 
-        unsigned int index = sumType->getIndex(module, toFind);
+        unsigned int index = sumType->getIndex(localSym->getType());
 
         if (index == 0)
         {
@@ -126,7 +131,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
         builder->SetInsertPoint(matchBlk);
 
         switchInst->addCase(getU32(index), matchBlk);
-        origParent->getBasicBlockList().push_back(matchBlk);
+        origParent->insert(origParent->end(), matchBlk);
 
         //  Get the type of the symbol // FIXME: WHY IS THIS SAME AS TOFIND?
         llvm::Type *ty = getLLVMType(localSym);
@@ -135,7 +140,12 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
         llvm::AllocaInst *v = CreateAndLinkEntryBlockAlloc(ty, localSym);
 
         // Now to store the var
-        Value *valuePtr = builder->CreateGEP(SumPtr, {Int32Zero, Int32One});
+        Value *valuePtr = builder->CreateGEP(
+            sum_type,
+            SumPtr,
+            {Int32Zero, Int32One}
+        );
+
         Value *corrected = builder->CreateBitCast(valuePtr, ty->getPointerTo());
 
         Value *val = builder->CreateLoad(ty, corrected);
@@ -163,7 +173,7 @@ std::optional<Value *> CodegenVisitor::visit(TMatchStatementNode & n)
         }
     }
 
-    origParent->getBasicBlockList().push_back(mergeBlk);
+    origParent->insert(origParent->end(), mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
     for (TypedNode *s : n.post)
@@ -213,7 +223,7 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode & n)
                     i + 1
                 ), 
             matchBlk);
-        origParent->getBasicBlockList().push_back(matchBlk);
+        origParent->insert(origParent->end(), matchBlk);
 
         // altCtx->eval->accept(this);
         TypedNode *caseNode = n.cases.at(i);
@@ -238,7 +248,7 @@ std::optional<Value *> CodegenVisitor::visit(TChannelCaseStatementNode & n)
         }
     }
 
-    origParent->getBasicBlockList().push_back(mergeBlk);
+    origParent->insert(origParent->end(), mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
     for (TypedNode *s : n.post)
@@ -290,7 +300,7 @@ std::optional<Value *> CodegenVisitor::visit(TInvocationNode & n)
         {
             if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(n.paramType.at(args.size()))) // argNodes.at(args.size())->getType()))
             {
-                val = correctSumAssignment(sumOpt.value(), val);
+                val = correctSumAssignment(sumOpt.value(), e->getType(), val);
             }
         }
 
@@ -318,9 +328,11 @@ std::optional<Value *> CodegenVisitor::visit(TInvocationNode & n)
         return val;
     }
 
-    llvm::FunctionType *fnType = static_cast<llvm::FunctionType *>(ty->getPointerElementType());
-
-    Value *val = builder->CreateCall(fnType, fnVal, ref);
+    Value *val = builder->CreateCall(
+        n.getFuncType()->getLLVMFunctionType(module),
+        fnVal, 
+        ref
+    );
     return val;
 }
 
@@ -427,7 +439,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramSendNode & n)
     // Same as return node's
     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(n.lType))
     {
-        stoVal = correctSumAssignment(sumOpt.value(), stoVal);
+        stoVal = correctSumAssignment(sumOpt.value(), copyNode.getType(), stoVal);
     }
 
     Value *v = builder->CreateCall(getMalloc(), {getU32(getSizeForValue(stoVal))});
@@ -488,15 +500,12 @@ std::optional<Value *> CodegenVisitor::visit(TProgramCancelNode & n)
 {
     Symbol *sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
-
     if (!optVal)
     {
         errorHandler.addError(n.getStart(), "Could not find value for channel in cancel: " + getCodegenID(n.sym));
         return std::nullopt;
     }
-
     Value *chanVal = optVal.value();
-
     builder->CreateCall(getCancelChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal), getU32(n.closeNumber)});
     return std::nullopt;
 }
@@ -545,7 +554,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptNode & n)
     /*
      * Out of loop
      */
-    parent->getBasicBlockList().push_back(restBlk);
+    parent->insert(parent->end(), restBlk);
     builder->SetInsertPoint(restBlk);
 
     return std::nullopt;
@@ -585,7 +594,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode & n)
     builder->CreateCondBr(condOpt.value(), thenBlk, restBlk);
     condBlk = builder->GetInsertBlock();
 
-    parent->getBasicBlockList().push_back(thenBlk);
+    parent->insert(parent->end(), thenBlk);
     builder->SetInsertPoint(thenBlk);
     Value *check = builder->CreateCall(
         n.isInCloseable() ? 
@@ -600,7 +609,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode & n)
     /*
      * In the loop block
      */
-    parent->getBasicBlockList().push_back(loopBlk);
+    parent->insert(parent->end(), loopBlk);
     builder->SetInsertPoint(loopBlk);
     for (auto e : n.blk->exprs)
     {
@@ -614,7 +623,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptWhileNode & n)
     /*
      * Out of loop
      */
-    parent->getBasicBlockList().push_back(restBlk);
+    parent->insert(parent->end(), restBlk);
     builder->SetInsertPoint(restBlk);
 
     return std::nullopt;
@@ -662,7 +671,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode & n)
         elseBlk);
     condBlk = builder->GetInsertBlock();
 
-    parent->getBasicBlockList().push_back(thenBlk);
+    parent->insert(parent->end(), thenBlk);
     builder->SetInsertPoint(thenBlk);
     
     for (auto e : n.trueBlk->exprs)
@@ -677,7 +686,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode & n)
 
     if (n.falseOpt)
     {
-        parent->getBasicBlockList().push_back(elseBlk);
+        parent->insert(parent->end(), elseBlk);
         builder->SetInsertPoint(elseBlk);
         for (auto e : n.falseOpt.value()->exprs)
         {
@@ -689,7 +698,7 @@ std::optional<Value *> CodegenVisitor::visit(TProgramAcceptIfNode & n)
         }
     }
 
-    parent->getBasicBlockList().push_back(restBlk);
+    parent->insert(parent->end(), restBlk);
     builder->SetInsertPoint(restBlk);
     for (auto e : n.post)
     {
@@ -714,7 +723,7 @@ std::optional<Value *> CodegenVisitor::visit(TDefineStructNode & n)
 
 std::optional<Value *> CodegenVisitor::visit(TInitProductNode & n)
 {
-    std::vector<Value *> args;
+    std::vector<std::pair<const Type *, Value *>> args;
 
     for (TypedNode *e : n.exprs)
     {
@@ -727,7 +736,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode & n)
 
         Value *stoVal = valOpt.value();
 
-        args.push_back(stoVal);
+        args.push_back({e->getType(), stoVal});
     }
 
     const TypeStruct *product = n.product;
@@ -738,23 +747,22 @@ std::optional<Value *> CodegenVisitor::visit(TInitProductNode & n)
         unsigned i = 0;
         std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
 
-        for (Value *a : args)
+        for (auto [ ty_a, a ] : args)
         {
             if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(elements.at(i).second))
             {
-                a = correctSumAssignment(sumOpt.value(), a);
+                a = correctSumAssignment(sumOpt.value(), ty_a, a);
             }
 
-            Value *ptr = builder->CreateGEP(v, {Int32Zero, getU32(i)});
+            Value *ptr = builder->CreateGEP(ty, v, {Int32Zero, getU32(i)});
 
             builder->CreateStore(a, ptr);
 
             i++;
         }
-    }
+    };
 
-    Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
-    return loaded;
+    return builder->CreateLoad(v->getAllocatedType(), v);
 }
 
 std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
@@ -778,18 +786,28 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
     {
         // TODO: use pattern matching instead of get to ensure we visit all possible opts
         const TypeDynArray * ty = std::get<const TypeDynArray *>(typeVariant); 
+        auto * ArrayElementType = ty->getLLVMType(module);
 
         ans = CreateEntryBlockAlloc(ty->getLLVMType(module), ""); // TODO: this isn't always needed
 
-        InitDynArray(ans, (n.exprs.size()));
+        InitDynArray(ty, ans, (n.exprs.size()));
 
-        Value * vecPtr = builder->CreateGEP(ans, {Int32Zero, Int32Zero});
-        writeTo = builder->CreateLoad(vecPtr, vecPtr->getType()->getPointerElementType());
+        Value * vecPtr = builder->CreateGEP(
+            ArrayElementType, 
+            ans, 
+            {Int32Zero, Int32Zero}
+        );
+
+        writeTo = builder->CreateLoad(
+            ArrayElementType,
+            vecPtr
+        //    vecPtr->getType()->getArrayElementType()
+        );
 
         stoType = const_cast<Type *>(ty->getValueType()); 
     }
     
-    std::vector<Value *> args;
+    std::vector<std::pair<const Type *, Value *>> args;
 
     for (TypedNode *e : n.exprs)
     {
@@ -802,7 +820,7 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
 
         Value *stoVal = valOpt.value();
 
-        args.push_back(stoVal);
+        args.push_back({e->getType(), stoVal});
     }
 
     unsigned int i = 0; 
@@ -810,27 +828,26 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
     if(std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(stoType)) // FIXME: WONT WORK FOR [[(A + B)]]
     {
         const TypeSum * sumTy = sumOpt.value();
-        for(Value * a : args)
+        for(auto [ty, a] : args)
         {
-            a = correctSumAssignment(sumTy, a);
+            a = correctSumAssignment(sumTy, ty, a);
 
-            Value *ptr = builder->CreateGEP(writeTo, {Int32Zero, getU32(i)});
+            Value *ptr = builder->CreateGEP(ans->getAllocatedType(), writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
             i++;
         }
     }
     else 
     {
-        for(Value * a : args)
+        for(auto [ ty, a ] : args)
         {
-            Value *ptr = builder->CreateGEP(writeTo, {Int32Zero, getU32(i)});
+            Value *ptr = builder->CreateGEP(ans->getAllocatedType(), writeTo, {Int32Zero, getU32(i)});
             builder->CreateStore(a, ptr);
             i++;   
         }
     }
 
-
-    Value *loaded = builder->CreateLoad(ans->getType()->getPointerElementType(), ans);
+    Value *loaded = builder->CreateLoad(ans->getAllocatedType(), ans);
     return loaded;
 }
 
@@ -849,7 +866,7 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode & n)
 
     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(box->getInnerType()))
     {
-        stoVal = correctSumAssignment(sumOpt.value(), stoVal);
+        stoVal = correctSumAssignment(sumOpt.value(), n.expr->getType(), stoVal);
     }
 
     // Value *v = builder->CreateCall(getG_CMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
@@ -865,7 +882,6 @@ std::optional<Value *> CodegenVisitor::visit(TInitBoxNode & n)
         casted
     );
 
-    // Value *loaded = builder->CreateLoad(v->getType()->getPointerElementType(), v);
     return casted;
 }
 
@@ -892,7 +908,13 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
     if (!n.is_rvalue)
     {
         // If its an lvalue,need the pointer!
-        return builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
+        auto * ans =  builder->CreateGEP(
+            n.getArrayType()->getLLVMType(module),
+            arrayPtr,
+            {Int32Zero, indexValue}
+        );
+
+        return ans; 
     }
 
     // TODO: SIGNED VS UNSIGNED? AND LENGTH! NUM ELEMENTS IS 64!!
@@ -926,28 +948,33 @@ std::optional<Value *> CodegenVisitor::visit(TArrayAccessNode & n) // TODO: COns
     /*
      * Passed Bounds Check Blk
      */
-    parentFn->getBasicBlockList().push_back(gtzBlk);
+    parentFn->insert(parentFn->end(), gtzBlk);
     builder->SetInsertPoint(gtzBlk);
-    Value *valuePtr = builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
-    Value *value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
-    auto ptr = correctSumAssignment(n.getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
+    auto *valuePtr = builder->CreateGEP(
+        n.getArrayType()->getLLVMType(module),
+        arrayPtr, 
+        {Int32Zero, indexValue}
+    );
+    // const llvm::GEPOperator * GEP = dyn_cast<llvm::GEPOperator>(valuePtr);
+    Value *value = builder->CreateLoad(n.getLValueType()->getLLVMType(module), valuePtr);
+    auto ptr = correctSumAssignment(n.getRValueType(), n.getLValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();
 
     /*
      * Out of bounds, so set unit
      */
-    parentFn->getBasicBlockList().push_back(elseBlk);
+    parentFn->insert(parentFn->end(), elseBlk);
     builder->SetInsertPoint(elseBlk);
 
-    auto unitPtr = correctSumAssignment(n.getRValueType(), getUnitValue());
+    auto unitPtr = correctSumAssignment(n.getRValueType(), Types::UNIT, getUnitValue());
     builder->CreateBr(restBlk);
     elseBlk = builder->GetInsertBlock();
 
     /*
      * Return to computation
      */
-    parentFn->getBasicBlockList().push_back(restBlk);
+    parentFn->insert(parentFn->end(), restBlk);
     builder->SetInsertPoint(restBlk);
 
     PHINode *phi = builder->CreatePHI(n.getType()->getLLVMType(module), 2, "arrayAccess");
@@ -977,14 +1004,22 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
 
     Value *indexValue = indexOpt.value();
     Value *structPtr = structOpt.value();
+    // llvm::Type * structType = n.expr->getType()->getLLVMType(module); 
 
 
 
-    Value *lengthPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32One});
-    Value *length = builder->CreateLoad(lengthPtr->getType()->getPointerElementType(), lengthPtr); 
+    auto * llvm_dyn_array_type = n.expr->getType()->getLLVMType(module);
+    Value *lengthPtr = builder->CreateGEP(llvm_dyn_array_type, structPtr, {Int32Zero, Int32One});
+    Value *length = builder->CreateLoad(Int32Ty, lengthPtr); 
+
+
+    auto * ArrayElementType = n.getStoredType()->getLLVMType(module);
+    auto * InnerArrayType = ArrayElementType->getPointerTo();
 
     if (!n.is_rvalue)
     {
+        const auto * array_type = n.getArrayType();
+
         (TConditionalStatementNode(
             nullptr, 
             // Condition
@@ -996,9 +1031,8 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
             ), 
             // True block 
             new TBlockNode({
-                new CompCodeWrapper([this, lengthPtr, length, structPtr, indexValue](){
-
-                    Value *capPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32One});
+                new CompCodeWrapper([this, llvm_dyn_array_type, array_type, lengthPtr, length, structPtr, indexValue](){
+                    Value *capPtr = builder->CreateGEP(llvm_dyn_array_type, structPtr, {Int32Zero, Int32One});
                     Value *cap =    builder->CreateLoad(Int32Ty, capPtr);
 
                     // TODO: does this memory leak?
@@ -1013,8 +1047,11 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
                         ), 
                         // True Block 
                         new TBlockNode({
-                            new CompCodeWrapper([this, structPtr, indexValue](){
-                                ReallocateDynArray(structPtr, 
+                            new CompCodeWrapper([this, array_type, structPtr, indexValue](){
+                                
+                                ReallocateDynArray(
+                                    array_type,
+                                    structPtr, 
                                     builder->CreateNSWMul(indexValue, // TODO: Should really be the max of capacity or len!
                                     getU32(DYN_ARRAY_GROW_FACTOR))
                                 );
@@ -1048,11 +1085,23 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
 
 
         // If its an lvalue,need the pointer!
-        Value * arrayPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32Zero});
-        Value * loadedArray = builder->CreateLoad(arrayPtr, arrayPtr->getType()->getPointerElementType());
-        Value * indexPtr = builder->CreateGEP(loadedArray, indexValue);
+        Value * arrayPtr = builder->CreateGEP(
+            llvm_dyn_array_type,
+            structPtr,
+            {Int32Zero, Int32Zero}
+        );
 
-        return indexPtr; //builder->CreateGEP(arrayPtr, {Int32Zero, indexValue});
+        Value * loadedArray = builder->CreateLoad(
+            InnerArrayType,
+            arrayPtr
+        );
+        Value * indexPtr = builder->CreateGEP(
+            ArrayElementType, 
+            loadedArray,
+            indexValue
+        );
+
+        return indexPtr;
     }
 
     
@@ -1088,13 +1137,30 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
     /*
      * Passed Bounds Check Blk
      */
-    parentFn->getBasicBlockList().push_back(gtzBlk);
+    parentFn->insert(parentFn->end(), gtzBlk);
     builder->SetInsertPoint(gtzBlk);
-    Value *vecPtr = builder->CreateGEP(structPtr, {Int32Zero, Int32Zero});
-    Value *vec = builder->CreateLoad(vecPtr->getType()->getPointerElementType(), vecPtr);
+
+    Value *vecPtr = builder->CreateGEP(
+        llvm_dyn_array_type,
+        structPtr,
+        {Int32Zero, Int32Zero}
+    );
+
+    Value *vec = builder->CreateLoad(
+        InnerArrayType,
+        vecPtr
+    );
     
-    Value * valuePtr = builder->CreateGEP(vec, indexValue);
-    Value * value = builder->CreateLoad(valuePtr->getType()->getPointerElementType(), valuePtr);
+    Value * valuePtr = builder->CreateGEP(
+        ArrayElementType,
+        vec,
+        indexValue
+    );
+
+    Value * value = builder->CreateLoad(
+        ArrayElementType,
+        valuePtr
+    );
 
     // FIXME: NULLABILITY CHECKS + FIX BUG WHERE DYN ARRAY CAN BE USED W/ LINEAR RESOURCES 
     // FIXME: ALLOW STREAMING OF DYN ARRAYS!
@@ -1102,24 +1168,24 @@ std::optional<Value *> CodegenVisitor::visit(TDynArrayAccessNode & n) // TODO: C
 
 
 
-    auto ptr = correctSumAssignment(n.getRValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
+    auto ptr = correctSumAssignment(n.getRValueType(), n.getStoredType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();
 
     /*
      * Out of bounds, so set unit
      */
-    parentFn->getBasicBlockList().push_back(elseBlk);
+    parentFn->insert(parentFn->end(), elseBlk);
     builder->SetInsertPoint(elseBlk);
 
-    auto unitPtr = correctSumAssignment(n.getRValueType(), getUnitValue());
+    auto unitPtr = correctSumAssignment(n.getRValueType(), Types::UNIT, getUnitValue());
     builder->CreateBr(restBlk);
     elseBlk = builder->GetInsertBlock();
 
     /*
      * Return to computation
      */
-    parentFn->getBasicBlockList().push_back(restBlk);
+    parentFn->insert(parentFn->end(), restBlk);
     builder->SetInsertPoint(restBlk);
 
 
@@ -1385,7 +1451,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogAndExprNode & n)
     /*
      * LHS True - Can skip checking RHS and return true
      */
-    parent->getBasicBlockList().push_back(mergeBlk);
+    parent->insert(parent->end(), mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
     return phi;
@@ -1458,7 +1524,7 @@ std::optional<Value *> CodegenVisitor::visit(TLogOrExprNode & n)
     /*
      * LHS True - Can skip checking RHS and return true
      */
-    parent->getBasicBlockList().push_back(mergeBlk);
+    parent->insert(parent->end(), mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
     return phi;
@@ -1480,10 +1546,6 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode & n)
             // If it is, correctly, an array type, then we can get the array's length (this is the only operation currently, so we can just do thus)
             return getU32(arOpt.value()->getLength());
         }
-        // else if(std::optional<const TypeDynArray *> dynArOpt = type_cast<TypeDynArray>(modOpt))
-        // {
-            // Value *lenPtr = builder->CreateGEP(dynArOpt.value(), {Int32Zero, Int32One});
-        // }
 
         // Can't throw error b/c length could be field of struct
     }
@@ -1498,6 +1560,7 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode & n)
 
     Value *baseValue = baseOpt.value();
     const Type *ty = n.getExprType();
+    auto * base_llvm_type = ty->getLLVMType(module);
 
     std::vector<Value *> addresses = {Int32Zero};
 
@@ -1522,7 +1585,6 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode & n)
         }
         else if (type_cast<TypeDynArray>(ty) &&  i + 1 == n.accesses.size() && n.accesses.at(n.accesses.size() - 1).first == "length")
         {
-            // Value *lenPtr = builder->CreateGEP(dynArOpt.value(), {Int32Zero, Int32One});
             addresses.push_back(Int32One);
             ty = Types::DYN_U32; 
         }
@@ -1538,13 +1600,13 @@ std::optional<Value *> CodegenVisitor::visit(TFieldAccessNode & n)
         }
     }
 
-    Value *valPtr = builder->CreateGEP(baseValue, addresses);
+    const Type *fieldType = n.accesses.at(n.accesses.size() - 1).second;
+    llvm::Type *ansType = fieldType->getLLVMType(module);
+
+    Value *valPtr = builder->CreateGEP(base_llvm_type, baseValue, addresses);
 
     if (n.is_rvalue)
     {
-        const Type *fieldType = n.accesses.at(n.accesses.size() - 1).second;
-
-        llvm::Type *ansType = fieldType->getLLVMType(module);
         baseOpt = builder->CreateLoad(ansType, valPtr);
         return baseOpt;
     }
@@ -1590,7 +1652,7 @@ std::optional<Value *> CodegenVisitor::visit(TIdentifier & n)
             }
 
             // Create and return a load for the global var
-            Value *val = builder->CreateLoad(glob);
+            Value *val = builder->CreateLoad(nullptr, glob);
             return val;
         }
 
@@ -1666,10 +1728,7 @@ std::optional<Value *> CodegenVisitor::visit(TDerefBoxNode & n)
     }
 
     Value *ptrVal = baseOpt.value();
-    return n.is_rvalue ? builder->CreateLoad(ptrVal->getType()->getPointerElementType(), ptrVal) : ptrVal;
-
-    // return loaded;
-    // return n.is_rvalue ? builder->CreateLoad(loaded->getType()->getPointerElementType(), loaded) : loaded;
+    return n.is_rvalue ? builder->CreateLoad(n.boxType->getInnerType()->getLLVMType(module), ptrVal) : ptrVal;
 }
 
 std::optional<Value *> CodegenVisitor::visit(TBinaryRelNode & n)
@@ -1803,7 +1862,7 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode & n)
         }
 
         // Create a GEP to the index based on our previously calculated value and index
-        Value *built = builder->CreateGEP(val.value(), {Int32Zero, index.value()});
+        Value *built = builder->CreateGEP(fixme, val.value(), {Int32Zero, index.value()});
         val = built;
     }
     */
@@ -1815,7 +1874,8 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode & n)
     const Type *varSymType = n.var->getType();
     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymType))
     {
-        uint32_t index = sumOpt.value()->getIndex(module, stoVal->getType());
+        uint32_t index = sumOpt.value()->getIndex(n.val->getType());
+        auto * sum_type = sumOpt.value()->getLLVMType(module);
 
         if (index == 0)
         {
@@ -1823,10 +1883,15 @@ std::optional<Value *> CodegenVisitor::visit(TAssignNode & n)
             builder->CreateStore(stoVal, corrected);
             return std::nullopt;
         }
-        Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
+
+        Value *tagPtr = builder->CreateGEP(
+            sum_type, 
+            v, 
+            {Int32Zero, Int32Zero}
+        );
 
         builder->CreateStore(getU32(index), tagPtr);
-        Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
+        Value *valuePtr = builder->CreateGEP(sum_type, v, {Int32Zero, Int32One});
 
         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
         builder->CreateStore(stoVal, corrected);
@@ -1906,7 +1971,8 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode & n)
                     Value *stoVal = exVal.value();
                     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol->getType()))
                     {
-                        uint32_t index = sumOpt.value()->getIndex(module, stoVal->getType());
+                        uint32_t index = sumOpt.value()->getIndex(e->val.value()->getType());
+                        auto * sum_type = sumOpt.value()->getLLVMType(module);
 
                         if (index == 0)
                         {
@@ -1915,10 +1981,18 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode & n)
                             return std::nullopt;
                         }
 
-                        Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
+                        Value *tagPtr = builder->CreateGEP(
+                            sum_type,
+                            v,
+                            {Int32Zero, Int32Zero}
+                        );
 
                         builder->CreateStore(getU32(index), tagPtr);
-                        Value *valuePtr = builder->CreateGEP(v, {Int32Zero, Int32One});
+                        Value *valuePtr = builder->CreateGEP(
+                            sum_type, 
+                            v,
+                            {Int32Zero, Int32One}
+                        );
 
                         Value *corrected = builder->CreateBitCast(valuePtr, stoVal->getType()->getPointerTo());
                         builder->CreateStore(stoVal, corrected);
@@ -1930,7 +2004,7 @@ std::optional<Value *> CodegenVisitor::visit(TVarDeclNode & n)
                 }
                 else if(const TypeDynArray * dynArray = dynamic_cast<const TypeDynArray*>(varSymbol->getType()))
                 {
-                    InitDynArray(v, 1); // FIXME: change to 0 and add push_back
+                    InitDynArray(dynArray, v, 1); // FIXME: change to 0 and add push_back
                 }
             }
         }
@@ -1981,7 +2055,7 @@ std::optional<Value *> CodegenVisitor::visit(TWhileLoopNode & n)
     /*
      * Out of loop
      */
-    parent->getBasicBlockList().push_back(restBlk);
+    parent->insert(parent->end(), restBlk);
     builder->SetInsertPoint(restBlk);
     return std::nullopt;
 }
@@ -2031,7 +2105,7 @@ std::optional<Value *> CodegenVisitor::visit(TConditionalStatementNode & n)
     /*
      * Insert the else block (same as rest if no else branch)
      */
-    parentFn->getBasicBlockList().push_back(elseBlk);
+    parentFn->insert(parentFn->end(), elseBlk);
     builder->SetInsertPoint(elseBlk);
 
     if (n.falseOpt) // If we have an else branch
@@ -2051,7 +2125,7 @@ std::optional<Value *> CodegenVisitor::visit(TConditionalStatementNode & n)
         elseBlk = builder->GetInsertBlock();
 
         // As we have an else block, rest and else are different, so we have to merge back in.
-        parentFn->getBasicBlockList().push_back(restBlk);
+        parentFn->insert(parentFn->end(), restBlk);
         builder->SetInsertPoint(restBlk);
     }
 
@@ -2144,13 +2218,13 @@ std::optional<Value *> CodegenVisitor::visit(TSelectStatementNode & n)
          */
         if (!isLast)
         {
-            parent->getBasicBlockList().push_back(elseBlk);
+            parent->insert(parent->end(), elseBlk);
             builder->SetInsertPoint(elseBlk);
         }
     }
 
     // We could probably do this as an else on the is !isLast check, but this works
-    origParent->getBasicBlockList().push_back(mergeBlk);
+    origParent->insert(origParent->end(), mergeBlk);
     builder->SetInsertPoint(mergeBlk);
 
     for (TypedNode *s : n.post)
@@ -2180,7 +2254,7 @@ std::optional<Value *> CodegenVisitor::visit(TReturnNode & n)
 
         if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(expr.first))
         {
-            inner = correctSumAssignment(sumOpt.value(), inner);
+            inner = correctSumAssignment(sumOpt.value(), expr.second->getType(), inner);
         }
 
         // As the code was generated correctly, build the return statement; we ensure no following code due to how block visitors work in semantic analysis.
@@ -2407,7 +2481,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
         if (const TypeArray *arrayType = dynamic_cast<const TypeArray *>(ty))
         {
             // FIXME: ONLY NEEDED BC CANT SPECIFY THAT THIS IS AN LVALUE!!!
-            AllocaInst *stoVal = CreateEntryBlockAlloc(loadedVal->getType(), "cast_arr");
+            AllocaInst *stoVal = CreateEntryBlockAlloc(arrayType->getLLVMType(module), "cast_arr");
             builder->CreateStore(loadedVal, stoVal);
             loadedVal = stoVal;
             return *arrayType;
@@ -2419,7 +2493,11 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
         // TODO: Remove Array and make things use pointers?
         AllocaInst *saveBlock = CreateEntryBlockAlloc(arrTy.getLLVMType(module), "createdArray");
 
-        Value *stoLoc = builder->CreateGEP(saveBlock, {Int32Zero, Int32Zero});
+        Value *stoLoc = builder->CreateGEP(
+            arrTy.getLLVMType(module),
+            saveBlock,
+            {Int32Zero, Int32Zero}
+        );
         builder->CreateStore(loadedVal, stoLoc);
 
         loadedVal = saveBlock; // builder->CreateLoad(saveBlock->getType(), saveBlock);
@@ -2452,7 +2530,7 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
     builder->CreateCondBr(builder->CreateICmpSLT(builder->CreateLoad(Int32Ty, loop_index), builder->CreateLoad(Int32Ty, loop_len)), loopBlk, restBlk);
     condBlk = builder->GetInsertBlock();
 
-    parent->getBasicBlockList().push_back(loopBlk);
+    parent->insert(parent->end(), loopBlk);
     builder->SetInsertPoint(loopBlk);
 
     /******************Loop Body********************/
@@ -2461,13 +2539,19 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
     /**/
     /**/
     {
-        Value *stoLoc = builder->CreateGEP(saveBlock, {Int32Zero,
-                                                       builder->CreateLoad(Int32Ty, loop_index)});
+        Value *stoLoc = builder->CreateGEP(
+            arrayPtrTy,
+            saveBlock,
+            {Int32Zero, builder->CreateLoad(Int32Ty, loop_index)}
+        );
 
-        Value *readLoc = builder->CreateGEP(loadedVal, {Int32Zero,
-                                                        builder->CreateLoad(Int32Ty, loop_index)});
+        Value *readLoc = builder->CreateGEP(
+            arrayType.getLLVMType(module), // FIXME: getArrayElementType this might just be i8p?
+            loadedVal,
+            {Int32Zero, builder->CreateLoad(Int32Ty, loop_index)}
+        );
 
-        Value *read = builder->CreateLoad(readLoc->getType()->getPointerElementType(), readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
+        Value *read = builder->CreateLoad(Int32Ty, readLoc); // FIXME: MALLOCS SEEM EXCESSIVE, SEE ABOUT DOING BETTER!!
 
         Value *v = builder->CreateCall(getMalloc(), {getU32(getSizeForValue(read))});
         Value *casted = builder->CreateBitCast(v, read->getType()->getPointerTo());
@@ -2488,12 +2572,12 @@ std::optional<Value *> CodegenVisitor::visit(TAsChannelNode & n) // TODO: POSSIB
     builder->CreateBr(condBlk);
     loopBlk = builder->GetInsertBlock();
 
-    parent->getBasicBlockList().push_back(restBlk);
+    parent->insert(parent->end(), restBlk);
     builder->SetInsertPoint(restBlk);
 
     // Convert [n x i8*] to i8**
     Value *arrayStart = builder->CreateBitCast(
-        builder->CreateGEP(saveBlock, {Int32Zero, Int32Zero}),
+        builder->CreateGEP(arrayPtrTy, saveBlock, {Int32Zero, Int32Zero}),
         Int8PtrPtrTy);
 
     // return saveBlock;
@@ -2510,7 +2594,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 
     const TypeSum * sum = meta.actingType.value(); 
 
-    uint32_t unitIndex = sum->getIndex(module, Types::UNIT->getLLVMType(module));
+    uint32_t unitIndex = sum->getIndex(Types::UNIT);
     
     if (unitIndex == 0) // Shouldn't be a problem...
     {
@@ -2526,8 +2610,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     }
 
     llvm::Type * valueType = meta.protocolType->getLLVMType(module);
-    uint32_t valueIndex = sum->getIndex(module, valueType);
-
+    uint32_t valueIndex = sum->getIndex(meta.protocolType);
     if (valueIndex == 0)
     {
         errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but the sum doesn't allow for a value case");
@@ -2538,7 +2621,11 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     llvm::Type *sumTy = sum->getLLVMType(module);
     llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
 
-    Value *tagPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
+    Value *tagPtr = builder->CreateGEP(
+        sumTy,
+        alloc,
+        {Int32Zero, Int32Zero}
+    );
 
     builder->CreateStore(getU32(unitIndex), tagPtr); // TODO: IS THIS WASTEFUL AS OPPOSED TO BRANCH?
 
@@ -2548,7 +2635,6 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     Value *cond = builder->CreateZExtOrTrunc(rawEquality, Int1Ty);
 
     // AcceptType(*this, n.cond);
-
     /*
      * Generate the basic blocks for then, else, and the remaining code.
      * (NOTE: We set rest to be else if there is no else branch).
@@ -2566,21 +2652,24 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     builder->SetInsertPoint(thenBlk);
     builder->CreateStore(getU32(valueIndex), tagPtr);
 
-    Value *valuePtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+    Value *valuePtr = builder->CreateGEP(
+        sumTy,
+        alloc,
+        {Int32Zero, Int32One}
+    );
 
     Value *corrected = builder->CreateBitCast(valuePtr, valueType->getPointerTo());
     Value *castedValue = builder->CreateBitCast(original, valueType->getPointerTo());
-    Value *loadedValue = builder->CreateLoad(castedValue);
+    Value *loadedValue = builder->CreateLoad(valueType, castedValue);
     builder->CreateStore(loadedValue, corrected);
 
     builder->CreateBr(restBlk);
 
     thenBlk = builder->GetInsertBlock();
-
     /*
      * Insert the else block (same as rest if no else branch)
      */
-    parentFn->getBasicBlockList().push_back(restBlk);
+    parentFn->insert(parentFn->end(), restBlk);
     builder->SetInsertPoint(restBlk);
 
     // return builder->CreateLoad(sumTy, alloc);

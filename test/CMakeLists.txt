@@ -1,5 +1,6 @@
 # Test CMakeLists.txt file
 #
+include(CPM)
 include(Testing)
 include(ANTLR)
 include(Symbol)
@@ -21,6 +22,7 @@ include(cmake/SymbolTests.cmake)
 include(cmake/SemanticTests.cmake)
 include(cmake/CodegenTests.cmake)
 include(cmake/CliTests.cmake)
+
 
 ### Set up all tests to be run
 add_executable(
@@ -70,6 +72,9 @@ target_link_libraries(tests
   Catch2::Catch2WithMain
 )
 
+# https://stackoverflow.com/questions/59690736/how-to-get-a-relative-path-for-cmake-unit-tests
+target_compile_definitions(tests PUBLIC SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../")
+
 # Get the tests registered with CTest
 catch_discover_tests(tests)
 
@@ -77,5 +82,11 @@ catch_discover_tests(tests)
 if(BUILD_COVERAGE)
   setup_target_for_coverage_lcov(NAME coverage 
                               EXECUTABLE tests
-                              EXCLUDE "/home/shared/cov/_deps/*" "/home/shared/antlr/*" "/usr/*" "11/*")
+                              EXCLUDE 
+                                "/home/shared/cov/_deps/*" 
+                                "/home/shared/antlr/*" 
+                                "/usr/*" 
+                                "src/catch2/matchers/internal/*"
+                                "src/catch2/*"
+                                )
 endif(BUILD_COVERAGE)

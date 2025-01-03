@@ -17,6 +17,8 @@
 #include "CodegenVisitor.h"
 #include "ExecUtils.h"
 
+// #include "llvm/TargetParser/Optional.h"
+#include "llvm/Object/ObjectFile.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Support/TargetSelect.h"
 
@@ -153,7 +155,7 @@ llvm::TargetMachine * getTargetMachine()
     auto Features = "";
 
     llvm::TargetOptions opt;
-    auto RM = llvm::Optional<llvm::Reloc::Model>();
+    auto RM = std::optional<llvm::Reloc::Model>();
     auto TheTargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
     return TheTargetMachine; 
 }
@@ -348,6 +350,11 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
     for(auto entry : inputs)
     {
         auto [cu, input] = entry; 
+        if (isVerbose)
+        {
+            // should be output.getInputName()
+            std::cout << "Code generation starting for " << input->getSourceName() << "." << std::endl;
+        }
         /*******************************************************************
          * Code Generation
          * ================================================================
@@ -410,7 +417,7 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
             llvm::raw_pwrite_stream * stream = std::get<llvm::raw_pwrite_stream *>(objOutOpt);
 
             llvm::legacy::PassManager pass;
-            auto FileType = llvm::CGFT_ObjectFile;
+            auto FileType = llvm::CodeGenFileType::ObjectFile;
 
             if (TheTargetMachine->addPassesToEmitFile(pass, *stream, nullptr, FileType))
             {
@@ -420,8 +427,10 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
 
             pass.run(*module);
             stream->flush();
-
-            // std::cout << "Wrote " << input.outputPath << std::endl;
+            if (isVerbose)
+            {
+                std::cout << "Wrote code for " << input->getSourceName() << std::endl;
+            }
         }
         delete cu;
     }

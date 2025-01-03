@@ -106,11 +106,29 @@ int main(int argc, const char *argv[])
 =========================================================================
 Bismuth Process Calculus Compiler - Created by Alex Friedman (https://ahfriedman.com)
 Website: https://bismuth-lang.org
-Version: Pre-Alpha 1.3.5 @ )"""" << GIT_COMMIT_HASH
+Version: Pre-Alpha 1.3.6 @ )"""" << GIT_COMMIT_HASH
                                     << R""""(
 
 ChangeLog
 =========
+1.3.6 - 2025-01-03: 
+BREAKING (Compiler Internals)
+  - Sum types and internal/external choices now have their tag value determined by the `C_STYLE` internal representation of the type instead of the LLVM-IR string representation due to introduction of opaque pointers
+  - Per upgrading LLVM, a new docker image has been introduced. For older builds, be sure to specify the v1.3.5 tag to continue development.
+ 
+Features
+  - Added support for Nix via flakes
+  - Improved documentation for getting started with and using Bismuth codebase
+
+Compiler Internals
+  - Updated from LLVM-12 to LLVM-19
+  - Updated from Clang-14 to Clang-19 (docker) or GCC (Nix)
+  - Test cases now use files instead of hashes to make identifying changes easier
+
+Outstanding Issues
+  - Due to minor differences between Clang and GCC, not all test cases pass on GCC  (see 0789b91)
+  - Coverage is only supported via Docker image and clang; some instabilities with coverage appear to occasionally occur
+
 1.3.5 - 2024-12-22: 
 Bugs
   - Corrects array accesses to use unsigned numbers instead of signed

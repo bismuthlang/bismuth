@@ -1,7 +1,7 @@
 #include "CodegenUtils.h"
 
 
-void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, uint32_t len)// ConstantInt * len32)
+void CodegenModule::InitDynArray(const TypeDynArray * ty, llvm::AllocaInst * alloc, uint32_t len)// ConstantInt * len32)
 {
     // Value * len64 = builder->CreateSExtOrBitCast(len32, Int64Ty);//CreateIntCast(len, Int64Ty);
 
@@ -14,7 +14,7 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, uint32_t len)// Const
 
     // Allocate the vector 
     {
-        llvm::Type * storeType =  alloc->getAllocatedType()->getStructElementType(0)->getPointerElementType();
+        llvm::Type * storeType =  ty->getValueType()->getLLVMType(module);
         builder->CreateStore(
             TypedGCHeapAlloc(
                 builder->CreateNSWMul(
@@ -25,11 +25,11 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, uint32_t len)// Const
                 ),
                 storeType->getPointerTo()
             ),
-            builder->CreateGEP(alloc, {Int32Zero, Int32Zero})
+            builder->CreateGEP(alloc->getAllocatedType(), alloc, {Int32Zero, Int32Zero})
         );
     }
 
-    Value *lenPtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+    Value *lenPtr = builder->CreateGEP(alloc->getAllocatedType(), alloc, {Int32Zero, Int32One});
     {
         builder->CreateStore(
             len32, 
@@ -38,7 +38,7 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, uint32_t len)// Const
 
     }
 
-    Value *capPtr = builder->CreateGEP(alloc, {Int32Zero, getU32(DYN_ARRAY_GROW_FACTOR)});
+    Value *capPtr = builder->CreateGEP(alloc->getAllocatedType(), alloc, {Int32Zero, getU32(DYN_ARRAY_GROW_FACTOR)});
     {
         builder->CreateStore(
             capacity, 
@@ -47,11 +47,15 @@ void CodegenModule::InitDynArray(llvm::AllocaInst * alloc, uint32_t len)// Const
     }
 }
 
-void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCapacity)
+void CodegenModule::ReallocateDynArray(const TypeDynArray * ty, llvm::Value * alloc, llvm::Value * newCapacity)
 {
     // PLAN: use DYN_ARRAY_GROW_FACTOR
 
-    Value *lenPtr = builder->CreateGEP(alloc, {Int32Zero, Int32One});
+    auto * alloc_type = ty->getLLVMType(module); 
+    auto * ArrayElementType = ty->getValueType()->getLLVMType(module);
+    auto * InnerArrayType = ArrayElementType->getPointerTo();
+
+    Value *lenPtr = builder->CreateGEP(alloc_type, alloc, {Int32Zero, Int32One});
     Value * origLen = builder->CreateLoad(Int32Ty, lenPtr); 
 
     // PLAN: REFACTOR W/ CONDITIONAL
@@ -78,9 +82,9 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
      */
     builder->SetInsertPoint(thenBlk);
 
-    Value * vecPtr = builder->CreateGEP(alloc, {Int32Zero, Int32Zero});
-    Value * loadedArray = builder->CreateLoad(vecPtr, vecPtr->getType()->getPointerElementType());
-    // Value * indexPtr = builder->CreateGEP(loadedArray, indexValue);
+    Value * vecPtr = builder->CreateGEP(alloc_type, alloc, {Int32Zero, Int32Zero});
+    Value * loadedArray = builder->CreateLoad(InnerArrayType, vecPtr);
+    // Value * indexPtr = builder->CreateGEP(nullptr, loadedArray, indexValue);
 
     // Value *newData_i8ptr = builder->CreateCall(
     //     getG_CMalloc(), 
@@ -88,18 +92,17 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
     //         builder->CreateNSWMul(
     //             builder->CreateSExtOrBitCast(newCapacity, Int64Ty), 
     //             builder->getInt64(
-    //                 getSizeForType(loadedArray->getType()->getPointerElementType())
+    //                 getSizeForType(ArrayElementType)
     //             )
     //         )
     //     }
     // );
-
     // Value * newData = builder->CreateBitCast(newData_i8ptr, loadedArray->getType());
     Value * newData = TypedGCHeapAlloc(
         builder->CreateNSWMul(
             builder->CreateSExtOrBitCast(newCapacity, Int64Ty), 
             builder->getInt64(
-                getSizeForType(loadedArray->getType()->getPointerElementType())
+                getSizeForType(ArrayElementType)
             )
         ),
         loadedArray->getType()
@@ -122,8 +125,10 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
             builder->CreateICmpSLT(
                 builder->CreateLoad(Int32Ty, loopValuePtr), 
                 origLen
-            )
-            , loopBlk, restBlk);
+            ), 
+            loopBlk,
+            restBlk
+        );
 
         //
         // In the loop block
@@ -131,12 +136,21 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
         builder->SetInsertPoint(loopBlk);
 
         Value * loopValueLoaded = builder->CreateLoad(Int32Ty, loopValuePtr); 
-        
+
         builder->CreateStore(
             builder->CreateLoad(
-                builder->CreateGEP(loadedArray, loopValueLoaded)
+                ArrayElementType,
+                builder->CreateGEP(
+                    ArrayElementType,
+                    loadedArray,
+                    loopValueLoaded
+                )
             ), 
-            builder->CreateGEP(newData, loopValueLoaded)
+            builder->CreateGEP(
+                InnerArrayType,
+                newData,
+                loopValueLoaded
+            )
         );
         
         builder->CreateStore(
@@ -154,14 +168,16 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
             builder->CreateICmpSLT(
                 builder->CreateLoad(Int32Ty, loopValuePtr), 
                 origLen
-            ),
-            loopBlk, restBlk);
+            ), 
+            loopBlk, 
+            restBlk
+        );
         loopBlk = builder->GetInsertBlock();
 
         //
         // Out of loop
         //
-        parent->getBasicBlockList().push_back(restBlk);
+        parent->insert(parent->end(), restBlk);
         builder->SetInsertPoint(restBlk);
         
 
@@ -169,7 +185,7 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
             newData, 
             vecPtr
         ); 
-        Value *capPtr = builder->CreateGEP(alloc, {Int32Zero, getU32(DYN_ARRAY_GROW_FACTOR)});
+        Value *capPtr = builder->CreateGEP(alloc_type, alloc, {Int32Zero, getU32(DYN_ARRAY_GROW_FACTOR)});
 
         builder->CreateStore(newCapacity, capPtr);
 
@@ -186,7 +202,7 @@ void CodegenModule::ReallocateDynArray(llvm::Value * alloc, llvm::Value * newCap
     /*
      * Insert the else block (same as rest if no else branch)
      */
-    parentFn->getBasicBlockList().push_back(elseBlk);
+    parentFn->insert(parentFn->end(), elseBlk);
     builder->SetInsertPoint(elseBlk);
 
 }

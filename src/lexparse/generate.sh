@@ -6,4 +6,5 @@ then
   pwd
   java -jar ../../antlr/antlr4.jar -Dlanguage=Cpp -visitor -listener -o ../generated $1.g4 
   touch parser_sources.h
+  echo ">>> Parser Generation Complete <<<"
 fi

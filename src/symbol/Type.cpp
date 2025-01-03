@@ -116,7 +116,7 @@ llvm::Type *TypeBool::getLLVMType(llvm::Module *M) const
  *
  *********************************************/
 std::string TypeStr::toString(DisplayMode) const { return "str"; }
-llvm::Type *TypeStr::getLLVMType(llvm::Module *M) const { return llvm::Type::getInt8PtrTy(M->getContext()); }
+llvm::Type *TypeStr::getLLVMType(llvm::Module *M) const { return llvm::Type::getInt8Ty(M->getContext())->getPointerTo(); }
 bool TypeStr::isSupertypeFor(const Type *other) const
 {
     return dynamic_cast<const TypeStr *>(other);
@@ -973,13 +973,14 @@ std::set<const Type *, TypeCompare> TypeSum::getCases() const {
     return resorted; 
 }
 
-unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
+unsigned int TypeSum::getIndex(const Type *toFind) const
 {
     unsigned i = 1;
 
     for (auto e : getCases())
     {
-        if (e->getLLVMType(M) == toFind)
+        // FIXME: THIS MIGHT NOT WORK WITH INF TYPES B/C TOSTRING INCLUDES INFER FOR THOSE
+        if (e->toString(C_STYLE) == toFind->toString(C_STYLE)) //(e->getLLVMType(M) == toFind)
         {
             return i;
         }
