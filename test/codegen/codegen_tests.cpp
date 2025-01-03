@@ -17,14 +17,13 @@
 #include "BismuthErrorHandler.h"
 #include "SemanticVisitor.h"
 #include "CodegenVisitor.h"
-#include "HashUtils.h"
 #include "CompilerFlags.h"
 
 using Catch::Matchers::Equals;
 
 void ExpectOutput(string file)
 {
-    auto stream = std::fstream("../../" + file);
+    auto stream = std::fstream(SOURCE_DIR + file);
     auto input = antlr4::ANTLRInputStream(stream);
     BismuthLexer lexer(&input);
     antlr4::CommonTokenStream tokens(&lexer);
@@ -49,37 +48,10 @@ void ExpectOutput(string file)
     OS << *cv.getModule();
     OS.flush();
 
-    auto log_stream = std::fstream("../../" + file + ".expected.ll");
+    auto log_stream = std::fstream(SOURCE_DIR + file + ".expected.ll");
     std::ostringstream log_str_stream;
     log_str_stream << log_stream.rdbuf();
-    // REQUIRE(module_str == log_str_stream.str());
     REQUIRE_THAT(module_str, Equals(log_str_stream.str())); 
-//    return sstr.str();
-
-    // REQUIRE(llvmIrToSHA256(cv.getModule()) == hash);
-}
-
-void EnsureCompilesTo(antlr4::ANTLRInputStream input, string hash)
-{
-    BismuthLexer lexer(&input);
-    antlr4::CommonTokenStream tokens(&lexer);
-    BismuthParser parser(&tokens);
-    parser.removeErrorListeners();
-    BismuthParser::CompilationUnitContext *tree = NULL;
-    REQUIRE_NOTHROW(tree = parser.compilationUnit());
-    REQUIRE(tree != NULL);
-    STManager stm = STManager();
-    SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, 0);
-    auto cuOpt = sv.visitCtx(tree);
-    REQUIRE_FALSE(sv.hasErrors(0));
-    REQUIRE(std::holds_alternative<TCompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
-
-    CodegenVisitor cv = CodegenVisitor("BismuthProgram", DisplayMode::C_STYLE, 0);
-    TCompilationUnitNode * node = std::get<TCompilationUnitNode*>(cuOpt);
-    cv.visitCompilationUnit(*node);//cuOpt.value());
-    REQUIRE_FALSE(cv.hasErrors(0));
-
-    REQUIRE(llvmIrToSHA256(cv.getModule()) == hash);
 }
 
 void EnsureErrors(antlr4::ANTLRInputStream input)
@@ -105,7 +77,7 @@ TEST_CASE("programs/test1 - General Overview", "[codegen]")
 
 TEST_CASE("programs/test1a", "[codegen]")
 {
-    auto stream = std::fstream("../../programs/test1a.bismuth");
+    auto stream = std::fstream(std::string(SOURCE_DIR) + "programs/test1a.bismuth");
     EnsureErrors(antlr4::ANTLRInputStream(stream));
 }
 
@@ -422,7 +394,7 @@ TEST_CASE("programs/TStructEnumArray - Parody + Clone w/ Struct Enum Array", "[c
 
 // TEST_CASE("programs/TStructEnumArrayBlock - TStructEnumArray with blocks to mess with control flow", "[codegen][enum]")
 // {
-//     auto stream = std::fstream("../../programs/TStructEnumArrayBlock.bismuth");
+//     auto stream = std::fstream(std::string(SOURCE_DIR) + "programs/TStructEnumArrayBlock.bismuth");
 //     EnsureCompilesTo(
 //         antlr4::ANTLRInputStream(stream),
 //         "c85d7a2abf1cda05652145962a9726294897f757b1332b44aee7f88b3b823d7f");

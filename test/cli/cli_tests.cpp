@@ -32,10 +32,10 @@ TEST_CASE("BSL - Compile 1", "[cli]")
     */
 
 
-    VirtualInput * bsl_lib_types = getVI("../../bsl/lib/Types.bismuth", {"bsl", "lib", "Types"});
-    VirtualInput * bsl_lib_lists = getVI("../../bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"});
-    VirtualInput * bsl_lib_optional = getVI("../../bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"});
-    VirtualInput * bsl_lib_arrays = getVI("../../bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"});
+    VirtualInput * bsl_lib_types = getVI(std::string(SOURCE_DIR) + "bsl/lib/Types.bismuth", {"bsl", "lib", "Types"});
+    VirtualInput * bsl_lib_lists = getVI(std::string(SOURCE_DIR) + "bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"});
+    VirtualInput * bsl_lib_optional = getVI(std::string(SOURCE_DIR) + "bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"});
+    VirtualInput * bsl_lib_arrays = getVI(std::string(SOURCE_DIR) + "bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"});
 
     VirtualInput * temp = new VirtualInput(
         new antlr4::ANTLRInputStream(R""""(
@@ -474,10 +474,10 @@ TEST_CASE("BSL - Compile 3", "[cli]")
     */
 
 
-    VirtualInput * bsl_lib_types = getVI("../../bsl/lib/Types.bismuth", {"bsl", "lib", "Types"});
-    VirtualInput * bsl_lib_lists = getVI("../../bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"});
-    VirtualInput * bsl_lib_optional = getVI("../../bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"});
-    VirtualInput * bsl_lib_arrays = getVI("../../bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"});
+    VirtualInput * bsl_lib_types = getVI(std::string(SOURCE_DIR) + "bsl/lib/Types.bismuth", {"bsl", "lib", "Types"});
+    VirtualInput * bsl_lib_lists = getVI(std::string(SOURCE_DIR) + "bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"});
+    VirtualInput * bsl_lib_optional = getVI(std::string(SOURCE_DIR) + "bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"});
+    VirtualInput * bsl_lib_arrays = getVI(std::string(SOURCE_DIR) + "bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"});
 
     VirtualInput * temp = new VirtualInput(
         new antlr4::ANTLRInputStream(R""""(
