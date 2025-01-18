@@ -48,7 +48,7 @@ TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define func foo (int a, int a, int b) {
+func foo (int a, int a, int b) {
   return; 
 }
     )"""",
@@ -207,7 +207,7 @@ TEST_CASE("Demo Mode: Program is wrong type", "[semantic][conditional]")
 {
   EnsureErrorsWithMessage(
     R""""(
-define func program () {
+func program () {
   return; 
 }
     )"""", 
@@ -220,7 +220,7 @@ TEST_CASE("Demo Mode: Program follows wrong protocol", "[semantic][conditional]"
 {
   EnsureErrorsWithMessage(
     R""""(
-define program :: c : Channel<-boolean> {
+prog program :: c : -boolean {
   c.send(false)
 }
     )"""", 
@@ -233,7 +233,7 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-    define func program () : int {
+    func program () -> int {
 
         return 1; 
 
@@ -249,7 +249,7 @@ TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
 {
   EnsureErrorsWithMessage(
       R""""(
-    define func program () : int {
+    func program () -> int {
 
     if true {
         return 0; 
@@ -269,7 +269,7 @@ TEST_CASE("Dead code in select", "[semantic][program][select]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define func foo (int idk) : int {
+func foo (int idk) -> int {
 
     select {
         true : {
@@ -295,7 +295,7 @@ TEST_CASE("Infer In return", "[semantic][program]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var a; 
     # return a;
     c.send(a)
@@ -328,12 +328,12 @@ TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 # proc foo (int a) {
-define func foo (int a) : int {
+func foo (int a) -> int {
 
   return -1;
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   foo("hello");  
   c.send(0)
 }
@@ -345,7 +345,7 @@ TEST_CASE("Invoke on Non-Function (str)", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var x := "hey there!"; 
   x();
   c.send(0)
@@ -360,7 +360,7 @@ TEST_CASE("Invoke on Non-Function (int)", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var x := 10; 
   x();
   c.send(0)
@@ -373,15 +373,15 @@ TEST_CASE("Redeclaration of function 1", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define func foo () : int {
+func foo () -> int {
   return 1;
 }
 
-define func foo () : str {
+func foo () -> str {
   return "";
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send(0)
 }
     )"""", 
@@ -392,7 +392,7 @@ TEST_CASE("Copy linear resources", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var a := copy c; 
   c.send(0)
 }
@@ -404,15 +404,15 @@ TEST_CASE("Redeclaration of program 1", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<-int> = {
+prog foo :: c : -int = {
   c.send(1)
 }
 
-define foo :: c : Channel<-str> = {
+prog foo :: c : -str = {
   c.send("")
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send(0)
 }
     )"""", 
@@ -430,7 +430,7 @@ define program :: c : Channel<-int> = {
 //     proc  foo() {
 //       return;
 //     }
-//     define program :: c : Channel<-int> = {
+//     prog program :: c : -int = {
 //       return 0;
 //     }
 //     )"""");
@@ -461,14 +461,14 @@ TEST_CASE("Redeclaration of function 3", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define func foo () : int {
+func foo () -> int {
   return 1;
 }
 
-define func foo() : int {
+func foo() -> int {
   return 1;
 }
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send(0)
 }
     )"""", 
@@ -479,15 +479,15 @@ TEST_CASE("Redeclaration of program 3", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<-int> = {
+prog foo :: c : -int = {
   c.send(1)
 }
 
-define foo :: c : Channel<-int> = {
+prog foo :: c : -int = {
   c.send(1)
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send(0)
 }
     )"""", 
@@ -498,15 +498,15 @@ TEST_CASE("Redeclaration of function 4", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define func foo () : int {
+func foo () -> int {
   return 1;
 }
 
-define func foo (int a) : int {
+func foo (int a) -> int {
   return 1;
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send(0)
 }
     )"""", 
@@ -517,16 +517,16 @@ TEST_CASE("Redeclaration of program 4", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<-int> = {
+prog foo :: c : -int = {
   c.send(1)
 }
 
-define foo :: c : Channel<+int;-int> = {
+prog foo :: c : +int;-int = {
   int a := c.recv(); 
   c.send(1)
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send(0)
 }
     )"""", 
@@ -537,10 +537,10 @@ TEST_CASE("Redeclaration in extern", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-extern func foo() : int;
-extern func foo(int a) : int;
+extern func foo() -> int;
+extern func foo(int a) -> int;
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send(0)
 }
     )"""", 
@@ -551,13 +551,13 @@ TEST_CASE("Out of order function w/ forward declaration", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
-extern func foo(str a) : int;
+extern func foo(str a) -> int;
 
 # str a := "hello";
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     printf("hey!!"); 
     foo(); 
     # return 0;
@@ -565,7 +565,7 @@ define program :: c : Channel<-int> = {
 }
 
 # proc foo() {
-define func foo (str a) {
+func foo (str a) {
     printf("a = %s\n", a);
 }
     )"""", 
@@ -581,7 +581,7 @@ define func foo (str a) {
 
 // extern proc foo();
 
-// define program :: c : Channel<-int> = {
+// prog program :: c : -int = {
 //     foo();
 //     return 0;
 // }
@@ -619,18 +619,18 @@ TEST_CASE("Forward Decl with Variadic", "[semantic][program][function][forward-d
 {
   EnsureErrorsWithMessage(
       R""""(
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
-extern func foo(int a, ...) : Unit; 
+extern func foo(int a, ...) -> Unit; 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     foo(); 
     # return 0;
     c.send(0)
 }
 
 # proc foo(int a) {
-define foo :: c : Channel<+int> = {
+prog foo :: c : +int = {
     int a := c.recv();
     # printf("a = %s\n", a);
     printf("a = %u\n", a);
@@ -645,18 +645,18 @@ TEST_CASE("Forward Decl with wrong num args", "[semantic][program][function][for
 {
   EnsureErrorsWithMessage(
       R""""(
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
-extern func foo(str a) : int;
+extern func foo(str a) -> int;
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     foo("hello"); 
     # return 0;
     c.send(0)
 }
 
-define func foo (str a, int b) : int {
+func foo (str a, int b) -> int {
     printf("a = %s\n", a);
     return 0;
 }
@@ -673,7 +673,7 @@ define func foo (str a, int b) : int {
 
 // extern proc foo(int a);
 
-// define program :: c : Channel<-int> = {
+// prog program :: c : -int = {
 //     foo();
 //     return 0;
 // }
@@ -717,7 +717,7 @@ define func foo (str a, int b) : int {
 
 // extern proc foo(int a);
 
-// define program :: c : Channel<-int> = {
+// prog program :: c : -int = {
 //     foo();
 //     return 0;
 // }
@@ -756,7 +756,7 @@ TEST_CASE("Wrong UnaryNot", "[semantic][program][bool]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     boolean a := ~0; 
     c.send(0)
 }
@@ -768,7 +768,7 @@ TEST_CASE("Wrong UnaryMinus", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     int a := -"hey"; 
     c.send(0)
 }
@@ -780,7 +780,7 @@ TEST_CASE("Wrong RHS Arithmetic", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     int a := 0 - "hey?"; 
     c.send(0)
 }
@@ -792,7 +792,7 @@ TEST_CASE("Wrong LogAnd LHS", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     boolean a := 1 && false; 
     c.send(0)
 }
@@ -804,7 +804,7 @@ TEST_CASE("Wrong LogAnd RHS", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     boolean a := false && 1; 
     c.send(0)
 }
@@ -816,7 +816,7 @@ TEST_CASE("Wrong LogOr LHS", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     boolean a := 1 || false; 
     c.send(0)
 }
@@ -828,7 +828,7 @@ TEST_CASE("Wrong LogOr RHS", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     boolean a := false || 1; 
     c.send(0)
 }
@@ -840,7 +840,7 @@ TEST_CASE("Field Access - var", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     var a;
     var b := a.length; 
     c.send(0);
@@ -853,7 +853,7 @@ TEST_CASE("Field Access - int", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     int a;
     var b := a.length; 
     c.send(0);
@@ -868,7 +868,7 @@ TEST_CASE("ArrayAccess - Wrong Type", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     int [5] a;
     var b := a[true || false];
     c.send(0)
@@ -881,7 +881,7 @@ TEST_CASE("Field Access - Unsupported/Undefined", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     int [5] a;
     var b := a.testing; 
     c.send(0);
@@ -894,7 +894,7 @@ TEST_CASE("Field Access - Undefined Var", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     var b := a.testing; 
     c.send(0);
 }
@@ -906,7 +906,7 @@ TEST_CASE("Equals Different types", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     var a := "hello" == 1; 
     c.send(0);
 }
@@ -918,7 +918,7 @@ TEST_CASE("Assign to undefined", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   a := 10; 
   c.send(0);
 }
@@ -931,11 +931,11 @@ TEST_CASE("Proc Returning", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 # proc foo() {
-define func foo () {
+func foo () {
   return 1;
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send(0)
 }
     )"""", 
@@ -947,10 +947,10 @@ TEST_CASE("Function return nothing", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 # int func foo() {
-define func foo (int x) : int {
+func foo (int x) -> int {
   return;
 }
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   # return 0; 
   c.send(0)
 }
@@ -962,7 +962,7 @@ TEST_CASE("Function return wrong type", "[semantic][program]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send("hey"); 
 }
     )"""", 
@@ -973,10 +973,10 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program]
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var a := 0; 
 
-  define func foo (Channel<-int> c) : Channel<-int> {
+  func foo (Channel<-int> c) -> Channel<-int> {
     a := 2; 
     return c; 
   }
@@ -991,10 +991,10 @@ TEST_CASE("Nested Local Program - Disallow Local vars 1", "[semantic][program][l
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var a := 0; 
 
-  define foo :: c : Channel<-int> = {
+  prog foo :: c : -int = {
     c.send(a)
   }
 
@@ -1008,7 +1008,7 @@ define program :: c : Channel<-int> = {
 // {
 //   antlr4::ANTLRInputStream input(
 //       R""""(
-//     define program :: c : Channel<-int> = {
+//     prog program :: c : -int = {
 //       var a := 0;
 
 //       proc foo() {
@@ -1047,13 +1047,13 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2f", "[semantic][pr
 {
   antlr4::ANTLRInputStream input(
       R""""(
-define program :: c : Channel<-int> = {
-  define func other (int a) : int {
+prog program :: c : -int = {
+  func other (int a) -> int {
     var c := 10; 
     return a;
   }
 
-  define func foo (int x) : int {
+  func foo (int x) -> int {
       return other(x); 
   }
 
@@ -1087,13 +1087,13 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2p", "[semantic][pr
 {
   antlr4::ANTLRInputStream input(
       R""""(
-define program :: c : Channel<-int> = {
-  define func other (int a) : int {
+prog program :: c : -int = {
+  func other (int a) -> int {
     var c := 10; 
     return a;
   }
 
-  define foo :: c : Channel<+int;-int> = {
+  prog foo :: c : +int;-int = {
     int x := c.recv(); 
     c.send(other(x))
   }
@@ -1128,13 +1128,13 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][pr
 {
   antlr4::ANTLRInputStream input(
       R""""(
-define program :: c : Channel<-int> = {
-  define other :: io : Channel<-int> = {
+prog program :: c : -int = {
+  prog other :: io : -int = {
     var c := 10; 
     io.send(c)
   }
 
-  define func foo (int y) : int {
+  func foo (int y) -> int {
       Channel<+int> c := exec other; 
       int x := c.recv(); 
       return x;
@@ -1173,13 +1173,13 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
 {
   antlr4::ANTLRInputStream input(
       R""""(
-define program :: c : Channel<-int> = {
-  define other :: io : Channel<-int> = {
+prog program :: c : -int = {
+  prog other :: io : -int = {
     var c := 10; 
     io.send(c)
   }
 
-  define foo :: io : Channel<-int> = {
+  prog foo :: io : -int = {
     Channel<+int> c := exec other; 
     int ans := c.recv(); 
     io.send(ans)
@@ -1217,18 +1217,18 @@ TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
-  define other :: io : Channel<-int> = {
+prog program :: c : -int = {
+  prog other :: io : -int = {
     var c := 10; 
     io.send(c)
   }
 
-  define foo :: io : Channel<-Channel<+int>> = {
+  prog foo :: io : -Channel<+int> = {
     Channel<+int> ans := exec other; 
     io.send(ans)
   }
 
-  define foo :: io : Channel<-int> = {
+  prog foo :: io : -int = {
     Channel<+int> c := exec other; 
     int ans := c.recv(); 
     io.send(ans)
@@ -1244,18 +1244,18 @@ TEST_CASE("Redeclaration - p2f", "[semantic][program][local-function]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
-  define other :: io : Channel<-int> = {
+prog program :: c : -int = {
+  prog other :: io : -int = {
     var c := 10; 
     io.send(c)
   }
 
-  define foo :: io : Channel<-Channel<+int>> = {
+  prog foo :: io : -Channel<+int> = {
     Channel<+int> ans := exec other; 
     io.send(ans)
   }
 
-  define func foo () {
+  func foo () {
     return;
   }
 
@@ -1269,17 +1269,17 @@ TEST_CASE("Redeclaration - f2p", "[semantic][program][local-function]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
-  define other :: io : Channel<-int> = {
+prog program :: c : -int = {
+  prog other :: io : -int = {
     var c := 10; 
     io.send(c)
   }
 
-  define func foo () {
+  func foo () {
     return;
   }
 
-  define foo :: io : Channel<-Channel<+int>> = {
+  prog foo :: io : -Channel<+int> = {
     Channel<+int> ans := exec other; 
     io.send(ans)
   }
@@ -1296,17 +1296,17 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
-  define other :: io : Channel<-int> = {
+prog program :: c : -int = {
+  prog other :: io : -int = {
     var c := 10; 
     io.send(c)
   }
 
-  define func foo () {
+  func foo () {
     return;
   }
 
-  define func foo () {
+  func foo () {
     return;
   }
 
@@ -1320,7 +1320,7 @@ define program :: c : Channel<-int> = {
 // {
 //   antlr4::ANTLRInputStream input(
 //       R""""(
-//     define program :: c : Channel<-int> = {
+//     prog program :: c : -int = {
 //       proc other () {
 //         var c := 10;
 //       }
@@ -1365,7 +1365,7 @@ define program :: c : Channel<-int> = {
 //       var c := 10;
 //     }
 
-//     define program :: c : Channel<-int> = {
+//     prog program :: c : -int = {
 
 //       proc foo() {
 //           other();
@@ -1406,7 +1406,7 @@ define program :: c : Channel<-int> = {
 //       var c := 10;
 //     }
 
-//     define program :: c : Channel<-int> = {
+//     prog program :: c : -int = {
 
 //       proc foo() {
 //         other();
@@ -1446,17 +1446,17 @@ TEST_CASE("Nested Enums - Disallow Local Assign", "[semantic][program][enum]")
       R""""(
 extern func printf(str s, ...);
 
-define enum Inner {
+enum Inner {
     int, 
     boolean 
 }
 
-define enum Outer {
+enum Outer {
     Inner, 
     str
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     int i := 5; 
     Outer o := i; 
 
@@ -1464,7 +1464,7 @@ define program :: c : Channel<-int> = {
         Inner in => {
             match in {
                 int i => printf("int: %u\n", i);
-                boolean b => printf("boolean: %s\n", (boolean b) : str { if b { return "true"; } return "false"; }(b));
+                boolean b => printf("boolean: %s\n", (boolean b) -> str { if b { return "true"; } return "false"; }(b));
             }
         }
         str s => printf("str: %s\n", s);
@@ -1482,17 +1482,17 @@ TEST_CASE("Nested Enums - Disallow Local Assign with mismatch", "[semantic][prog
       R""""(
 extern func printf(str s, ...);
 
-define enum Inner {
+enum Inner {
     int, 
     boolean 
 }
 
-define enum Outer {
+enum Outer {
     Inner, 
     str
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     (int + boolean) i := 5; 
     Outer o := i; 
 
@@ -1500,7 +1500,7 @@ define program :: c : Channel<-int> = {
         Inner in => {
             match in {
                 int i => printf("int: %u\n", i);
-                boolean b => printf("boolean: %s\n", (boolean b) : str { if b { return "true"; } return "false"; }(b));
+                boolean b => printf("boolean: %s\n", (boolean b) -> str { if b { return "true"; } return "false"; }(b));
             }
         }
         str s => printf("str: %s\n", s);
@@ -1516,7 +1516,7 @@ TEST_CASE("Duplicated enum keys", "[semantic][program][enum]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define enum Inner {
+enum Inner {
     int, 
     boolean,
     int
@@ -1529,7 +1529,7 @@ TEST_CASE("Duplicated product keys - 1", "[semantic][program][product]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define struct Inner {
+struct Inner {
     int a; 
     boolean a;
     int c;
@@ -1542,7 +1542,7 @@ TEST_CASE("Duplicated product keys - 2", "[semantic][program][product]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define struct Inner {
+struct Inner {
     int a; 
     boolean b;
     int a;
@@ -1555,7 +1555,7 @@ define struct Inner {
 // {
 //   antlr4::ANTLRInputStream input(
 //       R""""(
-// define struct Inner {
+// struct Inner {
 //     int a;
 //     boolean b;
 //     int c;
@@ -1621,7 +1621,7 @@ define struct Inner {
 // {
 //   antlr4::ANTLRInputStream input(
 //       R""""(
-// var lam := (int a, int b) : int {
+// var lam := (int a, int b) -> int {
 //     return a * b;
 // };
 //     )"""");
@@ -1653,12 +1653,12 @@ TEST_CASE("Bad Enum pass", "[semantic][program][lambda][enum]")
 {
   EnsureErrorsWithMessage(
       R""""(
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-define func test ((int + boolean + (str + boolean)) sum) : int {
+func test ((int + boolean + (str + boolean)) sum) -> int {
     match sum {
         int i => printf("integer: %u\n", i);
-        boolean b => printf("boolean: %s\n", (boolean b) : str {
+        boolean b => printf("boolean: %s\n", (boolean b) -> str {
             if b {
                 return "true";
             }
@@ -1672,7 +1672,7 @@ define func test ((int + boolean + (str + boolean)) sum) : int {
 }
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     test("hey");
     # return 0; 
     c.send(0)
@@ -1685,7 +1685,7 @@ TEST_CASE("Channel Assignment 1", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<+int> = {
+prog foo :: c : +int = {
   var b := c; 
   int a := c.recv(); # C is no longer defined
 }
@@ -1697,7 +1697,7 @@ TEST_CASE("Channel Assignment 2", "[semantic]")
 {
     antlr4::ANTLRInputStream input(
       R""""(
-define foo :: c : Channel<+int> = {
+prog foo :: c : +int = {
   var b := c; 
   int a := b.recv(); # C is no longer defined
 }
@@ -1729,7 +1729,7 @@ TEST_CASE("No Weaken in loop", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define bar :: c : Channel<?(?-int);+int> = {
+prog bar :: c : ?(?-int);+int = {
 
     int i := 0;
 
@@ -1749,11 +1749,11 @@ TEST_CASE("double recv", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<-int> = {
+prog foo :: c : -int = {
     c.send(5)
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var com := exec foo, a, b := com.recv(); 
 
     c.send(a)
@@ -1766,11 +1766,11 @@ TEST_CASE("double recv - correct", "[semantic]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-define foo :: c : Channel<-int> = {
+prog foo :: c : -int = {
     c.send(5)
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var com := exec foo, a := com.recv(); 
 
     c.send(a)
@@ -1803,7 +1803,7 @@ TEST_CASE("Links3 - 1", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
     Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
     
@@ -1822,13 +1822,13 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel
     a.send("5")
 }
 
-define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
     var xyz := c.recv(); 
 }
 
-define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
             boolean b := c.recv(); 
@@ -1839,7 +1839,7 @@ define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
     )
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
     Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
 
@@ -1857,7 +1857,7 @@ TEST_CASE("Links3 - 2", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
     Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
     
@@ -1875,13 +1875,13 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel
     a.send("5")
 }
 
-define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
     var xyz := c.recv(); 
 }
 
-define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
             boolean b := c.recv(); 
@@ -1892,7 +1892,7 @@ define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
     )
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
     Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
 
@@ -1910,7 +1910,7 @@ TEST_CASE("Links3 - 3", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
     Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
     
@@ -1928,13 +1928,13 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel
     a.send("5")
 }
 
-define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
     var xyz := c.recv(); 
 }
 
-define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
             boolean b := c.recv(); 
@@ -1945,7 +1945,7 @@ define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
     )
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
     Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
 
@@ -1963,7 +1963,7 @@ TEST_CASE("Links3 - 4", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
     Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
     
@@ -1980,13 +1980,13 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel
 
 }
 
-define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
     var xyz := c.recv(); 
 }
 
-define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
             boolean b := c.recv(); 
@@ -1997,7 +1997,7 @@ define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
     )
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
     Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
 
@@ -2016,7 +2016,7 @@ TEST_CASE("Links3 - 5", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> = {
+prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
     Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
     
@@ -2033,13 +2033,13 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel
 
 }
 
-define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> = {
+prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
     var xyz := c.recv(); 
 }
 
-define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
+prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
             boolean b := c.recv(); 
@@ -2050,7 +2050,7 @@ define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> = {
     )
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
     Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
 
@@ -2068,7 +2068,7 @@ TEST_CASE("No assignments of guarded", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
   while true {
     var b;
@@ -2086,7 +2086,7 @@ TEST_CASE("No assignments of guarded in decls", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
   while true {
     var b := c;
@@ -2102,7 +2102,7 @@ TEST_CASE("No instancing cancelable", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<?Cancelable<-int>> {
+prog program :: c : ?Cancelable<-int> {
 }
     )"""",
       "cannot include looping protocol within cancelable");
@@ -2131,7 +2131,7 @@ TEST_CASE("Cancel a non-cancelable", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     cancel(c);
 }
     )"""",
@@ -2142,9 +2142,9 @@ TEST_CASE("While Loop Break I", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
 
   c.send(0)
 
@@ -2160,7 +2160,7 @@ define program :: c : Channel<-int> {
   }
 }
 
-define loopBreaker :: c : Channel<?+int> {
+prog loopBreaker :: c : ?+int {
 
   int i := -1
 
@@ -2182,16 +2182,16 @@ TEST_CASE("Linear returns are prohibited when unused", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define progFoo :: c : Channel<-int> {
+prog progFoo :: c : -int {
     c.send(20);
 }
 
-define func getChannel() : Channel<+int> {
+func getChannel() -> Channel<+int> {
     var c := exec progFoo; 
     return c; 
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
 
     c.send(0);
 
@@ -2206,7 +2206,7 @@ TEST_CASE("Error message during inference of number reports proper type mismatch
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     str[4] arr := [0, 1, 2, 3];
     c.send(0);
 }

@@ -1,4 +1,4 @@
-# define func fill<T>(T[] array, T value, u32 num)
+# func fill<T>(T[] array, T value, u32 num)
 # {
 #     for(u32 i := 0u32; i < num; i := i + 1u32)
 #     {
@@ -6,7 +6,7 @@
 #     }
 # }
 
-define func fill<T>(T[] array, T value, u32 num)
+func fill<T>(T[] array, T value, u32 num)
 {
     for(u32 i := 0; i < num; i := i + 1)
     {
@@ -18,7 +18,7 @@ define func fill<T>(T[] array, T value, u32 num)
 
 
 # bsl::arrays::forEach
-define func forEach<T>(T[] array, (T) -> Unit fn) {
+func forEach<T>(T[] array, (T) -> Unit fn) {
     for(u32 i := 0; i < array.length; i := i + 1)
     {
         # fn(array[i]);
@@ -32,7 +32,7 @@ define func forEach<T>(T[] array, (T) -> Unit fn) {
 
 
 # bsl::arrays::map
-define func map<I, O>(I[] array, ((I) -> O + (I, u32) -> O) mapper) : O[]
+func map<I, O>(I[] array, ((I) -> O + (I, u32) -> O) mapper) -> O[]
 {
     O[] output; 
     match mapper 
@@ -53,10 +53,10 @@ define func map<I, O>(I[] array, ((I) -> O + (I, u32) -> O) mapper) : O[]
     return output; 
 }
 
-# define func map2<T1, T2>(T1[] a, T2[] b) : (Unit + )
+# func map2<T1, T2>(T1[] a, T2[] b) -> (Unit + )
 
 /*
-define func generatorFill<K>(T[] array, (T + Unit -> T) generator, int num)
+func generatorFill<K>(T[] array, (T + Unit -> T) generator, int num)
 {
     match generator 
         |   T val => fill(array, val, num);

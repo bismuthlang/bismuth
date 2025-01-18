@@ -1,6 +1,6 @@
 extern int func printf(str s, ...);
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Channel<+int> c2 := exec simple; 
     printf("why4\n");
     int y := c2.recv(); 
@@ -10,7 +10,7 @@ define program :: c : Channel<-int> = {
     # while true {}
 }
 
-define simple :: c : Channel<-int> = {
+prog simple :: c : -int = {
     printf("And the other one!\n");
     c.send(0)
     printf("And the other one SENT!\n");

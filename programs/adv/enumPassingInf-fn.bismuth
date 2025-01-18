@@ -1,9 +1,9 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
-define func test ((int + boolean) sum) : int {
+func test ((int + boolean) sum) -> int {
     match sum {
         int i => printf("integer: %u\n", i);
-        boolean b => printf("boolean: %s\n", (boolean b) : str {
+        boolean b => printf("boolean: %s\n", (boolean b) -> str {
             if b {
                 return "true";
             }
@@ -16,7 +16,7 @@ define func test ((int + boolean) sum) : int {
 }
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var msg := false; 
     # msg := 5;  # TODO: THIS SHOULDNT THROW AN ERROR, MAKE INF USE SUM TYPES?
     test(msg);

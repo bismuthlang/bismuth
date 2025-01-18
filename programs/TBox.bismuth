@@ -1,16 +1,16 @@
-extern func printf(str s, ...) : Unit;
+extern func printf(str s, ...) -> Unit;
 
-define func printBoxInt(str name, Box<int> b) {
+func printBoxInt(str name, Box<int> b) {
   printf("%s = %u\n", name, *b);
   return; 
 }
 
-define func printBoxBoxInt(str name, Box<Box<int>> b) {
+func printBoxBoxInt(str name, Box<Box<int>> b) {
   printf("%s = %u\n", name, **b);
   return; 
 }
 
-define foo :: c : Channel<+Box<Box<int>>;-int;+int> = {
+prog foo :: c : +Box<Box<int>>;-int;+int = {
   var iPtr := c.recv(); 
   printBoxBoxInt("iPtr (orig/5)", iPtr);
   **iPtr := 7; 
@@ -21,12 +21,12 @@ define foo :: c : Channel<+Box<Box<int>>;-int;+int> = {
 
 }
 
-define bar :: c : Channel<+Box<int>> = {
+prog bar :: c : +Box<int> = {
   var iPtr := c.recv(); 
 }
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var a := exec foo; 
   # var a := exec bar; 
 

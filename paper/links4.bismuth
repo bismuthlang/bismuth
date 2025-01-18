@@ -1,6 +1,6 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
-define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>>> {
+prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> {
     Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
     Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
 
@@ -19,13 +19,13 @@ define foo :: c : Channel<+Channel<ExternalChoice<+int, +boolean>;-str>;+Channel
     a.send("5")
 }
 
-define bar1 :: c : Channel<InternalChoice<-int, -boolean>;+str> {
+prog bar1 :: c : InternalChoice<-int, -boolean>;+str {
     c[-boolean]
     c.send(false)
     var xyz := c.recv(); 
 }
 
-define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> {
+prog bar2 :: c : ExternalChoice<+boolean, +int> {
     c.case(
         +boolean => {
             boolean b := c.recv(); 
@@ -36,7 +36,7 @@ define bar2 :: c : Channel<ExternalChoice<+boolean, +int>> {
     )
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
     Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
 

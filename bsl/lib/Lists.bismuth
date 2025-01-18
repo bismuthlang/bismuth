@@ -1,12 +1,12 @@
 
 import bsl::lib::Types::Empty; 
 
-define struct LinkedList<T> {
+struct LinkedList<T> {
     (Empty + Box<LinkedList<T>>) next;
     T value;
 }
 
-define func length<T>(LinkedList<T> list) : int {
+func length<T>(LinkedList<T> list) -> int {
     int len := 0; 
 
     var ptr := Box<LinkedList<T>>::init(list); # Huh, I guess, in practice, this ptr could be on the stack....
@@ -27,11 +27,10 @@ define func length<T>(LinkedList<T> list) : int {
     return len; 
 }
 
-define func map<I, O>(
+func map<I, O>(
     LinkedList<I> array, 
-    ((I) -> O + (I, int) -> O) mapper) : LinkedList<O>
-
-{
+    ((I) -> O + (I, int) -> O) mapper
+) -> LinkedList<O> {
     match mapper 
         |   I -> O m1 => {
                 var ans := LinkedList<O>::init(

@@ -1,7 +1,7 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # proc nested(int a) {
-define nested :: io : Channel<+int> = {
+prog nested :: io : +int = {
     int a := io.recv(); 
 
     if a <= 0 && (a < -5 || a < 0 || a == 0) {
@@ -37,7 +37,7 @@ define nested :: io : Channel<+int> = {
     
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     var i := -10; 
     while i <= 15 {

@@ -1,6 +1,6 @@
 extern func printf(...);
 
-define func fib(int n, int[5] a) : int {
+func fib(int n, int[5] a) -> int {
   if(n == 0 || n == 1) {
     return n;
   }
@@ -8,7 +8,7 @@ define func fib(int n, int[5] a) : int {
   return fib(n - 1, a) + fib(n - 2, a);
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
  var current := 1;        
  while current < 20 { 
    int[5] b; 

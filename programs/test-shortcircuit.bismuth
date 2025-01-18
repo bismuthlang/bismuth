@@ -1,7 +1,7 @@
-extern func printf(str a,         ...) : int;
+extern func printf(str a,         ...) -> int;
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var a := -1; 
   var b := 20; 
 

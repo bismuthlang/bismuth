@@ -1,6 +1,6 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
   int[50] a; 
   a[0] := 1; 
   a[1] := 2; 

@@ -29,18 +29,34 @@ void ExpectOutput(string file)
     antlr4::CommonTokenStream tokens(&lexer);
     BismuthParser parser(&tokens);
     parser.removeErrorListeners();
+    BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
+    parser.addErrorListener(syntaxListener);
     BismuthParser::CompilationUnitContext *tree = NULL;
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
+    if (syntaxListener->hasErrors(0)) // Want to see all errors.
+    {
+        std::cerr << syntaxListener->errorList() << std::endl;
+        REQUIRE_FALSE(syntaxListener->hasErrors(0));
+    }
+    delete syntaxListener;
     STManager stm = STManager();
     SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, 0);
     auto cuOpt = sv.visitCtx(tree);
+    if(sv.hasErrors(0))
+    {
+        REQUIRE_THAT(sv.getErrors(), Equals(""));
+    }
     REQUIRE_FALSE(sv.hasErrors(0));
     REQUIRE(std::holds_alternative<TCompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
 
     CodegenVisitor cv = CodegenVisitor("BismuthProgram", DisplayMode::C_STYLE, 0);
     TCompilationUnitNode * node = std::get<TCompilationUnitNode*>(cuOpt);
     cv.visitCompilationUnit(*node);//cuOpt.value());
+    if(cv.hasErrors(0))
+    {
+        REQUIRE_THAT(cv.getErrors(), Equals(""));
+    }
     REQUIRE_FALSE(cv.hasErrors(0));
 
     std::string module_str;
@@ -60,9 +76,17 @@ void EnsureErrors(antlr4::ANTLRInputStream input)
     antlr4::CommonTokenStream tokens(&lexer);
     BismuthParser parser(&tokens);
     parser.removeErrorListeners();
+    BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
+    parser.addErrorListener(syntaxListener);
     BismuthParser::CompilationUnitContext *tree = NULL;
     REQUIRE_NOTHROW(tree = parser.compilationUnit());
     REQUIRE(tree != NULL);
+    if (syntaxListener->hasErrors(0)) // Want to see all errors.
+    {
+        std::cerr << syntaxListener->errorList() << std::endl;
+        REQUIRE_FALSE(syntaxListener->hasErrors(0));
+    }
+    delete syntaxListener;
     STManager stm = STManager();
     SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, 0);
     auto cuOpt = sv.visitCtx(tree);

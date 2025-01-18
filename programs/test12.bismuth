@@ -1,9 +1,9 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # TODO: Params named by what they are, ret named by fn name...
 # boolean func isPrime(int n) {
 /*
-define isPrime :: c : Channel<+int;-boolean> = {
+prog isPrime :: c : +int;-boolean = {
   int n := c.recv();
   var i := 3;
   while (i < n) { 
@@ -19,7 +19,7 @@ define isPrime :: c : Channel<+int;-boolean> = {
 */
 
 
-define isPrime :: c : Channel<+int;-boolean> = {
+prog isPrime :: c : +int;-boolean = {
   int n := c.recv();
   var i := 3, done := false, ans := true;
 
@@ -37,7 +37,7 @@ define isPrime :: c : Channel<+int;-boolean> = {
   c.send(ans)
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var current := 3;        
   int nPrimes := 2;       # explicit type 
   while current < 100 { 

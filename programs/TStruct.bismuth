@@ -1,22 +1,22 @@
-extern func printf(str s, ...) : Unit;
+extern func printf(str s, ...) -> Unit;
 
-define struct IB {
+struct IB {
   Box<int> a; 
 }
 
 # Two Int Box Box
-define struct TIBB {
+struct TIBB {
   Box<Box<int>> b1; 
   Box<Box<int>> b2; 
   IB ib; 
 }
 
-define func printTIBB(str name, TIBB b) {
+func printTIBB(str name, TIBB b) {
   printf("%s = {b1 : %u, b2 : %u}\n", name, **b.b1, **b.b2);
   return; 
 }
 
-define foo :: c : Channel<+TIBB;-int;+int> = {
+prog foo :: c : +TIBB;-int;+int = {
   var iPtr := c.recv(); 
   printTIBB("iPtr (orig/5)", iPtr);
   **iPtr.b1 := 7;
@@ -27,7 +27,7 @@ define foo :: c : Channel<+TIBB;-int;+int> = {
 
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   {
     var a := exec foo; 
 

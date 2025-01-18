@@ -1,9 +1,9 @@
 extern func printf(...);
 
-define foo :: c : Channel<+int;+int;-int> = {
+prog foo :: c : +int;+int;-int = {
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
  var current := 1;
  c.send(current)
 
@@ -11,7 +11,7 @@ define program :: c : Channel<-int> = {
 }
 
 
-define bar :: c : Channel<?(?-int);+int> = {
+prog bar :: c : ?(?-int);+int = {
     more(c) # Why is it more(c) vs c.more() ? 
     weaken(c)
     weaken(c)
@@ -19,7 +19,7 @@ define bar :: c : Channel<?(?-int);+int> = {
     # c.send(5)
 }
 
-define bar1 :: c : Channel<?(?-int);+int> = {
+prog bar1 :: c : ?(?-int);+int = {
     while true {
         # more(c)
         while true {
@@ -43,7 +43,7 @@ define bar1 :: c : Channel<?(?-int);+int> = {
     y.send(10)
 }
 
-define bar2 :: c : Channel<InternalChoice<-int;+boolean, ?-int>;+str> = {
+prog bar2 :: c : InternalChoice<-int;+boolean, ?-int>;+str = {
     c[?(-int)] # TODO: USE BETTER SYNTAX!!!
     weaken(c)
 
@@ -51,7 +51,7 @@ define bar2 :: c : Channel<InternalChoice<-int;+boolean, ?-int>;+str> = {
 
 }
 
-define bar3 :: c2 : Channel<-int> = {
+prog bar3 :: c2 : -int = {
     Channel<ExternalChoice<+int;-boolean, !+int>;-str> o := exec bar2; 
 
     o.case(
@@ -76,13 +76,13 @@ define bar3 :: c2 : Channel<-int> = {
 
 
 
-define struct CappedArray {
+struct CappedArray {
     int cap; 
     int[12] data; 
 }
 
 
-define QuickSort :: c : Channel<+CappedArray; -CappedArray> = {
+prog QuickSort :: c : +CappedArray; -CappedArray = {
     CappedArray input := c.recv(); 
 
     # TODO: Set it so that way select can have a default case?

@@ -1,39 +1,39 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-define struct RGBData {
+struct RGBData {
     int[3] rgb; 
 }
 
-define struct HSVData {
+struct HSVData {
     int[3] hsv; 
 }
 
-define struct RGBColor {
+struct RGBColor {
     RGBData rgb; 
     RGBData -> int getRed; 
     RGBData -> int getGreen; 
     RGBData -> int getBlue;     
 }
 
-define struct HSVColor {
+struct HSVColor {
     HSVData hsv; 
     HSVData -> int getHue; 
     HSVData -> int getSat; 
     HSVData -> int getVal;
 }
 
-define enum ColorType {
+enum ColorType {
     RGBColor, 
     HSVColor
 }
 
-define struct Color {
+struct Color {
     ColorType colorType; 
     ColorType -> str toString; 
 }
 
 # Color func getRGBColor(int r, int g, int b) 
-define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of params gets lost...
+prog getRGBColor :: io : +int;+int;+int;-Color = # Note: Meaning of params gets lost...
 {
     int[3] data; 
     data[0] := io.recv();# r; 
@@ -42,7 +42,7 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
 
     RGBData rgbDat := RGBData::init(data);
 
-    define getChannel :: c : Channel<+RGBData;+int;-int> = {
+    prog getChannel :: c : +RGBData;+int;-int = {
         RGBData d := c.recv();
         int[3] channels := d.rgb; 
         
@@ -54,26 +54,26 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
     var c := Color::init(
         RGBColor::init(
             rgbDat, 
-            (RGBData d) : int { 
+            (RGBData d) -> int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(0)
                 return io.recv();
             },
-            (RGBData d) : int { 
+            (RGBData d) -> int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(1)
                 return io.recv(); 
             },
-            (RGBData d) : int { 
+            (RGBData d) -> int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(2)
                 return io.recv();
             }
         ),
-        (ColorType c) : str { return "rgb"; }
+        (ColorType c) -> str { return "rgb"; }
     );
  
     {
@@ -84,33 +84,33 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> = # Note: Meaning of p
     io.send(Color::init(
         RGBColor::init(
             rgbDat, 
-            (RGBData d) : int { 
+            (RGBData d) -> int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(0)
                 return io.recv(); 
                 # return getChannel(d, 0); 
             },
-            (RGBData d) : int { 
+            (RGBData d) -> int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(1)
                 return io.recv();
                 # return getChannel(d, 1); 
             },
-            (RGBData d) : int { 
+            (RGBData d) -> int { 
                 Channel<-RGBData;-int;+int> io := exec getChannel; 
                 io.send(d)
                 io.send(2)
                 return io.recv(); 
             }
         ),
-        (ColorType c) : str { return "rgb"; }
+        (ColorType c) -> str { return "rgb"; }
     ))
 }
 
 
-define lamePrint :: io : Channel<+Color> = {
+prog lamePrint :: io : +Color = {
     Color c := io.recv(); 
 
     {
@@ -142,7 +142,7 @@ define lamePrint :: io : Channel<+Color> = {
     printf("133\n");
     # return 0;
 }
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     HSVColor hsv; 
     RGBColor rgb; 

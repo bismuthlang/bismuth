@@ -1,5 +1,5 @@
-define program :: c : Channel<-int> {
-    define struct A{
+prog program :: c : -int {
+    struct A{
         int r; 
         int g; 
         int b; 

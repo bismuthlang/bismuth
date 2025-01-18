@@ -1948,7 +1948,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
         [this, ctx, &case_count](BismuthParser::SelectAlternativeContext *e) -> std::variant<TSelectAlternativeNode *, ErrorChain *>
         {
             /*
-             *  Just make sure that we don't try to define functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
+             *  Just make sure that we don't try to functions and stuff in a select as that doesn't make sense (and would cause codegen issues as it stands).
              */
             if (dynamic_cast<BismuthParser::TypeDefContext *>(e->eval) || // FIXME: DO BETTER, THERE MAY BE A LOT LIKE THIS!
                 dynamic_cast<BismuthParser::VarDeclStatementContext *>(e->eval))
@@ -2606,18 +2606,7 @@ std::variant<TBooleanConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismut
 std::variant<const TypeChannel *, ErrorChain *>
 SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
 {
-    ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
-    std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->proto); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
-    delete protoVisitor;
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate channel protocol");
-    }
-
-    const ProtocolSequence *proto = std::get<const ProtocolSequence *>(protoOpt);
-
-    return new TypeChannel(proto);
+    return visitProtocolAsChannel(ctx->proto); 
 }
 
 std::variant<const TypeBox *, ErrorChain *>
@@ -3613,22 +3602,17 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
     auto defineProgram = [this](BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType) -> std::optional<ErrorChain *> {
         if (progType->isDefined()) return std::nullopt; 
 
-        std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
+        std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = visitProtocolAsSeq(ctx->proto);
 
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
         {
-            return (*e)->addError(ctx->getStart(), "Failed to generate channel type for program");
+            return (*e)->addError(ctx->getStart(), "Failed to generate channel type for program " + ctx->name->getText());
         }
 
-        const Type * ty = std::get<const Type*>(tyOpt);
+        const auto * proto = std::get<const ProtocolSequence *>(protoOpt);
 
-        if (const TypeChannel *channel = dynamic_cast<const TypeChannel *>(ty))
-        {
-            progType->setProtocol(channel->getProtocol());
-            return std::nullopt; 
-        }
-
-        return errorHandler.addError(ctx->getStart(), "Process expected channel but got " + ty->toString(toStringMode));
+        progType->setProtocol(proto);
+        return std::nullopt; 
     };
 
     auto defineEnum = [this](BismuthParser::DefineEnumContext *ctx, const TypeSum *sumTy) -> std::optional<ErrorChain *> {
@@ -4018,4 +4002,31 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitLValue(antlr4::Par
     }
 
     return errorHandler.addError(ctx->getStart(), "Required an l-value, but the provided expression (" + ctx->getText() + ") is not."); // TODO: better error
+}
+
+
+
+std::variant<const ProtocolSequence *, ErrorChain *> 
+SemanticVisitor::visitProtocolAsSeq(BismuthParser::ProtocolContext *ctx) 
+{
+    ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
+    std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
+    delete protoVisitor;
+
+    return protoOpt;
+}
+
+std::variant<const TypeChannel *, ErrorChain *> 
+SemanticVisitor::visitProtocolAsChannel(BismuthParser::ProtocolContext *ctx) 
+{
+    std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = visitProtocolAsSeq(ctx);
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
+    {
+        return (*e)->addError(ctx->getStart(), "Failed to generate channel protocol");
+    }
+
+    const ProtocolSequence *proto = std::get<const ProtocolSequence *>(protoOpt);
+
+    return new TypeChannel(proto);
 }

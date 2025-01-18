@@ -19,14 +19,14 @@ genericEntry        : name=VARIABLE (':' supTy+=type (',' supTy+=type)*)?   # Ge
 
 genericSpecifier    : LESS subst+=type (',' subst+=type)* GREATER        ;
 
-defineType        : DEFINE ENUM name=VARIABLE genericTemplate? LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
-                  | DEFINE STRUCT name=VARIABLE genericTemplate? LSQB (cases+=structCase)*  RSQB             # DefineStruct
-                  | DEFINE name=VARIABLE genericTemplate? '::' channelName=VARIABLE ':' ty=type '='? block   # DefineProgram
-                  | DEFINE FUNC name=VARIABLE genericTemplate? lam=lambdaConstExpr                           # DefineFunction
-                  ; 
+defineType  : ENUM name=VARIABLE genericTemplate? LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
+            | STRUCT name=VARIABLE genericTemplate? LSQB (cases+=structCase)*  RSQB             # DefineStruct
+            | PROG name=VARIABLE genericTemplate? '::' channelName=VARIABLE ':' proto=protocol '='? block   # DefineProgram
+            | FUNC name=VARIABLE genericTemplate? lam=lambdaConstExpr                           # DefineFunction
+            ; 
 
 //FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
-externStatement : EXTERN FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR (COLON ret=type)? ';'; 
+externStatement : EXTERN FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR (MAPS_TO ret=type)? ';'; 
 
 
 pathElement     : id=VARIABLE genericSpecifier? ;
@@ -93,7 +93,7 @@ expression
     ;
 
 lambdaConstExpr 
-    : LPAR parameterList RPAR (COLON ret=type)? block ;
+    : LPAR parameterList RPAR (MAPS_TO ret=type)? block ;
 
 /* 
  * Keeping block as its own rule so that way we can re-use it as
@@ -292,6 +292,7 @@ TYPE_PROGRAM    :   'Program'   ;
 TYPE_CHANNEL    :   'Channel'   ;
 
 //Others
+PROG            :   'prog'  ;
 FUNC            :   'func'  ;
 ENUM            :   'enum'  ;
 STRUCT          :   'struct';

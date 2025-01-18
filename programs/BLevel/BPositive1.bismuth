@@ -1,6 +1,6 @@
-extern func getArgCount() : int;
+extern func getArgCount() -> int;
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   int i;
   i := getArgCount();
   c.send(i)

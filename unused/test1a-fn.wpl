@@ -88,7 +88,7 @@ str func otherbranchthree() {
     return b; 
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     printf("Hello World!\n");
     # printf(); 
     int [50] a; 

@@ -47,7 +47,7 @@ import bsl::lib::Arrays::forEach;
 extern func printf(str s, ...);
 
 
-define func linkedListToDyn<T>(LinkedList<T> list) : T[] {
+func linkedListToDyn<T>(LinkedList<T> list) -> T[] {
     T[] ans; 
 
     int len := 0; 
@@ -70,7 +70,7 @@ define func linkedListToDyn<T>(LinkedList<T> list) : T[] {
     return ans; 
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     LinkedList<int> a := LinkedList<int>::init(
         Box<LinkedList<int>>::init(LinkedList<int>::init(
             Empty::init(), 
@@ -83,7 +83,7 @@ define program :: c : Channel<-int> {
 
     forEach<int>(
         b, 
-        (int i) : Unit {
+        (int i) -> Unit {
             printf("%u, ", i);
             return; 
         }
@@ -490,7 +490,7 @@ import bsl::lib::Lists::map as llMap;
 
 extern func printf(str s, ...);
 
-define func linkedListToDyn<T>(LinkedList<T> list) : T[] {
+func linkedListToDyn<T>(LinkedList<T> list) -> T[] {
     T[] ans; 
 
     int len := 0; 
@@ -510,7 +510,7 @@ define func linkedListToDyn<T>(LinkedList<T> list) : T[] {
     return ans; 
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     LinkedList<int> a := LinkedList<int>::init(
         Box<LinkedList<int>>::init(LinkedList<int>::init(
             Empty::init(), 
@@ -524,7 +524,7 @@ define program :: c : Channel<-int> {
 
     forEach<int>(
         b, 
-        (int i) : Unit {
+        (int i) -> Unit {
             printf("%u, ", i);
             return; 
         }
@@ -534,7 +534,7 @@ define program :: c : Channel<-int> {
 
     LinkedList<int> mapped := llMap<int, int>(
         a, 
-        (int val, int idx) : int {
+        (int val, int idx) -> int {
             # printf("CALLED %u, %u\n", val, idx);
             return (val + 1) * (idx + 1); 
         }
@@ -542,7 +542,7 @@ define program :: c : Channel<-int> {
 
     forEach<int>(
         linkedListToDyn<int>(mapped),
-        (int i) : Unit {
+        (int i) -> Unit {
             printf("%u, ", i);
             return; 
         }

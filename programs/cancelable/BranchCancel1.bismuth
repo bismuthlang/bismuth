@@ -1,6 +1,6 @@
-extern func printf(str s, ...) :  int; 
+extern func printf(str s, ...) ->  int; 
 
-define program :: c : Channel<-int> 
+prog program :: c : -int 
 {
     c.send(0);
 
@@ -21,8 +21,7 @@ define program :: c : Channel<-int>
 
 
 
-define c2 :: c : Channel<
-                        Cancelable<
+prog c2 :: c : Cancelable<
                             Cancelable<
                                 ExternalChoice<
                                     +int, 
@@ -30,7 +29,7 @@ define c2 :: c : Channel<
                                 >
                             >;
                             ?(+boolean)>;
-                        Cancelable<+int;-int;+int>> {
+                        Cancelable<+int;-int;+int> {
 
     offer c 
         |   +int => {

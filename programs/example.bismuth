@@ -1,57 +1,52 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
 # Define structs for various color representations
-define struct RGBColor {
+struct RGBColor {
   int red; 
   int green; 
   int blue; 
 }
 
-define struct HSVColor {
+struct HSVColor {
   int hue; 
   int sat; 
   int value; 
 }
 
-define struct HexColor {
+struct HexColor {
   str representation; 
 }
 
 # Define an enum to act as a wrapper
-define enum Color {
+enum Color {
   RGBColor, 
   HSVColor, 
   HexColor
 }
 
 # Helper struct to demonstrate storing functions
-define struct ColorHelper {
+struct ColorHelper {
     # int, int, int -> Color getRGB; 
     Program<+int;+int;+int;-Color> getRGB; 
     int, int, int -> Color getHSV; 
     str -> Color getHex; 
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     # Define three helper functions which we then use to create a ColorHelper
     # Color func getRGBColor(int red, int green, int blue) {
-    define getRGBColor :: c : Channel<+int;+int;+int;-Color> = { # SEEMS WASTEFUL TO HAVE TO SEND EACH SEPARATLEY
+    prog getRGBColor :: c : +int;+int;+int;-Color = { # SEEMS WASTEFUL TO HAVE TO SEND EACH SEPARATLEY
         int red := c.recv(), green := c.recv(), blue := c.recv(); # Note: Channels erase names of what each var means... 
         c.send(RGBColor::init(red, green, blue))
     }
 
-    # define getRGBColor :: c : Channel<+int;+int;+int;-Color> = { 
-    #     int red := c.recv(), green := c.recv(), blue := c.recv(); 
-    #     c.send(RGBColor::init(red, green, blue))
-    # }
-
     # Color func getHSVColor(int h, int s, int v) {
-    define func getHSVColor(int h, int s, int v) : Color {
+    func getHSVColor(int h, int s, int v) -> Color {
         return HSVColor::init(h, s, v);
     }
 
     # Color func getHexColor(str s) {
-    define func getHexColor (str s) : Color {
+    func getHexColor (str s) -> Color {
         return HexColor::init(s);
     }
 
@@ -85,7 +80,7 @@ define program :: c : Channel<-int> = {
 }
 
 # Color[3] func getSampleColors(ColorHelper helper)
-define getSampleColors :: io : Channel<+ColorHelper;-Color[3]> = {
+prog getSampleColors :: io : +ColorHelper;-Color[3] = {
     ColorHelper helper := io.recv(); 
 
     Color[3] ans; 
@@ -111,8 +106,8 @@ define getSampleColors :: io : Channel<+ColorHelper;-Color[3]> = {
  * any function definitions prior to it in the local scope
  */
 # Unit func printPrimitive((int + boolean + str) toPrint) {
-# define printPrimitive :: io : Channel<+(int + boolean + str)> = {
-define func printPrimitive ((int + boolean + str) toPrint) {
+# prog printPrimitive :: io : +(int + boolean + str) = {
+func printPrimitive ((int + boolean + str) toPrint) {
   match toPrint {
     int i => printf("int: %u", i);
     str s => {
@@ -122,7 +117,7 @@ define func printPrimitive ((int + boolean + str) toPrint) {
     }
     boolean b => printf("boolean: %s", 
       # Here we define anonymous function and invoke it
-      (boolean bool) : str { 
+      (boolean bool) -> str { 
         if bool {
           return "true";
         }
@@ -135,7 +130,7 @@ define func printPrimitive ((int + boolean + str) toPrint) {
 }
 
 # Unit func toString((Color + int + boolean + str) obj) {
-define toString :: io : Channel<+(Unit + Color + int + boolean + str)> = {
+prog toString :: io : +(Unit + Color + int + boolean + str) = {
     (Unit + Color + int + boolean + str) obj := io.recv(); 
 
     match obj {

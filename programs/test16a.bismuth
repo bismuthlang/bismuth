@@ -1,6 +1,6 @@
 extern func printf(...);
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var a, b, c; 
 
     a := c; 

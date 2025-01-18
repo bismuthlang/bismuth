@@ -24,12 +24,12 @@ public:
     COMMA = 55, ELLIPSIS = 56, DEC_LITERAL = 57, HEX_LITERAL = 58, BIN_LITERAL = 59, 
     TYPE_INT = 60, TYPE_I32 = 61, TYPE_U32 = 62, TYPE_I64 = 63, TYPE_U64 = 64, 
     TYPE_BOOL = 65, TYPE_STR = 66, TYPE_UNIT = 67, TYPE_VAR = 68, TYPE_BOX = 69, 
-    TYPE_PROGRAM = 70, TYPE_CHANNEL = 71, FUNC = 72, ENUM = 73, STRUCT = 74, 
-    IF = 75, ELSE = 76, WHILE = 77, RETURN = 78, SELECT = 79, EXTERN = 80, 
-    MATCH = 81, DEFINE = 82, EXIT = 83, EXEC = 84, COPY = 85, IMPORT = 86, 
-    EXTERNAL_CHOICE = 87, INTERNAL_CHOICE = 88, CLOSEABLE = 89, FALSE = 90, 
-    TRUE = 91, STRING = 92, VARIABLE = 93, INLINE_COMMENT = 94, STD_COMMENT = 95, 
-    WS = 96
+    TYPE_PROGRAM = 70, TYPE_CHANNEL = 71, PROG = 72, FUNC = 73, ENUM = 74, 
+    STRUCT = 75, IF = 76, ELSE = 77, WHILE = 78, RETURN = 79, SELECT = 80, 
+    EXTERN = 81, MATCH = 82, DEFINE = 83, EXIT = 84, EXEC = 85, COPY = 86, 
+    IMPORT = 87, EXTERNAL_CHOICE = 88, INTERNAL_CHOICE = 89, CLOSEABLE = 90, 
+    FALSE = 91, TRUE = 92, STRING = 93, VARIABLE = 94, INLINE_COMMENT = 95, 
+    STD_COMMENT = 96, WS = 97
   };
 
   enum {
@@ -252,7 +252,6 @@ public:
     antlr4::Token *name = nullptr;
     BismuthParser::StructCaseContext *structCaseContext = nullptr;
     std::vector<StructCaseContext *> cases;
-    antlr4::tree::TerminalNode *DEFINE();
     antlr4::tree::TerminalNode *STRUCT();
     antlr4::tree::TerminalNode *LSQB();
     antlr4::tree::TerminalNode *RSQB();
@@ -273,7 +272,6 @@ public:
     antlr4::Token *name = nullptr;
     BismuthParser::TypeContext *typeContext = nullptr;
     std::vector<TypeContext *> cases;
-    antlr4::tree::TerminalNode *DEFINE();
     antlr4::tree::TerminalNode *ENUM();
     antlr4::tree::TerminalNode *LSQB();
     antlr4::tree::TerminalNode *RSQB();
@@ -295,13 +293,13 @@ public:
 
     antlr4::Token *name = nullptr;
     antlr4::Token *channelName = nullptr;
-    BismuthParser::TypeContext *ty = nullptr;
-    antlr4::tree::TerminalNode *DEFINE();
+    BismuthParser::ProtocolContext *proto = nullptr;
+    antlr4::tree::TerminalNode *PROG();
     antlr4::tree::TerminalNode *COLON();
     BlockContext *block();
     std::vector<antlr4::tree::TerminalNode *> VARIABLE();
     antlr4::tree::TerminalNode* VARIABLE(size_t i);
-    TypeContext *type();
+    ProtocolContext *protocol();
     GenericTemplateContext *genericTemplate();
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -315,7 +313,6 @@ public:
 
     antlr4::Token *name = nullptr;
     BismuthParser::LambdaConstExprContext *lam = nullptr;
-    antlr4::tree::TerminalNode *DEFINE();
     antlr4::tree::TerminalNode *FUNC();
     antlr4::tree::TerminalNode *VARIABLE();
     LambdaConstExprContext *lambdaConstExpr();
@@ -343,7 +340,7 @@ public:
     antlr4::tree::TerminalNode *SEMICOLON();
     antlr4::tree::TerminalNode *VARIABLE();
     antlr4::tree::TerminalNode *ELLIPSIS();
-    antlr4::tree::TerminalNode *COLON();
+    antlr4::tree::TerminalNode *MAPS_TO();
     TypeContext *type();
     ParameterListContext *parameterList();
     antlr4::tree::TerminalNode *VariadicParam();
@@ -831,7 +828,7 @@ public:
     ParameterListContext *parameterList();
     antlr4::tree::TerminalNode *RPAR();
     BlockContext *block();
-    antlr4::tree::TerminalNode *COLON();
+    antlr4::tree::TerminalNode *MAPS_TO();
     TypeContext *type();
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;

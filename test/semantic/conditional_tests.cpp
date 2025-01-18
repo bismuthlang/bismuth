@@ -23,7 +23,7 @@ TEST_CASE("Inference If Errors - 1", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
   var a; 
   
   if(1 < 2) {
@@ -43,7 +43,7 @@ TEST_CASE("Inference If - 1", "[semantic]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
   var a; 
   
   if(1 < 2) {
@@ -85,7 +85,7 @@ TEST_CASE("Inference If - 2", "[semantic]")
 {
   antlr4::ANTLRInputStream input(
       R""""(
-define program :: c : Channel<-int> {
+prog program :: c : -int {
   var a; 
   
   if(1 < 2) {

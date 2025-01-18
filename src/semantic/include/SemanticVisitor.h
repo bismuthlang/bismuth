@@ -485,6 +485,13 @@ std::variant<
         std::function<TypedNode *(Y)> getNode, 
         std::function<std::variant<Y, ErrorChain *>(T *)> typeCheck);
 
+
+    inline std::variant<const ProtocolSequence *, ErrorChain *>
+    visitProtocolAsSeq(BismuthParser::ProtocolContext *ctx);
+
+    inline std::variant<const TypeChannel *, ErrorChain *>
+    visitProtocolAsChannel(BismuthParser::ProtocolContext *ctx);
+
 private:
     DisplayMode toStringMode; 
 

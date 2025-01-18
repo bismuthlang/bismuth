@@ -1,15 +1,15 @@
 extern func printf(...);
 
-extern func foo(int z) : Unit; 
+extern func foo(int z) -> Unit; 
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     foo(10); 
 
     return 1; 
 }
 
-define foo :: c : Channel<+int> = {
+prog foo :: c : +int = {
     int a := c.recv();
     printf("a=%u\n", a);
 }

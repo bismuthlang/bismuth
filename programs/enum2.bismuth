@@ -1,12 +1,12 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-define enum lambdaOp {
+enum lambdaOp {
     str, int -> str,
     str -> str
 }
 
 
-define enum a {
+enum a {
     int, 
     boolean,
     str,
@@ -14,8 +14,8 @@ define enum a {
     (str, int -> str + str -> str)
 }
 
-define program :: c : Channel<-int> = {
-    var fn := (str msg, int times) : str {
+prog program :: c : -int = {
+    var fn := (str msg, int times) -> str {
         while times > 0 {
             printf("msg=%s\n", msg);
             times := times -1; 

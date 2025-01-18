@@ -2,25 +2,25 @@
 # b (orig/5;6) = {b1 : 5@A, b2 : 6@B}
 # b (orig/9;6) = {b1 : 9@C, b2 : 6@D}
 
-extern func printf(str s, ...) : Unit;
+extern func printf(str s, ...) -> Unit;
 
-define struct IB {
+struct IB {
   Box<int> a; 
 }
 
 # Two Int Box Box
-define struct TIBB {
+struct TIBB {
   Box<Box<int>> b1; 
   Box<Box<int>> b2; 
   IB ib; 
 }
 
-define func printTIBB(str name, TIBB b) {
+func printTIBB(str name, TIBB b) {
   printf("%s = {b1 : %u@%p, b2 : %u@%p}\n", name, **b.b1, b.b1, **b.b2, b.b2);
   return; 
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   
   var shared := Box<Box<int>>::init(Box<int>::init(5));
   var tibb := TIBB::init(shared, Box<Box<int>>::init(Box<int>::init(6)), IB::init(Box<int>::init(1)));

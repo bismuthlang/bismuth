@@ -1,8 +1,8 @@
-extern func printf(str a, ...) : int;
-extern func getArgCount() : int;
-extern func getIntArg(int i) : int;
+extern func printf(str a, ...) -> int;
+extern func getArgCount() -> int;
+extern func getIntArg(int i) -> int;
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var i := 1;
 
   if getArgCount() < 2 {

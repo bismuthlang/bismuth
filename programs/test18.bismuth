@@ -1,7 +1,7 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
-# define program :: c : Channel<-int> = {
-define program :: io : Channel<-int> = {
+# prog program :: c : -int = {
+prog program :: io : -int = {
     var a, b := "Hello world!", c, d := 10 * 2; 
 
     printf("a = %s, b = %s, c = %d, d = %d\n", a, b, c, d); # a = Hello world!, b = Hello world!, c = 20, d = 20

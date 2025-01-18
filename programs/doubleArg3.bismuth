@@ -1,7 +1,7 @@
 extern func printf(...);
 
 # proc foo(int a, str a, int b) {
-define func foo (int a, str a, int b) : int {
+func foo (int a, str a, int b) -> int {
     a := 10;
     a := "10";  
 
@@ -10,7 +10,7 @@ define func foo (int a, str a, int b) : int {
     return 0;
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
  var current := 1;        
  c.send(current)
 #  return -1;

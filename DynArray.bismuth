@@ -1,6 +1,6 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
-define func printIdxValue(int[] array, str id, int idx) : Unit 
+func printIdxValue (int[] array, str id, int idx) -> Unit 
 {
     var val := array[idx];
 
@@ -12,7 +12,7 @@ define func printIdxValue(int[] array, str id, int idx) : Unit
 }
 
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
 
     int [] a; 
 

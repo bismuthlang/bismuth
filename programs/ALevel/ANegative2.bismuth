@@ -2,8 +2,8 @@
 #   return i + j;
 # }
 
-extern func add(int i, int j) : int;
+extern func add(int i, int j) -> int;
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   c.send(add(5, 6, 7))
 }

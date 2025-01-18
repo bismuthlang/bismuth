@@ -1,9 +1,9 @@
-extern func printf(...) : int; 
+extern func printf(...) -> int; 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
 
-    var ref := (int x) : int {
+    var ref := (int x) -> int {
         printf("LAM: %u:\n", x);
         return x; 
     }; 
@@ -11,7 +11,7 @@ define program :: c : Channel<-int> = {
     ref(10); 
     printf("ref(1) = %u\n", ref(1));
 
-    ref := (int z) : int {
+    ref := (int z) -> int {
         printf("LAM2: %u\n", z);
         return z; 
     };

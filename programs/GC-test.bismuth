@@ -1,6 +1,6 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
-define sender :: c : Channel<?-str> = {
+prog sender :: c : ?-str = {
     int i := 0; 
     while true {
         more(c)
@@ -11,13 +11,13 @@ printf("Sending! %u\n", i);
     weaken(c)
 }
 
-define reciever :: c : Channel<!+str> = {
+prog reciever :: c : !+str = {
     accept(c) {
         str s := c.recv(); 
     }
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var a := exec sender, b := exec reciever; 
 
     accept(a) {
