@@ -1,7 +1,6 @@
-
 #include <catch2/catch_test_macros.hpp>
 #include "Compile.h"
-// TODO: Note: this doesn't compile all bsl functions due to them being templated. 
+// TODO: Note: this doesn't compile all bsl functions due to them being templated.
 // Ensure we have coverage on the standard library!
 
 TEST_CASE("BSL - Compile 1", "[cli]")
@@ -14,13 +13,13 @@ TEST_CASE("BSL - Compile 1", "[cli]")
     };
 
     /*
-    std::vector<std::pair<std::string, std::vector<std::string>>> bslFiles; 
+    std::vector<std::pair<std::string, std::vector<std::string>>> bslFiles;
     bslFiles.push_back({"./bsl/lib/Types.bismuth", {"bsl", "lib", "Types"}});
     bslFiles.push_back({"./bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"}});
     bslFiles.push_back({"./bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"}});
     bslFiles.push_back({"./bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"}});
 
-    std::vector<VirtualInput *> inputs; 
+    std::vector<VirtualInput *> inputs;
 
     for(auto i : bslFiles)
     {
@@ -39,64 +38,64 @@ TEST_CASE("BSL - Compile 1", "[cli]")
 
     VirtualInput * temp = new VirtualInput(
         new antlr4::ANTLRInputStream(R""""(
-import bsl::lib::Types::Empty; 
-import bsl::lib::Optional::Optional; 
-import bsl::lib::Lists::LinkedList; 
-import bsl::lib::Arrays::forEach; 
+import bsl::lib::Types::Empty;
+import bsl::lib::Optional::Optional;
+import bsl::lib::Lists::LinkedList;
+import bsl::lib::Arrays::forEach;
 
 extern func printf(str s, ...);
 
 
 func linkedListToDyn<T>(LinkedList<T> list) -> T[] {
-    T[] ans; 
+    T[] ans;
 
-    int len := 0; 
-    var ptr := Box<LinkedList<T>>::init(list); 
-    var shouldLoop := true; 
+    int len := 0;
+    var ptr := Box<LinkedList<T>>::init(list);
+    var shouldLoop := true;
 
     while(shouldLoop) {
-        LinkedList<T> lst := *ptr; 
-        ans[len] := lst.value; 
-        match lst.next 
+        LinkedList<T> lst := *ptr;
+        ans[len] := lst.value;
+        match lst.next
             |   Box<LinkedList<T>> nxt => {
-                    ptr := nxt; 
-                    len := len + 1; 
+                    ptr := nxt;
+                    len := len + 1;
                 }
             |   Empty e => {
-                    shouldLoop := false; 
+                    shouldLoop := false;
                 }
     }
 
-    return ans; 
+    return ans;
 }
 
-prog program :: c : -int {
+prog main :: c : -int {
     LinkedList<int> a := LinkedList<int>::init(
         Box<LinkedList<int>>::init(LinkedList<int>::init(
-            Empty::init(), 
+            Empty::init(),
             2
         )),
         1
     );
-    
+
     int[] b := linkedListToDyn<int>(a);
 
     forEach<int>(
-        b, 
+        b,
         (int i) -> Unit {
             printf("%u, ", i);
-            return; 
+            return;
         }
     );
 
-    c.send(0); 
+    c.send(0);
 }
 
-        )""""), 
+        )""""),
         {"temp"}
     );
 
-    std::vector<CompilerInput *> inputs; 
+    std::vector<CompilerInput *> inputs;
     inputs.push_back(bsl_lib_types);
     inputs.push_back(bsl_lib_lists);
     inputs.push_back(bsl_lib_optional);
@@ -104,23 +103,23 @@ prog program :: c : -int {
     inputs.push_back(temp);
 
     compile(
-        inputs, 
-        "-.ll", 
+        inputs,
+        "-.ll",
         false,
-        true, 
+        true,
         DisplayMode::C_STYLE,
-        false, 
-        false, 
+        false,
+        false,
         CompileType::none
     );
 
 
-    REQUIRE(bsl_lib_types->getIrStr() == 
+    REQUIRE(bsl_lib_types->getIrStr() ==
 R"(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 )");
 
-    REQUIRE(bsl_lib_lists->getIrStr() == 
+    REQUIRE(bsl_lib_lists->getIrStr() ==
 R"(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 )");
@@ -130,7 +129,7 @@ R"(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 )");
 
-    REQUIRE(bsl_lib_arrays->getIrStr() == 
+    REQUIRE(bsl_lib_arrays->getIrStr() ==
 R"""(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 
@@ -228,7 +227,7 @@ rest:                                             ; preds = %match-cont, %entry
 }
 )""");
 
-    REQUIRE(temp->getIrStr() == 
+    REQUIRE(temp->getIrStr() ==
 R"""(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 
@@ -240,7 +239,7 @@ source_filename = "BismuthProgram"
 
 @0 = private unnamed_addr constant [5 x i8] c"%u, \00", align 1
 
-define %Unit @program(ptr %0) {
+define %Unit @_bismuth_main(ptr %0) {
 entry:
   %b = alloca %"int[]", align 8
   %a = alloca %"bsl::lib::Lists::LinkedList<int>", align 8
@@ -279,7 +278,7 @@ entry:
   %20 = call %"int[]" @"temp::linkedListToDyn<int>"(%"bsl::lib::Lists::LinkedList<int>" %a1)
   store %"int[]" %20, ptr %b, align 8
   %b2 = load %"int[]", ptr %b, align 8
-  %21 = call %Unit @"bsl::lib::Arrays::forEach<int>"(%"int[]" %b2, ptr @"program::#lambda")
+  %21 = call %Unit @"bsl::lib::Arrays::forEach<int>"(%"int[]" %b2, ptr @"_bismuth_main::#lambda")
   %22 = call ptr @malloc(i32 4)
   store i32 0, ptr %22, align 4
   %23 = load ptr, ptr %c, align 8
@@ -426,7 +425,7 @@ rest13:                                           ; preds = %match-cont, %entry
 
 declare ptr @GC_malloc(i64)
 
-define private %Unit @"program::#lambda"(i32 %0) {
+define private %Unit @"_bismuth_main::#lambda"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -456,13 +455,13 @@ TEST_CASE("BSL - Compile 3", "[cli]")
     };
 
     /*
-    std::vector<std::pair<std::string, std::vector<std::string>>> bslFiles; 
+    std::vector<std::pair<std::string, std::vector<std::string>>> bslFiles;
     bslFiles.push_back({"./bsl/lib/Types.bismuth", {"bsl", "lib", "Types"}});
     bslFiles.push_back({"./bsl/lib/Lists.bismuth", {"bsl", "lib", "Lists"}});
     bslFiles.push_back({"./bsl/lib/Optional.bismuth", {"bsl", "lib", "Optional"}});
     bslFiles.push_back({"./bsl/lib/Arrays.bismuth", {"bsl", "lib", "Arrays"}});
 
-    std::vector<VirtualInput *> inputs; 
+    std::vector<VirtualInput *> inputs;
 
     for(auto i : bslFiles)
     {
@@ -481,62 +480,62 @@ TEST_CASE("BSL - Compile 3", "[cli]")
 
     VirtualInput * temp = new VirtualInput(
         new antlr4::ANTLRInputStream(R""""(
-import bsl::lib::Types::Empty; 
-import bsl::lib::Optional::Optional; 
-import bsl::lib::Lists::LinkedList; 
-import bsl::lib::Arrays::forEach; 
+import bsl::lib::Types::Empty;
+import bsl::lib::Optional::Optional;
+import bsl::lib::Lists::LinkedList;
+import bsl::lib::Arrays::forEach;
 
-import bsl::lib::Lists::map as llMap; 
+import bsl::lib::Lists::map as llMap;
 
 extern func printf(str s, ...);
 
 func linkedListToDyn<T>(LinkedList<T> list) -> T[] {
-    T[] ans; 
+    T[] ans;
 
-    int len := 0; 
-    var ptr := Box<LinkedList<T>>::init(list); 
+    int len := 0;
+    var ptr := Box<LinkedList<T>>::init(list);
 
     while(true) {
-        LinkedList<T> lst := *ptr; 
-        ans[len] := lst.value; 
+        LinkedList<T> lst := *ptr;
+        ans[len] := lst.value;
         match lst.next
             |   Box<LinkedList<T>> nxt => {
-                    ptr := nxt; 
-                    len := len + 1; 
+                    ptr := nxt;
+                    len := len + 1;
                 }
-            |   Empty e => return ans; 
+            |   Empty e => return ans;
     }
 
-    return ans; 
+    return ans;
 }
 
-prog program :: c : -int {
+prog main :: c : -int {
     LinkedList<int> a := LinkedList<int>::init(
         Box<LinkedList<int>>::init(LinkedList<int>::init(
-            Empty::init(), 
+            Empty::init(),
             2
         )),
         1
     );
-    
+
 
     int[] b := linkedListToDyn<int>(a);
 
     forEach<int>(
-        b, 
+        b,
         (int i) -> Unit {
             printf("%u, ", i);
-            return; 
+            return;
         }
     );
 
     printf("\n");
 
     LinkedList<int> mapped := llMap<int, int>(
-        a, 
+        a,
         (int val, int idx) -> int {
             # printf("CALLED %u, %u\n", val, idx);
-            return (val + 1) * (idx + 1); 
+            return (val + 1) * (idx + 1);
         }
     );
 
@@ -544,19 +543,19 @@ prog program :: c : -int {
         linkedListToDyn<int>(mapped),
         (int i) -> Unit {
             printf("%u, ", i);
-            return; 
+            return;
         }
     );
 
     printf("\n");
 
-    c.send(0); 
+    c.send(0);
 }
-        )""""), 
+        )""""),
         {"temp3"}
     );
 
-    std::vector<CompilerInput *> inputs; 
+    std::vector<CompilerInput *> inputs;
     inputs.push_back(bsl_lib_types);
     inputs.push_back(bsl_lib_lists);
     inputs.push_back(bsl_lib_optional);
@@ -564,23 +563,23 @@ prog program :: c : -int {
     inputs.push_back(temp);
 
     compile(
-        inputs, 
-        "-.ll", 
+        inputs,
+        "-.ll",
         false,
-        true, 
+        true,
         DisplayMode::C_STYLE,
-        false, 
-        false, 
+        false,
+        false,
         CompileType::none
     );
 
 
-    REQUIRE(bsl_lib_types->getIrStr() == 
+    REQUIRE(bsl_lib_types->getIrStr() ==
 R"(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 )");
 
-    REQUIRE(bsl_lib_lists->getIrStr() == 
+    REQUIRE(bsl_lib_lists->getIrStr() ==
 R"""(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 
@@ -849,7 +848,7 @@ R"(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 )");
 
-    REQUIRE(bsl_lib_arrays->getIrStr() == 
+    REQUIRE(bsl_lib_arrays->getIrStr() ==
 R"""(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 
@@ -947,7 +946,7 @@ rest:                                             ; preds = %match-cont, %entry
 }
 )""");
 
-    REQUIRE(temp->getIrStr() == 
+    REQUIRE(temp->getIrStr() ==
 R"""(; ModuleID = 'BismuthProgram'
 source_filename = "BismuthProgram"
 
@@ -963,7 +962,7 @@ source_filename = "BismuthProgram"
 @2 = private unnamed_addr constant [5 x i8] c"%u, \00", align 1
 @3 = private unnamed_addr constant [2 x i8] c"\0A\00", align 1
 
-define %Unit @program(ptr %0) {
+define %Unit @_bismuth_main(ptr %0) {
 entry:
   %mapped = alloca %"bsl::lib::Lists::LinkedList<int>", align 8
   %1 = alloca %"(int -> int + int, int -> int)", align 8
@@ -1004,19 +1003,19 @@ entry:
   %21 = call %"int[]" @"temp3::linkedListToDyn<int>"(%"bsl::lib::Lists::LinkedList<int>" %a1)
   store %"int[]" %21, ptr %b, align 8
   %b2 = load %"int[]", ptr %b, align 8
-  %22 = call %Unit @"bsl::lib::Arrays::forEach<int>"(%"int[]" %b2, ptr @"program::#lambda")
+  %22 = call %Unit @"bsl::lib::Arrays::forEach<int>"(%"int[]" %b2, ptr @"_bismuth_main::#lambda")
   %23 = call %Unit (ptr, ...) @printf(ptr @1)
   %a3 = load %"bsl::lib::Lists::LinkedList<int>", ptr %a, align 4
   %24 = getelementptr %"(int -> int + int, int -> int)", ptr %1, i32 0, i32 0
   store i32 2, ptr %24, align 4
   %25 = getelementptr %"(int -> int + int, int -> int)", ptr %1, i32 0, i32 1
-  store ptr @"program::#lambda.0", ptr %25, align 8
+  store ptr @"_bismuth_main::#lambda.0", ptr %25, align 8
   %26 = load %"(int -> int + int, int -> int)", ptr %1, align 4
   %27 = call %"bsl::lib::Lists::LinkedList<int>" @"bsl::lib::Lists::map<int, int>"(%"bsl::lib::Lists::LinkedList<int>" %a3, %"(int -> int + int, int -> int)" %26)
   store %"bsl::lib::Lists::LinkedList<int>" %27, ptr %mapped, align 4
   %mapped4 = load %"bsl::lib::Lists::LinkedList<int>", ptr %mapped, align 4
   %28 = call %"int[]" @"temp3::linkedListToDyn<int>"(%"bsl::lib::Lists::LinkedList<int>" %mapped4)
-  %29 = call %Unit @"bsl::lib::Arrays::forEach<int>"(%"int[]" %28, ptr @"program::#lambda.1")
+  %29 = call %Unit @"bsl::lib::Arrays::forEach<int>"(%"int[]" %28, ptr @"_bismuth_main::#lambda.1")
   %30 = call %Unit (ptr, ...) @printf(ptr @3)
   %31 = call ptr @malloc(i32 4)
   store i32 0, ptr %31, align 4
@@ -1160,7 +1159,7 @@ rest12:                                           ; preds = %match-cont, %entry
 
 declare ptr @GC_malloc(i64)
 
-define private %Unit @"program::#lambda"(i32 %0) {
+define private %Unit @"_bismuth_main::#lambda"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4
@@ -1171,7 +1170,7 @@ entry:
 
 declare %Unit @"bsl::lib::Arrays::forEach<int>"(%"int[]", ptr)
 
-define private i32 @"program::#lambda.0"(i32 %0, i32 %1) {
+define private i32 @"_bismuth_main::#lambda.0"(i32 %0, i32 %1) {
 entry:
   %idx = alloca i32, align 4
   %val = alloca i32, align 4
@@ -1187,7 +1186,7 @@ entry:
 
 declare %"bsl::lib::Lists::LinkedList<int>" @"bsl::lib::Lists::map<int, int>"(%"bsl::lib::Lists::LinkedList<int>", %"(int -> int + int, int -> int)")
 
-define private %Unit @"program::#lambda.1"(i32 %0) {
+define private %Unit @"_bismuth_main::#lambda.1"(i32 %0) {
 entry:
   %i = alloca i32, align 4
   store i32 %0, ptr %i, align 4

@@ -272,8 +272,13 @@ std::optional<Value *> CodegenVisitor::visit(TProgramProjectNode & n)
 
     Value *chanVal = optVal.value();
 
-    builder->CreateCall(getWriteProjection(), {builder->CreateLoad(channelRtPtrTy(), chanVal),
-                                               getU32(n.projectIndex)});
+    builder->CreateCall(
+        getWriteProjection(), 
+        {
+            builder->CreateLoad(channelRtPtrTy(), chanVal),
+            getU32(n.projectIndex)
+        }
+    );
     return std::nullopt;
 }
 
@@ -491,7 +496,12 @@ std::optional<Value *> CodegenVisitor::visit(TProgramWeakenNode & n)
 
     Value *chanVal = optVal.value();
 
-    builder->CreateCall(getWeakenChannel(), {builder->CreateLoad(channelRtPtrTy(), chanVal)});
+    builder->CreateCall(
+        getWeakenChannel(), 
+        {
+            builder->CreateLoad(channelRtPtrTy(), chanVal)
+        }
+    );
 
     return std::nullopt;
 }
@@ -801,7 +811,6 @@ std::optional<Value *> CodegenVisitor::visit(TArrayRValue & n)
         writeTo = builder->CreateLoad(
             ArrayElementType,
             vecPtr
-        //    vecPtr->getType()->getArrayElementType()
         );
 
         stoType = const_cast<Type *>(ty->getValueType()); 

@@ -49,7 +49,7 @@ TEST_CASE("programs/doubleArg1 - Prevent Argument reuse in func", "[semantic]")
   EnsureErrorsWithMessage(
       R""""(
 func foo (int a, int a, int b) {
-  return; 
+  return;
 }
     )"""",
       "Re-use of previously defined parameter a");
@@ -197,8 +197,8 @@ TEST_CASE("Demo Mode: Program is required", "[semantic][conditional]")
 {
   EnsureErrorsWithMessage(
     R""""(
-    )"""", 
-    "When compiling in demo mode, 'program :: * : Channel<-int>' (the entry point) must be defined", 
+    )"""",
+    "When compiling in demo mode, 'prog main :: * : -int' (the entry point) must be defined",
     DEMO_MODE
   );
 }
@@ -207,11 +207,11 @@ TEST_CASE("Demo Mode: Program is wrong type", "[semantic][conditional]")
 {
   EnsureErrorsWithMessage(
     R""""(
-func program () {
-  return; 
+func main () {
+  return;
 }
-    )"""", 
-    "When compiling in demo mode identifier 'program' must be defined as 'program :: * : Channel<-int>' (the entry point)", 
+    )"""",
+    "When compiling in demo mode identifier 'main' must be defined as 'prog main :: * : -int' (the entry point)",
     DEMO_MODE
   );
 }
@@ -220,11 +220,11 @@ TEST_CASE("Demo Mode: Program follows wrong protocol", "[semantic][conditional]"
 {
   EnsureErrorsWithMessage(
     R""""(
-prog program :: c : -boolean {
+prog main :: c : -boolean {
   c.send(false)
 }
-    )"""", 
-    "In demo mode, 'program' must recognize a channel of protocol -int, not -boolean",
+    )"""",
+    "In demo mode, 'main' must recognize a channel of protocol -int, not -boolean",
     DEMO_MODE
   );
 }
@@ -235,13 +235,13 @@ TEST_CASE("Dead code in program block", "[semantic][program]")
       R""""(
     func program () -> int {
 
-        return 1; 
+        return 1;
 
-        int a; 
+        int a;
 
         return 0;
     }
-    )"""", 
+    )"""",
     "Dead code");
 }
 
@@ -252,16 +252,16 @@ TEST_CASE("Dead code in if/else", "[semantic][program][conditional]")
     func program () -> int {
 
     if true {
-        return 0; 
+        return 0;
 
-        int a; 
+        int a;
     } else {
         return 1;
 
-        int b; 
+        int b;
     }
 }
-    )"""", 
+    )"""",
     "Dead code");
 }
 
@@ -279,13 +279,13 @@ func foo (int idk) -> int {
         }
 
         false : {
-            return 1; 
+            return 1;
 
-            int b; 
+            int b;
         }
     }
 
-    return 0; 
+    return 0;
 }
     )"""",
     "Dead code");
@@ -296,7 +296,7 @@ TEST_CASE("Infer In return", "[semantic][program]")
   antlr4::ANTLRInputStream input(
       R""""(
 prog program :: c : -int = {
-    var a; 
+    var a;
     # return a;
     c.send(a)
 }
@@ -308,7 +308,7 @@ prog program :: c : -int = {
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
+  auto pListener = TestErrorListener();
   parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -334,10 +334,10 @@ func foo (int a) -> int {
 }
 
 prog program :: c : -int = {
-  foo("hello");  
+  foo("hello");
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Argument 0 expected int but got str");
 }
 
@@ -346,11 +346,11 @@ TEST_CASE("Invoke on Non-Function (str)", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int = {
-  var x := "hey there!"; 
+  var x := "hey there!";
   x();
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Can only invoke functions, not str");
 }
 
@@ -361,7 +361,7 @@ TEST_CASE("Invoke on Non-Function (int)", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int = {
-  var x := 10; 
+  var x := 10;
   x();
   c.send(0)
 }
@@ -384,7 +384,7 @@ func foo () -> str {
 prog program :: c : -int = {
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -393,10 +393,10 @@ TEST_CASE("Copy linear resources", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int = {
-  var a := copy c; 
+  var a := copy c;
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Cannot perform a copy on a linear type: Channel<-int>");
 }
 
@@ -415,7 +415,7 @@ prog foo :: c : -str = {
 prog program :: c : -int = {
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -441,7 +441,7 @@ prog program :: c : -int = {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -471,7 +471,7 @@ func foo() -> int {
 prog program :: c : -int = {
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -490,7 +490,7 @@ prog foo :: c : -int = {
 prog program :: c : -int = {
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -509,7 +509,7 @@ func foo (int a) -> int {
 prog program :: c : -int = {
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -522,14 +522,14 @@ prog foo :: c : -int = {
 }
 
 prog foo :: c : +int;-int = {
-  int a := c.recv(); 
+  int a := c.recv();
   c.send(1)
 }
 
 prog program :: c : -int = {
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -543,7 +543,7 @@ extern func foo(int a) -> int;
 prog program :: c : -int = {
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -558,8 +558,8 @@ extern func foo(str a) -> int;
 # str a := "hello";
 
 prog program :: c : -int = {
-    printf("hey!!"); 
-    foo(); 
+    printf("hey!!");
+    foo();
     # return 0;
     c.send(0)
 }
@@ -568,7 +568,7 @@ prog program :: c : -int = {
 func foo (str a) {
     printf("a = %s\n", a);
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -599,7 +599,7 @@ func foo (str a) {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -621,10 +621,10 @@ TEST_CASE("Forward Decl with Variadic", "[semantic][program][function][forward-d
       R""""(
 extern func printf(...) -> int;
 
-extern func foo(int a, ...) -> Unit; 
+extern func foo(int a, ...) -> Unit;
 
 prog program :: c : -int = {
-    foo(); 
+    foo();
     # return 0;
     c.send(0)
 }
@@ -637,7 +637,7 @@ prog foo :: c : +int = {
   c.send(0)
 }
 
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -651,7 +651,7 @@ extern func foo(str a) -> int;
 
 
 prog program :: c : -int = {
-    foo("hello"); 
+    foo("hello");
     # return 0;
     c.send(0)
 }
@@ -692,7 +692,7 @@ func foo (str a, int b) -> int {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -736,7 +736,7 @@ func foo (str a, int b) -> int {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -757,10 +757,10 @@ TEST_CASE("Wrong UnaryNot", "[semantic][program][bool]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int {
-    boolean a := ~0; 
+    boolean a := ~0;
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Expression of type int cannot be assigned to boolean");
 }
 
@@ -769,10 +769,10 @@ TEST_CASE("Wrong UnaryMinus", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int {
-    int a := -"hey"; 
+    int a := -"hey";
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Signed number (e.g., int or i64) expected in unary minus, but got str");
 }
 
@@ -781,10 +781,10 @@ TEST_CASE("Wrong RHS Arithmetic", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int {
-    int a := 0 - "hey?"; 
+    int a := 0 - "hey?";
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Operator - cannot be applied between int and str. Expected int - int");
 }
 
@@ -793,7 +793,7 @@ TEST_CASE("Wrong LogAnd LHS", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int {
-    boolean a := 1 && false; 
+    boolean a := 1 && false;
     c.send(0)
 }
     )"""",
@@ -805,10 +805,10 @@ TEST_CASE("Wrong LogAnd RHS", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int {
-    boolean a := false && 1; 
+    boolean a := false && 1;
     c.send(0)
 }
-    )"""", 
+    )"""",
     "boolean expression expected, but was int");
 }
 
@@ -817,10 +817,10 @@ TEST_CASE("Wrong LogOr LHS", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int {
-    boolean a := 1 || false; 
+    boolean a := 1 || false;
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Expected boolean but got int");
 }
 
@@ -829,7 +829,7 @@ TEST_CASE("Wrong LogOr RHS", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int {
-    boolean a := false || 1; 
+    boolean a := false || 1;
     c.send(0)
 }
     )"""",
@@ -842,10 +842,10 @@ TEST_CASE("Field Access - var", "[semantic][program]")
       R""""(
 prog program :: c : -int {
     var a;
-    var b := a.length; 
+    var b := a.length;
     c.send(0);
 }
-    )"""", 
+    )"""",
     "Cannot access length on VAR");
 }
 
@@ -855,10 +855,10 @@ TEST_CASE("Field Access - int", "[semantic][program]")
       R""""(
 prog program :: c : -int {
     int a;
-    var b := a.length; 
+    var b := a.length;
     c.send(0);
 }
-    )"""", 
+    )"""",
     "Cannot access length on int");
 }
 
@@ -883,10 +883,10 @@ TEST_CASE("Field Access - Unsupported/Undefined", "[semantic][program]")
       R""""(
 prog program :: c : -int {
     int [5] a;
-    var b := a.testing; 
+    var b := a.testing;
     c.send(0);
 }
-    )"""", 
+    )"""",
     "Cannot access testing on int[5]");
 }
 
@@ -895,10 +895,10 @@ TEST_CASE("Field Access - Undefined Var", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int {
-    var b := a.testing; 
+    var b := a.testing;
     c.send(0);
 }
-    )"""", 
+    )"""",
     "Undefined variable reference: a");
 }
 
@@ -907,10 +907,10 @@ TEST_CASE("Equals Different types", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int {
-    var a := "hello" == 1; 
+    var a := "hello" == 1;
     c.send(0);
 }
-    )"""", 
+    )"""",
     "Both sides of '=' must have the same type");
 }
 
@@ -919,10 +919,10 @@ TEST_CASE("Assign to undefined", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int = {
-  a := 10; 
+  a := 10;
   c.send(0);
 }
-    )"""", 
+    )"""",
     "Undefined variable reference: a");
 }
 
@@ -938,7 +938,7 @@ func foo () {
 prog program :: c : -int = {
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Expected return type of Unit but got int");
 }
 
@@ -951,7 +951,7 @@ func foo (int x) -> int {
   return;
 }
 prog program :: c : -int = {
-  # return 0; 
+  # return 0;
   c.send(0)
 }
     )"""",
@@ -963,9 +963,9 @@ TEST_CASE("Function return wrong type", "[semantic][program]")
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int = {
-  c.send("hey"); 
+  c.send("hey");
 }
-    )"""", 
+    )"""",
     "Failed to send str over channel [c, Channel<-int>]");
 }
 
@@ -974,16 +974,16 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 1", "[semantic][program]
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int = {
-  var a := 0; 
+  var a := 0;
 
   func foo (Channel<-int> c) -> Channel<-int> {
-    a := 2; 
-    return c; 
+    a := 2;
+    return c;
   }
 
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Undefined variable reference: a");
 }
 
@@ -992,13 +992,13 @@ TEST_CASE("Nested Local Program - Disallow Local vars 1", "[semantic][program][l
   EnsureErrorsWithMessage(
       R""""(
 prog program :: c : -int = {
-  var a := 0; 
+  var a := 0;
 
   prog foo :: c : -int = {
     c.send(a)
   }
 
-  c.send(0); 
+  c.send(0);
 }
     )"""",
     "Undefined variable reference: a");
@@ -1026,7 +1026,7 @@ prog program :: c : -int = {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1049,12 +1049,12 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2f", "[semantic][pr
       R""""(
 prog program :: c : -int = {
   func other (int a) -> int {
-    var c := 10; 
+    var c := 10;
     return a;
   }
 
   func foo (int x) -> int {
-      return other(x); 
+      return other(x);
   }
 
   c.send(0)
@@ -1067,7 +1067,7 @@ prog program :: c : -int = {
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
+  auto pListener = TestErrorListener();
   parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1089,12 +1089,12 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2p", "[semantic][pr
       R""""(
 prog program :: c : -int = {
   func other (int a) -> int {
-    var c := 10; 
+    var c := 10;
     return a;
   }
 
   prog foo :: c : +int;-int = {
-    int x := c.recv(); 
+    int x := c.recv();
     c.send(other(x))
   }
 
@@ -1108,7 +1108,7 @@ prog program :: c : -int = {
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
+  auto pListener = TestErrorListener();
   parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1130,13 +1130,13 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][pr
       R""""(
 prog program :: c : -int = {
   prog other :: io : -int = {
-    var c := 10; 
+    var c := 10;
     io.send(c)
   }
 
   func foo (int y) -> int {
-      Channel<+int> c := exec other; 
-      int x := c.recv(); 
+      Channel<+int> c := exec other;
+      int x := c.recv();
       return x;
   }
 
@@ -1145,12 +1145,12 @@ prog program :: c : -int = {
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener(); 
+  // auto lListener = TestErrorListener();
   // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
+  auto pListener = TestErrorListener();
   parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1175,13 +1175,13 @@ TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][pr
       R""""(
 prog program :: c : -int = {
   prog other :: io : -int = {
-    var c := 10; 
+    var c := 10;
     io.send(c)
   }
 
   prog foo :: io : -int = {
-    Channel<+int> c := exec other; 
-    int ans := c.recv(); 
+    Channel<+int> c := exec other;
+    int ans := c.recv();
     io.send(ans)
   }
 
@@ -1195,7 +1195,7 @@ prog program :: c : -int = {
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
+  auto pListener = TestErrorListener();
   parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1219,24 +1219,24 @@ TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")
       R""""(
 prog program :: c : -int = {
   prog other :: io : -int = {
-    var c := 10; 
+    var c := 10;
     io.send(c)
   }
 
   prog foo :: io : -Channel<+int> = {
-    Channel<+int> ans := exec other; 
+    Channel<+int> ans := exec other;
     io.send(ans)
   }
 
   prog foo :: io : -int = {
-    Channel<+int> c := exec other; 
-    int ans := c.recv(); 
+    Channel<+int> c := exec other;
+    int ans := c.recv();
     io.send(ans)
   }
 
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -1246,12 +1246,12 @@ TEST_CASE("Redeclaration - p2f", "[semantic][program][local-function]")
       R""""(
 prog program :: c : -int = {
   prog other :: io : -int = {
-    var c := 10; 
+    var c := 10;
     io.send(c)
   }
 
   prog foo :: io : -Channel<+int> = {
-    Channel<+int> ans := exec other; 
+    Channel<+int> ans := exec other;
     io.send(ans)
   }
 
@@ -1261,7 +1261,7 @@ prog program :: c : -int = {
 
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -1271,7 +1271,7 @@ TEST_CASE("Redeclaration - f2p", "[semantic][program][local-function]")
       R""""(
 prog program :: c : -int = {
   prog other :: io : -int = {
-    var c := 10; 
+    var c := 10;
     io.send(c)
   }
 
@@ -1280,15 +1280,15 @@ prog program :: c : -int = {
   }
 
   prog foo :: io : -Channel<+int> = {
-    Channel<+int> ans := exec other; 
+    Channel<+int> ans := exec other;
     io.send(ans)
   }
 
-  
+
 
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -1298,7 +1298,7 @@ TEST_CASE("Redeclaration - f2f", "[semantic][program][local-function]")
       R""""(
 prog program :: c : -int = {
   prog other :: io : -int = {
-    var c := 10; 
+    var c := 10;
     io.send(c)
   }
 
@@ -1312,7 +1312,7 @@ prog program :: c : -int = {
 
   c.send(0)
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of foo");
 }
 
@@ -1340,7 +1340,7 @@ prog program :: c : -int = {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1381,7 +1381,7 @@ prog program :: c : -int = {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1423,7 +1423,7 @@ prog program :: c : -int = {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1447,18 +1447,18 @@ TEST_CASE("Nested Enums - Disallow Local Assign", "[semantic][program][enum]")
 extern func printf(str s, ...);
 
 enum Inner {
-    int, 
-    boolean 
+    int,
+    boolean
 }
 
 enum Outer {
-    Inner, 
+    Inner,
     str
 }
 
 prog program :: c : -int = {
-    int i := 5; 
-    Outer o := i; 
+    int i := 5;
+    Outer o := i;
 
     match o {
         Inner in => {
@@ -1470,9 +1470,9 @@ prog program :: c : -int = {
         str s => printf("str: %s\n", s);
     }
 
-    return 0; 
+    return 0;
 }
-    )"""", 
+    )"""",
     "Expression of type int cannot be assigned to Outer");
 }
 
@@ -1483,18 +1483,18 @@ TEST_CASE("Nested Enums - Disallow Local Assign with mismatch", "[semantic][prog
 extern func printf(str s, ...);
 
 enum Inner {
-    int, 
-    boolean 
+    int,
+    boolean
 }
 
 enum Outer {
-    Inner, 
+    Inner,
     str
 }
 
 prog program :: c : -int = {
-    (int + boolean) i := 5; 
-    Outer o := i; 
+    (int + boolean) i := 5;
+    Outer o := i;
 
     match o {
         Inner in => {
@@ -1506,9 +1506,9 @@ prog program :: c : -int = {
         str s => printf("str: %s\n", s);
     }
 
-    return 0; 
+    return 0;
 }
-    )"""", 
+    )"""",
     "Expression of type (boolean + int) cannot be assigned to Outer");
 }
 
@@ -1517,11 +1517,11 @@ TEST_CASE("Duplicated enum keys", "[semantic][program][enum]")
   EnsureErrorsWithMessage(
       R""""(
 enum Inner {
-    int, 
+    int,
     boolean,
     int
 }
-    )"""", 
+    )"""",
     "Duplicate arguments to enum type, or failed to generate types"); // TODO: BETTER MESSAGE
 }
 
@@ -1530,11 +1530,11 @@ TEST_CASE("Duplicated product keys - 1", "[semantic][program][product]")
   EnsureErrorsWithMessage(
       R""""(
 struct Inner {
-    int a; 
+    int a;
     boolean a;
     int c;
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of a");
 }
 
@@ -1543,11 +1543,11 @@ TEST_CASE("Duplicated product keys - 2", "[semantic][program][product]")
   EnsureErrorsWithMessage(
       R""""(
 struct Inner {
-    int a; 
+    int a;
     boolean b;
     int a;
 }
-    )"""", 
+    )"""",
     "Unsupported redeclaration of a");
 }
 
@@ -1570,7 +1570,7 @@ struct Inner {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1600,7 +1600,7 @@ struct Inner {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1632,7 +1632,7 @@ struct Inner {
 //   antlr4::CommonTokenStream tokens(&lexer);
 //   BismuthParser parser(&tokens);
 //   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
+//   auto pListener = TestErrorListener();
 //   parser.addErrorListener(&pListener);
 
 //   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1663,21 +1663,21 @@ func test ((int + boolean + (str + boolean)) sum) -> int {
                 return "true";
             }
 
-            return "false"; 
+            return "false";
         }(b));
          (str + boolean) n => printf("no!\n");
     }
 
-    return 0; 
+    return 0;
 }
 
 
 prog program :: c : -int = {
     test("hey");
-    # return 0; 
+    # return 0;
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Argument 0 expected ((boolean + str) + boolean + int) but got str");
 }
 
@@ -1686,10 +1686,10 @@ TEST_CASE("Channel Assignment 1", "[semantic]")
   EnsureErrorsWithMessage(
       R""""(
 prog foo :: c : +int = {
-  var b := c; 
+  var b := c;
   int a := c.recv(); # C is no longer defined
 }
-    )"""", 
+    )"""",
     "Could not find channel: c");
 }
 
@@ -1698,7 +1698,7 @@ TEST_CASE("Channel Assignment 2", "[semantic]")
     antlr4::ANTLRInputStream input(
       R""""(
 prog foo :: c : +int = {
-  var b := c; 
+  var b := c;
   int a := b.recv(); # C is no longer defined
 }
     )"""");
@@ -1709,7 +1709,7 @@ prog foo :: c : +int = {
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
+  auto pListener = TestErrorListener();
   parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1735,13 +1735,13 @@ prog bar :: c : ?(?-int);+int = {
 
     while i < 5 {
         weaken(c)
-        i := i + 1; 
+        i := i + 1;
     }
 
     weaken(c)
     int a := c.recv();
 }
-    )"""", 
+    )"""",
     "Failed to weaken: c against Channel<*?(?(-int));+int>");
 }
 
@@ -1754,11 +1754,11 @@ prog foo :: c : -int = {
 }
 
 prog program :: c : -int = {
-    var com := exec foo, a, b := com.recv(); 
+    var com := exec foo, a, b := com.recv();
 
     c.send(a)
 }
-    )"""", 
+    )"""",
     "Failed to recv over channel: [com, Channel<>]");
 }
 
@@ -1771,19 +1771,19 @@ prog foo :: c : -int = {
 }
 
 prog program :: c : -int = {
-    var com := exec foo, a := com.recv(); 
+    var com := exec foo, a := com.recv();
 
     c.send(a)
 }
     )"""");
   BismuthLexer lexer(&input);
   // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener(); 
+  // auto lListener = TestErrorListener();
   // lexer.addErrorListener(&lListener);
   antlr4::CommonTokenStream tokens(&lexer);
   BismuthParser parser(&tokens);
   parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
+  auto pListener = TestErrorListener();
   parser.addErrorListener(&pListener);
 
   BismuthParser::CompilationUnitContext *tree = NULL;
@@ -1804,10 +1804,10 @@ TEST_CASE("Links3 - 1", "[semantic]")
   EnsureErrorsWithMessage(
       R""""(
 prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
-    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
-    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
-    
-    offer a 
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv();
+    Channel<InternalChoice<-int, -boolean>> b := c.recv();
+
+    offer a
         | +int => {
                 b[-int]
                 b.send(a.recv())
@@ -1825,31 +1825,31 @@ prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalC
 prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
-    var xyz := c.recv(); 
+    var xyz := c.recv();
 }
 
 prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
-            boolean b := c.recv(); 
+            boolean b := c.recv();
         }
         +int => {
-            int i := c.recv(); 
+            int i := c.recv();
         }
     )
 }
 
 prog program :: c : -int = {
-    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
-    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1;
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2;
 
-    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo;
     linker.send(l1)
     linker.send(l2)
 
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Failed to send str over channel [a, Channel<>]");
 }
 
@@ -1858,10 +1858,10 @@ TEST_CASE("Links3 - 2", "[semantic]")
   EnsureErrorsWithMessage(
       R""""(
 prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
-    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
-    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
-    
-    offer a 
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv();
+    Channel<InternalChoice<-int, -boolean>> b := c.recv();
+
+    offer a
         | +int => {
                 b[-int]
                 b.send(a.recv())
@@ -1878,31 +1878,31 @@ prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalC
 prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
-    var xyz := c.recv(); 
+    var xyz := c.recv();
 }
 
 prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
-            boolean b := c.recv(); 
+            boolean b := c.recv();
         }
         +int => {
-            int i := c.recv(); 
+            int i := c.recv();
         }
     )
 }
 
 prog program :: c : -int = {
-    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
-    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1;
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2;
 
-    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo;
     linker.send(l1)
     linker.send(l2)
 
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Failed to send str over channel [a, Channel<>]");
 }
 
@@ -1911,10 +1911,10 @@ TEST_CASE("Links3 - 3", "[semantic]")
   EnsureErrorsWithMessage(
       R""""(
 prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
-    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
-    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
-    
-    offer a 
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv();
+    Channel<InternalChoice<-int, -boolean>> b := c.recv();
+
+    offer a
         | +int => {
                 b[-int]
                 b.send(a.recv())
@@ -1931,31 +1931,31 @@ prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalC
 prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
-    var xyz := c.recv(); 
+    var xyz := c.recv();
 }
 
 prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
-            boolean b := c.recv(); 
+            boolean b := c.recv();
         }
         +int => {
-            int i := c.recv(); 
+            int i := c.recv();
         }
     )
 }
 
 prog program :: c : -int = {
-    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
-    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1;
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2;
 
-    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo;
     linker.send(l1)
     linker.send(l2)
 
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Failed to send str over channel [a, Channel<>]");
 }
 
@@ -1964,10 +1964,10 @@ TEST_CASE("Links3 - 4", "[semantic]")
   EnsureErrorsWithMessage(
       R""""(
 prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
-    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
-    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
-    
-    offer a 
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv();
+    Channel<InternalChoice<-int, -boolean>> b := c.recv();
+
+    offer a
         | +int => {
                 b[-int]
                 b.send(a.recv())
@@ -1983,31 +1983,31 @@ prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalC
 prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
-    var xyz := c.recv(); 
+    var xyz := c.recv();
 }
 
 prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
-            boolean b := c.recv(); 
+            boolean b := c.recv();
         }
         +int => {
-            int i := c.recv(); 
+            int i := c.recv();
         }
     )
 }
 
 prog program :: c : -int = {
-    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
-    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1;
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2;
 
-    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo;
     linker.send(l1)
     linker.send(l2)
 
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Unused linear types in context: [a, Channel<-str>]");
 }
 
@@ -2017,10 +2017,10 @@ TEST_CASE("Links3 - 5", "[semantic]")
   EnsureErrorsWithMessage(
       R""""(
 prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalChoice<-int, -boolean>> = {
-    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv(); 
-    Channel<InternalChoice<-int, -boolean>> b := c.recv(); 
-    
-    offer a 
+    Channel<ExternalChoice<+int, + boolean>;-str> a := c.recv();
+    Channel<InternalChoice<-int, -boolean>> b := c.recv();
+
+    offer a
         | +int => {
                 b[-int]
                 b.send(a.recv())
@@ -2036,31 +2036,31 @@ prog foo :: c : +Channel<ExternalChoice<+int, +boolean>;-str>;+Channel<InternalC
 prog bar1 :: c : InternalChoice<-int, -boolean>;+str = {
     c[-boolean]
     c.send(false)
-    var xyz := c.recv(); 
+    var xyz := c.recv();
 }
 
 prog bar2 :: c : ExternalChoice<+boolean, +int> = {
     c.case(
         +boolean => {
-            boolean b := c.recv(); 
+            boolean b := c.recv();
         }
         +int => {
-            int i := c.recv(); 
+            int i := c.recv();
         }
     )
 }
 
 prog program :: c : -int = {
-    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1; 
-    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2; 
+    Channel<ExternalChoice<+int, +boolean>;-str> l1 := exec bar1;
+    Channel<InternalChoice<-int, -boolean>> l2 := exec bar2;
 
-    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo; 
+    Channel<-Channel<ExternalChoice<+int, +boolean>;-str>;-Channel<InternalChoice<-int, -boolean>>> linker := exec foo;
     linker.send(l1)
     linker.send(l2)
 
     c.send(0)
 }
-    )"""", 
+    )"""",
     "Unused linear types in context: [a, Channel<-str>]");
 }
 
@@ -2073,7 +2073,7 @@ prog program :: c : -int = {
   while true {
     var b;
 
-    b := c; 
+    b := c;
   }
 
   c.send(0)
@@ -2142,7 +2142,7 @@ TEST_CASE("While Loop Break I", "[semantic]")
 {
   EnsureErrorsWithMessage(
       R""""(
-extern func printf(str s, ...) -> int; 
+extern func printf(str s, ...) -> int;
 
 prog program :: c : -int {
 
@@ -2152,7 +2152,7 @@ prog program :: c : -int {
 
 
   var i := 1
-  accept(break) 
+  accept(break)
   {
     break.send(i)
 
@@ -2187,8 +2187,8 @@ prog progFoo :: c : -int {
 }
 
 func getChannel() -> Channel<+int> {
-    var c := exec progFoo; 
-    return c; 
+    var c := exec progFoo;
+    return c;
 }
 
 prog program :: c : -int {
@@ -2210,7 +2210,7 @@ prog program :: c : -int {
     str[4] arr := [0, 1, 2, 3];
     c.send(0);
 }
-    )"""", 
+    )"""",
     "Expression of type int[4] cannot be assigned to str[4]");
 }
 
