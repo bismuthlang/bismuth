@@ -24,9 +24,17 @@
   } \
   type id = std::get<type>(tmp); \
 
+#define IMPL_DEFINE_OR_PROPAGATE_VARIANT(type, id, expr, ctx, tmp) \
+  std::variant<type, ErrorChain*> tmp = expr; \
+  if (ErrorChain **e = std::get_if<ErrorChain *>(&tmp)) \
+  { \
+    return (*e)->addErrorAt(ctx->getStart()); \
+  } \
+  type id = std::get<type>(tmp); \
 
 # define DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(type, id, expr, ctx, message) IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(type, id, expr, ctx, message, IMPL_MACRO_CONCAT(id, _COUNTER__))
 # define DEFINE_OR_PROPAGATE_VARIANT_WMSG(type, id, expr, ctx, message) IMPL_DEFINE_OR_PROPAGATE_VARIANT_WMSG(type, id, expr, ctx, message, IMPL_MACRO_CONCAT(id, __COUNTER__))
+# define DEFINE_OR_PROPAGATE_VARIANT(type, id, expr, ctx) IMPL_DEFINE_OR_PROPAGATE_VARIANT(type, id, expr, ctx, IMPL_MACRO_CONCAT(id, __COUNTER__))
 
 std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx)
 {
@@ -536,14 +544,12 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
  */
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineProgramContext *ctx)
 {
-    std::variant<DefinitionSymbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-
-    DefinitionSymbol * defSym = std::get<DefinitionSymbol*>(symOpt);
+    DEFINE_OR_PROPAGATE_VARIANT(
+        DefinitionSymbol *,
+        defSym,
+        defineAndGetSymbolFor(ctx),
+        ctx
+    );
 
     auto generateProgram = [this, ctx, defSym](const TypeProgram * progType) -> std::variant<DefinitionNode *, ErrorChain *> {
         std::string funcId = ctx->name->getText();
@@ -559,11 +565,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         stmgr->addSymbol("@EXIT", Types::UNIT, false);
 
         // Safe visit the program block without creating a new scope (as we are managing the scope)
-        std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Failed to safe visit block");
-        }
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(TBlockNode *, blk, this->safeVisitBlock(ctx->block(), false), ctx, "Failed to save visit block");
 
         // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
         // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<BismuthParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
@@ -575,7 +577,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         safeExitScope(ctx);
         stmgr->enterScope(orig);
 
-        return new TProgramDefNode(defSym, channelSymbol, std::get<TBlockNode *>(blkOpt), progType, ctx->getStart());
+        return new TProgramDefNode(defSym, channelSymbol, blk, progType, ctx->getStart());
     };
 
     if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate*>(defSym->getType()))
@@ -585,16 +587,12 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
         if(const TypeProgram * progTy = dynamic_cast<const TypeProgram *>(templateTy->getValueType().value()))
         {
-            auto progNodeOpt = generateProgram(progTy);
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&progNodeOpt))
-            {
-                return (*e); //->addError(ctx->getStart(), "Failed to safe visit block");
-            }
+           DEFINE_OR_PROPAGATE_VARIANT(DefinitionNode*, programNode, generateProgram(progTy), ctx);
 
             return new TDefineTemplateNode(
                 defSym,
                 templateTy,
-                std::get<DefinitionNode *>(progNodeOpt),
+                programNode,
                 ctx->getStart()
             );
         }
@@ -609,25 +607,8 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
-    std::variant<DefinitionSymbol *, ErrorChain *> funcSymOpt = defineAndGetSymbolFor(ctx);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&funcSymOpt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-    DefinitionSymbol * defSym = std::get<DefinitionSymbol *>(funcSymOpt);
-
-    // Symbol *funcSym = symScope.first; //std::get<Symbol *>(funcSymOpt);
-    // Scope * funcScope = symScope.second;
-
-    std::variant<TLambdaConstNode *, ErrorChain *> lamOpt = visitCtx(ctx->lam, defSym);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&lamOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unable to generate lambda");
-    }
-
-    TLambdaConstNode *lam = std::get<TLambdaConstNode *>(lamOpt);
+    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSymbol *, defSym, defineAndGetSymbolFor(ctx), ctx);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TLambdaConstNode *, lam, visitCtx(ctx->lam, defSym), ctx, "Unable to generate lambda");
 
     /*
      *  Check if this is a template or not, and handle it accordingly
@@ -649,22 +630,14 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
 std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitProductContext *ctx)
 {
-    std::variant<const Type *, ErrorChain *> tyOpt = visitPathType(ctx->path());
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, ty, visitPathType(ctx->path()), ctx, "Unknown type.");
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
+        const TypeStruct *,
+        product,
+        type_cast<TypeStruct>(ty),
+        ctx,
+       "Cannot initialize non-product type: " + ty->toString(toStringMode));
 
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unknown type.");
-    }
-
-    const Type *ty = std::get<const Type *>(tyOpt);
-
-    std::optional<const TypeStruct *> productOpt = type_cast<TypeStruct>(ty);
-    if (!productOpt)
-    {
-        return errorHandler.addError(ctx->getStart(), "Cannot initialize non-product type: " + ty->toString(toStringMode));
-    }
-
-    const TypeStruct *product = productOpt.value();
     std::vector<std::pair<std::string, const Type *>> elements = product->getElements();
     if (elements.size() != ctx->exprs.size())
     {
@@ -681,14 +654,7 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
         for (auto eleItr : elements)
         {
-            std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->exprs.at(i)->accept(this));
-
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-            {
-                return (*e)->addError(ctx->exprs.at(i)->getStart(), "Unable to generate expression");
-            }
-
-            TypedNode *tn = std::get<TypedNode *>(opt);
+           DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->exprs.at(i)->accept(this)), ctx->exprs.at(i), "Unable to generate expression");
 
             n.push_back(tn);
             const Type *providedType = tn->getType();
@@ -722,14 +688,8 @@ std::variant<TArrayRValue *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
     for(auto eleCtx : ctx->elements)
     {
-        std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, eleCtx->accept(this));
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn,  anyOpt2VarError<TypedNode>(errorHandler, eleCtx->accept(this)), eleCtx, "Unable to generate expression");
 
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-        {
-            return (*e)->addError(eleCtx->getStart(), "Unable to generate expression");
-        }
-
-        TypedNode *tn = std::get<TypedNode *>(opt);
         elements.push_back(tn);
 
         const Type *providedType = tn->getType();
@@ -738,7 +698,6 @@ std::variant<TArrayRValue *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
         {
             // PLAN: handle errors better!
             return errorHandler.addError(ctx->getStart(), "Expected " + innerTy->toString(toStringMode) + " but got " + providedType->toString(toStringMode));
-            // isValid = false;
         }
 
     }
@@ -748,14 +707,7 @@ std::variant<TArrayRValue *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
 std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitBoxContext *ctx)
 {
-    std::variant<const Type *, ErrorChain *> storeTypeOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&storeTypeOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate the type to store in the box");
-    }
-
-    const Type *storeType = std::get<const Type *>(storeTypeOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, storeType, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this)), ctx, "Failed to generate the type to store in the box");
 
     if (storeType->isLinear())
     {
@@ -763,14 +715,7 @@ std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     }
 
     // TODO: METHODIZE WITH INVOKE AND INIT PRODUCT?
-    std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-    {
-        return (*e)->addError(ctx->expr->getStart(), "Unable to generate expression in init box");
-    }
-
-    TypedNode *tn = std::get<TypedNode *>(opt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx->expr, "Unable to generate expression in init box");
 
     const Type *providedType = tn->getType();
 
@@ -795,14 +740,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     /*
      * Check that we are provided an int for the index.
      */
-    std::variant<TypedNode *, ErrorChain *> idxOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->index->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&idxOpt))
-    {
-        return (*e)->addError(ctx->index->getStart(), "Unable to type check array access index");
-    }
-
-    TypedNode *idxExpr = std::get<TypedNode *>(idxOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, idxExpr, anyOpt2VarError<TypedNode>(errorHandler, ctx->index->accept(this)), ctx->index, "Unable to type check array access index");
 
     const Type *idxType = idxExpr->getType();
     if (idxType->isNotSubtype({Types::DYN_INT, Types::DYN_U32}, InferenceMode::QUERY))
@@ -814,17 +752,11 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
      * Look up the symbol and check that it is defined.
      */
 
-    std::variant<TypedNode *, ErrorChain *> opt = visitLValue(ctx->expr);
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-    {
-        return (*e)->addError(ctx->expr->getStart(), "Cannot access value from undefined array: " + ctx->expr->getText());
-    }
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, node, visitLValue(ctx->expr), ctx->expr, "Cannot access value from undefined array: " + ctx->expr->getText());
 
     /*
      * Check that the symbol is of array type.
      */
-    TypedNode *node = std::get<TypedNode *>(opt);
-
     if (type_cast<TypeArray>(node->getType()))
     {
         return new TArrayAccessNode(node, idxExpr, is_rvalue, ctx->getStart());
@@ -966,15 +898,7 @@ std::variant<TStringConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::UnaryExprContext *ctx)
 {
     // Lookup the inner type
-    std::variant<TypedNode *, ErrorChain *> innerNodeOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&innerNodeOpt))
-    {
-        return (*e)->addError(ctx->ex->getStart(), "Failed to generate unary expression");
-    }
-
-    TypedNode *innerNode = std::get<TypedNode *>(innerNodeOpt);
-
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, innerNode, anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this)), ctx->ex, "Failed to generate unary expression");
     const Type *innerType = innerNode->getType();
 
     // Switch on the operation so we can ensure that the type and operation are compatable.
@@ -1029,27 +953,13 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
                       : ctx->PLUS()     ? "+"
                                         : "-";
 
-    auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unable to generate LHS of Binary Arithmetic Expression");
-    }
-
-    auto left = std::get<TypedNode *>(leftOpt);
-
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, left, anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this)), ctx, "Unable to generate LHS of Binary Arithmetic Expression");
     if (left->getType()->isNotSubtype({Types::DYN_INT, Types::DYN_U32, Types::DYN_I64, Types::DYN_U64}, InferenceMode::QUERY))
     {
         return errorHandler.addError(ctx->getStart(), "Cannot apply " + opStr + " to " + left->getType()->toString(toStringMode));
     }
 
-    auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&rightOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unable to generate RHS of binary arithmetic expression");
-    }
-
-    auto right = std::get<TypedNode *>(rightOpt);
-
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, right, anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this)), ctx, "Unable to generate RHS of binary arithmetic expression");
     if (right->getType()->isNotSubtype(left->getType())) // TODO: PROBABLY WONT WORK IF LEFT DONE VIA INFERENCE
     {
         return errorHandler.addError(ctx->getStart(), "Operator " + opStr + " cannot be applied between " + left->getType()->toString(toStringMode) + " and " + right->getType()->toString(toStringMode) + ". Expected " + left->getType()->toString(toStringMode) + " " + opStr + " " + left->getType()->toString(toStringMode));
@@ -1074,23 +984,8 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
 std::variant<TEqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::EqExprContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> rhsOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
-    std::variant<TypedNode *, ErrorChain *> lhsOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
-
-    // FIXME: DO BETTER AND ALLOW BRANCHING ERROR MSGS?
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&rhsOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unable to generate RHS");
-    }
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&lhsOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unable to generate LHS");
-    }
-
-    TypedNode *lhs = std::get<TypedNode *>(lhsOpt);
-    TypedNode *rhs = std::get<TypedNode *>(rhsOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, rhs, anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this)), ctx, "Unable to generate RHS");
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, lhs, anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this)), ctx, "Unable to generate LHS");
 
     if (rhs->getType()->isNotSubtype(lhs->getType()))
     {
@@ -1137,22 +1032,14 @@ std::variant<TLogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
     std::vector<TypedNode *> nodes;
 
-    for (BismuthParser::ExpressionContext *e : toGen)
+    for (BismuthParser::ExpressionContext *ectx : toGen)
     {
-        std::variant<TypedNode *, ErrorChain *> nodeOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
-
-        if (ErrorChain **er = std::get_if<ErrorChain *>(&nodeOpt))
-        {
-            (*er)->addError(e->getStart(), "Unable to generate expression in logical and");
-            return *er;
-        }
-
-        TypedNode *node = std::get<TypedNode *>(nodeOpt);
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, node, anyOpt2VarError<TypedNode>(errorHandler, ectx->accept(this)), ectx, "Unable to generate expression in logical and");
         const Type *type = node->getType();
 
         if (type->isNotSubtype(Types::DYN_BOOL))
         {
-            errorHandler.addError(e->getStart(), "boolean expression expected, but was " + type->toString(toStringMode));
+            errorHandler.addError(ectx->getStart(), "boolean expression expected, but was " + type->toString(toStringMode));
         }
         else
         {
@@ -1236,14 +1123,7 @@ std::variant<TPathNode *, ErrorChain*> SemanticVisitor::visitCtx(BismuthParser::
 std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::FieldAccessExprContext *ctx, bool is_rvalue)
 {
     // FIXME: but it may need to be an rvalue sometimes!
-    std::variant<TypedNode *, ErrorChain *> exprOpt = this->visitLValue(ctx->expr);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-
-    TypedNode *expr = std::get<TypedNode *>(exprOpt);
+    DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, expr, this->visitLValue(ctx->expr), ctx);
 
     const Type *ty = expr->getType();
     std::vector<std::pair<std::string, const Type *>> a;
@@ -1293,12 +1173,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 std::variant<TIdentifier *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IdentifierExprContext * ctx, bool is_rvalue)
 {
     // Determine the type of the expression we are visiting
-    std::optional<Symbol *> opt = stmgr->lookup(ctx->VARIABLE()->getText());
-    if (!opt)
-    {
-        return errorHandler.addError(ctx->getStart(), "Undefined variable reference: " + ctx->VARIABLE()->getText());
-    }
-    Symbol *sym = opt.value();
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(ctx->VARIABLE()->getText()), ctx, "Undefined variable reference: " + ctx->VARIABLE()->getText());
 
     if (sym->getType()->isLinear())
     {
@@ -1341,14 +1216,8 @@ std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
 // Passthrough to expression
 std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ParenExprContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-
-    return std::get<TypedNode *>(opt);
+    DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, opt, anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this)), ctx);
+    return opt;
 }
 
 /**
@@ -1996,28 +1865,13 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     /*
      * Lookup the @RETURN symbol which can ONLY be defined by entering a function
      */
-    std::optional<Symbol *> symOpt = stmgr->lookup("@RETURN");
-
-    // If we don't have the symbol, we're not in a place that we can return from.
-    if (!symOpt)
-    {
-        return errorHandler.addError(ctx->getStart(), "Cannot use return outside of a function");
-    }
-
-    Symbol *sym = symOpt.value();
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup("@RETURN"), ctx, "Cannot use return outside of a function");
 
     // If the return statement has an expression...
     if (ctx->expression())
     {
         // Evaluate the expression type
-        std::variant<TypedNode *, ErrorChain *> valOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expression()->accept(this));
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&valOpt))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        TypedNode *val = std::get<TypedNode *>(valOpt);
+        DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, val, anyOpt2VarError<TypedNode>(errorHandler, ctx->expression()->accept(this)), ctx);
 
         const Type *valType = val->getType();
 
@@ -2269,15 +2123,7 @@ SemanticVisitor::visitCtx(BismuthParser::TemplatedTypeContext *ctx)
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
 {
-    // FIXME: do we need type_cast?
-    std::variant<DefinitionSymbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-
-    DefinitionSymbol *sym = std::get<DefinitionSymbol *>(symOpt);
+    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSymbol *, sym, defineAndGetSymbolFor(ctx), ctx);
 
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
     {
@@ -2320,15 +2166,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
 {
-    std::variant<DefinitionSymbol *, ErrorChain *> symOpt = defineAndGetSymbolFor(ctx);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&symOpt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-
-    // FIXME: ENTER SCOPE!!
-    DefinitionSymbol *sym = std::get<DefinitionSymbol *>(symOpt);
+    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSymbol *, sym, defineAndGetSymbolFor(ctx), ctx);
 
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
     {
@@ -2373,43 +2211,26 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
 
         std::string name = pCtx->id->getText();
 
-        std::optional<Symbol *> opt = stmgr->lookup(name);
-        if (!opt)
-        {
-            return errorHandler.addError(pCtx->getStart(), "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
-        }
-
-        Symbol *sym = opt.value();
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(name), pCtx, "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
 
         if (!sym->getType() || !sym->isDefinition())
         {
             return errorHandler.addError(pCtx->getStart(), "Cannot use: " + name + " as a type");
         }
 
-        if(pCtx->genericSpecifier())
+        if(!pCtx->genericSpecifier())
         {
-            // Copied from templated Type
-            if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
-            {
-                std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
-                {
-                    return (*e)->addErrorAt(ctx->getStart());
-                }
-
-                std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
-
-                std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys);
-                if(!appliedOpt)
-                    return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-
-                return appliedOpt.value();
-            }
-            return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + sym->getType()->toString(toStringMode));
+          return sym->getType();
         }
 
-        return sym->getType();
+        // Copied from templated Type
+        if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+        {
+          DEFINE_OR_PROPAGATE_VARIANT(std::vector<const Type *>, innerTys, TvisitGenericSpecifier(pCtx->genericSpecifier()), ctx);
+          DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const Type*, applied, templateTy->canApplyTemplate(innerTys), ctx, "Failed to apply template. FIXME: Improve this error message!!");
+          return applied;
+        }
+        return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + sym->getType()->toString(toStringMode));
     }
 
     // FIXME: add visibility modifiers & checks!
@@ -2419,15 +2240,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
     for(auto pCtx : ctx->eles)
     {
         std::string stepId = pCtx->id->getText();
-        std::optional<Symbol *> opt = lookupScope->lookup(stepId);
-
-        if(!opt)
-        {
-            return errorHandler.addError(pCtx->getStart(), "Could not find " + stepId + " in " + lookupScope->getIdentifier()->getFullyQualifiedName());
-        }
-
-        Symbol * sym = opt.value();
-
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, lookupScope->lookup(stepId), pCtx, "Could not find " + stepId + " in " + lookupScope->getIdentifier()->getFullyQualifiedName());
         // if (sym->getType()->isLinear())
         // {
         //     if (!is_rvalue)
@@ -2472,20 +2285,10 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
         {
             if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(symType))
             {
-                std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(pCtx->genericSpecifier());
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
-                {
-                    return (*e)->addErrorAt(ctx->getStart());
-                }
-
-                std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
-
-                std::optional<const NameableType *> appliedOpt = templateTy->canApplyTemplate(innerTys);
-                if(!appliedOpt)
-                    return errorHandler.addError(pCtx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-                symType = appliedOpt.value();
-                pathVar = appliedOpt.value();
+                DEFINE_OR_PROPAGATE_VARIANT(std::vector<const Type *>, innerTys, TvisitGenericSpecifier(pCtx->genericSpecifier()), ctx);
+                DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const NameableType *, applied, templateTy->canApplyTemplate(innerTys), pCtx, "Failed to apply template. FIXME: Improve this error message!!");
+                symType = applied;
+                pathVar = applied;
             }
             else
             {
@@ -3150,125 +2953,69 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
 std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
-    if (!opt)
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Unbound identifier: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot accept: " + sym->toString());
+
+    DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, condition, this->visitCondition(ctx->check), ctx);
+
+    bool isInCloseable = channel->getProtocol()->isInCloseable();
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const ProtocolSequence *, proto_post_accept, channel->getProtocol()->acceptIf(), ctx, "Cannot accept on " + channel->toString(toStringMode));
+
+    std::vector<BismuthParser::BlockContext *> blksCtx = {ctx->trueBlk};
+    if (ctx->falseBlk)
+      blksCtx.push_back(ctx->falseBlk);
+
+    unsigned int idx = 0;
+    auto branchOpt = checkBranch<BismuthParser::ProgramAcceptIfContext, BismuthParser::BlockContext, TBlockNode *>(
+      ctx,
+      [this, blksCtx](std::deque<DeepRestData *> *rest) {
+        for (auto b : blksCtx) // TODO: Methodize this w/ other conditions?
+        {
+          for (auto c : b->stmts)
+          {
+            bindRestData(c, rest);
+          }
+        }
+      },
+      blksCtx,
+      blksCtx.size() == 1, // TODO: VERIFY
+      [](TBlockNode * blk) -> TypedNode * { return (TypedNode*) blk; },
+      [this, &idx, id, proto_post_accept](BismuthParser::BlockContext *blk) -> std::variant<TBlockNode *, ErrorChain *>
+      {
+        if (idx == 0)
+        {
+          idx++;
+          DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), blk, "Could not find channel: " + id); // FIXME: FIND BETTER WAY TO MAP AND CHANGE CHANNEL VALUES IN SPECIFIC BRANCHES
+          DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), blk, "Channel identifier does not have a channel type in accept if.");
+          channel->setProtocol(proto_post_accept);
+          return this->safeVisitBlock(blk, false);
+        }
+      return this->safeVisitBlock(blk, false);
+      });
+
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(ConditionalData<TBlockNode *>, dat, branchOpt, ctx, "Failed to generate one or more branches in acceptIf");
+
+    if (ctx->falseBlk)
     {
-        return errorHandler.addError(ctx->getStart(), "Unbound identifier: " + id);
+      return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, condition,dat.cases.at(0), dat.post, dat.cases.at(1));
     }
 
-    Symbol *sym = opt.value();
-
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-    if (channelOpt)
-    {
-        const TypeChannel *channel = channelOpt.value();
-        std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCondition(ctx->check);
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        bool isInCloseable = channel->getProtocol()->isInCloseable();
-        std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptIf();
-        if (!acceptOpt)
-        {
-            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString(toStringMode));
-        }
-
-        std::vector<BismuthParser::BlockContext *> blksCtx = {ctx->trueBlk};
-        if (ctx->falseBlk)
-            blksCtx.push_back(ctx->falseBlk);
-
-        unsigned int idx = 0;
-
-        auto branchOpt = checkBranch<BismuthParser::ProgramAcceptIfContext, BismuthParser::BlockContext, TBlockNode *>(
-            ctx,
-            [this, blksCtx](std::deque<DeepRestData *> *rest) {
-                for (auto b : blksCtx) // TODO: Methodize this w/ other conditions?
-                {
-                    for (auto c : b->stmts)
-                    {
-                        bindRestData(c, rest);
-                    }
-                }
-            },
-            blksCtx,
-            blksCtx.size() == 1, // TODO: VERIFY
-            [](TBlockNode * blk) -> TypedNode * { return (TypedNode*) blk; },
-            [this, &idx, id, acceptOpt](BismuthParser::BlockContext *blk) -> std::variant<TBlockNode *, ErrorChain *>
-            {
-                if (idx == 0)
-                {
-                    idx++;
-                    std::optional<Symbol *> opt = stmgr->lookup(id);
-
-                    if (!opt) // FIXME: FIND BETTER WAY TO MAP AND CHANGE CHANNEL VALUES IN SPECIFIC BRANCHES
-                    {
-                        return errorHandler.addError(blk->getStart(), "Could not find channel: " + id);
-                    }
-
-                    Symbol *sym = opt.value();
-                    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-                    if (channelOpt)
-                    {
-                        const TypeChannel *channel = channelOpt.value();
-                        channel->setProtocol(acceptOpt.value());
-                        return this->safeVisitBlock(blk, false);
-                    }
-
-                    return errorHandler.addError(blk->getStart(), "Channel identifier does not have a channel type in accept if.");
-                }
-                return this->safeVisitBlock(blk, false);
-            });
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
-            return errorHandler.addError(ctx->getStart(), "Failed to generate one or more branches in acceptIf");
-
-        ConditionalData<TBlockNode *> dat = std::get<ConditionalData<TBlockNode *>>(branchOpt);
-        if (ctx->falseBlk)
-        {
-            return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, std::get<TypedNode *>(condOpt),dat.cases.at(0), dat.post, dat.cases.at(1));
-        }
-
-        return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, std::get<TypedNode *>(condOpt), dat.cases.at(0), dat.post);
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
+    return new TProgramAcceptIfNode(ctx->getStart(), isInCloseable, sym, condition, dat.cases.at(0), dat.post);
 }
 
 std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableExec(BismuthParser::AssignableExecContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> opt = anyOpt2VarError<TypedNode>(errorHandler, ctx->prog->accept(this));
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-    // Symbol *sym = opt.value();
-    TypedNode *prog = std::get<TypedNode *>(opt);
-
-    std::optional<const TypeProgram *> invOpt = type_cast<TypeProgram>(prog->getType());
-    if (invOpt)
-    {
-        const TypeProgram *inv = invOpt.value();
-        return new TProgramExecNode(
-            prog,
-            new TypeChannel(inv->getProtocol()->getInverse()),
-            ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Cannot exec: " + prog->getType()->toString(toStringMode));
+    DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, prog, anyOpt2VarError<TypedNode>(errorHandler, ctx->prog->accept(this)), ctx);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeProgram *, inv, type_cast<TypeProgram>(prog->getType()), ctx, "Cannot exec: " + prog->getType()->toString(toStringMode));
+    return new TProgramExecNode(
+      prog,
+      new TypeChannel(inv->getProtocol()->getInverse()),
+      ctx->getStart());
 }
 
 std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(BismuthParser::CopyExprContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to type check copy expression");
-    }
-
-    TypedNode *tn = std::get<TypedNode *>(tnOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx, "Failed to type check copy expression");
     const Type *ty = tn->getType();
 
     if (ty->isLinear())
@@ -3281,14 +3028,7 @@ std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(Bism
 
 std::variant<TAsChannelNode *, ErrorChain *> SemanticVisitor::TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to type check copy expression");
-    }
-
-    TypedNode *tn = std::get<TypedNode *>(tnOpt);
-
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx, "Failed to type check copy expression");
     return new TAsChannelNode(tn, ctx->getStart());
 }
 
@@ -3309,13 +3049,7 @@ std::optional<ErrorChain *> SemanticVisitor::TVisitImportStatement(BismuthParser
         return errorHandler.addError(ctx->getStart(), aliasStr + " is already defined."); // TODO: better error
     }
 
-    std::variant<const Type *, ErrorChain *> tyOpt = visitPathType(ctx->path());
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-
-    const Type * ty = std::get<const Type *>(tyOpt);
+    DEFINE_OR_PROPAGATE_VARIANT(const Type *, ty, visitPathType(ctx->path()), ctx);
 
     if(const NameableType * nt = dynamic_cast<const NameableType *>(ty))
     {
@@ -3402,28 +3136,18 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
     // STManager *origStmgr = this->stmgr;
 
-    std::optional<Scope *> origScopeOpt = stmgr->getCurrentScope();
-    if(!origScopeOpt)
-    {
-        return errorHandler.addCompilerError(ctx->getStart(), "Symbol table manager has no current scope at branch!");
-    }
-    Scope * origScope = origScopeOpt.value();
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Scope *, origScope, stmgr->getCurrentScope(), ctx, "Symbol table manager has no current scope at branch!");
 
-    const auto checkCase = [&](antlr4::Token * branchToken, bool checkRest, std::string branchErrorMessage, std::string subsequentErrorMessage) -> std::optional<ErrorChain *>{
+    const auto checkCase = [&](auto * branchToken, bool checkRest, std::string branchErrorMessage, std::string subsequentErrorMessage) -> std::optional<ErrorChain *>{
         if(checkRest)
         {
             for (auto s : restDat->ctxRest)
             {
-                std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                {
-                    return (*e)->addError(branchToken, branchErrorMessage);
-                }
+                DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, rest, anyOpt2VarError<TypedNode>(errorHandler, s->accept(this)), branchToken, branchErrorMessage);
 
                 if (!restDat->isGenerated)
                 {
-                    restDat->post.push_back(std::get<TypedNode *>(rOpt));
+                    restDat->post.push_back(rest);
                 }
             }
 
@@ -3437,16 +3161,11 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
             {
                 for (auto s : r->ctxRest)
                 {
-                    std::variant<TypedNode *, ErrorChain *> rOpt = anyOpt2VarError<TypedNode>(errorHandler, s->accept(this));
-
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&rOpt))
-                    {
-                        return (*e)->addError(ctx->getStart(), subsequentErrorMessage); // "Failed to type check when no branch followed"
-                    }
+                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, rest, anyOpt2VarError<TypedNode>(errorHandler, s->accept(this)), ctx, subsequentErrorMessage); // "Failed to type check when no branch followed"
 
                     if (!r->isGenerated)
                     {
-                        r->post.push_back(std::get<TypedNode *>(rOpt));
+                        r->post.push_back(rest);
                     }
                 }
                 r->isGenerated = true;
@@ -3471,7 +3190,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
             // SUM TYPE: ALLOW OPS THAT COULD BE POSSIBLE BOTH WAYS?
             // But problem here is that we need the whole environment to converge.... and not just subtypes, but exactly the same.... but then why would the channels be allowed to be sums>
 
-            errorHandler.addError(branchToken, "588 Unused linear types in context: " + details.str());
+            errorHandler.addError(branchToken->getStart(), "588 Unused linear types in context: " + details.str());
         }
 
         return std::nullopt;
@@ -3492,20 +3211,14 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
         }
 
         stmgr->enterScope(StopType::NONE);
-        std::variant<Y, ErrorChain *> optEval = typeCheck(alt);
+        DEFINE_OR_PROPAGATE_VARIANT(Y, caseVal, typeCheck(alt), ctx);
 
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&optEval))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        Y caseVal = std::get<Y>(optEval);
         cases.push_back(caseVal);
 
         TypedNode * caseNode = getNode(caseVal);
 
         std::optional<ErrorChain *> errorOpt = checkCase(
-            alt->getStart(),
+            alt,
             !TypedAST::endsInReturn(*caseNode) && !TypedAST::endsInBranch(*caseNode),
             "Failed to type check code following branch",
             "Failed to type check when no branch followed"
@@ -3520,7 +3233,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
         stmgr->enterScope(StopType::NONE); // Why? This doesn't make sense.. oh it does, but should ideally refactor!
 
-        std::optional<ErrorChain *> errorOpt = checkCase(ctx->getStart(), true, "Failed to type check code when conditional skipped over", "Failed to type check when skipped over and no branch followed");
+        std::optional<ErrorChain *> errorOpt = checkCase(ctx, true, "Failed to type check code when conditional skipped over", "Failed to type check when skipped over and no branch followed");
         if(errorOpt) return errorOpt.value();
     }
 
@@ -3533,14 +3246,8 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
     auto defineFunction = [this](BismuthParser::DefineFunctionContext *ctx, const TypeFunc *funcType) -> std::optional<ErrorChain *> {
         if(funcType->isDefined()) return std::nullopt;
 
-        std::optional<ParameterListNode> paramTypeOpt = visitCtx(ctx->lam->parameterList());
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(ParameterListNode, params, visitCtx(ctx->lam->parameterList()), ctx, "340");
 
-        if (!paramTypeOpt)
-        {
-            return errorHandler.addError(ctx->getStart(), "340");
-        }
-
-        ParameterListNode params = paramTypeOpt.value();
         std::vector<const Type *> ps;
 
         for (ParameterNode param : params)
@@ -3566,14 +3273,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
     auto defineProgram = [this](BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType) -> std::optional<ErrorChain *> {
         if (progType->isDefined()) return std::nullopt;
 
-        std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = visitProtocolAsSeq(ctx->proto);
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Failed to generate channel type for program " + ctx->name->getText());
-        }
-
-        const auto * proto = std::get<const ProtocolSequence *>(protoOpt);
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const ProtocolSequence *, proto, visitProtocolAsSeq(ctx->proto), ctx, "Failed to generate channel type for program " + ctx->name->getText());
 
         progType->setProtocol(proto);
         return std::nullopt;
@@ -3586,14 +3286,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
         for (auto e : ctx->cases)
         {
-            std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, e->accept(this));
-
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
-            {
-                return (*e)->addError(ctx->getStart(), "Failed to generate case type");
-            }
-
-            const Type *caseType = std::get<const Type *>(caseTypeOpt);
+            DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseType, anyOpt2VarError<const Type>(errorHandler, e->accept(this)), ctx, "Failed to generate case type");
 
             if (caseType->isLinear())
             {
@@ -3624,14 +3317,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                 return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
             }
 
-            std::variant<const Type *, ErrorChain *> caseTyOpt = anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this));
-
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTyOpt))
-            {
-                return (*e)->addError(ctx->getStart(), "Failed to generate case type");
-            }
-
-            const Type *caseTy = std::get<const Type *>(caseTyOpt);
+            DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseTy, anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this)), ctx, "Failed to generate case type");
 
             if (caseTy->isLinear())
             {
@@ -3972,14 +3658,6 @@ SemanticVisitor::visitProtocolAsSeq(BismuthParser::ProtocolContext *ctx)
 std::variant<const TypeChannel *, ErrorChain *>
 SemanticVisitor::visitProtocolAsChannel(BismuthParser::ProtocolContext *ctx)
 {
-    std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = visitProtocolAsSeq(ctx);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate channel protocol");
-    }
-
-    const ProtocolSequence *proto = std::get<const ProtocolSequence *>(protoOpt);
-
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const ProtocolSequence *, proto, visitProtocolAsSeq(ctx), ctx, "Failed to generate channel protocol");
     return new TypeChannel(proto);
 }
