@@ -1079,14 +1079,8 @@ std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     for (BismuthParser::ExpressionContext *e : toGen)
     {
-        std::variant<TypedNode *, ErrorChain *> nodeOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
+        DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, node, anyOpt2VarError<TypedNode>(errorHandler, e->accept(this)), ctx);
 
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&nodeOpt))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        TypedNode *node = std::get<TypedNode *>(nodeOpt);
         const Type *type = node->getType();
 
         if (type->isNotSubtype(Types::DYN_BOOL))
@@ -1103,14 +1097,7 @@ std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
 std::variant<TPathNode *, ErrorChain*> SemanticVisitor::visitCtx(BismuthParser::PathContext * ctx, bool is_rvalue)
 {
-    std::variant<const Type *, ErrorChain *> tyOpt = visitPathType(ctx);
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-
-    const Type * ty = std::get<const Type *>(tyOpt);
-
+    DEFINE_OR_PROPAGATE_VARIANT(const Type *, ty, visitPathType(ctx), ctx);
     return new TPathNode(ctx->getStart(), ty,  is_rvalue); //a.size() == 0 ? is_rvalue : false);
 }
 
@@ -1193,24 +1180,12 @@ std::variant<TIdentifier *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
 std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DerefContext *ctx, bool is_rvalue)
 {
-    std::variant<TypedNode *, ErrorChain *> exprOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
+  DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, expr, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx, "Unable to type check dereference expression");
 
-    // Determine the type of the expression we are visiting
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unable to type check dereference expression");
-    }
+  const Type *exprType = expr->getType();
+  DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeBox *, box, type_cast<TypeBox>(exprType), ctx,"Dereference expected Box<T> but got " + exprType->toString(toStringMode));
 
-    TypedNode *expr = std::get<TypedNode *>(exprOpt);
-
-    const Type *exprType = expr->getType();
-    std::optional<const TypeBox *> boxOpt = type_cast<TypeBox>(exprType);
-    if (boxOpt)
-    {
-        return new TDerefBoxNode(boxOpt.value(), expr, is_rvalue, ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Dereference expected Box<T> but got " + exprType->toString(toStringMode));
+  return new TDerefBoxNode(box, expr, is_rvalue, ctx->getStart());
 }
 
 // Passthrough to expression
@@ -1233,26 +1208,14 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
                       : ctx->GREATER()   ? ">"
                       : ">=";
 
-    auto leftOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this));
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&leftOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unable to type check LHS of binary relation expression");
-    }
-
-    auto left = std::get<TypedNode *>(leftOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, left, anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this)), ctx, "Unable to type check LHS of binary relation expression");
 
     if (left->getType()->isNotSubtype({Types::DYN_INT, Types::DYN_U32, Types::DYN_I64, Types::DYN_U64}, InferenceMode::QUERY))
     {
         return errorHandler.addError(ctx->getStart(), "Cannot apply " + opStr + " to " + left->getType()->toString(toStringMode) + ". Expected a number.");
     }
 
-    auto rightOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this));
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&rightOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unable to type check RHS of binary relation expression");
-    }
-
-    auto right = std::get<TypedNode *>(rightOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, right, anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this)), ctx, "Unable to type check RHS of binary relation expression");
 
     if (right->getType()->isNotSubtype(left->getType()))
     {
@@ -1321,14 +1284,7 @@ std::optional<ParameterListNode> SemanticVisitor::visitCtx(BismuthParser::Parame
 
 std::variant<ParameterNode, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ParameterContext *ctx)
 {
-    std::variant<const Type *, ErrorChain *> paramTypeOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&paramTypeOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate case type");
-    }
-
-    const Type *paramType = std::get<const Type *>(paramTypeOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, paramType, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this)), ctx, "Failed to generate case type");
     return ParameterNode(paramType, ctx->name->getText());
 }
 
@@ -1407,24 +1363,10 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     // This one is the update one!
 
     // Determine the expected type
-    std::variant<TypedNode *, ErrorChain *> varOpt = this->visitLValue(ctx->to);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&varOpt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-
-    TypedNode *var = std::get<TypedNode *>(varOpt);
+    DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, var, this->visitLValue(ctx->to), ctx);
 
     // Determine the expression type
-    std::variant<TypedNode *, ErrorChain *> exprOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->a->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Unable to type check assignment");
-    }
-
-    TypedNode *expr = std::get<TypedNode *>(exprOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, expr, anyOpt2VarError<TypedNode>(errorHandler, ctx->a->accept(this)), ctx, "Unable to type check assignment");
     const Type *exprType = expr->getType();
 
     if (exprType->isGuarded())
@@ -1445,201 +1387,157 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
 std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::VariableDeclarationContext *ctx)
 {
-    std::vector<AssignmentNode *> a;
+  std::vector<AssignmentNode *> a;
 
-    for (auto e : ctx->assignments)
+  for (auto e : ctx->assignments)
+  {
+    // Needs to happen in case we have vars
+    // const Type *assignType = this->visitCtx(ctx->typeOrVar());
+
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, assignType, this->visitCtx(ctx->typeOrVar()), ctx, "Error generating assign type");
+    const Type *origType = assignType->getCopy();
+
+    if (e->a && stmgr->isGlobalScope())
     {
-        // Needs to happen in case we have vars
-        // const Type *assignType = this->visitCtx(ctx->typeOrVar());
+      if (!(dynamic_cast<BismuthParser::BConstExprContext *>(e->a) ||
+            dynamic_cast<BismuthParser::IConstExprContext *>(e->a) ||
+            dynamic_cast<BismuthParser::SConstExprContext *>(e->a)))
+      {
+        errorHandler.addError(e->a->getStart(), "Global variables must be assigned explicit constants or initialized at runtime!");
+      }
 
-        std::variant<const Type *, ErrorChain *> assignTypeOpt = this->visitCtx(ctx->typeOrVar());
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&assignTypeOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Error generating assign type");
-        }
-
-        const Type *assignType = std::get<const Type *>(assignTypeOpt);
-        const Type *origType = assignType->getCopy();
-
-        if (e->a && stmgr->isGlobalScope())
-        {
-            if (!(dynamic_cast<BismuthParser::BConstExprContext *>(e->a) ||
-                  dynamic_cast<BismuthParser::IConstExprContext *>(e->a) ||
-                  dynamic_cast<BismuthParser::SConstExprContext *>(e->a)))
-            {
-                errorHandler.addError(e->a->getStart(), "Global variables must be assigned explicit constants or initialized at runtime!");
-            }
-
-            if (type_cast<TypeSum>(assignType))
-            {
-                errorHandler.addError(e->a->getStart(), "Sums cannot be initialized at a global level");
-            }
-        }
-
-        for (auto var : e->VARIABLE())
-        {
-            std::string id = var->getText();
-
-            std::optional<Symbol *> symOpt = stmgr->lookupInCurrentScope(id);
-
-            if (symOpt)
-            {
-                return errorHandler.addError(e->getStart(), "Redeclaration of " + id);
-            }
-            else
-            {
-                // if (!(e->a))
-                //     return errorHandler.addCodegenError(ctx->getStart(), "FALSE!");
-                std::optional<TypedNode *> exprOpt = std::nullopt;
-
-                if (e->a)
-                {
-                    std::variant<TypedNode *, ErrorChain *> exprOptO = anyOpt2VarError<TypedNode>(errorHandler, e->a->accept(this));
-
-                    if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOptO))
-                    {
-                        return (*e)->addError(ctx->getStart(), "Unable to type check assignment");
-                    }
-
-                    exprOpt = std::get<TypedNode *>(exprOptO);
-                }
-                // std::variant<TypedNode *, ErrorChain *> exprOpt = (e->a) ? anyOpt2VarError<TypedNode>(e->a->accept(this)) : std::nullopt;
-
-                const Type *newAssignType = origType->getCopy(); // this->visitCtx(ctx->typeOrVar()); // Needed to ensure vars get their own inf type
-
-                const Type *exprType = exprOpt ? exprOpt.value()->getType() : newAssignType;
-
-                if (exprType->isGuarded()) // TODO: Use syntactic sugar to separate out declarations from assignments. Also could use it to make select statements work better!
-                {
-                    return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier");
-                }
-
-                // Note: This automatically performs checks to prevent issues with setting VAR = VAR
-                if (e->a && exprType->isNotSubtype(newAssignType))
-                {
-                    return errorHandler.addError(e->getStart(), "Expression of type " + exprType->toString(toStringMode) + " cannot be assigned to " + newAssignType->toString(toStringMode));
-                }
-
-                const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType;
-
-                // Done with exprType for later type inference purposes
-                // .value() should be safe as we already checked name uniqueness
-                // FIXME: isGlobalScope probably doesnt work anymore with paths and namespaces. Revise it!
-                Symbol * symbol = stmgr->addSymbol(id, newExprType, stmgr->isGlobalScope()).value();
-
-                // This is somewhat inefficient to have to repeat this for every single value, but needed if for linear resources and if we aren't purely FP.
-                a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Does assignment node need to be list?
-            }
-        }
+      if (type_cast<TypeSum>(assignType))
+      {
+        errorHandler.addError(e->a->getStart(), "Sums cannot be initialized at a global level");
+      }
     }
-    return new TVarDeclNode(a, ctx->getStart());
+
+    for (auto var : e->VARIABLE())
+    {
+      std::string id = var->getText();
+      std::optional<Symbol *> symOpt = stmgr->lookupInCurrentScope(id);
+      if (symOpt)
+      {
+        return errorHandler.addError(e->getStart(), "Redeclaration of " + id);
+      }
+
+      // if (!(e->a))
+      //     return errorHandler.addCodegenError(ctx->getStart(), "FALSE!");
+      std::optional<TypedNode *> exprOpt = std::nullopt;
+      if (e->a)
+      {
+        std::variant<TypedNode *, ErrorChain *> exprOptO = anyOpt2VarError<TypedNode>(errorHandler, e->a->accept(this));
+        if (ErrorChain **e = std::get_if<ErrorChain *>(&exprOptO))
+        {
+          return (*e)->addError(ctx->getStart(), "Unable to type check assignment");
+        }
+
+        exprOpt = std::get<TypedNode *>(exprOptO);
+      }
+
+      const Type *newAssignType = origType->getCopy(); // this->visitCtx(ctx->typeOrVar()); // Needed to ensure vars get their own inf type
+      const Type *exprType = exprOpt ? exprOpt.value()->getType() : newAssignType;
+
+      if (exprType->isGuarded()) // TODO: Use syntactic sugar to separate out declarations from assignments. Also could use it to make select statements work better!
+      {
+        return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier");
+      }
+
+      // Note: This automatically performs checks to prevent issues with setting VAR = VAR
+      if (e->a && exprType->isNotSubtype(newAssignType))
+      {
+        return errorHandler.addError(e->getStart(), "Expression of type " + exprType->toString(toStringMode) + " cannot be assigned to " + newAssignType->toString(toStringMode));
+      }
+
+      const Type *newExprType = (dynamic_cast<const TypeInfer *>(newAssignType) && e->a) ? exprType : newAssignType;
+
+      // Done with exprType for later type inference purposes
+      // .value() should be safe as we already checked name uniqueness
+      // FIXME: isGlobalScope probably doesnt work anymore with paths and namespaces. Revise it!
+      Symbol * symbol = stmgr->addSymbol(id, newExprType, stmgr->isGlobalScope()).value();
+
+      // This is somewhat inefficient to have to repeat this for every single value, but needed if for linear resources and if we aren't purely FP.
+      a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Does assignment node need to be list?
+    }
+  }
+  return new TVarDeclNode(a, ctx->getStart());
 }
 
 std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::MatchStatementContext *ctx)
 {
-    std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->check->ex->accept(this));
+  DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, cond, anyOpt2VarError<TypedNode>(errorHandler, ctx->check->ex->accept(this)), ctx);
+  DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeSum*, sumType, type_cast<TypeSum>(cond->getType()), ctx->check, "Can only case on Sum Types, not " + cond->getType()->toString(toStringMode));
 
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
+  std::set<const Type *> foundCaseTypes = {};
+  // TODO: Maybe make so these can return values?
+
+  auto branchOpt = checkBranch<BismuthParser::MatchStatementContext, BismuthParser::MatchAlternativeContext, std::pair<Symbol *, TypedNode *>>(
+    ctx,
+    [this, ctx](std::deque<DeepRestData *> *rest) {
+      for (auto b : ctx->matchAlternative())
+      {
+        bindRestData(b->eval, rest);
+      }
+    },
+    ctx->matchAlternative(),
+    false,
+    [](std::pair<Symbol *, TypedNode *> pair) -> TypedNode * { return pair.second; },
+    [this, ctx, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<std::pair<Symbol *, TypedNode *>, ErrorChain *>
     {
+      DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseType, anyOpt2VarError<const Type>(errorHandler, altCtx->type()->accept(this)), ctx, "Failed to generate case type");
+
+      if (!sumType->contains(caseType))
+      {
+        errorHandler.addError(
+          altCtx->type()->getStart(),
+          "Impossible case for " + sumType->toString(toStringMode) + " to act as " + caseType->toString(toStringMode)
+        );
+      }
+
+      if (foundCaseTypes.count(caseType))
+      {
+        errorHandler.addError(altCtx->type()->getStart(), "Duplicate case in match");
+      }
+      else
+      {
+        foundCaseTypes.insert(caseType);
+      }
+
+      stmgr->enterScope(StopType::NONE);
+      DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, local, stmgr->addSymbol(altCtx->name->getText(), caseType, false), altCtx, "Duplicate case name"); // TODO: may provide duplicate errors to prior checks!
+
+      std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, altCtx->eval->accept(this));
+      // this->safeExitScope(altCtx);
+      stmgr->exitScope();
+
+      if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
+      {
         return (*e)->addErrorAt(ctx->getStart());
-    }
+      }
 
-    TypedNode *cond = std::get<TypedNode *>(condOpt);
+      if (dynamic_cast<BismuthParser::TypeDefContext *>(altCtx->eval) ||
+          dynamic_cast<BismuthParser::VarDeclStatementContext *>(altCtx->eval))
+      {
+        return errorHandler.addError(altCtx->getStart(), "Dead code: definition as select alternative");
+      }
 
-    std::optional<const TypeSum *> sumTypeOpt = type_cast<TypeSum>(cond->getType());
-    if (sumTypeOpt)
-    {
-        const TypeSum *sumType = sumTypeOpt.value();
+      TypedNode *ans = std::get<TypedNode *>(tnOpt);
 
-        std::set<const Type *> foundCaseTypes = {};
-        // TODO: Maybe make so these can return values?
+      return std::make_pair(local, ans);
+    });
 
-        auto branchOpt = checkBranch<BismuthParser::MatchStatementContext, BismuthParser::MatchAlternativeContext, std::pair<Symbol *, TypedNode *>>(
-            ctx,
-            [this, ctx](std::deque<DeepRestData *> *rest) {
-                for (auto b : ctx->matchAlternative())
-                {
-                    bindRestData(b->eval, rest);
-                }
-            },
-            ctx->matchAlternative(),
-            false,
-            [](std::pair<Symbol *, TypedNode *> pair) -> TypedNode * { return pair.second; },
-            [this, ctx, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<std::pair<Symbol *, TypedNode *>, ErrorChain *>
-            {
-                std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, altCtx->type()->accept(this));
+  if (foundCaseTypes.size() != sumType->getCases().size())
+  {
+    return errorHandler.addError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString(toStringMode));
+  }
 
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
-                {
-                    return (*e)->addError(ctx->getStart(), "Failed to generate case type");
-                }
+  if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
+  {
+    return (*e)->addError(ctx->getStart(), "Failed to type check match statement");
+  }
 
-                const Type *caseType = std::get<const Type *>(caseTypeOpt);
-
-                if (!sumType->contains(caseType))
-                {
-                    errorHandler.addError(
-                        altCtx->type()->getStart(),
-                        "Impossible case for " +
-                        sumType->toString(toStringMode) +
-                        " to act as " +
-                        caseType->toString(toStringMode)
-                    );
-                }
-
-                if (foundCaseTypes.count(caseType))
-                {
-                    errorHandler.addError(altCtx->type()->getStart(), "Duplicate case in match");
-                }
-                else
-                {
-                    foundCaseTypes.insert(caseType);
-                }
-
-                stmgr->enterScope(StopType::NONE);
-                std::optional<Symbol *> localOpt = stmgr->addSymbol(altCtx->name->getText(), caseType, false);
-                if(!localOpt)
-                    return errorHandler.addError(altCtx->getStart(), "Duplicate case name"); // TODO: may provide duplicate errors to prior checks!
-
-                Symbol * local = localOpt.value();
-                std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, altCtx->eval->accept(this));
-                // this->safeExitScope(altCtx);
-                stmgr->exitScope();
-
-                if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-                {
-                    return (*e)->addErrorAt(ctx->getStart());
-                }
-
-                if (dynamic_cast<BismuthParser::TypeDefContext *>(altCtx->eval) ||
-                    dynamic_cast<BismuthParser::VarDeclStatementContext *>(altCtx->eval))
-                {
-                    return errorHandler.addError(altCtx->getStart(), "Dead code: definition as select alternative");
-                }
-
-                TypedNode *ans = std::get<TypedNode *>(tnOpt);
-
-                return std::make_pair(local, ans);
-
-            });
-
-        if (foundCaseTypes.size() != sumType->getCases().size())
-        {
-            return errorHandler.addError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString(toStringMode));
-        }
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Failed to type check match statement");
-        }
-
-        ConditionalData<std::pair<Symbol *, TypedNode *>> dat = std::get<ConditionalData<std::pair<Symbol *, TypedNode *>>>(branchOpt);
-
-        return new TMatchStatementNode(sumType, cond, dat.cases, dat.post, ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->check->getStart(), "Can only case on Sum Types, not " + cond->getType()->toString(toStringMode));
+  ConditionalData<std::pair<Symbol *, TypedNode *>> dat = std::get<ConditionalData<std::pair<Symbol *, TypedNode *>>>(branchOpt);
+  return new TMatchStatementNode(sumType, cond, dat.cases, dat.post, ctx->getStart());
 }
 
 /**
@@ -1825,13 +1723,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             case_count++;
 
-            std::variant<TypedNode *, ErrorChain *> checkOpt = anyOpt2VarError<TypedNode>(errorHandler, e->check->accept(this));
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&checkOpt))
-            {
-                return (*e)->addErrorAt(ctx->getStart());
-            }
-
-            TypedNode *check = std::get<TypedNode *>(checkOpt);
+            DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, check, anyOpt2VarError<TypedNode>(errorHandler, e->check->accept(this)), ctx);
             const Type *checkType = check->getType();
 
             if (checkType->isNotSubtype(Types::DYN_BOOL))
@@ -1841,14 +1733,9 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
 
             stmgr->enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
 
-            std::variant<TypedNode *, ErrorChain *> evalOpt = anyOpt2VarError<TypedNode>(errorHandler, e->eval->accept(this));
+            DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, eval, anyOpt2VarError<TypedNode>(errorHandler, e->eval->accept(this)), ctx);
 
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&evalOpt))
-            {
-                return (*e)->addErrorAt(ctx->getStart());
-            }
-
-            return new TSelectAlternativeNode(check, std::get<TypedNode *>(evalOpt), ctx->getStart());
+            return new TSelectAlternativeNode(check, eval, ctx->getStart());
         });
 
     if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
@@ -1977,13 +1864,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         );
     }
 
-    std::variant<TBlockNode *, ErrorChain *> blkOpt = this->safeVisitBlock(ctx->block(), false);
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
-    {
-        return (*e)->addErrorAt(ctx->getStart());
-    }
-    TBlockNode *blk = std::get<TBlockNode *>(blkOpt);
+    DEFINE_OR_PROPAGATE_VARIANT(TBlockNode *, blk, this->safeVisitBlock(ctx->block(), false), ctx);
 
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
     if (!TypedAST::endsInReturn(*blk))
@@ -2043,14 +1924,7 @@ SemanticVisitor::visitCtx(BismuthParser::SumTypeContext *ctx)
 
     for (auto e : ctx->type()) // FIXME: ADD TEST CASES LIKE THIS FOR STRUCT + ENUM!! (LINEAR CHECK?)
     {
-        std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, e->accept(this));
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Failed to generate case type");
-        }
-
-        const Type *caseType = std::get<const Type *>(caseTypeOpt);
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseType, anyOpt2VarError<const Type>(errorHandler, e->accept(this)), ctx, "Failed to generate case type");
 
         if (caseType->isLinear())
         {
@@ -2074,14 +1948,7 @@ std::variant<std::vector<const Type *>, ErrorChain *> SemanticVisitor::TvisitGen
 
     for(auto a : ctx->subst)
     {
-        std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, a->accept(this));
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
-        {
-            return (*e)->addError(a->getStart(), "Failed to generate type in template application");
-        }
-
-        const Type * sub = std::get<const Type *>(caseTypeOpt);
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, sub, anyOpt2VarError<const Type>(errorHandler, a->accept(this)), a, "Failed to generate type in template application");
         innerTys.push_back(sub);
     }
 
@@ -2091,31 +1958,13 @@ std::variant<std::vector<const Type *>, ErrorChain *> SemanticVisitor::TvisitGen
 std::variant<const Type *, ErrorChain *>
 SemanticVisitor::visitCtx(BismuthParser::TemplatedTypeContext *ctx)
 {
-    std::variant<const Type *, ErrorChain *> caseTypeOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&caseTypeOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate case type");
-    }
-
-    const Type * main = std::get<const Type *>(caseTypeOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, main, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this)), ctx, "Failed to generate case type");
 
     if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(main))
     {
-        std::variant<std::vector<const Type *>, ErrorChain *> tempOpts = TvisitGenericSpecifier(ctx->genericSpecifier());
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&tempOpts))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        std::vector<const Type *> innerTys = std::get<std::vector<const Type *>>(tempOpts);
-
-        std::optional<const Type*> appliedOpt = templateTy->canApplyTemplate(innerTys);
-        if(!appliedOpt)
-            return errorHandler.addError(ctx->getStart(), "Failed to apply template. FIXME: Improve this error message!!");
-
-        return appliedOpt.value();
+        DEFINE_OR_PROPAGATE_VARIANT(std::vector<const Type *>, innerTys, TvisitGenericSpecifier(ctx->genericSpecifier()), ctx);
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const Type*, applied, templateTy->canApplyTemplate(innerTys), ctx, "Failed to apply template. FIXME: Improve this error message!!");
+        return applied;
     }
 
     return errorHandler.addError(ctx->getStart(), "Expected a template type but got: " + main->toString(toStringMode));
@@ -2308,14 +2157,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
 std::variant<const TypeDynArray *, ErrorChain*>
 SemanticVisitor::visitCtx(BismuthParser::DynArrayTypeContext * ctx)
 {
-    std::variant<const Type *, ErrorChain *> innerOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&innerOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate array type");
-    }
-
-    const Type *inner = std::get<const Type *>(innerOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, inner, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this)), ctx, "Failed to generate array type");
 
     return new TypeDynArray(inner);
 }
@@ -2323,14 +2165,7 @@ SemanticVisitor::visitCtx(BismuthParser::DynArrayTypeContext * ctx)
 std::variant<const TypeArray *, ErrorChain *>
 SemanticVisitor::visitCtx(BismuthParser::ArrayTypeContext *ctx)
 {
-    std::variant<const Type *, ErrorChain *> innerOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&innerOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate array type");
-    }
-
-    const Type *inner = std::get<const Type *>(innerOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, inner, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this)), ctx, "Failed to generate array type");
 
     // Undefined type errors handled below
 
@@ -2393,14 +2228,7 @@ SemanticVisitor::visitCtx(BismuthParser::ChannelTypeContext *ctx)
 std::variant<const TypeBox *, ErrorChain *>
 SemanticVisitor::visitCtx(BismuthParser::BoxTypeContext *ctx)
 {
-    std::variant<const Type *, ErrorChain *> innerOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this));
-
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&innerOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate type inside box");
-    }
-
-    const Type *inner = std::get<const Type *>(innerOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, inner, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this)), ctx, "Failed to generate type inside box");
 
     if (inner->isLinear())
     {
@@ -2431,318 +2259,218 @@ SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(BismuthParser::ProgramSendContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot send on non-channel: " + id);
 
-    if (!opt)
+    DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx);
+    const Type *ty = tn->getType();
+
+    bool inCloseable = channel->getProtocol()->isInCloseable();
+    std::optional<const Type *> canSend = channel->getProtocol()->send(ty);
+
+    if (!canSend)
     {
-        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
+      return errorHandler.addError(ctx->getStart(), "Failed to send " + ty->toString(toStringMode) + " over channel " + sym->toString());
     }
-
-    Symbol *sym = opt.value();
-
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-    if (channelOpt)
-    {
-        const TypeChannel *channel = channelOpt.value();
-        std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this));
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        TypedNode *tn = std::get<TypedNode *>(tnOpt);
-        const Type *ty = tn->getType();
-
-        bool inCloseable = channel->getProtocol()->isInCloseable();
-        std::optional<const Type *> canSend = channel->getProtocol()->send(ty);
-
-        if (!canSend)
-        {
-            return errorHandler.addError(ctx->getStart(), "Failed to send " + ty->toString(toStringMode) + " over channel " + sym->toString());
-        }
-        return new TProgramSendNode(sym, inCloseable, tn, canSend.value(), ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Cannot send on non-channel: " + id);
+    return new TProgramSendNode(sym, inCloseable, tn, canSend.value(), ctx->getStart());
 }
 
 std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot recv on non-channel: " + id);
 
-    if (!opt)
+    bool closeState = channel->getProtocol()->isInCloseable();
+    std::optional<RecvMetadata> ty = channel->getProtocol()->recv();
+    if (!ty)
     {
-        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
+      return errorHandler.addError(ctx->getStart(), "Failed to recv over channel: " + sym->toString());
     }
 
-    Symbol *sym = opt.value();
-
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-
-    if (channelOpt)
-    {
-        const TypeChannel *channel = channelOpt.value();
-        bool closeState = channel->getProtocol()->isInCloseable();
-        std::optional<RecvMetadata> ty = channel->getProtocol()->recv();
-        if (!ty)
-        {
-            return errorHandler.addError(ctx->getStart(), "Failed to recv over channel: " + sym->toString());
-        }
-
-        return new TProgramRecvNode(sym, ty.value(), closeState, ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);
+    return new TProgramRecvNode(sym, ty.value(), closeState, ctx->getStart());
 }
 
 std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot recv on non-channel: " + id);
 
-    if (!opt)
+    bool isInCloseable = channel->getProtocol()->isInCloseable();
+    if (!channel->getProtocol()->isOC(true))
     {
-        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
+      return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym->toString() + " as it is not a ! loop");
     }
 
-    Symbol *sym = opt.value();
-
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-
-    if (channelOpt)
-    {
-        const TypeChannel *channel = channelOpt.value();
-        bool isInCloseable = channel->getProtocol()->isInCloseable();
-        if (!channel->getProtocol()->isOC(true))
-        {
-            return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym->toString() + " as it is not a ! loop");
-        }
-
-        return new TProgramIsPresetNode(sym, isInCloseable, ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Cannot recv on non-channel: " + id);
+    return new TProgramIsPresetNode(sym, isInCloseable, ctx->getStart());
 }
 
 std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(BismuthParser::ProgramCaseContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot case on non-channel: " + id);
+    std::set<
+      std::pair<
+        std::variant<const ProtocolSequence *, std::string>,
+        BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
 
-    if (!opt)
+    for (auto alt : ctx->protoAlternative())
     {
-        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
+      if(alt->lbl)
+      {
+        optsI.insert({
+          alt->lbl->getText(),
+          alt->eval
+        });
+        continue;
+      }
+
+      // TODO: SEEMS WRONG TO PERFORM ERROR CHECKS HERE AS, BY DEF, COULD ONLY ERROR SHOULD HIGHER-LEVEL PROTO FAIL, BUT I GUESS MAYBE USEFUL IF WE LATER ADD INF!
+      ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
+      std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(alt->check); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
+      delete protoVisitor;
+
+      if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
+      {
+        return (*e)->addError(ctx->getStart(), "Failed to generate protocol type in channel case statement");
+      }
+
+      const ProtocolSequence *a = std::get<const ProtocolSequence *>(protoOpt);
+
+      optsI.insert({
+        a->getInverse(), alt->eval}); // Double inverses to ensure order same for both sides (server & client)
     }
 
-    Symbol *sym = opt.value();
+    std::vector<std::variant<const ProtocolSequence *, std::string>> branchSequences = {};
+    std::vector<BismuthParser::StatementContext *> alternatives = {};
 
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-    if (channelOpt)
+    for (auto itr : optsI)
     {
-        const TypeChannel *channel = channelOpt.value();
-        std::set<
-            std::pair<
-                std::variant<const ProtocolSequence *, std::string>,
-            BismuthParser::StatementContext *>, ProtocolCompareInv> optsI = {};
-
-        for (auto alt : ctx->protoAlternative())
-        {
-            if(alt->lbl)
-            {
-                optsI.insert({
-                    alt->lbl->getText(),
-                    alt->eval
-                });
-                continue;
-            }
-
-            // TODO: SEEMS WRONG TO PERFORM ERROR CHECKS HERE AS, BY DEF, COULD ONLY ERROR SHOULD HIGHER-LEVEL PROTO FAIL, BUT I GUESS MAYBE USEFUL IF WE LATER ADD INF!
-            ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
-            std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(alt->check); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
-            delete protoVisitor;
-
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-            {
-                return (*e)->addError(ctx->getStart(), "Failed to generate protocol type in channel case statement");
-            }
-
-            const ProtocolSequence *a = std::get<const ProtocolSequence *>(protoOpt);
-
-            optsI.insert({
-                a->getInverse(), alt->eval}); // Double inverses to ensure order same for both sides (server & client)
-        }
-
-        std::vector<std::variant<const ProtocolSequence *, std::string>> branchSequences = {};
-        std::vector<BismuthParser::StatementContext *> alternatives = {};
-
-        for (auto itr : optsI)
-        {
-            std::variant<const ProtocolSequence *, std::string> tmp = itr.first;
-            if(std::holds_alternative<const ProtocolSequence *>(tmp))
-            {
-                branchSequences.push_back(
-                    std::get<const ProtocolSequence *>(tmp)->getInverse()
-                );
-                // TODO: delete std::get<const ProtocolSequence *>(tmp)?
-            }
-            else
-            {
-                branchSequences.push_back(tmp);
-            }
-            // branchSequences.push_back(itr.first->getInverse());
-            alternatives.push_back(itr.second);
-        }
-
-        bool isInCloseable = channel->getProtocol()->isInCloseable();
-
-        if(ctx->protoElse() && !isInCloseable)
-        {
-            return errorHandler.addError(ctx->protoElse()->getStart(), "Dead code - An else block can only apply to choices in a lossy protocol");
-        }
-
-        if(isInCloseable && !ctx->protoElse()) // TODO: see about removing this when we can?
-        {
-            return errorHandler.addError(ctx->getStart(), "Currently, an else block is required for cases in lossy protocols");
-        }
-
-        optional<CaseMetadata> metaOpts = channel->getProtocol()->caseAnalysis(branchSequences);
-
-        if (!metaOpts) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
-        {
-            return errorHandler.addError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
-        }
-
-        CaseMetadata meta = metaOpts.value();
-
-        vector<const ProtocolSequence *> fullSequences = meta.fullSequences; //fullSeqOpts.value();
-
-        if(ctx->protoElse())
-        {
-            fullSequences.push_back(meta.rest);
-            alternatives.push_back(ctx->protoElse()->statement());
-        }
-
-        unsigned int branch = 0;
-        auto branchOpt = checkBranch<BismuthParser::ProgramCaseContext, BismuthParser::StatementContext, TypedNode *>(
-            ctx,
-            [this, ctx](std::deque<DeepRestData *> *rest) {
-                for (auto b : ctx->protoAlternative())
-                {
-                    bindRestData(b->eval, rest);
-                }
-            },
-            alternatives,
-            false, // TODO: make this (isInCloseable && !ctx->protoElse()). The challenge is making it follow the correct protocol in the case when it skips to rest as we don't currently support skipping ops like that
-            [](TypedNode * n) -> TypedNode * { return n; },
-            [this, fullSequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
-            {
-                const ProtocolSequence *proto = fullSequences.at(branch++);
-
-                std::optional<Symbol *> opt = stmgr->lookup(id);
-
-                if (!opt)
-                {
-                    return errorHandler.addError(alt->getStart(), "Could not find channel: " + id);
-                }
-
-                Symbol *sym = opt.value();
-                std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-                if (channelOpt)
-                {
-                    const TypeChannel *channel = channelOpt.value();
-                    channel->setProtocol(proto);
-                    std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
-                    return optEval;
-                }
-
-                return errorHandler.addCompilerError(alt->getStart(), "Channel identifier does not have a channel type in external choice.");
-            });
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Failed to type check external choice");
-        }
-
-        ConditionalData<TypedNode *> dat = std::get<ConditionalData<TypedNode *>>(branchOpt);
-
-        return new TChannelCaseStatementNode(sym, isInCloseable, ctx->protoElse(), dat.cases, dat.post, ctx->getStart());
+      std::variant<const ProtocolSequence *, std::string> tmp = itr.first;
+      if(std::holds_alternative<const ProtocolSequence *>(tmp))
+      {
+        branchSequences.push_back(
+          std::get<const ProtocolSequence *>(tmp)->getInverse()
+        );
+        // TODO: delete std::get<const ProtocolSequence *>(tmp)?
+      }
+      else
+      {
+        branchSequences.push_back(tmp);
+      }
+      // branchSequences.push_back(itr.first->getInverse());
+      alternatives.push_back(itr.second);
     }
 
-    return errorHandler.addError(ctx->getStart(), "Cannot case on non-channel: " + id);
+    bool isInCloseable = channel->getProtocol()->isInCloseable();
+
+    if(ctx->protoElse() && !isInCloseable)
+    {
+      return errorHandler.addError(ctx->protoElse()->getStart(), "Dead code - An else block can only apply to choices in a lossy protocol");
+    }
+
+    if(isInCloseable && !ctx->protoElse()) // TODO: see about removing this when we can?
+    {
+      return errorHandler.addError(ctx->getStart(), "Currently, an else block is required for cases in lossy protocols");
+    }
+
+    optional<CaseMetadata> metaOpts = channel->getProtocol()->caseAnalysis(branchSequences);
+
+    if (!metaOpts) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
+    {
+      return errorHandler.addError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
+    }
+
+    CaseMetadata meta = metaOpts.value();
+
+    vector<const ProtocolSequence *> fullSequences = meta.fullSequences; //fullSeqOpts.value();
+
+    if(ctx->protoElse())
+    {
+      fullSequences.push_back(meta.rest);
+      alternatives.push_back(ctx->protoElse()->statement());
+    }
+
+    unsigned int branch = 0;
+    auto branchOpt = checkBranch<BismuthParser::ProgramCaseContext, BismuthParser::StatementContext, TypedNode *>(
+      ctx,
+      [this, ctx](std::deque<DeepRestData *> *rest) {
+        for (auto b : ctx->protoAlternative())
+        {
+          bindRestData(b->eval, rest);
+        }
+      },
+      alternatives,
+      false, // TODO: make this (isInCloseable && !ctx->protoElse()). The challenge is making it follow the correct protocol in the case when it skips to rest as we don't currently support skipping ops like that
+      [](TypedNode * n) -> TypedNode * { return n; },
+      [this, fullSequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
+      {
+        const ProtocolSequence *proto = fullSequences.at(branch++);
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), alt, "Could find channel: " + id);
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), alt, "Channel identifier does not have a channel type in external choice.");
+        channel->setProtocol(proto);
+        std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
+        return optEval;
+      });
+
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&branchOpt))
+    {
+      return (*e)->addError(ctx->getStart(), "Failed to type check external choice");
+    }
+
+    ConditionalData<TypedNode *> dat = std::get<ConditionalData<TypedNode *>>(branchOpt);
+
+    return new TChannelCaseStatementNode(sym, isInCloseable, ctx->protoElse(), dat.cases, dat.post, ctx->getStart());
 }
 std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramProject(BismuthParser::ProgramProjectContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot project on non-channel: " + id);
 
-    if (!opt)
+    if(ctx->lbl)
     {
-        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
+      unsigned int projectIndex = channel->getProtocol()->project(ctx->lbl->getText());
+
+      if (!projectIndex)
+      {
+        return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ctx->lbl->getText());
+      }
+
+      return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
     }
 
-    Symbol *sym = opt.value();
+    ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
+    std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->sel); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
+    delete protoVisitor;
 
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-    if (channelOpt)
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
     {
-        const TypeChannel *channel = channelOpt.value();
-
-        if(ctx->lbl)
-        {
-            unsigned int projectIndex = channel->getProtocol()->project(ctx->lbl->getText());
-
-            if (!projectIndex)
-            {
-                return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ctx->lbl->getText());
-            }
-
-            return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
-        }
-
-        ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
-        std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx->sel); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
-        delete protoVisitor;
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Failed to generate protocol type in project statement");
-        }
-
-        const ProtocolSequence *ps = std::get<const ProtocolSequence *>(protoOpt);
-
-        unsigned int projectIndex = channel->getProtocol()->project(ps);
-
-        if (!projectIndex)
-        {
-            return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString(toStringMode));
-        }
-
-        return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
+        return (*e)->addError(ctx->getStart(), "Failed to generate protocol type in project statement");
     }
 
-    return errorHandler.addError(ctx->getStart(), "Cannot project on non-channel: " + id);
+    const ProtocolSequence *ps = std::get<const ProtocolSequence *>(protoOpt);
+
+    unsigned int projectIndex = channel->getProtocol()->project(ps);
+
+    if (!projectIndex)
+    {
+      return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString(toStringMode));
+    }
+
+    return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
 }
 std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgramContract(BismuthParser::ProgramContractContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
-
-    if (!opt)
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot contract on non-channel: " + id);
+    if (!channel->getProtocol()->contract())
     {
-        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
+      return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id + " : " + channel->getProtocol()->toString(toStringMode));
     }
-
-    Symbol *sym = opt.value();
-
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-    if (channelOpt)
-    {
-        const TypeChannel *channel = channelOpt.value();
-        if (!channel->getProtocol()->contract())
-        {
-            return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id + " : " + channel->getProtocol()->toString(toStringMode));
-        }
         // stmgr ->addSymbol(sym); // Makes sure we enforce weakening rules...
 
         /*
@@ -2757,197 +2485,120 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         }
 
         */
-        return new TProgramContractNode(sym, ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Cannot contract on non-channel: " + id);
+    return new TProgramContractNode(sym, ctx->getStart());
 }
 
 std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
-
-    if (!opt)
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot weaken on non-channel: " + id);
+    if (!channel->getProtocol()->weaken())
     {
-        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
+        return errorHandler.addError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString(toStringMode));
     }
-
-    Symbol *sym = opt.value();
-
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-    if (channelOpt)
-    {
-        const TypeChannel *channel = channelOpt.value();
-        if (!channel->getProtocol()->weaken())
-        {
-            return errorHandler.addError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString(toStringMode));
-        }
-        return new TProgramWeakenNode(sym, ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Cannot weaken on non-channel: " + id);
+    return new TProgramWeakenNode(sym, ctx->getStart());
 }
 
 std::variant<TProgramCancelNode *, ErrorChain *> SemanticVisitor::TvisitProgramCancel(BismuthParser::ProgramCancelContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot cancel on non-channel: " + id); // TODO: better error messages (expected type XYZ but got...)
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const ProtocolClose *, proto_post_close, channel->getProtocol()->cancel(), ctx, "Failed to cancel: " + id + " : "  + channel->toString(toStringMode));
 
-    if (!opt)
-    {
-        return errorHandler.addError(ctx->getStart(), "Could not find channel: " + id);
-    }
-
-    Symbol *sym = opt.value();
-
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-    if (channelOpt)
-    {
-        const TypeChannel *channel = channelOpt.value();
-        std::optional<const ProtocolClose *> closeOpt = channel->getProtocol()->cancel();
-
-        if (!closeOpt)
-        {
-            return errorHandler.addError(ctx->getStart(), "Failed to cancel: " + id + " : "  + channel->toString(toStringMode));
-        }
-
-        return new TProgramCancelNode(sym, closeOpt.value()->getCloseNumber(), ctx->getStart());
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Cannot cancel on non-channel: " + id); // TODO : better error messages (expected type XYZ but got)
+    return new TProgramCancelNode(sym, proto_post_close->getCloseNumber(), ctx->getStart());
 }
 
 std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAccept(BismuthParser::ProgramAcceptContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
-    if (!opt)
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Unbound identifier: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel*, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot accept: " + sym->toString());
+    bool isInCloseable = channel->getProtocol()->isInCloseable();
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const ProtocolSequence *, proto_post_accept, channel->getProtocol()->acceptLoop(), ctx, "Cannot accept on " + channel->toString(toStringMode));
+
+    const ProtocolSequence *postC = channel->getProtocolCopy();
+    postC->guard();
+
+    stmgr->guard();
+
+    channel->setProtocol(proto_post_accept);
+
+    std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
+    std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
+
+    // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
+    // due to the var leaving the scope
+    if (lins.size() > 0)
     {
-        return errorHandler.addError(ctx->getStart(), "Unbound identifier: " + id);
+      std::ostringstream details;
+      for (auto e : lins)
+      {
+        details << e->toString() << "; ";
+      }
+
+      errorHandler.addError(ctx->getStart(), "2114 Unused linear types in context: " + details.str());
     }
 
-    Symbol *sym = opt.value();
-
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-    if (channelOpt)
+    channel->setProtocol(postC);
+    if (!stmgr->unguard())
     {
-        const TypeChannel *channel = channelOpt.value();
-        bool isInCloseable = channel->getProtocol()->isInCloseable();
-        std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptLoop();
-        if (!acceptOpt)
-        {
-            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString(toStringMode));
-        }
-        const ProtocolSequence *postC = channel->getProtocolCopy();
-        postC->guard();
-
-        stmgr->guard();
-
-        channel->setProtocol(acceptOpt.value());
-
-        // stmgr ->addSymbol(sym);
-
-        std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
-
-        // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
-        // due to the var leaving the scope
-        if (lins.size() > 0)
-        {
-            std::ostringstream details;
-
-            for (auto e : lins)
-            {
-                details << e->toString() << "; ";
-            }
-
-            errorHandler.addError(ctx->getStart(), "2114 Unused linear types in context: " + details.str());
-        }
-
-        channel->setProtocol(postC);
-        if (!stmgr->unguard())
-        {
-            return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
-        }
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        return new TProgramAcceptNode(sym, isInCloseable, std::get<TBlockNode *>(blkOpt), ctx->getStart());
+      return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
     }
 
-    return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
+    {
+      return (*e)->addErrorAt(ctx->getStart());
+    }
+
+    return new TProgramAcceptNode(sym, isInCloseable, std::get<TBlockNode *>(blkOpt), ctx->getStart());
 }
 
 std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    std::optional<Symbol *> opt = stmgr->lookup(id);
-    if (!opt)
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Unbound identifier: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot accept: " + sym->toString());
+    DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, condition, this->visitCondition(ctx->ex), ctx);
+
+    bool isInCloseable = channel->getProtocol()->isInCloseable();
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const ProtocolSequence *, proto_post_accept, channel->getProtocol()->acceptWhileLoop(), ctx, "Cannot accept on " + channel->toString(toStringMode));
+
+    const ProtocolSequence *postC = channel->getProtocolCopy();
+    postC->guard();
+
+    stmgr->guard();
+    channel->setProtocol(proto_post_accept);
+
+    std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
+    std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
+
+    // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
+    // due to the var leaving the scope
+    if (lins.size() > 0)
     {
-        return errorHandler.addError(ctx->getStart(), "Unbound identifier: " + id);
+      std::ostringstream details;
+      for (auto e : lins)
+      {
+        details << e->toString() << "; ";
+      }
+
+      errorHandler.addError(ctx->getStart(), "2196 Unused linear types in context: " + details.str());
     }
 
-    Symbol *sym = opt.value();
-
-    std::optional<const TypeChannel *> channelOpt = type_cast<TypeChannel>(sym->getType());
-    if (channelOpt)
+    channel->setProtocol(postC);
+    if (!stmgr->unguard())
     {
-        const TypeChannel *channel = channelOpt.value();
-        std::variant<TypedNode *, ErrorChain *> condOpt = this->visitCondition(ctx->ex);
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        bool isInCloseable = channel->getProtocol()->isInCloseable();
-        std::optional<const ProtocolSequence *> acceptOpt = channel->getProtocol()->acceptWhileLoop();
-        if (!acceptOpt)
-        {
-            return errorHandler.addError(ctx->getStart(), "Cannot accept on " + channel->toString(toStringMode));
-        }
-        const ProtocolSequence *postC = channel->getProtocolCopy();
-        postC->guard();
-
-        stmgr->guard();
-        channel->setProtocol(acceptOpt.value());
-
-        std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
-
-        // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
-        // due to the var leaving the scope
-        if (lins.size() > 0)
-        {
-            std::ostringstream details;
-
-            for (auto e : lins)
-            {
-                details << e->toString() << "; ";
-            }
-
-            errorHandler.addError(ctx->getStart(), "2196 Unused linear types in context: " + details.str());
-        }
-
-        channel->setProtocol(postC);
-        if (!stmgr->unguard())
-        {
-            return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
-        }
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
-        {
-            return (*e)->addErrorAt(ctx->getStart());
-        }
-
-        return new TProgramAcceptWhileNode(sym, isInCloseable, std::get<TypedNode *>(condOpt), std::get<TBlockNode *>(blkOpt), ctx->getStart());
+      return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
     }
 
-    return errorHandler.addError(ctx->getStart(), "Cannot accept: " + sym->toString());
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&blkOpt))
+    {
+      return (*e)->addErrorAt(ctx->getStart());
+    }
+
+    return new TProgramAcceptWhileNode(sym, isInCloseable, condition, std::get<TBlockNode *>(blkOpt), ctx->getStart());
 }
 
 std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx)
