@@ -31,17 +31,18 @@ add_executable(bismuthc bismuthc.cpp)
 
 llvm_map_components_to_libnames(LLVM_LIBS ${LLVM_TARGETS_TO_BUILD} support core irreader codegen mc mcparser option)
 
-add_dependencies(bismuthc 
-    parser_lib 
-    sym_lib 
+add_dependencies(bismuthc
+  generate_parser
+    parser_lib
+    sym_lib
     semantic_lib
     utility_lib
     codegen_lib
     bismuth_runtime
 )
 
-target_include_directories(bismuthc PUBLIC 
-    ${ANTLR_INCLUDE} 
+target_include_directories(bismuthc PUBLIC
+    ${ANTLR_INCLUDE}
     ${ANTLR_GENERATED_DIR}
     ${SYMBOL_INCLUDE}
     ${SEMANTIC_INCLUDE}
@@ -53,7 +54,7 @@ target_include_directories(bismuthc PUBLIC
     ${CLI_INCLUDE}
 )
 
-target_link_libraries(bismuthc 
+target_link_libraries(bismuthc
     PRIVATE
     ${ANTLR_RUNTIME_LIB}
     parser_lib
