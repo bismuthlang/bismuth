@@ -20,7 +20,8 @@ Thumbs.db
 *.wmv
 
 ## expression-compiler specific
-
+.cache/
+cmake/compile_commands.json
 build/
 cov/
 antlr4-cpp-runtime/
@@ -33,10 +34,8 @@ CMakeFiles/
 main
 *.o
 testoutput/
-testdata/*.ll
 testdata/*.bc
 
-programs/**/*.ll
 programs/*.c
 programs/*.s
 a.out
@@ -44,3 +43,4 @@ a.out
 bdwgc/
 
 *.ll
+!*.bismuth.expected.ll

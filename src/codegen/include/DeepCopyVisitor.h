@@ -124,14 +124,15 @@ private:
 
         llvm::Type *llvmType = type->getLLVMType(module);
 
-        Function *fn = Function::Create(FunctionType::get(
-                                            llvmType,
-                                            {
-                                                llvmType, // Value
-                                                i8p,      // Map
-                                            },
-                                            false),
-                                        GlobalValue::PrivateLinkage, "_clone_" + type->toString(DisplayMode::C_STYLE), module);
+        Function *fn = Function::Create(
+            FunctionType::get(
+                llvmType,
+                {
+                    llvmType, // Value
+                    i8p,      // Map
+                },
+                false),
+            GlobalValue::PrivateLinkage, "_clone_" + type->toString(DisplayMode::C_STYLE), module);
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
 
@@ -144,7 +145,7 @@ private:
 
         if (const TypeBox *boxType = dynamic_cast<const TypeBox *>(type))
         {
-            Value * loaded_i8p_v = builder->CreateBitCast(builder->CreateLoad(llvmType, v), i8p);
+            Value * loaded_i8p_v = builder->CreateLoad(llvmType, v); //builder->CreateBitCast(builder->CreateLoad(llvmType, v), i8p);
             const Type *innerType = boxType->getInnerType();
 
             Value *hasValPtr = builder->CreateCall(
@@ -170,7 +171,7 @@ private:
              * Then block
              */
             builder->SetInsertPoint(thenBlk);
-            Value *casted = builder->CreateBitCast(hasValPtr, type->getLLVMType(module));
+            Value *casted = hasValPtr;//builder->CreateBitCast(hasValPtr, type->getLLVMType(module));
 
             builder->CreateBr(restBlk);
 
@@ -179,7 +180,7 @@ private:
             /*
              * Insert the else block (same as rest if no else branch)
              */
-            parentFn->getBasicBlockList().push_back(elseBlk);
+            parentFn->insert(parentFn->end(), elseBlk);
             builder->SetInsertPoint(elseBlk);
 
             // // Generate the code for the else block; follows the same logic as the then block.
@@ -192,8 +193,8 @@ private:
                 return std::nullopt;
             // Value *cloned = clonedOpt.value();
             Value *alloc = runGCMalloc(builder, getSizeForType(type->getLLVMType(module)));
-            Value *casted2 = builder->CreateBitCast(alloc, type->getLLVMType(module));
-            builder->CreateStore(clonedOpt.value(), casted2);
+            // Value *casted2 = builder->CreateBitCast(alloc, type->getLLVMType(module));
+            builder->CreateStore(clonedOpt.value(), alloc);
             builder->CreateCall(
                 get_address_map_put(),
                 {builder->CreateLoad(i8p, m),
@@ -205,25 +206,33 @@ private:
             elseBlk = builder->GetInsertBlock();
 
             // As we have an else block, rest and else are different, so we have to merge back in.
-            parentFn->getBasicBlockList().push_back(restBlk);
+            parentFn->insert(parentFn->end(), restBlk);
             builder->SetInsertPoint(restBlk);
 
             llvm::PHINode *phi = builder->CreatePHI(type->getLLVMType(module), 2, "phi");
             phi->addIncoming(casted, thenBlk);
-            phi->addIncoming(casted2, elseBlk);
+            phi->addIncoming(alloc, elseBlk);
             v = phi;
         }
         else if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(type))
         {
+            auto * llvm_struct_type = structType->getLLVMType(module);
+
             for (auto eleItr : structType->getElements())
             {
                 const Type *localTy = eleItr.second;
 
                 if (localTy->requiresDeepCopy())
                 {
-                    Value *memLoc = builder->CreateGEP(v, {Int32Zero,
-                                                           getU32(structType->getElementIndex(eleItr.first).value()) // In theory, bad opt access, but should never happen
-                                            });
+                    Value *memLoc = builder->CreateGEP(
+                        llvm_struct_type,
+                        v,
+                        {   
+                            Int32Zero, 
+                            getU32(structType->getElementIndex(eleItr.first).value()) // In theory, bad opt access, but should never happen
+                        }
+                    );
+
                     Value *loaded = builder->CreateLoad(eleItr.second->getLLVMType(module), memLoc);
 
                     optional<Value *> valOpt = deepCopyHelper(builder, eleItr.second, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
@@ -236,13 +245,14 @@ private:
         }
         else if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(type))
         {
+            auto * llvm_sum_type = sumType->getLLVMType(module);
             auto origParent = builder->GetInsertBlock()->getParent();
 
             BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
 
-            Value *memLoc = builder->CreateGEP(v, {Int32Zero, Int32One});
-            Value *tagPtr = builder->CreateGEP(v, {Int32Zero, Int32Zero});
-            Value *tag = builder->CreateLoad(tagPtr->getType()->getPointerElementType(), tagPtr);
+            Value *memLoc = builder->CreateGEP(llvm_sum_type, v, {Int32Zero, Int32One});
+            Value *tagPtr = builder->CreateGEP(llvm_sum_type, v, {Int32Zero, Int32Zero});
+            Value *tag = builder->CreateLoad(Int32Ty, tagPtr);
             SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, sumType->getCases().size());
 
             uint32_t index = 0;
@@ -253,9 +263,9 @@ private:
                 builder->SetInsertPoint(matchBlk);
                 
                 switchInst->addCase(getU32(index), matchBlk);
-                origParent->getBasicBlockList().push_back(matchBlk);
+                origParent->insert(origParent->end(), matchBlk);
 
-                Value *corrected = builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
+                Value *corrected = memLoc; //builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
                 Value *loaded = builder->CreateLoad(caseNode->getLLVMType(module), corrected);
 
                 optional<Value *> valOpt = deepCopyHelper(builder, caseNode, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
@@ -266,12 +276,13 @@ private:
                 builder->CreateBr(mergeBlk);
             }
 
-            origParent->getBasicBlockList().push_back(mergeBlk);
+            origParent->insert(origParent->end(), mergeBlk);
             builder->SetInsertPoint(mergeBlk);
             v = builder->CreateLoad(llvmType, v);
         }
         else if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(type))
         {
+            auto * llvm_array_type = arrayType->getLLVMType(module);
             const Type * valueType = arrayType->getValueType(); 
             
             AllocaInst *loop_index = CreateEntryBlockAlloc(builder,Int32Ty, "idx");
@@ -291,7 +302,7 @@ private:
             builder->CreateCondBr(builder->CreateICmpSLT(builder->CreateLoad(Int32Ty, loop_index), builder->CreateLoad(Int32Ty, loop_len)), loopBlk, restBlk);
             condBlk = builder->GetInsertBlock();
 
-            parent->getBasicBlockList().push_back(loopBlk);
+            parent->insert(parent->end(), loopBlk);
             builder->SetInsertPoint(loopBlk);
 
             /******************Loop Body********************/
@@ -300,7 +311,7 @@ private:
             /**/
             /**/
             {
-                Value *memLoc = builder->CreateGEP(v, {Int32Zero,
+                Value *memLoc = builder->CreateGEP(llvm_array_type, v, {Int32Zero,
                                                               builder->CreateLoad(Int32Ty, loop_index)});
 
                 Value *loaded = builder->CreateLoad(valueType->getLLVMType(module), memLoc);
@@ -321,7 +332,7 @@ private:
             builder->CreateBr(condBlk);
             loopBlk = builder->GetInsertBlock();
 
-            parent->getBasicBlockList().push_back(restBlk);
+            parent->insert(parent->end(), restBlk);
             builder->SetInsertPoint(restBlk);
             v = builder->CreateLoad(llvmType, v);
 

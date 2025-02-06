@@ -1,8 +1,8 @@
 # Out of order function call
 
-extern func printf(...) : int; 
+extern func printf(...) -> int; 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Channel<-str> c2 := exec foo; 
 
     c2.send("Hello")
@@ -10,6 +10,6 @@ define program :: c : Channel<-int> = {
     c.send(0)
 }
 
-define foo :: c : Channel<+str> = {
+prog foo :: c : +str = {
     printf("c.recv() = %s\n", c.recv());
 }

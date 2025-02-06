@@ -15,10 +15,10 @@ Output:
     Other other other test, Second case this time!
 */
 
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # int func chayos() {
-define chayos :: c : Channel<-int> = {
+prog chayos :: c : -int = {
     var a, b := 1; 
 
     a := b;
@@ -29,7 +29,7 @@ define chayos :: c : Channel<-int> = {
 
 
 # int func idk() { 
-define idk :: c : Channel<-int> = {
+prog idk :: c : -int = {
     var x; 
     if (1 < 2) {
         x := 3; 
@@ -42,8 +42,8 @@ define idk :: c : Channel<-int> = {
 }
 
 # int func branchtest() {
-define branchtest :: c : Channel<-int> = {
-    int[5] a; 
+prog branchtest :: c : -int = {
+    u32[5] a; 
 
     var count := 0; 
 
@@ -70,7 +70,7 @@ define branchtest :: c : Channel<-int> = {
 
 
 # int func otherbranch() {
-define otherbranch :: c : Channel<-int> = {
+prog otherbranch :: c : -int = {
     int a := 0; 
     int b := 1; 
 
@@ -85,7 +85,7 @@ define otherbranch :: c : Channel<-int> = {
 }
 
 # str func otherbranchtwo() {
-define otherbranchtwo :: c : Channel<-str> = {
+prog otherbranchtwo :: c : -str = {
     int a := 0; 
     str b := "Why hello there!"; 
 
@@ -101,7 +101,7 @@ define otherbranchtwo :: c : Channel<-str> = {
 }
 
 # str func otherbranchthree() {
-define otherbranchthree :: c : Channel<-str> = {
+prog otherbranchthree :: c : -str = {
     int a := 0; 
     str b := "Why hello there!"; 
 
@@ -119,8 +119,8 @@ define otherbranchthree :: c : Channel<-str> = {
     c.send(b)
 }
 
-# define program :: c : Channel<-int> = {
-define program :: io : Channel<-int> = {
+# prog program :: c : -int = {
+prog program :: io : -int = {
     printf("Hello World!\n");
     # printf(); 
     int [50] a; 
@@ -138,7 +138,15 @@ define program :: io : Channel<-int> = {
     a[3] := 4; 
     a[4] := 5; 
 
-    printf("C is: %i; a = [%i, %i, %i, %i, %i]\n", c, a[0], a[1], a[2], a[3], a[4]);
+    # printf("C is: %i; a = [%i, %i, %i, %i, %i]\n", c, a[0], a[1], a[2], a[3], a[4]);
+    printf("C is %i; a = [", c);
+    for(var i := 0; i < 5; i := i + 1)
+    {
+        match a[i]
+            |   Unit u => printf("ERROR, ");
+            |   int v => printf("%i, ", v); 
+    }
+    printf("]\n");
 
     
     Channel<+int> t1 := exec branchtest; 

@@ -11,7 +11,16 @@
 
 #include "Compile.h"
 
+#include "BismuthLexer.h"
+#include "CompilerFlags.h"
+#include "SemanticVisitor.h"
+#include "CodegenVisitor.h"
 #include "ExecUtils.h"
+
+// #include "llvm/TargetParser/Optional.h"
+#include "llvm/Object/ObjectFile.h"
+#include "llvm/IR/LegacyPassManager.h"
+#include "llvm/Support/TargetSelect.h"
 
 std::filesystem::path getRelativePath(std::filesystem::path& currentPath, std::filesystem::path& given)
 {
@@ -146,7 +155,7 @@ llvm::TargetMachine * getTargetMachine()
     auto Features = "";
 
     llvm::TargetOptions opt;
-    auto RM = llvm::Optional<llvm::Reloc::Model>();
+    auto RM = std::optional<llvm::Reloc::Model>();
     auto TheTargetMachine = Target->createTargetMachine(TargetTriple, CPU, Features, opt, RM);
     return TheTargetMachine; 
 }
@@ -341,6 +350,11 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
     for(auto entry : inputs)
     {
         auto [cu, input] = entry; 
+        if (isVerbose)
+        {
+            // should be output.getInputName()
+            std::cout << "Code generation starting for " << input->getSourceName() << "." << std::endl;
+        }
         /*******************************************************************
          * Code Generation
          * ================================================================
@@ -403,7 +417,7 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
             llvm::raw_pwrite_stream * stream = std::get<llvm::raw_pwrite_stream *>(objOutOpt);
 
             llvm::legacy::PassManager pass;
-            auto FileType = llvm::CGFT_ObjectFile;
+            auto FileType = llvm::CodeGenFileType::ObjectFile;
 
             if (TheTargetMachine->addPassesToEmitFile(pass, *stream, nullptr, FileType))
             {
@@ -413,8 +427,10 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
 
             pass.run(*module);
             stream->flush();
-
-            // std::cout << "Wrote " << input.outputPath << std::endl;
+            if (isVerbose)
+            {
+                std::cout << "Wrote code for " << input->getSourceName() << std::endl;
+            }
         }
         delete cu;
     }
@@ -467,17 +483,6 @@ int compile(
     bool noCode, 
     CompileType compileWith)
 {
-
-    // std::cout << "517 compile w/ " << std::endl; 
-    // std::cout << "\t inputs : " << std::endl; 
-    // std::cout << "\t outputFileName : " << outputFileName << std::endl; 
-    // std::cout << "\t demoMode : " << demoMode << std::endl; 
-    // std::cout << "\t isVerbose : " << isVerbose << std::endl; 
-    // std::cout << "\t toStringMode : " << toStringMode << std::endl; 
-    // std::cout << "\t printOutput : " << printOutput << std::endl; 
-    // std::cout << "\t noCode : " << noCode << std::endl; 
-    // std::cout << "\t compileWith : " << compileWith << std::endl; 
-
     /******************************************************************
      * Now that we have the input, we can perform the first stage:
      * 1. Create the lexer from the input.

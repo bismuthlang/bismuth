@@ -1,4 +1,4 @@
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   int i;
   i := getIntArg(1);
   c.send(i)

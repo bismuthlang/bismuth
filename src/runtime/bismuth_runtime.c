@@ -11,10 +11,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// The program entry function
-void program(unsigned int i);
 
-extern struct _Channel; 
+extern struct _Channel;
+
+// The program entry function
+void _bismuth_main(struct _Channel *);
 
 struct _Channel * _Execute(void (*func)(struct _Channel *));
 void *_ReadLinearChannel(struct _Channel *);
@@ -36,7 +37,7 @@ int main(int argc, char *argv[])
   argCount = argc;
   args = argv;
 
-  struct _Channel * idOut = _Execute(&program);
+  struct _Channel * idOut = _Execute(&_bismuth_main);
 
   void *ptr = _ReadLinearChannel(idOut);
 

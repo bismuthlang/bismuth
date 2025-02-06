@@ -10,7 +10,6 @@
  * 
  */
 #pragma once
-#include "antlr4-runtime.h"
 #include "BismuthBaseVisitor.h"
 
 template <class T> class TypedVisitor : public BismuthBaseVisitor

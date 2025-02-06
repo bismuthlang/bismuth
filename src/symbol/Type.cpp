@@ -116,7 +116,7 @@ llvm::Type *TypeBool::getLLVMType(llvm::Module *M) const
  *
  *********************************************/
 std::string TypeStr::toString(DisplayMode) const { return "str"; }
-llvm::Type *TypeStr::getLLVMType(llvm::Module *M) const { return llvm::Type::getInt8PtrTy(M->getContext()); }
+llvm::Type *TypeStr::getLLVMType(llvm::Module *M) const { return llvm::Type::getInt8Ty(M->getContext())->getPointerTo(); }
 bool TypeStr::isSupertypeFor(const Type *other) const
 {
     return dynamic_cast<const TypeStr *>(other);
@@ -854,16 +854,6 @@ bool TypeInfer::isSupertypeFor(const Type *other) const
 
 bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
 {
-    std::cout << "857 " << this->toString(C_STYLE) << ".isSupertypeFor " << other->toString(C_STYLE) << std::endl;
-    if(possibleTypes.size())
-    {
-        std::cout << "POSSIBLE TYPES: "; 
-        for(auto t : possibleTypes)
-        {
-            std::cout << t->toString(C_STYLE) << ", "; 
-        }
-        std::cout << endl; 
-    }
     // If we already have an inferred type, we can simply
     // check if that type is a subtype of other.
     if (valueType->has_value())
@@ -983,13 +973,14 @@ std::set<const Type *, TypeCompare> TypeSum::getCases() const {
     return resorted; 
 }
 
-unsigned int TypeSum::getIndex(llvm::Module *M, llvm::Type *toFind) const
+unsigned int TypeSum::getIndex(const Type *toFind) const
 {
     unsigned i = 1;
 
     for (auto e : getCases())
     {
-        if (e->getLLVMType(M) == toFind)
+        // FIXME: THIS MIGHT NOT WORK WITH INF TYPES B/C TOSTRING INCLUDES INFER FOR THOSE
+        if (e->toString(C_STYLE) == toFind->toString(C_STYLE)) //(e->getLLVMType(M) == toFind)
         {
             return i;
         }

@@ -1,21 +1,13 @@
 #pragma once
-#include "antlr4-runtime.h"
 #include "BismuthBaseVisitor.h"
 #include "STManager.h"
 #include "PropertyManager.h"
 #include "BismuthErrorHandler.h"
-#include "CompilerFlags.h"
 #include "TypedAST.h"
 #include "CastUtils.h"
-#include "CUtils.h"
 #include "ProtocolVisitor.h"
 
-// #include "TypeVisitor.h"
 
-#include "LinkedMap.h"
-
-#include <concepts>
-#include <regex>
 #include <variant>
 
 template<typename T>                             
@@ -492,6 +484,13 @@ std::variant<
         bool checkRestIndependently,
         std::function<TypedNode *(Y)> getNode, 
         std::function<std::variant<Y, ErrorChain *>(T *)> typeCheck);
+
+
+    inline std::variant<const ProtocolSequence *, ErrorChain *>
+    visitProtocolAsSeq(BismuthParser::ProtocolContext *ctx);
+
+    inline std::variant<const TypeChannel *, ErrorChain *>
+    visitProtocolAsChannel(BismuthParser::ProtocolContext *ctx);
 
 private:
     DisplayMode toStringMode; 

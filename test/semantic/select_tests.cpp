@@ -1,5 +1,4 @@
 #include <catch2/catch_test_macros.hpp>
-#include "antlr4-runtime.h"
 #include "BismuthLexer.h"
 #include "BismuthParser.h"
 #include "BismuthErrorHandler.h"
@@ -15,7 +14,7 @@ TEST_CASE("Basic select", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       select {
         false : {int a := 2;}
 
@@ -53,7 +52,7 @@ TEST_CASE("Select without any cases", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       select {
       }
       c.send(0)
@@ -89,7 +88,7 @@ TEST_CASE("Basic select inf error 1", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       var a; 
 
       select {
@@ -128,7 +127,7 @@ TEST_CASE("Basic select inf 1", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       var a; 
 
       select {
@@ -168,7 +167,7 @@ TEST_CASE("Basic select inf 2", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       var a; 
 
       select {
@@ -209,7 +208,7 @@ TEST_CASE("Basic select inf 3", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       var a; 
 
       select {
@@ -251,7 +250,7 @@ TEST_CASE("Basic select - Dead Code - var", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       select {
         false : int a := 2;
 
@@ -288,9 +287,9 @@ TEST_CASE("Basic select - Dead Code - proc", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       select {
-        false : define func foo (int a) : int {return a;}
+        false : func foo (int a) -> int {return a;}
 
 
       }
@@ -325,9 +324,9 @@ TEST_CASE("Basic select - Dead Code - func", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       select {
-        false : define foo :: c : Channel<-int> = {c.send(0)}
+        false : prog foo :: c : -int = {c.send(0)}
 
 
       }
@@ -362,7 +361,7 @@ TEST_CASE("Wrong case Type in Select", "[semantic][conditional]")
 {
   antlr4::ANTLRInputStream input(
     R""""(
-      define program :: c : Channel<-int> = {
+      prog program :: c : -int = {
       var a; 
 
       select {

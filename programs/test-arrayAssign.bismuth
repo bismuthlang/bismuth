@@ -1,20 +1,20 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # Note: The issue w/ lack of channel names is that of secondary notation
 
 # proc printInt5Array(str name, int [5] array) {
-define printInt5Array :: c : Channel<+str; +int[5]> = {
+prog printInt5Array :: c : +str;+u32[5] = {
   str name := c.recv(); 
-  int [5] array := c.recv(); 
+  u32 [5] array := c.recv(); 
 
   var i := 0; 
 
   while i < array.length {
 
 
-    printf("%s[%d] = %d", name, i, ((int + Unit) a) : int {
+    printf("%s[%d] = %d", name, i, ((u32 + Unit) a) -> u32 {
       match a 
-        | int i => return i; 
+        | u32 i => return i; 
         | Unit u => return -1; 
       }(array[i])
     );
@@ -30,10 +30,10 @@ define printInt5Array :: c : Channel<+str; +int[5]> = {
 }
 
 
-# proc addOneToInt5(str name, int [5] array) {
-define addOneToInt5 :: c : Channel<+str; +int[5]> = {
+# proc addOneToInt5(str name, u32 [5] array) {
+prog addOneToInt5 :: c : +str; +u32[5] = {
   str name := c.recv(); 
-  int[5] array := c.recv(); 
+  u32[5] array := c.recv(); 
 
   printf("In AddOne\n");
   # printInt5Array(name, array);
@@ -44,10 +44,10 @@ define addOneToInt5 :: c : Channel<+str; +int[5]> = {
 
     while i < array.length {
       # array[i] := array[i] + 1; # FIXME: SEEMS OFF NOT BEING ABLE TO DO THIS!
-      array[i] := (int[5] a, int idx) : int {
+      array[i] := (u32[5] a, u32 idx) -> u32 {
                       match a[idx]
                         | Unit u => return -1; 
-                        | int i => return i + 1; 
+                        | u32 i => return i + 1; 
                   }(array, i);
 
       i := i + 1; 
@@ -59,17 +59,17 @@ define addOneToInt5 :: c : Channel<+str; +int[5]> = {
   printf("Exiting add one!\n");
 }
 
-define func syncExec (Program<+str;+int[5]> prog, str s, int[5] a) : int
+func syncExec (Program<+str;+u32[5]> pg, str s, u32[5] a) -> u32
 {
-  Channel<-str;-int[5]> chan := exec prog; 
+  Channel<-str;-u32[5]> chan := exec pg; 
   chan.send(s)
   chan.send(a)
 
   return -1; 
 }
 
-define program :: c : Channel<-int> = {
-  int [5] a; 
+prog program :: c : -int = {
+  u32 [5] a; 
 
   {
     var i := 0; 
@@ -83,7 +83,7 @@ define program :: c : Channel<-int> = {
   # printInt5Array("a", a);
   syncExec(printInt5Array, "a", a);
 
-  int [5] b; 
+  u32 [5] b; 
 
   
   {

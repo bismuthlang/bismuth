@@ -11,30 +11,19 @@
 
 #pragma once
 
-#include <iostream>
+#include "BismuthParser.h"
+#include "TypedAST.h"
+
 #include <fstream>
 #include <memory> // Smart pointers 
 #include <filesystem> // Current path 
 
-#include "antlr4-runtime.h"
-#include "BismuthLexer.h"
-#include "BismuthParser.h"
-
-#include "TypedAST.h"
-
-#include "SemanticVisitor.h"
-#include "CodegenVisitor.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Support/raw_ostream.h"
-#include "llvm/Support/CommandLine.h"
-#include "llvm/Support/InitLLVM.h"
-#include "llvm/Support/TargetSelect.h"
-#include "llvm/Support/Host.h"
-#include "llvm/Support/TargetRegistry.h"
-#include "llvm/Target/TargetOptions.h"
+#include "llvm/TargetParser/Host.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Target/TargetMachine.h"
-#include "llvm/IR/LegacyPassManager.h"
 
-#include <sstream> //String stream
 
 using std::unique_ptr; 
 using std::shared_ptr; 
@@ -117,7 +106,7 @@ public:
     {
         std::string filename = outputPath.replace_extension(".o");
         std::error_code ec;
-        llvm::raw_fd_ostream * fileStream = new llvm::raw_fd_ostream(filename, ec, llvm::sys::fs::OF_None);;
+        llvm::raw_fd_ostream * fileStream = new llvm::raw_fd_ostream(filename, ec, llvm::sys::fs::OF_None);
 
         if(ec) return ec; 
         return fileStream;

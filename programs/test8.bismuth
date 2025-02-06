@@ -1,8 +1,8 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # int a := 10; 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     int x, y := 0; 
     while x < 4 {

@@ -60,7 +60,6 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
 
 
     // Find a unique name for the symbol within the current stop
-    uint32_t idNum = 0; 
     std::string uniqName = getUniqNameFor(currentScope.value(), id); 
 
 
@@ -85,7 +84,6 @@ std::optional<DefinitionSymbol *> Context::addDefinition(VisibilityModifier m, s
 
 
     // Find a unique name for the symbol within the current stop
-    uint32_t idNum = 0; 
     std::string uniqName = getUniqNameFor(currentScope.value(), id); 
 
     Identifier * identifier = new Identifier(

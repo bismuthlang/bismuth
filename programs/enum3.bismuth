@@ -1,17 +1,17 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
 
-define enum E1 {
+enum E1 {
     int, 
     str
 }
 
-define enum E2 {
+enum E2 {
     E1, 
     boolean
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     # E2 e2 := 10; 
     E1 e1 := 10; 
     E2 e2 := false;#e1;
@@ -22,7 +22,7 @@ define program :: c : Channel<-int> = {
             int i => printf("int: %u\n", i);
             str s => printf("str: %s\n", s);
         }
-        boolean b => printf("bool: %s\n", (boolean b) : str {
+        boolean b => printf("bool: %s\n", (boolean b) -> str {
             if b {
                 return "true";
             }

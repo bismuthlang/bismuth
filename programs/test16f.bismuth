@@ -1,7 +1,7 @@
 extern func printf(...);
 
-# define program :: c : Channel<-int> = {
-define program :: io : Channel<-int> = {
+# prog program :: c : -int = {
+prog program :: io : -int = {
     var a, b, c, d, e; #, f, K;
 
     a := b; 

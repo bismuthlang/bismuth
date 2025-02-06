@@ -8,6 +8,7 @@
  */
 
 #include "bismuthc.h"
+#include "llvm/Support/CommandLine.h"
 
 llvm::cl::OptionCategory CLIOptions("Bismuth CLI Options");
 static llvm::cl::list<std::string>
@@ -105,35 +106,65 @@ int main(int argc, const char *argv[])
 =========================================================================
 Bismuth Process Calculus Compiler - Created by Alex Friedman (https://ahfriedman.com)
 Website: https://bismuth-lang.org
-Version: Pre-Alpha 1.3.4 @ )"""" << GIT_COMMIT_HASH
+Version: Pre-Alpha 1.3.6 @ )"""" << GIT_COMMIT_HASH
                                     << R""""(
 
 ChangeLog
 =========
-1.3.4 - XXX: 
-  - Return statements can be omitted in functions that return Unit. 
+1.3.6 - 2025-01-03: 
+BREAKING (Compiler Internals)
+  - Sum types and internal/external choices now have their tag value determined by the `C_STYLE` internal representation of the type instead of the LLVM-IR string representation due to introduction of opaque pointers
+  - Per upgrading LLVM, a new docker image has been introduced. For older builds, be sure to specify the v1.3.5 tag to continue development.
+ 
+Features
+  - Added support for Nix via flakes
+  - Improved documentation for getting started with and using Bismuth codebase
+
+Compiler Internals
+  - Updated from LLVM-12 to LLVM-19
+  - Updated from Clang-14 to Clang-19 (docker) or GCC (Nix)
+  - Test cases now use files instead of hashes to make identifying changes easier
+
+Outstanding Issues
+  - Due to minor differences between Clang and GCC, not all test cases pass on GCC  (see 0789b91)
+  - Coverage is only supported via Docker image and clang; some instabilities with coverage appear to occasionally occur
+
+1.3.5 - 2024-12-22: 
+Bugs
+  - Corrects array accesses to use unsigned numbers instead of signed
+  - Addresses several small bugs with inferring integer types & improves handling of generics
+
+1.3.4 - 2024-05-03: 
+Features
+  - Added ability to use labels for describing internal and external choice alternatives
+  - Added dynamically sized arrays
+  - Added `Cancelable<>` session type modality
+  - Return statements can be omitted in functions that return `Unit`. 
   - Added Logical & Arithmetic Right Bit Shift, Left Bit Shift, Bit XOR/AND/OR
   - Added imports, basic name mangling, and generics/templates
-  - Added u32, i64, and u64
+  - Added `u32`, `i64`, and `u64` (`int` and `i32` are now interchangeable)
   - Added ability to specify integer values in hex via 0x and binary via 0b prefixes
   - Added for loops
-  - Added toChannel function to convert ty -> Channel<!+ty>
-  - Added --display-mode to enable error messages to show types as they would appear in-code instead of mathematical representation
+  - Added `toChannel` function to convert `ty` -> `Channel<!+ty>` or `ty[]` -> `Channel<!+ty>` in the case of arrays
+  - Added `--display-mode` CLI option to enable error messages to show types as they would appear in-code instead of mathematical representation
   - Now displaying number of errors on compile failure
 
-  - Fixed bug wherein T_1 -> T_2[] is ambiguous by allowing (T_1 -> T_2)[]
+Bugs 
+  - Fixed bug wherein `T_1 -> T_2[]` is ambiguous by allowing `(T_1 -> T_2)[]`
   - Improved syntax and handling of l-values to enable expressions like improved syntax to allow *(expr).<field> syntax, 
   - Fixed bug where nested control flow would incorrectly process use of linear resources
   - Fixed typos in generated IR files, error messages, and compiler internals
 
+Compiler Internals
   - Reorganized compiler internals to separate CLI elements and support generics
   - Refactored symbol/allocation handling by connecting them to FQNs instead of symbols
   - Reorganized compilation order to conduct codegen after all of semantic analysis
-  - Removed CLI feature -s to supply input string instead of file location; makes more sense to re-add in future as REPL.
+  - Removed CLI feature `-s` to supply input string instead of file location; makes more sense to re-add in future as REPL.
   - Added new error type for internal/compiler errors. 
   - Improved efficiency of IPC by removing state to eliminate additional lookup step
   - Refactored code internals to promote compile speed (of Bismuth, not the Bismuth compiler)
   - Added ProtocolVisitor.cpp/.h and moved code relating to visiting protocols to there from SemanticVisitor.cpp/.h
+
 
 1.3.3 - 2023-06-04:
   - Added ability to nest all type defs (struct, enum) in addition to programs and functions. 

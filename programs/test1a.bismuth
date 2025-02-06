@@ -1,7 +1,7 @@
 extern func printf(...);
 
 # int func chayos() {
-define chayos :: c : Channel<-int> = {
+prog chayos :: c : -int = {
     var a, b; # := 1; 
 
     a := b; 
@@ -12,7 +12,7 @@ define chayos :: c : Channel<-int> = {
 
 
 # int func idk() { 
-define idk :: c : Channel<-int> = {
+prog idk :: c : -int = {
     var x; 
     if (1 < 2) {
         x := 3; 
@@ -25,7 +25,7 @@ define idk :: c : Channel<-int> = {
 }
 
 # int func branchtest() {
-define branchtest :: c : Channel<-int> = {
+prog branchtest :: c : -int = {
     int[5] a; 
 
     var count := 0; 
@@ -52,7 +52,7 @@ define branchtest :: c : Channel<-int> = {
 
 
 # int func otherbranch() {
-define otherbranch :: c : Channel<-int> = {
+prog otherbranch :: c : -int = {
     int a := 0; 
     int b := 1; 
 
@@ -67,7 +67,7 @@ define otherbranch :: c : Channel<-int> = {
 }
 
 # str func otherbranchtwo() {
-define otherbranchtwo :: c : Channel<-str> = {
+prog otherbranchtwo :: c : -str = {
     int a := 0; 
     str b := "Why hello there!"; 
 
@@ -82,7 +82,7 @@ define otherbranchtwo :: c : Channel<-str> = {
 }
 
 # str func otherbranchthree() {
-define otherbranchthree :: c : Channel<-str> = {
+prog otherbranchthree :: c : -str = {
     int a := 0; 
     str b := "Why hello there!"; 
 
@@ -99,7 +99,7 @@ define otherbranchthree :: c : Channel<-str> = {
     c.send(b)
 }
 
-define program :: io : Channel<-int> = {
+prog program :: io : -int = {
     printf("Hello World!\n");
     # printf(); 
     int [50] a; 

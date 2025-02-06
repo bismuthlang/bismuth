@@ -1,7 +1,7 @@
 extern func printf(...);
-extern func foo (int a, int b, int a) : Unit;
+extern func foo (int a, int b, int a) -> Unit;
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
  var current := 1;        
     c.send(-1)
 }

@@ -1,10 +1,10 @@
-extern func printf(...) : int; 
+extern func printf(...) -> int; 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     # int func foo(int x) {
-    define foo :: c : Channel<+int;-int> = {
+    prog foo :: c : +int;-int = {
         # int func foo(int x) {
-        define foo :: c : Channel<+int;-int> = {
+        prog foo :: c : +int;-int = {
             int x := c.recv(); 
             printf("FOO_I: %u\n", x);
             c.send(x)
@@ -40,7 +40,7 @@ define program :: c : Channel<-int> = {
 
     {
         # int func foo(int z) {
-        define foo :: c : Channel<+int;-int> = {
+        prog foo :: c : +int;-int = {
             int z := c.recv();
             printf("Foo2: %u\n", z);
             # return z; 

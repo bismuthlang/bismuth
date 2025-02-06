@@ -15,17 +15,9 @@
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/IR/Module.h"
-#include "llvm/Support/raw_ostream.h"
 #include "llvm/IR/NoFolder.h"
 
-// #include "CastUtils.h"
-
-// #include <any>
 #include <string>
-// #include <regex>
-
-#include <variant>
-#include <optional>
 
 #include "TypedAST.h"
 #include "Symbol.h" // Only for VisibilityModifier
@@ -98,7 +90,7 @@ public:
         Int8Ty = llvm::Type::getInt8Ty(module->getContext());
         Int32Zero = ConstantInt::get(Int32Ty, 0, true);
         Int32One = ConstantInt::get(Int32Ty, 1, true);
-        i8p = llvm::Type::getInt8PtrTy(module->getContext());
+        i8p = llvm::Type::getInt8Ty(module->getContext())->getPointerTo();
         Int8PtrPtrTy = i8p->getPointerTo();
     }
 
@@ -120,7 +112,7 @@ public:
         Int8Ty = llvm::Type::getInt8Ty(module->getContext());
         Int32Zero = ConstantInt::get(Int32Ty, 0, true);
         Int32One = ConstantInt::get(Int32Ty, 1, true);
-        i8p = llvm::Type::getInt8PtrTy(module->getContext());
+        i8p = llvm::Type::getInt8Ty(module->getContext())->getPointerTo();
         Int8PtrPtrTy = i8p->getPointerTo();
     }
 
@@ -437,10 +429,9 @@ public:
 
     // }
     
-    void InitDynArray(llvm::AllocaInst * alloc, uint32_t len); //ConstantInt * len);
+    void InitDynArray(const TypeDynArray * ty, llvm::AllocaInst * alloc, uint32_t len); //ConstantInt * len);
 
-    void ReallocateDynArray(llvm::Value * alloc, llvm::Value * newLen32); 
-
+    void ReallocateDynArray(const TypeDynArray * ty, llvm::Value * alloc, llvm::Value * newLen32); 
 
 private:
     DisplayMode toStringMode; 

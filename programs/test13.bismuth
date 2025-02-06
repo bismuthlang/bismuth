@@ -1,7 +1,7 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # int func fib(int n) {
-define fib :: c : Channel<+int;-int> = {
+prog fib :: c : +int;-int = {
   int n := c.recv(); 
 
   if(n == 0 || n == 1) {
@@ -22,7 +22,7 @@ define fib :: c : Channel<+int;-int> = {
   # return fib(n - 1) + fib(n - 2);
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
  var current := 1;        
  while current < 20 { 
   #  var i := fib(current); 

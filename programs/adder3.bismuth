@@ -1,6 +1,6 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     var addStream := exec BinaryCounter, s1, s2 := exec toBinary, printer := exec toDecimal;
     s1.send(120);
     s2.send(75); 
@@ -11,11 +11,11 @@ define program :: c : Channel<-int> {
     c.send(0); 
 }
 
-define func XOR (boolean a, boolean b) : boolean {
+func XOR (boolean a, boolean b) -> boolean {
     return (a && !b) || (!a && b);
 }
 
-define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> {
+prog BinaryCounter :: c : +Channel<!+boolean>; +Channel<!+boolean>;?-boolean {
     var i1 := c.recv(), i2 := c.recv();
 
     boolean carry := false; 
@@ -47,7 +47,7 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
     weaken(c);  
 }
 
-define toBinary :: c : Channel<+int;?-boolean> {
+prog toBinary :: c : +int;?-boolean {
     int n := c.recv(); 
 
     while n > 0 {
@@ -63,7 +63,7 @@ define toBinary :: c : Channel<+int;?-boolean> {
     weaken(c);
 }
 
-define toDecimal :: c : Channel<+Channel<!+boolean>> {
+prog toDecimal :: c : +Channel<!+boolean> {
     var a := c.recv(), dec_val := 0, base := 1; 
  
     accept(a) { 

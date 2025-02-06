@@ -1,4 +1,5 @@
 #include "BismuthErrorHandler.h"
+#include "CharStream.h"
 #include <sstream>
 
 /******************************************

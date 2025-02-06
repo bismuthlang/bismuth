@@ -1,7 +1,7 @@
-extern func printf(str s, ...) : Unit; 
-extern func GC_get_heap_size() : int; 
+extern func printf(str s, ...) -> Unit; 
+extern func GC_get_heap_size() -> int; 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   int i; 
   
   while i < 10000000 {

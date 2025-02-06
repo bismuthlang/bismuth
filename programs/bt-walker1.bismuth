@@ -1,7 +1,7 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
 # Defines a struct that holds no value; used to simulate optionals
-define struct Empty {}
+struct Empty {}
 
 /* 
  * Defines a struct for each binary tree node
@@ -10,13 +10,13 @@ define struct Empty {}
  *  - lhs, an anonymous enum that is either empty, or a pointer to a binary tree node
  *  - rhs, an anonymous enum that is either empty, or a pointer to a binary tree node
  */
-define struct BinaryTree {
+struct BinaryTree {
   int value; 
   (Empty + Box<BinaryTree>) lhs;  
   (Empty + Box<BinaryTree>) rhs; 
 }
 
-define func BTWalker ((Empty + Box<BinaryTree>) btOpt, Channel<?-int> a) : Channel<?-int> {
+func BTWalker ((Empty + Box<BinaryTree>) btOpt, Channel<?-int> a) -> Channel<?-int> {
     match btOpt
         | Empty e => return a; 
         | Box<BinaryTree> t => {
@@ -31,7 +31,7 @@ define func BTWalker ((Empty + Box<BinaryTree>) btOpt, Channel<?-int> a) : Chann
     return a; 
 }
 
-define BTPrinter :: c : Channel<!+int> {
+prog BTPrinter :: c : !+int {
   accept(c) {
     printf("%u, ", c.recv());
   }
@@ -46,7 +46,7 @@ define BTPrinter :: c : Channel<!+int> {
  * Returns: 
  *  - Unit/Nothing, as functions are synchronous and pass-by-reference, the parameter root will reflect the changes made. 
  */
-define func insertBT(Box<BinaryTree> root, int value) {
+func insertBT(Box<BinaryTree> root, int value) {
   BinaryTree bt := *root; # Get a pointer to the binary tree
   if bt.value < value {   # Check which side of the tree to insert into
     match bt.lhs {        # If the branch is empty, set it to be a new binary tree. Otherwise, recursively call insert. 
@@ -68,7 +68,7 @@ define func insertBT(Box<BinaryTree> root, int value) {
 }
 
 # Helper function to print a number of spaces to the current line
-define func printSpaces(int chars) {
+func printSpaces(int chars) {
   int i := 0; 
   while i < chars {
     printf(" ");
@@ -78,7 +78,7 @@ define func printSpaces(int chars) {
 }
 
 # Function to print a binary tree node. 
-define func printBT(BinaryTree node) 
+func printBT(BinaryTree node) 
 {
   printf("%u", node.value);
   printf("\n");
@@ -98,7 +98,7 @@ define func printBT(BinaryTree node)
   return; 
 }
 
-define func traversePreOrder(int padding, str prefix, BinaryTree node) {
+func traversePreOrder(int padding, str prefix, BinaryTree node) {
   printSpaces(padding);
   printf(prefix);
   printf("%u", node.value);
@@ -117,7 +117,7 @@ define func traversePreOrder(int padding, str prefix, BinaryTree node) {
   return;
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
   Box<BinaryTree> node := Box<BinaryTree>::init(BinaryTree::init(5, Empty::init(), Empty::init()));
   printBT( *node);
   insertBT(node, 6);
@@ -135,7 +135,7 @@ define program :: c : Channel<-int> {
   printBT( *node);
 
 
-  # BTWalker ((Empty + Box<BinaryTree>) btOpt, Channel<?-int> a) : Channel<?-int>
+  # BTWalker ((Empty + Box<BinaryTree>) btOpt, Channel<?-int> a) -> Channel<?-int>
   var print := exec BTPrinter; 
   var print2 := BTWalker(node, print);
   weaken(print2);

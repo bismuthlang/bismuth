@@ -1,39 +1,39 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
-define struct RGBData {
+struct RGBData {
     int[3] rgb; 
 }
 
-define struct HSVData {
+struct HSVData {
     int[3] hsv; 
 }
 
-define struct RGBColor {
+struct RGBColor {
     RGBData rgb; 
     RGBData -> int getRed; 
     RGBData -> int getGreen; 
     RGBData -> int getBlue; 
 }
 
-define struct HSVColor {
+struct HSVColor {
     HSVData hsv; 
     HSVData -> int getHue; 
     HSVData -> int getSat; 
     HSVData -> int getVal;
 }
 
-define enum ColorType {
+enum ColorType {
     RGBColor, 
     HSVColor
 }
 
-define struct Color {
+struct Color {
     ColorType colorType; 
     ColorType -> str toString; 
 }
 
 # Color func getRGBColor(int r, int g, int b) 
-define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
+prog getRGBColor :: io : +int;+int;+int;-Color =  {
 
     int[3] data; 
     data[0] := io.recv();# r; 
@@ -42,7 +42,7 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
 
     RGBData rgbDat := RGBData::init(data);
 
-    define func getChannel (RGBData d, int c) : int {
+    func getChannel (RGBData d, int c) -> int {
         int[3] channels := d.rgb; 
         match channels[c]
             | Unit u =>  return -1;
@@ -52,11 +52,11 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
     var c := Color::init(
         RGBColor::init(
             rgbDat, 
-            (RGBData d) : int { return getChannel(d, 0); },
-            (RGBData d) : int { return getChannel(d, 1); },
-            (RGBData d) : int { return getChannel(d, 2); }
+            (RGBData d) -> int { return getChannel(d, 0); },
+            (RGBData d) -> int { return getChannel(d, 1); },
+            (RGBData d) -> int { return getChannel(d, 2); }
         ),
-        (ColorType c) : str { return "rgb"; }
+        (ColorType c) -> str { return "rgb"; }
     );
 
     lamePrint(c); 
@@ -64,16 +64,16 @@ define getRGBColor :: io : Channel<+int;+int;+int;-Color> =  {
     io.send(Color::init(
         RGBColor::init(
             rgbDat, 
-            (RGBData d) : int { return getChannel(d, 0); },
-            (RGBData d) : int { return getChannel(d, 1); },
-            (RGBData d) : int { return getChannel(d, 2); }
+            (RGBData d) -> int { return getChannel(d, 0); },
+            (RGBData d) -> int { return getChannel(d, 1); },
+            (RGBData d) -> int { return getChannel(d, 2); }
         ),
-        (ColorType c) : str { return "rgb"; }
+        (ColorType c) -> str { return "rgb"; }
     ))
 }
 
 # int func lamePrint(Color c) {
-define func lamePrint (Color c) : int {
+func lamePrint (Color c) -> int {
     {
         ColorType -> str lam := c.toString;
         printf("Color[type=%s, ", lam(c.colorType));
@@ -102,7 +102,7 @@ define func lamePrint (Color c) : int {
     printf("133\n");
     return 0;
 }
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     HSVColor hsv; 
     RGBColor rgb; 

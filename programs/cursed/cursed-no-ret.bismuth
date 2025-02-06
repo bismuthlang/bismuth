@@ -1,6 +1,6 @@
-extern func printf(str s, ...) : int; # Import printf
+extern func printf(str s, ...) -> int; # Import printf
 
-define func more_cursed(int i) : Unit {
+func more_cursed(u32 i) -> Unit {
     var r0 := i & ~3; #0b11;       // Get the number w/o the last 2 bits
     var r1 := r0 | (r0 >> 1);  #// Group each 2 bits 
     var r2 := r1 | (r1 >> 2);  #// Groups of 4 bits
@@ -14,38 +14,38 @@ define func more_cursed(int i) : Unit {
     var r7 := r6 | (~r5 & i);  
 
     var arr := [
-       (int i) : Unit { printf("Never");  },
-       (int i) : Unit { printf("Once");   },
-       (int i) : Unit { printf("Twice");  },
-       (int i) : Unit { printf("Thrice"); },
-       (int i) : Unit { printf("%uth", i);}
+       (u32 i) -> Unit { printf("Never");  },
+       (u32 i) -> Unit { printf("Once");   },
+       (u32 i) -> Unit { printf("Twice");  },
+       (u32 i) -> Unit { printf("Thrice"); },
+       (u32 i) -> Unit { printf("%uth", i);}
     ];
 
     match arr[r7]
         | Unit u => printf("IMPOSSIBLE");
-        | (int -> Unit) fn => fn(i); 
+        | (u32 -> Unit) fn => fn(i); 
 }
 
-define func less_cursed(int i) : Unit {
+func less_cursed(u32 i) -> Unit {
     var idx := i;
     if i > 3 {
         idx := 4
     }
 
     var arr := [
-       (int i) : Unit { printf("Never");  },
-       (int i) : Unit { printf("Once");   },
-       (int i) : Unit { printf("Twice");  },
-       (int i) : Unit { printf("Thrice"); },
-       (int i) : Unit { printf("%uth", i);}
+       (u32 i) -> Unit { printf("Never");  },
+       (u32 i) -> Unit { printf("Once");   },
+       (u32 i) -> Unit { printf("Twice");  },
+       (u32 i) -> Unit { printf("Thrice"); },
+       (u32 i) -> Unit { printf("%uth", i);}
     ];
 
     match arr[idx]
         | Unit u => printf("IMPOSSIBLE");
-        | (int -> Unit) fn => fn(i); 
+        | (u32 -> Unit) fn => fn(i); 
 }
 
-define func sel_array(int i) : Unit {
+func sel_array(u32 i) -> Unit {
     var arr := ["Never", "Once", "Twice", "Thrice"];
     select {
         i < 4: match arr[i] 
@@ -58,11 +58,11 @@ define func sel_array(int i) : Unit {
 # Define the main program in the system. 
 # - c is the name of the channel used by the program 
 # - -int indicates that we have to send an int over the channel.
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     printf("Hello, World!\n");
     c.send(0)
 
-    for(int i := 0; i < 500000; i := i + 1) {
+    for(u32 i := 0; i < 500000; i := i + 1) {
         /*
         500000
         real    =   [1.496s, 1.245s, 1.235s, 1.243s]
@@ -156,7 +156,7 @@ define program :: c : Channel<-int> {
 }
 
 
-define func sil_more_cursed(int i) : int {
+func sil_more_cursed(u32 i) -> u32 {
     var r0 := i & ~3; #0b11;       // Get the number w/o the last 2 bits
     var r1 := r0 | (r0 >> 1);  #// Group each 2 bits 
     var r2 := r1 | (r1 >> 2);  #// Groups of 4 bits
@@ -170,48 +170,48 @@ define func sil_more_cursed(int i) : int {
     var r7 := r6 | (~r5 & i);  
 
     var arr := [
-       (int i) : int { return 0; },
-       (int i) : int { return 1; },
-       (int i) : int { return 2; },
-       (int i) : int { return 3; },
-       (int i) : int { return i; }
+       (u32 i) -> u32 { return 0; },
+       (u32 i) -> u32 { return 1; },
+       (u32 i) -> u32 { return 2; },
+       (u32 i) -> u32 { return 3; },
+       (u32 i) -> u32 { return i; }
     ];
 
     match arr[r7]
         | Unit u => return -1;
-        | (int -> int) fn => return fn(i); 
+        | (u32 -> u32) fn => return fn(i); 
 }
 
-define func sil_less_cursed(int i) : int {
+func sil_less_cursed(u32 i) -> u32 {
     var idx := i;
     if i > 3 {
         idx := 4
     }
 
      var arr := [
-       (int i) : int { return 0; },
-       (int i) : int { return 1; },
-       (int i) : int { return 2; },
-       (int i) : int { return 3; },
-       (int i) : int { return i; }
+       (u32 i) -> u32 { return 0; },
+       (u32 i) -> u32 { return 1; },
+       (u32 i) -> u32 { return 2; },
+       (u32 i) -> u32 { return 3; },
+       (u32 i) -> u32 { return i; }
     ];
 
     match arr[idx]
         | Unit u => return -1;
-        | (int -> int) fn => return fn(i); 
+        | (u32 -> u32) fn => return fn(i); 
 }
 
-define func sil_sel_array(int i) : int {
-    var arr := [0, 1, 2, 3];
+func sil_sel_array(u32 i) -> u32 {
+    var arr := [0u32, 1, 2, 3];
     select {
         i < 4: match arr[i] 
-                | int s => return s; 
+                | u32 s => return s; 
                 | Unit u => return -1; 
         true: return i;
     }
 }
 
-define func sil_sel_each(int i) : int {
+func sil_sel_each(u32 i) -> u32 {
     select {
         i == 0: return 0; 
         i == 1: return 1; 

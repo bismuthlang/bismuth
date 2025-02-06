@@ -1,23 +1,23 @@
-extern func printf(str s, ...) : Unit;
-extern func GC_get_heap_size() : int;  # FIXME: NOT GARBAGE COLLECTING HEAP PROPERLY!
+extern func printf(str s, ...) -> Unit;
+extern func GC_get_heap_size() -> int;  # FIXME: NOT GARBAGE COLLECTING HEAP PROPERLY!
 
 # Two Int Box Box
-define struct TIBB {
+struct TIBB {
   Box<Box<int>> b1; 
   Box<Box<int>> b2; 
 }
 
-define enum ETIBBOB {
+enum ETIBBOB {
   TIBB, 
   int
 }
 
-define func printTIBB(str name, TIBB b) {
+func printTIBB(str name, TIBB b) {
   printf("%s = {b1 : %u, b2 : %u}\n", name, **b.b1, **b.b2);
   return; 
 }
 
-define foo :: c : Channel<+ETIBBOB;-int;+int> = {
+prog foo :: c : +ETIBBOB;-int;+int = {
   match c.recv() {
     TIBB iPtr => {
         # var iPtr := c.recv(); 
@@ -35,7 +35,7 @@ define foo :: c : Channel<+ETIBBOB;-int;+int> = {
   }
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   int ctr := 0; 
   var shared;
   var tibb; 

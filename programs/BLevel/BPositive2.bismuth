@@ -1,4 +1,4 @@
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   int i := 31;
   int b;
   if (i < 42) {

@@ -1,0 +1,149 @@
+extern func printf(str s, ...) -> int;
+
+# FIXME: ADD INT VARIANTs (I32, U32, I64, U64) TO BISMUTH DOCS
+# FIXME: Allow binary ops (xor) to be performed on booleans!
+
+struct Value {int v;}
+enum OptVal {Unit, Value}
+
+# The Database program serves an external choice of 
+# either: 
+#   1. Receiving an integer key and returning an OptVal which 
+#      stores either the Value corresponding to the key or Empty 
+#      should the key be invalid. 
+#   2. Receiving an integer key followed by a Value. This inserts the 
+#      specified value into the database corresponding to the provided key. 
+#   3. Receiving an integer key to lookup. If this key is in the database, 
+#      then the current Value corresponding to the key is returned. Either way, 
+#      the process then receives a new Value to store correlating to this key.  
+prog Database :: c : !ExternalChoice<
+                              get: +int;-OptVal,
+                              set: +int;+Value,
+                              lock: +int;InternalChoice<
+                                       present: -Value;+Value,
+                                       missing: +Value>> = {
+
+  Value[10] data; 
+  # Helper function to log the contents of the database
+  func PrintDatabase(Value[10] data) {
+      for(var i := 0; i < data.length; i := i + 1){
+        match data[i]
+            | Unit u => {}
+            | Value v => printf("%u, ", v.v);
+      }
+      printf("\n");
+      return;
+  }
+
+  printf("Initial Database State:\n");
+  PrintDatabase(data); 
+
+  accept(c) {
+    offer c 
+      | get => { 
+            c.send(data[c.recv()])
+        }
+      | set => {
+            var key := c.recv(); 
+            data[key] := c.recv(); 
+        }
+      | lock => {
+          var k := c.recv();
+          match data[k] # FIXME: BROKEN!
+            | Unit u => { c[missing] }
+            | Value v => {  c[present]; c.send(v); }
+          data[k] := c.recv();
+        }
+    printf("Database Updated: \n");
+    PrintDatabase(data); 
+  }
+}
+
+prog program :: c : -int = {
+    var db := exec Database;  # Database to send requests to
+    var rqs := exec requests; # Regular priority requests
+
+    var setRq := exec writeRequest; # High-priority requests
+
+    # Process each of the requests with high-priority requests taking precedence
+    accept(rqs) { 
+
+      acceptWhile(setRq, setRq.is_present()) {
+        more(db); 
+        db[set]
+        db.send(setRq.recv())
+        db.send(setRq.recv())
+      }
+   
+      more(db)
+      offer rqs 
+        | get => { 
+            db[get] 
+            db.send(rqs.recv())  
+            var a := db.recv();
+            rqs.send(a) 
+          } 
+        | set => { db[set] db.send(rqs.recv()) db.send(rqs.recv()) }
+        | lock => { 
+            db[lock] 
+            db.send(rqs.recv())
+            offer db 
+                |   present => { rqs[present] rqs.send(db.recv()) db.send(rqs.recv())}
+                |   missing => { rqs[missing] db.send(rqs.recv()) }
+          }
+  
+    }
+ 
+
+    accept(setRq) {
+      more(db); 
+      db[set]
+      db.send(setRq.recv())
+      db.send(setRq.recv())
+    }
+
+    weaken(db)
+    c.send(0);
+}
+
+
+prog requests :: c : ?InternalChoice<
+                              get: -int;+OptVal,
+                              set: -int;-Value,
+                              lock: -int;ExternalChoice<
+                                       present: +Value;-Value,
+                                       missing: -Value>> {
+
+    
+    more(c)\
+    c[get]
+    c.send(4)
+    var opt := c.recv(); 
+
+    printf("Read Request for 4 got: ");
+
+    match opt
+      | Unit u => { printf("empty\n"); }
+      | Value v => { printf("%u\n", v.v); }
+
+    more(c)
+    c[get]
+    c.send(20)
+    opt := c.recv(); 
+
+    printf("Read Request for 20 got: ");
+
+    match opt
+      | Unit u => { printf("empty\n"); }
+      | Value v => { printf("%u\n", v.v); }
+
+    weaken(c)
+}
+
+prog writeRequest :: c : ?(-int;-Value) {
+    more(c)
+    c.send(4)
+    c.send(Value::init(2))
+    
+    weaken(c)
+}

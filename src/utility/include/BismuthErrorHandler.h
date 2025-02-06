@@ -9,7 +9,8 @@
  *
  */
 #pragma once
-#include "antlr4-runtime.h"
+#include "BaseErrorListener.h"
+#include "Token.h"
 #include <string>
 #include <vector>
 #include <optional>

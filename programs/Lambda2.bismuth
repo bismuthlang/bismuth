@@ -1,8 +1,8 @@
-extern func printf(...) : int; 
+extern func printf(...) -> int; 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
-    define foo :: c : Channel<+int;-int> = {
+    prog foo :: c : +int;-int = {
         int x := c.recv();
         printf("FOO: %u\n", x);
         # return x; 

@@ -1,6 +1,6 @@
 import bsl::lib::Types::Empty; 
 
-define enum Optional<T> {
+enum Optional<T> {
     T, 
     Empty
 }

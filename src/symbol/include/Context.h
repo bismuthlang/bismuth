@@ -13,8 +13,6 @@
 #include <vector>
 #include <optional>
 
-#include <stack>
-
 class Context {
 private: 
     std::map<std::string, uint32_t> & nameCounter; 

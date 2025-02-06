@@ -1,14 +1,14 @@
-# define struct Empty {}
+# struct Empty {}
 
-define struct Bar<K> {
+struct Bar<K> {
     K k; 
 }
 
-define func foo<T>(T k) : T {
+func foo<T>(T k) -> T {
     return k;
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     Bar<str> b1; 
     Bar<boolean> b2; 
 
@@ -16,8 +16,8 @@ define program :: c : Channel<-int> {
     foo<str> f1; 
     foo<boolean> f2;
 
-    # define struct VVV {}
-    # define func VVV () { return; }
+    # struct VVV {}
+    # func VVV () { return; }
 
     # VVV v; 
     

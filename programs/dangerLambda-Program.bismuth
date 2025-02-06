@@ -1,9 +1,9 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
 # Unit -> int func getMain1() {
-define getMain1 :: c : Channel<-Program<-int>> = {
+prog getMain1 :: c : -Program<-int> = {
     # int func main(Unit u) {
-    define main :: c : Channel<-int> = {
+    prog main :: c : -int = {
         printf("Main 1!\n");
         # return 0; 
         c.send(0)
@@ -15,9 +15,9 @@ define getMain1 :: c : Channel<-Program<-int>> = {
 
 
 # Unit -> int func getMain2() {
-define getMain2 :: c : Channel<-Program<-int>> = {
+prog getMain2 :: c : -Program<-int> = {
     # int func main(Unit u) {
-    define main :: c : Channel<-int> = {
+    prog main :: c : -int = {
         printf("Main 2!\n");
         # return 0; 
         c.send(0)
@@ -27,7 +27,7 @@ define getMain2 :: c : Channel<-Program<-int>> = {
     c.send(main)
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Channel<+Program<-int>> c1 := exec getMain1; 
     Channel<+Program<-int>> c2 := exec getMain2;
 
