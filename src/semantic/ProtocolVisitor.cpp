@@ -13,13 +13,7 @@ std::variant<const ProtocolSequence *, ErrorChain *> ProtocolVisitor::visitProto
 
     for (auto e : ctx->protos)
     {
-        std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, e->accept(this));
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Error in protocol sequence");
-        }
-
-        const Protocol *proto = std::get<const Protocol *>(protoOpt);
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Protocol*, proto, anyOpt2VarError<const Protocol>(errorHandler, e->accept(this)), ctx, "Error in protocol sequence");
         steps.push_back(proto);
     }
 
@@ -28,20 +22,12 @@ std::variant<const ProtocolSequence *, ErrorChain *> ProtocolVisitor::visitProto
 
 std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::RecvTypeContext *ctx)
 {
-    std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(semanticVisitor));
-    
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate receive type");
-    }
-
-    const Type * ty = std::get<const Type*>(tyOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, ty, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(semanticVisitor)),  ctx, "Failed to generate receive type");
     
     if(this->inClose && !ty->isLossy())
     {
         return errorHandler.addError(ctx->getStart(), "Cannot receive non-lossy type " + ty->toString(semanticVisitor->getToStringMode()) + " in a closeable protocol"); 
     }
-
 
     return new ProtocolRecv(this->inClose, ty);
 }
@@ -49,15 +35,7 @@ std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(Bis
 // FIXME: ADD TEST CASES WITH BRANCHES, LOOPS, SEQ, ETC TO VERIFY THIS'LL CATCH, POTENTIALLY METHODIZE THESE ALL
 std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::SendTypeContext *ctx)
 {
-    std::variant<const Type *, ErrorChain *> tyOpt = anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(semanticVisitor));
-    
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&tyOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Failed to generate send type");
-    }
-
-    const Type * ty = std::get<const Type*>(tyOpt);
-    
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, ty, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(semanticVisitor)), ctx, "Failed to generate send type");
     if(this->inClose && !ty->isLossy())
     {
         return errorHandler.addError(ctx->getStart(), "Cannot send non-lossy type " + ty->toString(semanticVisitor->getToStringMode()) + " in a closeable protocol"); 
@@ -73,12 +51,8 @@ std::variant<const ProtocolWN *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
     std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, ctx->proto->accept(this));
     this->inLoop = origStatus; 
 
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Error in ? loop protocol");  // PLAN: refactor symbols into constants/pull from parser rule?
-    }
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Protocol *, proto, protoOpt, ctx, "Error in ? loop protocol");  // PLAN: refactor symbols into constants/pull from parser rule?
 
-    const Protocol *proto = std::get<const Protocol *>(protoOpt);
     return new ProtocolWN(this->inClose, toSequence(proto));
 }
 
@@ -89,12 +63,8 @@ std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
     std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, ctx->proto->accept(this));
     this->inLoop = origStatus; 
 
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Error in ! loop protocol");
-    }
-
-    const Protocol *proto = std::get<const Protocol *>(protoOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Protocol *, proto, protoOpt, ctx, "Error in ! loop protocol");
+    
     return new ProtocolOC(this->inClose, toSequence(proto));
 }
 
@@ -111,13 +81,7 @@ std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(
         std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, e->accept(this));
         maxCloseNumber = this->closeNumber > maxCloseNumber ? this->closeNumber : maxCloseNumber;
 
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Error in external choice branch");
-        }
-
-        const Protocol *proto = std::get<const Protocol *>(protoOpt);
-
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Protocol *, proto, protoOpt, ctx, "Error in external choice branch");
         // opts.insert(toSequence(proto));
         if(e->lbl) 
         {
@@ -156,12 +120,7 @@ std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(
         std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, e->accept(this));
         maxCloseNumber = this->closeNumber > maxCloseNumber ? this->closeNumber : maxCloseNumber;
 
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-        {
-            return (*e)->addError(ctx->getStart(), "Error in internal choice branch");
-        }
-
-        const Protocol *proto = std::get<const Protocol *>(protoOpt);
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Protocol *, proto, protoOpt, ctx, "Error in internal choice branch");
 
         // opts.insert(toSequence(proto));
         if(e->lbl) 
@@ -200,12 +159,7 @@ std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(Bi
     std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, ctx->proto->accept(this));
     this->inClose = origStatus; 
 
-    if (ErrorChain **e = std::get_if<ErrorChain *>(&protoOpt))
-    {
-        return (*e)->addError(ctx->getStart(), "Error in close protocol");
-    }
-
-    const Protocol *proto = std::get<const Protocol *>(protoOpt);
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Protocol *, proto, protoOpt, ctx, "Error in close protocol");
 
     return new ProtocolClose(origStatus, toSequence(proto), ++closeNumber); // NOTE, must be ++i otherwise first would be zero, which could potentially be a problem?
 }

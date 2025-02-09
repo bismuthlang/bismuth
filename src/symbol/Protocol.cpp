@@ -1,4 +1,5 @@
 #include "Protocol.h"
+#include "matchit.h"
 
 bool Protocol::isSubtype(const Protocol *other) const
 {
@@ -349,32 +350,32 @@ const Protocol *ProtocolEChoice::getCopy() const
 std::optional<const ProtocolBranchOption *> 
 ProtocolEChoice::lookup(std::variant<const ProtocolSequence *, std::string> opt) const
 {
-    // TODO: switch to visitor
-    if(std::holds_alternative<std::string>(opt))
-    {
-        std::string label = std::get<std::string>(opt); 
+    using namespace matchit; 
+    Id<std::string> label; 
+    Id<const ProtocolSequence *> ps;
+    return match(opt)(
+        pattern | as<std::string>(label) = [&]()-> std::optional<const ProtocolBranchOption *> {
+            for(const ProtocolBranchOption * br : opts)
+            {
+                if(!br->label) continue; 
 
-        for(const ProtocolBranchOption * br : opts)
-        {
-            if(!br->label) continue; 
+                if(br->label.value() == *label) return std::make_optional<const ProtocolBranchOption *>(br);
+            }
+            return std::nullopt;
+        },
+        pattern | as<const ProtocolSequence *>(ps) = [&]()-> std::optional<const ProtocolBranchOption *> {
+            for(const ProtocolBranchOption * br : opts)
+            {
+                if(br->label) continue; 
 
-            if(br->label.value() == label) return br;
+                // Note: this has to be explicit matching; subtypes/structural equivalences could technically be 
+                // other branches...
+                if (br->seq->toString(DisplayMode::C_STYLE) == (*ps)->toString(DisplayMode::C_STYLE)) 
+                    return std::make_optional<const ProtocolBranchOption *>(br);
+            }
+            return std::nullopt;
         }
-    }
-
-    const ProtocolSequence * ps = std::get<const ProtocolSequence *>(opt); 
-
-    for(const ProtocolBranchOption * br : opts)
-    {
-        if(br->label) continue; 
-
-        // Note: this has to be explicit matching; subtypes/structural equivalences could technically be 
-        // other branches...
-        if (br->seq->toString(DisplayMode::C_STYLE) == ps->toString(DisplayMode::C_STYLE)) 
-            return br; 
-    }
-
-    return std::nullopt; 
+    );
 }
 
 bool ProtocolEChoice::isSupertypeFor(const Protocol *other) const
