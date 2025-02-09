@@ -2101,6 +2101,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
     std::string id = ctx->channel->getText();
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot case on non-channel: " + id);
+    
     std::set<
       std::pair<
         std::variant<const ProtocolSequence *, std::string>,
@@ -2161,15 +2162,10 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
       return errorHandler.addError(ctx->getStart(), "Currently, an else block is required for cases in lossy protocols");
     }
 
-    optional<CaseMetadata> metaOpts = channel->getProtocol()->caseAnalysis(branchSequences);
 
-    if (!metaOpts) // Ensures we have all cases. //TODO: LOG THESE ERRORS BETTER
-    {
-      return errorHandler.addError(ctx->getStart(), "Failed to case over channel: " + sym->toString());
-    }
+    DEFINE_OR_PROPAGATE_VARIANT_IERR(CaseMetadata, meta, channel->getProtocol()->caseAnalysis(branchSequences), ctx);
 
-    CaseMetadata meta = metaOpts.value();
-    vector<const ProtocolSequence *> fullSequences = meta.fullSequences; //fullSeqOpts.value();
+    vector<const ProtocolSequence *> fullSequences = meta.fullSequences;
 
     if(ctx->protoElse())
     {
@@ -2647,7 +2643,6 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
             "Failed to type check when no branch followed"
         );
 
-        // if(errorOpt) return errorOpt.value();
         if(errorOpt) errors.push_back(*errorOpt);
     }
 
@@ -2658,7 +2653,6 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
         stmgr->enterScope(StopType::NONE); // Why? This doesn't make sense.. oh it does, but should ideally refactor!
 
         std::optional<ErrorChain *> errorOpt = checkCase(ctx, true, "Failed to type check code when conditional skipped over", "Failed to type check when skipped over and no branch followed");
-        // if(errorOpt) return errorOpt.value();
         if(errorOpt) errors.push_back(*errorOpt);
     }
 

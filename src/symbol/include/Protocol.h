@@ -11,6 +11,7 @@
  *
  */
 #include <string>  //Includes strings
+#include "BismuthInternalError.h"
 
 #include <vector>   // Vectors
 #include <optional> // Optionals
@@ -185,7 +186,7 @@ public:
     unsigned int project(const ProtocolSequence *ps) const;
     unsigned int project(std::string label) const; 
     
-    optional<CaseMetadata>
+    variant<CaseMetadata, InternalBismuthError>
     caseAnalysis(vector<variant<const ProtocolSequence *, string>> testOpts) const;
 
 

@@ -29,6 +29,14 @@
   std::cout << "Trying opt " << __FILE__<<":"<< __LINE__<<" "#type" "#id" "#expr << std::endl; \
   type id = tmp.value(); \
 
+#define IMPL_DEFINE_OR_PROPAGATE_VARIANT_IERR(type, id, expr, ctx, tmp) \
+    std::variant<type, InternalBismuthError> tmp = expr; \
+    if(InternalBismuthError *e = std::get_if<InternalBismuthError>(&tmp)) \
+    { \
+        return errorHandler.addError(ctx->getStart(), e->toString()); \
+    } \
+    type id = std::get<type>(tmp); \
+
 #define IMPL_DEFINE_OR_PROPAGATE_VARIANT_WMSG(type, id, expr, ctx, message, tmp) \
   std::variant<type, ErrorChain*> tmp = expr; \
   if (ErrorChain **e = std::get_if<ErrorChain *>(&tmp)) \
@@ -53,6 +61,7 @@
 # define DEFINE_OR_PROPAGATE_VARIANT_WMSG(type, id, expr, ctx, message) IMPL_DEFINE_OR_PROPAGATE_VARIANT_WMSG(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, message, IMPL_MACRO_CONCAT(id, __COUNTER__))
 # define DEFINE_OR_PROPAGATE_VARIANT(type, id, expr, ctx) IMPL_DEFINE_OR_PROPAGATE_VARIANT(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, IMPL_MACRO_CONCAT(id, __COUNTER__))
 
+# define DEFINE_OR_PROPAGATE_VARIANT_IERR(type, id, expr, ctx) IMPL_DEFINE_OR_PROPAGATE_VARIANT_IERR(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, IMPL_MACRO_CONCAT(id, __COUNTER__))
 
 template <typename T>
 std::optional<T> anyOpt2Val(const std::any &a) // https://stackoverflow.com/questions/66969536/how-to-correctly-check-any-cast-available

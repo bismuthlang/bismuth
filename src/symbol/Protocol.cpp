@@ -744,19 +744,19 @@ unsigned int ProtocolSequence::project(std::string label) const
 }
 
 // optional<vector<const ProtocolSequence *>> 
-optional<CaseMetadata> 
+variant<CaseMetadata, InternalBismuthError> 
 ProtocolSequence::caseAnalysis(vector<variant<const ProtocolSequence *, string>> testOpts) const // Note: using vector as otherwise duplicate cases could be too easily ignored by type checking (ie, semantic visitor dumps cases into set and thus isn't aware of duplicates) //set<const ProtocolSequence *, ProtocolCompare> testOpts) const
 {
     if (isComplete())
-        return std::nullopt;
+        return InternalBismuthError("Cannot case on protocol which has already been completed.");
 
     if (steps.front()->isGuarded() || this->isGuarded())
-        return std::nullopt;
+        return InternalBismuthError("Cannot case on guarded protocol");
 
     optional<const Protocol *> protoOpt = this->getFirst();
 
     if (!protoOpt)
-        return std::nullopt;
+        return InternalBismuthError("Internal Compiler Error: Protocol for case does not exist?");
 
     const Protocol *proto = protoOpt.value();
 
@@ -767,8 +767,20 @@ ProtocolSequence::caseAnalysis(vector<variant<const ProtocolSequence *, string>>
 
         for (auto p : testOpts) // TODO: METHODIZE WITH MatchStatement?
         {
+            std::string display_p = "Compiler Error";
+            
+            {
+                using namespace matchit; 
+                Id<const ProtocolSequence*> ps; 
+                Id<std::string> str;
+                display_p = match(p)(
+                    pattern | as<const ProtocolSequence *>(ps) = [&] { return (*ps)->toString(C_STYLE); },
+                    pattern | as<std::string>(str) = [&]{ return *str; }
+                );
+            }
+            
             std::optional<const ProtocolBranchOption *> brOpt = eChoice->lookup(p);
-            if(!brOpt) return std::nullopt; // Got something that isn't in the ext choice 
+            if(!brOpt) return InternalBismuthError("Attempted to case on something not in the protocol: " + display_p); // Got something that isn't in the ext choice 
 
             const ProtocolBranchOption * br = brOpt.value(); 
 
@@ -776,36 +788,29 @@ ProtocolSequence::caseAnalysis(vector<variant<const ProtocolSequence *, string>>
             
             if(!res->swapChoice(br)) // if (!eChoice->getOptions().count(p))
             {
-                // errorHandler.addSemanticError(ctx->getStart(), "Impossible case: " p->toString());
-                return std::nullopt;
+                return InternalBismuthError("Impossible case: " + display_p);
             }
-            else 
-            {
-                ans.push_back(res); 
-            }
+            
+            ans.push_back(res); 
 
             if (foundCaseTypes.count(br)) // Is this even possible? its a set after all. Would require messy subtyping
             {
-                // errorHandler.addSemanticError(ctx->getStart(), "Duplicate case: " + p->toString());
-                return std::nullopt; // FIXME: HANDLE ERRORS BETTER IN THE SEMANTIC VISITOR SO WE CAN GET THESE ERRORS!!
+                return InternalBismuthError("Duplicate case: " + display_p);
             }
-            else
-            {
-                foundCaseTypes.insert(br);
-            }
+            
+            foundCaseTypes.insert(br);
         }
 
         if (foundCaseTypes.size() != eChoice->getOptions().size())
         {
-            return std::nullopt;
-            // errorHandler.addSemanticError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString());
+            return InternalBismuthError("Match statement did not cover all cases needed");
         }
 
         this->popFirst(); // Remove the choice
         return CaseMetadata(ans, this); // Should be safe due to passing get first
     }
 
-    return std::nullopt;
+    return InternalBismuthError("Can only case on internal/external choices");
 }
 
 // void ProtocolSequence::append(const ProtocolSequence *proto) const

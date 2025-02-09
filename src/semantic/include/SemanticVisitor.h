@@ -3,6 +3,7 @@
 #include "STManager.h"
 #include "PropertyManager.h"
 #include "BismuthErrorHandler.h"
+#include "BismuthInternalError.h"
 #include "TypedAST.h"
 #include "CastUtils.h"
 #include "ProtocolVisitor.h"

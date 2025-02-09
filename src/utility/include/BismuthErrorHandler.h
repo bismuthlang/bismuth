@@ -10,6 +10,7 @@
  */
 #pragma once
 #include "BaseErrorListener.h"
+#include "BismuthInternalError.h"
 #include "Token.h"
 #include <string>
 #include <vector>
