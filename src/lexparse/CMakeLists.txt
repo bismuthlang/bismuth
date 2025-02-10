@@ -7,7 +7,7 @@ include(ANTLR)
 add_custom_command(
   OUTPUT(
     #    ${CMAKE_CURRENT_SOURCE_DIR}/parser_sources.h
-    # ${ANTLR_SOURCES} # Uncomment if the build fails, then put back
+    ${ANTLR_SOURCES} # Uncomment if the build fails, then put back
   )
   BYPRODUCTS ${ANTLR_SOURCES}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
