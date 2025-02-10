@@ -1,4 +1,4 @@
-# CLI CMakeLists file 
+# CLI CMakeLists file
 
 include(CLI)
 
@@ -19,6 +19,7 @@ include_directories(cli_lib
     ${CLI_INCLUDE}
     ${ANTLR_INCLUDE}
     ${ANTLR_GENERATED_DIR}
+    ${ANTLR_SOURCES}
     ${SYMBOL_INCLUDE}
     ${SEMANTIC_INCLUDE}
     ${CODEGEN_INCLUDE}
