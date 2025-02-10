@@ -124,14 +124,15 @@ private:
 
         llvm::Type *llvmType = type->getLLVMType(module);
 
-        Function *fn = Function::Create(FunctionType::get(
-                                            llvmType,
-                                            {
-                                                llvmType, // Value
-                                                i8p,      // Map
-                                            },
-                                            false),
-                                        GlobalValue::PrivateLinkage, "_clone_" + type->toString(DisplayMode::C_STYLE), module);
+        Function *fn = Function::Create(
+            FunctionType::get(
+                llvmType,
+                {
+                    llvmType, // Value
+                    i8p,      // Map
+                },
+                false),
+            GlobalValue::PrivateLinkage, "_clone_" + type->toString(DisplayMode::C_STYLE), module);
         BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
         builder->SetInsertPoint(bBlk);
 

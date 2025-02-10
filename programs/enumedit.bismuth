@@ -1,6 +1,6 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
-define func PrintEnum ((int + str) e) {
+func PrintEnum ((int + str) e) {
     match e {
         int i => printf("%u\n", i);
         str s => printf("%s\n", s);
@@ -10,7 +10,7 @@ define func PrintEnum ((int + str) e) {
 }
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     (int + str) a := "hello there";
 
     PrintEnum(a);                               # hello there

@@ -1,7 +1,7 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # str func nestedIf(int a) {
-define nestedIf :: c : Channel<+int;-str> = {
+prog nestedIf :: c : +int;-str = {
     int a := c.recv();
 
     if( a > 0) {
@@ -34,7 +34,7 @@ define nestedIf :: c : Channel<+int;-str> = {
     # c.send("CASE IMPOSSIBLE (-1)") # ADD A TEST CASE THAT CONFIRMS THIS ERROR WAS THROWN!!!
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     var i := -10; 
     while i <= 15 {

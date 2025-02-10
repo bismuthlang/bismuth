@@ -1,1 +1,1 @@
-define struct Empty {}
+struct Empty {}

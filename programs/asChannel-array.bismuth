@@ -1,7 +1,7 @@
 extern func printf(str s, ...);
 
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     int [5] a; 
 
     a[0] := 1; 

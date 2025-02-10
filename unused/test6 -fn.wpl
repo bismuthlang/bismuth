@@ -10,7 +10,7 @@ str func selReturnOne(int a) {
     return "CASE IMPOSSIBLE (-1)"; 
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     var i := -10; 
     while i <= 15 {

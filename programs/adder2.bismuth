@@ -1,12 +1,12 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     var addStream := exec BinaryCounter;
     addStream.send(exec Num7);
     addStream.send(exec Num5);
 
     accept(addStream) {
-        printf("%s",(boolean b) : str {
+        printf("%s",(boolean b) -> str {
             if b { return "1"; }
             return "0";
         }(addStream.recv()));
@@ -16,11 +16,11 @@ define program :: c : Channel<-int> {
     c.send(0); 
 }
 
-define func XOR (boolean a, boolean b) : boolean {
+func XOR (boolean a, boolean b) -> boolean {
     return (a && !b) || (!a && b);
 }
 
-define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-boolean> {
+prog BinaryCounter :: c : +Channel<!+boolean>; +Channel<!+boolean>;?-boolean {
     var i1 := c.recv(), i2 := c.recv();
 
     boolean carry := false; 
@@ -52,7 +52,7 @@ define BinaryCounter :: c : Channel<+Channel<!+boolean>; +Channel<!+boolean>;?-b
     weaken(c);  
 }
 
-define Num7 :: c : Channel<?-boolean> {
+prog Num7 :: c : ?-boolean {
     more(c); 
     c.send(true); 
     more(c); 
@@ -62,7 +62,7 @@ define Num7 :: c : Channel<?-boolean> {
     weaken(c); 
 }
 
-define Num5 :: c : Channel<?-boolean> {
+prog Num5 :: c : ?-boolean {
     more(c); 
     c.send(true); 
     more(c); 

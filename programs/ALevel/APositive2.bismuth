@@ -1,6 +1,6 @@
-extern func getIntArg(int i) : int;
+extern func getIntArg(int i) -> int;
 
-define program :: c : Channel<-int> = { 
+prog program :: c : -int = { 
   var i;
   var result;
   i := getIntArg(1);

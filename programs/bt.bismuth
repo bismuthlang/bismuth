@@ -1,33 +1,32 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-# define foo :: c : Channel<+int> {
+# prog foo :: c : +int {
 #   Channel<+int> b := c; 
 #   int a := b.recv(); # C is no longer defined
 # }
 
-# define func foo () {
+# func foo () {
 #   return;
 # }
 
-define struct Empty {}
+struct Empty {}
 
-define struct BinaryTree {
+struct BinaryTree {
   int value; 
   (Empty + Box<BinaryTree>) lhs;  
   (Empty + Box<BinaryTree>) rhs; 
-  # Box<BinaryTree> rhs; 
 }
 
 
-define struct IDK {
+struct IDK {
   foo f;
 }
 
-define func foo () {
+func foo () {
   return; 
 }
 
-define func insertBT(Box<BinaryTree> root, int value) {
+func insertBT(Box<BinaryTree> root, int value) {
   BinaryTree bt := *root; 
   if bt.value < value {
     match bt.lhs {
@@ -49,7 +48,7 @@ define func insertBT(Box<BinaryTree> root, int value) {
 }
 
 
-define func printPadding(int chars) {
+func printPadding(int chars) {
   int i := 0; 
   while i < chars {
     printf(" ");
@@ -59,7 +58,7 @@ define func printPadding(int chars) {
   return; 
 }
 
-define func printBT(BinaryTree node) 
+func printBT(BinaryTree node) 
 {
   printf("%u", node.value);
   printf("\n");
@@ -79,7 +78,7 @@ define func printBT(BinaryTree node)
   return; 
 }
 
-define func traversePreOrder(int padding, str pointer, BinaryTree node) {
+func traversePreOrder(int padding, str pointer, BinaryTree node) {
   printPadding(padding);
   printf(pointer);
   printf("%u", node.value);
@@ -100,7 +99,7 @@ define func traversePreOrder(int padding, str pointer, BinaryTree node) {
 
 
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
 
   # BinaryTree node := BinaryTree::init(5, Empty::init(), Empty::init());
   Box<BinaryTree> node := Box<BinaryTree>::init(BinaryTree::init(5, Empty::init(), Empty::init()));

@@ -1,8 +1,8 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     if 1 < 2 {
         printf("Correct!\n");
     }

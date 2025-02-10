@@ -1,6 +1,6 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     printf("Prior to decl\n");
     
@@ -10,7 +10,7 @@ define program :: c : Channel<-int> = {
 
     # inner(); 
 
-    define inner :: c : Channel<+str> = {
+    prog inner :: c : +str = {
         str s := c.recv(); 
         printf(s);
     }

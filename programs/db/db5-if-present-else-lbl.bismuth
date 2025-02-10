@@ -1,19 +1,18 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-define struct Value {int v;}
-define enum OptVal {Unit, Value}
+struct Value {int v;}
+enum OptVal {Unit, Value}
 
-define Database :: c : Channel<
-                        !ExternalChoice<
+prog Database :: c : !ExternalChoice<
                               get: +int;-OptVal,
                               set: +int;+Value,
                               lock: +int;InternalChoice<
                                        present: -Value;+Value,
-                                       missing: +Value>>> = {
+                                       missing: +Value>> = {
 
   Value[10] data; 
 
-  define func PrintDatabase(Value[10] data) {
+  func PrintDatabase(Value[10] data) {
       var i := 0; 
       while i < data.length {
         match data[i]
@@ -46,7 +45,7 @@ define Database :: c : Channel<
   }
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var db := exec Database;
     var rqs := exec requests;
     var setRq := exec writeRequest; 
@@ -102,13 +101,12 @@ define program :: c : Channel<-int> = {
 }
 
 
-define requests :: c : Channel<
-                        ?InternalChoice<
+prog requests :: c : ?InternalChoice<
                               -int;+OptVal,
                               -int;-Value,
                               -int;ExternalChoice<
                                        +Value;-Value,
-                                       -Value>>> = {
+                                       -Value>> = {
 
     
     more(c)
@@ -136,7 +134,7 @@ define requests :: c : Channel<
     weaken(c)
 }
 
-define writeRequest :: c : Channel<?(-int;-Value)> = {
+prog writeRequest :: c : ?(-int;-Value) = {
     more(c)
     c.send(4)
     c.send(Value::init(2))

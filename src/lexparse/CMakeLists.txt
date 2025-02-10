@@ -6,7 +6,7 @@ include(ANTLR)
 
 add_custom_command(
   OUTPUT(
-    ${CMAKE_CURRENT_SOURCE_DIR}/parser_sources.h
+    #    ${CMAKE_CURRENT_SOURCE_DIR}/parser_sources.h
     # ${ANTLR_SOURCES} # Uncomment if the build fails, then put back
   )
   BYPRODUCTS ${ANTLR_SOURCES}
@@ -27,5 +27,5 @@ target_include_directories(parser_lib PUBLIC ${ANTLR_INCLUDE})
 add_library(lexparse_lib
   ${ANTLR_SOURCES}
 )
-add_dependencies(lexparse_lib parser_lib)
+add_dependencies(lexparse_lib generate_parser parser_lib)
 target_include_directories(lexparse_lib PUBLIC ${ANTLR_INCLUDE})

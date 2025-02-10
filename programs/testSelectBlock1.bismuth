@@ -1,6 +1,6 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
-define selReturnOne :: c : Channel<+int;-str> = {
+prog selReturnOne :: c : +int;-str = {
     int a := c.recv(); 
     
     select {
@@ -12,7 +12,7 @@ define selReturnOne :: c : Channel<+int;-str> = {
     c.send("CASE IMPOSSIBLE (-1)")
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     var i := -10; 
     while i <= 15 {

@@ -1,19 +1,19 @@
-extern func printf(str s, ...) : Unit;
-extern func GC_get_heap_size() : int; 
+extern func printf(str s, ...) -> Unit;
+extern func GC_get_heap_size() -> int; 
 
 # Two Int Box Box
-define struct TIBB {
+struct TIBB {
   Box<Box<int>> b1; 
   Box<Box<int>> b2; 
 }
 
 
-define func printTIBB(str name, TIBB b) {
+func printTIBB(str name, TIBB b) {
   # printf("%s = {b1 : %u, b2 : %u}\n", name, **b.b1, **b.b2);
   return; 
 }
 
-define foo :: c : Channel<+TIBB;-int;+int> = {
+prog foo :: c : +TIBB;-int;+int = {
   var iPtr := c.recv(); 
   printTIBB("iPtr (orig/5)", iPtr);
   **iPtr.b1 := 7;
@@ -23,7 +23,7 @@ define foo :: c : Channel<+TIBB;-int;+int> = {
   printTIBB("iPtr (mod/7)", iPtr);
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   int ctr := 0; 
   Box<Box<int>> shared;
   TIBB tibb; 

@@ -1,8 +1,8 @@
-extern func printf(str s, ...) : int; 
-extern func getArgCount() : int;
+extern func printf(str s, ...) -> int; 
+extern func getArgCount() -> int;
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     printf("why\n");
     getArgCount(); 
     var current := 20;
@@ -28,7 +28,7 @@ printf("wh52\n");
     c3.send(7)
 }
 
-define simple :: c : Channel<-int> = {
+prog simple :: c : -int = {
     printf("And the other one!\n");
     c.send(5)
 
@@ -36,7 +36,7 @@ define simple :: c : Channel<-int> = {
     # while true {}
 }
 
-define bar :: c : Channel<?(?-int);+int> = {
+prog bar :: c : ?(?-int);+int = {
 
     int i := 0;
 

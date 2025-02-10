@@ -1,16 +1,16 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
-define enum Inner {
+enum Inner {
     int, 
     boolean 
 }
 
-define enum Outer {
+enum Outer {
     Inner, 
     str
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Inner i := 5; 
     Outer o := i; 
 
@@ -18,7 +18,7 @@ define program :: c : Channel<-int> = {
         Inner in => {
             match in {
                 int i => printf("int: %u\n", i);
-                boolean b => printf("boolean: %s\n", (boolean b) : str { if b { return "true"; } return "false"; }(b));
+                boolean b => printf("boolean: %s\n", (boolean b) -> str { if b { return "true"; } return "false"; }(b));
             }
         }
         str s => printf("str: %s\n", s);

@@ -157,12 +157,12 @@ entry:
   %chan = alloca ptr, align 8
   %a = alloca [5 x i32], align 4
   %s = alloca ptr, align 8
-  %prog = alloca ptr, align 8
-  store ptr %0, ptr %prog, align 8
+  %pg = alloca ptr, align 8
+  store ptr %0, ptr %pg, align 8
   store ptr %1, ptr %s, align 8
   store [5 x i32] %2, ptr %a, align 4
-  %prog1 = load ptr, ptr %prog, align 8
-  %3 = call ptr @_Execute(ptr %prog1)
+  %pg1 = load ptr, ptr %pg, align 8
+  %3 = call ptr @_Execute(ptr %pg1)
   store ptr %3, ptr %chan, align 8
   %s2 = load ptr, ptr %s, align 8
   %4 = call ptr @malloc(i32 8)

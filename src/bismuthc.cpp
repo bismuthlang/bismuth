@@ -111,6 +111,21 @@ Version: Pre-Alpha 1.3.6 @ )"""" << GIT_COMMIT_HASH
 
 ChangeLog
 =========
+1.3.7 - 2025-02-09: 
+BREAKING 
+  - Entry point changed from `program` to `main`
+
+Features
+  - Syntax improvements: removed the `define` keyword, added `prog` keyword, and now specification of `Channel` in programs is implicit
+  - Added in "error-flows" which allows error messages to be displayed in a tree to get a better sense of how an error originated
+
+Bugs
+  - Improved nix flake build stability
+
+Compiler Internals
+  - Refactored various visitors
+  - Improved some error messages
+
 1.3.6 - 2025-01-03: 
 BREAKING (Compiler Internals)
   - Sum types and internal/external choices now have their tag value determined by the `C_STYLE` internal representation of the type instead of the LLVM-IR string representation due to introduction of opaque pointers

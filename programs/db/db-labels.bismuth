@@ -1,10 +1,10 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
 # FIXME: ADD INT VARIANTs (I32, U32, I64, U64) TO BISMUTH DOCS
 # FIXME: Allow binary ops (xor) to be performed on booleans!
 
-define struct Value {int v;}
-define enum OptVal {Unit, Value}
+struct Value {int v;}
+enum OptVal {Unit, Value}
 
 # The Database program serves an external choice of 
 # either: 
@@ -16,17 +16,16 @@ define enum OptVal {Unit, Value}
 #   3. Receiving an integer key to lookup. If this key is in the database, 
 #      then the current Value corresponding to the key is returned. Either way, 
 #      the process then receives a new Value to store correlating to this key.  
-define Database :: c : Channel<
-                        !ExternalChoice<
+prog Database :: c : !ExternalChoice<
                               get: +int;-OptVal,
                               set: +int;+Value,
                               lock: +int;InternalChoice<
                                        present: -Value;+Value,
-                                       missing: +Value>>> = {
+                                       missing: +Value>> = {
 
   Value[10] data; 
   # Helper function to log the contents of the database
-  define func PrintDatabase(Value[10] data) {
+  func PrintDatabase(Value[10] data) {
       for(var i := 0; i < data.length; i := i + 1){
         match data[i]
             | Unit u => {}
@@ -60,7 +59,7 @@ define Database :: c : Channel<
   }
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var db := exec Database;  # Database to send requests to
     var rqs := exec requests; # Regular priority requests
 
@@ -108,16 +107,15 @@ define program :: c : Channel<-int> = {
 }
 
 
-define requests :: c : Channel<
-                        ?InternalChoice<
+prog requests :: c : ?InternalChoice<
                               get: -int;+OptVal,
                               set: -int;-Value,
                               lock: -int;ExternalChoice<
                                        present: +Value;-Value,
-                                       missing: -Value>>> {
+                                       missing: -Value>> {
 
     
-    more(c)
+    more(c)\
     c[get]
     c.send(4)
     var opt := c.recv(); 
@@ -142,7 +140,7 @@ define requests :: c : Channel<
     weaken(c)
 }
 
-define writeRequest :: c : Channel<?(-int;-Value)> {
+prog writeRequest :: c : ?(-int;-Value) {
     more(c)
     c.send(4)
     c.send(Value::init(2))

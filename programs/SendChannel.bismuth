@@ -1,4 +1,4 @@
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     Channel<-Channel<+int>;+int> foo2 := exec Foo2; 
     Channel<+int> foo1 := exec Foo1; 
 
@@ -9,11 +9,11 @@ define program :: c : Channel<-int> = {
     c.send(temp)
 }
 
-define Foo1 :: c : Channel<-int> = {
+prog Foo1 :: c : -int = {
     c.send(5)
 }
 
-define Foo2 :: c : Channel<+Channel<+int>;-int> = {
+prog Foo2 :: c : +Channel<+int>;-int = {
     Channel<+int> c2 := c.recv(); 
 
     c.send(c2.recv())

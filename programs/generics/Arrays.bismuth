@@ -1,6 +1,6 @@
-extern func printf(str s, ...) : Unit; 
+extern func printf(str s, ...) -> Unit; 
 
-# define func fill<T>(T[] array, T value, u32 num)
+# func fill<T>(T[] array, T value, u32 num)
 # {
 #     for(u32 i := 0u32; i < num; i := i + 1u32)
 #     {
@@ -8,7 +8,7 @@ extern func printf(str s, ...) : Unit;
 #     }
 # }
 
-define func fill<T>(T[] array, T value, u32 num)
+func fill<T>(T[] array, T value, u32 num)
 {
     for(u32 i := 0; i < num; i := i + 1)
     {
@@ -20,7 +20,7 @@ define func fill<T>(T[] array, T value, u32 num)
 
 
 # bsl::arrays::forEach
-define func forEach<T>(T[] array, (T) -> Unit fn) {
+func forEach<T>(T[] array, (T) -> Unit fn) {
     for(u32 i := 0; i < array.length; i := i + 1)
     {
         # fn(array[i]);
@@ -34,7 +34,7 @@ define func forEach<T>(T[] array, (T) -> Unit fn) {
 
 
 # bsl::arrays::map
-define func map<I, O>(I[] array, ((I) -> O + (I, u32) -> O) mapper) : O[]
+func map<I, O>(I[] array, ((I) -> O + (I, u32) -> O) mapper) -> O[]
 {
     O[] output; 
     match mapper 
@@ -55,7 +55,7 @@ define func map<I, O>(I[] array, ((I) -> O + (I, u32) -> O) mapper) : O[]
     return output; 
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     u32[] a;
     boolean[] b; 
 
@@ -70,18 +70,18 @@ define program :: c : Channel<-int> {
     printf("Size: %u\n", a.length);
 
 
-    forEach<u32>(a, (u32 i) : Unit {
+    forEach<u32>(a, (u32 i) -> Unit {
         printf("%u, ", i);
         return;
     });
     printf("\n");
 
 
-    u32[] a2 := map<u32, u32>(a, (u32 ele, u32 idx) : u32{
+    u32[] a2 := map<u32, u32>(a, (u32 ele, u32 idx) -> u32{
         return idx; 
     });
 
-    forEach<u32>(a2, (u32 i) : Unit {
+    forEach<u32>(a2, (u32 i) -> Unit {
         printf("%u, ", i);
         return;
     });
@@ -93,10 +93,10 @@ define program :: c : Channel<-int> {
 }
 
 
-# define func map2<T1, T2>(T1[] a, T2[] b) : (Unit + )
+# func map2<T1, T2>(T1[] a, T2[] b) -> (Unit + )
 
 /*
-define func generatorFill<K>(T[] array, (T + Unit -> T) generator, u32 num)
+func generatorFill<K>(T[] array, (T + Unit -> T) generator, u32 num)
 {
     match generator 
         |   T val => fill(array, val, num);

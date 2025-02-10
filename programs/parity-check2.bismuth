@@ -1,16 +1,16 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-define struct Empty {}
+struct Empty {}
 
-define struct IntBox {
+struct IntBox {
     int number;
 }
 
-define struct IntBoxBox {
+struct IntBoxBox {
     IntBox ib; 
 }
 
-define prog1 :: c : Channel<-IntBoxBox; +Empty> = {
+prog prog1 :: c : -IntBoxBox; +Empty = {
     # IntBox ib := IntBox::init(15); 
     IntBoxBox ib := IntBoxBox::init(IntBox::init(15));
 
@@ -26,7 +26,7 @@ define prog1 :: c : Channel<-IntBoxBox; +Empty> = {
 
 }
 
-define prog2 :: c : Channel<+IntBoxBox; -Empty> = {
+prog prog2 :: c : +IntBoxBox; -Empty = {
     var ib := c.recv(); 
 
     printf("prog2: recvd IntBox\n");
@@ -40,7 +40,7 @@ define prog2 :: c : Channel<+IntBoxBox; -Empty> = {
     c.send(Empty::init())
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var p1 := exec prog1, p2 := exec prog2; 
 
     var temp := p1.recv(); 

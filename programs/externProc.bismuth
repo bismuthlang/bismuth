@@ -1,8 +1,8 @@
 # Simple test of how an extern generates.
 # Note, this does not attempt to use the externed value
-extern func foo (int a, int b) : Unit;
+extern func foo (int a, int b) -> Unit;
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     var current := 1;
     
     c.send(-1)

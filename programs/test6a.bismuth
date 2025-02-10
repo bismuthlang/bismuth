@@ -1,7 +1,7 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # proc sel1(int a) {
-define sel1 :: io : Channel<+int> = {
+prog sel1 :: io : +int = {
     int a := io.recv(); # SHOULD THIS CHANGE TO READ?
 
     select {
@@ -18,7 +18,7 @@ define sel1 :: io : Channel<+int> = {
     
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     var i := -10; 
     while i <= 15 {

@@ -1,22 +1,22 @@
-# define struct Empty {}
+# struct Empty {}
 
-define struct Bar<K> {
+struct Bar<K> {
     K k; 
 }
 
-define struct Foo<V> {
+struct Foo<V> {
     V v; 
     # int i;
     Bar<V> bar;
     # Optional<V> opt; 
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     Foo<str> foo; 
     Foo<boolean> foo2; 
 
-    define struct VVV {}
-    # define func VVV () { return; }
+    struct VVV {}
+    # func VVV () { return; }
 
     VVV v; 
     

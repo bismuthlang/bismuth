@@ -1,14 +1,14 @@
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # int a := 10; 
 
-define func accessor (str[4] array, u32 idx) : str {
+func accessor (str[4] array, u32 idx) -> str {
     match array[idx]
         |   Unit u => return "Bounds Error";
         |   str s => return s;
 }
 
-define program :: io : Channel<-int> = {
+prog program :: io : -int = {
     printf("H\t\n\r\n\v\"\'\nokay\\")
 
     str a := "Why hello there!", b := "This is a different string!", c := "Still a different string", d := "Why hello there!";

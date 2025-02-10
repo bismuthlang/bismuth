@@ -10,9 +10,11 @@
  */
 #pragma once
 #include "BaseErrorListener.h"
+#include "BismuthInternalError.h"
 #include "Token.h"
 #include <string>
 #include <vector>
+#include <optional>
 // #include <source_location> // TODO: Upgrade to clang 15 or 16 and use https://en.cppreference.com/w/cpp/compiler_support/20#C.2B.2B20_library_features
 
 /**
@@ -23,7 +25,8 @@ enum ErrType
 {
     SYNTAX,   // Syntactic errors         (Lexer/parser)
     SEMANTIC, // Semantic errors          (Semantic Analysis)
-    CODEGEN   // Code generation errors   (LLVM IR Codegen)
+    CODEGEN,  // Code generation errors   (LLVM IR Codegen)
+    COMBO     // Used to represent branches
 };
 
 /**
@@ -45,67 +48,70 @@ enum ErrSev
  */
 struct BismuthError
 {
-    antlr4::Token *token; // Where the error occurred
-    std::string message;  // Error Message text
+    // antlr4::Token *token; // Where the error occurred
+    // std::string message;  // Error Message text
 
-    BismuthError(antlr4::Token *tok, std::string msg)
-        : token(tok)
-        , message(msg)
-    {}
+    BismuthError(ErrType et, ErrSev es, antlr4::Token *tok, std::string msg)
+        : errorType(et)
+        , errorSeverity(es)
+        // , token(tok)
+        // , message(msg)
+    {
+        addTrace(tok, msg);
+    }
+
+    void addTrace(antlr4::Token * tok, std::string msg)
+    {
+        trace.push_back(std::make_pair(tok, msg));
+    }
 
     std::string toString(); 
+    std::vector<std::string> asTrace(); 
+
+    static std::string getStringForErrorType(ErrType e);
+    static std::string getStringForSeverity(ErrSev e);
+
+private: 
+    ErrType errorType;
+    ErrSev errorSeverity;
+    std::vector<std::pair<antlr4::Token *, std::string>> trace; 
 };
 
 struct ErrorChain
 {
-    ErrType errType;
-    ErrSev errSev;
-
-    std::vector<BismuthError *> chain;
+    std::optional<BismuthError *> error; 
+    std::vector<ErrorChain *> branches; 
 
     ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
     {
-        errType = et;
-        errSev = es;
-        BismuthError *primaryError = new BismuthError(tok, msg);
-        chain.push_back(primaryError);
+        severity = es; 
+        error = new BismuthError(et, es, tok, msg);
     }
 
     ErrorChain * addErrorAt(antlr4::Token *t);
     ErrorChain * addError(antlr4::Token *t, std::string msg);
-    ErrorChain * addCritWarning(antlr4::Token *t, std::string msg);
+
+    ErrorChain * addBranch(ErrorChain * other);
+    // ErrorChain * addCritWarning(antlr4::Token *t, std::string msg);
     std::string toString();
-    ErrSev getSeverity();
+    uint32_t getSeverity();
+    // ErrSev getSeverity();
 
-    static std::string getStringForErrorType(ErrType e)
+    std::vector<std::string> asTrace();
+
+private: 
+    ErrorChain(ErrorChain & other)
     {
-        switch (e)
-        {
-        case SYNTAX:
-            return "SYNTAX";
-        case SEMANTIC:
-            return "SEMANTIC";
-        case CODEGEN:
-            return "CODEGEN";
-        }
+        // other.errType = errType; 
+        // other.errSev = errSev; 
+        // other.chain = chain; 
+        error = other.error; 
+        branches = other.branches; 
+        severity = other.severity;
     }
 
-    static std::string getStringForSeverity(ErrSev e)
-    {
-        switch (e)
-        {
-        case ERROR:
-            return "Error";
-        case CRITICAL_WARNING:
-            return "Critical Warning";
-        case WARNING:
-            return "Warning";
-        case INFO:
-            return "Informational";
-        case COMPILER:
-            return "Compiler Error";
-        }
-    }
+    uint32_t severity; 
+
 };
 
 class BismuthErrorHandler

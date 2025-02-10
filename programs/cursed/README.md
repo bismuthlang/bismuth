@@ -13,7 +13,7 @@ They also test that (aside from the name of the file/module), `return` can be re
 
 Finally, they test that the following function type checks.
 ```bismuth
-define func sil_sel_array(int i) : int {
+func sil_sel_array(int i) : int {
     var arr := [0, 1, 2, 3]; 
     select {
         i < 4: match arr[i] 

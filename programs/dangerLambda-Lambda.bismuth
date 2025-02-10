@@ -1,8 +1,8 @@
-extern func printf(str s, ...) : int; 
+extern func printf(str s, ...) -> int; 
 
 # Unit -> int func getMain1() { // TODO: this syntax kind of seems better for documentation
-define func getMain1 () : () -> int {
-    define func main () : int {
+func getMain1 () -> (() -> int) {
+    func main () -> int {
         printf("Main 1!\n");
         return 1; 
     }
@@ -11,8 +11,8 @@ define func getMain1 () : () -> int {
 }
 
 # Unit -> int func getMain2() {
-define func getMain2 () : () -> int {
-    define func main () : int {
+func getMain2 () -> () -> int {
+    func main () -> int {
         printf("Main 2!\n");
         return 2; 
     }
@@ -20,7 +20,7 @@ define func getMain2 () : () -> int {
     return main; 
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     # Unit u := Unit::init();
 
     c.send(getMain1()() + getMain2()())

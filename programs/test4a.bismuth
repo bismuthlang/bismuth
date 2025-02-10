@@ -8,10 +8,10 @@ Output (order may differ due to threads):
     ANS: 20
 */
 
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # int func mutArgsOne(int i) {
-define mutArgsOne :: io : Channel<+int;-int> = {
+prog mutArgsOne :: io : +int;-int = {
     int i := io.recv(); 
 
     if !(5 < 10) {
@@ -26,7 +26,7 @@ define mutArgsOne :: io : Channel<+int;-int> = {
 }
 
 
-define mutArgsTwo :: io : Channel<+int;-int> = {
+prog mutArgsTwo :: io : +int;-int = {
     int i := io.recv(); 
 
     if (5 < 10) {
@@ -41,7 +41,7 @@ define mutArgsTwo :: io : Channel<+int;-int> = {
 }
 
 # proc PROCmutArgsOne(int i) {
-define PROCmutArgsOne :: io : Channel<+int> = {
+prog PROCmutArgsOne :: io : +int = {
     int i := io.recv();
 
     if !(5 < 10) {
@@ -56,7 +56,7 @@ define PROCmutArgsOne :: io : Channel<+int> = {
 
 
 # proc PROCmutArgsTwo(int i) {
-define PROCmutArgsTwo :: io : Channel<+int> = {
+prog PROCmutArgsTwo :: io : +int = {
     int i := io.recv();
 
     if (5 < 10) {
@@ -69,7 +69,7 @@ define PROCmutArgsTwo :: io : Channel<+int> = {
     # return; 
 }
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
     Channel<-int;+int> t1 := exec mutArgsOne; 
     Channel<-int;+int> t2 := exec mutArgsTwo;

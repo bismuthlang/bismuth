@@ -1,4 +1,4 @@
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
   var x; 
   int i := 42; 
   x := i;

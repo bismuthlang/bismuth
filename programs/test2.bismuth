@@ -25,10 +25,10 @@ Output:
     Ints still are: a = 95, b = -185, c = 0
 */
 
-extern func printf(...) : int;
+extern func printf(...) -> int;
 
 # int func program () {
-define program :: io : Channel<-int> = {
+prog program :: io : -int = {
     int a, b, c := 10;
     printf("Int equality test I: %d, %d, %d\n", a == b, a != b, a == c); 
     printf("a = %d, b = %d, c = %d\n", a, b, c);

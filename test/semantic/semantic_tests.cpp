@@ -1,6 +1,6 @@
 #include "Type.h"
 #include <catch2/catch_test_macros.hpp>
-
+#include "BismuthErrorHandler.h"
 
 TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 {
@@ -9,8 +9,8 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
   Type *BoolTy = new TypeBool(false);
   Type *StrTy = new TypeStr(false);
   Type *BotTy = new TypeBottom(false);
-  Type* UnitTy = new TypeUnit(false); 
-  Type* AbsurdTy = new TypeAbsurd(false); 
+  Type* UnitTy = new TypeUnit(false);
+  Type* AbsurdTy = new TypeAbsurd(false);
 
   SECTION("Top Type tests")
   {
@@ -112,8 +112,8 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
   Type *BoolTy = new TypeBool(false);
   Type *StrTy = new TypeStr(false);
   Type *BotTy = new TypeBottom(false);
-  Type* UnitTy = new TypeUnit(false); 
-  Type* AbsurdTy = new TypeAbsurd(false); 
+  Type* UnitTy = new TypeUnit(false);
+  Type* AbsurdTy = new TypeAbsurd(false);
 
   SECTION("Top Type tests")
   {
@@ -210,3 +210,40 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
 }
 
 // FIXME: MAKE LINEAR SUPERTYPE OF NON-LINEAR
+
+
+TEST_CASE("Test Error Chain - Tree", "[error-handler]")
+{
+  BismuthErrorHandler handler(SEMANTIC);
+
+  auto e = handler.addError(nullptr, "Hello there!");
+
+  e->addError(nullptr, "step 2!");
+
+  e->addError(nullptr, "Step 3!");
+
+  auto e2 = handler.addCompilerError(nullptr, "Comp error!");
+  e->addBranch(e2);
+
+  auto e3 = handler.addCritWarning(nullptr, "Crit warning!");
+  e->addBranch(e3);
+
+  e->addError(nullptr, "After 3-way branch 1");
+  e->addError(nullptr, "After 3-way branch 2");
+
+  auto e4 = handler.addError(nullptr, "yet another error!");
+  e->addBranch(e4);
+
+  e->addError(nullptr, "And yet another join!");
+
+  for(auto s : e->asTrace())
+  {
+    std::cout << s << std::endl;
+  }
+
+  std::cout << "ERROR LIST " << std::endl;
+  std::cout << handler.errorList() << std::endl;
+  std::cout << "END ERROR LIST " << std::endl;
+
+  REQUIRE(true);
+}

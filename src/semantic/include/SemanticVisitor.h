@@ -3,6 +3,7 @@
 #include "STManager.h"
 #include "PropertyManager.h"
 #include "BismuthErrorHandler.h"
+#include "BismuthInternalError.h"
 #include "TypedAST.h"
 #include "CastUtils.h"
 #include "ProtocolVisitor.h"
@@ -97,7 +98,7 @@ public:
     std::any visitAssignmentStatement(BismuthParser::AssignmentStatementContext * ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx)); }
     std::any visitAssignStatement(BismuthParser::AssignStatementContext *ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx->assignmentStatement())); }
 
-    std::optional<ParameterListNode> visitCtx(BismuthParser::ParameterListContext *ctx);
+    std::variant<ParameterListNode, ErrorChain *> visitCtx(BismuthParser::ParameterListContext *ctx);
     std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { return visitCtx(ctx); }
 
     std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<DefinitionSymbol *> sym);
@@ -317,14 +318,8 @@ std::variant<
     std::variant<TypedNode *, ErrorChain *> visitCondition(BismuthParser::ExpressionContext *ex)
     {
         auto a =  ex->accept(this); 
-        std::variant<TypedNode *, ErrorChain *> condOpt = anyOpt2VarError<TypedNode>(errorHandler, a);
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&condOpt))
-        {
-            return (*e)->addError(ex->getStart(), "Unable to type check condition expression");
-        }
-
-        TypedNode *cond = std::get<TypedNode *>(condOpt);
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, cond, anyOpt2VarError<TypedNode>(errorHandler, a), ex, "Unable to type check condition expression");
+        
         const Type *conditionType = cond->getType();
 
         if (conditionType->isNotSubtype(Types::DYN_BOOL))
@@ -358,14 +353,8 @@ std::variant<
         for (auto e : ctx->stmts)
         {
             // Visit all the statements in the block
-            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, e->accept(this));
-
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-            {
-                return (*e)->addError(ctx->getStart(), "Failed to type check statement in block");
-            }
-
-            nodes.push_back(std::get<TypedNode *>(tnOpt));
+            DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, e->accept(this)), ctx, "Failed to type check statement in block");
+            nodes.push_back(tn);
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
             {
@@ -403,15 +392,10 @@ std::variant<
         for (auto expr : exprs)
         {
             // Visit all the statements in the block
-            std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, expr->accept(this));
+            // TODO: does having return here w/o safe exit again mean that we have a bug if we hit this case? 
+            DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, expr->accept(this)), expr); 
+            nodes.push_back(tn);
 
-            if (ErrorChain **e = std::get_if<ErrorChain *>(&tnOpt))
-            {
-                // TODO: does having return here w/o safe exit again mean that we have a bug if we hit this case? 
-                return (*e)->addErrorAt(expr->getStart());
-            }
-
-            nodes.push_back(std::get<TypedNode *>(tnOpt));
             // If we found a return, then this is dead code, and we can break out of the loop.
             if (foundReturn)
             {
@@ -447,7 +431,7 @@ std::variant<
             }
             
             if(std::holds_alternative<std::string>(b))
-                return false; // TODO: verify 
+                return false;
 
             return std::get<const ProtocolSequence *>(a)->toString(DisplayMode::C_STYLE) < std::get<const ProtocolSequence *>(b)->toString(DisplayMode::C_STYLE);
         }
@@ -484,6 +468,13 @@ std::variant<
         bool checkRestIndependently,
         std::function<TypedNode *(Y)> getNode, 
         std::function<std::variant<Y, ErrorChain *>(T *)> typeCheck);
+
+
+    inline std::variant<const ProtocolSequence *, ErrorChain *>
+    visitProtocolAsSeq(BismuthParser::ProtocolContext *ctx);
+
+    inline std::variant<const TypeChannel *, ErrorChain *>
+    visitProtocolAsChannel(BismuthParser::ProtocolContext *ctx);
 
 private:
     DisplayMode toStringMode; 

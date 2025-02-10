@@ -1,6 +1,6 @@
-extern func printf(str s, ...) :  int; 
+extern func printf(str s, ...) ->  int; 
 
-define program :: c : Channel<-int> 
+prog program :: c : -int 
 {
     c.send(0);
 
@@ -21,7 +21,7 @@ define program :: c : Channel<-int>
 
 
 
-define c2 :: c : Channel<Cancelable<+int; +int>;Cancelable<+int;-int;+int>> {
+prog c2 :: c : Cancelable<+int; +int>;Cancelable<+int;-int;+int> {
     (Unit + int) a := c.recv();
     cancel(c);
 

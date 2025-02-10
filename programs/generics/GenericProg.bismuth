@@ -1,11 +1,11 @@
 extern func printf(str s, ...);
 
-define foo<T> :: c : Channel<+T;-T> {
+prog foo<T> :: c : +T;-T {
     T t := c.recv(); 
     c.send(t);
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
     var c1 := exec foo<int>; 
     c1.send(5);
     printf("%u\n", c1.recv()); # should be 5

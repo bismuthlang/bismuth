@@ -2,7 +2,7 @@ extern int func printf(str s, ...);
 extern int func getArgCount();
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
     printf("why\n");
     getArgCount(); 
     var current := 1;
@@ -10,7 +10,7 @@ define program :: c : Channel<-int> = {
     c.send(current)
 }
 
-define bar :: c : Channel<?(?-int);+int> = {
+prog bar :: c : ?(?-int);+int = {
     more(c) # Why is it more(c) vs c.more() ? 
     weaken(c)
     weaken(c)

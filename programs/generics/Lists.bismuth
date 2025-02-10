@@ -1,9 +1,9 @@
 
-define struct Empty {}
+struct Empty {}
 
 # So on the template, we need to check for a specific given template combination first, and then run things!
 # Otherwise, its recursive!
-define struct LinkedList<T> {
+struct LinkedList<T> {
     (Empty + Box<LinkedList<T>>) next;
     T value; 
     # Box<LinkedList<T>> next; 
@@ -11,10 +11,10 @@ define struct LinkedList<T> {
     (Empty + LinkedList<str>) sumty2;
 }
 
-define program :: c : Channel<-int> {
+prog program :: c : -int {
 
     # LL2 Is used to ensure that name mangaling applies to nested structs
-    define struct LL2<V> {
+    struct LL2<V> {
         int a; 
         (Empty + Box<LL2<V>>) next;
     }

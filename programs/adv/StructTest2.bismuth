@@ -1,23 +1,23 @@
-extern func printf(str s, ...) : int;
+extern func printf(str s, ...) -> int;
 
-define struct Integer {
+struct Integer {
     int i; 
 }
 
-define struct Complex {
+struct Complex {
     Integer r; 
     Integer g; 
     Integer b; 
 }
 
-define struct Color {
+struct Color {
     int red; 
     int green; 
     int blue; 
 }
 
 
-define program :: c : Channel<-int> = {
+prog program :: c : -int = {
 
 
     Color z := Color::init(25, 24, 23);
