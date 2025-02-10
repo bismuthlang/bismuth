@@ -21,12 +21,13 @@
 #define IMPL_MACRO_CONCAT(a,b) a##b
 #define MACRO_ARG(...) __VA_ARGS__
 
+//   std::cout << "Trying opt " << __FILE__<<":"<< __LINE__<<" "#type" "#id" "#expr << std::endl;
+
 #define IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(type, id, expr, ctx, message, tmp) \
   std::optional<type> tmp = expr; \
   if(!tmp) { \
     return errorHandler.addError(ctx->getStart(), message); \
   } \
-  std::cout << "Trying opt " << __FILE__<<":"<< __LINE__<<" "#type" "#id" "#expr << std::endl; \
   type id = tmp.value(); \
 
 #define IMPL_DEFINE_OR_PROPAGATE_VARIANT_IERR(type, id, expr, ctx, tmp) \
@@ -43,9 +44,7 @@
   { \
     return (*e)->addError(ctx->getStart(), message); \
   } \
-  std::cout << "Trying "<< __FILE__<<":"<< __LINE__<<" "#type" "#id" "#expr << std::endl; \
   type id = std::get<type>(tmp); \
-  std::cout << "Yay" << std::endl; \
 
 #define IMPL_DEFINE_OR_PROPAGATE_VARIANT(type, id, expr, ctx, tmp) \
   std::variant<type, ErrorChain*> tmp = expr; \
@@ -53,9 +52,7 @@
   { \
     return (*e)->addErrorAt(ctx->getStart()); \
   } \
-  std::cout << "Trying "<< __FILE__<<":"<< __LINE__<<" "#type" "#id" "#expr << std::endl; \
   type id = std::get<type>(tmp); \
-  std::cout << "Yay" << std::endl; \
 
 # define DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(type, id, expr, ctx, message) IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, message, IMPL_MACRO_CONCAT(id, _COUNTER__))
 # define DEFINE_OR_PROPAGATE_VARIANT_WMSG(type, id, expr, ctx, message) IMPL_DEFINE_OR_PROPAGATE_VARIANT_WMSG(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, message, IMPL_MACRO_CONCAT(id, __COUNTER__))
