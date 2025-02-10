@@ -119,6 +119,9 @@ Features
   - Syntax improvements: removed the `define` keyword, added `prog` keyword, and now specification of `Channel` in programs is implicit
   - Added in "error-flows" which allows error messages to be displayed in a tree to get a better sense of how an error originated
 
+Bugs
+  - Improved nix flake build stability
+
 Compiler Internals
   - Refactored various visitors
   - Improved some error messages
