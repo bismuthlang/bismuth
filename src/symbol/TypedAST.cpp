@@ -1,12 +1,12 @@
 #include "TypedAST.h"
 
 // #include "CastUtils.h"
-
+/*
 std::optional<Value *> TypedASTVisitor::visit(CompCodeWrapper &n)
 {
-    return n.generator(); 
+    return n.generator();
 }
-
+*/
 
 
 bool TypedAST::endsInReturn(vector<TypedNode *> n)
@@ -32,42 +32,42 @@ bool TypedAST::endsInReturn(TypedNode & n)
     {
         if(cn->post.size())
             return endsInReturn(cn->post);
-        
-        if(cn->falseOpt) 
+
+        if(cn->falseOpt)
         {
             return endsInReturn(*cn->falseOpt.value()) && endsInReturn(*cn->trueBlk);
         }
 
-        return false; 
+        return false;
     }
 
     if (auto cn = dynamic_cast<TMatchStatementNode *>(&n))
     {
         if(cn->post.size())
             return endsInReturn(cn->post);
-        
+
         for(auto branch : cn->cases)
             if(!endsInReturn(*branch.second))
-                return false; 
-        return true; 
+                return false;
+        return true;
     }
 
     if (auto cn = dynamic_cast<TSelectStatementNode *>(&n))
     {
         if(cn->post.size())
             return endsInReturn(cn->post);
-        
+
         for(auto branch : cn->nodes)
             if(!endsInReturn(*branch))
-                return false; 
-        return true; 
+                return false;
+        return true;
     }
 
     if(auto cn = dynamic_cast<TSelectAlternativeNode *>(&n))
     {
         return endsInReturn(*cn->eval);
     }
-    
+
     return false;
 }
 
@@ -89,28 +89,28 @@ bool TypedAST::endsInBranch(TypedNode & n)
     // FIXME: DO THESE BETTER!
     if (TConditionalStatementNode *cn = dynamic_cast<TConditionalStatementNode *>(&n))
     {
-        return true; 
+        return true;
     }
 
     if (TMatchStatementNode *cn = dynamic_cast<TMatchStatementNode *>(&n))
     {
-        return true; 
+        return true;
     }
 
     if (TSelectStatementNode *cn = dynamic_cast<TSelectStatementNode *>(&n))
     {
-        return true; 
+        return true;
     }
 
     if (TSelectAlternativeNode *cn = dynamic_cast<TSelectAlternativeNode *>(&n))
     {
         return endsInBranch(*cn->eval);
-        // return true; 
+        // return true;
     }
 
     if(TChannelCaseStatementNode * sn = dynamic_cast<TChannelCaseStatementNode*>(&n))
     {
-        return true; 
+        return true;
     }
 
     return false;

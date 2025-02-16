@@ -44,13 +44,13 @@ using llvm::PHINode;
 using llvm::StringRef;
 using llvm::Value;
 
-class CodegenVisitor : public CodegenModule, TypedASTVisitor
+class CodegenVisitor : public CodegenModule, public virtual NuASTVisitor<std::optional<Value *>>
 {
     // TODO: move all defs to cpp file and move everything here to the private section at the end of the file
 private:
     // TODO: DO BETTER W/ A mangler
-    // std::string currentNamespacePath; 
-    std::map<std::string, llvm::AllocaInst *> allocations; 
+    // std::string currentNamespacePath;
+    std::map<std::string, llvm::AllocaInst *> allocations;
 
     std::string getCodegenID(Symbol * sym);
 
@@ -72,7 +72,7 @@ public:
      * @param moduleName LLVM Module name to use
      * @param f Compiler flags
      */
-    CodegenVisitor(std::string moduleName, DisplayMode mode, int f = 0) 
+    CodegenVisitor(std::string moduleName, DisplayMode mode, int f = 0)
         : CodegenModule(moduleName, mode, f)
         , copyVisitor(module, mode, f, errorHandler)
     {}
@@ -80,62 +80,62 @@ public:
     /******************************************************************
      * Standard visitor methods all defined to use the typed versions
      ******************************************************************/
-    // std::optional<Value *> visit(TSelectAlternativeNode & n) override;
-    std::optional<Value *> visit(TSelectStatementNode & n) override;
-    std::optional<Value *> visit(TBlockNode & n) override;
-    std::optional<Value *> visit(TLambdaConstNode & n) override;
-    std::optional<Value *> visit(TProgramDefNode & n) override;
-    std::optional<Value *> visit(TDefineTemplateNode & n) override; 
-    std::optional<Value *> visit(TConditionalStatementNode & n) override;
-    std::optional<Value *> visit(TReturnNode & n) override;
-    std::optional<Value *> visit(TProgramSendNode & n) override;
-    std::optional<Value *> visit(TProgramRecvNode & n) override;
-    std::optional<Value *> visit(TProgramIsPresetNode & n) override; 
-    std::optional<Value *> visit(TProgramContractNode & n) override;
-    std::optional<Value *> visit(TProgramWeakenNode & n) override;
-    std::optional<Value *> visit(TProgramCancelNode & n) override;
-    std::optional<Value *> visit(TProgramExecNode & n) override;
-    std::optional<Value *> visit(TProgramAcceptNode & n) override;
-    std::optional<Value *> visit(TProgramAcceptWhileNode & n) override;
-    std::optional<Value *> visit(TProgramAcceptIfNode & n) override; 
-    std::optional<Value *> visit(TDefineEnumNode & n) override;
-    std::optional<Value *> visit(TDefineStructNode & n) override;
-    std::optional<Value *> visit(TInitProductNode & n) override;
-    std::optional<Value *> visit(TArrayRValue & n) override; 
-    std::optional<Value *> visit(TWhileLoopNode & n) override;
-    std::optional<Value *> visit(TExternNode & n) override;
-    std::optional<Value *> visit(TInvocationNode & n) override;
-    std::optional<Value *> visit(TFieldAccessNode & n) override;
-    std::optional<Value *> visit(TIdentifier & n) override;
-    std::optional<Value *> visit(TPathNode & n) override; 
-    std::optional<Value *> visit(TDerefBoxNode & n) override;
-    std::optional<Value *> visit(TArrayAccessNode & n) override;
-    std::optional<Value *> visit(TDynArrayAccessNode & n) override; 
-    std::optional<Value *> visit(TAssignNode & n) override;
-    std::optional<Value *> visit(TBinaryRelNode & n) override;
-    std::optional<Value *> visit(TBinaryArithNode & n) override;
-    std::optional<Value *> visit(TEqExprNode & n) override;
-    std::optional<Value *> visit(TUnaryExprNode & n) override;
-    std::optional<Value *> visit(TLogAndExprNode & n) override;
-    std::optional<Value *> visit(TLogOrExprNode & n) override;
-    std::optional<Value *> visit(TStringConstNode & n) override;
-    std::optional<Value *> visit(TBooleanConstNode & n) override;
-    std::optional<Value *> visit(TInt32ConstExprNode & n) override;
-    std::optional<Value *> visit(TInt64ConstExprNode & n) override;
-    std::optional<Value *> visit(TIntU32ConstExprNode & n) override;
-    std::optional<Value *> visit(TIntU64ConstExprNode & n) override;
-    std::optional<Value *> visit(TNumConstExprNode & n) override;
-    std::optional<Value *> visit(TCompilationUnitNode & n) override;
-    std::optional<Value *> visit(TVarDeclNode & n) override;
-    std::optional<Value *> visit(TMatchStatementNode & n) override;
-    std::optional<Value *> visit(TExitNode & n) override;
-    std::optional<Value *> visit(TChannelCaseStatementNode & n) override;
-    std::optional<Value *> visit(TProgramProjectNode & n) override;
-    std::optional<Value *> visit(TInitBoxNode & n) override;
-    std::optional<Value *> visit(TExprCopyNode & n) override; 
-    std::optional<Value *> visit(TAsChannelNode & n) override;  
+    std::optional<Value *> visit_typed(TSelectStatementNode & n) override;
+    std::optional<Value *> visit_typed(TBlockNode & n) override;
+    std::optional<Value *> visit_typed(TLambdaConstNode & n) override;
+    std::optional<Value *> visit_typed(TProgramDefNode & n) override;
+    std::optional<Value *> visit_typed(TDefineTemplateNode & n) override;
+    std::optional<Value *> visit_typed(TConditionalStatementNode & n) override;
+    std::optional<Value *> visit_typed(TReturnNode & n) override;
+    std::optional<Value *> visit_typed(TProgramSendNode & n) override;
+    std::optional<Value *> visit_typed(TProgramRecvNode & n) override;
+    std::optional<Value *> visit_typed(TProgramIsPresetNode & n) override;
+    std::optional<Value *> visit_typed(TProgramContractNode & n) override;
+    std::optional<Value *> visit_typed(TProgramWeakenNode & n) override;
+    std::optional<Value *> visit_typed(TProgramCancelNode & n) override;
+    std::optional<Value *> visit_typed(TProgramExecNode & n) override;
+    std::optional<Value *> visit_typed(TProgramAcceptNode & n) override;
+    std::optional<Value *> visit_typed(TProgramAcceptWhileNode & n) override;
+    std::optional<Value *> visit_typed(TProgramAcceptIfNode & n) override;
+    std::optional<Value *> visit_typed(TDefineEnumNode & n) override;
+    std::optional<Value *> visit_typed(TDefineStructNode & n) override;
+    std::optional<Value *> visit_typed(TInitProductNode & n) override;
+    std::optional<Value *> visit_typed(TArrayRValue & n) override;
+    std::optional<Value *> visit_typed(TWhileLoopNode & n) override;
+    std::optional<Value *> visit_typed(TExternNode & n) override;
+    std::optional<Value *> visit_typed(TInvocationNode & n) override;
+    std::optional<Value *> visit_typed(TFieldAccessNode & n) override;
+    std::optional<Value *> visit_typed(TIdentifier & n) override;
+    std::optional<Value *> visit_typed(TPathNode & n) override;
+    std::optional<Value *> visit_typed(TDerefBoxNode & n) override;
+    std::optional<Value *> visit_typed(TArrayAccessNode & n) override;
+    std::optional<Value *> visit_typed(TDynArrayAccessNode & n) override;
+    std::optional<Value *> visit_typed(TAssignNode & n) override;
+    std::optional<Value *> visit_typed(TBinaryRelNode & n) override;
+    std::optional<Value *> visit_typed(TBinaryArithNode & n) override;
+    std::optional<Value *> visit_typed(TEqExprNode & n) override;
+    std::optional<Value *> visit_typed(TUnaryExprNode & n) override;
+    std::optional<Value *> visit_typed(TLogAndExprNode & n) override;
+    std::optional<Value *> visit_typed(TLogOrExprNode & n) override;
+    std::optional<Value *> visit_typed(TStringConstNode & n) override;
+    std::optional<Value *> visit_typed(TBooleanConstNode & n) override;
+    std::optional<Value *> visit_typed(TInt32ConstExprNode & n) override;
+    std::optional<Value *> visit_typed(TInt64ConstExprNode & n) override;
+    std::optional<Value *> visit_typed(TIntU32ConstExprNode & n) override;
+    std::optional<Value *> visit_typed(TIntU64ConstExprNode & n) override;
+    std::optional<Value *> visit_typed(TNumConstExprNode & n) override;
+    std::optional<Value *> visit_typed(TCompilationUnitNode & n) override;
+    std::optional<Value *> visit_typed(TVarDeclNode & n) override;
+    std::optional<Value *> visit_typed(TMatchStatementNode & n) override;
+    std::optional<Value *> visit_typed(TExitNode & n) override;
+    std::optional<Value *> visit_typed(TChannelCaseStatementNode & n) override;
+    std::optional<Value *> visit_typed(TProgramProjectNode & n) override;
+    std::optional<Value *> visit_typed(TInitBoxNode & n) override;
+    std::optional<Value *> visit_typed(TExprCopyNode & n) override;
+    std::optional<Value *> visit_typed(TAsChannelNode & n) override;
+    std::optional<Value *> visit_typed(CompCodeWrapper & n) override { return n.generator(); }
 
-    std::optional<Value *> visitCompilationUnit(TCompilationUnitNode & n) { return visit(n); }
+    std::optional<Value *> visitCompilationUnit(TCompilationUnitNode & n) { return visit_typed(n); }
 
     Module *getModule() { return module; }
     void modPrint() { module->print(llvm::outs(), nullptr); }

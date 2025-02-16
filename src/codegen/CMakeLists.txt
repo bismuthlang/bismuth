@@ -5,6 +5,7 @@ include(ANTLR)
 include(Utility)
 include(Codegen)
 include(LLVM)
+include(Matchit)
 
 ####################################################################
 # See: https://cmake.org/cmake/help/latest/command/find_package.html
@@ -20,9 +21,10 @@ include(HandleLLVMOptions)
 
 add_library(codegen_lib OBJECT
   ${CODEGEN_SOURCES}
+  ${MATCHIT_SOURCES}
 )
 
-add_dependencies(codegen_lib 
+add_dependencies(codegen_lib
   lexparse_lib
   utility_lib
   semantic_lib
@@ -37,4 +39,5 @@ include_directories(codegen_lib
   ${CODEGEN_INCLUDE}
   ${LLVM_BINARY_DIR}/include
   ${LLVM_INCLUDE_DIR}
+  ${MATCHIT_INCLUDE}
 )
