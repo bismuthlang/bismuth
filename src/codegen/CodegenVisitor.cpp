@@ -737,7 +737,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TInitProductNode & n)
 
     for (TypedNode *e : n.exprs)
     {
-        std::optional<Value *> valOpt = e->accept<std::optional<Value *>>(*this);
+        std::optional<Value *> valOpt = this->visit_recur(*e); // ->accept<std::optional<Value *>>(*this);
         if (!valOpt)
         {
             errorHandler.addError(n.getStart(), "Failed to generate code");

@@ -191,142 +191,6 @@ class CompCodeWrapper;
 
 class TIdentifier;
 
-/*
-class TypedASTVisitor
-{
-public:
-    virtual ~TypedASTVisitor() = default;
-
-    // virtual std::optional<Value *> visit(TSelectAlternativeNode & n) = 0;
-    virtual std::optional<Value *> visit(TSelectStatementNode & n) = 0;
-    virtual std::optional<Value *> visit(TBlockNode & n) = 0;
-    virtual std::optional<Value *> visit(TLambdaConstNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramDefNode & n) = 0;
-    virtual std::optional<Value *> visit(TConditionalStatementNode & n) = 0;
-    virtual std::optional<Value *> visit(TReturnNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramSendNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramRecvNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramIsPresetNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramContractNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramWeakenNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramCancelNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramExecNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramAcceptNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramAcceptWhileNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramAcceptIfNode & n) = 0;
-    virtual std::optional<Value *> visit(TDefineEnumNode & n) = 0;
-    virtual std::optional<Value *> visit(TDefineStructNode & n) = 0;
-    virtual std::optional<Value *> visit(TDefineTemplateNode & n) = 0;
-    virtual std::optional<Value *> visit(TInitProductNode & n) = 0;
-    virtual std::optional<Value *> visit(TArrayRValue & n) = 0;
-    virtual std::optional<Value *> visit(TInitBoxNode & n) = 0;
-    virtual std::optional<Value *> visit(TDerefBoxNode & n) = 0;
-    virtual std::optional<Value *> visit(TWhileLoopNode & n) = 0;
-    virtual std::optional<Value *> visit(TExternNode & n) = 0;
-    virtual std::optional<Value *> visit(TInvocationNode & n) = 0;
-    virtual std::optional<Value *> visit(TFieldAccessNode & n) = 0;
-    virtual std::optional<Value *> visit(TIdentifier & n) = 0;
-    virtual std::optional<Value *> visit(TPathNode & n) = 0;
-    virtual std::optional<Value *> visit(TArrayAccessNode & n) = 0;
-    virtual std::optional<Value *> visit(TDynArrayAccessNode & n) = 0;
-    virtual std::optional<Value *> visit(TAssignNode & n) = 0;
-    virtual std::optional<Value *> visit(TBinaryRelNode & n) = 0;
-    virtual std::optional<Value *> visit(TBinaryArithNode & n) = 0;
-    virtual std::optional<Value *> visit(TEqExprNode & n) = 0;
-    virtual std::optional<Value *> visit(TUnaryExprNode & n) = 0;
-    virtual std::optional<Value *> visit(TLogAndExprNode & n) = 0;
-    virtual std::optional<Value *> visit(TLogOrExprNode & n) = 0;
-    virtual std::optional<Value *> visit(TStringConstNode & n) = 0;
-    virtual std::optional<Value *> visit(TBooleanConstNode & n) = 0;
-    virtual std::optional<Value *> visit(TInt32ConstExprNode & n) = 0;
-    virtual std::optional<Value *> visit(TInt64ConstExprNode & n) = 0;
-    virtual std::optional<Value *> visit(TIntU32ConstExprNode & n) = 0;
-    virtual std::optional<Value *> visit(TIntU64ConstExprNode & n) = 0;
-    virtual std::optional<Value *> visit(TNumConstExprNode & n) = 0;
-    virtual std::optional<Value *> visit(TCompilationUnitNode & n) = 0;
-    virtual std::optional<Value *> visit(TVarDeclNode & n) = 0;
-    virtual std::optional<Value *> visit(TMatchStatementNode & n) = 0;
-    virtual std::optional<Value *> visit(TExitNode & n) = 0;
-    virtual std::optional<Value *> visit(TChannelCaseStatementNode & n) = 0;
-    virtual std::optional<Value *> visit(TProgramProjectNode & n) = 0;
-    virtual std::optional<Value *> visit(TExprCopyNode & n) = 0;
-    virtual std::optional<Value *> visit(TAsChannelNode & n) = 0;
-    std::optional<Value *> visit(CompCodeWrapper & n);  // TODO: why don't we directly call the generator?
-
-    // virtual std::optional<Value
-
-    // private:
-    std::any any_visit(TSelectAlternativeNode & n) { return std::nullopt; } // this->visit(n); }
-    std::any any_visit(TSelectStatementNode & n) { return this->visit(n); }
-    std::any any_visit(TBlockNode & n) { return this->visit(n); }
-    std::any any_visit(TLambdaConstNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramDefNode & n) { return this->visit(n); }
-    std::any any_visit(TConditionalStatementNode & n) { return this->visit(n); }
-    std::any any_visit(TReturnNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramSendNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramRecvNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramIsPresetNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramContractNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramWeakenNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramCancelNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramExecNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramAcceptNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramAcceptWhileNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramAcceptIfNode & n) { return this->visit(n); }
-    std::any any_visit(TDefineEnumNode & n) { return this->visit(n); }
-    std::any any_visit(TDefineTemplateNode & n) { return this->visit(n); }
-    std::any any_visit(TDefineStructNode & n) { return this->visit(n); }
-    std::any any_visit(TInitProductNode & n) { return this->visit(n); }
-    std::any any_visit(TArrayRValue & n) { return this->visit(n); }
-    std::any any_visit(TInitBoxNode & n) { return this->visit(n); }
-    std::any any_visit(TDerefBoxNode & n) { return this->visit(n); }
-    std::any any_visit(TWhileLoopNode & n) { return this->visit(n); }
-    std::any any_visit(TExternNode & n) { return this->visit(n); }
-    std::any any_visit(TInvocationNode & n) { return this->visit(n); }
-    std::any any_visit(TFieldAccessNode & n) { return this->visit(n); }
-    std::any any_visit(TIdentifier & n) { return this->visit(n); }
-    std::any any_visit(TPathNode & n) { return this->visit(n); }
-    std::any any_visit(TArrayAccessNode & n) { return this->visit(n); }
-    std::any any_visit(TDynArrayAccessNode & n) { return this->visit(n); }
-    std::any any_visit(TAssignNode & n) { return this->visit(n); }
-    std::any any_visit(TBinaryRelNode & n) { return this->visit(n); }
-    std::any any_visit(TBinaryArithNode & n) { return this->visit(n); }
-    std::any any_visit(TEqExprNode & n) { return this->visit(n); }
-    std::any any_visit(TUnaryExprNode & n) { return this->visit(n); }
-    std::any any_visit(TLogAndExprNode & n) { return this->visit(n); }
-    std::any any_visit(TLogOrExprNode & n) { return this->visit(n); }
-    std::any any_visit(TStringConstNode & n) { return this->visit(n); }
-    std::any any_visit(TBooleanConstNode & n) { return this->visit(n); }
-    std::any any_visit(TInt32ConstExprNode & n) { return this->visit(n); }
-    std::any any_visit(TInt64ConstExprNode & n) { return this->visit(n); }
-    std::any any_visit(TIntU32ConstExprNode & n) { return this->visit(n); }
-    std::any any_visit(TIntU64ConstExprNode & n) { return this->visit(n); }
-    std::any any_visit(TNumConstExprNode & n) { return this->visit(n); }
-    std::any any_visit(TCompilationUnitNode & n) { return this->visit(n); }
-    std::any any_visit(TVarDeclNode & n) { return this->visit(n); }
-    std::any any_visit(TMatchStatementNode & n) { return this->visit(n); }
-    std::any any_visit(TExitNode & n) { return this->visit(n); }
-    std::any any_visit(TChannelCaseStatementNode & n) { return this->visit(n); }
-    std::any any_visit(TProgramProjectNode & n) { return this->visit(n); }
-    std::any any_visit(TExprCopyNode & n) {return this->visit(n); }
-    std::any any_visit(TAsChannelNode & n) { return this->visit(n); }
-    std::any any_visit(CompCodeWrapper & n) { return this->visit(n); }
-
-    std::any visit(std::any & n) { return std::nullopt; } //return "FIXME"; }
-    std::any accept(TypedNode & n)
-    {
-        return n.accept(*this);
-        // return dynamic_cast<T>(n->accept(this)); // Hacky, but completely safe
-        // return n->accept(this);
-    }
-};
-
-inline std::optional<Value *> AcceptType(TypedASTVisitor & visitor, TypedNode & n)
-{
-    return any_cast<std::optional<Value *>>(n.accept(visitor));
-}
-*/
-
 template<typename R>
 class NuASTVisitor : public Visitor<TSelectStatementNode, R>
                    , public Visitor<TBlockNode, R>
@@ -383,6 +247,8 @@ class NuASTVisitor : public Visitor<TSelectStatementNode, R>
                     , public Visitor<TAsChannelNode, R>
                    ,public Visitor<CompCodeWrapper, R>
 {
+public:
+  R visit_recur(TypedNode & tn) { return any_cast<R>(tn.accept_any(*this)); }
 };
 class TSelectAlternativeNode : public TypedNode, public Visitable<TSelectAlternativeNode>
 {
