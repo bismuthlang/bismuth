@@ -20,6 +20,9 @@ public:
   virtual void enterStructCase(BismuthParser::StructCaseContext *ctx) = 0;
   virtual void exitStructCase(BismuthParser::StructCaseContext *ctx) = 0;
 
+  virtual void enterTraitEntry(BismuthParser::TraitEntryContext *ctx) = 0;
+  virtual void exitTraitEntry(BismuthParser::TraitEntryContext *ctx) = 0;
+
   virtual void enterGenericTemplate(BismuthParser::GenericTemplateContext *ctx) = 0;
   virtual void exitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) = 0;
 
@@ -43,6 +46,12 @@ public:
 
   virtual void enterDefineFunction(BismuthParser::DefineFunctionContext *ctx) = 0;
   virtual void exitDefineFunction(BismuthParser::DefineFunctionContext *ctx) = 0;
+
+  virtual void enterDefineTrait(BismuthParser::DefineTraitContext *ctx) = 0;
+  virtual void exitDefineTrait(BismuthParser::DefineTraitContext *ctx) = 0;
+
+  virtual void enterInherentTraitSpec(BismuthParser::InherentTraitSpecContext *ctx) = 0;
+  virtual void exitInherentTraitSpec(BismuthParser::InherentTraitSpecContext *ctx) = 0;
 
   virtual void enterExternStatement(BismuthParser::ExternStatementContext *ctx) = 0;
   virtual void exitExternStatement(BismuthParser::ExternStatementContext *ctx) = 0;

@@ -23,6 +23,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitTraitEntry(BismuthParser::TraitEntryContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) override {
     return visitChildren(ctx);
   }
@@ -52,6 +56,14 @@ public:
   }
 
   virtual std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitDefineTrait(BismuthParser::DefineTraitContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
+  virtual std::any visitInherentTraitSpec(BismuthParser::InherentTraitSpecContext *ctx) override {
     return visitChildren(ctx);
   }
 

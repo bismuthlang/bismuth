@@ -22,6 +22,9 @@ public:
   virtual void enterStructCase(BismuthParser::StructCaseContext * /*ctx*/) override { }
   virtual void exitStructCase(BismuthParser::StructCaseContext * /*ctx*/) override { }
 
+  virtual void enterTraitEntry(BismuthParser::TraitEntryContext * /*ctx*/) override { }
+  virtual void exitTraitEntry(BismuthParser::TraitEntryContext * /*ctx*/) override { }
+
   virtual void enterGenericTemplate(BismuthParser::GenericTemplateContext * /*ctx*/) override { }
   virtual void exitGenericTemplate(BismuthParser::GenericTemplateContext * /*ctx*/) override { }
 
@@ -45,6 +48,12 @@ public:
 
   virtual void enterDefineFunction(BismuthParser::DefineFunctionContext * /*ctx*/) override { }
   virtual void exitDefineFunction(BismuthParser::DefineFunctionContext * /*ctx*/) override { }
+
+  virtual void enterDefineTrait(BismuthParser::DefineTraitContext * /*ctx*/) override { }
+  virtual void exitDefineTrait(BismuthParser::DefineTraitContext * /*ctx*/) override { }
+
+  virtual void enterInherentTraitSpec(BismuthParser::InherentTraitSpecContext * /*ctx*/) override { }
+  virtual void exitInherentTraitSpec(BismuthParser::InherentTraitSpecContext * /*ctx*/) override { }
 
   virtual void enterExternStatement(BismuthParser::ExternStatementContext * /*ctx*/) override { }
   virtual void exitExternStatement(BismuthParser::ExternStatementContext * /*ctx*/) override { }

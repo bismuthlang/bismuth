@@ -23,6 +23,8 @@ public:
 
     virtual std::any visitStructCase(BismuthParser::StructCaseContext *context) = 0;
 
+    virtual std::any visitTraitEntry(BismuthParser::TraitEntryContext *context) = 0;
+
     virtual std::any visitGenericTemplate(BismuthParser::GenericTemplateContext *context) = 0;
 
     virtual std::any visitGenericType(BismuthParser::GenericTypeContext *context) = 0;
@@ -38,6 +40,10 @@ public:
     virtual std::any visitDefineProgram(BismuthParser::DefineProgramContext *context) = 0;
 
     virtual std::any visitDefineFunction(BismuthParser::DefineFunctionContext *context) = 0;
+
+    virtual std::any visitDefineTrait(BismuthParser::DefineTraitContext *context) = 0;
+
+    virtual std::any visitInherentTraitSpec(BismuthParser::InherentTraitSpecContext *context) = 0;
 
     virtual std::any visitExternStatement(BismuthParser::ExternStatementContext *context) = 0;
 

@@ -8,6 +8,7 @@ grammar Bismuth;
 compilationUnit   :  (imports+=importStatement | externs+=externStatement | defs+=defineType)* EOF ; 
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
+traitEntry        :  name=VARIABLE genericTemplate? lam=lambdaConstExpr;
 
 
 // TODO: how to specify that we need a protocol type, linear type, etc?
@@ -20,10 +21,15 @@ genericEntry        : name=VARIABLE (':' supTy+=type (',' supTy+=type)*)?   # Ge
 genericSpecifier    : LESS subst+=type (',' subst+=type)* GREATER        ;
 
 defineType  : ENUM name=VARIABLE genericTemplate? LSQB cases+=type (',' cases+=type)+ RSQB      # DefineEnum
-            | STRUCT name=VARIABLE genericTemplate? LSQB (cases+=structCase)*  RSQB             # DefineStruct
+            | STRUCT name=VARIABLE genericTemplate? LSQB (cases+=structCase)*  RSQB inherentTraitSpec?      # DefineStruct
             | PROG name=VARIABLE genericTemplate? '::' channelName=VARIABLE ':' proto=protocol '='? block   # DefineProgram
-            | FUNC name=VARIABLE genericTemplate? lam=lambdaConstExpr                           # DefineFunction
+            | FUNC name=VARIABLE genericTemplate? lam=lambdaConstExpr                                       # DefineFunction
+            | TRAIT name=VARIABLE genericTemplate? LSQB traitEntry+ RSQB                                    # DefineTrait
             ; 
+
+inherentTraitSpec : IMPLS (AUTO | path) (',' path)+ ;
+
+
 
 //FIXME: THIS ALLOWS FOR (, ...) WHICH ISNT RIGHT NOW THAT WE REQUIRE PARAMLISTS TO BE ABLE TO BE EMPTY!
 externStatement : EXTERN FUNC name=VARIABLE LPAR ((paramList=parameterList variadic=VariadicParam?) | ELLIPSIS) RPAR (MAPS_TO ret=type)? ';'; 
@@ -308,6 +314,11 @@ EXIT            :   'exit'  ;
 EXEC            :   'exec'  ;
 COPY            :   'copy'  ;
 IMPORT          :   'import';
+TRAIT           :   'trait' ;
+IMPL            :   'impl'  ;
+AUTO            :   'auto'  ;
+IMPLS           :   'impls' ;
+
 
 // Protocols   
 EXTERNAL_CHOICE :   'ExternalChoice'    ;

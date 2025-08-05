@@ -27,22 +27,22 @@ public:
     TYPE_PROGRAM = 70, TYPE_CHANNEL = 71, PROG = 72, FUNC = 73, ENUM = 74, 
     STRUCT = 75, IF = 76, ELSE = 77, WHILE = 78, RETURN = 79, SELECT = 80, 
     EXTERN = 81, MATCH = 82, DEFINE = 83, EXIT = 84, EXEC = 85, COPY = 86, 
-    IMPORT = 87, EXTERNAL_CHOICE = 88, INTERNAL_CHOICE = 89, CLOSEABLE = 90, 
-    FALSE = 91, TRUE = 92, STRING = 93, VARIABLE = 94, INLINE_COMMENT = 95, 
-    STD_COMMENT = 96, WS = 97
+    IMPORT = 87, TRAIT = 88, IMPL = 89, AUTO = 90, IMPLS = 91, EXTERNAL_CHOICE = 92, 
+    INTERNAL_CHOICE = 93, CLOSEABLE = 94, FALSE = 95, TRUE = 96, STRING = 97, 
+    VARIABLE = 98, INLINE_COMMENT = 99, STD_COMMENT = 100, WS = 101
   };
 
   enum {
-    RuleCompilationUnit = 0, RuleStructCase = 1, RuleGenericTemplate = 2, 
-    RuleGenericEntry = 3, RuleGenericSpecifier = 4, RuleDefineType = 5, 
-    RuleExternStatement = 6, RulePathElement = 7, RulePath = 8, RuleImportStatement = 9, 
-    RuleInv_args = 10, RuleExpression = 11, RuleLambdaConstExpr = 12, RuleBlock = 13, 
-    RuleCondition = 14, RuleSelectAlternative = 15, RuleMatchAlternative = 16, 
-    RuleProtoAlternative = 17, RuleProtoElse = 18, RuleParameterList = 19, 
-    RuleParameter = 20, RuleAssignment = 21, RuleStatement = 22, RuleAssignmentStatement = 23, 
-    RuleVariableDeclaration = 24, RuleShiftOp = 25, RuleTypeOrVar = 26, 
-    RuleProtocol = 27, RuleSubProtocol = 28, RuleProtoBranch = 29, RuleType = 30, 
-    RuleIntegerValue = 31, RuleBooleanConst = 32
+    RuleCompilationUnit = 0, RuleStructCase = 1, RuleTraitEntry = 2, RuleGenericTemplate = 3, 
+    RuleGenericEntry = 4, RuleGenericSpecifier = 5, RuleDefineType = 6, 
+    RuleInherentTraitSpec = 7, RuleExternStatement = 8, RulePathElement = 9, 
+    RulePath = 10, RuleImportStatement = 11, RuleInv_args = 12, RuleExpression = 13, 
+    RuleLambdaConstExpr = 14, RuleBlock = 15, RuleCondition = 16, RuleSelectAlternative = 17, 
+    RuleMatchAlternative = 18, RuleProtoAlternative = 19, RuleProtoElse = 20, 
+    RuleParameterList = 21, RuleParameter = 22, RuleAssignment = 23, RuleStatement = 24, 
+    RuleAssignmentStatement = 25, RuleVariableDeclaration = 26, RuleShiftOp = 27, 
+    RuleTypeOrVar = 28, RuleProtocol = 29, RuleSubProtocol = 30, RuleProtoBranch = 31, 
+    RuleType = 32, RuleIntegerValue = 33, RuleBooleanConst = 34
   };
 
   explicit BismuthParser(antlr4::TokenStream *input);
@@ -64,10 +64,12 @@ public:
 
   class CompilationUnitContext;
   class StructCaseContext;
+  class TraitEntryContext;
   class GenericTemplateContext;
   class GenericEntryContext;
   class GenericSpecifierContext;
   class DefineTypeContext;
+  class InherentTraitSpecContext;
   class ExternStatementContext;
   class PathElementContext;
   class PathContext;
@@ -141,6 +143,25 @@ public:
   };
 
   StructCaseContext* structCase();
+
+  class  TraitEntryContext : public antlr4::ParserRuleContext {
+  public:
+    antlr4::Token *name = nullptr;
+    BismuthParser::LambdaConstExprContext *lam = nullptr;
+    TraitEntryContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *VARIABLE();
+    LambdaConstExprContext *lambdaConstExpr();
+    GenericTemplateContext *genericTemplate();
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  TraitEntryContext* traitEntry();
 
   class  GenericTemplateContext : public antlr4::ParserRuleContext {
   public:
@@ -257,6 +278,7 @@ public:
     antlr4::tree::TerminalNode *RSQB();
     antlr4::tree::TerminalNode *VARIABLE();
     GenericTemplateContext *genericTemplate();
+    InherentTraitSpecContext *inherentTraitSpec();
     std::vector<StructCaseContext *> structCase();
     StructCaseContext* structCase(size_t i);
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -307,6 +329,24 @@ public:
     virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
   };
 
+  class  DefineTraitContext : public DefineTypeContext {
+  public:
+    DefineTraitContext(DefineTypeContext *ctx);
+
+    antlr4::Token *name = nullptr;
+    antlr4::tree::TerminalNode *TRAIT();
+    antlr4::tree::TerminalNode *LSQB();
+    antlr4::tree::TerminalNode *RSQB();
+    antlr4::tree::TerminalNode *VARIABLE();
+    GenericTemplateContext *genericTemplate();
+    std::vector<TraitEntryContext *> traitEntry();
+    TraitEntryContext* traitEntry(size_t i);
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+  };
+
   class  DefineFunctionContext : public DefineTypeContext {
   public:
     DefineFunctionContext(DefineTypeContext *ctx);
@@ -324,6 +364,26 @@ public:
   };
 
   DefineTypeContext* defineType();
+
+  class  InherentTraitSpecContext : public antlr4::ParserRuleContext {
+  public:
+    InherentTraitSpecContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *IMPLS();
+    antlr4::tree::TerminalNode *AUTO();
+    std::vector<PathContext *> path();
+    PathContext* path(size_t i);
+    std::vector<antlr4::tree::TerminalNode *> COMMA();
+    antlr4::tree::TerminalNode* COMMA(size_t i);
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  InherentTraitSpecContext* inherentTraitSpec();
 
   class  ExternStatementContext : public antlr4::ParserRuleContext {
   public:
