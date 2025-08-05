@@ -67,6 +67,9 @@ public:
   virtual void enterImportStatement(BismuthParser::ImportStatementContext * /*ctx*/) override { }
   virtual void exitImportStatement(BismuthParser::ImportStatementContext * /*ctx*/) override { }
 
+  virtual void enterDefineImpl(BismuthParser::DefineImplContext * /*ctx*/) override { }
+  virtual void exitDefineImpl(BismuthParser::DefineImplContext * /*ctx*/) override { }
+
   virtual void enterInv_args(BismuthParser::Inv_argsContext * /*ctx*/) override { }
   virtual void exitInv_args(BismuthParser::Inv_argsContext * /*ctx*/) override { }
 

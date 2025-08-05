@@ -94,31 +94,32 @@ std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser:
 
 std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visitFwdDecls(BismuthParser::CompilationUnitContext *ctx)
 {
+    
     std::vector<DefinitionNode *> defs;
     for (auto e : ctx->defs)
     {
         // Note: re-applying template symbols happens in each visitor for now!
-        if (BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
+        if (auto progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
         {
             DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
             defs.push_back(prog);
         }
-        else if (BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
+        else if (auto fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
         {
             DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, func, visitCtx(fnCtx), ctx, "Failed to type check function");
             defs.push_back(func);
         }
-        else if (BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
+        else if (auto structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
         {
             DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, structNode, visitCtx(structCtx), ctx, "Failed to type check struct");
             defs.push_back(structNode);
         }
-        else if (BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
+        else if (auto enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
         {
             DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, enumNode, visitCtx(enumCtx), ctx, "Failed to type check enum");
             defs.push_back(enumNode);
         }
-        else if (BismuthParser::DefineTraitContext * traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(e))
+        else if (auto traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(e))
         {
             DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, traitNode, visitCtx(traitCtx), ctx, "Failed to type check trait");
             defs.push_back(traitNode);
@@ -2536,6 +2537,56 @@ std::optional<ErrorChain *> SemanticVisitor::TVisitImportStatement(BismuthParser
     }
     return errorHandler.addError(ctx->getStart(), "Cannot import: " + ty->toString(toStringMode) + ". Can only import named definitions."); // TODO: do better!
 }
+
+std::variant<DefinitionNode *, ErrorChain *> 
+SemanticVisitor::visitCtx(BismuthParser::DefineImplContext *ctx)
+{
+    // FIXME: IMpl traits!
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, lhsTy, visitPathType(ctx->traitPath), ctx, "Unknown type.");
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
+        const TypeTrait *,
+        traitTy,
+        type_cast<TypeTrait>(lhsTy),
+        ctx,
+       "Cannot implement non-trait type: " + lhsTy->toString(toStringMode));
+    return errorHandler.addError(ctx->getStart(), "Unimplemented!");
+    /*
+    if(ctx->path()->eles.size() < 2)
+    {
+        return errorHandler.addCompilerError(
+            ctx->path()->eles.back()->getStart(),
+            "Paths must have 2 or more elements in them."
+        );
+    }
+
+    std::string aliasStr = ctx->alias ? ctx->alias->getText() : ctx->path()->eles.at(ctx->path()->eles.size() - 1)->getText();
+
+    if(stmgr->lookupInCurrentScope(aliasStr))
+    {
+        return errorHandler.addError(ctx->getStart(), aliasStr + " is already defined."); // TODO: better error
+    }
+
+    DEFINE_OR_PROPAGATE_VARIANT(const Type *, ty, visitPathType(ctx->path()), ctx);
+
+    if(const NameableType * nt = dynamic_cast<const NameableType *>(ty))
+    {
+        if(!nt->hasName())
+        {
+            return errorHandler.addCompilerError(ctx->getStart(), "Imported type does not have a name");
+        }
+
+        stmgr->addAlias(
+            aliasStr,
+            nt,
+            nt->getIdentifier().value()
+        );
+
+        return std::nullopt;
+    }
+    return errorHandler.addError(ctx->getStart(), "Cannot import: " + ty->toString(toStringMode) + ". Can only import named definitions."); // TODO: do better!
+    */
+}
+
 
 TemplateInfo SemanticVisitor::TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) {
     std::vector<std::pair<std::string, TypeGeneric *>> syms; // FIXME: SHOULD THIS BE CONST?

@@ -84,6 +84,7 @@ public:
     std::optional<Value *> visit_typed(TBlockNode & n) override;
     std::optional<Value *> visit_typed(TLambdaConstNode & n) override;
     std::optional<Value *> visit_typed(TProgramDefNode & n) override;
+    std::optional<Value *> visit_typed(TImplDefNode & n) override;
     std::optional<Value *> visit_typed(TDefineTemplateNode & n) override;
     std::optional<Value *> visit_typed(TConditionalStatementNode & n) override;
     std::optional<Value *> visit_typed(TReturnNode & n) override;

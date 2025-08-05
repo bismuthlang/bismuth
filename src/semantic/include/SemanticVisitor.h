@@ -11,6 +11,7 @@
 
 
 #include <variant>
+#include <fplus/fplus.hpp>
 
 template<typename T>
 concept RestRuleContext = requires(T a) {
@@ -133,6 +134,9 @@ public:
     std::any visitSelectAlternative(BismuthParser::SelectAlternativeContext *ctx) override { return TNVariantCast<TSelectAlternativeNode>(visitCtx(ctx)); }
 
     std::any visitTypeDef(BismuthParser::TypeDefContext *ctx) override { return ctx->defineType()->accept(this); }
+
+    std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineImplContext *ctx);
+    std::any visitDefineImpl(BismuthParser::DefineImplContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx);
     std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }

@@ -53,6 +53,8 @@ public:
 
     virtual std::any visitImportStatement(BismuthParser::ImportStatementContext *context) = 0;
 
+    virtual std::any visitDefineImpl(BismuthParser::DefineImplContext *context) = 0;
+
     virtual std::any visitInv_args(BismuthParser::Inv_argsContext *context) = 0;
 
     virtual std::any visitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *context) = 0;

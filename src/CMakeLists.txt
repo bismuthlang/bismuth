@@ -8,6 +8,7 @@ include(Codegen)
 include(LLVM)
 include(Runtime)
 include(CLI)
+include(FunctionalPlus)
 
 ####################################################################
 # See: https://cmake.org/cmake/help/latest/command/find_package.html
@@ -64,6 +65,7 @@ target_link_libraries(bismuthc
     utility_lib
     codegen_lib
     ${LLVM_LIBS}
+    FunctionalPlus::fplus
 )
 
 # git commit hash macro from https://stackoverflow.com/questions/1435953/how-can-i-pass-git-sha1-to-compiler-as-definition-using-cmake

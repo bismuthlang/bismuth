@@ -83,6 +83,10 @@ public:
     return visitChildren(ctx);
   }
 
+  virtual std::any visitDefineImpl(BismuthParser::DefineImplContext *ctx) override {
+    return visitChildren(ctx);
+  }
+
   virtual std::any visitInv_args(BismuthParser::Inv_argsContext *ctx) override {
     return visitChildren(ctx);
   }

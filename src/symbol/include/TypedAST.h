@@ -134,6 +134,7 @@ class TBlockNode;
 
 class TLambdaConstNode;
 class TProgramDefNode;
+class TImplDefNode;
 class TConditionalStatementNode;
 class TReturnNode;
 class TProgramSendNode;
@@ -197,6 +198,7 @@ class NuASTVisitor : public Visitor<TSelectStatementNode, R>
                    , public Visitor<TBlockNode, R>
                    , public Visitor<TLambdaConstNode, R>
                    , public Visitor<TProgramDefNode, R>
+                   , public Visitor<TImplDefNode, R>
                    , public Visitor<TConditionalStatementNode, R>
                    , public Visitor<TReturnNode, R>
                    , public Visitor<TProgramSendNode, R>
@@ -394,6 +396,36 @@ public:
 
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 };
+
+
+class TImplDefNode : public DefinitionNode, public Visitable<TImplDefNode>
+{
+private:
+    const TypeTrait *type; // FIXME: is this right or is it more specific?
+
+public:
+
+    TImplDefNode(
+        DefinitionSymbol * sym, 
+        const TypeTrait *ty,
+        antlr4::Token *tok
+    ) : DefinitionNode(sym, tok)
+    {
+        type = ty;
+    }
+
+    const TypeTrait *getType() override
+    {
+        return type;
+    }
+
+    std::string toString() const override {
+        return "IMPL DEF";
+    }
+
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+};
+
 
 class TConditionalStatementNode : public TypedNode, public Visitable<TConditionalStatementNode>
 {

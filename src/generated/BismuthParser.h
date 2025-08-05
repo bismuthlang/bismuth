@@ -15,34 +15,35 @@ public:
     T__0 = 1, T__1 = 2, T__2 = 3, T__3 = 4, T__4 = 5, T__5 = 6, T__6 = 7, 
     T__7 = 8, T__8 = 9, T__9 = 10, T__10 = 11, T__11 = 12, T__12 = 13, T__13 = 14, 
     T__14 = 15, T__15 = 16, T__16 = 17, T__17 = 18, T__18 = 19, T__19 = 20, 
-    T__20 = 21, T__21 = 22, T__22 = 23, T__23 = 24, VariadicParam = 25, 
-    ASSIGN = 26, MINUS = 27, NOT = 28, MULTIPLY = 29, DIVIDE = 30, MOD = 31, 
-    PLUS = 32, LESS = 33, LESS_EQ = 34, GREATER_EQ = 35, GREATER = 36, EQUAL = 37, 
-    NOT_EQUAL = 38, BIT_NOT = 39, BIT_AND = 40, BIT_OR = 41, LOG_AND = 42, 
-    LOG_OR = 43, BIT_XOR = 44, MAPS_TO = 45, LPAR = 46, RPAR = 47, LBRC = 48, 
-    RBRC = 49, LSQB = 50, RSQB = 51, SEMICOLON = 52, COLON = 53, QUOTE = 54, 
-    COMMA = 55, ELLIPSIS = 56, DEC_LITERAL = 57, HEX_LITERAL = 58, BIN_LITERAL = 59, 
-    TYPE_INT = 60, TYPE_I32 = 61, TYPE_U32 = 62, TYPE_I64 = 63, TYPE_U64 = 64, 
-    TYPE_BOOL = 65, TYPE_STR = 66, TYPE_UNIT = 67, TYPE_VAR = 68, TYPE_BOX = 69, 
-    TYPE_PROGRAM = 70, TYPE_CHANNEL = 71, PROG = 72, FUNC = 73, ENUM = 74, 
-    STRUCT = 75, IF = 76, ELSE = 77, WHILE = 78, RETURN = 79, SELECT = 80, 
-    EXTERN = 81, MATCH = 82, DEFINE = 83, EXIT = 84, EXEC = 85, COPY = 86, 
-    IMPORT = 87, TRAIT = 88, IMPL = 89, AUTO = 90, IMPLS = 91, EXTERNAL_CHOICE = 92, 
-    INTERNAL_CHOICE = 93, CLOSEABLE = 94, FALSE = 95, TRUE = 96, STRING = 97, 
-    VARIABLE = 98, INLINE_COMMENT = 99, STD_COMMENT = 100, WS = 101
+    T__20 = 21, T__21 = 22, T__22 = 23, VariadicParam = 24, ASSIGN = 25, 
+    MINUS = 26, NOT = 27, MULTIPLY = 28, DIVIDE = 29, MOD = 30, PLUS = 31, 
+    LESS = 32, LESS_EQ = 33, GREATER_EQ = 34, GREATER = 35, EQUAL = 36, 
+    NOT_EQUAL = 37, BIT_NOT = 38, BIT_AND = 39, BIT_OR = 40, LOG_AND = 41, 
+    LOG_OR = 42, BIT_XOR = 43, MAPS_TO = 44, LPAR = 45, RPAR = 46, LBRC = 47, 
+    RBRC = 48, LSQB = 49, RSQB = 50, SEMICOLON = 51, COLON = 52, QUOTE = 53, 
+    COMMA = 54, ELLIPSIS = 55, DEC_LITERAL = 56, HEX_LITERAL = 57, BIN_LITERAL = 58, 
+    TYPE_INT = 59, TYPE_I32 = 60, TYPE_U32 = 61, TYPE_I64 = 62, TYPE_U64 = 63, 
+    TYPE_BOOL = 64, TYPE_STR = 65, TYPE_UNIT = 66, TYPE_VAR = 67, TYPE_BOX = 68, 
+    TYPE_PROGRAM = 69, TYPE_CHANNEL = 70, PROG = 71, FUNC = 72, ENUM = 73, 
+    STRUCT = 74, IF = 75, FOR = 76, ELSE = 77, WHILE = 78, RETURN = 79, 
+    SELECT = 80, EXTERN = 81, MATCH = 82, DEFINE = 83, EXIT = 84, EXEC = 85, 
+    COPY = 86, IMPORT = 87, TRAIT = 88, IMPL = 89, AUTO = 90, IMPLS = 91, 
+    EXTERNAL_CHOICE = 92, INTERNAL_CHOICE = 93, CLOSEABLE = 94, FALSE = 95, 
+    TRUE = 96, STRING = 97, VARIABLE = 98, INLINE_COMMENT = 99, STD_COMMENT = 100, 
+    WS = 101
   };
 
   enum {
     RuleCompilationUnit = 0, RuleStructCase = 1, RuleTraitEntry = 2, RuleGenericTemplate = 3, 
     RuleGenericEntry = 4, RuleGenericSpecifier = 5, RuleDefineType = 6, 
     RuleInherentTraitSpec = 7, RuleExternStatement = 8, RulePathElement = 9, 
-    RulePath = 10, RuleImportStatement = 11, RuleInv_args = 12, RuleExpression = 13, 
-    RuleLambdaConstExpr = 14, RuleBlock = 15, RuleCondition = 16, RuleSelectAlternative = 17, 
-    RuleMatchAlternative = 18, RuleProtoAlternative = 19, RuleProtoElse = 20, 
-    RuleParameterList = 21, RuleParameter = 22, RuleAssignment = 23, RuleStatement = 24, 
-    RuleAssignmentStatement = 25, RuleVariableDeclaration = 26, RuleShiftOp = 27, 
-    RuleTypeOrVar = 28, RuleProtocol = 29, RuleSubProtocol = 30, RuleProtoBranch = 31, 
-    RuleType = 32, RuleIntegerValue = 33, RuleBooleanConst = 34
+    RulePath = 10, RuleImportStatement = 11, RuleDefineImpl = 12, RuleInv_args = 13, 
+    RuleExpression = 14, RuleLambdaConstExpr = 15, RuleBlock = 16, RuleCondition = 17, 
+    RuleSelectAlternative = 18, RuleMatchAlternative = 19, RuleProtoAlternative = 20, 
+    RuleProtoElse = 21, RuleParameterList = 22, RuleParameter = 23, RuleAssignment = 24, 
+    RuleStatement = 25, RuleAssignmentStatement = 26, RuleVariableDeclaration = 27, 
+    RuleShiftOp = 28, RuleTypeOrVar = 29, RuleProtocol = 30, RuleSubProtocol = 31, 
+    RuleProtoBranch = 32, RuleType = 33, RuleIntegerValue = 34, RuleBooleanConst = 35
   };
 
   explicit BismuthParser(antlr4::TokenStream *input);
@@ -74,6 +75,7 @@ public:
   class PathElementContext;
   class PathContext;
   class ImportStatementContext;
+  class DefineImplContext;
   class Inv_argsContext;
   class ExpressionContext;
   class LambdaConstExprContext;
@@ -106,6 +108,8 @@ public:
     std::vector<ExternStatementContext *> externs;
     BismuthParser::DefineTypeContext *defineTypeContext = nullptr;
     std::vector<DefineTypeContext *> defs;
+    BismuthParser::DefineImplContext *defineImplContext = nullptr;
+    std::vector<DefineImplContext *> implementations;
     CompilationUnitContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *EOF();
@@ -115,6 +119,8 @@ public:
     ExternStatementContext* externStatement(size_t i);
     std::vector<DefineTypeContext *> defineType();
     DefineTypeContext* defineType(size_t i);
+    std::vector<DefineImplContext *> defineImpl();
+    DefineImplContext* defineImpl(size_t i);
 
     virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
     virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
@@ -150,6 +156,7 @@ public:
     BismuthParser::TypeContext *ty = nullptr;
     TraitEntryContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *COLON();
     antlr4::tree::TerminalNode *VARIABLE();
     TypeContext *type();
 
@@ -466,6 +473,30 @@ public:
   };
 
   ImportStatementContext* importStatement();
+
+  class  DefineImplContext : public antlr4::ParserRuleContext {
+  public:
+    BismuthParser::PathContext *traitPath = nullptr;
+    BismuthParser::PathContext *defPath = nullptr;
+    DefineImplContext(antlr4::ParserRuleContext *parent, size_t invokingState);
+    virtual size_t getRuleIndex() const override;
+    antlr4::tree::TerminalNode *IMPL();
+    antlr4::tree::TerminalNode *FOR();
+    antlr4::tree::TerminalNode *LSQB();
+    antlr4::tree::TerminalNode *RSQB();
+    std::vector<PathContext *> path();
+    PathContext* path(size_t i);
+    std::vector<DefineTypeContext *> defineType();
+    DefineTypeContext* defineType(size_t i);
+
+    virtual void enterRule(antlr4::tree::ParseTreeListener *listener) override;
+    virtual void exitRule(antlr4::tree::ParseTreeListener *listener) override;
+
+    virtual std::any accept(antlr4::tree::ParseTreeVisitor *visitor) override;
+   
+  };
+
+  DefineImplContext* defineImpl();
 
   class  Inv_argsContext : public antlr4::ParserRuleContext {
   public:
@@ -1392,6 +1423,7 @@ public:
     BismuthParser::ConditionContext *check = nullptr;
     BismuthParser::StatementContext *expr = nullptr;
     BismuthParser::BlockContext *blk = nullptr;
+    antlr4::tree::TerminalNode *FOR();
     antlr4::tree::TerminalNode *LPAR();
     std::vector<antlr4::tree::TerminalNode *> SEMICOLON();
     antlr4::tree::TerminalNode* SEMICOLON(size_t i);

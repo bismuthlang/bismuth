@@ -718,6 +718,15 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramAcceptIfNode & n)
     return std::nullopt;
 }
 
+
+std::optional<Value *> CodegenVisitor::visit_typed(TImplDefNode & n)
+{
+    //FIXME: IMPL TRAITS
+    return std::nullopt;
+}
+
+
+
 std::optional<Value *> CodegenVisitor::visit_typed(TDefineEnumNode & n)
 {
     n.sum->getLLVMType(module);

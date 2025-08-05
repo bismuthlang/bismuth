@@ -13,6 +13,14 @@ include(CLI)
 find_package(LLVM REQUIRED CONFIG)
 list(APPEND CMAKE_MODULE_PATH ${LLVM_DIR})
 
+include(FetchContent)
+FetchContent_Declare(
+    functional_plus
+    GIT_REPOSITORY https://github.com/Dobiasd/FunctionalPlus.git
+    GIT_TAG master
+)
+FetchContent_MakeAvailable(functional_plus)
+
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")
 include(AddLLVM)
@@ -70,6 +78,7 @@ target_link_libraries(tests
   cli_lib
   ${LLVM_LIBS}
   Catch2::Catch2WithMain
+  FunctionalPlus::fplus
 )
 
 # https://stackoverflow.com/questions/59690736/how-to-get-a-relative-path-for-cmake-unit-tests

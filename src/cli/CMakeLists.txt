@@ -10,6 +10,7 @@ include(Symbol)
 include(Codegen)
 include(LLVM)
 include(Runtime)
+include(FunctionalPlus)
 
 add_library(cli_lib OBJECT
     ${CLI_SOURCES}
@@ -26,4 +27,9 @@ include_directories(cli_lib
     ${UTILITY_INCLUDE}
     ${LLVM_BINARY_DIR}/include
     ${LLVM_INCLUDE_DIR}
+)
+
+target_link_libraries(cli_lib
+    PRIVATE
+    FunctionalPlus::fplus
 )

@@ -65,6 +65,9 @@ public:
   virtual void enterImportStatement(BismuthParser::ImportStatementContext *ctx) = 0;
   virtual void exitImportStatement(BismuthParser::ImportStatementContext *ctx) = 0;
 
+  virtual void enterDefineImpl(BismuthParser::DefineImplContext *ctx) = 0;
+  virtual void exitDefineImpl(BismuthParser::DefineImplContext *ctx) = 0;
+
   virtual void enterInv_args(BismuthParser::Inv_argsContext *ctx) = 0;
   virtual void exitInv_args(BismuthParser::Inv_argsContext *ctx) = 0;
 

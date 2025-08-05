@@ -5,6 +5,7 @@ include(Symbol)
 include(ANTLR)
 include(Utility)
 include(LLVM)
+include(FunctionalPlus)
 
 add_library(semantic_lib OBJECT
   ${SEMANTIC_SOURCES}
@@ -23,4 +24,10 @@ include_directories(semantic_lib
   ${UTILITY_INCLUDE}
   ${LLVM_BINARY_DIR}/include
   ${LLVM_INCLUDE_DIR}
+)
+
+
+target_link_libraries(semantic_lib
+    PRIVATE
+    FunctionalPlus::fplus
 )

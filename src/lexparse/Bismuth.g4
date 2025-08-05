@@ -5,10 +5,10 @@
 grammar Bismuth;
 
 // Parser rules
-compilationUnit   :  (imports+=importStatement | externs+=externStatement | defs+=defineType)* EOF ; 
+compilationUnit   :  (imports+=importStatement | externs+=externStatement | defs+=defineType | implementations+=defineImpl)* EOF ; 
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
-traitEntry        :  name=VARIABLE ty=type; //genericTemplate? lam=lambdaConstExpr;
+traitEntry        :  name=VARIABLE ':' ty=type; //genericTemplate? lam=lambdaConstExpr;
 
 
 // TODO: how to specify that we need a protocol type, linear type, etc?
@@ -40,6 +40,8 @@ pathElement     : id=VARIABLE genericSpecifier? ;
 path            : eles+=pathElement ('::' eles+=pathElement)* ; 
 
 importStatement : IMPORT path ('as' alias=VARIABLE)? ';'? ; 
+
+defineImpl      : IMPL traitPath=path FOR defPath=path LSQB defineType* RSQB ;
 
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
 
@@ -155,7 +157,7 @@ statement   : defineType                                                        
             | block                                                                                                 # BlockStatement
             | channel=VARIABLE '.send' '(' expr=expression ')' ';'?                                                 # ProgramSend
             | WHILE check=condition block                                                                           # ProgramLoop
-            | 'for' '(' (decl=variableDeclaration | assign=assignmentStatement) ';' check=condition ';' expr=statement ')' blk=block   # ForStatement
+            | FOR '(' (decl=variableDeclaration | assign=assignmentStatement) ';' check=condition ';' expr=statement ')' blk=block   # ForStatement
             | channel=VARIABLE '.case' '(' opts+=protoAlternative (opts+=protoAlternative)+ protoElse? ')' (rest+=statement)*  # ProgramCase  
             | 'offer' channel=VARIABLE  ( '|' opts+=protoAlternative )+ ('|' protoElse?)? (rest+=statement)*                   # ProgramCase   
             | channel=VARIABLE LBRC (lbl=VARIABLE | sel=protocol) RBRC ';'?                                                    # ProgramProject
@@ -303,6 +305,7 @@ FUNC            :   'func'  ;
 ENUM            :   'enum'  ;
 STRUCT          :   'struct';
 IF              :   'if'    ;
+FOR             :   'for'   ;
 ELSE            :   'else'  ;
 WHILE           :   'while' ;
 RETURN          :   'return';
