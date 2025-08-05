@@ -813,7 +813,7 @@ public:
 
     const TypeFunc * getCopy() const override;
 
-    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+    const TypeFunc * getCopySubst(std::map<const Type *, const Type *> existing) const override;
     
 protected:
     bool isSupertypeFor(const Type *other) const override;
@@ -1237,4 +1237,72 @@ protected:
      * @return false
      */
     bool isSupertypeFor(const Type *other) const override;
+};
+
+
+
+
+/*******************************************
+ *
+ * Trait
+ *
+ *******************************************/
+class TypeTrait : public NameableType
+{
+private:
+    /**
+     * @brief The function signatures
+     *
+     */
+    LinkedMap<std::string, const TypeFunc *> elements;
+
+    /**
+     * @brief Determines if the trait has been fully defined (true), or if it is a partial signature (ie, a pre-declaration waiting to be fulfilled)
+     *
+     */
+    bool defined;
+
+public:
+    TypeTrait(LinkedMap<std::string, const TypeFunc *> e, Identifier * n) 
+        : NameableType(false, n)
+        , elements(e)
+        , defined(true)
+    {}
+
+    TypeTrait(Identifier * n = {}) 
+        : NameableType(false, n)
+        , defined(false)
+    {}
+
+    std::optional<const TypeFunc *> get(std::string id) const;
+
+    std::optional<unsigned int> getIndex(std::string id) const;
+
+    bool define(LinkedMap<std::string, const TypeFunc *> e) const;
+
+    bool isDefined() const;
+
+    vector<pair<std::string, const TypeFunc *>> getElements() const;
+    optional<unsigned int> getElementIndex(std::string k) const;
+
+    std::string getTypeRepresentation(DisplayMode mode) const override; 
+
+    /**
+     * @brief Gets the LLVM type for an array of the given valueType and length.
+     *
+     * @param C LLVM Context
+     * @return llvm::Type*
+     */
+    llvm::Type *getLLVMType(llvm::Module *M) const override;
+
+    bool requiresDeepCopy() const override;
+
+    const TypeTrait * getCopy() const override;
+
+    const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
+
+
+protected:
+    bool isSupertypeFor(const Type *other) const override;
+
 };

@@ -45,6 +45,15 @@ std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthPars
                 };
             },
 
+
+            [](BismuthParser::DefineTraitContext *ctx) -> std::pair<std::string, const Type *>{
+                std::string name = ctx->name->getText();
+                return {
+                    name,
+                    ctx->genericTemplate() ? (const Type *) new TypeTemplate() : (const Type *) new TypeTrait() // FIXME: Traits require a name though
+                };
+            },
+
             [this](BismuthParser::DefineTypeContext * ctx){
                 errorHandler.addCompilerError(ctx->getStart(), "Unhandled case in identifying definitions");
                 return std::nullopt;
@@ -108,6 +117,11 @@ std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visit
         {
             DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, enumNode, visitCtx(enumCtx), ctx, "Failed to type check enum");
             defs.push_back(enumNode);
+        }
+        else if (BismuthParser::DefineTraitContext * traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(e))
+        {
+            DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, traitNode, visitCtx(traitCtx), ctx, "Failed to type check trait");
+            defs.push_back(traitNode);
         }
     }
 
@@ -1846,6 +1860,46 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     return structNode;
 }
 
+
+std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineTraitContext *ctx)
+{
+    // FIXME THIS IMPL PROBS WRONG
+    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSymbol *, sym, defineAndGetSymbolFor(ctx), ctx);
+
+    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+    {
+
+        if(!templateTy->getValueType()) return errorHandler.addCompilerError(ctx->getStart(), "Template type does not have a value type");
+
+        const TypeTrait * traitTy = dynamic_cast<const TypeTrait *>(templateTy->getValueType().value());
+        if(!traitTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected template to be applied to a trait type but got: " + templateTy->getValueType().value()->toString(toStringMode));
+
+        TDefineTraitNode * traitNode = new TDefineTraitNode(
+            sym,
+            traitTy,
+            ctx->getStart());
+
+        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
+            sym,
+            templateTy,
+            traitNode,
+            ctx->getStart()
+        );
+
+        return templateNode;
+    }
+
+    const TypeTrait * traitTy = dynamic_cast<const TypeTrait *>(sym->getType());
+    if(!traitTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected Struct but got: " + sym->getType()->toString(toStringMode));
+
+    TDefineTraitNode * traitNode = new TDefineTraitNode(
+        sym,
+        traitTy,
+        ctx->getStart());
+
+    return traitNode;
+}
+
 std::variant<const Type *, ErrorChain *>
 SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
 {
@@ -2757,7 +2811,45 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         return std::nullopt;
     };
 
-    auto defineTemplate = [this, m, defineFunction, defineProgram, defineEnum, defineStruct](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol * defSym) -> std::optional<ErrorChain *> {
+
+    auto defineTrait = [this](BismuthParser::DefineTraitContext *ctx, const TypeTrait *traitTy) -> std::optional<ErrorChain *> {
+        if (traitTy->isDefined()) return std::nullopt;
+        LinkedMap<std::string, const TypeFunc *> el;
+
+        for (BismuthParser::TraitEntryContext *caseCtx : ctx->traitEntry()) // FIXME: ADD AUTO TRAITS
+        {
+            std::string caseName = caseCtx->name->getText();
+            if (el.lookup(caseName))
+            {
+                return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
+            }
+
+            DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseTy, anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this)), ctx, "Failed to generate case type");
+
+            if (caseTy->isLinear())
+            {
+                return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString(toStringMode) + ", in non-linear container");
+            }
+
+            if(auto caseFnTy = dynamic_cast<const TypeFunc*>(caseTy))
+            {
+                el.insert({caseName, caseFnTy});
+            }
+            else 
+            {
+                return errorHandler.addError(
+                    caseCtx->getStart(),
+                    "Only functions can be specified in a trait; got non-function kind " + caseTy->toString(toStringMode)
+                );
+            }
+
+
+        }
+        traitTy->define(el);
+        return std::nullopt;
+    };
+
+    auto defineTemplate = [this, m, defineFunction, defineProgram, defineEnum, defineStruct, defineTrait](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol * defSym) -> std::optional<ErrorChain *> {
         if (templateTy->isDefined()) return std::nullopt;
 
         auto applyTemplate = [this, m, defSym, ctx](TemplateInfo info, std::function<std::optional<ErrorChain *>()> fn) -> std::optional<ErrorChain *> {
@@ -2834,6 +2926,23 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
                 return applyTemplate(info, [defineEnum, ctx, sumTy](){
                     return defineEnum(ctx, sumTy);
+                });
+            },
+
+
+            [this, templateTy, defineTrait, applyTemplate](BismuthParser::DefineTraitContext * ctx) -> std::optional<ErrorChain *> {
+                // TODO: get errors from this?
+                TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
+
+                TypeTrait * traitTy = new TypeTrait(); //ctx->name->getText());
+
+                // if(templateTy->getIdentifier())
+                //     traitTy->setIdentifier(templateTy->getIdentifier().value());
+
+                templateTy->define(info, traitTy);
+
+                return applyTemplate(info, [defineTrait, ctx, traitTy](){
+                    return defineTrait(ctx, traitTy);
                 });
             },
 
@@ -3028,6 +3137,42 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
             }
 
             return errorHandler.addError(ctx->getStart(), "Expected enum/sum but got: " + sym->getType()->toString(toStringMode));
+        },
+
+
+        [this, m, getTemplateSymbol, defineTrait](BismuthParser::DefineTraitContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
+            std::optional<DefinitionSymbol *> opt = symBindings.getBinding(ctx);
+
+            if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+            {
+                return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
+            }
+
+            std::string name = ctx->name->getText();
+
+            if(ctx->genericTemplate())
+            {
+                return getTemplateSymbol(opt, name, ctx);
+            }
+
+            DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
+                [this, m, name]() { return stmgr->addDefinition(
+                    m,
+                    name,
+                    new TypeTrait(),
+                    true) // FIXME: WHY ARE OTHERS true, false? when this is true, true
+                    .value(); //should be safe as we checked for redeclarations
+                });
+
+            if(const TypeTrait * structTy = dynamic_cast<const TypeTrait *>(sym->getType()))
+            {
+                std::optional<ErrorChain *> errOpt = defineTrait(ctx, structTy);
+
+                if(errOpt) return errOpt.value();
+                return sym;
+            }
+
+            return errorHandler.addError(ctx->getStart(), "Expected trait but got: " + sym->getType()->toString(toStringMode));
         },
 
         [this](BismuthParser::DefineTypeContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *>{

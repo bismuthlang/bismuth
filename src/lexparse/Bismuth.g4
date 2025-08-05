@@ -8,7 +8,7 @@ grammar Bismuth;
 compilationUnit   :  (imports+=importStatement | externs+=externStatement | defs+=defineType)* EOF ; 
 
 structCase        :  (ty=type name=VARIABLE) ';' ;
-traitEntry        :  name=VARIABLE genericTemplate? lam=lambdaConstExpr;
+traitEntry        :  name=VARIABLE ty=type; //genericTemplate? lam=lambdaConstExpr;
 
 
 // TODO: how to specify that we need a protocol type, linear type, etc?
@@ -24,7 +24,7 @@ defineType  : ENUM name=VARIABLE genericTemplate? LSQB cases+=type (',' cases+=t
             | STRUCT name=VARIABLE genericTemplate? LSQB (cases+=structCase)*  RSQB inherentTraitSpec?      # DefineStruct
             | PROG name=VARIABLE genericTemplate? '::' channelName=VARIABLE ':' proto=protocol '='? block   # DefineProgram
             | FUNC name=VARIABLE genericTemplate? lam=lambdaConstExpr                                       # DefineFunction
-            | TRAIT name=VARIABLE genericTemplate? LSQB traitEntry+ RSQB                                    # DefineTrait
+            | TRAIT name=VARIABLE genericTemplate? LSQB traitEntry* RSQB                                    # DefineTrait
             ; 
 
 inherentTraitSpec : IMPLS (AUTO | path) (',' path)+ ;

@@ -731,6 +731,12 @@ std::optional<Value *> CodegenVisitor::visit_typed(TDefineStructNode & n)
     return std::nullopt;
 }
 
+std::optional<Value *> CodegenVisitor::visit_typed(TDefineTraitNode & n)
+{
+    n.traitSpec->getLLVMType(module); // FIXME: WRONG, NEED TO TRACK THE VTABLE
+    return std::nullopt;
+}
+
 std::optional<Value *> CodegenVisitor::visit_typed(TInitProductNode & n)
 {
     std::vector<std::pair<const Type *, Value *>> args;

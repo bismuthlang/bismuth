@@ -99,6 +99,7 @@ public:
     std::optional<Value *> visit_typed(TProgramAcceptIfNode & n) override;
     std::optional<Value *> visit_typed(TDefineEnumNode & n) override;
     std::optional<Value *> visit_typed(TDefineStructNode & n) override;
+    std::optional<Value *> visit_typed(TDefineTraitNode & n) override;
     std::optional<Value *> visit_typed(TInitProductNode & n) override;
     std::optional<Value *> visit_typed(TArrayRValue & n) override;
     std::optional<Value *> visit_typed(TWhileLoopNode & n) override;

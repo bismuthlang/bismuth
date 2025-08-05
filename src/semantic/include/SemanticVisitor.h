@@ -162,6 +162,9 @@ public:
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineStructContext *ctx);
     std::any visitDefineStruct(BismuthParser::DefineStructContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
+    std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineTraitContext *ctx);
+    std::any visitDefineTrait(BismuthParser::DefineTraitContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
+
     std::variant<TInitProductNode *, ErrorChain *> visitCtx(BismuthParser::InitProductContext *ctx);
     std::any visitInitProduct(BismuthParser::InitProductContext *ctx) override { return TNVariantCast<TInitProductNode>(visitCtx(ctx)); }
 
@@ -579,6 +582,7 @@ private:
                         std::function<T(BismuthParser::DefineProgramContext *)> progFn,
                         std::function<T(BismuthParser::DefineStructContext *)> structFn,
                         std::function<T(BismuthParser::DefineEnumContext *)> enumFn,
+                        std::function<T(BismuthParser::DefineTraitContext *)> traitFn,
                         std::function<T(BismuthParser::DefineTypeContext *)> errFn){
         if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
             return funcFn(fnCtx);
@@ -588,6 +592,8 @@ private:
             return structFn(structCtx);
         if(BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(ctx))
             return enumFn(enumCtx);
+        if(BismuthParser::DefineTraitContext * traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(ctx))
+            return traitFn(traitCtx);
         return errFn(ctx);
     }
 

@@ -149,6 +149,7 @@ class TProgramAcceptIfNode;
 class TDefineEnumNode;
 class TDefineTemplateNode;
 class TDefineStructNode;
+class TDefineTraitNode;
 class TInitProductNode;
 class TArrayRValue;
 class TInitBoxNode;
@@ -210,6 +211,7 @@ class NuASTVisitor : public Visitor<TSelectStatementNode, R>
                   , public Visitor<TProgramAcceptIfNode, R>
                     , public Visitor<TDefineEnumNode, R>
                     , public Visitor<TDefineStructNode, R>
+                    , public Visitor<TDefineTraitNode, R>
                     , public Visitor<TDefineTemplateNode, R>
                     , public Visitor<TInitProductNode, R>
                     , public Visitor<TArrayRValue, R>
@@ -1660,6 +1662,32 @@ public:
     std::string toString() const override {
         return "GENERATOR NODE";
     }
+
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+};
+
+
+
+
+
+
+
+class TDefineTraitNode : public DefinitionNode, public Visitable<TDefineTraitNode>
+{
+public:
+    const TypeTrait *traitSpec;
+
+    TDefineTraitNode(DefinitionSymbol * sym, const TypeTrait *t, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    {
+        traitSpec = t;
+    }
+
+    const TypeUnit *getType() override { return Types::UNIT; }
+
+    std::string toString() const override {
+        return "DEF TRAIT";
+    }
+
 
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 };

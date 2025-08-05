@@ -715,9 +715,16 @@ bool TypeFunc::isSupertypeFor(const Type *other) const
 }
 
 
-const Type * TypeFunc::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+const TypeFunc * TypeFunc::getCopySubst(std::map<const Type *, const Type *> existing) const { 
     if(existing.contains(this))
-        return existing.find(this)->second; 
+    {
+        auto found = existing.find(this)->second;
+        if(const TypeFunc * foundFunc = dynamic_cast<const TypeFunc *>(found))
+        {
+            return foundFunc;
+        }
+        assert(false && "Invalid substitution found!");
+    }
 
     
     TypeFunc * ans = new TypeFunc();
@@ -1545,4 +1552,125 @@ bool TypeCompare::operator()(const Type *a, const Type *b) const
     // }
     if(dynamic_cast<const TypeInfer *>(a)) b->isSubtype(a, InferenceMode::QUERY); 
     return a->toString(C_STYLE) < b->toString(C_STYLE);
+}
+
+
+
+
+
+
+/*******************************************
+ *
+ * Traits
+ *
+ *******************************************/
+std::optional<const TypeFunc *> TypeTrait::get(std::string id) const
+{
+    return elements.lookup(id);
+}
+
+std::optional<unsigned int> TypeTrait::getIndex(std::string id) const
+{
+    return elements.getIndex(id);
+}
+
+bool TypeTrait::define(LinkedMap<std::string, const TypeFunc *> e) const
+{
+    if (isDefined())
+        return false;
+
+    TypeTrait *u_this = const_cast<TypeTrait *>(this);
+    u_this->defined = true;
+
+    u_this->elements = e;
+    // u_this->name = n;
+
+    return true;
+}
+
+bool TypeTrait::isDefined() const { return defined; }
+
+vector<pair<std::string, const TypeFunc *>> TypeTrait::getElements() const { return elements.getElements(); }
+optional<unsigned int> TypeTrait::getElementIndex(std::string k) const { return elements.getIndex(k); }
+
+
+std::string TypeTrait::getTypeRepresentation(DisplayMode mode) const
+{
+    std::ostringstream description;
+
+    description << "(";
+
+    unsigned int ctr = 0;
+    unsigned int size = elements.getElements().size();
+
+    for (auto e : elements.getElements())
+    {
+        description << e.second->toString(mode);
+        if (++ctr != size)
+            description << " * ";
+    }
+    description << ")";
+
+    return description.str();
+}
+
+llvm::Type *TypeTrait::getLLVMType(llvm::Module *M) const
+{
+    // FIXME: this is wrong, traits have a type!(a pointer to teh value + ptr to vtable)
+    assert(false && "Attempted to get LLVM type for trait"); 
+    return nullptr; 
+}
+
+bool TypeTrait::requiresDeepCopy() const
+{
+    for (auto ty : elements.getElements())
+        if (ty.second->requiresDeepCopy())
+            return true;
+
+    return false;
+}
+
+const TypeTrait * TypeTrait::getCopy() const { return this; };
+
+bool TypeTrait::isSupertypeFor(const Type *other) const
+{
+    // FIXME: Do better implementation for  TypeTrait::isSupertypeFor
+    if(const TypeTrait * oStruct = dynamic_cast<const TypeTrait *>(other))
+    {
+        if(this->hasName() == oStruct->hasName())
+        {
+            if(this->hasName())
+                return this->getIdentifier().value()->getFullyQualifiedName() == oStruct->getIdentifier().value()->getFullyQualifiedName();
+            return this == other; 
+        }
+    }
+    return false;
+}
+
+const Type * TypeTrait::getCopySubst(std::map<const Type *, const Type *> existing) const { 
+    if(existing.contains(this))
+        return existing.find(this)->second; 
+
+    LinkedMap<std::string, const TypeFunc *> elements;
+    TypeTrait * ans = new TypeTrait(elements, this->getIdentifier().value()); //this->getName());
+    {
+        // ans->setIdentifier(this->getIdentifier());
+
+        // auto m = this->getMeta(); 
+        // if(m)
+        //     ans->setMeta(m.value());
+    }
+
+    existing.insert({this, ans});
+
+    for(auto ty : this->getElements())
+    {
+        elements.insert(
+            {ty.first, ty.second->getCopySubst(existing)}
+        );
+    }
+
+    ans->elements = elements; 
+
+    return ans; 
 }
