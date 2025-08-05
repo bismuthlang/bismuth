@@ -2784,12 +2784,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
         DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params, visitCtx(ctx->lam->parameterList()), ctx);
 
-        std::vector<const Type *> ps;
-
-        for (ParameterNode param : params)
-        {
-            ps.push_back(param.type);
-        }
+        std::vector<const Type *> ps = fplus::transform([](auto param){ return param.type; }, params);
 
         std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->lam->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->lam->ret->accept(this))
                             : (const Type*) Types::UNIT;
@@ -2862,7 +2857,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         return std::nullopt;
     };
 
-
+    // FIXME: This will never get called...
     auto defineTrait = [this](BismuthParser::DefineTraitContext *ctx, const TypeTrait *traitTy) -> std::optional<ErrorChain *> {
         if (traitTy->isDefined()) return std::nullopt;
         LinkedMap<std::string, const TypeFunc *> el;
