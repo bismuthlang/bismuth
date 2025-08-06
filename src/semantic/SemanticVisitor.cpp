@@ -304,6 +304,11 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
             // FIXME: ERROR CHECK!
             defineFwdDeclSymbols(ctx);
 
+            for(auto implCtx : ctx->implementations)
+            {
+                // FIXME: do basic checks on traits
+            }
+
             return [this, ctx, cuScope, externs]() -> std::variant<TCompilationUnitNode *, ErrorChain *> {
                 stmgr->enterScope(cuScope);
 
@@ -2763,14 +2768,10 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
     if(errors.size())
     {
-        // Basically a reduce
-        ErrorChain * chain = errors.at(0);
-        for(unsigned int i = 1; i < errors.size(); i++)
-        {
-            chain->addBranch(errors.at(i));
-        }
-
-        return chain;
+        return fplus::reduce_1(
+            [](auto a, auto b) { return a->addBranch(b); },
+            errors
+        );
     }
 
     return ConditionalData<Y>(cases, restDat->post);

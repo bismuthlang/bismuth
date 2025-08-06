@@ -1,8 +1,11 @@
 #pragma once
 #include <optional>
 #include <variant>
+#include <vector>
 #include "TypedAST.h"
 #include "BismuthErrorHandler.h"
+
+#include <fplus/fplus.hpp>
 
 // template<typename I, typename E>
 // std::optional<E&> cast_ref(I& i)
@@ -81,3 +84,35 @@
 
 # define WRAPPED_ANY_CAST(type, id, expr) \
     IMPL_WRAPPED_ANY_CAST(MACRO_ARG(type), id, MACRO_ARG(expr), IMPL_MACRO_CONCAT(id, __COUNTER__))
+
+
+
+template<typename T>
+std::variant<std::vector<T>, ErrorChain*> 
+collect_results (std::vector<std::variant<T, ErrorChain *>> input)
+{
+  std::vector<T> res; 
+  std::vector<ErrorChain *> errors; 
+
+  for(auto ele : input)
+  {
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&ele))
+    {
+      errors.push_back(*e);
+    }
+    else if(T * a = std::get_if<T>(&ele))
+    {
+      res.push_back(a);
+    }
+  }
+
+  if(!errors.empty())
+  {
+    return fplus::reduce_1(
+      [](auto a, auto b) { return a.add_branch(b); }, 
+      errors
+    );
+  }
+
+  return res;
+}

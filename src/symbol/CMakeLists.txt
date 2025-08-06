@@ -5,6 +5,7 @@
 ##############################################
 include(Symbol)
 include(Matchit)
+include(FunctionalPlus)
 
 add_library(sym_lib OBJECT
   ${SYMBOL_SOURCES}
@@ -19,4 +20,10 @@ include_directories(sym_lib
   ${ANTLR_SOURCES}
   ${ANTLR_GENERATED_DIR}  # Just for RawAST
   ${MATCHIT_INCLUDE}
+)
+
+
+target_link_libraries(sym_lib
+    PRIVATE
+    FunctionalPlus::fplus
 )

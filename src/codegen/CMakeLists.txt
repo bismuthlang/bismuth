@@ -6,6 +6,7 @@ include(Utility)
 include(Codegen)
 include(LLVM)
 include(Matchit)
+include(FunctionalPlus)
 
 ####################################################################
 # See: https://cmake.org/cmake/help/latest/command/find_package.html
@@ -40,4 +41,9 @@ include_directories(codegen_lib
   ${LLVM_BINARY_DIR}/include
   ${LLVM_INCLUDE_DIR}
   ${MATCHIT_INCLUDE}
+)
+
+target_link_libraries(codegen_lib
+    PRIVATE
+    FunctionalPlus::fplus
 )
