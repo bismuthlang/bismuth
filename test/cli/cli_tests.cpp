@@ -95,7 +95,7 @@ prog main :: c : -int {
         {"temp"}
     );
 
-    std::vector<CompilerInput *> inputs;
+    std::vector<LexParseInput *> inputs;
     inputs.push_back(bsl_lib_types);
     inputs.push_back(bsl_lib_lists);
     inputs.push_back(bsl_lib_optional);
@@ -555,7 +555,7 @@ prog main :: c : -int {
         {"temp3"}
     );
 
-    std::vector<CompilerInput *> inputs;
+    std::vector<LexParseInput *> inputs;
     inputs.push_back(bsl_lib_types);
     inputs.push_back(bsl_lib_lists);
     inputs.push_back(bsl_lib_optional);

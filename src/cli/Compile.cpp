@@ -42,7 +42,7 @@ std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath)//
     return parts; 
 } 
 
-std::vector<CompilerInput *> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::vector<std::string> inputFileName)
+std::vector<LexParseInput *> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::vector<std::string> inputFileName)
 {
     // TODO: need to verify canonical src starts with current path? maybe? probably not
     auto currentPath = std::filesystem::current_path();
@@ -88,7 +88,7 @@ std::vector<CompilerInput *> getInputsFromFiles(std::string argSrcPath, std::str
      * we create a vector of input streams/output file pairs.
      *******************************************************************/
     std::set<std::filesystem::path> visitedPaths; // TODO: verify & do better, Tracking that we dont have duplicate paths
-    std::vector<CompilerInput *> inputs;
+    std::vector<LexParseInput *> inputs;
 
     // bool useOutputFileName = outputFileName != "-.ll";
 
@@ -162,11 +162,11 @@ llvm::TargetMachine * getTargetMachine()
 
 
 
-std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> Stage_lexParse(std::vector<CompilerInput *> inputs)
+std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> Stage_lexParse(std::vector<LexParseInput *> inputs)
 {
     bool valid = true;
 
-    std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> ans;
+    std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> ans;
 
     for (auto input : inputs)
     {
@@ -216,7 +216,7 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>>
  * and bind nodes to Symbols using the property manager. If
  * there are any errors we print them out and exit.
  *******************************************************************/
-std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
+std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> Stage_PSemantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
 {
     /*
      * Sets up compiler flags. These need to be sent to the visitors.
@@ -277,12 +277,12 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
     // Interesting how when we copy paste, we really would benefit from var renaming
     // to get compiler errors. 
 
-    std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> ans;
+    std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> ans;
     // for(auto nClos : nClosures)
     for(unsigned int i = 0; i < nClosures.size(); i++)
     {
         auto nClos = nClosures.at(i); 
-        CompilerInput * input = inputs.at(i).second; 
+        LexParseInput * input = inputs.at(i).second; 
         std::variant<TCompilationUnitNode *, ErrorChain *> opt = nClos(); 
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -308,7 +308,7 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
     return ans; 
 }
 
-void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
+void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
 {
     bool isValid = true;
     bool useOutputFileName = outputFileName != "-.ll";
@@ -447,7 +447,7 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *
 }
 
 int compile(
-    std::vector<CompilerInput *> inputs, 
+    std::vector<LexParseInput *> inputs, 
     std::string outputFileName, 
     bool demoMode, 
     bool isVerbose,
@@ -512,7 +512,7 @@ int compileFiles(std::string argSrcPath, std::string argBuildPath, std::string o
      * input or file(s). To make both cases easy to handle later on,
      * we create a vector of input streams/output file pairs.
      *******************************************************************/
-    std::vector<CompilerInput *> inputs = getInputsFromFiles(argSrcPath, argBuildPath, inputFileName);
+    std::vector<LexParseInput *> inputs = getInputsFromFiles(argSrcPath, argBuildPath, inputFileName);
 
     compile(
         inputs,

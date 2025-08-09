@@ -43,21 +43,21 @@ std::filesystem::path getRelativePath(std::filesystem::path& currentPath, std::f
 std::vector<std::string> pathToIdentifierSteps(std::filesystem::path& relPath);
 
 
-class CompilerInput {
+class LexParseInput {
 
 private: 
     antlr4::ANTLRInputStream * inputStream; 
     std::vector<std::string> pathSteps; 
 
 public: 
-    CompilerInput(
+    LexParseInput(
         antlr4::ANTLRInputStream * i, 
         std::vector<std::string> ps)
         : inputStream(i)
         , pathSteps(ps)
     {}
 
-    virtual ~CompilerInput() = default;
+    virtual ~LexParseInput() = default;
 
     antlr4::ANTLRInputStream * getInputStream() { return inputStream; }
     std::vector<std::string> getPathSteps() { 
@@ -77,7 +77,7 @@ public:
 
 };
 
-class FileInput : public CompilerInput {
+class FileInput : public LexParseInput {
 
 private: 
     std::filesystem::path outputPath; 
@@ -87,7 +87,7 @@ public:
         antlr4::ANTLRInputStream * i, 
         std::vector<std::string> ps,
         std::filesystem::path o)
-        : CompilerInput(i, ps)
+        : LexParseInput(i, ps)
         , outputPath(o)
     {}
 
@@ -115,7 +115,7 @@ public:
     std::optional<std::filesystem::path> getOutputPath() override { return outputPath; }
 };
 
-class VirtualInput : public CompilerInput {
+class VirtualInput : public LexParseInput {
 
 private:
     std::string irStr; 
@@ -125,7 +125,7 @@ public:
     VirtualInput(
         antlr4::ANTLRInputStream * i, 
         std::vector<std::string> ps)
-        : CompilerInput(i, ps)
+        : LexParseInput(i, ps)
     {}
 
     std::string getSourceName() override 
@@ -158,15 +158,15 @@ public:
 };
 
 
-std::vector<CompilerInput *> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName);
+std::vector<LexParseInput *> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName);
 
 llvm::TargetMachine * getTargetMachine();
 
 
 
-std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> Stage_lexParse(std::vector<CompilerInput *> inputs);
+std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> Stage_lexParse(std::vector<LexParseInput *> inputs);
 
-void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
+void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
 
-int compile(std::vector<CompilerInput *> inputs, std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
+int compile(std::vector<LexParseInput *> inputs, std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
 int compileFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
