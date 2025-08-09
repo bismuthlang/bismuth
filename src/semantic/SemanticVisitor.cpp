@@ -89,67 +89,91 @@ std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser:
         defineAndGetSymbolFor(e, VisibilityModifier::PUBLIC);
     }
 
+    for(auto implCtx : ctx->implementations)
+            {
+                // FIXME: do basic checks on traits
+                // Needs to be two phases: 
+                //  1. to establish what types have traits and their uniqueness
+                //  2. check implementations are valid
+                // Unfortunatley this does mean that there will be some duplication on what the various passes do
+
+                // Phase 1: Uniqueness
+                {
+                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, lhsTy, visitPathType(implCtx->traitPath), implCtx, "Unknown type.");
+                    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
+                        const TypeTrait *,
+                        traitTy,
+                        type_cast<TypeTrait>(lhsTy),
+                        implCtx,
+                    "Cannot implement non-trait type: " + lhsTy->toString(toStringMode));
+                    return errorHandler.addError(implCtx->getStart(), "Unimplemented!");
+                }
+
+                
+            }
+
     return std::nullopt;
 }
 
 std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visitFwdDecls(BismuthParser::CompilationUnitContext *ctx)
 {
-    
-    std::vector<DefinitionNode *> defs;
-    for (auto e : ctx->defs)
-    {
-        // Note: re-applying template symbols happens in each visitor for now!
-        if (auto progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
-        {
-            DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
-            defs.push_back(prog);
-        }
-        else if (auto fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
-        {
-            DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, func, visitCtx(fnCtx), ctx, "Failed to type check function");
-            defs.push_back(func);
-        }
-        else if (auto structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
-        {
-            DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, structNode, visitCtx(structCtx), ctx, "Failed to type check struct");
-            defs.push_back(structNode);
-        }
-        else if (auto enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
-        {
-            DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, enumNode, visitCtx(enumCtx), ctx, "Failed to type check enum");
-            defs.push_back(enumNode);
-        }
-        else if (auto traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(e))
-        {
-            DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, traitNode, visitCtx(traitCtx), ctx, "Failed to type check trait");
-            defs.push_back(traitNode);
-        }
-    }
-
-    return defs;
+    return collect_results<DefinitionNode *>(
+        fplus::transform(
+            [this, ctx](auto e) -> std::variant<DefinitionNode *, ErrorChain *>
+            {
+                // Note: re-applying template symbols happens in each visitor for now!
+                if (auto progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
+                {
+                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
+                    return prog;
+                }
+                else if (auto fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
+                {
+                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, func, visitCtx(fnCtx), ctx, "Failed to type check function");
+                    return func;
+                }
+                else if (auto structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
+                {
+                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, structNode, visitCtx(structCtx), ctx, "Failed to type check struct");
+                    return structNode;
+                }
+                else if (auto enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
+                {
+                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, enumNode, visitCtx(enumCtx), ctx, "Failed to type check enum");
+                    return enumNode;
+                }
+                else if (auto traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(e))
+                {
+                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, traitNode, visitCtx(traitCtx), ctx, "Failed to type check trait");
+                    return traitNode;
+                }
+                assert(false && "Unknown definition kind");
+            },
+            ctx->defs
+        )
+    );
 }
 
 std::variant<std::vector<TExternNode *>, ErrorChain *> SemanticVisitor::visitExterns(BismuthParser::CompilationUnitContext *ctx)
 {
-    std::vector<TExternNode *> externs;
-
-    // Visit externs first; they will report any errors if they have any.
-    for (auto e : ctx->externs)
-    {
-        DEFINE_OR_PROPAGATE_VARIANT_WMSG(TExternNode *, node, this->visitCtx(e), ctx, "Error in definition of extern");
+    return collect_results<TExternNode *>(
+        fplus::transform(
+            [this, ctx](auto e) -> std::variant<TExternNode *, ErrorChain*> {
+                DEFINE_OR_PROPAGATE_VARIANT_WMSG(TExternNode *, node, this->visitCtx(e), ctx, "Error in definition of extern");
         
-        if (flags & CompilerFlags::DEMO_MODE)
-        {
-            if (!(node->getSymbol()->getScopedIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::DYN_STR) && node->getType()->getReturnType()->isSubtype(Types::DYN_INT) && node->getType()->isVariadic()))
-            {
-                errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
-            }
-        }
+                if (flags & CompilerFlags::DEMO_MODE)
+                {
+                    if (!(node->getSymbol()->getScopedIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::DYN_STR) && node->getType()->getReturnType()->isSubtype(Types::DYN_INT) && node->getType()->isVariadic()))
+                    {
+                        errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
+                    }
+                }
 
-        externs.push_back(node);
-    }
-
-    return externs;
+                return node; 
+            },
+            ctx->externs
+        )
+    );
 }
 
 std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::CompilationUnitContext *ctx)
@@ -290,11 +314,16 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
             ErrorChain *
     >{
         stmgr->enterScope(cuScope);
-        for(auto i : ctx->imports)
+
         {
-            std::optional<ErrorChain *> errOpt = this->TVisitImportStatement(i);
-            if(errOpt)
-                return errOpt.value();
+            auto importError = collect_optionals(
+                fplus::transform(
+                    [this](auto i){ return this->TVisitImportStatement(i); },
+                    ctx->imports
+                )
+            );
+            if(importError)
+                return importError.value();
         }
 
         DEFINE_OR_PROPAGATE_VARIANT(std::vector<TExternNode *>, externs, visitExterns(ctx), ctx); 
@@ -307,6 +336,24 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
             for(auto implCtx : ctx->implementations)
             {
                 // FIXME: do basic checks on traits
+                // Needs to be two phases: 
+                //  1. to establish what types have traits and their uniqueness
+                //  2. check implementations are valid
+                // Unfortunatley this does mean that there will be some duplication on what the various passes do
+
+                // Phase 1: Uniqueness
+                {
+                    // DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, lhsTy, visitPathType(implCtx->traitPath), implCtx, "Unknown type.");
+                    // DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
+                    //     const TypeTrait *,
+                    //     traitTy,
+                    //     type_cast<TypeTrait>(lhsTy),
+                    //     implCtx,
+                    // "Cannot implement non-trait type: " + lhsTy->toString(toStringMode));
+                    // return errorHandler.addError(implCtx->getStart(), "Unimplemented!");
+                }
+
+                
             }
 
             return [this, ctx, cuScope, externs]() -> std::variant<TCompilationUnitNode *, ErrorChain *> {

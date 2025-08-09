@@ -9,17 +9,10 @@ include(Utility)
 include(Codegen)
 include(LLVM)
 include(CLI)
+include(FunctionalPlus)
 
 find_package(LLVM REQUIRED CONFIG)
 list(APPEND CMAKE_MODULE_PATH ${LLVM_DIR})
-
-include(FetchContent)
-FetchContent_Declare(
-    functional_plus
-    GIT_REPOSITORY https://github.com/Dobiasd/FunctionalPlus.git
-    GIT_TAG master
-)
-FetchContent_MakeAvailable(functional_plus)
 
 message(STATUS "Found LLVM ${LLVM_PACKAGE_VERSION}")
 message(STATUS "Using LLVMConfig.cmake in: ${LLVM_DIR}")

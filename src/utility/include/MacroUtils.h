@@ -102,17 +102,39 @@ collect_results (std::vector<std::variant<T, ErrorChain *>> input)
     }
     else if(T * a = std::get_if<T>(&ele))
     {
-      res.push_back(a);
+      res.push_back(*a);
     }
   }
 
   if(!errors.empty())
   {
     return fplus::reduce_1(
-      [](auto a, auto b) { return a.add_branch(b); }, 
+      [](auto a, auto b) { return a->addBranch(b); }, 
       errors
     );
   }
 
   return res;
+}
+
+inline std::optional<ErrorChain *> 
+collect_optionals(std::vector<std::optional<ErrorChain *>> input)
+{
+  if(input.empty()) return std::nullopt; 
+  
+  return fplus::reduce_1(
+    [](auto a, auto b) -> std::optional<ErrorChain *> {
+      if(a.has_value())
+      {
+        if(b.has_value())
+        {
+          return a.value()->addBranch(b.value());
+        }
+        return a;
+      }
+
+      return b;
+    },
+    input
+  );
 }
