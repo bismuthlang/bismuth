@@ -41,7 +41,7 @@ path            : eles+=pathElement ('::' eles+=pathElement)* ;
 
 importStatement : IMPORT path ('as' alias=VARIABLE)? ';'? ; 
 
-defineImpl      : IMPL traitPath=path FOR defPath=path LSQB defineType* RSQB ;
+defineImpl      : IMPL traitPath=path FOR ty=type LSQB defineType* RSQB ;
 
 inv_args            :  LPAR (args+=expression (',' args+=expression)* )? RPAR   ;
 

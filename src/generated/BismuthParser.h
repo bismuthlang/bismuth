@@ -477,15 +477,15 @@ public:
   class  DefineImplContext : public antlr4::ParserRuleContext {
   public:
     BismuthParser::PathContext *traitPath = nullptr;
-    BismuthParser::PathContext *defPath = nullptr;
+    BismuthParser::TypeContext *ty = nullptr;
     DefineImplContext(antlr4::ParserRuleContext *parent, size_t invokingState);
     virtual size_t getRuleIndex() const override;
     antlr4::tree::TerminalNode *IMPL();
     antlr4::tree::TerminalNode *FOR();
     antlr4::tree::TerminalNode *LSQB();
     antlr4::tree::TerminalNode *RSQB();
-    std::vector<PathContext *> path();
-    PathContext* path(size_t i);
+    PathContext *path();
+    TypeContext *type();
     std::vector<DefineTypeContext *> defineType();
     DefineTypeContext* defineType(size_t i);
 

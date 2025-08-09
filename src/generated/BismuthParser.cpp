@@ -217,7 +217,7 @@ void bismuthParserInitialize() {
   	21,1,0,0,0,236,234,1,0,0,0,237,238,5,87,0,0,238,241,3,20,10,0,239,240,
   	5,4,0,0,240,242,5,98,0,0,241,239,1,0,0,0,241,242,1,0,0,0,242,244,1,0,
   	0,0,243,245,5,51,0,0,244,243,1,0,0,0,244,245,1,0,0,0,245,23,1,0,0,0,246,
-  	247,5,89,0,0,247,248,3,20,10,0,248,249,5,76,0,0,249,250,3,20,10,0,250,
+  	247,5,89,0,0,247,248,3,20,10,0,248,249,5,76,0,0,249,250,3,66,33,0,250,
   	254,5,49,0,0,251,253,3,12,6,0,252,251,1,0,0,0,253,256,1,0,0,0,254,252,
   	1,0,0,0,254,255,1,0,0,0,255,257,1,0,0,0,256,254,1,0,0,0,257,258,5,50,
   	0,0,258,25,1,0,0,0,259,268,5,45,0,0,260,265,3,28,14,0,261,262,5,54,0,
@@ -2134,12 +2134,12 @@ tree::TerminalNode* BismuthParser::DefineImplContext::RSQB() {
   return getToken(BismuthParser::RSQB, 0);
 }
 
-std::vector<BismuthParser::PathContext *> BismuthParser::DefineImplContext::path() {
-  return getRuleContexts<BismuthParser::PathContext>();
+BismuthParser::PathContext* BismuthParser::DefineImplContext::path() {
+  return getRuleContext<BismuthParser::PathContext>(0);
 }
 
-BismuthParser::PathContext* BismuthParser::DefineImplContext::path(size_t i) {
-  return getRuleContext<BismuthParser::PathContext>(i);
+BismuthParser::TypeContext* BismuthParser::DefineImplContext::type() {
+  return getRuleContext<BismuthParser::TypeContext>(0);
 }
 
 std::vector<BismuthParser::DefineTypeContext *> BismuthParser::DefineImplContext::defineType() {
@@ -2196,7 +2196,7 @@ BismuthParser::DefineImplContext* BismuthParser::defineImpl() {
     setState(248);
     match(BismuthParser::FOR);
     setState(249);
-    antlrcpp::downCast<DefineImplContext *>(_localctx)->defPath = path();
+    antlrcpp::downCast<DefineImplContext *>(_localctx)->ty = type(0);
     setState(250);
     match(BismuthParser::LSQB);
     setState(254);

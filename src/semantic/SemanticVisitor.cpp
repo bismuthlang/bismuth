@@ -89,28 +89,28 @@ std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser:
         defineAndGetSymbolFor(e, VisibilityModifier::PUBLIC);
     }
 
+    // FIXME: do basic checks on traits
+    // Needs to be two phases: 
+    //  1. to establish what types have traits and their uniqueness
+    //  2. check implementations are valid
+    // Unfortunatley this does mean that there will be some duplication on what the various passes do
+
+    // Phase 1: Uniqueness -> Needs to be moved after all traits across all files are processed
     for(auto implCtx : ctx->implementations)
-            {
-                // FIXME: do basic checks on traits
-                // Needs to be two phases: 
-                //  1. to establish what types have traits and their uniqueness
-                //  2. check implementations are valid
-                // Unfortunatley this does mean that there will be some duplication on what the various passes do
+    {
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, lhsTy, visitPathType(implCtx->traitPath), implCtx, "Unknown trait requested");
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
+            const TypeTrait *,
+            traitTy,
+            type_cast<TypeTrait>(lhsTy),
+            implCtx,
+        "Cannot implement non-trait type: " + lhsTy->toString(toStringMode));
 
-                // Phase 1: Uniqueness
-                {
-                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, lhsTy, visitPathType(implCtx->traitPath), implCtx, "Unknown type.");
-                    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
-                        const TypeTrait *,
-                        traitTy,
-                        type_cast<TypeTrait>(lhsTy),
-                        implCtx,
-                    "Cannot implement non-trait type: " + lhsTy->toString(toStringMode));
-                    return errorHandler.addError(implCtx->getStart(), "Unimplemented!");
-                }
 
-                
-            }
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, rhsTy, anyOpt2VarError<const Type>(errorHandler, implCtx->ty->accept(this)), implCtx, "Failed to determine type to implement trait for");
+
+        // FIXME: track uniqueness
+    }
 
     return std::nullopt;
 }
