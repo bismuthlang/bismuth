@@ -22,6 +22,9 @@
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/Support/TargetSelect.h"
 
+
+#include "matchit.h"
+
 std::filesystem::path getRelativePath(std::filesystem::path& currentPath, std::filesystem::path& given)
 {
     return given.string().starts_with(currentPath.string()) 
@@ -162,7 +165,7 @@ llvm::TargetMachine * getTargetMachine()
 
 
 
-std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> Stage_lexParse(std::vector<LexParseInput *> inputs)
+std::variant<SemanticInput*, BismuthErrorHandler *> Stage_lexParse(std::vector<LexParseInput *> inputs)
 {
     std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> ans;
 
@@ -203,7 +206,7 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>>
 
     delete syntaxListener;
 
-    return ans; 
+    return new SemanticInput(ans); 
 }
 
 /*******************************************************************
@@ -214,7 +217,7 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>>
  * and bind nodes to Symbols using the property manager. If
  * there are any errors we print them out and exit.
  *******************************************************************/
-std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> Stage_PSemantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
+std::variant<CodegenInput *, std::string> Stage_PSemantic(SemanticInput* inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
 {
     /*
      * Sets up compiler flags. These need to be sent to the visitors.
@@ -236,14 +239,13 @@ std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> Stage_PSemantic(
      auto [importClosures, importErrors] = collect_separate_results(
         fplus::transform(
             [&sv](auto input){ return sv.phasedVisit(input.first, input.second->getPathSteps()); },
-            inputs
+            inputs->getInputs()
         )
     );
 
     if(importErrors.size() || sv.hasErrors(0))
     {
-        std::cerr << sv.getErrors() << std::endl;
-        std::exit(-1);
+        return sv.getErrors();
     }
     
     auto [fwdDeclClosures, fwdDeclErrors] = collect_separate_results(
@@ -255,8 +257,7 @@ std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> Stage_PSemantic(
 
     if(fwdDeclErrors.size() || sv.hasErrors(0))
     {
-        std::cerr << sv.getErrors() << std::endl;
-        std::exit(-1);
+        return sv.getErrors();
     }
 
     auto [nClosures, phaseNErrors] = collect_separate_results(
@@ -268,8 +269,7 @@ std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> Stage_PSemantic(
 
     if(phaseNErrors.size() || sv.hasErrors(0))
     {
-        std::cerr << sv.getErrors() << std::endl;
-        std::exit(-1);
+        return sv.getErrors();
     }
 
     // Interesting how when we copy paste, we really would benefit from var renaming
@@ -280,7 +280,7 @@ std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> Stage_PSemantic(
     for(unsigned int i = 0; i < nClosures.size(); i++)
     {
         auto nClos = nClosures.at(i); 
-        LexParseInput * input = inputs.at(i).second; 
+        LexParseInput * input = inputs->getInputs().at(i).second; 
         std::variant<TCompilationUnitNode *, ErrorChain *> opt = nClos(); 
 
         if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
@@ -299,14 +299,13 @@ std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> Stage_PSemantic(
 
     if(!valid || sv.hasErrors(0))
     {
-        std::cerr << sv.getErrors() << std::endl;
-        std::exit(-1);
+        return sv.getErrors();
     }
 
-    return ans; 
+    return new CodegenInput(ans); 
 }
 
-void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
+void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
 {
     bool isValid = true;
     bool useOutputFileName = outputFileName != "-.ll";
@@ -318,7 +317,7 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, LexParseInput *
     auto TheTargetMachine = (compileWith != none)  ? getTargetMachine() : nullptr; 
 
 
-    for(auto entry : inputs)
+    for(auto entry : inputs->getInputs())
     {
         auto [cu, input] = entry; 
         if (isVerbose)
@@ -425,7 +424,7 @@ void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, LexParseInput *
         }
 
         std::string ext = compileWith == clangll ? ".ll" : ".o";
-        for (auto input : inputs)
+        for (auto input : inputs->getInputs())
         {
             assert(input.second->getOutputPath().has_value()); // TODO: better error!
             cmd << input.second->getOutputPath().value().replace_extension(ext) << " ";
@@ -471,25 +470,48 @@ int compile(
      * we create a vector of input streams/output file pairs.
      *******************************************************************/
 
-    auto toCodegen = Stage_PSemantic(
-        Stage_lexParse(inputs),
-        demoMode, 
-        isVerbose,
-        toStringMode
-    );
+    using namespace matchit; 
+    Id<SemanticInput*> lexParseResults;
+    Id<BismuthErrorHandler*> lexParseErrorHandler; 
 
-    Stage_CodeGen(
-        toCodegen,
-        outputFileName,
-        demoMode,
-        isVerbose,
-        toStringMode,
-        printOutput,
-        noCode,
-        compileWith
-    );
+    return match(Stage_lexParse(inputs))(
+        pattern | as<BismuthErrorHandler *>(lexParseErrorHandler) = [&]{
+            std::cerr << (*lexParseErrorHandler)->errorList() << std::endl;
+            delete *lexParseErrorHandler;
+            return -1;
+        },
+        pattern | as<SemanticInput*>(lexParseResults) = [&]{
 
-    return 0;
+            Id<CodegenInput*> semanticResults; 
+            Id<std::string> semanticError; 
+            
+            return match(Stage_PSemantic(
+                *lexParseResults,
+                demoMode, 
+                isVerbose,
+                toStringMode
+            ))(
+                pattern | as<CodegenInput*>(semanticResults) = [&]{
+                    Stage_CodeGen(
+                        *semanticResults,
+                        outputFileName,
+                        demoMode,
+                        isVerbose,
+                        toStringMode,
+                        printOutput,
+                        noCode,
+                        compileWith
+                    );
+                    return 0; // FIXME: NOT QUITE, STILL NEED TO REPORT ERROR
+                },
+                pattern | as<std::string>(semanticError) = [&]{
+                    std::cerr << (*semanticError) << std::endl;
+                    return -1; 
+                }
+            );
+            return 0;
+        }
+    );
 }
 
 int compileFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)

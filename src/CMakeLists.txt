@@ -8,6 +8,7 @@ include(Codegen)
 include(LLVM)
 include(Runtime)
 include(CLI)
+include(Matchit)
 include(FunctionalPlus)
 
 ####################################################################
@@ -53,6 +54,7 @@ target_include_directories(bismuthc PUBLIC
     ${LLVM_INCLUDE_DIR}
     ${LLVM_TARGETS_TO_BUILD}
     ${CLI_INCLUDE}
+    ${MATCHIT_INCLUDE}
 )
 
 target_link_libraries(bismuthc

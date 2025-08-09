@@ -158,15 +158,42 @@ public:
 };
 
 
+class SemanticInput {
+private: 
+    std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> inputs; 
+
+public: 
+    SemanticInput(std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> i )
+        : inputs(i)
+    {};
+
+    auto& getInputs() { return inputs; }
+};
+
+
+
+class CodegenInput {
+private: 
+    std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> inputs; 
+
+public: 
+    CodegenInput(std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> i )
+        : inputs(i)
+    {};
+
+    auto& getInputs() { return inputs; }
+};
+
+
+
 std::vector<LexParseInput *> getInputsFromFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName);
 
 llvm::TargetMachine * getTargetMachine();
 
 
+std::variant<SemanticInput*, BismuthErrorHandler *> Stage_lexParse(std::vector<LexParseInput *> inputs);
 
-std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> Stage_lexParse(std::vector<LexParseInput *> inputs);
-
-void Stage_CodeGen(std::vector<std::pair<TCompilationUnitNode *, LexParseInput *>> inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
+void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
 
 int compile(std::vector<LexParseInput *> inputs, std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
 int compileFiles(std::string argSrcPath, std::string argBuildPath, std::string outputFileName, std::vector<std::string> inputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith);
