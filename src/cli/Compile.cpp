@@ -239,49 +239,29 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
     // I wish there was an easy way to write programs (perhaps with constraints)
     // which is able to generate the following code, as it really is all algorithmic.
     // Eg, with Type T do XYZ
-    std::vector<SemanticVisitor::ImportPhaseClosure> importClosures; 
-    for(auto [tree, input] : inputs)
-    {
-        std::variant<
-            SemanticVisitor::ImportPhaseClosure,
-            ErrorChain *
-        > opt = sv.phasedVisit(tree, input->getPathSteps());
+    // std::vector<SemanticVisitor::ImportPhaseClosure> importClosures; 
 
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-        {
-            // return (*e);
-            valid = false; 
-        }
-        else
-        {
-            SemanticVisitor::ImportPhaseClosure clos = std::get<SemanticVisitor::ImportPhaseClosure>(opt);
-            importClosures.push_back(clos); 
-        }
-    }
+     auto [importClosures, importErrors] = collect_separate_results(
+        fplus::transform(
+            [&sv](auto input){ return sv.phasedVisit(input.first, input.second->getPathSteps()); },
+            inputs
+        )
+    );
 
-    if(!valid || sv.hasErrors(0))
+    if(importErrors.size() || sv.hasErrors(0))
     {
         std::cerr << sv.getErrors() << std::endl;
         std::exit(-1);
     }
+    
+    auto [fwdDeclClosures, fwdDeclErrors] = collect_separate_results(
+        fplus::transform(
+            [](auto input){ return input(); },
+            importClosures
+        )
+    );
 
-    std::vector<SemanticVisitor::DefineFwdDeclsPhaseClosure> fwdDeclClosures; 
-    for(auto importClos : importClosures)
-    {
-        std::variant<SemanticVisitor::DefineFwdDeclsPhaseClosure, ErrorChain *> opt = importClos(); 
-
-        if (ErrorChain **e = std::get_if<ErrorChain *>(&opt))
-        {
-            // return (*e);
-            valid = false; 
-        }
-        else
-        {
-            fwdDeclClosures.push_back(std::get<SemanticVisitor::DefineFwdDeclsPhaseClosure>(opt));
-        }
-    }
-
-    if(!valid || sv.hasErrors(0))
+    if(fwdDeclErrors.size() || sv.hasErrors(0))
     {
         std::cerr << sv.getErrors() << std::endl;
         std::exit(-1);
