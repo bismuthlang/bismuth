@@ -19,79 +19,56 @@
 #include "CodegenVisitor.h"
 #include "CompilerFlags.h"
 
+#include "Compile.h"
+
 using Catch::Matchers::Equals;
 
 void ExpectOutput(string file)
 {
-    auto stream = std::fstream(SOURCE_DIR + file);
-    auto input = antlr4::ANTLRInputStream(stream);
-    BismuthLexer lexer(&input);
-    antlr4::CommonTokenStream tokens(&lexer);
-    BismuthParser parser(&tokens);
-    parser.removeErrorListeners();
-    BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
-    parser.addErrorListener(syntaxListener);
-    BismuthParser::CompilationUnitContext *tree = NULL;
-    REQUIRE_NOTHROW(tree = parser.compilationUnit());
-    REQUIRE(tree != NULL);
-    if (syntaxListener->hasErrors(0)) // Want to see all errors.
-    {
-        std::cerr << syntaxListener->errorList() << std::endl;
-        REQUIRE_FALSE(syntaxListener->hasErrors(0));
-    }
-    delete syntaxListener;
-    STManager stm = STManager();
-    SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, 0);
-    auto cuOpt = sv.visitCtx(tree);
-    if(sv.hasErrors(0))
-    {
-        REQUIRE_THAT(sv.getErrors(), Equals(""));
-    }
-    REQUIRE_FALSE(sv.hasErrors(0));
-    REQUIRE(std::holds_alternative<TCompilationUnitNode*>(cuOpt)); //cuOpt.has_value());
+    auto getVI = [](std::string path, std::vector<std::string> steps){
+        return new VirtualInput(
+            new antlr4::ANTLRInputStream(*(new std::fstream(path))),
+            steps
+        );
+    };
 
-    CodegenVisitor cv = CodegenVisitor("BismuthProgram", DisplayMode::C_STYLE, 0);
-    TCompilationUnitNode * node = std::get<TCompilationUnitNode*>(cuOpt);
-    cv.visitCompilationUnit(*node);//cuOpt.value());
-    if(cv.hasErrors(0))
-    {
-        REQUIRE_THAT(cv.getErrors(), Equals(""));
-    }
-    REQUIRE_FALSE(cv.hasErrors(0));
+    VirtualInput * temp = getVI(SOURCE_DIR + file, {});
 
-    std::string module_str;
-    llvm::raw_string_ostream OS(module_str);
-    OS << *cv.getModule();
-    OS.flush();
+    REQUIRE_FALSE(compile(
+        {temp},
+        "-.ll",
+        false,
+        true,
+        DisplayMode::C_STYLE,
+        false,
+        false,
+        CompileType::none
+    ).has_value());
+
 
     auto log_stream = std::fstream(SOURCE_DIR + file + ".expected.ll");
     std::ostringstream log_str_stream;
     log_str_stream << log_stream.rdbuf();
-    REQUIRE_THAT(module_str, Equals(log_str_stream.str())); 
+    REQUIRE_THAT(temp->getIrStr(), Equals(log_str_stream.str())); 
 }
 
-void EnsureErrors(antlr4::ANTLRInputStream input)
+void EnsureErrors(antlr4::ANTLRInputStream input, std::string error_msg)
 {
-    BismuthLexer lexer(&input);
-    antlr4::CommonTokenStream tokens(&lexer);
-    BismuthParser parser(&tokens);
-    parser.removeErrorListeners();
-    BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
-    parser.addErrorListener(syntaxListener);
-    BismuthParser::CompilationUnitContext *tree = NULL;
-    REQUIRE_NOTHROW(tree = parser.compilationUnit());
-    REQUIRE(tree != NULL);
-    if (syntaxListener->hasErrors(0)) // Want to see all errors.
-    {
-        std::cerr << syntaxListener->errorList() << std::endl;
-        REQUIRE_FALSE(syntaxListener->hasErrors(0));
-    }
-    delete syntaxListener;
-    STManager stm = STManager();
-    SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, 0);
-    auto cuOpt = sv.visitCtx(tree);
+    VirtualInput * temp = new VirtualInput(
+            &input,
+            {}
+    );
 
-    REQUIRE(sv.hasErrors(0));
+    REQUIRE_THAT(compile(
+        {temp},
+        "-.ll",
+        false,
+        true,
+        DisplayMode::C_STYLE,
+        false,
+        false,
+        CompileType::none
+    ).value(), Equals(error_msg));
 }
 
 TEST_CASE("programs/test1 - General Overview", "[codegen]")
@@ -102,7 +79,23 @@ TEST_CASE("programs/test1 - General Overview", "[codegen]")
 TEST_CASE("programs/test1a", "[codegen]")
 {
     auto stream = std::fstream(std::string(SOURCE_DIR) + "programs/test1a.bismuth");
-    EnsureErrors(antlr4::ANTLRInputStream(stream));
+    EnsureErrors(antlr4::ANTLRInputStream(stream), 
+R""""(
+Error (SEMANTIC): 
+<unknown>:4:0: 700 Uninferred types in context: [a, VAR]; [b, VAR]; 
+
+
+Error (SEMANTIC): 
+<unknown>:34:8: Assignment statement expected int but got u32
+<unknown>:33:27: Failed to type check statement in block
+at <unknown>:33:4
+<unknown>:28:30: Failed to type check statement in block
+<unknown>:28:0: Failed to save visit block
+<unknown>:1:0: Failed to type check program
+at <unknown>:1:0
+
+Number of Errors: 2
+)"""");
 }
 
 TEST_CASE("programs/test2 - Scopes, multiple assignments, equality (non-arrays)", "[codegen]")
