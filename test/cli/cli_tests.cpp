@@ -102,7 +102,7 @@ prog main :: c : -int {
     inputs.push_back(bsl_lib_arrays);
     inputs.push_back(temp);
 
-    compile(
+    REQUIRE_FALSE(compile(
         inputs,
         "-.ll",
         false,
@@ -111,7 +111,7 @@ prog main :: c : -int {
         false,
         false,
         CompileType::none
-    );
+    ).has_value());
 
 
     REQUIRE(bsl_lib_types->getIrStr() ==
@@ -562,7 +562,7 @@ prog main :: c : -int {
     inputs.push_back(bsl_lib_arrays);
     inputs.push_back(temp);
 
-    compile(
+    REQUIRE_FALSE(compile(
         inputs,
         "-.ll",
         false,
@@ -571,7 +571,7 @@ prog main :: c : -int {
         false,
         false,
         CompileType::none
-    );
+    ).has_value());
 
 
     REQUIRE(bsl_lib_types->getIrStr() ==

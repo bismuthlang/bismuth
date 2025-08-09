@@ -448,7 +448,7 @@ std::optional<std::string> Stage_CodeGen(CodegenInput * inputs,  std::string out
     return std::nullopt;
 }
 
-int compile(
+std::optional<std::string> compile(
     std::vector<LexParseInput *> inputs, 
     std::string outputFileName, 
     bool demoMode, 
@@ -481,8 +481,7 @@ int compile(
 
     return match(Stage_lexParse(inputs))(
         pattern | as<std::string>(lexParseErrorHandler) = [&]{
-            std::cerr << (*lexParseErrorHandler) << std::endl;
-            return -1;
+            return (*lexParseErrorHandler);
         },
         pattern | as<SemanticInput*>(lexParseResults) = [&]{
 
@@ -496,7 +495,7 @@ int compile(
                 toStringMode
             ))(
                 pattern | as<CodegenInput*>(semanticResults) = [&]{
-                    auto codegenResults = Stage_CodeGen(
+                    return Stage_CodeGen(
                         *semanticResults,
                         outputFileName,
                         demoMode,
@@ -506,19 +505,11 @@ int compile(
                         noCode,
                         compileWith
                     );
-                    if(codegenResults)
-                    {
-                        std::cerr << codegenResults.value() << std::endl;
-                        return -1; 
-                    }
-                    return 0;
                 },
                 pattern | as<std::string>(semanticError) = [&]{
-                    std::cerr << (*semanticError) << std::endl;
-                    return -1; 
+                    return (*semanticError);
                 }
             );
-            return 0;
         }
     );
 }
@@ -543,7 +534,7 @@ int compileFiles(std::string argSrcPath, std::string argBuildPath, std::string o
      *******************************************************************/
     std::vector<LexParseInput *> inputs = getInputsFromFiles(argSrcPath, argBuildPath, inputFileName);
 
-    compile(
+    auto results = compile(
         inputs,
         outputFileName,
         demoMode,
@@ -553,6 +544,12 @@ int compileFiles(std::string argSrcPath, std::string argBuildPath, std::string o
         noCode,
         compileWith
     );
+
+    if(results)
+    {
+        std::cerr << results.value() << std::endl; 
+        return -1; 
+    }
 
     return 0;
 }
