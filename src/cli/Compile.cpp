@@ -164,9 +164,9 @@ llvm::TargetMachine * getTargetMachine()
 
 std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> Stage_lexParse(std::vector<LexParseInput *> inputs)
 {
-    bool valid = true;
-
     std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> ans;
+
+    BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
 
     for (auto input : inputs)
     {
@@ -187,23 +187,21 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>>
          *******************************************************************/
         BismuthParser * parser = new BismuthParser(tokens);
         parser->removeErrorListeners();
-        BismuthSyntaxErrorListener *syntaxListener = new BismuthSyntaxErrorListener();
         parser->addErrorListener(syntaxListener);
 
         // Run The parser
         BismuthParser::CompilationUnitContext * tree = nullptr;
         tree = parser->compilationUnit();
-
-        if (syntaxListener->hasErrors(0)) // Want to see all errors.
-        {
-            std::cerr << syntaxListener->errorList() << std::endl;
-            valid = false; // Shouldn't be needed
-        }
         ans.push_back({tree, input});
-        delete syntaxListener;
     }
     
-    if(!valid) std::exit(-1);
+    if (syntaxListener->hasErrors(0)) // Want to see all errors.
+    {
+        std::cerr << syntaxListener->errorList() << std::endl;
+        std::exit(-1);
+    }
+
+    delete syntaxListener;
 
     return ans; 
 }
