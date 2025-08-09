@@ -252,6 +252,7 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
 
 std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps)
 {
+    // FIXME: is this only ever used for test cases? Like, outside of our test files, this is never called as this isn't how we actually compile stuff...
     DEFINE_OR_PROPAGATE_VARIANT(
         MACRO_ARG(
             SemanticVisitor::ImportPhaseClosure),
