@@ -165,7 +165,7 @@ llvm::TargetMachine * getTargetMachine()
 
 
 
-std::variant<SemanticInput*, BismuthErrorHandler *> Stage_lexParse(std::vector<LexParseInput *> inputs)
+std::variant<SemanticInput*, std::string> Stage_lexParse(std::vector<LexParseInput *> inputs)
 {
     std::vector<std::pair<BismuthParser::CompilationUnitContext *, LexParseInput *>> ans;
 
@@ -200,8 +200,9 @@ std::variant<SemanticInput*, BismuthErrorHandler *> Stage_lexParse(std::vector<L
     
     if (syntaxListener->hasErrors(0)) // Want to see all errors.
     {
-        std::cerr << syntaxListener->errorList() << std::endl;
-        std::exit(-1);
+        auto ans = syntaxListener->errorList();
+        delete syntaxListener;
+        return ans; 
     }
 
     delete syntaxListener;
@@ -305,10 +306,11 @@ std::variant<CodegenInput *, std::string> Stage_PSemantic(SemanticInput* inputs,
     return new CodegenInput(ans); 
 }
 
-void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
+std::optional<std::string> Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demoMode, bool isVerbose, DisplayMode toStringMode, bool printOutput, bool noCode, CompileType compileWith)
 {
     bool isValid = true;
     bool useOutputFileName = outputFileName != "-.ll";
+    std::ostringstream errorMsgs;
 
     /*
      * Sets up compiler flags. These need to be sent to the visitors.
@@ -336,7 +338,7 @@ void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demo
         cv.visitCompilationUnit(*cu);
         if (cv.hasErrors(0)) // Want to see all errors
         {
-            std::cerr << cv.getErrors() << std::endl;
+            errorMsgs << cv.getErrors() << std::endl;
             isValid = false;
             continue;
         }
@@ -357,8 +359,7 @@ void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demo
             auto irOutOpt = input->getIROut(); 
             if (std::error_code *ec = std::get_if<std::error_code>(&irOutOpt))
             {
-                std::cerr << ec->message() << std::endl; 
-                return; 
+                return ec->message();
             }
             
             llvm::raw_ostream * stream = std::get<llvm::raw_ostream *>(irOutOpt);
@@ -380,8 +381,7 @@ void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demo
             auto objOutOpt = input->getObjectOut(); 
              if (std::error_code *ec = std::get_if<std::error_code>(&objOutOpt))
             {
-                std::cerr << ec->message() << std::endl; 
-                return; 
+                return ec->message();
             }
 
             llvm::raw_pwrite_stream * stream = std::get<llvm::raw_pwrite_stream *>(objOutOpt);
@@ -391,8 +391,7 @@ void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demo
 
             if (TheTargetMachine->addPassesToEmitFile(pass, *stream, nullptr, FileType))
             {
-                std::cerr << "TheTargetMachine can't emit a file of this type" << std::endl;
-                return;
+                return "TheTargetMachine can't emit a file of this type";
             }
 
             pass.run(*module);
@@ -405,8 +404,13 @@ void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demo
         delete cu;
     }
 
+    if(!isValid)
+    {
+        return errorMsgs.str();
+    }
+
     // TODO: Separate out into separate stage
-    if (isValid && compileWith != none)
+    if (compileWith != none)
     {
         std::ostringstream cmd;
 
@@ -420,7 +424,7 @@ void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demo
             cmd << "g++ ";
             break;
         case none:
-            return; // Not even possible
+            assert(false);// Not even possible
         }
 
         std::string ext = compileWith == clangll ? ".ll" : ".o";
@@ -441,6 +445,7 @@ void Stage_CodeGen(CodegenInput * inputs,  std::string outputFileName, bool demo
         exec(cmd.str());
     }
 
+    return std::nullopt;
 }
 
 int compile(
@@ -472,12 +477,11 @@ int compile(
 
     using namespace matchit; 
     Id<SemanticInput*> lexParseResults;
-    Id<BismuthErrorHandler*> lexParseErrorHandler; 
+    Id<std::string> lexParseErrorHandler; 
 
     return match(Stage_lexParse(inputs))(
-        pattern | as<BismuthErrorHandler *>(lexParseErrorHandler) = [&]{
-            std::cerr << (*lexParseErrorHandler)->errorList() << std::endl;
-            delete *lexParseErrorHandler;
+        pattern | as<std::string>(lexParseErrorHandler) = [&]{
+            std::cerr << (*lexParseErrorHandler) << std::endl;
             return -1;
         },
         pattern | as<SemanticInput*>(lexParseResults) = [&]{
@@ -492,7 +496,7 @@ int compile(
                 toStringMode
             ))(
                 pattern | as<CodegenInput*>(semanticResults) = [&]{
-                    Stage_CodeGen(
+                    auto codegenResults = Stage_CodeGen(
                         *semanticResults,
                         outputFileName,
                         demoMode,
@@ -502,7 +506,12 @@ int compile(
                         noCode,
                         compileWith
                     );
-                    return 0; // FIXME: NOT QUITE, STILL NEED TO REPORT ERROR
+                    if(codegenResults)
+                    {
+                        std::cerr << codegenResults.value() << std::endl;
+                        return -1; 
+                    }
+                    return 0;
                 },
                 pattern | as<std::string>(semanticError) = [&]{
                     std::cerr << (*semanticError) << std::endl;
