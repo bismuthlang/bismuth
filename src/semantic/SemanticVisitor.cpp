@@ -253,30 +253,27 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
 std::variant<TCompilationUnitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps)
 {
     DEFINE_OR_PROPAGATE_VARIANT(
-        MACRO_ARG(std::function<std::variant<
-            std::function<std::function<std::variant<TCompilationUnitNode *, ErrorChain *>()>()>,
-            ErrorChain *>()>),
+        MACRO_ARG(
+            SemanticVisitor::ImportPhaseClosure),
         phasedVisitor1,
         phasedVisit(ctx, steps),
         ctx
     );
 
     DEFINE_OR_PROPAGATE_VARIANT(
-        MACRO_ARG(std::function<std::function<
-            std::variant<TCompilationUnitNode *,
-            ErrorChain *>()>()>),
+        MACRO_ARG(SemanticVisitor::DefineFwdDeclsPhaseClosure),
         phasedVisitor2,
         phasedVisitor1(),
         ctx
     );
 
     DEFINE_OR_PROPAGATE_VARIANT(
-        TCompilationUnitNode *,
-        ans,
-        phasedVisitor2()(),
+        MACRO_ARG(SemanticVisitor::PhaseNClosure),
+        phasedVisitor3,
+        phasedVisitor2(),
         ctx
     );
-    return ans;
+    return phasedVisitor3();
 }
 
 std::variant<
@@ -308,11 +305,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
 
     provisionFwdDeclSymbols(ctx);
 
-    return [this, ctx, cuScope]() ->
-        std::variant<
-            std::function<std::function<std::variant<TCompilationUnitNode *, ErrorChain *>()>()>,
-            ErrorChain *
-    >{
+    return [this, ctx, cuScope]() -> SemanticVisitor::ImportPhaseResult {
         stmgr->enterScope(cuScope);
 
         {
@@ -328,35 +321,16 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
 
         DEFINE_OR_PROPAGATE_VARIANT(std::vector<TExternNode *>, externs, visitExterns(ctx), ctx); 
 
-        return [this, ctx, cuScope, externs]() -> std::function<std::variant<TCompilationUnitNode *, ErrorChain *>()>{
+        return [this, ctx, cuScope, externs]() -> SemanticVisitor::DefineFwdDeclsPhaseResult {
             stmgr->enterScope(cuScope);
             // FIXME: ERROR CHECK!
-            defineFwdDeclSymbols(ctx);
-
-            for(auto implCtx : ctx->implementations)
             {
-                // FIXME: do basic checks on traits
-                // Needs to be two phases: 
-                //  1. to establish what types have traits and their uniqueness
-                //  2. check implementations are valid
-                // Unfortunatley this does mean that there will be some duplication on what the various passes do
-
-                // Phase 1: Uniqueness
-                {
-                    // DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, lhsTy, visitPathType(implCtx->traitPath), implCtx, "Unknown type.");
-                    // DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
-                    //     const TypeTrait *,
-                    //     traitTy,
-                    //     type_cast<TypeTrait>(lhsTy),
-                    //     implCtx,
-                    // "Cannot implement non-trait type: " + lhsTy->toString(toStringMode));
-                    // return errorHandler.addError(implCtx->getStart(), "Unimplemented!");
-                }
-
-                
+                auto fwdDeclErrors = defineFwdDeclSymbols(ctx);
+                if(fwdDeclErrors.has_value())
+                    return fwdDeclErrors.value();
             }
 
-            return [this, ctx, cuScope, externs]() -> std::variant<TCompilationUnitNode *, ErrorChain *> {
+            return [this, ctx, cuScope, externs]() -> SemanticVisitor::PhaseNResult {
                 stmgr->enterScope(cuScope);
 
                 DEFINE_OR_PROPAGATE_VARIANT(std::vector<DefinitionNode *>, defs, visitFwdDecls(ctx), ctx); 

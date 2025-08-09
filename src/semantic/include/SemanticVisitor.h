@@ -279,9 +279,14 @@ public:
     std::optional<ErrorChain *> postCUVisitChecks(BismuthParser::CompilationUnitContext *ctx);
 
     // typedef unsigned long ulong;
-    typedef std::function<std::variant<TCompilationUnitNode *, ErrorChain *>()> PhaseNClosure;
-    typedef std::function<PhaseNClosure()> DefineFwdDeclsPhaseClosure;
-    typedef std::function<std::variant<DefineFwdDeclsPhaseClosure, ErrorChain *>()> ImportPhaseClosure;
+    typedef std::variant<TCompilationUnitNode *, ErrorChain *> PhaseNResult;
+    typedef std::function<PhaseNResult()> PhaseNClosure;
+
+    typedef std::variant<PhaseNClosure, ErrorChain *> DefineFwdDeclsPhaseResult;
+    typedef std::function<DefineFwdDeclsPhaseResult()> DefineFwdDeclsPhaseClosure;
+
+    typedef std::variant<DefineFwdDeclsPhaseClosure, ErrorChain *> ImportPhaseResult;
+    typedef std::function<ImportPhaseResult()> ImportPhaseClosure;
 
 std::variant<
     ImportPhaseClosure,

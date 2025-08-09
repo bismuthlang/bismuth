@@ -87,6 +87,30 @@
 
 
 
+
+template<typename T>
+std::pair<std::vector<T>, std::vector<ErrorChain*>> 
+collect_separate_results (std::vector<std::variant<T, ErrorChain *>> input)
+{
+  std::vector<T> res; 
+  std::vector<ErrorChain *> errors; 
+
+  for(auto ele : input)
+  {
+    if (ErrorChain **e = std::get_if<ErrorChain *>(&ele))
+    {
+      errors.push_back(*e);
+    }
+    else if(T * a = std::get_if<T>(&ele))
+    {
+      res.push_back(*a);
+    }
+  }
+
+  return {res, errors};
+}
+
+
 template<typename T>
 std::variant<std::vector<T>, ErrorChain*> 
 collect_results (std::vector<std::variant<T, ErrorChain *>> input)

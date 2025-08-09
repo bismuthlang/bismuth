@@ -287,15 +287,14 @@ std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(
         std::exit(-1);
     }
 
-    std::vector<SemanticVisitor::PhaseNClosure> nClosures; 
-    for(auto fwdClos : fwdDeclClosures)
-    {
-        nClosures.push_back(
-            fwdClos()
-        ); 
-    }
+    auto [nClosures, phaseNErrors] = collect_separate_results(
+        fplus::transform(
+            [](auto fwdClos){ return fwdClos(); },
+            fwdDeclClosures
+        )
+    );
 
-    if(!valid || sv.hasErrors(0))
+    if(phaseNErrors.size() || sv.hasErrors(0))
     {
         std::cerr << sv.getErrors() << std::endl;
         std::exit(-1);
