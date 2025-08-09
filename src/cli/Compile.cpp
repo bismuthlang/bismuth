@@ -218,12 +218,6 @@ std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>>
  *******************************************************************/
 std::vector<std::pair<TCompilationUnitNode *, CompilerInput *>> Stage_PSemantic(std::vector<std::pair<BismuthParser::CompilationUnitContext *, CompilerInput *>> inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
 {
-    // auto printErrors = [](ErrorChain *) {
-    //     std::cerr << "Semantic analysis completed for " << input->getSourceName() << " with errors: " << std::endl;
-    //     std::cerr << sv.getErrors() << std::endl;
-    //     valid = false;
-    //     // continue;
-    // }
     /*
      * Sets up compiler flags. These need to be sent to the visitors.
      */
