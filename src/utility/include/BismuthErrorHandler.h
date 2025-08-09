@@ -79,13 +79,13 @@ private:
 
 struct ErrorChain
 {
-    std::optional<BismuthError *> error; 
+    std::optional<BismuthError> error; 
     std::vector<ErrorChain *> branches; 
 
     ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
     {
         severity = es; 
-        error = new BismuthError(et, es, tok, msg);
+        error = BismuthError(et, es, tok, msg);
     }
 
     ErrorChain * addErrorAt(antlr4::Token *t);

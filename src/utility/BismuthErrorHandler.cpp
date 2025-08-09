@@ -89,15 +89,11 @@ ErrorChain * ErrorChain::addErrorAt(antlr4::Token *t)
 
     if(!this->error)
     {
-        this->error = new BismuthError(COMBO, ERROR, t, "");
+        this->error = BismuthError(COMBO, ERROR, t, "");
         return this; 
     }
 
-    (*error)->addTrace(t, "");
-    // BismuthError *e = new BismuthError(t, "");
-    // chain.push_back(e);
-    
-
+    (*error).addTrace(t, "");
 
     return this; 
 }
@@ -116,16 +112,12 @@ ErrorChain * ErrorChain::addError(antlr4::Token *t, std::string msg)
 
     if(!this->error)
     {
-        this->error = new BismuthError(COMBO, ERROR, t, msg);
+        this->error = BismuthError(COMBO, ERROR, t, msg);
         return this; 
     }
 
-    (*error)->addTrace(t, msg);
+    (*error).addTrace(t, msg);
 
-
-    // BismuthError *e = new BismuthError(t, msg);
-
-    // chain.push_back(e);
     return this; 
 }
 
@@ -182,7 +174,7 @@ std::vector<std::string> ErrorChain::asTrace()
 
     if(error)
     {
-        for(auto s : (*error)->asTrace())
+        for(auto s : (*error).asTrace())
         {
             // if(this->branches.size())
             //     ans.push_back("| " + s);
