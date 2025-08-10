@@ -67,7 +67,7 @@ std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthPars
         DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
             DefinitionSymbol*,
             defSym,
-            stmgr->addDefinition(VisibilityModifier::PUBLIC, id, opt.value().second, true),
+            stmgr.addDefinition(VisibilityModifier::PUBLIC, id, opt.value().second, true),
             ctx,
             "Unsupported redeclaration of " + id);
 
@@ -180,7 +180,7 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
 
     bool demoMode = flags & CompilerFlags::DEMO_MODE;
     
-    if (std::optional<Symbol *> opt = stmgr->lookup("main"); opt.has_value())
+    if (std::optional<Symbol *> opt = stmgr.lookup("main"); opt.has_value())
     {
         Symbol *sym = opt.value();
         std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->getType());
@@ -208,12 +208,12 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
     }
 
     // Should be impossible
-    if(!stmgr->getCurrentScope())
+    if(!stmgr.getCurrentScope())
     {
         return errorHandler.addCompilerError(ctx->getStart(), "No current scope for the compilation unit!");
     }
 
-    Scope * scope = stmgr->getCurrentScope().value();
+    Scope * scope = stmgr.getCurrentScope().value();
 
     // Try to unify symbols (really needed for things like nums wherein
     // we know what types are possible to infer, so we can just
@@ -253,12 +253,12 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
     Scope * cuScope;
     if(steps.empty())
     {
-        stmgr->enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
-        cuScope = stmgr->getCurrentScope().value();
+        stmgr.enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
+        cuScope = stmgr.getCurrentScope().value();
     }
     else
     {
-        std::optional<Scope *> scopeOpt = stmgr->getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
+        std::optional<Scope *> scopeOpt = stmgr.getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
 
         if(!scopeOpt)
         {
@@ -267,13 +267,13 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
 
         cuScope = scopeOpt.value();
 
-        stmgr->enterScope(cuScope);
+        stmgr.enterScope(cuScope);
     }
 
     provisionFwdDeclSymbols(ctx);
 
     return [this, ctx, cuScope]() -> SemanticVisitor::ImportPhaseResult {
-        stmgr->enterScope(cuScope);
+        stmgr.enterScope(cuScope);
 
         {
             auto importError = collect_optionals(
@@ -289,7 +289,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
         DEFINE_OR_PROPAGATE_VARIANT(std::vector<TExternNode *>, externs, visitExterns(ctx), ctx); 
 
         return [this, ctx, cuScope, externs]() -> SemanticVisitor::DefineFwdDeclsPhaseResult {
-            stmgr->enterScope(cuScope);
+            stmgr.enterScope(cuScope);
             {
                 auto fwdDeclErrors = defineFwdDeclSymbols(ctx);
                 if(fwdDeclErrors.has_value())
@@ -297,7 +297,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
             }
 
             return [this, ctx, cuScope, externs]() -> SemanticVisitor::PhaseNResult {
-                stmgr->enterScope(cuScope);
+                stmgr.enterScope(cuScope);
 
                 DEFINE_OR_PROPAGATE_VARIANT(std::vector<DefinitionNode *>, defs, visitFwdDecls(ctx), ctx); 
                 // Visit the statements contained in the unit
@@ -433,13 +433,13 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         // Lookup the function in the current scope and prevent re-declarations
 
         // Add the symbol to the stmgr and enter the scope.
-        if(!stmgr->getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "STManager does not have a current scope!");
-        Scope * orig = stmgr->getCurrentScope().value();
-        stmgr->enterScope(defSym->getInnerScope());
+        if(!stmgr.getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "STManager does not have a current scope!");
+        Scope * orig = stmgr.getCurrentScope().value();
+        stmgr.enterScope(defSym->getInnerScope());
 
-        Symbol *channelSymbol = stmgr->addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
+        Symbol *channelSymbol = stmgr.addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
         // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
-        stmgr->addSymbol("@EXIT", Types::UNIT, false);
+        stmgr.addSymbol("@EXIT", Types::UNIT, false);
 
         // Safe visit the program block without creating a new scope (as we are managing the scope)
         DEFINE_OR_PROPAGATE_VARIANT_WMSG(TBlockNode *, blk, this->safeVisitBlock(ctx->block(), false), ctx, "Failed to save visit block");
@@ -452,7 +452,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
         // Safe exit the scope.
         safeExitScope(ctx);
-        stmgr->enterScope(orig);
+        stmgr.enterScope(orig);
 
         return new TProgramDefNode(defSym, channelSymbol, blk, progType, ctx->getStart());
     };
@@ -1037,7 +1037,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 std::variant<TIdentifier *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IdentifierExprContext * ctx, bool is_rvalue)
 {
     // Determine the type of the expression we are visiting
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(ctx->VARIABLE()->getText()), ctx, "Undefined variable reference: " + ctx->VARIABLE()->getText());
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(ctx->VARIABLE()->getText()), ctx, "Undefined variable reference: " + ctx->VARIABLE()->getText());
 
     if (sym->getType()->isLinear())
     {
@@ -1046,7 +1046,7 @@ std::variant<TIdentifier *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
             errorHandler.addError(ctx->getStart(), "Cannot redefine linear variable!");
         }
 
-        if (!stmgr->removeSymbol(sym))
+        if (!stmgr.removeSymbol(sym))
         {
             errorHandler.addError(ctx->getStart(), "Failed to unbind local var: " + sym->toString());
         }
@@ -1163,7 +1163,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     std::string id = ctx->name->getText();
 
-    if (stmgr->isBound(id))
+    if (stmgr.isBound(id))
     {
         return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + id);
     }
@@ -1195,7 +1195,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
         DefinitionSymbol *, 
         sym, 
-        stmgr->addDefinition(
+        stmgr.addDefinition(
             VisibilityModifier::PUBLIC_LINK,
             id,
             funcTy,
@@ -1257,7 +1257,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, assignType, this->visitCtx(ctx->typeOrVar()), ctx, "Error generating assign type");
     const Type *origType = assignType->getCopy();
 
-    if (e->a && stmgr->isGlobalScope())
+    if (e->a && stmgr.isGlobalScope())
     {
       if (!(dynamic_cast<BismuthParser::BConstExprContext *>(e->a) ||
             dynamic_cast<BismuthParser::IConstExprContext *>(e->a) ||
@@ -1275,7 +1275,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     for (auto var : e->VARIABLE())
     {
       std::string id = var->getText();
-      std::optional<Symbol *> symOpt = stmgr->lookupInCurrentScope(id);
+      std::optional<Symbol *> symOpt = stmgr.lookupInCurrentScope(id);
       if (symOpt)
       {
         return errorHandler.addError(e->getStart(), "Redeclaration of " + id);
@@ -1307,7 +1307,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
       // Done with exprType for later type inference purposes
       // .value() should be safe as we already checked name uniqueness
       // FIXME: isGlobalScope probably doesnt work anymore with paths and namespaces. Revise it!
-      Symbol * symbol = stmgr->addSymbol(id, newExprType, stmgr->isGlobalScope()).value();
+      Symbol * symbol = stmgr.addSymbol(id, newExprType, stmgr.isGlobalScope()).value();
 
       // This is somewhat inefficient to have to repeat this for every single value, but needed if for linear resources and if we aren't purely FP.
       a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Does assignment node need to be list?
@@ -1356,12 +1356,12 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
         foundCaseTypes.insert(caseType);
       }
 
-      stmgr->enterScope(StopType::NONE);
-      DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, local, stmgr->addSymbol(altCtx->name->getText(), caseType, false), altCtx, "Duplicate case name"); // TODO: may provide duplicate errors to prior checks!
+      stmgr.enterScope(StopType::NONE);
+      DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, local, stmgr.addSymbol(altCtx->name->getText(), caseType, false), altCtx, "Duplicate case name"); // TODO: may provide duplicate errors to prior checks!
 
       std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, altCtx->eval->accept(this));
       // this->safeExitScope(altCtx);
-      stmgr->exitScope();
+      stmgr.exitScope();
       DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, ans, tnOpt, ctx);
 
       if (dynamic_cast<BismuthParser::TypeDefContext *>(altCtx->eval) ||
@@ -1399,7 +1399,7 @@ std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 {
     std::variant<TypedNode *, ErrorChain *> checkOpt;
 
-    stmgr->enterNonlinearScope(
+    stmgr.enterNonlinearScope(
         [this, &checkOpt, ctx](){
             checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
         }
@@ -1407,11 +1407,11 @@ std::variant<TWhileLoopNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, checkNode, checkOpt, ctx); 
 
-    stmgr->guard();
+    stmgr.guard();
 
     DEFINE_OR_PROPAGATE_VARIANT(TBlockNode *, blk, safeVisitBlock(ctx->block(), true), ctx);
 
-    if (!stmgr->unguard())
+    if (!stmgr.unguard())
     {
         return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
     }
@@ -1441,7 +1441,7 @@ std::variant<TBlockNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
 
     // PLAN: Update to handle better (along with while loops)
     std::variant<TypedNode *, ErrorChain *> checkOpt;
-    stmgr->enterNonlinearScope(
+    stmgr.enterNonlinearScope(
         [this, &checkOpt, ctx](){
             checkOpt = this->visitCtx(ctx->check); // Visiting check will make sure we have a boolean condition
         }
@@ -1449,14 +1449,14 @@ std::variant<TBlockNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, check, checkOpt, ctx, "Failed to typecheck condition in for loop");
 
-    stmgr->guard();
+    stmgr.guard();
 
     DEFINE_OR_PROPAGATE_VARIANT(TBlockNode *, block, safeVisit(
         {ctx->block(), ctx->expr},
         true),
         ctx); 
 
-    if (!stmgr->unguard())
+    if (!stmgr.unguard())
     {
         return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
     }
@@ -1557,7 +1557,7 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
                 return errorHandler.addError(ctx->getStart(), "Select alternative expected boolean but got " + checkType->toString(toStringMode));
             }
 
-            stmgr->enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
+            stmgr.enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
 
             DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, eval, anyOpt2VarError<TypedNode>(errorHandler, e->eval->accept(this)), ctx);
 
@@ -1573,7 +1573,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     /*
      * Lookup the @RETURN symbol which can ONLY be defined by entering a function
      */
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup("@RETURN"), ctx, "Cannot use return outside of a function");
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup("@RETURN"), ctx, "Cannot use return outside of a function");
 
     // If the return statement has an expression...
     if (ctx->expression())
@@ -1606,7 +1606,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
 std::variant<TExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExitStatementContext *ctx)
 {
-    std::optional<Symbol *> symOpt = stmgr->lookup("@EXIT");
+    std::optional<Symbol *> symOpt = stmgr.lookup("@EXIT");
 
     // If we don't have the symbol, we're not in a place that we can return from.
     if (!symOpt)
@@ -1637,12 +1637,12 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 {
     // FIXME: technically could be bad opt access, but should never happen
     DefinitionSymbol * sym = lazy_value_or<DefinitionSymbol *>(symOpt,
-        [this]() {return stmgr->addAnonymousDefinition("lambda", new TypeFunc()).value(); });
+        [this]() {return stmgr.addAnonymousDefinition("lambda", new TypeFunc()).value(); });
 
-    if(!stmgr->getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of lambda constexpr!");
+    if(!stmgr.getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of lambda constexpr!");
 
-    Scope * origScope = stmgr->getCurrentScope().value();
-    stmgr->enterScope(sym->getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
+    Scope * origScope = stmgr.getCurrentScope().value();
+    stmgr.enterScope(sym->getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
 
     DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params,  visitCtx(ctx->parameterList()), ctx); 
 
@@ -1666,12 +1666,12 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
             funcTy->setInvoke(paramTypes, retType, false);
     }
 
-    stmgr->addSymbol("@RETURN", retType, false); // Because of inserting a global stop, this will always go through
+    stmgr.addSymbol("@RETURN", retType, false); // Because of inserting a global stop, this will always go through
 
     for (ParameterNode param : params)
     {
         ps.push_back(
-            stmgr->addSymbol(param.name, param.type, false).value() // TODO: should this be error checked? Based on global stop it should be fine unless duplicates.. but that's likely already caught?
+            stmgr.addSymbol(param.name, param.type, false).value() // TODO: should this be error checked? Based on global stop it should be fine unless duplicates.. but that's likely already caught?
         );
     }
 
@@ -1691,7 +1691,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
     }
     safeExitScope(ctx);
-    stmgr->enterScope(origScope);
+    stmgr.enterScope(origScope);
 
     return new TLambdaConstNode(sym, ps, retType, blk, ctx->getStart());
 }
@@ -1783,10 +1783,10 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         const TypeSum * sumTy = dynamic_cast<const TypeSum *>(templateTy->getValueType().value());
         if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Template Type Value expected to be sum, but got: " + templateTy->getValueType().value()->toString(toStringMode));
 
-        if(!stmgr->getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of enum definition!");
+        if(!stmgr.getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of enum definition!");
 
-        Scope * origScope = stmgr->getCurrentScope().value();
-        stmgr->enterScope(sym->getInnerScope());
+        Scope * origScope = stmgr.getCurrentScope().value();
+        stmgr.enterScope(sym->getInnerScope());
         TDefineEnumNode * enumNode = new TDefineEnumNode(
             sym,
             sumTy,
@@ -1799,7 +1799,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
             ctx->getStart()
         );
 
-        stmgr->enterScope(origScope);
+        stmgr.enterScope(origScope);
 
         return templateNode;
     }
@@ -1902,7 +1902,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
 
         std::string name = pCtx->id->getText();
 
-        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(name), pCtx, "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(name), pCtx, "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
 
         if (!sym->getType() || !sym->isDefinition())
         {
@@ -1925,7 +1925,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
     }
 
     // FIXME: add visibility modifiers & checks!
-    std::reference_wrapper<Scope> lookupScope = stmgr->getGlobalScope();
+    std::reference_wrapper<Scope> lookupScope = stmgr.getGlobalScope();
     const Type * pathVar;
 
     for(auto pCtx : ctx->eles)
@@ -1939,7 +1939,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
         //         errorHandler.addError(ctx->getStart(), "Cannot redefine linear variable!");
         //     }
 
-        //     if (!stmgr->removeSymbol(sym))
+        //     if (!stmgr.removeSymbol(sym))
         //     {
         //         errorHandler.addError(ctx->getStart(), "Failed to unbind local var: " + sym->toString());
         //     }
@@ -2096,7 +2096,7 @@ SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(BismuthParser::ProgramSendContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot send on non-channel: " + id);
 
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx);
@@ -2115,7 +2115,7 @@ std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSen
 std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot recv on non-channel: " + id);
 
     bool closeState = channel->getProtocol()->isInCloseable();
@@ -2131,7 +2131,7 @@ std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
 std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot recv on non-channel: " + id);
 
     bool isInCloseable = channel->getProtocol()->isInCloseable();
@@ -2146,7 +2146,7 @@ std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssign
 std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(BismuthParser::ProgramCaseContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot case on non-channel: " + id);
     
     std::set<
@@ -2235,7 +2235,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
       [this, fullSequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
       {
         const ProtocolSequence *proto = fullSequences.at(branch++);
-        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), alt, "Could find channel: " + id);
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), alt, "Could find channel: " + id);
         DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), alt, "Channel identifier does not have a channel type in external choice.");
         channel->setProtocol(proto);
         std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
@@ -2248,7 +2248,7 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramProject(BismuthParser::ProgramProjectContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot project on non-channel: " + id);
 
     if(ctx->lbl)
@@ -2281,7 +2281,7 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgramContract(BismuthParser::ProgramContractContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot contract on non-channel: " + id);
     if (!channel->getProtocol()->contract())
     {
@@ -2307,7 +2307,7 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
 std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot weaken on non-channel: " + id);
     if (!channel->getProtocol()->weaken())
     {
@@ -2319,7 +2319,7 @@ std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramW
 std::variant<TProgramCancelNode *, ErrorChain *> SemanticVisitor::TvisitProgramCancel(BismuthParser::ProgramCancelContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot cancel on non-channel: " + id); // TODO: better error messages (expected type XYZ but got...)
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const ProtocolClose *, proto_post_close, channel->getProtocol()->cancel(), ctx, "Failed to cancel: " + id + " : "  + channel->toString(toStringMode));
 
@@ -2329,7 +2329,7 @@ std::variant<TProgramCancelNode *, ErrorChain *> SemanticVisitor::TvisitProgramC
 std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAccept(BismuthParser::ProgramAcceptContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Unbound identifier: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Unbound identifier: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel*, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot accept: " + sym->toString());
     bool isInCloseable = channel->getProtocol()->isInCloseable();
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const ProtocolSequence *, proto_post_accept, channel->getProtocol()->acceptLoop(), ctx, "Cannot accept on " + channel->toString(toStringMode));
@@ -2337,12 +2337,12 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
     const ProtocolSequence *postC = channel->getProtocolCopy();
     postC->guard();
 
-    stmgr->guard();
+    stmgr.guard();
 
     channel->setProtocol(proto_post_accept);
 
     std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-    std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
+    std::vector<Symbol *> lins = stmgr.getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
@@ -2358,7 +2358,7 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
     }
 
     channel->setProtocol(postC);
-    if (!stmgr->unguard())
+    if (!stmgr.unguard())
     {
       return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
     }
@@ -2371,7 +2371,7 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
 std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Unbound identifier: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Unbound identifier: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot accept: " + sym->toString());
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, condition, this->visitCondition(ctx->ex), ctx);
 
@@ -2381,11 +2381,11 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
     const ProtocolSequence *postC = channel->getProtocolCopy();
     postC->guard();
 
-    stmgr->guard();
+    stmgr.guard();
     channel->setProtocol(proto_post_accept);
 
     std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-    std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
+    std::vector<Symbol *> lins = stmgr.getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
@@ -2401,7 +2401,7 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
     }
 
     channel->setProtocol(postC);
-    if (!stmgr->unguard())
+    if (!stmgr.unguard())
     {
       return errorHandler.addError(ctx->getStart(), "Could not unguard resources in scope");
     }
@@ -2414,7 +2414,7 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
 std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), ctx, "Unbound identifier: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Unbound identifier: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot accept: " + sym->toString());
 
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, condition, this->visitCondition(ctx->check), ctx);
@@ -2446,7 +2446,7 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         if (idx == 0)
         {
           idx++;
-          DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr->lookup(id), blk, "Could not find channel: " + id); // FIXME: FIND BETTER WAY TO MAP AND CHANGE CHANNEL VALUES IN SPECIFIC BRANCHES
+          DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), blk, "Could not find channel: " + id); // FIXME: FIND BETTER WAY TO MAP AND CHANGE CHANNEL VALUES IN SPECIFIC BRANCHES
           DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), blk, "Channel identifier does not have a channel type in accept if.");
           channel->setProtocol(proto_post_accept);
           return this->safeVisitBlock(blk, false);
@@ -2505,7 +2505,7 @@ std::optional<ErrorChain *> SemanticVisitor::TVisitImportStatement(BismuthParser
 
     std::string aliasStr = ctx->alias ? ctx->alias->getText() : ctx->path()->eles.at(ctx->path()->eles.size() - 1)->getText();
 
-    if(stmgr->lookupInCurrentScope(aliasStr))
+    if(stmgr.lookupInCurrentScope(aliasStr))
     {
         return errorHandler.addError(ctx->getStart(), aliasStr + " is already defined."); // TODO: better error
     }
@@ -2519,7 +2519,7 @@ std::optional<ErrorChain *> SemanticVisitor::TVisitImportStatement(BismuthParser
             return errorHandler.addCompilerError(ctx->getStart(), "Imported type does not have a name");
         }
 
-        stmgr->addAlias(
+        stmgr.addAlias(
             aliasStr,
             nt,
             nt->getIdentifier().value()
@@ -2553,7 +2553,7 @@ SemanticVisitor::visitCtx(BismuthParser::DefineImplContext *ctx)
 
     std::string aliasStr = ctx->alias ? ctx->alias->getText() : ctx->path()->eles.at(ctx->path()->eles.size() - 1)->getText();
 
-    if(stmgr->lookupInCurrentScope(aliasStr))
+    if(stmgr.lookupInCurrentScope(aliasStr))
     {
         return errorHandler.addError(ctx->getStart(), aliasStr + " is already defined."); // TODO: better error
     }
@@ -2567,7 +2567,7 @@ SemanticVisitor::visitCtx(BismuthParser::DefineImplContext *ctx)
             return errorHandler.addCompilerError(ctx->getStart(), "Imported type does not have a name");
         }
 
-        stmgr->addAlias(
+        stmgr.addAlias(
             aliasStr,
             nt,
             nt->getIdentifier().value()
@@ -2647,7 +2647,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
     // STManager *origStmgr = this->stmgr;
 
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Scope *, origScope, stmgr->getCurrentScope(), ctx, "Symbol table manager has no current scope at branch!");
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Scope *, origScope, stmgr.getCurrentScope(), ctx, "Symbol table manager has no current scope at branch!");
 
     const auto checkCase = [&](auto * branchToken, bool checkRest, std::string branchErrorMessage, std::string subsequentErrorMessage) -> std::optional<ErrorChain *>{
         if(checkRest)
@@ -2686,7 +2686,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
         // Note: this will throw errors if it fails, but we cannot detect them here
         safeExitScope(ctx);
 
-        std::vector<Symbol *> lins = stmgr->getLinears(SymbolLookupFlags::PENDING_LINEAR);
+        std::vector<Symbol *> lins = stmgr.getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
         // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
         // due to the var leaving the scope
@@ -2716,14 +2716,14 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
         if (checkRestIndependently || i + 1 < ctxCases.size())
         {
             Scope * scopeCpy = origScope->copyToStop();
-            this->stmgr->enterScope(scopeCpy);
+            this->stmgr.enterScope(scopeCpy);
         }
         else
         {
-            this->stmgr->enterScope(origScope);
+            this->stmgr.enterScope(origScope);
         }
 
-        stmgr->enterScope(StopType::NONE);
+        stmgr.enterScope(StopType::NONE);
         DEFINE_OR_PROPAGATE_VARIANT(Y, caseVal, typeCheck(alt), ctx);
         // TODO: add to error vec--only limitation is that doing
         // so may break later checking of branches due to not
@@ -2745,9 +2745,9 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
     if (checkRestIndependently)
     {
-        this->stmgr->enterScope(origScope);
+        this->stmgr.enterScope(origScope);
 
-        stmgr->enterScope(StopType::NONE); // Why? This doesn't make sense.. oh it does, but should ideally refactor!
+        stmgr.enterScope(StopType::NONE); // Why? This doesn't make sense.. oh it does, but should ideally refactor!
 
         std::optional<ErrorChain *> errorOpt = checkCase(ctx, true, "Failed to type check code when conditional skipped over", "Failed to type check when skipped over and no branch followed");
         if(errorOpt) errors.push_back(*errorOpt);
@@ -2887,14 +2887,14 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         if (templateTy->isDefined()) return std::nullopt;
 
         auto applyTemplate = [this, m, defSym, ctx](TemplateInfo info, std::function<std::optional<ErrorChain *>()> fn) -> std::optional<ErrorChain *> {
-            if(!stmgr->getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of define Template!");
+            if(!stmgr.getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of define Template!");
 
-            Scope * origScope = stmgr->getCurrentScope().value();
-            stmgr->enterScope(defSym->getInnerScope());
+            Scope * origScope = stmgr.getCurrentScope().value();
+            stmgr.enterScope(defSym->getInnerScope());
 
             for(auto i : info.templates)
             {
-                std::optional<DefinitionSymbol *> symOpt =  stmgr->addDefinition(m, i.first, i.second, false);
+                std::optional<DefinitionSymbol *> symOpt =  stmgr.addDefinition(m, i.first, i.second, false);
 
                 // FIXME: WRITE BETTER ERROR!
                 if(!symOpt)
@@ -2904,7 +2904,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             std::optional<ErrorChain *> ans = fn();
 
-            stmgr->enterScope(origScope);
+            stmgr.enterScope(origScope);
             return ans;
         };
 
@@ -2989,7 +2989,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
     auto getTemplateSymbol = [this, m, defineTemplate](std::optional<DefinitionSymbol *> opt, std::string symName, BismuthParser::DefineTypeContext* innerCtx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
         DefinitionSymbol * defSym = lazy_value_or<DefinitionSymbol *>(opt,
             [this, m, symName]() {
-                DefinitionSymbol * sym = stmgr->addDefinition(m, symName, new TypeTemplate(), false).value(); //should be safe as we checked for redeclarations
+                DefinitionSymbol * sym = stmgr.addDefinition(m, symName, new TypeTemplate(), false).value(); //should be safe as we checked for redeclarations
                 return sym;
             });
 
@@ -3011,7 +3011,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             std::optional<DefinitionSymbol *> opt = symBindings.getBinding(fnCtx);
 
-            if (!opt && stmgr->lookupInCurrentScope(fnCtx->name->getText()))
+            if (!opt && stmgr.lookupInCurrentScope(fnCtx->name->getText()))
             {
                 return errorHandler.addError(fnCtx->getStart(), "Unsupported redeclaration of " + fnCtx->name->getText());
             }
@@ -3021,7 +3021,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
             {
                 DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
                     [this, m, fnCtx](){
-                        return stmgr->addDefinition(
+                        return stmgr.addDefinition(
                             m,
                             fnCtx->name->getText(),
                             new TypeTemplate(),
@@ -3052,7 +3052,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
                 [this, m, fnCtx]() {
-                    return stmgr->addDefinition(
+                    return stmgr.addDefinition(
                         m,
                         fnCtx->name->getText(),
                         new TypeFunc(),
@@ -3073,7 +3073,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         [this, m, getTemplateSymbol, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
             std::optional<DefinitionSymbol *> opt = symBindings.getBinding((BismuthParser::DefineTypeContext *)ctx);
 
-            if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+            if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
             }
@@ -3084,7 +3084,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
             }
 
             DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
-                [this, m, ctx]() { return stmgr->addDefinition(
+                [this, m, ctx]() { return stmgr.addDefinition(
                     m,
                     ctx->name->getText(),
                     new TypeProgram(),
@@ -3105,7 +3105,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         [this, m, getTemplateSymbol, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
             std::optional<DefinitionSymbol *> opt = symBindings.getBinding(ctx);
 
-            if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+            if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
             }
@@ -3118,7 +3118,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
             }
 
             DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
-                [this, m, name]() { return stmgr->addDefinition(
+                [this, m, name]() { return stmgr.addDefinition(
                     m,
                     name,
                     new TypeStruct(),
@@ -3140,7 +3140,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         [this, m, getTemplateSymbol, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
             std::optional<DefinitionSymbol *> opt = symBindings.getBinding(ctx);
 
-            if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+            if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
             }
@@ -3154,7 +3154,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
                 [this, m, name](){
-                    return stmgr->addDefinition(
+                    return stmgr.addDefinition(
                         m,
                         name,
                         new TypeSum(),
@@ -3177,7 +3177,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         [this, m, getTemplateSymbol, defineTrait](BismuthParser::DefineTraitContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
             std::optional<DefinitionSymbol *> opt = symBindings.getBinding(ctx);
 
-            if (!opt && stmgr->lookupInCurrentScope(ctx->name->getText()))
+            if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
             {
                 return errorHandler.addError(ctx->getStart(), "Unsupported redeclaration of " + ctx->name->getText());
             }
@@ -3190,7 +3190,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
             }
 
             DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
-                [this, m, name]() { return stmgr->addDefinition(
+                [this, m, name]() { return stmgr.addDefinition(
                     m,
                     name,
                     new TypeTrait(),

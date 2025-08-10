@@ -17,15 +17,15 @@
 class Context {
 private: 
     std::map<std::string, uint32_t> & nameCounter; 
-    Scope * globalScope;
+    Scope globalScope;
 
 public:
     Context(std::map<std::string, uint32_t> & nc) 
         : nameCounter(nc) 
-        , globalScope(new Scope(std::nullopt, new Identifier("", "", std::nullopt), false))
+        , globalScope(Scope(std::nullopt, new Identifier("", "", std::nullopt), false))
     {
         // Maybe add a global scope for all files? 
-        currentScope = std::make_optional(globalScope);
+        currentScope = std::make_optional(&globalScope);
     }
 
     /**
@@ -131,7 +131,7 @@ public:
     std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m);
     
 
-    Scope& getGlobalScope() { return *globalScope; }
+    Scope& getGlobalScope() { return globalScope; }
   private:
     std::vector<Scope*> scopes;
     std::optional<Scope*> currentScope = {}; 

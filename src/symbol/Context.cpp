@@ -322,7 +322,7 @@ std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> ste
     // Note bad variable names (we have two current scopes in here)
     std::optional<Scope *> origScope = this->currentScope; 
 
-    this->currentScope = globalScope; 
+    this->currentScope = &globalScope; 
 
 
 

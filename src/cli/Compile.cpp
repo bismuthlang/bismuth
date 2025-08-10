@@ -218,7 +218,7 @@ std::variant<SemanticInput*, std::string> Stage_lexParse(std::vector<LexParseInp
  * and bind nodes to Symbols using the property manager. If
  * there are any errors we print them out and exit.
  *******************************************************************/
-std::variant<CodegenInput *, std::string> Stage_PSemantic(SemanticInput* inputs, bool demoMode, bool isVerbose, DisplayMode toStringMode)
+std::variant<CodegenInput *, std::string> Stage_PSemantic(SemanticInput* inputs, STManager& stm, bool demoMode, bool isVerbose, DisplayMode toStringMode)
 {
     /*
      * Sets up compiler flags. These need to be sent to the visitors.
@@ -227,10 +227,9 @@ std::variant<CodegenInput *, std::string> Stage_PSemantic(SemanticInput* inputs,
     int flags = (demoMode) ? CompilerFlags::DEMO_MODE : 0;
 
     bool valid = true;
-    STManager stm = STManager();
 
 
-    SemanticVisitor sv = SemanticVisitor(&stm, toStringMode, flags);
+SemanticVisitor sv = SemanticVisitor(stm, toStringMode, flags);
 
     // I wish there was an easy way to write programs (perhaps with constraints)
     // which is able to generate the following code, as it really is all algorithmic.
@@ -486,10 +485,13 @@ std::optional<std::string> compile(
         pattern | as<SemanticInput*>(lexParseResults) = [&]{
 
             Id<CodegenInput*> semanticResults; 
-            Id<std::string> semanticError; 
+            Id<std::string> semanticError;
+
+            STManager stm = STManager(); // Here so that the ref lives long enough for codegen
             
             return match(Stage_PSemantic(
                 *lexParseResults,
+                stm,
                 demoMode, 
                 isVerbose,
                 toStringMode

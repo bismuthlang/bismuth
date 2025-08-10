@@ -29,13 +29,11 @@ public:
      * @param p Property manager to use
      * @param f Compiler flags
      */
-    SemanticVisitor(STManager *s, DisplayMode mode, int f = 0)
-    {
-        stmgr = s;
-
-        toStringMode = mode;
-        flags = f;
-    }
+    SemanticVisitor(STManager& s, DisplayMode mode, int f = 0)
+        : stmgr(s)
+        , toStringMode(mode)
+        , flags(f)
+    {}
 
     std::string getErrors() { return errorHandler.errorList(); }
     bool hasErrors(int flags) { return errorHandler.hasErrors(flags); }
@@ -356,7 +354,7 @@ std::variant<
     {
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
+            stmgr.enterScope(StopType::NONE); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -395,7 +393,7 @@ std::variant<
 
         // Enter a new scope if desired
         if (newScope)
-            stmgr->enterScope(StopType::NONE); // TODO: DO BETTER?
+            stmgr.enterScope(StopType::NONE); // TODO: DO BETTER?
 
         std::vector<TypedNode *> nodes;
 
@@ -488,14 +486,12 @@ std::variant<
     inline std::variant<const TypeChannel *, ErrorChain *>
     visitProtocolAsChannel(BismuthParser::ProtocolContext *ctx);
 
-private:
-    DisplayMode toStringMode;
-
 public:
     DisplayMode getToStringMode() { return toStringMode; }
 
 private:
-    STManager *stmgr;
+    STManager& stmgr;
+    DisplayMode toStringMode;
     PropertyManager<DefinitionSymbol> symBindings = PropertyManager<DefinitionSymbol>();
     PropertyManager<std::deque<DeepRestData *>> restBindings = PropertyManager<std::deque<DeepRestData *>>();
     BismuthErrorHandler errorHandler = BismuthErrorHandler(SEMANTIC);
@@ -508,7 +504,7 @@ private:
 
     // void safeVisitScope(antlr4::ParserRuleContext *ctx, StopType stopType, void (*visitor)())
     // {
-    //     stmgr->enterScope(stopType);
+    //     stmgr.enterScope(stopType);
     //     visitor();
     //     safeExitScope(ctx);
     // }
@@ -516,17 +512,17 @@ private:
     // template<typename T>
     // safeVisitScope(StopType stopType, T (*visitor)())
     // {
-    //     stmgr->enterScope(stopType);
+    //     stmgr.enterScope(stopType);
     //     visitor();
     //     // safeExitScope(ctx);
-    //     stmgr->exitScope();
+    //     stmgr.exitScope();
     // }
 
 
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
         // First, try exiting the scope
-        std::optional<Scope *> res = stmgr->exitScope();
+        std::optional<Scope *> res = stmgr.exitScope();
 
         // If we did so and got a value back, then we can do type inferencing.
         if (res)
