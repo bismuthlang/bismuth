@@ -12,19 +12,20 @@
 #include "Scope.h"
 #include <vector>
 #include <optional>
+#include <functional>
 
 class Context {
 private: 
     std::map<std::string, uint32_t> & nameCounter; 
-    Scope * globalScope; 
+    Scope * globalScope;
 
 public:
     Context(std::map<std::string, uint32_t> & nc) 
         : nameCounter(nc) 
+        , globalScope(new Scope(std::nullopt, new Identifier("", "", std::nullopt), false))
     {
         // Maybe add a global scope for all files? 
-        enterScope();
-        globalScope = getCurrentScope().value(); 
+        currentScope = std::make_optional(globalScope);
     }
 
     /**
@@ -134,7 +135,7 @@ public:
   private:
     std::vector<Scope*> scopes;
     std::optional<Scope*> currentScope = {}; 
-    int scopeNumber = 0;
+    int scopeNumber = 1;
 
     std::string getUniqNameFor(Scope * parent, std::string inScope) {
         // TODO: not sure if getting FQN here will break some stuff wrt generics...
