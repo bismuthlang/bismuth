@@ -208,8 +208,7 @@ public:
     std::variant<TProgramAcceptIfNode *, ErrorChain *> TvisitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx);
     std::any visitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx) override { return TNVariantCast<TProgramAcceptIfNode>(TvisitProgramAcceptIf(ctx)); }
 
-    std::variant<TCompilationUnitNode *, ErrorChain *> visitCtx(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps = {});
-    std::any visitCompilationUnit(BismuthParser::CompilationUnitContext *ctx) override { return visitCtx(ctx); }
+    std::any visitCompilationUnit(BismuthParser::CompilationUnitContext *ctx) override { assert(false && "Compiler got lost; use phased visit instead!"); }
 
     std::variant<TVarDeclNode *, ErrorChain *> visitCtx(BismuthParser::VariableDeclarationContext *ctx);
     std::any visitVariableDeclaration(BismuthParser::VariableDeclarationContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); };
