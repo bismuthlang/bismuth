@@ -9,7 +9,7 @@
 #include "MacroUtils.h"
 #include "ProtocolVisitor.h"
 
-
+#include <functional>
 #include <variant>
 #include <fplus/fplus.hpp>
 

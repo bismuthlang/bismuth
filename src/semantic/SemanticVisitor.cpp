@@ -1925,13 +1925,13 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
     }
 
     // FIXME: add visibility modifiers & checks!
-    Scope * lookupScope = stmgr->getGlobalScope();
+    std::reference_wrapper<Scope> lookupScope = stmgr->getGlobalScope();
     const Type * pathVar;
 
     for(auto pCtx : ctx->eles)
     {
         std::string stepId = pCtx->id->getText();
-        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, lookupScope->lookup(stepId), pCtx, "Could not find " + stepId + " in " + lookupScope->getIdentifier()->getFullyQualifiedName());
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, lookupScope.get().lookup(stepId), pCtx, "Could not find " + stepId + " in " + lookupScope.get().getIdentifier()->getFullyQualifiedName());
         // if (sym->getType()->isLinear())
         // {
         //     if (!is_rvalue)
@@ -1990,7 +1990,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
         {
             pathVar = nt;
         }
-        lookupScope = defSym->getInnerScope();
+        lookupScope = *defSym->getInnerScope();
     }
 
     return pathVar;

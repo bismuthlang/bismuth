@@ -130,7 +130,7 @@ public:
     std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m);
     
 
-    Scope * getGlobalScope() { return globalScope; }
+    Scope& getGlobalScope() { return *globalScope; }
   private:
     std::vector<Scope*> scopes;
     std::optional<Scope*> currentScope = {}; 
