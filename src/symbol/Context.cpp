@@ -1,12 +1,13 @@
 #include "Context.h"
 
+// FIXME: Rename this function to be createAndEnterScope or something to that effect. Maybe mkAndEnterScope()?
 Scope &Context::enterScope(bool insertStop, std::optional<Identifier *> idOpt)  //std::string id, std::optional<std::function<std::string()>> meta)
 {
     // This is safe because we use optionals
     Identifier * id = [this, idOpt](){
-        if(idOpt) return idOpt.value(); 
+        if(idOpt) return idOpt.value(); // FIXME: why is this allowed? shouldn't we require better scope access in the first place?
 
-        std::optional<Identifier *> parentOpt = this->currentScope ? (std::optional<Identifier *>) this->currentScope.value()->getIdentifier() : (std::optional<Identifier *>) std::nullopt; 
+        std::optional<Identifier *> parentOpt =  this->currentScope->getIdentifier(); 
         Identifier * i = new Identifier("", "", parentOpt);
         // i->meta = meta;
 
@@ -19,7 +20,7 @@ Scope &Context::enterScope(bool insertStop, std::optional<Identifier *> idOpt)  
     Scope *next = new Scope(this->currentScope, id, insertStop);
     next->setId(this->scopeNumber++);
 
-    this->currentScope = std::optional<Scope *>{next};
+    this->currentScope = next;
     // scopes.push_back(next);
 
     return *next;
@@ -41,63 +42,61 @@ Scope * Context::createNamespace(Identifier * id)
 std::optional<Scope *> Context::exitScope()
 {
     // INFO: Potential memory leak
-    if (!currentScope)
+    if (auto parentScope = currentScope->getParent(); parentScope.has_value())
     {
-        return std::nullopt;
+        Scope * last = currentScope; 
+        currentScope = *parentScope;
+        return last; 
     }
 
-    Scope *last = currentScope.value();
-
-    currentScope = last->getParent();
-
-    return std::optional<Scope *>{last};
+    return std::nullopt;
 }
 
 std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool glob)
 {
     // Check that the exact same identifier doesn't already exist in the current scope
-    if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
+    if(this->lookupInCurrentScope(id)) return std::nullopt;
 
 
     // Find a unique name for the symbol within the current stop
-    std::string uniqName = getUniqNameFor(currentScope.value(), id); 
+    std::string uniqName = getUniqNameFor(currentScope, id); 
 
 
     // Note: this is safe as we previously check that currentScope exists
-    return currentScope.value()->addSymbol(
+    return currentScope->addSymbol(
         new LocatableSymbol(
             new Identifier(
                 id, 
                 uniqName, 
-                currentScope.value()->getIdentifier()
+                currentScope->getIdentifier()
             ), 
             t, 
             glob, 
-            currentScope.value()
+            currentScope
         ));
 }
 
 std::optional<DefinitionSymbol *> Context::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
 {
     // Check that the exact same identifier doesn't already exist in the current scope
-    if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
+    if(this->lookupInCurrentScope(id)) return std::nullopt;
 
 
     // Find a unique name for the symbol within the current stop
-    std::string uniqName = getUniqNameFor(currentScope.value(), id); 
+    std::string uniqName = getUniqNameFor(currentScope, id); 
 
     Identifier * identifier = new Identifier(
         id, 
         uniqName, 
-        currentScope.value()->getIdentifier()
+        currentScope->getIdentifier()
     ); 
 
     Scope* innerScope = this->createNamespace(identifier);
 
-    DefinitionSymbol * sym = new DefinitionSymbol(m, identifier, t, glob, currentScope.value(), innerScope);
+    DefinitionSymbol * sym = new DefinitionSymbol(m, identifier, t, glob, currentScope, innerScope);
 
     // Need to do this hack just to preserve type safety. No need to add duplicate function. 
-    if(currentScope.value()->addSymbol(sym))
+    if(currentScope->addSymbol(sym))
         return sym; 
 
     delete sym; 
@@ -108,20 +107,20 @@ std::optional<DefinitionSymbol *> Context::addDefinition(VisibilityModifier m, s
 std::optional<AliasSymbol *> Context::addAlias(std::string id, const Type * t, Identifier * a)
 {
     // Check that the exact same identifier doesn't already exist in the current scope
-    if(!currentScope || this->lookupInCurrentScope(id)) return std::nullopt;
+    if(this->lookupInCurrentScope(id)) return std::nullopt;
 
 
     // TODO: why are we doing uniqueName? I guess it shouldnt ever happen tho given lookup in currentScope?
-    std::string uniqName = getUniqNameFor(currentScope.value(), id); 
+    std::string uniqName = getUniqNameFor(currentScope, id); 
 
     AliasSymbol * alias = new AliasSymbol(
-        new Identifier(id, uniqName, currentScope.value()->getIdentifier()),
-        currentScope.value(),
+        new Identifier(id, uniqName, currentScope->getIdentifier()),
+        currentScope,
         t, 
         a
     );
 
-    if(currentScope.value()->addSymbol(alias))
+    if(currentScope->addSymbol(alias))
         return alias; 
 
     delete alias; 
@@ -133,25 +132,25 @@ std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const 
 {
     std::string id = "#" + wantedId; // TODO: Better symbol to indicate anon. @ reserved for compiler internals
     // Check that the exact same identifier doesn't already exist in the current scope
-    if(!currentScope) return std::nullopt;
+    
     // Find a unique name for the symbol within the current stop
-    id = getUniqNameFor(currentScope.value(), id);
+    id = getUniqNameFor(currentScope, id);
 
     // Note: this is safe as we previously check that currentScope exists
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
-    return currentScope.value()->addSymbol(new LocatableSymbol(
-        new Identifier(id, id, currentScope.value()->getIdentifier()), t, false, currentScope.value()));
+    return currentScope->addSymbol(new LocatableSymbol(
+        new Identifier(id, id, currentScope->getIdentifier()), t, false, currentScope));
 }
 
 std::optional<DefinitionSymbol *> Context::addAnonymousDefinition(std::string wantedId, const Type * t)
 {
     std::string id = "#" + wantedId; // TODO: Better symbol to indicate anon. @ reserved for compiler internals
     // Check that the exact same identifier doesn't already exist in the current scope
-    if(!currentScope) return std::nullopt;
-    // Find a unique name for the symbol within the current stop
-    id = getUniqNameFor(currentScope.value(), id);
 
-    Identifier * identifier = new Identifier(id, id, currentScope.value()->getIdentifier());
+    // Find a unique name for the symbol within the current stop
+    id = getUniqNameFor(currentScope, id);
+
+    Identifier * identifier = new Identifier(id, id, currentScope->getIdentifier());
 
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
     DefinitionSymbol * ds = new DefinitionSymbol(
@@ -159,12 +158,12 @@ std::optional<DefinitionSymbol *> Context::addAnonymousDefinition(std::string wa
         identifier, 
         t, 
         false,
-        currentScope.value(), 
+        currentScope, 
         createNamespace(identifier)
     ); 
 
     // Note: this is safe as we previously check that currentScope exists
-    if(currentScope.value()->addSymbol(ds))
+    if(currentScope->addSymbol(ds))
         return ds; 
 
     delete ds; 
@@ -320,7 +319,7 @@ std::string Context::toString() const
 std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m)
 {
     // Note bad variable names (we have two current scopes in here)
-    std::optional<Scope *> origScope = this->currentScope; 
+    Scope * origScope = this->currentScope; 
 
     this->currentScope = &globalScope; 
 
@@ -347,8 +346,7 @@ std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> ste
         }
     }
 
-    assert(this->currentScope.has_value());
-    Scope * ans = this->currentScope.value(); 
+    Scope * ans = this->currentScope; 
     this->currentScope = origScope; 
     return ans; 
 }

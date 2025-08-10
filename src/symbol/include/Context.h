@@ -25,7 +25,7 @@ public:
         , globalScope(Scope(std::nullopt, new Identifier("", "", std::nullopt), false))
     {
         // Maybe add a global scope for all files? 
-        currentScope = std::make_optional(&globalScope);
+        currentScope = &globalScope;
     }
 
     /**
@@ -101,9 +101,8 @@ public:
      * 
      * @return std::optional<Scope*> 
      */
-    std::optional<Scope*> getCurrentScope() { 
-      if(currentScope) return std::optional<Scope*> {currentScope.value()};
-      return std::optional<Scope*>{}; 
+    Scope* getCurrentScope() {
+        return currentScope; 
     }
 
     /**
@@ -120,12 +119,9 @@ public:
      * @return true if current scope is the global scope
      * @return false if the current scope is not the global scope
      */
-    bool isGlobalScope() {
-        // if(scopes.size() == 0) return false; 
-
-        if(!currentScope) return false; 
-
-        return !currentScope.value()->getParent().has_value(); //->getId() == 0; 
+    bool isGlobalScope() { 
+        // FIXME: change to using the defined glpobal scope
+        return !currentScope->getParent().has_value(); //->getId() == 0; 
     }
 
     std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m);
@@ -134,7 +130,7 @@ public:
     Scope& getGlobalScope() { return globalScope; }
   private:
     std::vector<Scope*> scopes;
-    std::optional<Scope*> currentScope = {}; 
+    Scope* currentScope; 
     int scopeNumber = 1;
 
     std::string getUniqNameFor(Scope * parent, std::string inScope) {
