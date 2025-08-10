@@ -79,10 +79,6 @@ std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthPars
 
 std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx)
 {
-    // Enter initial scope
-    // stmgr->enterScope(StopType::NONE);
-
-    // TODO: refactor to use defineAndGetSymbolFor for each, then can remove defineTypeCase and replace with single function call.
     for (auto e : ctx->defs)
     {
         // Wastes a bit of memory in allocating type even for duplicates
@@ -183,9 +179,8 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
      *******************************************/
 
     bool demoMode = flags & CompilerFlags::DEMO_MODE;
-
-    std::optional<Symbol *> opt = stmgr->lookup("main");
-    if (opt)
+    
+    if (std::optional<Symbol *> opt = stmgr->lookup("main"); opt.has_value())
     {
         Symbol *sym = opt.value();
         std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->getType());
@@ -232,11 +227,9 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
         }
     }
 
-    std::vector<Symbol *> unInf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE);
-
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
-    if (unInf.size() > 0)
+    if (std::vector<Symbol *> unInf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); unInf.size() > 0)
     {
         std::ostringstream details;
 
@@ -297,7 +290,6 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
 
         return [this, ctx, cuScope, externs]() -> SemanticVisitor::DefineFwdDeclsPhaseResult {
             stmgr->enterScope(cuScope);
-            // FIXME: ERROR CHECK!
             {
                 auto fwdDeclErrors = defineFwdDeclSymbols(ctx);
                 if(fwdDeclErrors.has_value())
