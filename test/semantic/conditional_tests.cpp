@@ -14,9 +14,9 @@
 
 using Catch::Matchers::ContainsSubstring;
 
-void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message, int flags=0);
+void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message, bool demoMode=false);
 
-void EnsureErrorsWithMessage(std::string program, std::string message, int flags=0);
+void EnsureErrorsWithMessage(std::string program, std::string message, bool demoMode=false);
 
 
 TEST_CASE("Inference If Errors - 1", "[semantic]")

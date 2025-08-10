@@ -9,29 +9,48 @@
 
 #include "test_error_handlers.h"
 
+
+#include "Compile.h"
+
 using Catch::Matchers::ContainsSubstring;
 
-void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message, int flags=0)
+void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message, bool demoMode=false)
 {
-  BismuthLexer lexer(&input);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  STManager stm = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, flags);
-  sv.visitCtx(tree);
+   VirtualInput * temp = new VirtualInput(
+            &input,
+            {}
+    );
 
-  REQUIRE(sv.hasErrors(0));
-  REQUIRE_THAT(sv.getErrors(), ContainsSubstring(message));
+    REQUIRE_THAT(compile(
+        {temp},
+        "-.ll",
+        demoMode,
+        true,
+        DisplayMode::C_STYLE,
+        false,
+        false,
+        CompileType::none
+    ).value(), ContainsSubstring(message));
+
+  // BismuthLexer lexer(&input);
+  // antlr4::CommonTokenStream tokens(&lexer);
+  // BismuthParser parser(&tokens);
+  // parser.removeErrorListeners();
+  // BismuthParser::CompilationUnitContext *tree = NULL;
+  // REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  // REQUIRE(tree != NULL);
+  // STManager stm = STManager();
+  // SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, flags);
+  // sv.visitCtx(tree);
+
+  // REQUIRE(sv.hasErrors(0));
+  // REQUIRE_THAT(sv.getErrors(), ContainsSubstring(message));
 }
 
-void EnsureErrorsWithMessage(std::string program, std::string message, int flags=0)
+void EnsureErrorsWithMessage(std::string program, std::string message, bool demoMode=false)
 {
   antlr4::ANTLRInputStream input(program);
-  EnsureErrorsWithMessage(input, message, flags);
+  EnsureErrorsWithMessage(input, message, demoMode);
 }
 
 // TODO: does this use excess memory bc we dont free news?
