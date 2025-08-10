@@ -19,6 +19,11 @@ void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message
 void EnsureErrorsWithMessage(std::string program, std::string message, bool demoMode=false);
 
 
+void EnsureNoErrors(antlr4::ANTLRInputStream input, bool demoMode=false);
+
+void EnsureNoErrors(std::string program, bool demoMode=false);
+
+
 TEST_CASE("Inference If Errors - 1", "[semantic]")
 {
   EnsureErrorsWithMessage(
@@ -56,29 +61,7 @@ prog program :: c : -int {
 }
       )""""
     );
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
-  parser.addErrorListener(&pListener);
-
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-
-  // Any errors should be syntax errors.
-  REQUIRE(tree->getText() != "");
-
-  STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
-
-  sv.visitCompilationUnit(tree);
-
-  CHECK_FALSE(sv.hasErrors(0));
+  EnsureNoErrors(input);
 }
 
 TEST_CASE("Inference If - 2", "[semantic]")
@@ -98,27 +81,5 @@ prog program :: c : -int {
 }
       )""""
     );
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener(); 
-  parser.addErrorListener(&pListener);
-
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-
-  // Any errors should be syntax errors.
-  REQUIRE(tree->getText() != "");
-
-  STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
-
-  sv.visitCompilationUnit(tree);
-  
-  CHECK_FALSE(sv.hasErrors(0));
+  EnsureNoErrors(input);
 }
