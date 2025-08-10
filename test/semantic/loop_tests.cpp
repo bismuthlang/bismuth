@@ -11,99 +11,62 @@
  * FIXME: test loops more robustly AND REENABLE
  */
 
-// TEST_CASE("Undefined Params", "[semantic][loop]")
-// {
-//   antlr4::ANTLRInputStream input(
-//     "while i < 10 {"
-//     " sum := sum * 2; "
-//     " i := i + 1; "    
-//     "}"
-//   );
-//   BismuthLexer lexer(&input);
-//   // lexer.removeErrorListeners();
-//   // auto lListener = TestErrorListener();
-//   // lexer.addErrorListener(&lListener);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
-//   parser.addErrorListener(&pListener);
+void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message, bool demoMode=false);
 
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(tree->getText() != "");
-
-//   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
-
-//   sv.visitCompilationUnit(tree);
-//   CHECK(sv.hasErrors(ERROR));
-// }
+void EnsureErrorsWithMessage(std::string program, std::string message, bool demoMode=false);
 
 
-// TEST_CASE("Undefined Params 2", "[semantic][loop]")
-// {
-//   antlr4::ANTLRInputStream input(
-//     "int i := 0;"
-//     "while i < 10 {"
-//     " sum := sum * 2; "
-//     " i := i + 1; "    
-//     "}"
-//   );
-//   BismuthLexer lexer(&input);
-//   // lexer.removeErrorListeners();
-//   // auto lListener = TestErrorListener();
-//   // lexer.addErrorListener(&lListener);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
-//   parser.addErrorListener(&pListener);
+void EnsureNoErrors(antlr4::ANTLRInputStream input, bool demoMode=false);
 
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(tree->getText() != "");
+void EnsureNoErrors(std::string program, bool demoMode=false);
 
-//   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
-
-//   sv.visitCompilationUnit(tree);
-//   CHECK(sv.hasErrors(ERROR));
-// }
+TEST_CASE("Undefined Params", "[semantic][loop]")
+{
+  EnsureErrorsWithMessage(
+    R""""(
+    func a() {
+        while i < 10 {
+            sum := sum * 2;
+            i := i + 1;
+        }
+    }
+  )"""",
+  "Undefined variable reference: i"
+  );
+}
 
 
-// TEST_CASE("Check example", "[semantic][loop]")
-// {
-//   antlr4::ANTLRInputStream input(
-//     "int i := 0, sum := 1;"
-//     "while i < 10 {"
-//     " sum := sum * 2; "
-//     " i := i + 1; "    
-//     "}"
-//   );
-//   BismuthLexer lexer(&input);
-//   // lexer.removeErrorListeners();
-//   // auto lListener = TestErrorListener();
-//   // lexer.addErrorListener(&lListener);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
-//   parser.addErrorListener(&pListener);
+TEST_CASE("Undefined Params 2", "[semantic][loop]")
+{
+    EnsureErrorsWithMessage(
+    R""""(
+    func a() {
+       int i := 0;
+        while i < 10 {
+            sum := sum * 2;
+            i := i + 1;
+        }
+    }
+  )"""",
+  "Undefined variable reference: sum"
+  );
+}
 
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(tree->getText() != "");
 
-//   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
-
-//   sv.visitCompilationUnit(tree);
-//   CHECK_FALSE(sv.hasErrors(ERROR));
-// }
+TEST_CASE("Check example", "[semantic][loop]")
+{
+    EnsureNoErrors(
+    R""""(
+    func a() {
+       int i := 0, sum := 1;
+        while i < 10 {
+            sum := sum * 2;
+            i := i + 1;
+        }
+    }
+  )""""
+  );
+}
 
 // TEST_CASE("Check example - adv", "[semantic][loop]")
 // {
@@ -161,146 +124,60 @@
 //   }
 // }
 
-// TEST_CASE("Sit & Spin", "[semantic][loop]")
-// {
-//   antlr4::ANTLRInputStream input(
-//     "while true {"
-//     "}"
-//   );
-//   BismuthLexer lexer(&input);
-//   // lexer.removeErrorListeners();
-//   // auto lListener = TestErrorListener();
-//   // lexer.addErrorListener(&lListener);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
-//   parser.addErrorListener(&pListener);
+TEST_CASE("Sit & Spin", "[semantic][loop]")
+{
+    EnsureNoErrors(R""""(
+        func a() {
+            while true {
+            }
+        }
+        )""""
+    );
+}
 
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(tree->getText() != "");
+TEST_CASE("Int condition", "[semantic][loop]")
+{
+  EnsureErrorsWithMessage(R""""(
+        func a() {
+            while 1 {
+            }
+        }
+        )"""",
+        "Condition expected boolean, but was given int"
+    );
+}
 
-//   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
+TEST_CASE("Int condition 2", "[semantic][loop]")
+{
+    EnsureErrorsWithMessage(R""""(
+        func a() {
+            while  1 * 3 / 2 {
+            }
+        }
+        )"""",
+        "Condition expected boolean, but was given int"
+    );
+}
 
-//   sv.visitCompilationUnit(tree);
-//   CHECK_FALSE(sv.hasErrors(ERROR));
-// }
+TEST_CASE("str condition", "[semantic][loop]")
+{
+    EnsureErrorsWithMessage(R""""(
+        func a() {
+            while "This is not a boolean" {
+            }
+        }
+        )"""",
+        "Condition expected boolean, but was given str"
+    );
+}
 
-// TEST_CASE("Int condition", "[semantic][loop]")
-// {
-//   antlr4::ANTLRInputStream input(
-//     "while 1 {"
-//     "}"
-//   );
-//   BismuthLexer lexer(&input);
-//   // lexer.removeErrorListeners();
-//   // auto lListener = TestErrorListener();
-//   // lexer.addErrorListener(&lListener);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
-//   parser.addErrorListener(&pListener);
-
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(tree->getText() != "");
-
-//   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
-
-//   sv.visitCompilationUnit(tree);
-
-//   CHECK(sv.hasErrors(ERROR));
-// }
-
-// TEST_CASE("Int condition 2", "[semantic][loop]")
-// {
-//   antlr4::ANTLRInputStream input(
-//     "while 1 * 3 / 2 {"
-//     "}"
-//   );
-//   BismuthLexer lexer(&input);
-//   // lexer.removeErrorListeners();
-//   // auto lListener = TestErrorListener();
-//   // lexer.addErrorListener(&lListener);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
-//   parser.addErrorListener(&pListener);
-
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(tree->getText() != "");
-
-//   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
-
-//   sv.visitCompilationUnit(tree);
-
-//   CHECK(sv.hasErrors(ERROR));
-// }
-
-// TEST_CASE("str condition", "[semantic][loop]")
-// {
-//   antlr4::ANTLRInputStream input(
-//     "while \"This is not a boolean\" {"
-//     "}"
-//   );
-//   BismuthLexer lexer(&input);
-//   // lexer.removeErrorListeners();
-//   // auto lListener = TestErrorListener();
-//   // lexer.addErrorListener(&lListener);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
-//   parser.addErrorListener(&pListener);
-
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(tree->getText() != "");
-
-//   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
-
-//   sv.visitCompilationUnit(tree);
-
-//   CHECK(sv.hasErrors(ERROR));
-// }
-
-// TEST_CASE("Boolean Expr", "[semantic][loop]")
-// {
-//   antlr4::ANTLRInputStream input(
-//     "while ~false & true | false {"
-//     "}"
-//   );
-//   BismuthLexer lexer(&input);
-//   // lexer.removeErrorListeners();
-//   // auto lListener = TestErrorListener();
-//   // lexer.addErrorListener(&lListener);
-//   antlr4::CommonTokenStream tokens(&lexer);
-//   BismuthParser parser(&tokens);
-//   parser.removeErrorListeners();
-//   auto pListener = TestErrorListener(); 
-//   parser.addErrorListener(&pListener);
-
-//   BismuthParser::CompilationUnitContext *tree = NULL;
-//   REQUIRE_NOTHROW(tree = parser.compilationUnit());
-//   REQUIRE(tree != NULL);
-//   REQUIRE(tree->getText() != "");
-
-//   STManager stmgr = STManager();
-//   SemanticVisitor sv = SemanticVisitor(&stmgr);
-
-//   sv.visitCompilationUnit(tree);
-
-//   CHECK_FALSE(sv.hasErrors(ERROR));
-// }
+TEST_CASE("Boolean Expr", "[semantic][loop]")
+{
+    EnsureNoErrors(R""""(
+        func a() {
+            while !false && true || false {
+            }
+        }
+        )""""
+    );
+}
