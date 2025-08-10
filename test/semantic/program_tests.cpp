@@ -879,30 +879,7 @@ prog program :: c : -int = {
   c.send(0)
 }
     )"""");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener();
-  parser.addErrorListener(&pListener);
-
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
-
-  STManager stmgr = STManager();
-
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
-
-  // sv.visitCompilationUnit(tree);
-  // REQUIRE_FALSE(sv.hasErrors(ERROR));
-  auto TypedOpt = sv.visitCtx(tree);
-  REQUIRE_FALSE(sv.hasErrors(ERROR));
-  REQUIRE(std::holds_alternative<TCompilationUnitNode *>(TypedOpt));
+  EnsureNoErrors(input);
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2p", "[semantic][program][local-function]")
@@ -924,29 +901,7 @@ prog program :: c : -int = {
   c.send(0)
 }
     )"""");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  //   // auto lListener = TestErrorListener();
-  //   // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener();
-  parser.addErrorListener(&pListener);
-
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
-
-  STManager stmgr = STManager();
-
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
-
-  auto TypedOpt = sv.visitCtx(tree);
-  // sv.visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv.hasErrors(ERROR));
-  REQUIRE(std::holds_alternative<TCompilationUnitNode *>(TypedOpt));
+  EnsureNoErrors(input);
 }
 
 TEST_CASE("Redeclaration - p2p", "[semantic][program][local-function]")
