@@ -207,13 +207,7 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
         errorHandler.addError(ctx->getStart(), "When compiling in demo mode, 'prog main :: * : -int' (the entry point) must be defined");
     }
 
-    // Should be impossible
-    if(!stmgr.getCurrentScope())
-    {
-        return errorHandler.addCompilerError(ctx->getStart(), "No current scope for the compilation unit!");
-    }
-
-    Scope * scope = stmgr.getCurrentScope().value();
+    Scope * scope = stmgr.getCurrentScope();
 
     // Try to unify symbols (really needed for things like nums wherein
     // we know what types are possible to infer, so we can just
@@ -254,7 +248,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
     if(steps.empty())
     {
         stmgr.enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
-        cuScope = stmgr.getCurrentScope().value();
+        cuScope = stmgr.getCurrentScope();
     }
     else
     {
@@ -433,8 +427,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         // Lookup the function in the current scope and prevent re-declarations
 
         // Add the symbol to the stmgr and enter the scope.
-        if(!stmgr.getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "STManager does not have a current scope!");
-        Scope * orig = stmgr.getCurrentScope().value();
+        Scope * orig = stmgr.getCurrentScope();
         stmgr.enterScope(defSym->getInnerScope());
 
         Symbol *channelSymbol = stmgr.addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
@@ -1639,9 +1632,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     DefinitionSymbol * sym = lazy_value_or<DefinitionSymbol *>(symOpt,
         [this]() {return stmgr.addAnonymousDefinition("lambda", new TypeFunc()).value(); });
 
-    if(!stmgr.getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of lambda constexpr!");
-
-    Scope * origScope = stmgr.getCurrentScope().value();
+    Scope * origScope = stmgr.getCurrentScope();
     stmgr.enterScope(sym->getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
 
     DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params,  visitCtx(ctx->parameterList()), ctx); 
@@ -1783,9 +1774,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         const TypeSum * sumTy = dynamic_cast<const TypeSum *>(templateTy->getValueType().value());
         if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Template Type Value expected to be sum, but got: " + templateTy->getValueType().value()->toString(toStringMode));
 
-        if(!stmgr.getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of enum definition!");
-
-        Scope * origScope = stmgr.getCurrentScope().value();
+        Scope * origScope = stmgr.getCurrentScope();
         stmgr.enterScope(sym->getInnerScope());
         TDefineEnumNode * enumNode = new TDefineEnumNode(
             sym,
@@ -2645,9 +2634,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
     std::vector<Y> cases;
 
-    // STManager *origStmgr = this->stmgr;
-
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Scope *, origScope, stmgr.getCurrentScope(), ctx, "Symbol table manager has no current scope at branch!");
+    Scope * origScope = stmgr.getCurrentScope();
 
     const auto checkCase = [&](auto * branchToken, bool checkRest, std::string branchErrorMessage, std::string subsequentErrorMessage) -> std::optional<ErrorChain *>{
         if(checkRest)
@@ -2887,9 +2874,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         if (templateTy->isDefined()) return std::nullopt;
 
         auto applyTemplate = [this, m, defSym, ctx](TemplateInfo info, std::function<std::optional<ErrorChain *>()> fn) -> std::optional<ErrorChain *> {
-            if(!stmgr.getCurrentScope()) return errorHandler.addCompilerError(ctx->getStart(), "No current scope in type checking of define Template!");
-
-            Scope * origScope = stmgr.getCurrentScope().value();
+            Scope * origScope = stmgr.getCurrentScope();
             stmgr.enterScope(defSym->getInnerScope());
 
             for(auto i : info.templates)

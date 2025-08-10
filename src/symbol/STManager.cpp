@@ -97,7 +97,7 @@ std::optional<Symbol *> STManager::lookupInCurrentScope(std::string id)
     return context.lookupInCurrentScope(id);
 }
 
-std::optional<Scope *> STManager::getCurrentScope()
+Scope * STManager::getCurrentScope()
 {
     return context.getCurrentScope();
 }

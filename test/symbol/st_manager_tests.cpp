@@ -13,7 +13,7 @@ TEST_CASE("add a scope", "[symbol]") {
   CHECK(mgr.scopeCount() == 0);
   Scope& s = mgr.enterScope();
   CHECK(mgr.scopeCount() == 1);
-  Scope* s1 = mgr.getCurrentScope().value();
+  Scope* s1 = mgr.getCurrentScope();
   CHECK(&s == s1);
   CHECK(0 == s1->getId());
 }

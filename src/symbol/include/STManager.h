@@ -105,7 +105,7 @@ public:
    *
    * @return std::optional<Scope*>
    */
-  std::optional<Scope *> getCurrentScope(); 
+  Scope * getCurrentScope(); 
 
   std::vector<Symbol *> getLinears(int flags);
 
