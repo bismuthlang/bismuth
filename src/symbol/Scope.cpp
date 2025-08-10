@@ -34,13 +34,89 @@ bool Scope::removeSymbol(const Symbol *symbol)
   return false;
 }
 
+
+std::optional<std::pair<Symbol *, Scope *>> Scope::lookupWithScope(std::string id)
+{
+    std::optional<Scope *> opt = this;
+    bool foundStop = false; 
+
+    while (opt)
+    {
+        Scope *scope = opt.value();
+
+        std::optional<Symbol *> symOpt = scope->lookupInCurrentScope(id);
+        if (symOpt)
+        {
+            Symbol * sym = symOpt.value(); 
+            if (!foundStop || sym->isDefinition() || sym->isGlobal())
+            {
+                return std::make_pair(sym, scope);
+            }
+            return std::nullopt;
+        }
+
+        foundStop = scope->isStop(); 
+        opt = scope->getParent();
+    }
+
+    return std::nullopt;
+}
+
+
+std::optional<Symbol *> Scope::lookupInAccessableScopes(std::string id)
+{
+  std::optional<Scope *> opt = this;
+  bool foundStop = false; 
+
+  while (opt)
+  {
+    Scope *scope = opt.value();
+
+    std::optional<Symbol *> symOpt = scope->lookupInCurrentScope(id);
+    if (symOpt)
+    {
+      Symbol * sym = symOpt.value(); 
+      if (!foundStop || sym->isDefinition() || sym->isGlobal())
+          return sym;
+      return std::nullopt;
+    }
+
+    foundStop = scope->isStop(); 
+    opt = scope->getParent();
+  }
+
+    return std::nullopt;
+}
+
+
+Scope * Scope::createNamespace(Identifier * id)
+{
+  return new Scope(this, id, true);
+}
+
+
+std::optional<DefinitionSymbol *> Scope::addDefinition(VisibilityModifier m, Identifier * identifier, const Type * t, bool glob)
+{
+    Scope* innerScope = this->createNamespace(identifier);
+
+    DefinitionSymbol * sym = new DefinitionSymbol(m, identifier, t, glob, this, innerScope);
+
+    // Need to do this hack just to preserve type safety. No need to add duplicate function. 
+    if(this->addSymbol(sym))
+        return sym; 
+
+    delete sym; 
+
+    return std::nullopt; 
+}
+
 /**
  * @brief Searches for a token in the given scope.
  *
  * @param id The identifier of the token to search for
  * @return std::optional<Symbol*> - Empty if not found; value provided if found.
  */
-std::optional<Symbol *> Scope::lookup(std::string id)
+std::optional<Symbol *> Scope::lookupInCurrentScope(std::string id)
 {
   auto symbol = symbols.find(id);
   if (symbol == symbols.end())

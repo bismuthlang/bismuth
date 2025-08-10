@@ -58,7 +58,7 @@ public:
      */
     std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool glob); // Symbol* symbol);
 
-    std::optional<DefinitionSymbol *> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
+    std::optional<DefinitionSymbol *> addDefinition(Scope & scope, VisibilityModifier m, std::string id, const Type * t, bool glob); 
 
     std::optional<AliasSymbol *> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
 
@@ -78,7 +78,7 @@ public:
      * @param id The symbol name to lookup
      * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found. 
      */
-    std::optional<Symbol*> lookup(std::string id);
+    std::optional<Symbol*> lookupInAccessableScopes(std::string id);
 
     std::optional<std::pair<Symbol *, Scope *>> lookupWithScope(std::string id); 
 
@@ -101,8 +101,8 @@ public:
      * 
      * @return std::optional<Scope*> 
      */
-    Scope* getCurrentScope() {
-        return currentScope; 
+    Scope& getCurrentScope() {
+        return *currentScope; 
     }
 
     /**
@@ -124,7 +124,7 @@ public:
         return !currentScope->getParent().has_value(); //->getId() == 0; 
     }
 
-    std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m);
+    std::optional<std::reference_wrapper<Scope>> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m);
     
 
     Scope& getGlobalScope() { return globalScope; }
@@ -133,9 +133,9 @@ public:
     Scope* currentScope; 
     int scopeNumber = 1;
 
-    std::string getUniqNameFor(Scope * parent, std::string inScope) {
+    std::string getUniqNameFor(Scope& parent, std::string inScope) {
         // TODO: not sure if getting FQN here will break some stuff wrt generics...
-        std::string id = parent->getIdentifier()->getFullyQualifiedName() + "::" + inScope;
+        std::string id = parent.getIdentifier()->getFullyQualifiedName() + "::" + inScope;
       
         auto itr = nameCounter.find(id);
         if(itr == nameCounter.end())

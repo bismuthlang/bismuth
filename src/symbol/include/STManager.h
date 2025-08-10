@@ -105,7 +105,7 @@ public:
    *
    * @return std::optional<Scope*>
    */
-  Scope * getCurrentScope(); 
+  Scope&  getCurrentScope(); 
 
   std::vector<Symbol *> getLinears(int flags);
 
@@ -132,7 +132,7 @@ public:
   bool isGlobalScope(); 
 
 
-  std::optional<Scope *> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m) { return context.getOrProvisionScope(steps, m); }
+  std::optional<std::reference_wrapper<Scope>> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m) { return context.getOrProvisionScope(steps, m); }
 
   Scope& getGlobalScope() { return context.getGlobalScope(); }
 

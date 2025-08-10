@@ -81,7 +81,15 @@ public:
      * @param id Name of the symbol
      * @return std::optional<Symbol*> Empty if could not be found; present with value if symbol found.
      */
-    std::optional<Symbol *> lookup(std::string id);
+    std::optional<Symbol *> lookupInCurrentScope(std::string id);
+
+    std::optional<Symbol *> lookupInAccessableScopes(std::string id);
+
+    std::optional<std::pair<Symbol *, Scope *>>  lookupWithScope(std::string id);
+
+    Scope * createNamespace(Identifier * id);
+
+    std::optional<DefinitionSymbol *> addDefinition(VisibilityModifier m, Identifier * identifier, const Type * t, bool glob);
 
     /**
      * @brief Get the Parent object

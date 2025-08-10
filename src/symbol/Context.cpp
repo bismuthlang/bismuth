@@ -33,8 +33,8 @@ void Context::enterScope(Scope * scope)
 
 Scope * Context::createNamespace(Identifier * id)
 {
-    Scope *next = new Scope(this->currentScope, id, true);
-    next->setId(this->scopeNumber++);
+    Scope *next = currentScope->createNamespace(id);
+    next->setId(this->scopeNumber++); // FIXME: REMOVE ID number in this form
 
     return next; 
 }
@@ -59,7 +59,7 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
 
 
     // Find a unique name for the symbol within the current stop
-    std::string uniqName = getUniqNameFor(currentScope, id); 
+    std::string uniqName = getUniqNameFor(*currentScope, id); 
 
 
     // Note: this is safe as we previously check that currentScope exists
@@ -76,32 +76,22 @@ std::optional<Symbol *> Context::addSymbol(std::string id, const Type * t, bool 
         ));
 }
 
-std::optional<DefinitionSymbol *> Context::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
+std::optional<DefinitionSymbol *> Context::addDefinition(Scope & scope, VisibilityModifier m, std::string id, const Type * t, bool glob)
 {
     // Check that the exact same identifier doesn't already exist in the current scope
-    if(this->lookupInCurrentScope(id)) return std::nullopt;
+    if(scope.lookupInCurrentScope(id)) return std::nullopt;
 
 
     // Find a unique name for the symbol within the current stop
-    std::string uniqName = getUniqNameFor(currentScope, id); 
+    std::string uniqName = getUniqNameFor(scope, id); 
 
     Identifier * identifier = new Identifier(
         id, 
         uniqName, 
-        currentScope->getIdentifier()
+        scope.getIdentifier()
     ); 
 
-    Scope* innerScope = this->createNamespace(identifier);
-
-    DefinitionSymbol * sym = new DefinitionSymbol(m, identifier, t, glob, currentScope, innerScope);
-
-    // Need to do this hack just to preserve type safety. No need to add duplicate function. 
-    if(currentScope->addSymbol(sym))
-        return sym; 
-
-    delete sym; 
-
-    return std::nullopt; 
+    return scope.addDefinition(m, identifier, t, glob);
 }
 
 std::optional<AliasSymbol *> Context::addAlias(std::string id, const Type * t, Identifier * a)
@@ -111,7 +101,7 @@ std::optional<AliasSymbol *> Context::addAlias(std::string id, const Type * t, I
 
 
     // TODO: why are we doing uniqueName? I guess it shouldnt ever happen tho given lookup in currentScope?
-    std::string uniqName = getUniqNameFor(currentScope, id); 
+    std::string uniqName = getUniqNameFor(*currentScope, id); 
 
     AliasSymbol * alias = new AliasSymbol(
         new Identifier(id, uniqName, currentScope->getIdentifier()),
@@ -134,7 +124,7 @@ std::optional<Symbol *> Context::addAnonymousSymbol(std::string wantedId, const 
     // Check that the exact same identifier doesn't already exist in the current scope
     
     // Find a unique name for the symbol within the current stop
-    id = getUniqNameFor(currentScope, id);
+    id = getUniqNameFor(*currentScope, id);
 
     // Note: this is safe as we previously check that currentScope exists
     // FIXME: DETERMINE GLOB!!! SHOULD IT BE FALSE OR TRUE?
@@ -148,7 +138,7 @@ std::optional<DefinitionSymbol *> Context::addAnonymousDefinition(std::string wa
     // Check that the exact same identifier doesn't already exist in the current scope
 
     // Find a unique name for the symbol within the current stop
-    id = getUniqNameFor(currentScope, id);
+    id = getUniqNameFor(*currentScope, id);
 
     Identifier * identifier = new Identifier(id, id, currentScope->getIdentifier());
 
@@ -197,56 +187,14 @@ bool Context::removeSymbol(Symbol *symbol)
     return false;
 }
 
-std::optional<Symbol *> Context::lookup(std::string id)
+std::optional<Symbol *> Context::lookupInAccessableScopes(std::string id)
 {
-    std::optional<Scope *> opt = currentScope;
-    bool foundStop = false; 
-
-    while (opt)
-    {
-        Scope *scope = opt.value();
-
-        std::optional<Symbol *> symOpt = scope->lookup(id);
-        if (symOpt)
-        {
-            Symbol * sym = symOpt.value(); 
-            if (!foundStop || sym->isDefinition() || sym->isGlobal())
-                return sym;
-            return std::nullopt;
-        }
-
-        foundStop = scope->isStop(); 
-        opt = scope->getParent();
-    }
-
-    return std::nullopt;
+    return currentScope->lookupInAccessableScopes(id); 
 }
 
 std::optional<std::pair<Symbol *, Scope *>> Context::lookupWithScope(std::string id)
 {
-    std::optional<Scope *> opt = currentScope;
-    bool foundStop = false; 
-
-    while (opt)
-    {
-        Scope *scope = opt.value();
-
-        std::optional<Symbol *> symOpt = scope->lookup(id);
-        if (symOpt)
-        {
-            Symbol * sym = symOpt.value(); 
-            if (!foundStop || sym->isDefinition() || sym->isGlobal())
-            {
-                return std::make_pair(sym, scope);
-            }
-            return std::nullopt;
-        }
-
-        foundStop = scope->isStop(); 
-        opt = scope->getParent();
-    }
-
-    return std::nullopt;
+    return currentScope->lookupWithScope(id);
 }
 
 std::vector<Symbol *> Context::getSymbols(int flags) //TODO: DO BETTER
@@ -272,30 +220,7 @@ std::vector<Symbol *> Context::getSymbols(int flags) //TODO: DO BETTER
 
 std::optional<Symbol *> Context::lookupInCurrentScope(std::string id)
 {
-    std::optional<Scope *> opt = currentScope;
-    if (opt)
-    {
-        Scope *scope = opt.value();
-        std::optional<Symbol *> sym = scope->lookup(id);
-        if (sym)
-            return sym;
-        // opt = scope->getParent();
-        // while (opt)
-        // {
-        //     scope = opt.value();
-        //     std::optional<Symbol *> sym = scope->lookup(id);
-        //     if (sym)
-        //     {
-        //         // std::cout << sym.value()->toString() << " " << depth << " >= " << stop  << " || " << sym.value()->isDefinition << std::endl;
-        //         if (sym.value()->isDefinition)
-        //             return sym;
-        //         return std::nullopt;
-        //     }
-        //     opt = scope->getParent();
-        // }
-    }
-
-    return std::nullopt;
+    return currentScope->lookupInCurrentScope(id); 
 }
 
 // Directly from sample
@@ -316,37 +241,31 @@ std::string Context::toString() const
     return description.str();
 }
 
-std::optional<Scope *> Context::getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m)
+std::optional<std::reference_wrapper<Scope>> Context::getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m)
 {
     // Note bad variable names (we have two current scopes in here)
-    Scope * origScope = this->currentScope; 
-
-    this->currentScope = &globalScope; 
-
-
+    Scope * seek = &globalScope;
 
     for(std::string s : steps)
     {
-        std::optional<Symbol *> symOpt = lookup(s);
+        // FIXME: should this be lookupInCurrentScope?
+        std::optional<Symbol *> symOpt = seek->lookupInAccessableScopes(s);
         if(!symOpt)
         {
             TypeModule * mod = new TypeModule();
-            std::optional<DefinitionSymbol *> dsOpt = addDefinition(m, s, mod, true);
+            std::optional<DefinitionSymbol *> dsOpt = addDefinition(*seek, m, s, mod, true);
 
             assert(dsOpt.has_value()); // We already checked conflicts
 
-            this->currentScope = dsOpt.value()->getInnerScope(); 
+            seek = dsOpt.value()->getInnerScope(); 
         }
         else if(DefinitionSymbol * ds = dynamic_cast<DefinitionSymbol *>(symOpt.value()))
-            this->currentScope = ds->getInnerScope(); 
+            seek = ds->getInnerScope(); 
         else 
         {
-            this->currentScope = origScope; 
             return std::nullopt; 
         }
     }
 
-    Scope * ans = this->currentScope; 
-    this->currentScope = origScope; 
-    return ans; 
+    return *seek; 
 }

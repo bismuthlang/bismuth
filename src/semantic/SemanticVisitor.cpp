@@ -207,23 +207,23 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
         errorHandler.addError(ctx->getStart(), "When compiling in demo mode, 'prog main :: * : -int' (the entry point) must be defined");
     }
 
-    Scope * scope = stmgr.getCurrentScope();
-
     // Try to unify symbols (really needed for things like nums wherein
     // we know what types are possible to infer, so we can just
     // pick one if the code doesn't make it clear which variant we need)
-    for(Symbol * sym : scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE))
-    {
-        // Should always be inferrable
-        if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym->getType()))
-        {
-            inf->unify();
-        }
-    }
+    fplus::for_each(
+        [](Symbol * sym) {
+            if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym->getType()))
+            {
+                inf->unify();
+            }
+        },
+        stmgr.getCurrentScope().getSymbols(SymbolLookupFlags::UNINFERRED_TYPE)
+    );
+    
 
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
-    if (std::vector<Symbol *> unInf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); unInf.size() > 0)
+    if (std::vector<Symbol *> unInf = stmgr.getCurrentScope().getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); unInf.size() > 0)
     {
         std::ostringstream details;
 
@@ -243,31 +243,34 @@ std::variant<
 >
 SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::vector<std::string> steps)
 {
-    // Enter initial scope
-    Scope * cuScope;
-    if(steps.empty())
-    {
-        stmgr.enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
-        cuScope = stmgr.getCurrentScope();
-    }
-    else
-    {
-        std::optional<Scope *> scopeOpt = stmgr.getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
-
-        if(!scopeOpt)
+    auto maybeScope = [&]() -> std::variant<std::reference_wrapper<Scope>, ErrorChain *>{
+        if(steps.empty())
         {
-            return errorHandler.addCompilerError(ctx->getStart(), "Failed to enter scope for compilation unit!");
+            stmgr.enterScope(StopType::NONE); // FIXME: DO better, we need to ensure we are branching out of global scope!
+            return stmgr.getCurrentScope();
         }
+        else
+        {
+            std::optional<std::reference_wrapper<Scope>> scopeOpt = stmgr.getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
 
-        cuScope = scopeOpt.value();
+            if(!scopeOpt)
+            {
+                return errorHandler.addCompilerError(ctx->getStart(), "Failed to enter scope for compilation unit!"); // TODO: improve name, this is really just to say that the scope conflicts with something
+            }
 
-        stmgr.enterScope(cuScope);
-    }
+            return scopeOpt.value();
+        }
+    }();
+    // Enter initial scope
+    DEFINE_OR_PROPAGATE_VARIANT(std::reference_wrapper<Scope>, cuScope, maybeScope, ctx);
+    
 
-    provisionFwdDeclSymbols(ctx);
+    stmgr.enterScope(&cuScope.get());
+    
+    provisionFwdDeclSymbols(ctx); // TODO: should we report errors that this returns?
 
     return [this, ctx, cuScope]() -> SemanticVisitor::ImportPhaseResult {
-        stmgr.enterScope(cuScope);
+        stmgr.enterScope(&cuScope.get());
 
         {
             auto importError = collect_optionals(
@@ -283,7 +286,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
         DEFINE_OR_PROPAGATE_VARIANT(std::vector<TExternNode *>, externs, visitExterns(ctx), ctx); 
 
         return [this, ctx, cuScope, externs]() -> SemanticVisitor::DefineFwdDeclsPhaseResult {
-            stmgr.enterScope(cuScope);
+            stmgr.enterScope(&cuScope.get());
             {
                 auto fwdDeclErrors = defineFwdDeclSymbols(ctx);
                 if(fwdDeclErrors.has_value())
@@ -291,7 +294,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
             }
 
             return [this, ctx, cuScope, externs]() -> SemanticVisitor::PhaseNResult {
-                stmgr.enterScope(cuScope);
+                stmgr.enterScope(&cuScope.get());
 
                 DEFINE_OR_PROPAGATE_VARIANT(std::vector<DefinitionNode *>, defs, visitFwdDecls(ctx), ctx); 
                 // Visit the statements contained in the unit
@@ -427,7 +430,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         // Lookup the function in the current scope and prevent re-declarations
 
         // Add the symbol to the stmgr and enter the scope.
-        Scope * orig = stmgr.getCurrentScope();
+        Scope& orig = stmgr.getCurrentScope();
         stmgr.enterScope(defSym->getInnerScope());
 
         Symbol *channelSymbol = stmgr.addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
@@ -445,7 +448,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
         // Safe exit the scope.
         safeExitScope(ctx);
-        stmgr.enterScope(orig);
+        stmgr.enterScope(&orig);
 
         return new TProgramDefNode(defSym, channelSymbol, blk, progType, ctx->getStart());
     };
@@ -1632,7 +1635,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     DefinitionSymbol * sym = lazy_value_or<DefinitionSymbol *>(symOpt,
         [this]() {return stmgr.addAnonymousDefinition("lambda", new TypeFunc()).value(); });
 
-    Scope * origScope = stmgr.getCurrentScope();
+    Scope& origScope = stmgr.getCurrentScope();
     stmgr.enterScope(sym->getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
 
     DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params,  visitCtx(ctx->parameterList()), ctx); 
@@ -1682,7 +1685,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
     }
     safeExitScope(ctx);
-    stmgr.enterScope(origScope);
+    stmgr.enterScope(&origScope);
 
     return new TLambdaConstNode(sym, ps, retType, blk, ctx->getStart());
 }
@@ -1774,7 +1777,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         const TypeSum * sumTy = dynamic_cast<const TypeSum *>(templateTy->getValueType().value());
         if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Template Type Value expected to be sum, but got: " + templateTy->getValueType().value()->toString(toStringMode));
 
-        Scope * origScope = stmgr.getCurrentScope();
+        Scope& origScope = stmgr.getCurrentScope();
         stmgr.enterScope(sym->getInnerScope());
         TDefineEnumNode * enumNode = new TDefineEnumNode(
             sym,
@@ -1788,7 +1791,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
             ctx->getStart()
         );
 
-        stmgr.enterScope(origScope);
+        stmgr.enterScope(&origScope);
 
         return templateNode;
     }
@@ -1917,10 +1920,11 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
     std::reference_wrapper<Scope> lookupScope = stmgr.getGlobalScope();
     const Type * pathVar;
 
+    // TODO: refactor this into a function?
     for(auto pCtx : ctx->eles)
     {
         std::string stepId = pCtx->id->getText();
-        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, lookupScope.get().lookup(stepId), pCtx, "Could not find " + stepId + " in " + lookupScope.get().getIdentifier()->getFullyQualifiedName());
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, lookupScope.get().lookupInAccessableScopes(stepId), pCtx, "Could not find " + stepId + " in " + lookupScope.get().getIdentifier()->getFullyQualifiedName());
         // if (sym->getType()->isLinear())
         // {
         //     if (!is_rvalue)
@@ -2634,7 +2638,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
     std::vector<Y> cases;
 
-    Scope * origScope = stmgr.getCurrentScope();
+    Scope& origScope = stmgr.getCurrentScope();
 
     const auto checkCase = [&](auto * branchToken, bool checkRest, std::string branchErrorMessage, std::string subsequentErrorMessage) -> std::optional<ErrorChain *>{
         if(checkRest)
@@ -2702,12 +2706,12 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
         if (checkRestIndependently || i + 1 < ctxCases.size())
         {
-            Scope * scopeCpy = origScope->copyToStop();
+            Scope * scopeCpy = origScope.copyToStop();
             this->stmgr.enterScope(scopeCpy);
         }
         else
         {
-            this->stmgr.enterScope(origScope);
+            this->stmgr.enterScope(&origScope);
         }
 
         stmgr.enterScope(StopType::NONE);
@@ -2732,7 +2736,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
     if (checkRestIndependently)
     {
-        this->stmgr.enterScope(origScope);
+        this->stmgr.enterScope(&origScope);
 
         stmgr.enterScope(StopType::NONE); // Why? This doesn't make sense.. oh it does, but should ideally refactor!
 
@@ -2874,7 +2878,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
         if (templateTy->isDefined()) return std::nullopt;
 
         auto applyTemplate = [this, m, defSym, ctx](TemplateInfo info, std::function<std::optional<ErrorChain *>()> fn) -> std::optional<ErrorChain *> {
-            Scope * origScope = stmgr.getCurrentScope();
+            Scope& origScope = stmgr.getCurrentScope();
             stmgr.enterScope(defSym->getInnerScope());
 
             for(auto i : info.templates)
@@ -2889,7 +2893,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             std::optional<ErrorChain *> ans = fn();
 
-            stmgr.enterScope(origScope);
+            stmgr.enterScope(&origScope);
             return ans;
         };
 

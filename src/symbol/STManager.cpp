@@ -32,7 +32,7 @@ std::optional<AliasSymbol *> STManager::addAlias(std::string id, const Type * t,
 std::optional<DefinitionSymbol *> STManager::addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob)
 {
 
-    std::optional<DefinitionSymbol *> symOpt = context.addDefinition(m, id, t, glob);
+    std::optional<DefinitionSymbol *> symOpt = context.addDefinition(getCurrentScope(), m, id, t, glob);
 
     if(symOpt)
     {
@@ -66,7 +66,7 @@ bool STManager::removeSymbol(Symbol *symbol)
 
 std::optional<Symbol *> STManager::lookup(std::string id)
 {
-    std::optional<Symbol *> sym = context.lookup(id); 
+    std::optional<Symbol *> sym = context.lookupInAccessableScopes(id); 
     // TODO: propagate this data down so we don't have 
     // to do excess branching checks. 
     // Also, ensure this doesn't mess w/ error messages by 
@@ -89,7 +89,7 @@ void STManager::enterNonlinearScope(std::function<void()> func)
 
 bool STManager::isBound(std::string id)
 {
-    return context.lookup(id).has_value(); 
+    return context.lookupInAccessableScopes(id).has_value(); 
 }
 
 std::optional<Symbol *> STManager::lookupInCurrentScope(std::string id)
@@ -97,7 +97,7 @@ std::optional<Symbol *> STManager::lookupInCurrentScope(std::string id)
     return context.lookupInCurrentScope(id);
 }
 
-Scope * STManager::getCurrentScope()
+Scope& STManager::getCurrentScope()
 {
     return context.getCurrentScope();
 }
