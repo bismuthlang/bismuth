@@ -31,26 +31,40 @@ void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message
         false,
         CompileType::none
     ).value(), ContainsSubstring(message));
-
-  // BismuthLexer lexer(&input);
-  // antlr4::CommonTokenStream tokens(&lexer);
-  // BismuthParser parser(&tokens);
-  // parser.removeErrorListeners();
-  // BismuthParser::CompilationUnitContext *tree = NULL;
-  // REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  // REQUIRE(tree != NULL);
-  // STManager stm = STManager();
-  // SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE, flags);
-  // sv.visitCtx(tree);
-
-  // REQUIRE(sv.hasErrors(0));
-  // REQUIRE_THAT(sv.getErrors(), ContainsSubstring(message));
 }
 
 void EnsureErrorsWithMessage(std::string program, std::string message, bool demoMode=false)
 {
   antlr4::ANTLRInputStream input(program);
   EnsureErrorsWithMessage(input, message, demoMode);
+}
+
+
+
+
+void EnsureNoErrors(antlr4::ANTLRInputStream input, bool demoMode=false)
+{
+   VirtualInput * temp = new VirtualInput(
+            &input,
+            {}
+    );
+
+    REQUIRE_FALSE(compile(
+        {temp},
+        "-.ll",
+        demoMode,
+        true,
+        DisplayMode::C_STYLE,
+        false,
+        false,
+        CompileType::none
+    ).has_value());
+}
+
+void EnsureNoErrors(std::string program, bool demoMode=false)
+{
+  antlr4::ANTLRInputStream input(program);
+  EnsureNoErrors(input, demoMode);
 }
 
 // TODO: does this use excess memory bc we dont free news?
@@ -105,29 +119,7 @@ TEST_CASE("Comment EOF", "[semantic]")
 {
   antlr4::ANTLRInputStream input(
       "# Hello # there!");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto listener = TestErrorListener();
-  parser.addErrorListener(&listener);
-
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-
-  // Any errors should be syntax errors.
-  REQUIRE(tree->getText() != "");
-
-  STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
-
-  sv.visitCompilationUnit(tree);
-
-  CHECK_FALSE(sv.hasErrors(0));
+  EnsureNoErrors(input);
 }
 
 TEST_CASE("programs/test16 - overwrite lhs var", "[semantic]")
@@ -197,19 +189,19 @@ TEST_CASE("programs/test16f - var loop", "[semantic]")
 {
   std::fstream inStream = std::fstream(std::string(SOURCE_DIR) + "programs/test16f.bismuth");
   antlr4::ANTLRInputStream input = antlr4::ANTLRInputStream(inStream);
+  EnsureNoErrors(input);
+  // BismuthLexer lexer(&input);
+  // antlr4::CommonTokenStream tokens(&lexer);
+  // BismuthParser parser(&tokens);
+  // parser.removeErrorListeners();
+  // BismuthParser::CompilationUnitContext *tree = NULL;
+  // REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  // REQUIRE(tree != NULL);
+  // STManager stm = STManager();
 
-  BismuthLexer lexer(&input);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  STManager stm = STManager();
-
-  SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE);
-  sv.visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv.hasErrors(0));
+  // SemanticVisitor sv = SemanticVisitor(&stm, DisplayMode::C_STYLE);
+  // sv.visitCompilationUnit(tree);
+  // REQUIRE_FALSE(sv.hasErrors(0));
 }
 
 TEST_CASE("Demo Mode: Program is required", "[semantic][conditional]")
@@ -320,26 +312,28 @@ prog program :: c : -int = {
     c.send(a)
 }
     )"""");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener();
-  parser.addErrorListener(&pListener);
+  // BismuthLexer lexer(&input);
+  // // lexer.removeErrorListeners();
+  // // auto lListener = TestErrorListener();
+  // // lexer.addErrorListener(&lListener);
+  // antlr4::CommonTokenStream tokens(&lexer);
+  // BismuthParser parser(&tokens);
+  // parser.removeErrorListeners();
+  // auto pListener = TestErrorListener();
+  // parser.addErrorListener(&pListener);
 
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+  // BismuthParser::CompilationUnitContext *tree = NULL;
+  // REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  // REQUIRE(tree != NULL);
+  // REQUIRE(tree->getText() != "");
 
-  STManager stmgr = STManager();
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  // STManager stmgr = STManager();
+  // SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv.visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv.hasErrors(ERROR));
+  // sv.visitCompilationUnit(tree);
+  // REQUIRE_FALSE(sv.hasErrors(ERROR));
+
+  EnsureNoErrors(input);
 }
 
 TEST_CASE("Incorrect Argument Pass", "[semantic][program]")
@@ -1079,27 +1073,28 @@ prog program :: c : -int = {
   c.send(0)
 }
     )"""");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener();
-  parser.addErrorListener(&pListener);
+    EnsureNoErrors(input);
+  // BismuthLexer lexer(&input);
+  // // lexer.removeErrorListeners();
+  // // auto lListener = TestErrorListener();
+  // // lexer.addErrorListener(&lListener);
+  // antlr4::CommonTokenStream tokens(&lexer);
+  // BismuthParser parser(&tokens);
+  // parser.removeErrorListeners();
+  // auto pListener = TestErrorListener();
+  // parser.addErrorListener(&pListener);
 
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+  // BismuthParser::CompilationUnitContext *tree = NULL;
+  // REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  // REQUIRE(tree != NULL);
+  // REQUIRE(tree->getText() != "");
 
-  STManager stmgr = STManager();
+  // STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  // SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv.visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv.hasErrors(ERROR));
+  // sv.visitCompilationUnit(tree);
+  // REQUIRE_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - f2p", "[semantic][program][local-function]")
@@ -1120,27 +1115,28 @@ prog program :: c : -int = {
   c.send(0)
 }
     )"""");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener();
-  parser.addErrorListener(&pListener);
+    EnsureNoErrors(input);
+  // BismuthLexer lexer(&input);
+  // // lexer.removeErrorListeners();
+  // // auto lListener = TestErrorListener();
+  // // lexer.addErrorListener(&lListener);
+  // antlr4::CommonTokenStream tokens(&lexer);
+  // BismuthParser parser(&tokens);
+  // parser.removeErrorListeners();
+  // auto pListener = TestErrorListener();
+  // parser.addErrorListener(&pListener);
 
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+  // BismuthParser::CompilationUnitContext *tree = NULL;
+  // REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  // REQUIRE(tree != NULL);
+  // REQUIRE(tree->getText() != "");
 
-  STManager stmgr = STManager();
+  // STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  // SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv.visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv.hasErrors(ERROR));
+  // sv.visitCompilationUnit(tree);
+  // REQUIRE_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Nested Local Functions - Disallow Local vars 3 - p2f", "[semantic][program][local-function]")
@@ -1721,27 +1717,28 @@ prog foo :: c : +int = {
   int a := b.recv(); # C is no longer defined
 }
     )"""");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener();
-  parser.addErrorListener(&pListener);
+    EnsureNoErrors(input);
+  // BismuthLexer lexer(&input);
+  // // lexer.removeErrorListeners();
+  // // auto lListener = TestErrorListener();
+  // // lexer.addErrorListener(&lListener);
+  // antlr4::CommonTokenStream tokens(&lexer);
+  // BismuthParser parser(&tokens);
+  // parser.removeErrorListeners();
+  // auto pListener = TestErrorListener();
+  // parser.addErrorListener(&pListener);
 
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+  // BismuthParser::CompilationUnitContext *tree = NULL;
+  // REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  // REQUIRE(tree != NULL);
+  // REQUIRE(tree->getText() != "");
 
-  STManager stmgr = STManager();
+  // STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  // SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv.visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv.hasErrors(ERROR));
+  // sv.visitCompilationUnit(tree);
+  // REQUIRE_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("No Weaken in loop", "[semantic]")
@@ -1795,27 +1792,28 @@ prog program :: c : -int = {
     c.send(a)
 }
     )"""");
-  BismuthLexer lexer(&input);
-  // lexer.removeErrorListeners();
-  // auto lListener = TestErrorListener();
-  // lexer.addErrorListener(&lListener);
-  antlr4::CommonTokenStream tokens(&lexer);
-  BismuthParser parser(&tokens);
-  parser.removeErrorListeners();
-  auto pListener = TestErrorListener();
-  parser.addErrorListener(&pListener);
+    EnsureNoErrors(input);
+  // BismuthLexer lexer(&input);
+  // // lexer.removeErrorListeners();
+  // // auto lListener = TestErrorListener();
+  // // lexer.addErrorListener(&lListener);
+  // antlr4::CommonTokenStream tokens(&lexer);
+  // BismuthParser parser(&tokens);
+  // parser.removeErrorListeners();
+  // auto pListener = TestErrorListener();
+  // parser.addErrorListener(&pListener);
 
-  BismuthParser::CompilationUnitContext *tree = NULL;
-  REQUIRE_NOTHROW(tree = parser.compilationUnit());
-  REQUIRE(tree != NULL);
-  REQUIRE(tree->getText() != "");
+  // BismuthParser::CompilationUnitContext *tree = NULL;
+  // REQUIRE_NOTHROW(tree = parser.compilationUnit());
+  // REQUIRE(tree != NULL);
+  // REQUIRE(tree->getText() != "");
 
-  STManager stmgr = STManager();
+  // STManager stmgr = STManager();
 
-  SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
+  // SemanticVisitor sv = SemanticVisitor(&stmgr, DisplayMode::C_STYLE);
 
-  sv.visitCompilationUnit(tree);
-  REQUIRE_FALSE(sv.hasErrors(ERROR));
+  // sv.visitCompilationUnit(tree);
+  // REQUIRE_FALSE(sv.hasErrors(ERROR));
 }
 
 TEST_CASE("Links3 - 1", "[semantic]")
