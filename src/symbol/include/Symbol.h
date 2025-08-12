@@ -79,28 +79,29 @@ public:
 class LocatableSymbol : public Symbol 
 {
 public: 
-    LocatableSymbol(Identifier * id, const Type *t, bool glob, Scope * s)
+    LocatableSymbol(Identifier * id, const Type *t, bool glob, Scope& s)
         : Symbol(id, t, glob)
         , scope(s)
     {}
 
     LocatableSymbol(LocatableSymbol& sym) 
         : Symbol(sym)
+        , scope(sym.scope)
     {
-        sym.scope = scope;  
+        // sym.scope = scope;  
     }
 
 
-    Scope * getScope() const; 
+    Scope& getScope() const; 
 
 private: 
-    Scope * scope; 
+    Scope& scope; 
 };
 
 class DefinitionSymbol : public LocatableSymbol 
 {
 public: 
-    DefinitionSymbol(VisibilityModifier v, Identifier * id, const Type *t, bool glob, Scope * s, Scope * i)
+    DefinitionSymbol(VisibilityModifier v, Identifier * id, const Type *t, bool glob, Scope& s, Scope * i)
         : LocatableSymbol(id, t, glob, s)
         , innerScope(i)
         , visibility(v)
@@ -116,7 +117,7 @@ public:
 
     bool isDefinition() const override { return true; }
 
-    Scope * getInnerScope() const { return innerScope; }
+    Scope& getInnerScope() const { return *innerScope; }
 
     VisibilityModifier getVisibility() { return visibility; }
 private:
@@ -127,7 +128,7 @@ private:
 class AliasSymbol : public LocatableSymbol 
 {
 public:
-    AliasSymbol(Identifier * id, Scope * s, const Type * t, Identifier * a)//Symbol * a)
+    AliasSymbol(Identifier * id, Scope& s, const Type * t, Identifier * a)//Symbol * a)
         : LocatableSymbol(id, t, true, s)
         , orig(a)
     {}

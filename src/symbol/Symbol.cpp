@@ -28,4 +28,4 @@ void Symbol::updateIdentifier(Identifier * nxt)
     this->identifier = nxt; 
 }
 
-Scope * LocatableSymbol::getScope() const { return scope; }
+Scope& LocatableSymbol::getScope() const { return scope; }

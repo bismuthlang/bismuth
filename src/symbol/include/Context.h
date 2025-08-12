@@ -23,10 +23,8 @@ public:
     Context(std::map<std::string, uint32_t> & nc) 
         : nameCounter(nc) 
         , globalScope(Scope(std::nullopt, new Identifier("", "", std::nullopt), false))
-    {
-        // Maybe add a global scope for all files? 
-        currentScope = &globalScope;
-    }
+        , currentScope(globalScope)
+    {}
 
     /**
      * @brief Enter a new scope
@@ -41,13 +39,13 @@ public:
     
     Scope * createNamespace(Identifier * id);
 
-    void enterScope(Scope * scope);
+    void enterScope(Scope & scope);
     /**
      * @brief Exit the current scope and move up one level
      * 
      * @return std::optional<Scope*> Returns empty if no parent scope to enter; otherwise returns last scope. 
      */
-    std::optional<Scope*> exitScope();
+    std::optional<std::reference_wrapper<Scope>> exitScope();
 
     /**
      * @brief Add a symbol to the current scope
@@ -80,7 +78,7 @@ public:
      */
     std::optional<Symbol*> lookupInAccessableScopes(std::string id);
 
-    std::optional<std::pair<Symbol *, Scope *>> lookupWithScope(std::string id); 
+    std::optional<std::pair<Symbol *, std::reference_wrapper<Scope>>> lookupWithScope(std::string id); 
 
     std::vector<Symbol *> getSymbols(int flags);
 
@@ -90,7 +88,7 @@ public:
      * @param id The symbol name to lookup
      * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found. 
      */
-    std::optional<Symbol*> lookupInCurrentScope(std::string id);
+    std::optional<Symbol *> lookupInCurrentScope(std::string id);
 
     /****************************************
      * Miscellaneous (useful for testing)
@@ -101,9 +99,7 @@ public:
      * 
      * @return std::optional<Scope*> 
      */
-    Scope& getCurrentScope() {
-        return *currentScope; 
-    }
+    Scope& getCurrentScope() { return currentScope.get(); }
 
     /**
      * @brief Gets the number of scopes
@@ -121,7 +117,7 @@ public:
      */
     bool isGlobalScope() { 
         // FIXME: change to using the defined glpobal scope
-        return !currentScope->getParent().has_value(); //->getId() == 0; 
+        return !currentScope.get().getParent().has_value(); //->getId() == 0; 
     }
 
     std::optional<std::reference_wrapper<Scope>> getOrProvisionScope(std::vector<std::string> steps, VisibilityModifier m);
@@ -130,7 +126,7 @@ public:
     Scope& getGlobalScope() { return globalScope; }
   private:
     std::vector<Scope*> scopes;
-    Scope* currentScope; 
+    std::reference_wrapper<Scope> currentScope; 
     int scopeNumber = 1;
 
     std::string getUniqNameFor(Scope& parent, std::string inScope) {

@@ -19,7 +19,7 @@ std::optional<Symbol *> Scope::addSymbol(Symbol *symbol)
   }
 
   auto ret = symbols.insert({id, symbol}).first;
-  return ret->second;
+return ret->second;
 }
 
 bool Scope::removeSymbol(const Symbol *symbol)
@@ -35,28 +35,27 @@ bool Scope::removeSymbol(const Symbol *symbol)
 }
 
 
-std::optional<std::pair<Symbol *, Scope *>> Scope::lookupWithScope(std::string id)
+std::optional<std::pair<Symbol *, std::reference_wrapper<Scope>>> Scope::lookupWithScope(std::string id)
 {
-    std::optional<Scope *> opt = this;
+    std::optional<std::reference_wrapper<Scope>> opt = *this;
     bool foundStop = false; 
 
     while (opt)
     {
-        Scope *scope = opt.value();
+        Scope& scope = opt.value().get();
 
-        std::optional<Symbol *> symOpt = scope->lookupInCurrentScope(id);
-        if (symOpt)
+        if (std::optional<Symbol *> symOpt = scope.lookupInCurrentScope(id); symOpt.has_value())
         {
             Symbol * sym = symOpt.value(); 
             if (!foundStop || sym->isDefinition() || sym->isGlobal())
             {
-                return std::make_pair(sym, scope);
+                return std::make_pair(sym, opt.value());
             }
             return std::nullopt;
         }
 
-        foundStop = scope->isStop(); 
-        opt = scope->getParent();
+        foundStop = scope.isStop(); 
+        opt = scope.getParent();
     }
 
     return std::nullopt;
@@ -65,14 +64,14 @@ std::optional<std::pair<Symbol *, Scope *>> Scope::lookupWithScope(std::string i
 
 std::optional<Symbol *> Scope::lookupInAccessableScopes(std::string id)
 {
-  std::optional<Scope *> opt = this;
+  std::optional<std::reference_wrapper<Scope>> opt = *this;
   bool foundStop = false; 
 
   while (opt)
   {
-    Scope *scope = opt.value();
+    Scope& scope = opt.value().get();
 
-    std::optional<Symbol *> symOpt = scope->lookupInCurrentScope(id);
+    std::optional<Symbol *> symOpt = scope.lookupInCurrentScope(id);
     if (symOpt)
     {
       Symbol * sym = symOpt.value(); 
@@ -81,8 +80,8 @@ std::optional<Symbol *> Scope::lookupInAccessableScopes(std::string id)
       return std::nullopt;
     }
 
-    foundStop = scope->isStop(); 
-    opt = scope->getParent();
+    foundStop = scope.isStop(); 
+    opt = scope.getParent();
   }
 
     return std::nullopt;
@@ -91,7 +90,7 @@ std::optional<Symbol *> Scope::lookupInAccessableScopes(std::string id)
 
 Scope * Scope::createNamespace(Identifier * id)
 {
-  return new Scope(this, id, true);
+  return new Scope(*this, id, true);
 }
 
 
@@ -99,7 +98,7 @@ std::optional<DefinitionSymbol *> Scope::addDefinition(VisibilityModifier m, Ide
 {
     Scope* innerScope = this->createNamespace(identifier);
 
-    DefinitionSymbol * sym = new DefinitionSymbol(m, identifier, t, glob, this, innerScope);
+    DefinitionSymbol * sym = new DefinitionSymbol(m, identifier, t, glob, *this, innerScope);
 
     // Need to do this hack just to preserve type safety. No need to add duplicate function. 
     if(this->addSymbol(sym))
@@ -150,7 +149,7 @@ std::string Scope::toString() const
   description << '{'; 
   description << "\tid: " << scopeId << ", " << std::endl;
   if(parent) 
-    description << "\tparent: " << parent.value()->scopeId << ", " << std::endl; 
+    description << "\tparent: " << parent.value().get().scopeId << ", " << std::endl; 
   description << "\tsymbols: {" << std::endl; 
 
   for (auto sym : symbols)

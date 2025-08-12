@@ -522,18 +522,18 @@ private:
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
         // First, try exiting the scope
-        std::optional<Scope *> res = stmgr.exitScope();
+        std::optional<std::reference_wrapper<Scope>> res = stmgr.exitScope();
 
         // If we did so and got a value back, then we can do type inferencing.
         if (res)
         {
             // Get the Scope* and check for any uninferred symbols
-            Scope *scope = res.value();
+            Scope& scope = res.value().get();
 
             // Try to unify symbols (really needed for things like nums wherein
             // we know what types are possible to infer, so we can just
             // pick one if the code doesn't make it clear which variant we need)
-            for(Symbol * sym : scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE))
+            for(Symbol * sym : scope.getSymbols(SymbolLookupFlags::UNINFERRED_TYPE))
             {
                 // Should always be inferrable
                 if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym->getType()))
@@ -542,7 +542,7 @@ private:
                 }
             }
 
-            std::vector<Symbol *> unInf = scope->getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
+            std::vector<Symbol *> unInf = scope.getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
 
             // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
             // due to the var leaving the scope
@@ -558,7 +558,7 @@ private:
                 errorHandler.addError(ctx->getStart(), "700 Uninferred types in context: " + details.str());
             }
 
-            std::vector<Symbol *> lins = scope->getSymbols(SymbolLookupFlags::PENDING_LINEAR);
+            std::vector<Symbol *> lins = scope.getSymbols(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
             // due to the var leaving the scope

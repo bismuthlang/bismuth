@@ -39,14 +39,14 @@ public:
      *
      * @param p The parent to the current scope
      */
-    Scope(std::optional<Scope *> p, Identifier * n, bool s)
+    Scope(std::optional<std::reference_wrapper<Scope>> p, Identifier * n, bool s)
     {
         parent = p;
         id = n; 
         stop = s; 
     }
 
-    Scope(std::optional<Scope *> p, std::map<std::string, Symbol *> syms, Identifier * n, bool s)
+    Scope(std::optional<std::reference_wrapper<Scope>> p, std::map<std::string, Symbol *> syms, Identifier * n, bool s)
     {
         parent = p;
         symbols = syms;
@@ -85,7 +85,7 @@ public:
 
     std::optional<Symbol *> lookupInAccessableScopes(std::string id);
 
-    std::optional<std::pair<Symbol *, Scope *>>  lookupWithScope(std::string id);
+    std::optional<std::pair<Symbol *, std::reference_wrapper<Scope>>>  lookupWithScope(std::string id);
 
     Scope * createNamespace(Identifier * id);
 
@@ -96,9 +96,9 @@ public:
      *
      * @return std::optional<Scope*> Empty no parent; present with value if has parent
      */
-    std::optional<Scope *> getParent() { return parent; }
+    std::optional<std::reference_wrapper<Scope>> getParent() { return parent; }
 
-    void setParent(Scope * scope) { parent = scope; } // FIXME: MAKE PRIVATE?
+    void setParent(Scope& scope) { parent = scope; } // FIXME: MAKE PRIVATE?
 
     /**
      * @brief Set the Id object
@@ -198,17 +198,17 @@ public:
 
 
     Scope * copyToStop() {
-      std::optional<Scope *> scopeOpt = this;
+      std::optional<std::reference_wrapper<Scope>> scopeOpt = *this;
       std::optional<Scope *> ans = std::nullopt; 
       std::optional<Scope *> prev = std::nullopt;
 
       while(scopeOpt)
       {
-        Scope * scope = scopeOpt.value(); 
+        Scope& scope = scopeOpt.value().get(); 
 
-        Scope * scopeCpy = new Scope(std::nullopt, scope->copySymbols(), scope->getIdentifier(), scope->isStop());
+        Scope * scopeCpy = new Scope(std::nullopt, scope.copySymbols(), scope.getIdentifier(), scope.isStop());
 
-        scopeCpy->setId(10 * scope->getId());
+        scopeCpy->setId(10 * scope.getId());
 
         if(!ans)
         {
@@ -217,20 +217,20 @@ public:
 
         if(prev)
         {
-          prev.value()->setParent(scopeCpy); 
+          prev.value()->setParent(*scopeCpy); 
         }
 
-        if(scope->isStop())
+        if(scope.isStop())
         {
-            if(scope->getParent())
+            if(scope.getParent())
             {
-                scopeCpy->setParent(scope->getParent().value());
+                scopeCpy->setParent(scope.getParent().value());
             }
             return ans.value(); 
         }
 
         prev = scopeCpy; 
-        scopeOpt = scope->getParent(); 
+        scopeOpt = scope.getParent(); 
       }
 
         return ans.value(); 
@@ -238,7 +238,7 @@ public:
 
 private:
     int scopeId = -1;
-    std::optional<Scope *> parent = {};
+    std::optional<std::reference_wrapper<Scope>> parent = std::nullopt;
     std::map<std::string, Symbol *> symbols;
 
     Identifier * id; 

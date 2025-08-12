@@ -12,7 +12,7 @@ Scope * STManager::createNamespace(Identifier * id)
     return context.createNamespace(id); 
 }
 
-std::optional<Scope *> STManager::exitScope()
+std::optional<std::reference_wrapper<Scope>> STManager::exitScope()
 {
     return context.exitScope();
 }

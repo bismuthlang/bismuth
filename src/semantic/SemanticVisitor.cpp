@@ -265,12 +265,12 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
     DEFINE_OR_PROPAGATE_VARIANT(std::reference_wrapper<Scope>, cuScope, maybeScope, ctx);
     
 
-    stmgr.enterScope(&cuScope.get());
+    stmgr.enterScope(cuScope.get());
     
     provisionFwdDeclSymbols(ctx); // TODO: should we report errors that this returns?
 
     return [this, ctx, cuScope]() -> SemanticVisitor::ImportPhaseResult {
-        stmgr.enterScope(&cuScope.get());
+        stmgr.enterScope(cuScope.get());
 
         {
             auto importError = collect_optionals(
@@ -286,7 +286,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
         DEFINE_OR_PROPAGATE_VARIANT(std::vector<TExternNode *>, externs, visitExterns(ctx), ctx); 
 
         return [this, ctx, cuScope, externs]() -> SemanticVisitor::DefineFwdDeclsPhaseResult {
-            stmgr.enterScope(&cuScope.get());
+            stmgr.enterScope(cuScope.get());
             {
                 auto fwdDeclErrors = defineFwdDeclSymbols(ctx);
                 if(fwdDeclErrors.has_value())
@@ -294,7 +294,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
             }
 
             return [this, ctx, cuScope, externs]() -> SemanticVisitor::PhaseNResult {
-                stmgr.enterScope(&cuScope.get());
+                stmgr.enterScope(cuScope.get());
 
                 DEFINE_OR_PROPAGATE_VARIANT(std::vector<DefinitionNode *>, defs, visitFwdDecls(ctx), ctx); 
                 // Visit the statements contained in the unit
@@ -448,7 +448,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
         // Safe exit the scope.
         safeExitScope(ctx);
-        stmgr.enterScope(&orig);
+        stmgr.enterScope(orig);
 
         return new TProgramDefNode(defSym, channelSymbol, blk, progType, ctx->getStart());
     };
@@ -1685,7 +1685,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
     }
     safeExitScope(ctx);
-    stmgr.enterScope(&origScope);
+    stmgr.enterScope(origScope);
 
     return new TLambdaConstNode(sym, ps, retType, blk, ctx->getStart());
 }
@@ -1791,7 +1791,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
             ctx->getStart()
         );
 
-        stmgr.enterScope(&origScope);
+        stmgr.enterScope(origScope);
 
         return templateNode;
     }
@@ -1983,7 +1983,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
         {
             pathVar = nt;
         }
-        lookupScope = *defSym->getInnerScope();
+        lookupScope = defSym->getInnerScope();
     }
 
     return pathVar;
@@ -2707,11 +2707,11 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
         if (checkRestIndependently || i + 1 < ctxCases.size())
         {
             Scope * scopeCpy = origScope.copyToStop();
-            this->stmgr.enterScope(scopeCpy);
+            this->stmgr.enterScope(*scopeCpy);
         }
         else
         {
-            this->stmgr.enterScope(&origScope);
+            this->stmgr.enterScope(origScope);
         }
 
         stmgr.enterScope(StopType::NONE);
@@ -2736,7 +2736,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
     if (checkRestIndependently)
     {
-        this->stmgr.enterScope(&origScope);
+        this->stmgr.enterScope(origScope);
 
         stmgr.enterScope(StopType::NONE); // Why? This doesn't make sense.. oh it does, but should ideally refactor!
 
@@ -2893,7 +2893,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             std::optional<ErrorChain *> ans = fn();
 
-            stmgr.enterScope(&origScope);
+            stmgr.enterScope(origScope);
             return ans;
         };
 

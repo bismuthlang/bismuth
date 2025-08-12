@@ -44,7 +44,7 @@ public:
    */
   void enterScope(StopType stopType, std::optional<Identifier *> idOpt = std::nullopt);
 
-  void enterScope(Scope * s) { context.enterScope(s); }
+  void enterScope(Scope & s) { context.enterScope(s); }
 
   Scope * createNamespace(Identifier * id);
 
@@ -53,7 +53,7 @@ public:
    *
    * @return std::optional<Scope*> Returns empty if no parent scope to enter; otherwise returns last scope.
    */
-  std::optional<Scope *> exitScope();
+  std::optional<std::reference_wrapper<Scope>> exitScope();
 
   /**
    * @brief Add a symbol to the current scope
