@@ -1,21 +1,19 @@
 #include "Type.h"
 
-bool Type::isSubtype(const Type *other, InferenceMode mode) const
+bool Type::isSubtype(const Type& other, InferenceMode mode) const
 {
     if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(this))
     {
-        // return false;
-        // return inf->isSupertype(this);
-        return inf->isSupertypeFor(other, mode);
+        return inf->isSupertypeForWMode(other, mode);
     }
 
-    if(other->isLinear() && !this->isLinear()) return false;  //FIXME: VERIFY WORKS WITH TYPE INF!
+    if(other.isLinear() && !this->isLinear()) return false;  //FIXME: VERIFY WORKS WITH TYPE INF!
 
-    return other->isSupertypeFor(this);
+    return other.isSupertypeFor(*this);
 }
 
 
-bool Type::isNotSubtype(std::vector<const Type *> others, InferenceMode mode) const {
+bool Type::isNotSubtype(std::vector<std::reference_wrapper<const Type>> others, InferenceMode mode) const {
     for(auto a : others)
         if(isSubtype(a, mode))
             return false; 
@@ -28,9 +26,9 @@ bool Type::isNotSubtype(std::vector<const Type *> others, InferenceMode mode) co
  * Integer (32 bit, signed) Type Definition
  *
  *******************************************/
-bool TypeInt::isSupertypeFor(const Type *other) const
+bool TypeInt::isSupertypeFor(const Type& other) const
 {
-    return dynamic_cast<const TypeInt *>(other);
+    return dynamic_cast<const TypeInt *>(&other);
 }
 
 std::string TypeInt::toString(DisplayMode) const { return "int"; }
@@ -45,9 +43,9 @@ llvm::IntegerType *TypeInt::getLLVMType(llvm::Module *M) const
  * Integer (32 bit, unsigned) Type Definition
  *
  *******************************************/
-bool TypeU32::isSupertypeFor(const Type *other) const
+bool TypeU32::isSupertypeFor(const Type& other) const
 {
-    return dynamic_cast<const TypeU32 *>(other);
+    return dynamic_cast<const TypeU32 *>(&other);
 }
 
 std::string TypeU32::toString(DisplayMode) const { return "u32"; }
@@ -63,9 +61,9 @@ llvm::IntegerType *TypeU32::getLLVMType(llvm::Module *M) const
  * Integer (64 bit, signed) Type Definition
  *
  *******************************************/
-bool TypeI64::isSupertypeFor(const Type *other) const
+bool TypeI64::isSupertypeFor(const Type& other) const
 {
-    return dynamic_cast<const TypeI64 *>(other);
+    return dynamic_cast<const TypeI64 *>(&other);
 }
 
 std::string TypeI64::toString(DisplayMode) const { return "i64"; }
@@ -80,9 +78,9 @@ llvm::IntegerType *TypeI64::getLLVMType(llvm::Module *M) const
  * Integer (64 bit, unsigned) Type Definition
  *
  *******************************************/
-bool TypeU64::isSupertypeFor(const Type *other) const
+bool TypeU64::isSupertypeFor(const Type& other) const
 {
-    return dynamic_cast<const TypeU64 *>(other);
+    return dynamic_cast<const TypeU64 *>(&other);
 }
 
 std::string TypeU64::toString(DisplayMode) const { return "u64"; }
@@ -98,9 +96,9 @@ llvm::IntegerType *TypeU64::getLLVMType(llvm::Module *M) const
  *     Boolean (1 bit) Type Definition
  *
  *******************************************/
-bool TypeBool::isSupertypeFor(const Type *other) const
+bool TypeBool::isSupertypeFor(const Type& other) const
 {
-    return dynamic_cast<const TypeBool *>(other);
+    return dynamic_cast<const TypeBool *>(&other);
 }
 
 std::string TypeBool::toString(DisplayMode) const { return "boolean"; }
@@ -117,9 +115,9 @@ llvm::Type *TypeBool::getLLVMType(llvm::Module *M) const
  *********************************************/
 std::string TypeStr::toString(DisplayMode) const { return "str"; }
 llvm::Type *TypeStr::getLLVMType(llvm::Module *M) const { return llvm::Type::getInt8Ty(M->getContext())->getPointerTo(); }
-bool TypeStr::isSupertypeFor(const Type *other) const
+bool TypeStr::isSupertypeFor(const Type& other) const
 {
-    return dynamic_cast<const TypeStr *>(other);
+    return dynamic_cast<const TypeStr *>(&other);
 }
 
 
@@ -133,7 +131,7 @@ std::string TypeBottom::toString(DisplayMode mode) const { return "\u22A5"; } //
 
 const TypeBottom * TypeBottom::getCopy() const { return this; };
 
-bool TypeBottom::isSupertypeFor(const Type *other) const
+bool TypeBottom::isSupertypeFor(const Type& other) const
 {
     return false;
 }
@@ -174,11 +172,9 @@ llvm::Type *TypeUnit::getLLVMType(llvm::Module *M) const
     return ty;
 }
 
-bool TypeUnit::isSupertypeFor(const Type *other) const
+bool TypeUnit::isSupertypeFor(const Type& other) const
 {
-    // return dynamic_cast<const TypeUnit *>(other);
-    // return false;
-    return dynamic_cast<const TypeUnit *>(other);
+    return dynamic_cast<const TypeUnit *>(&other);
 }
 
 
@@ -191,7 +187,7 @@ std::string TypeAbsurd::toString(DisplayMode mode) const { return "0"; }
 
 const TypeAbsurd * TypeAbsurd::getCopy() const { return this; };
 
-bool TypeAbsurd::isSupertypeFor(const Type *other) const
+bool TypeAbsurd::isSupertypeFor(const Type& other) const
 {
     return false;
 }
@@ -226,17 +222,17 @@ bool TypeArray::requiresDeepCopy() const { return valueType->requiresDeepCopy();
 
 const TypeArray * TypeArray::getCopy() const { return this; };
 
-bool TypeArray::isSupertypeFor(const Type *other) const
+bool TypeArray::isSupertypeFor(const Type& other) const
 {
     // An array can only be a supertype of another array
-    if (const TypeArray *p = dynamic_cast<const TypeArray *>(other))
+    if (const TypeArray *p = dynamic_cast<const TypeArray *>(&other))
 {
         /*
             * If the other array's value type is a subtype of the current
             * array's type AND their lengths match, then we can consider
             * this to be a supertype of the other array.
             */
-        return p->valueType->isSubtype(valueType) && this->length == p->length;
+        return p->valueType->isSubtype(*valueType) && this->length == p->length;
     }
 
     return false;
@@ -295,17 +291,17 @@ bool TypeDynArray::requiresDeepCopy() const { return valueType->requiresDeepCopy
 
 const TypeDynArray * TypeDynArray::getCopy() const { return this; };
 
-bool TypeDynArray::isSupertypeFor(const Type *other) const
+bool TypeDynArray::isSupertypeFor(const Type& other) const
 {
     // An array can only be a supertype of another array
-    if (const TypeDynArray *p = dynamic_cast<const TypeDynArray *>(other))
+    if (const TypeDynArray *p = dynamic_cast<const TypeDynArray *>(&other))
     {
         /*
             * If the other array's value type is a subtype of the current
             * array's type AND their lengths match, then we can consider
             * this to be a supertype of the other array.
             */
-        return p->valueType->isSubtype(valueType);
+        return p->valueType->isSubtype(*valueType);
     }
     // TODO: allow unsized arrays to become sized! (I think you mean the opposite!)
 
@@ -415,10 +411,10 @@ bool TypeChannel::isLossy() const
     return false; 
 }
 
-bool TypeChannel::isSupertypeFor(const Type *other) const
+bool TypeChannel::isSupertypeFor(const Type& other) const
 {
 
-    if (const TypeChannel *p = dynamic_cast<const TypeChannel *>(other))
+    if (const TypeChannel *p = dynamic_cast<const TypeChannel *>(&other))
     {
         return this->protocol->isSubtype(p->protocol);
     }
@@ -446,11 +442,11 @@ bool TypeBox::requiresDeepCopy() const { return true; }
 
 const TypeBox * TypeBox::getCopy() const { return this; };
 
-bool TypeBox::isSupertypeFor(const Type *other) const
+bool TypeBox::isSupertypeFor(const Type& other) const
 {
-    if (const TypeBox *p = dynamic_cast<const TypeBox *>(other))
+    if (const TypeBox *p = dynamic_cast<const TypeBox *>(&other))
     {
-        return innerType->isSubtype(p->innerType);
+        return innerType->isSubtype(*p->innerType);
     }
     return false;
 }
@@ -541,9 +537,9 @@ const ProtocolSequence * TypeProgram::getProtocol() const
 
 const TypeProgram * TypeProgram::getCopy() const { return this; };
 
-bool TypeProgram::isSupertypeFor(const Type *other) const
+bool TypeProgram::isSupertypeFor(const Type& other) const
 {
-    if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(other))
+    if (const TypeProgram *p = dynamic_cast<const TypeProgram *>(&other))
     {
         if(this->hasName() && p->hasName())
             return this->getIdentifier().value()->getFullyQualifiedName() == p->getIdentifier().value()->getFullyQualifiedName();
@@ -687,10 +683,10 @@ bool TypeFunc::isDefined() const { return defined; }
 
 const TypeFunc * TypeFunc::getCopy() const { return this; };
 
-bool TypeFunc::isSupertypeFor(const Type *other) const
+bool TypeFunc::isSupertypeFor(const Type& other) const
 {
     // Checks that the other type is also a function
-    if (const TypeFunc *p = dynamic_cast<const TypeFunc *>(other))
+    if (const TypeFunc *p = dynamic_cast<const TypeFunc *>(&other))
     {
         // Makes sure that both functions have the same number of parameters
         if (p->paramTypes.size() != this->paramTypes.size())
@@ -703,13 +699,13 @@ bool TypeFunc::isSupertypeFor(const Type *other) const
         // Checks that the parameters of this function are all subtypes of the other
         for (unsigned int i = 0; i < this->paramTypes.size(); i++)
         {
-            if (this->paramTypes.at(i)->isNotSubtype(p->paramTypes.at(i)))
+            if (this->paramTypes.at(i)->isNotSubtype(*p->paramTypes.at(i)))
             {
                 return false;
             }
         }
         // Makes sure that the return type of this function is a subtype of the other
-        return this->retType->isSubtype(p->retType) || (dynamic_cast<const TypeUnit *>(this->retType) && dynamic_cast<const TypeUnit *>(p->retType));
+        return this->retType->isSubtype(*p->retType) || (dynamic_cast<const TypeUnit *>(this->retType) && dynamic_cast<const TypeUnit *>(p->retType));
     }
     return false;
 }
@@ -804,7 +800,7 @@ bool TypeInfer::setValue(const Type *other, InferenceMode mode) const
     // that that type is a subtype of other.
     if (valueType->has_value())
     {
-        return other->isSubtype(valueType->value()); // NOTE: CONDITION INVERSED BECAUSE WE CALL IT INVERSED IN SYMBOL.CPP!
+        return other->isSubtype(*valueType->value()); // NOTE: CONDITION INVERSED BECAUSE WE CALL IT INVERSED IN SYMBOL.CPP!
     }
     if(possibleTypes.size())
     {
@@ -854,12 +850,12 @@ valid:
     return valid;
 }
 
-bool TypeInfer::isSupertypeFor(const Type *other) const 
+bool TypeInfer::isSupertypeFor(const Type& other) const 
 {
-    return this->isSupertypeFor(other, InferenceMode::SET);
+    return this->isSupertypeForWMode(other, InferenceMode::SET);
 }
 
-bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
+bool TypeInfer::isSupertypeForWMode(const Type& other, InferenceMode mode) const
 {
     // If we already have an inferred type, we can simply
     // check if that type is a subtype of other.
@@ -870,7 +866,7 @@ bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
     /*
         * If the other type is also an inference type...
         */
-    if (const TypeInfer *oInf = dynamic_cast<const TypeInfer *>(other))
+    if (const TypeInfer *oInf = dynamic_cast<const TypeInfer *>(&other))
     {
         // If the other inference type has a value determined, try using that
         if (oInf->valueType->has_value())
@@ -884,11 +880,11 @@ bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
         }
 
         // Otherwise, add the types to be dependencies of each other, and return true.
-        TypeInfer *u_this = const_cast<TypeInfer *>(this);
-        u_this->infTypes.push_back(oInf);
+        TypeInfer *u_this = const_cast<TypeInfer *>(this); // FIXME: I reckon we need to use smart pointer!
+        u_this->infTypes.insert(oInf);
 
         TypeInfer *moth = const_cast<TypeInfer *>(oInf);
-        moth->infTypes.push_back(this);
+        moth->infTypes.insert(this);
 
         // TODO: handle this better so that way we can compare and unify across
         // the two when both are non-empty (DO AN INTERSECT!)
@@ -901,7 +897,7 @@ bool TypeInfer::isSupertypeFor(const Type *other, InferenceMode mode) const
 
     // Try to update this type's inferred value with the other type
     
-    bool ans = setValue(other, mode); 
+    bool ans = setValue(other.getCopy(), mode); 
     // If we fail the update, try to unify so that way 
     // we can get a type for this. After all, the program
     // is going to error anyways. We won't want to show this as a var. 
@@ -915,7 +911,8 @@ bool TypeInfer::unify() const
     if(this->hasBeenInferred()) return true;
     if(possibleTypes.size() != 0)
     {
-        return this->isSupertypeFor(*(possibleTypes.begin()));
+        const Type * chosenType = (*possibleTypes.begin());
+        return this->isSupertypeFor(*chosenType);
     }
 
     for (const TypeInfer *ty : infTypes)
@@ -923,7 +920,8 @@ bool TypeInfer::unify() const
         // ty->unify(); 
         if(ty->possibleTypes.size() != 0)
         {
-            return this->isSupertypeFor(*(ty->possibleTypes.begin()));
+            const Type * chosenType = (*ty->possibleTypes.begin());
+            return this->isSupertypeFor(*chosenType);
         }
     }
 
@@ -980,14 +978,14 @@ std::set<const Type *, TypeCompare> TypeSum::getCases() const {
     return resorted; 
 }
 
-unsigned int TypeSum::getIndex(const Type *toFind) const
+unsigned int TypeSum::getIndex(const Type& toFind) const
 {
     unsigned i = 1;
 
     for (auto e : getCases())
     {
         // FIXME: THIS MIGHT NOT WORK WITH INF TYPES B/C TOSTRING INCLUDES INFER FOR THOSE
-        if (e->toString(C_STYLE) == toFind->toString(C_STYLE)) //(e->getLLVMType(M) == toFind)
+        if (e->toString(C_STYLE) == toFind.toString(C_STYLE)) //(e->getLLVMType(M) == toFind)
         {
             return i;
         }
@@ -1083,12 +1081,12 @@ bool TypeSum::requiresDeepCopy() const
 
 const TypeSum * TypeSum::getCopy() const { return this; };
 
-bool TypeSum::isSupertypeFor(const Type *other) const
+bool TypeSum::isSupertypeFor(const Type& other) const
 {
-    if (this->contains(other))
+    if (this->contains(&other))
         return true;
 
-    if (const TypeSum *oSum = dynamic_cast<const TypeSum *>(other))
+    if (const TypeSum *oSum = dynamic_cast<const TypeSum *>(&other))
     {
         if (this->cases.size() != oSum->cases.size())
             return false;
@@ -1099,7 +1097,7 @@ bool TypeSum::isSupertypeFor(const Type *other) const
 
             for (const Type *y : oSum->cases)
             {
-                if (t->isSubtype(y))
+                if (t->isSubtype(*y))
                 {
                     found = true;
                     break;
@@ -1232,16 +1230,16 @@ bool TypeStruct::requiresDeepCopy() const
 
 const TypeStruct * TypeStruct::getCopy() const { return this; };
 
-bool TypeStruct::isSupertypeFor(const Type *other) const
+bool TypeStruct::isSupertypeFor(const Type& other) const
 {
     // FIXME: Do better implementation for  TypeStruct::isSupertypeFor
-    if(const TypeStruct * oStruct = dynamic_cast<const TypeStruct *>(other))
+    if(const TypeStruct * oStruct = dynamic_cast<const TypeStruct *>(&other))
     {
         if(this->hasName() == oStruct->hasName())
         {
             if(this->hasName())
                 return this->getIdentifier().value()->getFullyQualifiedName() == oStruct->getIdentifier().value()->getFullyQualifiedName();
-            return this == other; 
+            return this == &other; 
         }
     }
     return false;
@@ -1463,12 +1461,12 @@ const TypeTemplate * TypeTemplate::getCopy() const
     return this; 
 }
 
-bool TypeTemplate::isSupertypeFor(const Type *other) const
+bool TypeTemplate::isSupertypeFor(const Type& other) const
 {
     // FIXME: DO BETTER!
-    if (const TypeTemplate *p = dynamic_cast<const TypeTemplate *>(other))
+    if (const TypeTemplate *p = dynamic_cast<const TypeTemplate *>(&other))
     {
-        return toString(C_STYLE) == other->toString(C_STYLE); 
+        return toString(C_STYLE) == other.toString(C_STYLE); 
     }
     return false; 
 }
@@ -1535,9 +1533,9 @@ const Type * TypeModule::getCopySubst(std::map<const Type *, const Type *> exist
     return this; // FIXME: Implement getCopySubst for module! Shouldn't be needed yet though....
 }
 
-bool TypeModule::isSupertypeFor(const Type * other) const 
+bool TypeModule::isSupertypeFor(const Type& other) const 
 {
-    return this == other; 
+    return this == &other; 
 }
 
 
@@ -1550,7 +1548,7 @@ bool TypeCompare::operator()(const Type *a, const Type *b) const
     // {
     //     infA->isSubtype(b);
     // }
-    if(dynamic_cast<const TypeInfer *>(a)) b->isSubtype(a, InferenceMode::QUERY); 
+    if(dynamic_cast<const TypeInfer *>(a)) b->isSubtype(*a, InferenceMode::QUERY); 
     return a->toString(C_STYLE) < b->toString(C_STYLE);
 }
 
@@ -1632,16 +1630,16 @@ bool TypeTrait::requiresDeepCopy() const
 
 const TypeTrait * TypeTrait::getCopy() const { return this; };
 
-bool TypeTrait::isSupertypeFor(const Type *other) const
+bool TypeTrait::isSupertypeFor(const Type& other) const
 {
     // FIXME: Do better implementation for  TypeTrait::isSupertypeFor
-    if(const TypeTrait * oStruct = dynamic_cast<const TypeTrait *>(other))
+    if(const TypeTrait * oStruct = dynamic_cast<const TypeTrait *>(&other))
     {
         if(this->hasName() == oStruct->hasName())
         {
             if(this->hasName())
                 return this->getIdentifier().value()->getFullyQualifiedName() == oStruct->getIdentifier().value()->getFullyQualifiedName();
-            return this == other; 
+            return this == &other; 
         }
     }
     return false;

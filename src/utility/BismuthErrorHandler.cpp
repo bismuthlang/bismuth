@@ -34,7 +34,7 @@ std::vector<std::string> BismuthError::asTrace()
         );
     }
     
-    for (auto [token, message] : trace)
+    for (auto [token, message, location] : trace)
     {
 
         // What if we could write this like: 
@@ -45,23 +45,27 @@ std::vector<std::string> BismuthError::asTrace()
 
         I guess we kinda have that with select in bismuth... but not quite as pattern-matchey 
         */
-        if(!token)
+        std::ostringstream e;
+        
+        if(token)
         {
-
-            ans.push_back(message); 
-            continue; 
+            if(message.empty())
+            {
+                e << "at ";
+            }
+            e << token->getInputStream()->getSourceName() << ":" << token->getLine() << ':' << token->getCharPositionInLine();
         }
 
-        std::ostringstream e;
+        // TODO: ADD ABILITY TO DISABLE/ENABLE
+        // e <<  " [source " << location.file_name() << '('
+        //       << location.line() << ':'
+        //       << location.column() << ")]";
+
         if(!message.empty())
         {
-            e << token->getInputStream()->getSourceName() << ":" << token->getLine() << ':' << token->getCharPositionInLine() << ": " << message; 
-            ans.push_back(e.str());
-            continue; 
+            e << ": " << message;
         }
-
         
-        e << "at " << token->getInputStream()->getSourceName() << ":" << token->getLine() << ':' << token->getCharPositionInLine();
         ans.push_back(e.str());
     }
 
@@ -76,7 +80,7 @@ std::vector<std::string> BismuthError::asTrace()
  *  Error Chain
  * 
  *******************************************/
-ErrorChain * ErrorChain::addErrorAt(antlr4::Token *t)
+ErrorChain * ErrorChain::addErrorAt(antlr4::Token *t, std::source_location location)
 {
     if(branches.size() > 1)
     {
@@ -89,17 +93,17 @@ ErrorChain * ErrorChain::addErrorAt(antlr4::Token *t)
 
     if(!this->error)
     {
-        this->error = BismuthError(COMBO, ERROR, t, "");
+        this->error = BismuthError(COMBO, ERROR, t, "", location);
         return this; 
     }
 
-    (*error).addTrace(t, "");
+    (*error).addTrace(t, "", location);
 
     return this; 
 }
 
 
-ErrorChain * ErrorChain::addError(antlr4::Token *t, std::string msg)
+ErrorChain * ErrorChain::addError(antlr4::Token *t, std::string msg, std::source_location location)
 {
     if(branches.size() > 1)
     {
@@ -112,11 +116,11 @@ ErrorChain * ErrorChain::addError(antlr4::Token *t, std::string msg)
 
     if(!this->error)
     {
-        this->error = BismuthError(COMBO, ERROR, t, msg);
+        this->error = BismuthError(COMBO, ERROR, t, msg, location);
         return this; 
     }
 
-    (*error).addTrace(t, msg);
+    (*error).addTrace(t, msg, location);
 
     return this; 
 }
@@ -229,31 +233,32 @@ uint32_t ErrorChain::getSeverity() { return severity; }
  *  BismuthErrorHandler
  * 
  *******************************************/
-ErrorChain * BismuthErrorHandler::addCompilerError(antlr4::Token *t, std::string msg)
+ErrorChain * BismuthErrorHandler::addCompilerError(antlr4::Token *t, std::string msg, std::source_location location)
 {
     // TODO: where to report error to?
     ErrorChain *e = new ErrorChain(
         t,
         msg + ". This is likely an error with the compiler. Please report it.",
         errType,
-        COMPILER
+        COMPILER,
+        location
     );
     errors.push_back(e);
 
     return e;
 }
 
-ErrorChain * BismuthErrorHandler::addError(antlr4::Token *t, std::string msg)
+ErrorChain * BismuthErrorHandler::addError(antlr4::Token *t, std::string msg, std::source_location location)
 {
-    ErrorChain *e = new ErrorChain(t, msg, errType, ERROR);
+    ErrorChain *e = new ErrorChain(t, msg, errType, ERROR, location);
     errors.push_back(e);
 
     return e;
 }
 
-ErrorChain * BismuthErrorHandler::addCritWarning(antlr4::Token *t, std::string msg)
+ErrorChain * BismuthErrorHandler::addCritWarning(antlr4::Token *t, std::string msg, std::source_location location)
 {
-    ErrorChain *e = new ErrorChain(t, msg, errType, CRITICAL_WARNING);
+    ErrorChain *e = new ErrorChain(t, msg, errType, CRITICAL_WARNING, location);
     errors.push_back(e);
 
     return e;

@@ -15,7 +15,7 @@
 #include <string>
 #include <vector>
 #include <optional>
-// #include <source_location> // TODO: Upgrade to clang 15 or 16 and use https://en.cppreference.com/w/cpp/compiler_support/20#C.2B.2B20_library_features
+#include <source_location> // TODO: Upgrade to clang 15 or 16 and use https://en.cppreference.com/w/cpp/compiler_support/20#C.2B.2B20_library_features
 
 /**
  * @brief Defines various error types the compiler can throw
@@ -42,6 +42,47 @@ enum ErrSev
     COMPILER = 16,        // Compiler error
 };
 
+
+class TraceData {
+public:
+    antlr4::Token * tok; 
+    std::string msg; 
+    std::source_location loc; 
+
+    TraceData() = delete;
+
+    TraceData(antlr4::Token * t, std::string m, std::source_location l)
+        : tok(t)
+        , msg(m)
+        , loc(l)
+    {}
+
+    // TraceData (TraceData& obj) {
+    //     tok = obj.tok;
+    //     msg = obj.msg;
+    //     loc = obj.loc;
+    // };
+
+    // TraceData (TraceData&& obj) {
+    //     tok = obj.tok;
+    //     msg = obj.msg;
+    //     loc = obj.loc;
+    // };
+
+    // TraceData (const TraceData& obj) {
+    //     tok = obj.tok;
+    //     msg = obj.msg;
+    //     loc = obj.loc;
+    // };
+
+    // TraceData (const TraceData&& obj) {
+    //     tok = obj.tok;
+    //     msg = obj.msg;
+    //     loc = obj.loc;
+    // };
+
+};
+
 /**
  * @brief Defines an error in the language
  *
@@ -51,18 +92,18 @@ struct BismuthError
     // antlr4::Token *token; // Where the error occurred
     // std::string message;  // Error Message text
 
-    BismuthError(ErrType et, ErrSev es, antlr4::Token *tok, std::string msg)
+    BismuthError(ErrType et, ErrSev es, antlr4::Token *tok, std::string msg, std::source_location location=std::source_location::current())
         : errorType(et)
         , errorSeverity(es)
         // , token(tok)
         // , message(msg)
     {
-        addTrace(tok, msg);
+        addTrace(tok, msg, location);
     }
 
-    void addTrace(antlr4::Token * tok, std::string msg)
+    void addTrace(antlr4::Token * tok, std::string msg, std::source_location location=std::source_location::current())
     {
-        trace.push_back(std::make_pair(tok, msg));
+        trace.push_back(TraceData(tok, msg, location));
     }
 
     std::string toString(); 
@@ -74,7 +115,7 @@ struct BismuthError
 private: 
     ErrType errorType;
     ErrSev errorSeverity;
-    std::vector<std::pair<antlr4::Token *, std::string>> trace; 
+    std::vector<TraceData> trace; 
 };
 
 struct ErrorChain
@@ -82,14 +123,14 @@ struct ErrorChain
     std::optional<BismuthError> error; 
     std::vector<ErrorChain *> branches; 
 
-    ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es)
+    ErrorChain(antlr4::Token *tok, std::string msg, ErrType et, ErrSev es, std::source_location location=std::source_location::current())
     {
         severity = es; 
-        error = BismuthError(et, es, tok, msg);
+        error = BismuthError(et, es, tok, msg, location);
     }
 
-    ErrorChain * addErrorAt(antlr4::Token *t);
-    ErrorChain * addError(antlr4::Token *t, std::string msg);
+    ErrorChain * addErrorAt(antlr4::Token *t, std::source_location location=std::source_location::current());
+    ErrorChain * addError(antlr4::Token *t, std::string msg, std::source_location location=std::source_location::current());
 
     ErrorChain * addBranch(ErrorChain * other);
     // ErrorChain * addCritWarning(antlr4::Token *t, std::string msg);
@@ -122,9 +163,9 @@ private:
 public:
     BismuthErrorHandler(ErrType ty) : errType(ty) {}
 
-    ErrorChain *addCompilerError(antlr4::Token *t, std::string msg);
-    ErrorChain *addError(antlr4::Token *t, std::string msg);
-    ErrorChain *addCritWarning(antlr4::Token *t, std::string msg);
+    ErrorChain *addCompilerError(antlr4::Token *t, std::string msg, std::source_location location=std::source_location::current());
+    ErrorChain *addError(antlr4::Token *t, std::string msg, std::source_location location=std::source_location::current());
+    ErrorChain *addCritWarning(antlr4::Token *t, std::string msg, std::source_location location=std::source_location::current());
     std::vector<ErrorChain *> &getErrors();
     std::string errorList();
 

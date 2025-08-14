@@ -329,14 +329,13 @@ std::variant<
     {
         auto a =  ex->accept(this);
         DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, cond, anyOpt2VarError<TypedNode>(errorHandler, a), ex, "Unable to type check condition expression");
+        const Type& conditionType = cond->getType();
 
-        const Type *conditionType = cond->getType();
-
-        if (conditionType->isNotSubtype(Types::DYN_BOOL))
+        if (conditionType.isNotSubtype(*Types::DYN_BOOL))
         {
-            return errorHandler.addError(ex->getStart(), "Condition expected boolean, but was given " + conditionType->toString(toStringMode));
+            return errorHandler.addError(ex->getStart(), "Condition expected boolean, but was given " + conditionType.toString(toStringMode));
         }
-
+        
         return cond;
     }
 

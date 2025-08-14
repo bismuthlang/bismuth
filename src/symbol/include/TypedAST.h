@@ -89,7 +89,7 @@ public:
 
     virtual ~TypedNode() = default;
 
-    virtual const Type *getType() = 0;
+    virtual const Type& getType() = 0;
 
     virtual std::string toString() const = 0;
 
@@ -266,7 +266,7 @@ public:
         eval = e;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
@@ -287,7 +287,7 @@ public:
         post = p;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
     virtual std::any accept_any(VisitorBase &a) override { return this->Nuaccept_any(a); }
 
     std::string toString() const override {
@@ -307,7 +307,7 @@ public:
 
     vector<TypedNode *> getExprs() { return exprs; }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // PLAN: Change this to allow for more functional style?
+    const TypeUnit& getType() override { return *Types::UNIT; } // PLAN: Change this to allow for more functional style?
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
     std::string toString() const override {
@@ -355,9 +355,9 @@ public:
         type = new TypeFunc(paramTypes, retType);
     }
 
-    const TypeFunc *getType() override
+    const TypeFunc& getType() override
     {
-        return type;
+        return *type;
     }
 
     std::string toString() const override {
@@ -385,9 +385,9 @@ public:
         type = ty;
     }
 
-    const TypeProgram *getType() override
+    const TypeProgram& getType() override
     {
-        return type;
+        return *type;
     }
 
     std::string toString() const override {
@@ -414,9 +414,9 @@ public:
         type = ty;
     }
 
-    const TypeTrait *getType() override
+    const TypeTrait& getType() override
     {
-        return type;
+        return *type;
     }
 
     std::string toString() const override {
@@ -444,7 +444,7 @@ public:
         post = p;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // PLAN: Change this to allow for a more functional style syntax?
+    const TypeUnit& getType() override { return *Types::UNIT; } // PLAN: Change this to allow for a more functional style syntax?
 
     std::string toString() const override {
         return "COND STATEMENT NODE";
@@ -463,7 +463,7 @@ public:
         expr = e;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "RETURN NODE";
@@ -479,7 +479,7 @@ public:
     {
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit& getType() override { return *Types::UNIT; } // FIXME: DO BETTER
 
     std::string toString() const override {
         return "EXIT NODE";
@@ -502,7 +502,7 @@ public:
         lType = l;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "SEND NODE";
@@ -522,9 +522,9 @@ public:
         sym = s;
     }
 
-    const Type *getType() override {
-        if(meta.actingType) return meta.actingType.value();
-        return meta.protocolType;
+    const Type& getType() override {
+        if(meta.actingType) return *meta.actingType.value();
+        return *meta.protocolType;
         // return meta.actingType.value_or(meta.protocolType);
      }
 
@@ -546,7 +546,7 @@ public:
         sym = s;
     }
 
-    const Type *getType() override { return Types::DYN_BOOL; }
+    const Type& getType() override { return *Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "IS PRESENT NODE";
@@ -564,7 +564,7 @@ public:
         sym = s;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "CONTRACT NODE";
@@ -583,7 +583,7 @@ public:
         sym = s;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "WEAKEN NODE";
@@ -605,7 +605,7 @@ public:
         closeNumber = cn;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "CANCEL NODE";
@@ -626,7 +626,7 @@ public:
         chanType = c;
     }
 
-    const TypeChannel *getType() override { return chanType; }
+    const TypeChannel& getType() override { return *chanType; }
 
     std::string toString() const override {
         return "EXEC NODE";
@@ -647,7 +647,7 @@ public:
         blk = b;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "ACCEPT NODE";
@@ -670,7 +670,7 @@ public:
         blk = b;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "ACCEPT WHILE NODE";
@@ -698,7 +698,7 @@ public:
         falseOpt = f;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "ACCEPT IF NODE";
@@ -722,7 +722,7 @@ public:
         return "DEF ENUM NODE";
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 };
 
@@ -742,7 +742,7 @@ public:
 
     std::string toString() const override { return "DEF TEMPLATE NODE"; }
 
-    const TypeTemplate * getType() override { return type; }
+    const TypeTemplate& getType() override { return *type; }
     DefinitionNode * getTemplatedNodes() { return templatedNodes; }
     // TypedNode * getTemplatedNodes() { return templatedNodes; }
 
@@ -759,7 +759,7 @@ public:
         product = p;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "DEF STRUCT";
@@ -781,7 +781,7 @@ public:
         exprs = e;
     }
 
-    const TypeStruct *getType() override { return product; }
+    const TypeStruct& getType() override { return *product; }
 
     std::string toString() const override {
         return "INIT PRODUCT";
@@ -809,11 +809,11 @@ public:
         exprs = e;
     }
 
-    const Type *getType() override {
+    const Type& getType() override {
         // return type;  // Wish we could do this
         if(std::holds_alternative<const TypeArray *>(type))
-            return std::get<const TypeArray *>(type);
-        return std::get<const TypeDynArray*>(type);
+            return *std::get<const TypeArray *>(type);
+        return *std::get<const TypeDynArray*>(type);
     }
 
     std::variant<const TypeArray *, const TypeDynArray*> getTypeVariant() { return type; }
@@ -843,31 +843,55 @@ public:
 
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
-    const TypeBox *getType() override { return boxType; }
+    const TypeBox& getType() override { return *boxType; }
 };
 
 class TDerefBoxNode : public TypedNode, public Visitable<TDerefBoxNode>
 {
-public:
-    const TypeBox *boxType;
+public: 
+static std::variant<TDerefBoxNode *, std::string> get(TypedNode * e, bool rv, antlr4::Token *tok) 
+{
+    const Type& exprType = e->getType();
+    DEFINE_OR_PROPAGATE_OPTIONAL_WPROTO(
+        std::reference_wrapper<const TypeBox>, 
+        box, 
+        type_cast<TypeBox>(exprType), 
+        "Dereference expected Box<T> but got " + exprType.toString(C_STYLE)
+    );
+
+    return new TDerefBoxNode(
+        box.get(),
+        e,
+        rv, 
+        tok
+    );
+}
+
+private:
+    const TypeBox& boxType;
     TypedNode * expr;
     bool is_rvalue;
 
-    TDerefBoxNode(const TypeBox *b, TypedNode * e, bool rv, antlr4::Token *tok) : TypedNode(tok)
-    {
-        boxType = b;
-        expr = e;
-        is_rvalue = rv;
-    }
 
-    std::string toString() const override {
-        return "Deref BOX";
-    }
+    TDerefBoxNode(
+        const TypeBox & b, 
+        TypedNode * e, 
+        bool rv, 
+        antlr4::Token *tok
+    ) 
+        : TypedNode(tok)
+        , boxType(b)
+        , expr(e)
+        , is_rvalue(rv)
+    {}
 
+    public:
+    std::string toString() const override { return "Deref BOX"; }
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
-
-    // FIXME: why is this innerType? shouldnt that be separate?
-    const Type *getType() override { return boxType->getInnerType(); }
+    TypedNode & getExpr() { return *expr; }
+    const Type& getType() override { return *boxType.getInnerType(); }
+    const TypeBox& getBoxType() { return boxType; }
+    const bool isRValue() { return is_rvalue; }
 };
 
 class TWhileLoopNode : public TypedNode, public Visitable<TWhileLoopNode>
@@ -882,7 +906,7 @@ public:
         blk = t;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "WHILE LOOP";
@@ -901,9 +925,9 @@ public:
     TExternNode(Symbol * s, TypeFunc * func, antlr4::Token *tok) : TypedNode(tok), sym(s), ty(func)
     {}
 
-    const TypeFunc *getType() override
+    const TypeFunc& getType() override
     {
-        return ty;
+        return *ty;
     }
 
     std::string toString() const override {
@@ -929,14 +953,14 @@ public:
         paramType = p;
     }
 
-    const TypeFunc* getFuncType()
+    const TypeFunc& getFuncType()
     {
-        return dynamic_cast<const TypeFunc *>(fn->getType());
+        return dynamic_cast<const TypeFunc& >(fn->getType());
     }
 
-    const Type *getType() override
+    const Type& getType() override
     {
-        return getFuncType()->getReturnType();
+        return *getFuncType().getReturnType();
     }
 
     std::string toString() const override {
@@ -965,8 +989,8 @@ public:
     {
     }
 
-    const Type *getType() override {
-        return ty;
+    const Type& getType() override {
+        return *ty;
     //    return std::visit(overloaded{[](Symbol * sym)
     //             { return sym->getType(); },
     //             [](const NameableType * nt)
@@ -998,7 +1022,7 @@ public:
     {}
 
     Symbol * getSymbol() { return sym; }
-    const Type *getType() override { return sym->getType(); }
+    const Type& getType() override { return *sym->getType(); }
 
     bool isRValue() { return rvalue; }
 
@@ -1031,12 +1055,12 @@ public:
         resultType = r.at(r.size() - 1).second;
     }
 
-    const Type *getType() override { return resultType; }
+    const Type& getType() override { return *resultType; }
 
-    const Type * getResultantType() { return resultType; }
+    const Type& getResultantType() { return *resultType; }
 
     // const Type * getSymbolType() { return id->getType(); }
-    const Type * getExprType() { return expr->getType(); }
+    const Type& getExprType() { return expr->getType(); }
 
     TypedNode * getExpr() { return expr; }
 
@@ -1062,37 +1086,37 @@ public:
         is_rvalue = r;
     }
 
-    const TypeArray * getArrayType() {
-        return dynamic_cast<const TypeArray *>(expr->getType()); // FIXME: POTENTIAL ERROR?
+    const TypeArray& getArrayType() {
+        return dynamic_cast<const TypeArray& >(expr->getType()); // FIXME: POTENTIAL ERROR?
     }
 
     // The stored type of the array
-    const Type * getLValueType()
+    const Type& getLValueType()
     {
-        return getArrayType()->getValueType();
+        return *getArrayType().getValueType();
     }
 
     // TODO: allow for modulo get so that way we can access fields more directly?
-    const Type *getType() override
+    const Type& getType() override
     {
-        const Type * arrayType = getLValueType();
+        const Type& arrayType = getLValueType();
 
         if(!is_rvalue)
         {
             return arrayType;
         }
 
-        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType};
-        return new TypeSum(cases);
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, arrayType.getCopy()}; // FIXME: don't always make a copy, save the type so we can re-use it
+        return *new TypeSum(cases);
     }
 
-    const TypeSum* getRValueType() {
-        std::set<const Type *, TypeCompare> cases = {Types::UNIT, getLValueType()};
-        return new TypeSum(cases);
+    const TypeSum& getRValueType() {
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, getLValueType().getCopy()};// FIXME: don't always make a copy, save the type so we can re-use it
+        return *new TypeSum(cases);
     }
 
     uint32_t length() const {
-        return dynamic_cast<const TypeArray *>(expr->getType())->getLength();
+        return dynamic_cast<const TypeArray&>(expr->getType()).getLength();
     }
 
     std::string toString() const override {
@@ -1116,33 +1140,33 @@ public:
         is_rvalue = r;
     }
 
-    const TypeDynArray * getArrayType()
+    const TypeDynArray& getArrayType()
     {
-        return dynamic_cast<const TypeDynArray *>(expr->getType()); // FIXME: POTENTIAL ERROR?
+        return dynamic_cast<const TypeDynArray&>(expr->getType()); // FIXME: POTENTIAL ERROR?
     }
 
-    const Type * getStoredType()
+    const Type& getStoredType()
     {
-        return getArrayType()->getValueType(); // FIXME: POTENTIAL ERROR?
+        return *getArrayType().getValueType(); // FIXME: POTENTIAL ERROR?
     }
 
     // TODO: allow for modulo get so that way we can access fields more directly?
-    const Type *getType() override
+    const Type& getType() override
     {
-        const Type * stored_type = getStoredType();
+        const Type& stored_type = getStoredType();
 
         if(!is_rvalue)
         {
             return stored_type;
         }
 
-        std::set<const Type *, TypeCompare> cases = {Types::UNIT, stored_type};
-        return new TypeSum(cases);
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, stored_type.getCopy()}; //FIXME: Cache instead of making copies!
+        return *new TypeSum(cases);
     }
 
-    const TypeSum* getRValueType() {
-        std::set<const Type *, TypeCompare> cases = {Types::UNIT, getStoredType()};
-        return new TypeSum(cases);
+    const TypeSum& getRValueType() {
+        std::set<const Type *, TypeCompare> cases = {Types::UNIT, getStoredType().getCopy()}; // FIXME: Cache instead of making copies!
+        return *new TypeSum(cases);
     }
 
     std::string toString() const override {
@@ -1164,7 +1188,7 @@ public:
         val = v;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "ASSIGN NODE";
@@ -1194,7 +1218,7 @@ public:
         rhs = r;
     }
 
-    const TypeBool *getType() override { return Types::DYN_BOOL; }
+    const TypeBool& getType() override { return *Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "BINARY REL ";
@@ -1236,7 +1260,7 @@ public:
         return "BINARY ARITH";
     }
 
-    const Type *getType() override { return lhs->getType(); }
+    const Type& getType() override { return lhs->getType(); }
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 };
 
@@ -1260,7 +1284,7 @@ public:
         rhs = r;
     }
 
-    const TypeBool *getType() override { return Types::DYN_BOOL; }
+    const TypeBool& getType() override { return *Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "EQ EXPR";
@@ -1288,7 +1312,7 @@ public:
         value = v;
     }
 
-    const Type *getType() override
+    const Type& getType() override
     {
         switch (op)
         {
@@ -1297,7 +1321,7 @@ public:
             // return Types::DYN_INT;
             return value->getType();
         case UNARY_NOT:
-            return Types::DYN_BOOL;
+            return *Types::DYN_BOOL;
         }
     }
 
@@ -1320,7 +1344,7 @@ public:
 
     vector<TypedNode *> getExprs() { return exprs; }
 
-    const TypeBool *getType() override { return Types::DYN_BOOL; }
+    const TypeBool& getType() override { return *Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "LOG AND";
@@ -1341,7 +1365,7 @@ public:
 
     vector<TypedNode *> getExprs() { return exprs; }
 
-    const TypeBool *getType() override { return Types::DYN_BOOL; }
+    const TypeBool& getType() override { return *Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "LOG OR";
@@ -1360,7 +1384,7 @@ public:
         value = s;
     }
 
-    const TypeStr *getType() override { return Types::DYN_STR; }
+    const TypeStr& getType() override { return *Types::DYN_STR; }
 
     std::string toString() const override {
         return "StrConst";
@@ -1379,7 +1403,7 @@ public:
         value = b;
     }
 
-    const TypeBool *getType() override { return Types::DYN_BOOL; }
+    const TypeBool& getType() override { return *Types::DYN_BOOL; }
 
     std::string toString() const override {
         return "Boolean CONST";
@@ -1405,9 +1429,9 @@ public:
         });
     }
 
-    const Type *getType() override
+    const Type& getType() override
     {
-        return infTy;
+        return *infTy;
     }
 
     std::string toString() const override {
@@ -1428,7 +1452,7 @@ public:
         value = v;
     }
 
-    const TypeI64 *getType() override { return Types::DYN_I64; }
+    const TypeI64& getType() override { return *Types::DYN_I64; }
 
     std::string toString() const override {
         return "i64 CONST";
@@ -1447,7 +1471,7 @@ public:
         value = v;
     }
 
-    const TypeU32 *getType() override { return Types::DYN_U32; }
+    const TypeU32& getType() override { return *Types::DYN_U32; }
 
     std::string toString() const override {
         return "u32 CONST";
@@ -1466,7 +1490,7 @@ public:
         value = v;
     }
 
-    const TypeU64 *getType() override { return Types::DYN_U64; }
+    const TypeU64& getType() override { return *Types::DYN_U64; }
 
     std::string toString() const override {
         return "u64 CONST";
@@ -1486,7 +1510,7 @@ public:
         value = v;
     }
 
-    const TypeInt *getType() override { return Types::DYN_INT; }
+    const TypeInt& getType() override { return *Types::DYN_INT; }
 
     std::string toString() const override {
         return "i32 CONST";
@@ -1536,7 +1560,7 @@ public:
         assignments = a;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
 
     std::string toString() const override {
@@ -1550,15 +1574,16 @@ public:
 class TMatchStatementNode : public TypedNode, public Visitable<TMatchStatementNode>
 {
 public:
-    const TypeSum *matchType;
+    const TypeSum& matchType; // matchType should be the same thing as checkExpr's type! //TODO: Make static getter?
     TypedNode *checkExpr;
     vector<pair<Symbol *, TypedNode *>> cases;
 
     vector<TypedNode *> post;
 
-    TMatchStatementNode(const TypeSum *m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p, antlr4::Token *tok) : TypedNode(tok)
+    TMatchStatementNode(const TypeSum& m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p, antlr4::Token *tok) 
+        : TypedNode(tok)
+        , matchType(m)
     {
-        matchType = m;
         checkExpr = e;
         cases = c;
 
@@ -1566,9 +1591,9 @@ public:
     }
 
   std::any accept_any(VisitorBase &a) override { return this->Nuaccept_any(a); }
-    const TypeUnit *getType() override
+    const TypeUnit& getType() override
     {
-        return Types::UNIT; // PLAN: Change this to allow for a more functional style syntax?
+        return *Types::UNIT; // PLAN: Change this to allow for a more functional style syntax?
     }
 
     std::string toString() const override {
@@ -1598,9 +1623,9 @@ public:
 
     std::any accept_any(VisitorBase &a) override { return this->Nuaccept_any(a); }
 
-    const TypeUnit *getType() override
+    const TypeUnit& getType() override
     {
-        return Types::UNIT;
+        return *Types::UNIT;
     }
 
     std::string toString() const override {
@@ -1621,7 +1646,7 @@ public:
         projectIndex = p;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
     std::string toString() const override {
@@ -1640,7 +1665,7 @@ public:
         // lType = l;
     }
 
-    const Type *getType() override { return expr->getType(); }
+    const Type& getType() override { return expr->getType(); }
 
     std::string toString() const override {
         return "COPY NODE";
@@ -1662,18 +1687,18 @@ public:
         nodeType = new TypeChannel(new ProtocolSequence(false, {
             new ProtocolOC(false, new ProtocolSequence(false, {
                 new ProtocolRecv(false, [](TypedNode * expr){
-                    const Type * ty = expr->getType();
-                    if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(ty))
+                    const Type& ty = expr->getType();
+                    if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(&ty))
                     {
                         return arrayType->getValueType();
                     }
-                    return ty;
+                    return ty.getCopy();
                 }(expr))
             }))
         }));
     }
 
-    const Type* getType() override { return nodeType; }
+    const Type& getType() override { return *this->nodeType->getCopy(); } // FIXME: Copy shouldnt be needed!
     std::string toString() const override { return "AsChannel(" + expr->toString() + ")"; }
     virtual std::any accept_any(VisitorBase & a) override { return this->Nuaccept_any(a); }
 };
@@ -1689,7 +1714,7 @@ public:
     {
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; } // FIXME: DO BETTER
+    const TypeUnit& getType() override { return *Types::UNIT; } // FIXME: DO BETTER
 
     std::string toString() const override {
         return "GENERATOR NODE";
@@ -1714,7 +1739,7 @@ public:
         traitSpec = t;
     }
 
-    const TypeUnit *getType() override { return Types::UNIT; }
+    const TypeUnit& getType() override { return *Types::UNIT; }
 
     std::string toString() const override {
         return "DEF TRAIT";

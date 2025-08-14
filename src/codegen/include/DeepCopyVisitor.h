@@ -82,7 +82,9 @@ public:
         return tempBuilder.CreateAlloca(ty, 0, identifier);
     }
 
-    optional<Value *> deepCopy(IRBuilder<NoFolder> *builder, const Type *type, Value *to_copy)
+    optional<Value *> deepCopy(IRBuilder<NoFolder> *builder, const Type* type, Value *to_copy) = delete;
+
+    optional<Value *> deepCopy(IRBuilder<NoFolder> *builder, const Type& type, Value *to_copy)
     {
         Value *addrMap = getNewAddressMap(builder);
         optional<Value *> ans = deepCopyHelper(builder, type, to_copy, addrMap);// , MIXED_MALLOC);
@@ -92,5 +94,6 @@ public:
 
 private:
     // FIXME: DONT DUPLICATE THESE ACROSS FILES
-    optional<Value *> deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap);
+    optional<Value *> deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, Value *stoVal, Value *addrMap);
+    optional<Value *> deepCopyHelper(IRBuilder<NoFolder> *builder, const Type* type, Value *stoVal, Value *addrMap) = delete;
 };

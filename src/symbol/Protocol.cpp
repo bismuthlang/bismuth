@@ -39,7 +39,7 @@ bool ProtocolRecv::isSupertypeFor(const Protocol *other) const
 {
     if(const ProtocolRecv * pOther = dynamic_cast<const ProtocolRecv *>(other))
     {
-        return this->recvType->isSubtype(pOther->recvType);
+        return this->recvType->isSubtype(*pOther->recvType);
     }
 
     return false;
@@ -80,7 +80,7 @@ bool ProtocolSend::isSupertypeFor(const Protocol *other) const
 {
     if(const ProtocolSend * pOther = dynamic_cast<const ProtocolSend *>(other))
     {
-        return this->sendType->isSubtype(pOther->sendType);
+        return this->sendType->isSubtype(*pOther->sendType);
     }
 
     return false;
@@ -495,7 +495,7 @@ optional<const ProtocolSend *> ProtocolSequence::getSend() const
 }
 
 // FIXME: this will get complicated if we have (Unit + Closable) -- how will we know what to close?
-optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
+optional<reference_wrapper<const Type>> ProtocolSequence::canSend(const Type& ty) const
 {
     optional<const ProtocolSend *> sendOpt = this->getSend();
     if (!sendOpt)
@@ -503,16 +503,17 @@ optional<const Type *> ProtocolSequence::canSend(const Type *ty) const
 
     const Type *sendTy = sendOpt.value()->getSendType();
 
-    if (ty->isSubtype(sendTy))
-        return sendTy;
+    if (ty.isSubtype(*sendTy))
+        return *sendTy;
 
     return std::nullopt;
 }
 
-optional<const Type *> ProtocolSequence::send(const Type *ty) const
+// FIXME: SHould this use pointers instead of refs?
+optional<reference_wrapper<const Type>> ProtocolSequence::send(const Type& ty) const
 {
     // FIXME: BETTER ERROR HANDLING
-    optional<const Type *> ans = canSend(ty);
+    auto ans = canSend(ty);
     if (!ans)
         return std::nullopt;
 

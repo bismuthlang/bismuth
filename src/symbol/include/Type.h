@@ -62,12 +62,17 @@ public:
      * @return true If the current type is a subtype of other
      * @return false If the current type is not a subtype of other.
      */
-    virtual bool isSubtype(const Type *other, InferenceMode mode=InferenceMode::SET) const;
-    // virtual bool isSubtype(std::vector<const Type *> others) const; 
+    virtual bool isSubtype(const Type& other, InferenceMode mode=InferenceMode::SET) const;
+    virtual bool isNotSubtype(const Type& other, InferenceMode mode=InferenceMode::SET) const { return !(isSubtype(other, mode)); }
+    virtual bool isNotSubtype(std::vector<std::reference_wrapper<const Type>> others, InferenceMode mode=InferenceMode::SET) const;
 
-    virtual bool isNotSubtype(const Type *other, InferenceMode mode=InferenceMode::SET) const { return !(isSubtype(other, mode)); }
-    // TODO: probably doesn't work nicely with inference
-    virtual bool isNotSubtype(std::vector<const Type *> others, InferenceMode mode=InferenceMode::SET) const; 
+
+    virtual bool isSubtype(const Type* other, InferenceMode mode=InferenceMode::SET) const= delete; 
+    virtual bool isNotSubtype(const Type* other, InferenceMode mode=InferenceMode::SET) const = delete;
+    virtual bool isNotSubtype(std::vector<const Type *> others, InferenceMode mode=InferenceMode::SET) const= delete;
+
+    virtual bool isSupertype(const Type * other) const = delete;
+    virtual bool isNotSupertype(const Type * other) const = delete;
 
     /**
      * @brief Determines if this type is a supertype of another
@@ -76,8 +81,8 @@ public:
      * @return true If this is a supertype for other.
      * @return false If this is not a supertype for other.
      */
-    virtual bool isSupertype(const Type *other) const { return isSupertypeFor(other); }
-    virtual bool isNotSupertype(const Type *other) const { return !isSupertypeFor(other); }
+    virtual bool isSupertype(const Type& other) const { return isSupertypeFor(other); }
+    virtual bool isNotSupertype(const Type& other) const { return !isSupertypeFor(other); }
 
     /**
      * @brief Gets the llvm::Type* which corresponds to the current type in LLVM
@@ -137,7 +142,8 @@ protected:
      * @return true if this is a supertype of other
      * @return false if this is not a supertype of other.
      */
-    virtual bool isSupertypeFor(const Type *other) const { return true; } // The top type is the universal supertype
+    virtual bool isSupertypeFor(const Type& other) const { return true; } // The top type is the universal supertype
+    virtual bool isSupertypeFor(const Type* other) const = delete;
 
 private: 
     const bool linear; 
@@ -188,7 +194,8 @@ public:
     virtual const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override = 0;
 
 protected: 
-    virtual bool isSupertypeFor(const Type *other) const override = 0;
+    virtual bool isSupertypeFor(const Type& other) const override = 0;
+    virtual bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 
@@ -231,7 +238,8 @@ public:
     const TypeInt * getCopy() const override { return this; };
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 
@@ -254,7 +262,8 @@ public:
     const TypeU32 * getCopy() const override { return this; };
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 
@@ -277,7 +286,8 @@ public:
     const TypeI64 * getCopy() const override { return this; };
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 /*******************************************
@@ -299,7 +309,8 @@ public:
     const TypeU64 * getCopy() const override { return this; };
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 /*******************************************
@@ -322,7 +333,8 @@ public:
     const TypeBool * getCopy() const override { return this; };
 
 protected:
-    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 /*********************************************
@@ -345,7 +357,8 @@ public:
     const TypeStr * getCopy() const override { return this; };
 
 protected:
-    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 /*******************************************
@@ -364,7 +377,8 @@ public:
     const TypeBottom * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 /*******************************************
@@ -384,7 +398,8 @@ public:
     llvm::Type *getLLVMType(llvm::Module *M) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 /*******************************************
@@ -402,7 +417,8 @@ public:
     const TypeAbsurd * getCopy() const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override; // Defined in .cpp
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 /*******************************************
@@ -497,7 +513,8 @@ public:
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 
@@ -552,7 +569,8 @@ public:
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 /*******************************************
@@ -604,7 +622,8 @@ public:
     // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 
 };
 
@@ -639,7 +658,8 @@ public:
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 
 };
 
@@ -711,7 +731,8 @@ public:
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 
 };
 
@@ -816,7 +837,8 @@ public:
     const TypeFunc * getCopySubst(std::map<const Type *, const Type *> existing) const override;
     
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 
 };
 
@@ -838,7 +860,7 @@ private:
      * @brief Keeps track of all the other inferred types that this shares a dependency with.
      *
      */
-    std::vector<const TypeInfer *> infTypes;
+    std::set<const TypeInfer*> infTypes;
 
     /**
      * @brief Keeps track of a set of possible types for this infer to resolve to. If left empty, this behaves as normal
@@ -903,9 +925,11 @@ protected:
      * @return true
      * @return false
      */
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 friend class Type; 
-    bool isSupertypeFor(const Type *other, InferenceMode mode) const;
+    bool isSupertypeForWMode(const Type& other, InferenceMode mode) const;
+    bool isSupertypeForWMode(const Type* other, InferenceMode mode) const = delete;
 
 };
 
@@ -946,7 +970,8 @@ public:
 
     std::set<const Type *, TypeCompare> getCases() const;
 
-    unsigned int getIndex(const Type* ty) const;
+    unsigned int getIndex(const Type* ty) const = delete;
+    unsigned int getIndex(const Type& ty) const;
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
 
@@ -965,7 +990,8 @@ public:
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 
 };
 
@@ -1030,7 +1056,8 @@ public:
 
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 
 };
 
@@ -1058,6 +1085,31 @@ inline std::optional<const T*> type_cast(const Type * ty)
     return std::nullopt; 
 }
 
+template <typename T>
+inline std::optional<std::reference_wrapper<const T>> type_cast(const Type& ty) 
+{
+    if(const T* ans = dynamic_cast<const T*>(&ty))
+    {
+        return *ans; 
+    }
+
+    if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(&ty))
+    {
+        inf->unify(); // TODO: maybe move unify call to getValueType()?
+        std::optional<const Type *> opt = inf->getValueType(); 
+        if(!opt) return std::nullopt; //TODO: Handle better? Challenging for things like Struct... (ie, multiplicities), but may be less of a problem, perhaps, when we disable nulls.
+        return type_cast<T>(*opt.value()); 
+    }
+
+    return std::nullopt; 
+}
+
+
+template <typename T>
+inline std::optional<std::reference_wrapper<const T>> type_cast(std::reference_wrapper<const Type> ty) 
+{
+    return  type_cast<T>(ty.get());
+}
 
 
 
@@ -1105,7 +1157,8 @@ public:
     // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
 protected:
-    bool isSupertypeFor(const Type *other) const override { return this == other; }
+    bool isSupertypeFor(const Type& other) const override { return this == &other; }
+    bool isSupertypeFor(const Type* other) const override = delete;
 
 };
 
@@ -1190,7 +1243,8 @@ protected:
      * @return true
      * @return false
      */
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 
@@ -1236,7 +1290,8 @@ protected:
      * @return true
      * @return false
      */
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 };
 
 
@@ -1303,6 +1358,7 @@ public:
 
 
 protected:
-    bool isSupertypeFor(const Type *other) const override;
+    bool isSupertypeFor(const Type& other) const override;
+    bool isSupertypeFor(const Type* other) const override = delete;
 
 };

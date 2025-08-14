@@ -14,6 +14,31 @@
 
 using Catch::Matchers::ContainsSubstring;
 
+namespace Catch
+{
+  // https://stackoverflow.com/questions/74795976/comparison-with-stdnullopt-in-catch2-gives-unreadable-results
+    template <>
+    struct StringMaker<std::optional<std::string>>
+    {
+        static std::string convert(std::optional<std::string> const &value)
+        {
+            if (value)
+                return *value;
+            else
+                return std::string("<empty>");
+        }
+    };
+
+    template <>
+    struct StringMaker<std::nullopt_t>
+    {
+        static std::string convert(std::nullopt_t const &)
+        {
+            return std::string("<empty>");
+        }
+    };
+}
+
 void EnsureErrorsWithMessage(antlr4::ANTLRInputStream input, std::string message, bool demoMode=false)
 {
    VirtualInput * temp = new VirtualInput(

@@ -47,12 +47,12 @@ void CodegenModule::InitDynArray(const TypeDynArray * ty, llvm::AllocaInst * all
     }
 }
 
-void CodegenModule::ReallocateDynArray(const TypeDynArray * ty, llvm::Value * alloc, llvm::Value * newCapacity)
+void CodegenModule::ReallocateDynArray(const TypeDynArray& ty, llvm::Value * alloc, llvm::Value * newCapacity)
 {
     // PLAN: use DYN_ARRAY_GROW_FACTOR
 
-    auto * alloc_type = ty->getLLVMType(module); 
-    auto * ArrayElementType = ty->getValueType()->getLLVMType(module);
+    auto * alloc_type = ty.getLLVMType(module); 
+    auto * ArrayElementType = ty.getValueType()->getLLVMType(module);
     auto * InnerArrayType = ArrayElementType->getPointerTo();
 
     Value *lenPtr = builder->CreateGEP(alloc_type, alloc, {Int32Zero, Int32One});

@@ -162,9 +162,9 @@ public:
 
     bool isComplete() const;
 
-    optional<const Type *> canSend(const Type *ty) const;
+    optional<reference_wrapper<const Type>> canSend(const Type& ty) const;
 
-    optional<const Type *> send(const Type *ty) const;
+    optional<reference_wrapper<const Type>> send(const Type& ty) const;
 
     optional<RecvMetadata> recv() const;
 

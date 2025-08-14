@@ -159,7 +159,7 @@ std::variant<std::vector<TExternNode *>, ErrorChain *> SemanticVisitor::visitExt
         
                 if (flags & CompilerFlags::DEMO_MODE)
                 {
-                    if (!(node->getSymbol()->getScopedIdentifier() == "printf" && node->getType()->getParamTypes().size() == 1 && node->getType()->getParamTypes().at(0)->isSubtype(Types::DYN_STR) && node->getType()->getReturnType()->isSubtype(Types::DYN_INT) && node->getType()->isVariadic()))
+                    if (!(node->getSymbol()->getScopedIdentifier() == "printf" && node->getType().getParamTypes().size() == 1 && node->getType().getParamTypes().at(0)->isSubtype(*Types::DYN_STR) && node->getType().getReturnType()->isSubtype(*Types::DYN_INT) && node->getType().isVariadic()))
                     {
                         errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
                     }
@@ -188,7 +188,7 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
         {
             const TypeProgram *inv = progOpt.value();
             // FIXME: DO SUBTYPING BETTER!
-            if (!(TypeChannel(inv->getProtocol())).isSubtype(new TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
+            if (!(TypeChannel(inv->getProtocol())).isSubtype(TypeChannel(new ProtocolSequence(false, {new ProtocolSend(false, Types::DYN_INT)}))))
             {
                 errorHandler.addError(ctx->getStart(), "In demo mode, 'main' must recognize a channel of protocol -int, not " + inv->getProtocol()->toString(toStringMode));
             }
@@ -313,12 +313,12 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 {
     // Need RValue
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx, "Unable to generate expression to invoke");
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeFunc *, funcTy, type_cast<TypeFunc>(tn->getType()), ctx, "Can only invoke functions, not " + tn->getType()->toString(toStringMode));
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(std::reference_wrapper<const TypeFunc>, funcTy, type_cast<TypeFunc>(tn->getType()), ctx, "Can only invoke functions, not " + tn->getType().toString(toStringMode));
 
     /*
         * The symbol is something we can invoke, so check that we provide it with valid parameters
         */
-    std::vector<const Type *> fnParams = funcTy->getParamTypes();
+    std::vector<const Type *> fnParams = funcTy.get().getParamTypes();
 
     /*
         *  If the symbol is NOT a variadic and the number of arguments we provide
@@ -330,7 +330,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         * to allow for this invocation.
         */
     if (
-        (!funcTy->isVariadic() && fnParams.size() != ctx->inv_args()->args.size()) || (funcTy->isVariadic() && fnParams.size() > ctx->inv_args()->args.size()))
+        (!funcTy.get().isVariadic() && fnParams.size() != ctx->inv_args()->args.size()) || (funcTy.get().isVariadic() && fnParams.size() > ctx->inv_args()->args.size()))
     {
         std::ostringstream errorMsg;
         errorMsg << "Expected " << fnParams.size() << " argument(s), but got " << ctx->inv_args()->args.size();
@@ -359,15 +359,15 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
 
         args.push_back(provided);
 
-        const Type *providedType = provided->getType();
+        const Type& providedType = provided->getType();
 
         // If the function is variadic and has no specified type parameters, then we can
         // skip over subsequent checks--we just needed to run type checking on each parameter.
-        if (funcTy->isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
+        if (funcTy.get().isVariadic() && i >= fnParams.size()) //&& fnParams.size() == 0)
         {
             if (type_cast<TypeBottom>(providedType) || type_cast<TypeAbsurd>(providedType) || type_cast<TypeUnit>(providedType))
             {
-                errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType->toString(toStringMode) + " to a function");
+                errorHandler.addError(ctx->getStart(), "Cannot provide " + providedType.toString(toStringMode) + " to a function");
             }
             continue;
         }
@@ -382,10 +382,10 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         actualTypes.push_back(expectedType);
 
         // If the types do not match, report an error.
-        if (providedType->isNotSubtype(expectedType))
+        if (providedType.isNotSubtype(*expectedType))
         {
             std::ostringstream errorMsg;
-            errorMsg << "Argument " << i << " expected " << expectedType->toString(toStringMode) << " but got " << providedType->toString(toStringMode);
+            errorMsg << "Argument " << i << " expected " << expectedType->toString(toStringMode) << " but got " << providedType.toString(toStringMode);
 
             errorHandler.addError(ctx->getStart(), errorMsg.str());
         }
@@ -403,7 +403,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
 
     if (TypedNode **n = std::get_if<TypedNode *>(&opt))
     {
-        if((*n)->getType()->isLinear())
+        if((*n)->getType().isLinear())
             return errorHandler.addError(ctx->getStart(), "Evaluation of expression would result in introducing a linear resource that is impossible to use."); // TODO: better error.
     }
 
@@ -530,12 +530,12 @@ std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
            DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->exprs.at(i)->accept(this)), ctx->exprs.at(i), "Unable to generate expression");
 
             n.push_back(tn);
-            const Type *providedType = tn->getType();
+            const Type& providedType = tn->getType();
 
-            if (providedType->isNotSubtype(eleItr.second))
+            if (providedType.isNotSubtype(*eleItr.second))
             {
                 std::ostringstream errorMsg;
-                errorMsg << "Product init. argument " << i << " provided to " << ty->toString(toStringMode) << " expected " << eleItr.second->toString(toStringMode) << " but got " << providedType->toString(toStringMode);
+                errorMsg << "Product init. argument " << i << " provided to " << ty->toString(toStringMode) << " expected " << eleItr.second->toString(toStringMode) << " but got " << providedType.toString(toStringMode);
 
                 errorHandler.addError(ctx->getStart(), errorMsg.str());
                 isValid = false;
@@ -565,12 +565,12 @@ std::variant<TArrayRValue *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 
         elements.push_back(tn);
 
-        const Type *providedType = tn->getType();
+        const Type& providedType = tn->getType();
 
-        if (providedType->isNotSubtype(innerTy))
+        if (providedType.isNotSubtype(*innerTy))
         {
             // PLAN: handle errors better!
-            return errorHandler.addError(ctx->getStart(), "Expected " + innerTy->toString(toStringMode) + " but got " + providedType->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Expected " + innerTy->toString(toStringMode) + " but got " + providedType.toString(toStringMode));
         }
 
     }
@@ -590,17 +590,17 @@ std::variant<TInitBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     // TODO: METHODIZE WITH INVOKE AND INIT PRODUCT?
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx->expr, "Unable to generate expression in init box");
 
-    const Type *providedType = tn->getType();
+    const Type& providedType = tn->getType();
 
-    if (providedType->isLinear())
+    if (providedType.isLinear())
     {
         return errorHandler.addError(ctx->expr->getStart(), "Cannot create a box with a linear type!");
     }
 
-    if (providedType->isNotSubtype(storeType))
+    if (providedType.isNotSubtype(*storeType))
     {
         std::ostringstream errorMsg;
-        errorMsg << "Initialize box expected " << storeType->toString(toStringMode) << ", but got " << providedType->toString(toStringMode) << "";
+        errorMsg << "Initialize box expected " << storeType->toString(toStringMode) << ", but got " << providedType.toString(toStringMode) << "";
 
         return errorHandler.addError(ctx->getStart(), errorMsg.str());
     }
@@ -615,10 +615,10 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
      */
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, idxExpr, anyOpt2VarError<TypedNode>(errorHandler, ctx->index->accept(this)), ctx->index, "Unable to type check array access index");
 
-    const Type *idxType = idxExpr->getType();
-    if (idxType->isNotSubtype({Types::DYN_INT, Types::DYN_U32}, InferenceMode::QUERY))
+    const Type& idxType = idxExpr->getType();
+    if (idxType.isNotSubtype({*Types::DYN_INT, *Types::DYN_U32}, InferenceMode::QUERY))
     {
-        return errorHandler.addError(ctx->getStart(), "Array access index expected type u32 but got " + idxType->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Array access index expected type u32 but got " + idxType.toString(toStringMode));
     }
 
     /*
@@ -640,7 +640,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
     }
 
     // Report error
-    return errorHandler.addError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->expr->getText() + " : " + node->getType()->toString(toStringMode));
+    return errorHandler.addError(ctx->getStart(), "Cannot use array access on non-array expression " + ctx->expr->getText() + " : " + node->getType().toString(toStringMode));
 }
 
 // std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LValueContext *ctx)
@@ -772,27 +772,27 @@ std::variant<TUnaryExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 {
     // Lookup the inner type
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, innerNode, anyOpt2VarError<TypedNode>(errorHandler, ctx->ex->accept(this)), ctx->ex, "Failed to generate unary expression");
-    const Type *innerType = innerNode->getType();
+    const Type& innerType = innerNode->getType();
 
     // Switch on the operation so we can ensure that the type and operation are compatable.
     switch (ctx->op->getType())
     {
     case BismuthParser::MINUS:
-        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64}, InferenceMode::QUERY))
+        if (innerType.isNotSubtype({*Types::DYN_INT, *Types::DYN_I64}, InferenceMode::QUERY))
         {
-            return errorHandler.addError(ctx->getStart(), "Signed number (e.g., int or i64) expected in unary minus, but got " + innerType->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Signed number (e.g., int or i64) expected in unary minus, but got " + innerType.toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_MINUS, innerNode, ctx->getStart());
     case BismuthParser::BIT_NOT:
-        if (innerType->isNotSubtype({Types::DYN_INT, Types::DYN_I64, Types::DYN_U32, Types::DYN_U64}, InferenceMode::QUERY))
+        if (innerType.isNotSubtype({*Types::DYN_INT, *Types::DYN_I64, *Types::DYN_U32, *Types::DYN_U64}, InferenceMode::QUERY))
         {
-            return errorHandler.addError(ctx->getStart(), "Signed number (e.g., int or i64) expected in unary not, but got " + innerType->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Signed number (e.g., int or i64) expected in unary not, but got " + innerType.toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_BIT_NOT, innerNode, ctx->getStart());
     case BismuthParser::NOT:
-        if (innerType->isNotSubtype(Types::DYN_BOOL))
+        if (innerType.isNotSubtype(*Types::DYN_BOOL))
         {
-            return errorHandler.addError(ctx->getStart(), "boolean expected in unary not, but got " + innerType->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "boolean expected in unary not, but got " + innerType.toString(toStringMode));
         }
         return new TUnaryExprNode(UNARY_NOT, innerNode, ctx->getStart());
     }
@@ -827,15 +827,15 @@ std::variant<TBinaryArithNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
                                         : "-";
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, left, anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this)), ctx, "Unable to generate LHS of Binary Arithmetic Expression");
-    if (left->getType()->isNotSubtype({Types::DYN_INT, Types::DYN_U32, Types::DYN_I64, Types::DYN_U64}, InferenceMode::QUERY))
+    if (left->getType().isNotSubtype({*Types::DYN_INT, *Types::DYN_U32, *Types::DYN_I64, *Types::DYN_U64}, InferenceMode::QUERY))
     {
-        return errorHandler.addError(ctx->getStart(), "Cannot apply " + opStr + " to " + left->getType()->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Cannot apply " + opStr + " to " + left->getType().toString(toStringMode));
     }
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, right, anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this)), ctx, "Unable to generate RHS of binary arithmetic expression");
-    if (right->getType()->isNotSubtype(left->getType())) // TODO: PROBABLY WONT WORK IF LEFT DONE VIA INFERENCE
+    if (right->getType().isNotSubtype(left->getType())) // TODO: PROBABLY WONT WORK IF LEFT DONE VIA INFERENCE
     {
-        return errorHandler.addError(ctx->getStart(), "Operator " + opStr + " cannot be applied between " + left->getType()->toString(toStringMode) + " and " + right->getType()->toString(toStringMode) + ". Expected " + left->getType()->toString(toStringMode) + " " + opStr + " " + left->getType()->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Operator " + opStr + " cannot be applied between " + left->getType().toString(toStringMode) + " and " + right->getType().toString(toStringMode) + ". Expected " + left->getType().toString(toStringMode) + " " + opStr + " " + left->getType().toString(toStringMode));
     }
 
     return new TBinaryArithNode(
@@ -860,7 +860,7 @@ std::variant<TEqExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, rhs, anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this)), ctx, "Unable to generate RHS");
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, lhs, anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this)), ctx, "Unable to generate LHS");
 
-    if (rhs->getType()->isNotSubtype(lhs->getType()))
+    if (rhs->getType().isNotSubtype(lhs->getType()))
     {
         errorHandler.addError(ctx->getStart(), "Both sides of '=' must have the same type");
     }
@@ -908,11 +908,11 @@ std::variant<TLogAndExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
     for (BismuthParser::ExpressionContext *ectx : toGen)
     {
         DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, node, anyOpt2VarError<TypedNode>(errorHandler, ectx->accept(this)), ectx, "Unable to generate expression in logical and");
-        const Type *type = node->getType();
+        const Type& type = node->getType();
 
-        if (type->isNotSubtype(Types::DYN_BOOL))
+        if (type.isNotSubtype(*Types::DYN_BOOL))
         {
-            errorHandler.addError(ectx->getStart(), "boolean expression expected, but was " + type->toString(toStringMode));
+            errorHandler.addError(ectx->getStart(), "boolean expression expected, but was " + type.toString(toStringMode));
         }
         else
         {
@@ -954,11 +954,11 @@ std::variant<TLogOrExprNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     {
         DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, node, anyOpt2VarError<TypedNode>(errorHandler, e->accept(this)), ctx);
 
-        const Type *type = node->getType();
+        const Type& type = node->getType();
 
-        if (type->isNotSubtype(Types::DYN_BOOL))
+        if (type.isNotSubtype(*Types::DYN_BOOL))
         {
-            errorHandler.addError(e->getStart(), "Expected boolean but got " + type->toString(toStringMode));
+            errorHandler.addError(e->getStart(), "Expected boolean but got " + type.toString(toStringMode));
         }
         else
         {
@@ -985,27 +985,27 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     // FIXME: but it may need to be an rvalue sometimes!
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, expr, this->visitLValue(ctx->expr), ctx);
 
-    const Type *ty = expr->getType();
+    std::reference_wrapper<const Type> ty = expr->getType();
     std::vector<std::pair<std::string, const Type *>> a;
 
     for (unsigned int i = 0; i < ctx->fields.size(); i++)
     {
         std::string fieldName = ctx->fields.at(i)->getText();
 
-        std::optional<const TypeStruct *> sOpt = type_cast<TypeStruct>(ty);
+        std::optional<std::reference_wrapper<const TypeStruct>> sOpt = type_cast<TypeStruct>(ty);
         if (sOpt)
         {
-            const TypeStruct *s = sOpt.value();
-            std::optional<const Type *> eleOpt = s->get(fieldName);
+            const TypeStruct& s = sOpt.value().get();
+            std::optional<const Type *> eleOpt = s.get(fieldName);
             if (eleOpt)
             {
-                ty = eleOpt.value();
+                ty = *eleOpt.value();
                 a.push_back({fieldName,
-                             ty});
+                             eleOpt.value()});
             }
             else
             {
-                return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString(toStringMode));
+                return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty.get().toString(toStringMode));
             }
         }
         else if (i + 1 == ctx->fields.size() && (type_cast<TypeArray>(ty) || type_cast<TypeDynArray>(ty)) && ctx->fields.at(i)->getText() == "length")
@@ -1024,7 +1024,7 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
         }
         else
         {
-            return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Cannot access " + fieldName + " on " + ty.get().toString(toStringMode));
         }
     }
     return new TFieldAccessNode(ctx->getStart(), expr, is_rvalue, a);
@@ -1055,10 +1055,15 @@ std::variant<TDerefBoxNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPar
 {
   DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, expr, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx, "Unable to type check dereference expression");
 
-  const Type *exprType = expr->getType();
-  DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeBox *, box, type_cast<TypeBox>(exprType), ctx,"Dereference expected Box<T> but got " + exprType->toString(toStringMode));
+  PROPAGATE_PROTO(
+    TDerefBoxNode *,
+    TDerefBoxNode::get(expr, is_rvalue, ctx->getStart()),
+    ctx);
+  
+//   const Type& exprType = expr->getType();
+//   DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(std::reference_wrapper<const TypeBox>, box, type_cast<TypeBox>(exprType), ctx,"Dereference expected Box<T> but got " + exprType->toString(toStringMode));
 
-  return new TDerefBoxNode(box, expr, is_rvalue, ctx->getStart());
+//   return new TDerefBoxNode(box, expr, is_rvalue, ctx->getStart());
 }
 
 // Passthrough to expression
@@ -1083,16 +1088,16 @@ std::variant<TBinaryRelNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, left, anyOpt2VarError<TypedNode>(errorHandler, ctx->left->accept(this)), ctx, "Unable to type check LHS of binary relation expression");
 
-    if (left->getType()->isNotSubtype({Types::DYN_INT, Types::DYN_U32, Types::DYN_I64, Types::DYN_U64}, InferenceMode::QUERY))
+    if (left->getType().isNotSubtype({*Types::DYN_INT, *Types::DYN_U32, *Types::DYN_I64, *Types::DYN_U64}, InferenceMode::QUERY))
     {
-        return errorHandler.addError(ctx->getStart(), "Cannot apply " + opStr + " to " + left->getType()->toString(toStringMode) + ". Expected a number.");
+        return errorHandler.addError(ctx->getStart(), "Cannot apply " + opStr + " to " + left->getType().toString(toStringMode) + ". Expected a number.");
     }
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, right, anyOpt2VarError<TypedNode>(errorHandler, ctx->right->accept(this)), ctx, "Unable to type check RHS of binary relation expression");
 
-    if (right->getType()->isNotSubtype(left->getType()))
+    if (right->getType().isNotSubtype(left->getType()))
     {
-        return errorHandler.addError(ctx->getStart(), "Operator " + opStr + " cannot be applied between " + left->getType()->toString(toStringMode) + " and " + right->getType()->toString(toStringMode) + ". Expected " + left->getType()->toString(toStringMode) + " " + opStr + " " + left->getType()->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Operator " + opStr + " cannot be applied between " + left->getType().toString(toStringMode) + " and " + right->getType().toString(toStringMode) + ". Expected " + left->getType().toString(toStringMode) + " " + opStr + " " + left->getType().toString(toStringMode));
     }
 
     return new TBinaryRelNode(
@@ -1222,19 +1227,19 @@ std::variant<TAssignNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     // Determine the expression type
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, expr, anyOpt2VarError<TypedNode>(errorHandler, ctx->a->accept(this)), ctx, "Unable to type check assignment");
-    const Type *exprType = expr->getType();
+    const Type& exprType = expr->getType();
 
-    if (exprType->isGuarded())
+    if (exprType.isGuarded())
     {
         return errorHandler.addError(ctx->getStart(), "Cannot assign guarded resource to another identifier");
     }
 
-    const Type *type = var->getType();
+    const Type& type = var->getType();
 
     // Make sure that the types are compatible. Inference automatically managed here.
-    if (exprType->isNotSubtype(type))
+    if (exprType.isNotSubtype(type))
     {
-        return errorHandler.addError(ctx->getStart(), "Assignment statement expected " + type->toString(toStringMode) + " but got " + exprType->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Assignment statement expected " + type.toString(toStringMode) + " but got " + exprType.toString(toStringMode));
     }
 
     return new TAssignNode(var, expr, ctx->getStart());
@@ -1285,7 +1290,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
       }
 
       const Type *newAssignType = origType->getCopy(); // this->visitCtx(ctx->typeOrVar()); // Needed to ensure vars get their own inf type
-      const Type *exprType = exprOpt ? exprOpt.value()->getType() : newAssignType;
+      const Type *exprType = exprOpt ? exprOpt.value()->getType().getCopy() : newAssignType;
 
       if (exprType->isGuarded()) // TODO: Use syntactic sugar to separate out declarations from assignments. Also could use it to make select statements work better!
       {
@@ -1293,7 +1298,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
       }
 
       // Note: This automatically performs checks to prevent issues with setting VAR = VAR
-      if (e->a && exprType->isNotSubtype(newAssignType))
+      if (e->a && exprType->isNotSubtype(*newAssignType))
       {
         return errorHandler.addError(e->getStart(), "Expression of type " + exprType->toString(toStringMode) + " cannot be assigned to " + newAssignType->toString(toStringMode));
       }
@@ -1315,7 +1320,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
 std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::MatchStatementContext *ctx)
 {
   DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, cond, anyOpt2VarError<TypedNode>(errorHandler, ctx->check->ex->accept(this)), ctx);
-  DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeSum*, sumType, type_cast<TypeSum>(cond->getType()), ctx->check, "Can only case on Sum Types, not " + cond->getType()->toString(toStringMode));
+  DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(std::reference_wrapper<const TypeSum>, sumType, type_cast<TypeSum>(cond->getType()), ctx->check, "Can only case on Sum Types, not " + cond->getType().toString(toStringMode));
 
   std::set<const Type *> foundCaseTypes = {};
   // TODO: Maybe make so these can return values?
@@ -1335,11 +1340,11 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
     {
       DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseType, anyOpt2VarError<const Type>(errorHandler, altCtx->type()->accept(this)), ctx, "Failed to generate case type");
 
-      if (!sumType->contains(caseType))
+      if (!sumType.get().contains(caseType))
       {
         errorHandler.addError(
           altCtx->type()->getStart(),
-          "Impossible case for " + sumType->toString(toStringMode) + " to act as " + caseType->toString(toStringMode)
+          "Impossible case for " + sumType.get().toString(toStringMode) + " to act as " + caseType->toString(toStringMode)
         );
       }
 
@@ -1369,9 +1374,9 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
       return std::make_pair(local, ans);
     });
 
-  if (foundCaseTypes.size() != sumType->getCases().size())
+  if (foundCaseTypes.size() != sumType.get().getCases().size())
   {
-    return errorHandler.addError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType->toString(toStringMode));
+    return errorHandler.addError(ctx->getStart(), "Match statement did not cover all cases needed for " + sumType.get().toString(toStringMode));
   }
 
   DEFINE_OR_PROPAGATE_VARIANT_WMSG(
@@ -1546,11 +1551,11 @@ std::variant<TSelectStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bis
             case_count++;
 
             DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, check, anyOpt2VarError<TypedNode>(errorHandler, e->check->accept(this)), ctx);
-            const Type *checkType = check->getType();
+            const Type& checkType = check->getType();
 
-            if (checkType->isNotSubtype(Types::DYN_BOOL))
+            if (checkType.isNotSubtype(*Types::DYN_BOOL))
             {
-                return errorHandler.addError(ctx->getStart(), "Select alternative expected boolean but got " + checkType->toString(toStringMode));
+                return errorHandler.addError(ctx->getStart(), "Select alternative expected boolean but got " + checkType.toString(toStringMode));
             }
 
             stmgr.enterScope(StopType::NONE); // For safe exit + scoping... //FIXME: verify...
@@ -1577,13 +1582,13 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
         // Evaluate the expression type
         DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, val, anyOpt2VarError<TypedNode>(errorHandler, ctx->expression()->accept(this)), ctx);
 
-        const Type *valType = val->getType();
+        const Type& valType = val->getType();
 
         // Check return type.
         // TODO: improve error as if the return type is Unit, then simply return; is valid.
-        if (valType->isNotSubtype(sym->getType()))
+        if (valType.isNotSubtype(*sym->getType()))
         {
-            return errorHandler.addError(ctx->getStart(), "Expected return type of " + sym->getType()->toString(toStringMode) + " but got " + valType->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Expected return type of " + sym->getType()->toString(toStringMode) + " but got " + valType.toString(toStringMode));
         }
 
         std::pair<const Type *, TypedNode *> ans = {sym->getType(), val};
@@ -1592,7 +1597,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     }
 
     // We do not have an expression to return, so make sure that the return type is also a BOT.
-    if (sym->getType()->isSubtype(Types::UNIT))
+    if (sym->getType()->isSubtype(*Types::UNIT))
     {
         return new TReturnNode(ctx->getStart());
     }
@@ -1674,7 +1679,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
     if (!TypedAST::endsInReturn(*blk))
     {
-        if(retType->isNotSubtype(Types::UNIT))
+        if(retType->isNotSubtype(*Types::UNIT))
         {
             errorHandler.addError(ctx->getStart(), "Expected function to return type of " + retType->toString(toStringMode) + "; however, no return instruction was provided.");
         }
@@ -2093,16 +2098,16 @@ std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSen
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot send on non-channel: " + id);
 
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx);
-    const Type *ty = tn->getType();
+    const Type& ty = tn->getType();
 
     bool inCloseable = channel->getProtocol()->isInCloseable();
-    std::optional<const Type *> canSend = channel->getProtocol()->send(ty);
+    auto canSend = channel->getProtocol()->send(ty);
 
     if (!canSend)
     {
-      return errorHandler.addError(ctx->getStart(), "Failed to send " + ty->toString(toStringMode) + " over channel " + sym->toString());
+      return errorHandler.addError(ctx->getStart(), "Failed to send " + ty.toString(toStringMode) + " over channel " + sym->toString());
     }
-    return new TProgramSendNode(sym, inCloseable, tn, canSend.value(), ctx->getStart());
+    return new TProgramSendNode(sym, inCloseable, tn, canSend.value().get().getCopy(), ctx->getStart());
 }
 
 std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx)
@@ -2460,21 +2465,21 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
 std::variant<TProgramExecNode *, ErrorChain *> SemanticVisitor::TvisitAssignableExec(BismuthParser::AssignableExecContext *ctx)
 {
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, prog, anyOpt2VarError<TypedNode>(errorHandler, ctx->prog->accept(this)), ctx);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeProgram *, inv, type_cast<TypeProgram>(prog->getType()), ctx, "Cannot exec: " + prog->getType()->toString(toStringMode));
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(std::reference_wrapper<const TypeProgram>, inv, type_cast<TypeProgram>(prog->getType()), ctx, "Cannot exec: " + prog->getType().toString(toStringMode));
     return new TProgramExecNode(
       prog,
-      new TypeChannel(inv->getProtocol()->getInverse()),
+      new TypeChannel(inv.get().getProtocol()->getInverse()),
       ctx->getStart());
 }
 
 std::variant<TExprCopyNode *, ErrorChain *> SemanticVisitor::TvisitCopyExpr(BismuthParser::CopyExprContext *ctx)
 {
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx, "Failed to type check copy expression");
-    const Type *ty = tn->getType();
+    const Type& ty = tn->getType();
 
-    if (ty->isLinear())
+    if (ty.isLinear())
     {
-        return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty->toString(toStringMode));
+        return errorHandler.addError(ctx->getStart(), "Cannot perform a copy on a linear type: " + ty.toString(toStringMode));
     }
 
     return new TExprCopyNode(tn, ctx->getStart());
@@ -2706,7 +2711,7 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
         if (checkRestIndependently || i + 1 < ctxCases.size())
         {
-            Scope * scopeCpy = origScope.copyToStop();
+            Scope * scopeCpy = origScope.copyToStop(); // FIXME: Mem leak?
             this->stmgr.enterScope(*scopeCpy);
         }
         else

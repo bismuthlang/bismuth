@@ -431,7 +431,7 @@ public:
     
     void InitDynArray(const TypeDynArray * ty, llvm::AllocaInst * alloc, uint32_t len); //ConstantInt * len);
 
-    void ReallocateDynArray(const TypeDynArray * ty, llvm::Value * alloc, llvm::Value * newLen32); 
+    void ReallocateDynArray(const TypeDynArray& ty, llvm::Value * alloc, llvm::Value * newLen32); 
 
 private:
     DisplayMode toStringMode; 

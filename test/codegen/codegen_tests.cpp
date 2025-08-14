@@ -23,6 +23,31 @@
 
 using Catch::Matchers::Equals;
 
+namespace Catch
+{
+    //https://stackoverflow.com/questions/74795976/comparison-with-stdnullopt-in-catch2-gives-unreadable-results 
+    template <>
+    struct StringMaker<std::optional<std::string>>
+    {
+        static std::string convert(std::optional<std::string> const &value)
+        {
+            if (value)
+                return *value;
+            else
+                return std::string("<empty>");
+        }
+    };
+
+    template <>
+    struct StringMaker<std::nullopt_t>
+    {
+        static std::string convert(std::nullopt_t const &)
+        {
+            return std::string("<empty>");
+        }
+    };
+}
+
 void ExpectOutput(string file)
 {
     auto getVI = [](std::string path, std::vector<std::string> steps){
@@ -34,7 +59,7 @@ void ExpectOutput(string file)
 
     VirtualInput * temp = getVI(SOURCE_DIR + file, {});
 
-    REQUIRE_FALSE(compile(
+    REQUIRE(compile(
         {temp},
         "-.ll",
         false,
@@ -43,7 +68,7 @@ void ExpectOutput(string file)
         false,
         false,
         CompileType::none
-    ).has_value());
+    ) == std::nullopt);
 
 
     auto log_stream = std::fstream(SOURCE_DIR + file + ".expected.ll");

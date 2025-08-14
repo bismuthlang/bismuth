@@ -2,30 +2,30 @@
 #include "matchit.h"
 
 optional<Value *>
-DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, Value *stoVal, Value *addrMap)//, DeepCopyType copyType)
+DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, Value *stoVal, Value *addrMap)//, DeepCopyType copyType)
 {
 
-  if (type->isLinear())
+  if (type.isLinear())
   {
-    errorHandler.addError(nullptr, "Cannot make a copy of a linear type: " + type->toString(getToStringMode()));
+    errorHandler.addError(nullptr, "Cannot make a copy of a linear type: " + type.toString(getToStringMode())); // TODO: Return?
     return std::nullopt;
   }
 
-  if (!type->requiresDeepCopy())
+  if (!type.requiresDeepCopy())
   {
     return stoVal;
   }
 
-  if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(type))
+  if(const TypeInfer * infType = dynamic_cast<const TypeInfer *>(&type))
   {
     if(infType->hasBeenInferred()) {
-      return  deepCopyHelper(builder, infType->getValueType().value(), stoVal, addrMap);// , GC_MALLOC);
+      return  deepCopyHelper(builder, *infType->getValueType().value(), stoVal, addrMap);// , GC_MALLOC);
     }
     errorHandler.addError(nullptr, "Cannot make a copy of a variable that has yet to be inferred");
     return std::nullopt; // TODO: Probably add a compiler pass to make this impossible. After all, such an error message is hardly useful.
   }
 
-  Function *testFn = module->getFunction("_clone_" + type->toString(DisplayMode::C_STYLE));
+  Function *testFn = module->getFunction("_clone_" + type.toString(DisplayMode::C_STYLE));
   if (testFn)
   {
     return builder->CreateCall(testFn, {stoVal, addrMap});
@@ -33,7 +33,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
 
   BasicBlock *ins = builder->GetInsertBlock();
 
-  llvm::Type *llvmType = type->getLLVMType(module);
+  llvm::Type *llvmType = type.getLLVMType(module);
 
   Function *fn = Function::Create(
     FunctionType::get(
@@ -45,7 +45,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
       false
     ),
     GlobalValue::PrivateLinkage,
-    "_clone_" + type->toString(DisplayMode::C_STYLE),
+    "_clone_" + type.toString(DisplayMode::C_STYLE),
     module
   );
 
@@ -59,7 +59,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
   AllocaInst *m = CreateEntryBlockAlloc(builder, i8p, "m");
   builder->CreateStore(fn->getArg(1), m);
 
-  if (const TypeBox *boxType = dynamic_cast<const TypeBox *>(type))
+  if (const TypeBox *boxType = dynamic_cast<const TypeBox *>(&type))
         {
             Value * loaded_i8p_v = builder->CreateLoad(llvmType, v); //builder->CreateBitCast(builder->CreateLoad(llvmType, v), i8p);
             const Type *innerType = boxType->getInnerType();
@@ -101,15 +101,15 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
 
             // // Generate the code for the else block; follows the same logic as the then block.
             optional<Value *> clonedOpt = deepCopyHelper(builder,
-                                                         innerType,
+                                                         *innerType,
                                                          builder->CreateLoad(innerType->getLLVMType(module), builder->CreateLoad(llvmType, v)),
                                                          builder->CreateLoad(i8p, m));//,
                                                         //  GC_MALLOC);
             if (!clonedOpt)
                 return std::nullopt;
             // Value *cloned = clonedOpt.value();
-            Value *alloc = runGCMalloc(builder, getSizeForType(type->getLLVMType(module)));
-            // Value *casted2 = builder->CreateBitCast(alloc, type->getLLVMType(module));
+            Value *alloc = runGCMalloc(builder, getSizeForType(type.getLLVMType(module)));
+            // Value *casted2 = builder->CreateBitCast(alloc, type.getLLVMType(module));
             builder->CreateStore(clonedOpt.value(), alloc);
             builder->CreateCall(
                 get_address_map_put(),
@@ -125,12 +125,12 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
             parentFn->insert(parentFn->end(), restBlk);
             builder->SetInsertPoint(restBlk);
 
-            llvm::PHINode *phi = builder->CreatePHI(type->getLLVMType(module), 2, "phi");
+            llvm::PHINode *phi = builder->CreatePHI(type.getLLVMType(module), 2, "phi");
             phi->addIncoming(casted, thenBlk);
             phi->addIncoming(alloc, elseBlk);
             v = phi;
         }
-        else if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(type))
+        else if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(&type))
         {
             auto * llvm_struct_type = structType->getLLVMType(module);
 
@@ -151,7 +151,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
 
                     Value *loaded = builder->CreateLoad(eleItr.second->getLLVMType(module), memLoc);
 
-                    optional<Value *> valOpt = deepCopyHelper(builder, eleItr.second, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
+                    optional<Value *> valOpt = deepCopyHelper(builder, *eleItr.second, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
                         return std::nullopt;
                     builder->CreateStore(valOpt.value(), memLoc);
@@ -159,7 +159,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
             }
             v = builder->CreateLoad(llvmType, v);
         }
-        else if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(type))
+        else if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(&type))
         {
             auto * llvm_sum_type = sumType->getLLVMType(module);
             auto origParent = builder->GetInsertBlock()->getParent();
@@ -184,7 +184,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
                 Value *corrected = memLoc; //builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
                 Value *loaded = builder->CreateLoad(caseNode->getLLVMType(module), corrected);
 
-                optional<Value *> valOpt = deepCopyHelper(builder, caseNode, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
+                optional<Value *> valOpt = deepCopyHelper(builder, *caseNode, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
                         return std::nullopt;
                                                                                                  // builder->CreateLoad(llvm::Type::getInt8PtrTy(M->getContext()), m)});
@@ -196,7 +196,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
             builder->SetInsertPoint(mergeBlk);
             v = builder->CreateLoad(llvmType, v);
         }
-        else if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(type))
+        else if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(&type))
         {
             auto * llvm_array_type = arrayType->getLLVMType(module);
             const Type * valueType = arrayType->getValueType();
@@ -232,7 +232,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
 
                 Value *loaded = builder->CreateLoad(valueType->getLLVMType(module), memLoc);
 
-                optional<Value *> valOpt = deepCopyHelper(builder, valueType, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
+                optional<Value *> valOpt = deepCopyHelper(builder, *valueType, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
                         return std::nullopt;
                 builder->CreateStore(valOpt.value(), memLoc); // Verify this doesn't over-write the thing. I think it should be fine, but still...
@@ -257,7 +257,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type *type, 
         {
             builder->CreateRet(v);
             builder->SetInsertPoint(ins);
-            errorHandler.addCompilerError(nullptr, "I don't know how to copy the following type: " + type->toString(getToStringMode()));
+            errorHandler.addCompilerError(nullptr, "I don't know how to copy the following type: " + type.toString(getToStringMode()));
             return std::nullopt;
         }
 
