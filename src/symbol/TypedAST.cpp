@@ -115,3 +115,9 @@ bool TypedAST::endsInBranch(TypedNode & n)
 
     return false;
 }
+
+
+
+const TypeUnit& TSelectAlternativeNode::getType() { return *Types::UNIT; }
+const TypeUnit& TSelectStatementNode::getType() { return *Types::UNIT; }
+const TypeUnit& TBlockNode::getType() { return *Types::UNIT; }

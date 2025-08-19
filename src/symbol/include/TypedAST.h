@@ -214,7 +214,7 @@ public:
         eval = e;
     }
 
-    const TypeUnit& getType() override { return *Types::UNIT; }
+    const TypeUnit& getType() override;
 
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
@@ -235,7 +235,7 @@ public:
         post = p;
     }
 
-    const TypeUnit& getType() override { return *Types::UNIT; }
+    const TypeUnit& getType() override;
     virtual std::any accept_any(VisitorBase &a) override { return this->Nuaccept_any(a); }
 
     std::string toString() const override {
@@ -255,7 +255,7 @@ public:
 
     vector<TypedNode *> getExprs() { return exprs; }
 
-    const TypeUnit& getType() override { return *Types::UNIT; } // PLAN: Change this to allow for more functional style?
+    const TypeUnit& getType() override; // PLAN: Change this to allow for more functional style?
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
     std::string toString() const override {
@@ -839,7 +839,7 @@ private:
     TypedNode & getExpr() { return *expr; }
     const Type& getType() override { return *boxType.getInnerType(); }
     const TypeBox& getBoxType() { return boxType; }
-    const bool isRValue() { return is_rvalue; }
+    bool isRValue() { return is_rvalue; }
 };
 
 class TWhileLoopNode : public TypedNode, public Visitable<TWhileLoopNode>

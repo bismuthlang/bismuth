@@ -2,7 +2,7 @@
 #include <optional>
 #include <variant>
 #include <vector>
-#include "TypedAST.h"
+// #include "TypedAST.h"
 #include "BismuthErrorHandler.h"
 
 #include <fplus/fplus.hpp>

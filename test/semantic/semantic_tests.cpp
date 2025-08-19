@@ -4,7 +4,7 @@
 
 TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 {
-  Type *TopTy = new Type(false);
+  // Type *TopTy = new Type(false);
   Type *IntTy = new TypeInt(false); // TODO: test other int/unsigned int types?
   Type *BoolTy = new TypeBool(false);
   Type *StrTy = new TypeStr(false);
@@ -12,28 +12,28 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
   Type* UnitTy = new TypeUnit(false);
   Type* AbsurdTy = new TypeAbsurd(false);
 
-  SECTION("Top Type tests")
-  {
-    REQUIRE(TopTy->isSubtype(*TopTy));
+  // SECTION("Top Type tests")
+  // {
+  //   REQUIRE(TopTy->isSubtype(*TopTy));
 
-    REQUIRE(TopTy->isNotSubtype(*IntTy));
-    REQUIRE_FALSE(TopTy->isSubtype(*IntTy));
+  //   REQUIRE(TopTy->isNotSubtype(*IntTy));
+  //   REQUIRE_FALSE(TopTy->isSubtype(*IntTy));
 
-    REQUIRE(TopTy->isNotSubtype(*BoolTy));
-    REQUIRE_FALSE(TopTy->isSubtype(*BoolTy));
+  //   REQUIRE(TopTy->isNotSubtype(*BoolTy));
+  //   REQUIRE_FALSE(TopTy->isSubtype(*BoolTy));
 
-    REQUIRE(TopTy->isNotSubtype(*StrTy));
+  //   REQUIRE(TopTy->isNotSubtype(*StrTy));
 
-    REQUIRE(TopTy->isNotSubtype(*BotTy));
+  //   REQUIRE(TopTy->isNotSubtype(*BotTy));
 
-    REQUIRE(TopTy->isNotSubtype(*UnitTy));
-    REQUIRE(TopTy->isNotSubtype(*AbsurdTy));
-  }
+  //   REQUIRE(TopTy->isNotSubtype(*UnitTy));
+  //   REQUIRE(TopTy->isNotSubtype(*AbsurdTy));
+  // }
 
   SECTION("Int Type tests")
   {
-    REQUIRE(IntTy->isSubtype(*TopTy));
-    REQUIRE_FALSE(IntTy->isNotSubtype(*TopTy));
+    // REQUIRE(IntTy->isSubtype(*TopTy));
+    // REQUIRE_FALSE(IntTy->isNotSubtype(*TopTy));
 
     REQUIRE(IntTy->isSubtype(*IntTy));
     // REQUIRE(IntTy->isNotSubtype(TypeInt()));
@@ -50,7 +50,7 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 
   SECTION("Bool Type Tests")
   {
-    REQUIRE(BoolTy->isSubtype(*TopTy));
+    // REQUIRE(BoolTy->isSubtype(*TopTy));
     REQUIRE(BoolTy->isNotSubtype(*IntTy));
     REQUIRE(BoolTy->isNotSubtype(*StrTy));
     REQUIRE(BoolTy->isSubtype(*BoolTy));
@@ -61,7 +61,7 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 
   SECTION("Str Type Tests")
   {
-    REQUIRE(StrTy->isSubtype(*TopTy));
+    // REQUIRE(StrTy->isSubtype(*TopTy));
     REQUIRE(StrTy->isNotSubtype(*IntTy));
     REQUIRE(StrTy->isSubtype(*StrTy));
     REQUIRE(StrTy->isNotSubtype(*BoolTy));
@@ -72,7 +72,7 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 
   SECTION("Bot Type Tests")
   {
-    REQUIRE(BotTy->isSubtype(*TopTy));
+    // REQUIRE(BotTy->isSubtype(*TopTy));
     REQUIRE_FALSE(BotTy->isSubtype(*IntTy));
     REQUIRE_FALSE(BotTy->isSubtype(*StrTy));
     REQUIRE_FALSE(BotTy->isSubtype(*BoolTy));
@@ -83,7 +83,7 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 
   SECTION("Unit Type Tests")
   {
-    REQUIRE(UnitTy->isSubtype(*TopTy));
+    // REQUIRE(UnitTy->isSubtype(*TopTy));
     REQUIRE_FALSE(UnitTy->isSubtype(*IntTy));
     REQUIRE_FALSE(UnitTy->isSubtype(*StrTy));
     REQUIRE_FALSE(UnitTy->isSubtype(*BoolTy));
@@ -94,7 +94,7 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 
   SECTION("Absurd Type Tests")
   {
-    REQUIRE(AbsurdTy->isSubtype(*TopTy));
+    // REQUIRE(AbsurdTy->isSubtype(*TopTy));
     REQUIRE_FALSE(AbsurdTy->isSubtype(*IntTy));
     REQUIRE_FALSE(AbsurdTy->isSubtype(*StrTy));
     REQUIRE_FALSE(AbsurdTy->isSubtype(*BoolTy));
@@ -107,7 +107,7 @@ TEST_CASE("Test Type Equality - Subtypes", "[semantic]")
 
 TEST_CASE("Test Type Equality - Supertype", "[semantic]")
 {
-  Type *TopTy = new Type(false);
+  // Type *TopTy = new Type(false);
   Type *IntTy = new TypeInt(false);
   Type *BoolTy = new TypeBool(false);
   Type *StrTy = new TypeStr(false);
@@ -115,29 +115,29 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
   Type* UnitTy = new TypeUnit(false);
   Type* AbsurdTy = new TypeAbsurd(false);
 
-  SECTION("Top Type tests")
-  {
-    REQUIRE(TopTy->isSupertype(*TopTy));
-    REQUIRE_FALSE(TopTy->isNotSupertype(*TopTy));
+  // SECTION("Top Type tests")
+  // {
+  //   REQUIRE(TopTy->isSupertype(*TopTy));
+  //   REQUIRE_FALSE(TopTy->isNotSupertype(*TopTy));
 
-    REQUIRE(TopTy->isSupertype(*IntTy));
-    REQUIRE_FALSE(TopTy->isNotSupertype(*IntTy));
+  //   REQUIRE(TopTy->isSupertype(*IntTy));
+  //   REQUIRE_FALSE(TopTy->isNotSupertype(*IntTy));
 
-    REQUIRE(TopTy->isSupertype(*BoolTy));
-    REQUIRE_FALSE(TopTy->isNotSupertype(*BoolTy));
+  //   REQUIRE(TopTy->isSupertype(*BoolTy));
+  //   REQUIRE_FALSE(TopTy->isNotSupertype(*BoolTy));
 
-    REQUIRE(TopTy->isSupertype(*StrTy));
+  //   REQUIRE(TopTy->isSupertype(*StrTy));
 
-    REQUIRE(TopTy->isSupertype(*BotTy));
+  //   REQUIRE(TopTy->isSupertype(*BotTy));
 
-    REQUIRE(TopTy->isSupertype(*UnitTy));
-    REQUIRE(TopTy->isSupertype(*AbsurdTy));
-  }
+  //   REQUIRE(TopTy->isSupertype(*UnitTy));
+  //   REQUIRE(TopTy->isSupertype(*AbsurdTy));
+  // }
 
   SECTION("Int Type tests")
   {
-    REQUIRE(IntTy->isNotSupertype(*TopTy));
-    REQUIRE_FALSE(IntTy->isSupertype(*TopTy));
+    // REQUIRE(IntTy->isNotSupertype(*TopTy));
+    // REQUIRE_FALSE(IntTy->isSupertype(*TopTy));
 
     REQUIRE(IntTy->isSupertype(*IntTy));
     // REQUIRE(IntTy->isSupertype(TypeInt()));
@@ -154,7 +154,7 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
 
   SECTION("Bool Type Tests")
   {
-    REQUIRE(BoolTy->isNotSupertype(*TopTy));
+    // REQUIRE(BoolTy->isNotSupertype(*TopTy));
     REQUIRE(BoolTy->isNotSupertype(*IntTy));
     REQUIRE(BoolTy->isNotSupertype(*StrTy));
     REQUIRE(BoolTy->isSupertype(*BoolTy));
@@ -165,7 +165,7 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
 
   SECTION("Str Type Tests")
   {
-    REQUIRE(StrTy->isNotSupertype(*TopTy));
+    // REQUIRE(StrTy->isNotSupertype(*TopTy));
     REQUIRE(StrTy->isNotSupertype(*IntTy));
     REQUIRE(StrTy->isSupertype(*StrTy));
     REQUIRE(StrTy->isNotSupertype(*BoolTy));
@@ -176,7 +176,7 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
 
   SECTION("Bot Type Tests")
   {
-    REQUIRE(BotTy->isNotSupertype(*TopTy));
+    // REQUIRE(BotTy->isNotSupertype(*TopTy));
     REQUIRE(BotTy->isNotSupertype(*IntTy));
     REQUIRE(BotTy->isNotSupertype(*StrTy));
     REQUIRE(BotTy->isNotSupertype(*BoolTy));
@@ -187,7 +187,7 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
 
   SECTION("Unit Type Tests")
   {
-    REQUIRE(UnitTy->isNotSupertype(*TopTy));
+    // REQUIRE(UnitTy->isNotSupertype(*TopTy));
     REQUIRE(UnitTy->isNotSupertype(*IntTy));
     REQUIRE(UnitTy->isNotSupertype(*StrTy));
     REQUIRE(UnitTy->isNotSupertype(*BoolTy));
@@ -198,7 +198,7 @@ TEST_CASE("Test Type Equality - Supertype", "[semantic]")
 
   SECTION("Absurd Type Tests")
   {
-    REQUIRE(AbsurdTy->isNotSupertype(*TopTy));
+    // REQUIRE(AbsurdTy->isNotSupertype(*TopTy));
     REQUIRE(AbsurdTy->isNotSupertype(*IntTy));
     REQUIRE(AbsurdTy->isNotSupertype(*StrTy));
     REQUIRE(AbsurdTy->isNotSupertype(*BoolTy));

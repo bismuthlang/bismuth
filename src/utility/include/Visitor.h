@@ -1,3 +1,9 @@
+#pragma once
+
+#include "MacroUtils.h"
+
+// using namespace std;
+
 template<typename T, typename R>
 class Visitor;
 

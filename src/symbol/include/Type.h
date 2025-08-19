@@ -28,6 +28,8 @@
 #include "Protocol.h"
 #include "SymbolUtils.h"
 
+// #include "MacroUtils.h"
+#include "Visitor.h"
 
 class ProtocolSequence;
 
@@ -54,6 +56,14 @@ public:
      * @return std::string The string name of the type
      */
     virtual std::string toString(DisplayMode mode) const { return "TOP"; }
+
+    virtual std::any accept_any(VisitorBase&) = 0;
+    // virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
+    template<typename R>
+    R accept(VisitorBase& visitor){
+      return any_cast<R>(accept_any(visitor));
+    }
 
     /**
      * @brief Determines if this type is a subtype of another.
@@ -199,6 +209,65 @@ protected:
 };
 
 
+
+
+
+
+
+class TypeInt;
+class TypeU32;
+class TypeI64;
+class TypeU64;
+class TypeBool;
+class TypeStr;
+class TypeBottom;
+class TypeUnit;
+class TypeAbsurd;
+class TypeArray;
+class TypeDynArray ;
+class TypeChannel;
+class TypeBox;
+class TypeProgram;
+class TypeFunc;
+class TypeInfer;
+class TypeSum;
+class TypeStruct;
+class TypeGeneric;
+class TypeTemplate;
+class TypeModule ;
+class TypeTrait;
+
+template<typename R>
+class TypeVisitor : public Visitor<TypeInt, R>
+, public Visitor<TypeU32, R>
+, public Visitor<TypeI64, R>
+, public Visitor<TypeU64, R>
+, public Visitor<TypeBool, R>
+, public Visitor<TypeStr, R>
+, public Visitor<TypeBottom, R>
+, public Visitor<TypeUnit, R>
+, public Visitor<TypeAbsurd, R>
+, public Visitor<TypeArray, R>
+, public Visitor<TypeDynArray , R>
+, public Visitor<TypeChannel, R>
+, public Visitor<TypeBox, R>
+, public Visitor<TypeProgram, R>
+, public Visitor<TypeFunc, R>
+, public Visitor<TypeInfer, R>
+, public Visitor<TypeSum, R>
+, public Visitor<TypeStruct, R>
+, public Visitor<TypeGeneric, R>
+, public Visitor<TypeTemplate, R>
+, public Visitor<TypeModule , R>
+, public Visitor<TypeTrait, R>
+{
+public:
+  R visit_recur(Type& tn) { return any_cast<R>(tn.accept_any(*this)); }
+};
+
+
+
+
 class TypeNum {
 private: 
     bool isSigned;
@@ -224,7 +293,7 @@ public:
  * Integer (32 bit, signed) Type Definition
  *
  *******************************************/
-class TypeInt : public Type, public TypeNum 
+class TypeInt : public Type, public TypeNum, public Visitable<TypeInt>
 {
 public:
     TypeInt(bool isLinear) : Type(isLinear), TypeNum(true, 32, false) {}; 
@@ -237,6 +306,8 @@ public:
 
     const TypeInt * getCopy() const override { return this; };
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -248,7 +319,7 @@ protected:
  * Integer (32 bit, unsigned) Type Definition
  *
  *******************************************/
-class TypeU32 : public Type, public TypeNum
+class TypeU32 : public Type, public TypeNum, public Visitable<TypeU32>
 {
 public:
     TypeU32(bool isLinear) : Type(isLinear), TypeNum(false, 32, false){}; 
@@ -261,6 +332,8 @@ public:
 
     const TypeU32 * getCopy() const override { return this; };
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -272,7 +345,7 @@ protected:
  * Integer (64 bit, signed) Type Definition
  *
  *******************************************/
-class TypeI64 : public Type, public TypeNum 
+class TypeI64 : public Type, public TypeNum, public Visitable<TypeI64>
 {
 public:
     TypeI64(bool isLinear) : Type(isLinear), TypeNum(true, 64, false){}; 
@@ -285,6 +358,8 @@ public:
 
     const TypeI64 * getCopy() const override { return this; };
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -295,7 +370,7 @@ protected:
  * Integer (64 bit, unsigned) Type Definition
  *
  *******************************************/
-class TypeU64 : public Type, public TypeNum
+class TypeU64 : public Type, public TypeNum, public Visitable<TypeU64>
 {
 public:
     TypeU64(bool isLinear) : Type(isLinear), TypeNum(false, 64, false){}; 
@@ -308,6 +383,8 @@ public:
 
     const TypeU64 * getCopy() const override { return this; };
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -319,7 +396,7 @@ protected:
  *
  *******************************************/
 
-class TypeBool : public Type
+class TypeBool : public Type, public Visitable<TypeBool>
 {
 public:
     TypeBool(bool isLinear) : Type(isLinear) {}; 
@@ -332,6 +409,8 @@ public:
 
     const TypeBool * getCopy() const override { return this; };
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -343,7 +422,7 @@ protected:
  *
  *********************************************/
 
-class TypeStr : public Type
+class TypeStr : public Type, public Visitable<TypeStr>
 {
 public:
     TypeStr(bool isLinear) : Type(isLinear) {}; 
@@ -356,6 +435,8 @@ public:
 
     const TypeStr * getCopy() const override { return this; };
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -367,7 +448,7 @@ protected:
  *
  *******************************************/
 
-class TypeBottom : public Type
+class TypeBottom : public Type, public Visitable<TypeBottom>
 {
 public:
     TypeBottom(bool isLinear) : Type(isLinear) {}; 
@@ -375,6 +456,8 @@ public:
     std::string toString(DisplayMode mode) const override;
 
     const TypeBottom * getCopy() const override;
+
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
 protected:
     bool isSupertypeFor(const Type& other) const override;
@@ -386,7 +469,7 @@ protected:
  * Unit Type
  *
  *******************************************/
-class TypeUnit : public Type
+class TypeUnit : public Type, public Visitable<TypeUnit>
 {
 public:
     TypeUnit(bool isLinear) : Type(isLinear) {};
@@ -396,6 +479,8 @@ public:
     const TypeUnit * getCopy() const override;
 
     llvm::Type *getLLVMType(llvm::Module *M) const override;
+
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
 protected:
     bool isSupertypeFor(const Type& other) const override;
@@ -407,7 +492,7 @@ protected:
  * Absurd Type
  *
  *******************************************/
-class TypeAbsurd : public Type
+class TypeAbsurd : public Type, public Visitable<TypeAbsurd>
 {
 public:
     TypeAbsurd(bool isLinear) : Type(isLinear) {}; 
@@ -415,6 +500,8 @@ public:
     std::string toString(DisplayMode mode) const override;
 
     const TypeAbsurd * getCopy() const override;
+
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
 protected:
     bool isSupertypeFor(const Type& other) const override;
@@ -453,7 +540,7 @@ namespace Types
  * Fixed-Length Array Type Definition
  *
  *******************************************/
-class TypeArray : public Type
+class TypeArray : public Type, public Visitable<TypeArray>
 {
 private:
     /**
@@ -512,6 +599,8 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -523,7 +612,7 @@ protected:
  * Dynamic-Length Array Type Definition
  *
  *******************************************/
-class TypeDynArray : public Type
+class TypeDynArray : public Type, public Visitable<TypeDynArray>
 {
 private:
     /**
@@ -568,6 +657,7 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -579,7 +669,7 @@ protected:
  *
  *******************************************/
 
-class TypeChannel : public Type
+class TypeChannel : public Type, public Visitable<TypeChannel>
 {
 private:
     /**
@@ -618,6 +708,8 @@ public:
 
     bool isLossy() const override; 
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
     // FIXME: IMPL!
     // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
@@ -633,7 +725,7 @@ protected:
  *
  *******************************************/
 
-class TypeBox : public Type
+class TypeBox : public Type, public Visitable<TypeBox>
 {
 private:
     /**
@@ -657,6 +749,7 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -669,7 +762,7 @@ protected:
  *
  *******************************************/
 
-class TypeProgram : public NameableType
+class TypeProgram : public NameableType, public Visitable<TypeProgram>
 {
 private:
     /**
@@ -730,6 +823,7 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -744,7 +838,7 @@ protected:
 
 // TODO: With generics, allow for pattern matching? Ie, 
 // <TY1, TY2 : { someIdentifier : TY1, ...}> ? 
-class TypeFunc : public NameableType
+class TypeFunc : public NameableType, public Visitable<TypeFunc>
 {
 private:
     /**
@@ -836,6 +930,8 @@ public:
 
     const TypeFunc * getCopySubst(std::map<const Type *, const Type *> existing) const override;
     
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -847,7 +943,7 @@ protected:
  * Type used for Type Inference
  *
  *******************************************/
-class TypeInfer : public Type
+class TypeInfer : public Type, public Visitable<TypeInfer>
 {
 private:
     /**
@@ -907,6 +1003,8 @@ public:
     // FIXME: IMPL!
     // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
     bool unify() const; 
 protected:
     /**
@@ -938,7 +1036,7 @@ friend class Type;
  * Sum Types
  *
  *******************************************/
-class TypeSum : public NameableType
+class TypeSum : public NameableType, public Visitable<TypeSum>
 {
 private:
     /**
@@ -989,6 +1087,8 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     bool isSupertypeFor(const Type& other) const override;
     bool isSupertypeFor(const Type* other) const override = delete;
@@ -1000,7 +1100,7 @@ protected:
  * Struct Types (Product Types w/ Names)
  *
  *******************************************/
-class TypeStruct : public NameableType
+class TypeStruct : public NameableType, public Visitable<TypeStruct>
 {
 private:
     /**
@@ -1054,6 +1154,7 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
 protected:
     bool isSupertypeFor(const Type& other) const override;
@@ -1118,7 +1219,7 @@ inline std::optional<std::reference_wrapper<const T>> type_cast(std::reference_w
  * Generic Type; Used for polymorphism. 
  *
  *******************************************/
-class TypeGeneric : public Type
+class TypeGeneric : public Type, public Visitable<TypeGeneric>
 {
 private: 
     std::string identifier; 
@@ -1153,6 +1254,7 @@ public:
     // const Type * getActingType() const { return actingType; }
     void setActingType(const Type * nxt) { actingType = nxt; }
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
     // FIXME: IMPL
     // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
@@ -1177,7 +1279,7 @@ public:
  * Type used for Generics Inference
  *
  *******************************************/
-class TypeTemplate : public NameableType
+class TypeTemplate : public NameableType, public Visitable<TypeTemplate>
 {
 private:
     std::optional<const NameableType *> valueType;
@@ -1235,6 +1337,8 @@ public:
 
     const std::map<std::vector<const Type *>, const NameableType *> getRegisteredTemplates() const { return registeredTemplates; }
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
 protected:
     /**
      * @brief Determines if this is a supertype of another type (and thus, also performs type inferencing).
@@ -1253,7 +1357,7 @@ protected:
  * Type used for files/namespaces/modules  
  *
  *******************************************/
-class TypeModule : public NameableType
+class TypeModule : public NameableType, public Visitable<TypeModule>
 {
 private:
     // Scope * innerScope;
@@ -1281,6 +1385,7 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
 protected:
     /**
@@ -1302,7 +1407,7 @@ protected:
  * Trait
  *
  *******************************************/
-class TypeTrait : public NameableType
+class TypeTrait : public NameableType, public Visitable<TypeTrait>
 {
 private:
     /**
@@ -1356,6 +1461,7 @@ public:
 
     const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
 
+    virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
 protected:
     bool isSupertypeFor(const Type& other) const override;
