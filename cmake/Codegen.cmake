@@ -12,4 +12,5 @@ set (CODEGEN_SOURCES
   ${CODEGEN_DIR}/CodegenVisitor.cpp
   ${CODEGEN_DIR}/DeepCopyVisitor.cpp
   ${CODEGEN_DIR}/DynArrayVisitor.cpp
+  ${CODEGEN_DIR}/LLVMTypeGenerator.cpp
 )
