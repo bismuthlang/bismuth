@@ -70,6 +70,10 @@ llvm::Type * visit_typed(TypeTemplate& t) override;
 llvm::Type * visit_typed(TypeModule & t) override;
 llvm::Type * visit_typed(TypeTrait& t) override;
 
+
+llvm::FunctionType * getLLVMFunctionType(TypeProgram& t);
+llvm::FunctionType * getLLVMFunctionType(TypeFunc& t);
+
 private: 
     llvm::Module * mod; 
 };

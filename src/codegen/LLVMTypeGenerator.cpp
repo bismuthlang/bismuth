@@ -58,20 +58,20 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeAbsurd& t){
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeArray& t){
     return llvm::ArrayType::get(
-        t.getValueType()->accept<llvm::Type *>(*this),
+        const_cast<Type *>(t.getValueType())->accept<llvm::Type *>(*this),
         (uint64_t) t.getLength()
     );
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeDynArray & t){
-    llvm::StructType *ty = llvm::StructType::getTypeByName(mod->getContext(), t.toString());
+    llvm::StructType *ty = llvm::StructType::getTypeByName(mod->getContext(), t.toString(C_STYLE));
     if (ty)
         return ty;
 
-    ty = llvm::StructType::create(M->getContext(), t.toString());
+    ty = llvm::StructType::create(mod->getContext(), t.toString(C_STYLE));
 
     std::vector<llvm::Type *> typeVec = {
-        t.getValueType()->accept<llvm::Type *>(*this)->getPointerTo(), // Pointer
+        const_cast<Type *>(t.getValueType())->accept<llvm::Type *>(*this)->getPointerTo(), // Pointer
         llvm::Type::getInt32Ty(mod->getContext()),   // Length
         llvm::Type::getInt32Ty(mod->getContext())    // Capacity
     };
@@ -99,7 +99,7 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeChannel& t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeBox& t){
-    return t.getInnerType()->accept<llvm::Type *>(*this)->getPointerTo();
+    return const_cast<Type *>(t.getInnerType())->accept<llvm::Type *>(*this)->getPointerTo();
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeProgram& t){
@@ -138,3 +138,40 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeTrait& t){
 return t.getLLVMType(mod);
 }
 
+
+
+
+
+llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(TypeProgram& t){
+    llvm::Type *ret = const_cast<TypeUnit *>(Types::UNIT)->accept<llvm::Type *>(*this); // Types::UNIT->getLLVMType(M);
+
+     // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
+    llvm::StructType *argTy = llvm::StructType::getTypeByName(mod->getContext(), "_Channel");
+    if (!argTy)
+        argTy = llvm::StructType::create(mod->getContext(), "_Channel");
+
+
+    return llvm::FunctionType::get(
+        ret,
+        {argTy->getPointerTo()},
+        false);
+}
+
+llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(TypeFunc& t){
+    // Create a vector for our argument types
+    std::vector<llvm::Type *> typeVec;
+
+    for (const Type *ty : t.getParamTypes())
+    {
+        typeVec.push_back(const_cast<Type *>(ty)->accept<llvm::Type *>(*this));
+    }
+
+    llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
+
+    llvm::Type *ret = const_cast<Type *>(t.getReturnType())->accept<llvm::Type *>(*this);
+
+    return llvm::FunctionType::get(
+        ret,
+        paramRef,
+        t.isVariadic());
+}
