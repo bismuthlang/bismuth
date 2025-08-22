@@ -729,20 +729,20 @@ std::optional<Value *> CodegenVisitor::visit_typed(TImplDefNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TDefineEnumNode & n)
 {
-    n.sum->getLLVMType(module);
+    typeGenerator.genLLVMType(*n.sum);
     return std::nullopt;
 }
 
 
 std::optional<Value *> CodegenVisitor::visit_typed(TDefineStructNode & n)
 {
-    n.product->getLLVMType(module);
+    typeGenerator.genLLVMType(*n.product);
     return std::nullopt;
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TDefineTraitNode & n)
 {
-    n.traitSpec->getLLVMType(module); // FIXME: WRONG, NEED TO TRACK THE VTABLE
+    typeGenerator.genLLVMType(*n.traitSpec); // FIXME: WRONG, NEED TO TRACK THE VTABLE
     return std::nullopt;
 }
 
@@ -766,7 +766,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TInitProductNode & n)
 
     const TypeStruct *product = n.product;
 
-    llvm::Type *ty = product->getLLVMType(module);
+    llvm::Type *ty = typeGenerator.genLLVMType(*product);
     llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, ""); // TODO: this allocation isn' always needed
     {
         unsigned i = 0;
@@ -803,7 +803,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TArrayRValue & n)
     {
         const TypeArray * ty = std::get<const TypeArray *>(typeVariant);
 
-        ans = CreateEntryBlockAlloc(ty->getLLVMType(module), ""); // TODO: this isn't always needed
+        ans = CreateEntryBlockAlloc(typeGenerator.genLLVMType(*ty), ""); // TODO: this isn't always needed
         writeTo = ans;
         stoType = const_cast<Type *>(ty->getValueType());
     }
@@ -811,9 +811,9 @@ std::optional<Value *> CodegenVisitor::visit_typed(TArrayRValue & n)
     {
         // TODO: use pattern matching instead of get to ensure we visit all possible opts
         const TypeDynArray * ty = std::get<const TypeDynArray *>(typeVariant);
-        auto * ArrayElementType = ty->getLLVMType(module);
+        auto * ArrayElementType = typeGenerator.genLLVMType(*ty);
 
-        ans = CreateEntryBlockAlloc(ty->getLLVMType(module), ""); // TODO: this isn't always needed
+        ans = CreateEntryBlockAlloc(typeGenerator.genLLVMType(*ty), ""); // TODO: this isn't always needed
 
         InitDynArray(ty, ans, (n.exprs.size()));
 
@@ -893,12 +893,9 @@ std::optional<Value *> CodegenVisitor::visit_typed(TInitBoxNode & n)
         stoVal = correctSumAssignment(*sumOpt.value(), n.expr->getType(), stoVal);
     }
 
-    // Value *v = builder->CreateCall(getG_CMalloc(), {builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType()))});
-    // Value *casted = builder->CreateBitCast(v, box->getLLVMType(module));
-
     Value * casted = TypedGCHeapAlloc(
         builder->getInt64(module->getDataLayout().getTypeAllocSize(stoVal->getType())),
-        box->getLLVMType(module)
+        typeGenerator.genLLVMType(*box)
     );
 
     builder->CreateStore(
@@ -933,7 +930,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TArrayAccessNode & n) // TODO
     {
         // If its an lvalue,need the pointer!
         auto * ans =  builder->CreateGEP(
-            n.getArrayType().getLLVMType(module),
+            typeGenerator.genLLVMType(n.getArrayType()),
             arrayPtr,
             {Int32Zero, indexValue}
         );
@@ -975,12 +972,12 @@ std::optional<Value *> CodegenVisitor::visit_typed(TArrayAccessNode & n) // TODO
     parentFn->insert(parentFn->end(), gtzBlk);
     builder->SetInsertPoint(gtzBlk);
     auto *valuePtr = builder->CreateGEP(
-        n.getArrayType().getLLVMType(module),
+        typeGenerator.genLLVMType(n.getArrayType()),
         arrayPtr,
         {Int32Zero, indexValue}
     );
     // const llvm::GEPOperator * GEP = dyn_cast<llvm::GEPOperator>(valuePtr);
-    Value *value = builder->CreateLoad(n.getLValueType().getLLVMType(module), valuePtr);
+    Value *value = builder->CreateLoad(typeGenerator.genLLVMType(n.getLValueType()), valuePtr);
     auto ptr = correctSumAssignment(n.getRValueType(), n.getLValueType(), value); // FIXME: DONT CALCULATE getRValueType TWICE!!
     builder->CreateBr(restBlk);
     gtzBlk = builder->GetInsertBlock();
@@ -1001,7 +998,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TArrayAccessNode & n) // TODO
     parentFn->insert(parentFn->end(), restBlk);
     builder->SetInsertPoint(restBlk);
 
-    PHINode *phi = builder->CreatePHI(n.getType().getLLVMType(module), 2, "arrayAccess");
+    PHINode *phi = builder->CreatePHI(typeGenerator.genLLVMType(n.getType()), 2, "arrayAccess");
     modPrint();
     phi->addIncoming(ptr, gtzBlk);
     phi->addIncoming(unitPtr, elseBlk);
@@ -1029,16 +1026,13 @@ std::optional<Value *> CodegenVisitor::visit_typed(TDynArrayAccessNode & n) // T
 
     Value *indexValue = indexOpt.value();
     Value *structPtr = structOpt.value();
-    // llvm::Type * structType = n.expr->getType()->getLLVMType(module);
 
-
-
-    auto * llvm_dyn_array_type = n.expr->getType().getLLVMType(module);
+    auto * llvm_dyn_array_type = typeGenerator.genLLVMType(n.expr->getType());
     Value *lengthPtr = builder->CreateGEP(llvm_dyn_array_type, structPtr, {Int32Zero, Int32One});
     Value *length = builder->CreateLoad(Int32Ty, lengthPtr);
 
 
-    auto * ArrayElementType = n.getStoredType().getLLVMType(module);
+    auto * ArrayElementType = typeGenerator.genLLVMType(n.getStoredType());
     auto * InnerArrayType = ArrayElementType->getPointerTo();
 
     if (!n.is_rvalue)
@@ -1214,7 +1208,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TDynArrayAccessNode & n) // T
     builder->SetInsertPoint(restBlk);
 
 
-    PHINode *phi = builder->CreatePHI(n.getType().getLLVMType(module), 2, "arrayAccess");
+    PHINode *phi = builder->CreatePHI(typeGenerator.genLLVMType(n.getType()), 2, "arrayAccess");
     phi->addIncoming(ptr, gtzBlk);
     phi->addIncoming(unitPtr, elseBlk);
 
@@ -1585,7 +1579,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TFieldAccessNode & n)
 
     Value *baseValue = baseOpt.value();
     std::reference_wrapper<const Type> ty = n.getExprType();
-    auto * base_llvm_type = ty.get().getLLVMType(module);
+    auto * base_llvm_type = typeGenerator.genLLVMType(ty.get());
 
     std::vector<Value *> addresses = {Int32Zero};
 
@@ -1626,7 +1620,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TFieldAccessNode & n)
     }
 
     const Type *fieldType = n.accesses.at(n.accesses.size() - 1).second;
-    llvm::Type *ansType = fieldType->getLLVMType(module);
+    llvm::Type *ansType = typeGenerator.genLLVMType(*fieldType);
 
     Value *valPtr = builder->CreateGEP(base_llvm_type, baseValue, addresses);
 
@@ -1643,7 +1637,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TIdentifier & n)
 {
     Symbol * sym = n.getSymbol();
 
-    llvm::Type *type = sym->getType()->getLLVMType(module);
+    llvm::Type *type = typeGenerator.genLLVMType(*sym->getType());
     if (!type)
     {
         errorHandler.addError(n.getStart(), "Unable to find type for variable: " + getCodegenID(sym));
@@ -1753,7 +1747,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TDerefBoxNode & n)
     }
 
     Value *ptrVal = baseOpt.value();
-    return n.isRValue() ? builder->CreateLoad(n.getType().getLLVMType(module), ptrVal) : ptrVal;
+    return n.isRValue() ? builder->CreateLoad(typeGenerator.genLLVMType(n.getType()), ptrVal) : ptrVal;
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TBinaryRelNode & n)
@@ -1900,7 +1894,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TAssignNode & n)
     if (std::optional<std::reference_wrapper<const TypeSum>> sumOpt = type_cast<TypeSum>(varSymType))
     {
         uint32_t index = sumOpt.value().get().getIndex(n.val->getType());
-        auto* sum_type = sumOpt.value().get().getLLVMType(module);
+        auto* sum_type = typeGenerator.genLLVMType(sumOpt.value().get());
 
         if (index == 0)
         {
@@ -2506,7 +2500,10 @@ std::optional<Value *> CodegenVisitor::visit_typed(TAsChannelNode & n) // TODO: 
         if (const TypeArray *arrayType = dynamic_cast<const TypeArray *>(&ty))
         {
             // FIXME: ONLY NEEDED BC CANT SPECIFY THAT THIS IS AN LVALUE!!!
-            AllocaInst *stoVal = CreateEntryBlockAlloc(arrayType->getLLVMType(module), "cast_arr");
+            AllocaInst *stoVal = CreateEntryBlockAlloc(
+                typeGenerator.genLLVMType(*arrayType),
+                "cast_arr"
+            );
             builder->CreateStore(loadedVal, stoVal);
             loadedVal = stoVal;
             return *arrayType;
@@ -2516,10 +2513,13 @@ std::optional<Value *> CodegenVisitor::visit_typed(TAsChannelNode & n) // TODO: 
         const TypeArray arrTy = TypeArray(ty.getCopy(), 1);
 
         // TODO: Remove Array and make things use pointers?
-        AllocaInst *saveBlock = CreateEntryBlockAlloc(arrTy.getLLVMType(module), "createdArray");
+        AllocaInst *saveBlock = CreateEntryBlockAlloc(
+            typeGenerator.genLLVMType(arrTy),
+            "createdArray"
+        );
 
         Value *stoLoc = builder->CreateGEP(
-            arrTy.getLLVMType(module),
+            typeGenerator.genLLVMType(arrTy),
             saveBlock,
             {Int32Zero, Int32Zero}
         );
@@ -2571,7 +2571,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TAsChannelNode & n) // TODO: 
         );
 
         Value *readLoc = builder->CreateGEP(
-            arrayType.getLLVMType(module), // FIXME: getArrayElementType this might just be i8p?
+            typeGenerator.genLLVMType(arrayType), // FIXME: getArrayElementType this might just be i8p?
             loadedVal,
             {Int32Zero, builder->CreateLoad(Int32Ty, loop_index)}
         );
@@ -2634,7 +2634,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
         return std::nullopt;
     }
 
-    llvm::Type * valueType = meta.protocolType->getLLVMType(module);
+    llvm::Type * valueType = typeGenerator.genLLVMType(*meta.protocolType);
     uint32_t valueIndex = sum->getIndex(*meta.protocolType);
     if (valueIndex == 0)
     {
@@ -2643,7 +2643,7 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
     }
 
 
-    llvm::Type *sumTy = sum->getLLVMType(module);
+    llvm::Type *sumTy = typeGenerator.genLLVMType(*sum);
     llvm::AllocaInst *alloc = CreateEntryBlockAlloc(sumTy, "");
 
     Value *tagPtr = builder->CreateGEP(
@@ -2735,5 +2735,5 @@ llvm::AllocaInst * CodegenVisitor::CreateAndLinkEntryBlockAlloc(llvm::Type * ty,
 
 llvm::Type * CodegenVisitor::getLLVMType(Symbol * sym)
 {
-    return sym->getType()->getLLVMType(module);
+    return typeGenerator.genLLVMType(*sym->getType());
 }

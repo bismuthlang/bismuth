@@ -14,6 +14,7 @@
 #include "CodegenUtils.h"
 #include "TypedAST.h"
 #include "DeepCopyVisitor.h"
+#include "LLVMTypeGenerator.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/IRBuilder.h"
@@ -75,6 +76,7 @@ public:
     CodegenVisitor(std::string moduleName, DisplayMode mode, int f = 0)
         : CodegenModule(moduleName, mode, f)
         , copyVisitor(module, mode, f, errorHandler)
+        , typeGenerator(module)
     {}
 
     /******************************************************************
@@ -182,4 +184,5 @@ public:
 
 private:
     DeepCopyVisitor copyVisitor;
+    LLVMTypeGenerator typeGenerator;
 };

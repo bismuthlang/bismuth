@@ -175,3 +175,12 @@ llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(TypeFunc& t){
         paramRef,
         t.isVariadic());
 }
+
+
+llvm::Type * LLVMTypeGenerator::genLLVMType(Type & t){
+    return t.accept<llvm::Type *>(*this);
+}
+
+llvm::Type * LLVMTypeGenerator::genLLVMType(const Type& t){
+    return genLLVMType(const_cast<Type &>(t));
+}
