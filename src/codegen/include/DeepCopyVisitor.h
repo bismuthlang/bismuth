@@ -11,6 +11,7 @@
 #pragma once
 
 #include "CodegenUtils.h"
+#include "LLVMTypeGenerator.h"
 
 using llvm::AllocaInst;
 using llvm::ArrayRef;
@@ -35,7 +36,8 @@ using std::optional;
 
 class DeepCopyVisitor : public CodegenModule
 {
-
+private: 
+    LLVMTypeGenerator& typeGenerator;
     // enum DeepCopyType
     // {
     //     GC_MALLOC,
@@ -44,7 +46,13 @@ class DeepCopyVisitor : public CodegenModule
     // };
 
 public:
-    DeepCopyVisitor(Module *m, DisplayMode mode, int f, BismuthErrorHandler e) : CodegenModule(m, mode, f, e)
+    DeepCopyVisitor(
+        Module *m, 
+        DisplayMode mode, 
+        int f, 
+        BismuthErrorHandler e,
+        LLVMTypeGenerator& tyGen) : CodegenModule(m, mode, f, e)
+                                  , typeGenerator(tyGen)
     {
         errorHandler = e;
     }

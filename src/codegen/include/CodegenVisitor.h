@@ -75,8 +75,8 @@ public:
      */
     CodegenVisitor(std::string moduleName, DisplayMode mode, int f = 0)
         : CodegenModule(moduleName, mode, f)
-        , copyVisitor(module, mode, f, errorHandler)
         , typeGenerator(module)
+        , copyVisitor(module, mode, f, errorHandler, typeGenerator)
     {}
 
     /******************************************************************
@@ -183,6 +183,6 @@ public:
     std::optional<Value *> correctNullOptionalToSum(RecvMetadata meta, Value *original);
 
 private:
-    DeepCopyVisitor copyVisitor;
     LLVMTypeGenerator typeGenerator;
+    DeepCopyVisitor copyVisitor;
 };
