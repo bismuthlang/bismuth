@@ -448,7 +448,7 @@ public:
     std::string toString(DisplayMode mode) const override;
 
     const TypeUnit * getCopy() const override;
-
+ 
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
 protected:
