@@ -103,11 +103,11 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeBox& t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeProgram& t){
-    return t.getLLVMFunctionType(mod)->getPointerTo();
+    return getLLVMFunctionType(t)->getPointerTo();
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeFunc& t){
-    return t.getLLVMFunctionType(mod)->getPointerTo();
+    return getLLVMFunctionType(t)->getPointerTo();
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeInfer& t){
@@ -257,3 +257,13 @@ llvm::Type * LLVMTypeGenerator::genLLVMType(Type & t){
 llvm::Type * LLVMTypeGenerator::genLLVMType(const Type& t){
     return genLLVMType(const_cast<Type &>(t));
 }
+
+
+llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(const TypeProgram& t){
+    return getLLVMFunctionType(const_cast<TypeProgram &>(t));
+}
+
+llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(const TypeFunc& t){
+    return getLLVMFunctionType(const_cast<TypeFunc &>(t));
+}
+

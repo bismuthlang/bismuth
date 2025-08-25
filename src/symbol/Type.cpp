@@ -33,10 +33,6 @@ bool TypeInt::isSupertypeFor(const Type& other) const
 
 std::string TypeInt::toString(DisplayMode) const { return "int"; }
 
-llvm::IntegerType *TypeInt::getLLVMType(llvm::Module *M) const
-{
-    return llvm::Type::getInt32Ty(M->getContext());
-}
 
 /*******************************************
  *
@@ -50,10 +46,6 @@ bool TypeU32::isSupertypeFor(const Type& other) const
 
 std::string TypeU32::toString(DisplayMode) const { return "u32"; }
 
-llvm::IntegerType *TypeU32::getLLVMType(llvm::Module *M) const
-{
-    return llvm::Type::getInt32Ty(M->getContext());
-}
 
 
 /*******************************************
@@ -68,10 +60,6 @@ bool TypeI64::isSupertypeFor(const Type& other) const
 
 std::string TypeI64::toString(DisplayMode) const { return "i64"; }
 
-llvm::IntegerType *TypeI64::getLLVMType(llvm::Module *M) const
-{
-    return llvm::Type::getInt64Ty(M->getContext());
-}
 
 /*******************************************
  *
@@ -85,12 +73,6 @@ bool TypeU64::isSupertypeFor(const Type& other) const
 
 std::string TypeU64::toString(DisplayMode) const { return "u64"; }
 
-llvm::IntegerType *TypeU64::getLLVMType(llvm::Module *M) const
-{
-    return llvm::Type::getInt64Ty(M->getContext());
-}
-
-
 /*******************************************
  *
  *     Boolean (1 bit) Type Definition
@@ -103,18 +85,13 @@ bool TypeBool::isSupertypeFor(const Type& other) const
 
 std::string TypeBool::toString(DisplayMode) const { return "boolean"; }
 
-llvm::Type *TypeBool::getLLVMType(llvm::Module *M) const
-{
-    return llvm::Type::getInt1Ty(M->getContext());
-}
-
 /*********************************************
  *
  * String (dynamic allocation) Type Definition
  *
  *********************************************/
 std::string TypeStr::toString(DisplayMode) const { return "str"; }
-llvm::Type *TypeStr::getLLVMType(llvm::Module *M) const { return llvm::Type::getInt8Ty(M->getContext())->getPointerTo(); }
+
 bool TypeStr::isSupertypeFor(const Type& other) const
 {
     return dynamic_cast<const TypeStr *>(&other);
@@ -156,22 +133,6 @@ std::string TypeUnit::toString(DisplayMode mode) const
 
 const TypeUnit * TypeUnit::getCopy() const { return this; };
 
-llvm::Type *TypeUnit::getLLVMType(llvm::Module *M) const
-{
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString(C_STYLE));
-    if (ty)
-        return ty;
-
-    ty = llvm::StructType::create(M->getContext(), toString(C_STYLE));
-
-    std::vector<llvm::Type *> typeVec;
-    
-    llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-    ty->setBody(ref); // Done like this to enable recursive types
-
-    return ty;
-}
-
 bool TypeUnit::isSupertypeFor(const Type& other) const
 {
     return dynamic_cast<const TypeUnit *>(&other);
@@ -210,13 +171,6 @@ std::string TypeArray::toString(DisplayMode mode) const
 const Type *TypeArray::getValueType() const { return valueType; }
 
 uint32_t TypeArray::getLength() const { return length; }
-
-llvm::ArrayType *TypeArray::getLLVMType(llvm::Module *M) const
-{
-    uint64_t len = (uint64_t)length;
-    llvm::Type *inner = valueType->getLLVMType(M);
-    return llvm::ArrayType::get(inner, len);
-}
 
 bool TypeArray::requiresDeepCopy() const { return valueType->requiresDeepCopy(); }
 
@@ -264,27 +218,6 @@ std::string TypeDynArray::toString(DisplayMode mode=C_STYLE) const
 }
 
 const Type *TypeDynArray::getValueType() const { return valueType; }
-
-llvm::StructType *TypeDynArray::getLLVMType(llvm::Module *M) const
-{
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), toString());
-    if (ty)
-        return ty;
-
-    ty = llvm::StructType::create(M->getContext(), toString());
-
-    std::vector<llvm::Type *> typeVec = {
-        valueType->getLLVMType(M)->getPointerTo(), // Pointer
-        llvm::Type::getInt32Ty(M->getContext()),   // Length
-        llvm::Type::getInt32Ty(M->getContext())    // Capacity
-    };
-
-
-    llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-    ty->setBody(ref); // Done like this to enable recursive types
-
-    return ty;
-}
 
 // FIXME: VERIFY, THIS PROBS DOENST WORK BC WILL HAVE TO COPY OVER THE MALLOCED DATA!!!
 bool TypeDynArray::requiresDeepCopy() const { return valueType->requiresDeepCopy(); }
@@ -343,22 +276,6 @@ std::string TypeChannel::toString(DisplayMode mode) const
     // description << 
 
     // return description.str();
-}
-
-llvm::Type *TypeChannel::getLLVMType(llvm::Module *M) const
-{
-    // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
-    llvm::StructType *ty = llvm::StructType::getTypeByName(
-        M->getContext(),
-        "_Channel"
-    );
-
-    if (ty)
-        return ty->getPointerTo();
-
-    return llvm::StructType::create(
-        M->getContext(),
-        "_Channel")->getPointerTo();
 }
 
 // Note rhetoric of how we could group each type by fn. ie keep the deep copies together
@@ -433,11 +350,6 @@ std::string TypeBox::toString(DisplayMode mode) const
 
 const Type *TypeBox::getInnerType() const { return innerType; }
 
-llvm::Type *TypeBox::getLLVMType(llvm::Module *M) const
-{
-    return innerType->getLLVMType(M)->getPointerTo();
-}
-
 bool TypeBox::requiresDeepCopy() const { return true; }
 
 const TypeBox * TypeBox::getCopy() const { return this; };
@@ -490,28 +402,6 @@ std::string TypeProgram::getTypeRepresentation(DisplayMode mode) const
     description << "PROGRAM : " << (protocol ? protocol->toString(mode) : "PARTIAL DEFINITION");
 
     return description.str();
-}
-
-llvm::FunctionType *TypeProgram::getLLVMFunctionType(llvm::Module *M) const
-{
-    llvm::Type *ret = Types::UNIT->getLLVMType(M);
-
-     // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
-    llvm::StructType *argTy = llvm::StructType::getTypeByName(M->getContext(), "_Channel");
-    if (!argTy)
-        argTy = llvm::StructType::create(M->getContext(), "_Channel");
-
-
-    return llvm::FunctionType::get(
-        ret,
-        {argTy->getPointerTo()},
-        false);
-}
-
-
-llvm::PointerType *TypeProgram::getLLVMType(llvm::Module *M) const
-{
-    return getLLVMFunctionType(M)->getPointerTo();
 }
 
 bool TypeProgram::requiresDeepCopy() const { return false; }
@@ -634,33 +524,6 @@ std::string TypeFunc::getTypeRepresentation(DisplayMode mode) const
     return description.str();
 }
 
-
-
-llvm::FunctionType *TypeFunc::getLLVMFunctionType(llvm::Module *M) const
-{
-    // Create a vector for our argument types
-    std::vector<llvm::Type *> typeVec;
-
-    for (const Type *ty : paramTypes)
-    {
-        typeVec.push_back(ty->getLLVMType(M));
-    }
-
-    llvm::ArrayRef<llvm::Type *> paramRef = llvm::ArrayRef(typeVec);
-
-    llvm::Type *ret = retType->getLLVMType(M);
-
-    return llvm::FunctionType::get(
-        ret,
-        paramRef,
-        variadic);
-}
-
-llvm::PointerType *TypeFunc::getLLVMType(llvm::Module *M) const
-{
-    return getLLVMFunctionType(M)->getPointerTo();
-}
-
 bool TypeFunc::requiresDeepCopy() const { return false; }
 
 // bool TypeFunc::setName(std::string n) const
@@ -773,15 +636,6 @@ std::string TypeInfer::toString(DisplayMode mode) const
         return valueType->value()->toString(mode); 
     }
     return "VAR";
-}
-
-llvm::Type *TypeInfer::getLLVMType(llvm::Module *M) const
-{
-    if (valueType->has_value())
-        return valueType->value()->getLLVMType(M);
-
-    // This should never happen: we should have always detected such cases in our semantic analysis
-    return nullptr;
 }
 
 // FIXME: BAD OPT ACCESS
@@ -1018,58 +872,6 @@ std::string TypeSum::getTypeRepresentation(DisplayMode mode) const
     return description.str();
 }
 
-
-llvm::StructType *TypeSum::getLLVMType(llvm::Module *M) const
-{
-    // FIXME: I THINK WE HAVE TO CHANGE TOSTRING BC IF WE DONT, THEN canApplyTemplate SHOULD BREAK AS IT WONT USE FQNS! 
-    std::string name =  this->hasName() ? this->getIdentifier().value()->getFullyQualifiedName() :  getTypeRepresentation(DisplayMode::C_STYLE);
-
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), name);
-    if (ty)
-        return ty;
-
-    unsigned int min = std::numeric_limits<unsigned int>::max();
-    unsigned int max = std::numeric_limits<unsigned int>::min();
-
-    for (auto e : cases)
-    {
-        // Note: This is why one has to use pointers in order to nest a type into itself
-        llvm::Type* caseType = e->getLLVMType(M);
-
-        unsigned int t = caseType->isSized() ? M->getDataLayout().getTypeAllocSize(caseType) : 0;
-        // FIXME: DO BETTER - ALSO WILL NOT WORK ON VARS! (there are actually a LOT of places where using a var may break things bc we only check for TypeSum)
-
-        if (t < min && t != 0 )
-        {
-            min = t;
-        }
-
-        if (t > max)
-        {
-            max = t;
-        }
-    }
-
-    // FIXME: WHY DO WE DO THIS TWICE?
-    // Probably not needed in struct, but might be. 
-    // Needed in the case that we generate the type while generating one of the subtypes...
-    ty = llvm::StructType::getTypeByName(M->getContext(), name);
-    if (ty)
-        return ty;
-
-    // FIXME: DO BETTER
-    uint64_t len = (uint64_t)max;
-    llvm::Type *inner = llvm::Type::getInt8Ty(M->getContext());
-    llvm::Type *arr = llvm::ArrayType::get(inner, len);
-
-    std::vector<llvm::Type *> typeVec = {llvm::Type::getInt32Ty(M->getContext()), arr};
-
-    llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-    auto ans = llvm::StructType::create(M->getContext(), ref, name);
-    
-    return ans;
-}
-
 bool TypeSum::requiresDeepCopy() const
 {
     for (auto e : cases)
@@ -1193,30 +995,6 @@ std::string TypeStruct::getTypeRepresentation(DisplayMode mode) const
     description << ")";
 
     return description.str();
-}
-
-llvm::StructType *TypeStruct::getLLVMType(llvm::Module *M) const
-{
-    // PLAN: have to use this vs tostring bc tostring isnt fqn. Maybe change tostring to fqn?
-    std::string name =  this->hasName() ? this->getIdentifier().value()->getFullyQualifiedName() :  getTypeRepresentation(DisplayMode::C_STYLE);
-
-    llvm::StructType *ty = llvm::StructType::getTypeByName(M->getContext(), name);
-    if (ty)
-        return ty;
-
-    ty = llvm::StructType::create(M->getContext(), name);
-
-    std::vector<llvm::Type *> typeVec;
-
-    for (auto ty : elements.getElements())
-    {
-        typeVec.push_back(ty.second->getLLVMType(M));
-    }
-
-    llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
-    ty->setBody(ref); // Done like this to enable recursive types
-
-    return ty;
 }
 
 bool TypeStruct::requiresDeepCopy() const
@@ -1441,11 +1219,6 @@ std::string TypeTemplate::getTypeRepresentation(DisplayMode mode) const
     // return description.str();
 }
 
-llvm::Type *TypeTemplate::getLLVMType(llvm::Module *M) const 
-{
-    return llvm::Type::getVoidTy(M->getContext()); // TODO: DO BETTER!
-}
-
 bool TypeTemplate::requiresDeepCopy() const 
 {
     if(valueType)
@@ -1514,14 +1287,6 @@ std::string TypeModule::getTypeRepresentation(DisplayMode mode) const
 {
     // FIXME: Implement type representation for Modules!
     return "Module";
-}
-
-
-// This shouldn't ever show up in codegen
-llvm::Type *TypeModule::getLLVMType(llvm::Module *M) const
-{
-    assert(false && "Attempted to get LLVM type for module"); 
-    return nullptr; 
 }
 
 // Should never be copied anyhow 
@@ -1610,13 +1375,6 @@ std::string TypeTrait::getTypeRepresentation(DisplayMode mode) const
     description << ")";
 
     return description.str();
-}
-
-llvm::Type *TypeTrait::getLLVMType(llvm::Module *M) const
-{
-    // FIXME: this is wrong, traits have a type!(a pointer to teh value + ptr to vtable)
-    assert(false && "Attempted to get LLVM type for trait"); 
-    return nullptr; 
 }
 
 bool TypeTrait::requiresDeepCopy() const

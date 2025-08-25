@@ -24,7 +24,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TCompilationUnitNode & n)
             const TypeProgram& type = octx->getType();
 
             Function::Create(
-                type.getLLVMFunctionType(module),
+                typeGenerator.getLLVMFunctionType(type),
                 getLinkageType(e->getVisibility()),
                 getCodegenID(octx->getSymbol()),
                 module
@@ -36,7 +36,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TCompilationUnitNode & n)
             const TypeFunc& type = octx->getType();
 
             Function::Create(
-                type.getLLVMFunctionType(module),
+                typeGenerator.getLLVMFunctionType(type),
                 getLinkageType(e->getVisibility()),
                 getCodegenID(octx->getSymbol()),
                 module
@@ -334,7 +334,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TInvocationNode & n)
     }
 
     Value *val = builder->CreateCall(
-        n.getFuncType().getLLVMFunctionType(module),
+        typeGenerator.getLLVMFunctionType(n.getFuncType()),
         fnVal,
         ref
     );
@@ -355,7 +355,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramRecvNode & n)
     Value *chanVal = optVal.value();
 
     const Type *allocType = n.meta.actingType ? n.meta.actingType.value() : n.meta.protocolType;
-    llvm::Type *recvType = allocType->getLLVMType(module);
+    llvm::Type *recvType = typeGenerator.genLLVMType(*allocType);
 
     Value *valPtr = builder->CreateCall(
         n.isInCloseable() ?
@@ -1705,7 +1705,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TPathNode & n)
 
             auto fnc = module->getOrInsertFunction(
                 FQN,
-                prog->getLLVMFunctionType(module)
+                typeGenerator.getLLVMFunctionType(*prog)
             );
 
             return fnc.getCallee();
@@ -1721,7 +1721,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TPathNode & n)
 
             auto fnc = module->getOrInsertFunction(
                 FQN,
-                func->getLLVMFunctionType(module)
+                typeGenerator.getLLVMFunctionType(*func)
             );
 
             return fnc.getCallee();
@@ -1804,7 +1804,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TExternNode & n)
     const TypeFunc& type = n.getType();
 
     Function::Create(
-        type.getLLVMFunctionType(module),
+        typeGenerator.getLLVMFunctionType(type),
         GlobalValue::ExternalLinkage, // FIXME: USE getLinkageType(e->getVisibility()),?
         getCodegenID(symbol),
         module
@@ -1991,7 +1991,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TVarDeclNode & n)
                     if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol->getType()))
                     {
                         uint32_t index = sumOpt.value()->getIndex(e->val.value()->getType());
-                        auto * sum_type = sumOpt.value()->getLLVMType(module);
+                        auto * sum_type = typeGenerator.genLLVMType(*sumOpt.value());
 
                         if (index == 0)
                         {
@@ -2312,7 +2312,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TLambdaConstNode & n)
 
     const TypeFunc& type = n.getType();
 
-    llvm::FunctionType *fnType = type.getLLVMFunctionType(module);
+    llvm::FunctionType *fnType = typeGenerator.getLLVMFunctionType(type);
 
     std::string funcFullName = getCodegenID(n.getSymbol());
 
@@ -2385,7 +2385,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramDefNode & n)
 
     const TypeProgram& prog = n.getType();
 
-    llvm::FunctionType *fnType = prog.getLLVMFunctionType(module);
+    llvm::FunctionType *fnType = typeGenerator.getLLVMFunctionType(prog);
 
     std::string funcFullName = getCodegenID(n.getSymbol());
 

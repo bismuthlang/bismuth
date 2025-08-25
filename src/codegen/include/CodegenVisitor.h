@@ -14,7 +14,6 @@
 #include "CodegenUtils.h"
 #include "TypedAST.h"
 #include "DeepCopyVisitor.h"
-#include "LLVMTypeGenerator.h"
 
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/IRBuilder.h"
@@ -75,7 +74,6 @@ public:
      */
     CodegenVisitor(std::string moduleName, DisplayMode mode, int f = 0)
         : CodegenModule(moduleName, mode, f)
-        , typeGenerator(module)
         , copyVisitor(module, mode, f, errorHandler, typeGenerator)
     {}
 
@@ -162,14 +160,14 @@ public:
 
         if (index != 0)
         {
-            llvm::Type *sumTy = sum.getLLVMType(module);
+            llvm::Type *sumTy = typeGenerator.genLLVMType(sum);
             llvm::AllocaInst * alloc = CreateEntryBlockAlloc(sumTy, "");
 
             Value *tagPtr = builder->CreateGEP(sumTy, alloc, {Int32Zero, Int32Zero});
 
             builder->CreateStore(getU32(index), tagPtr);
 
-            Value *valuePtr = builder->CreateGEP(sum.getLLVMType(module), alloc, {Int32Zero, Int32One});
+            Value *valuePtr = builder->CreateGEP(typeGenerator.genLLVMType(sum), alloc, {Int32Zero, Int32One});
 
             Value *corrected = builder->CreateBitCast(valuePtr, original->getType()->getPointerTo());
             builder->CreateStore(original, corrected);
@@ -183,6 +181,5 @@ public:
     std::optional<Value *> correctNullOptionalToSum(RecvMetadata meta, Value *original);
 
 private:
-    LLVMTypeGenerator typeGenerator;
     DeepCopyVisitor copyVisitor;
 };

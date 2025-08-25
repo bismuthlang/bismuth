@@ -33,7 +33,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, 
 
   BasicBlock *ins = builder->GetInsertBlock();
 
-  llvm::Type *llvmType = type.getLLVMType(module);
+  llvm::Type *llvmType = typeGenerator.genLLVMType(type);
 
   Function *fn = Function::Create(
     FunctionType::get(
@@ -100,15 +100,16 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, 
             builder->SetInsertPoint(elseBlk);
 
             // // Generate the code for the else block; follows the same logic as the then block.
-            optional<Value *> clonedOpt = deepCopyHelper(builder,
-                                                         *innerType,
-                                                         builder->CreateLoad(innerType->getLLVMType(module), builder->CreateLoad(llvmType, v)),
-                                                         builder->CreateLoad(i8p, m));//,
+            auto clonedOpt = deepCopyHelper(
+                                builder,
+                                *innerType,
+                                builder->CreateLoad(typeGenerator.genLLVMType(*innerType), builder->CreateLoad(llvmType, v)),
+                                builder->CreateLoad(i8p, m));//,
                                                         //  GC_MALLOC);
             if (!clonedOpt)
                 return std::nullopt;
             // Value *cloned = clonedOpt.value();
-            Value *alloc = runGCMalloc(builder, getSizeForType(type.getLLVMType(module)));
+            Value *alloc = runGCMalloc(builder, getSizeForType(typeGenerator.genLLVMType(type)));
             // Value *casted2 = builder->CreateBitCast(alloc, type.getLLVMType(module));
             builder->CreateStore(clonedOpt.value(), alloc);
             builder->CreateCall(
@@ -125,14 +126,14 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, 
             parentFn->insert(parentFn->end(), restBlk);
             builder->SetInsertPoint(restBlk);
 
-            llvm::PHINode *phi = builder->CreatePHI(type.getLLVMType(module), 2, "phi");
+            llvm::PHINode *phi = builder->CreatePHI(typeGenerator.genLLVMType(type), 2, "phi");
             phi->addIncoming(casted, thenBlk);
             phi->addIncoming(alloc, elseBlk);
             v = phi;
         }
         else if (const TypeStruct *structType = dynamic_cast<const TypeStruct *>(&type))
         {
-            auto * llvm_struct_type = structType->getLLVMType(module);
+            auto * llvm_struct_type = typeGenerator.genLLVMType(*structType);
 
             for (auto eleItr : structType->getElements())
             {
@@ -149,7 +150,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, 
                         }
                     );
 
-                    Value *loaded = builder->CreateLoad(eleItr.second->getLLVMType(module), memLoc);
+                    Value *loaded = builder->CreateLoad(typeGenerator.genLLVMType(*eleItr.second), memLoc);
 
                     optional<Value *> valOpt = deepCopyHelper(builder, *eleItr.second, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
@@ -161,7 +162,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, 
         }
         else if (const TypeSum *sumType = dynamic_cast<const TypeSum *>(&type))
         {
-            auto * llvm_sum_type = sumType->getLLVMType(module);
+            auto * llvm_sum_type = typeGenerator.genLLVMType(*sumType);
             auto origParent = builder->GetInsertBlock()->getParent();
 
             BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
@@ -182,7 +183,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, 
                 origParent->insert(origParent->end(), matchBlk);
 
                 Value *corrected = memLoc; //builder->CreateBitCast(memLoc, caseNode->getLLVMType(module)->getPointerTo());
-                Value *loaded = builder->CreateLoad(caseNode->getLLVMType(module), corrected);
+                Value *loaded = builder->CreateLoad(typeGenerator.genLLVMType(*caseNode), corrected);
 
                 optional<Value *> valOpt = deepCopyHelper(builder, *caseNode, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)
@@ -198,7 +199,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, 
         }
         else if(const TypeArray * arrayType = dynamic_cast<const TypeArray*>(&type))
         {
-            auto * llvm_array_type = arrayType->getLLVMType(module);
+            auto * llvm_array_type = typeGenerator.genLLVMType(*arrayType);
             const Type * valueType = arrayType->getValueType();
 
             AllocaInst *loop_index = CreateEntryBlockAlloc(builder,Int32Ty, "idx");
@@ -230,7 +231,7 @@ DeepCopyVisitor::deepCopyHelper(IRBuilder<NoFolder> *builder, const Type& type, 
                 Value *memLoc = builder->CreateGEP(llvm_array_type, v, {Int32Zero,
                                                               builder->CreateLoad(Int32Ty, loop_index)});
 
-                Value *loaded = builder->CreateLoad(valueType->getLLVMType(module), memLoc);
+                Value *loaded = builder->CreateLoad(typeGenerator.genLLVMType(*valueType), memLoc);
 
                 optional<Value *> valOpt = deepCopyHelper(builder, *valueType, loaded, builder->CreateLoad(i8p, m));//, GC_MALLOC);
                     if (!valOpt)

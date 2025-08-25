@@ -74,6 +74,9 @@ llvm::Type * visit_typed(TypeTrait& t) override;
 llvm::FunctionType * getLLVMFunctionType(TypeProgram& t);
 llvm::FunctionType * getLLVMFunctionType(TypeFunc& t);
 
+llvm::FunctionType * getLLVMFunctionType(const TypeProgram& t);
+llvm::FunctionType * getLLVMFunctionType(const TypeFunc& t);
+
 llvm::Type * genLLVMType(Type & t);
 llvm::Type * genLLVMType(const Type& t);
 

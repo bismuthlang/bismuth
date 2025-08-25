@@ -21,6 +21,7 @@
 
 #include "TypedAST.h"
 #include "Symbol.h" // Only for VisibilityModifier
+#include "LLVMTypeGenerator.h"
 
 // using namespace llvm;
 using llvm::ArrayRef;
@@ -71,19 +72,24 @@ public:
      * @param moduleName LLVM Module name to use
      * @param f Compiler flags
      */
-    CodegenModule(std::string moduleName, DisplayMode mode, int f = 0) : toStringMode(mode), errorHandler(BismuthErrorHandler(CODEGEN))
+    CodegenModule(std::string moduleName, DisplayMode mode, int f = 0) 
+        : toStringMode(mode)
+        , errorHandler(BismuthErrorHandler(CODEGEN))
+        , module(new Module(moduleName, *(new LLVMContext())))
+        , typeGenerator(module)
     {
         flags = f;
 
         // LLVM Stuff
-        auto context = new LLVMContext(); // TODO: free contexts?
-        module = new Module(moduleName, *context);
+        // auto context = new LLVMContext(); // TODO: free contexts?
+        // module = new Module(moduleName, *context);
+        // typeGenerator = LLVMTypeGenerator(module);
 
         // Use the NoFolder to turn off constant folding
         builder = new IRBuilder<NoFolder>(module->getContext());
 
         // LLVM Types
-        UnitTy = Types::UNIT->getLLVMType(module);//llvm::Type::getVoidTy(module->getContext());
+        UnitTy = typeGenerator.genLLVMType(*Types::UNIT);
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
         Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
@@ -94,18 +100,19 @@ public:
         Int8PtrPtrTy = i8p->getPointerTo();
     }
 
-    CodegenModule(Module *m, DisplayMode mode, int f, BismuthErrorHandler e) : toStringMode(mode), errorHandler(e)
+    CodegenModule(Module *m, DisplayMode mode, int f, BismuthErrorHandler e) 
+        : toStringMode(mode)
+        , errorHandler(e)
+        , module(m)
+        , typeGenerator(module)
     {
         flags = f;
-
-        // LLVM Stuff
-        module = m;
 
         // Use the NoFolder to turn off constant folding
         builder = new IRBuilder<NoFolder>(module->getContext());
 
         // LLVM Types
-        UnitTy = Types::UNIT->getLLVMType(module);//llvm::Type::getVoidTy(module->getContext());
+        UnitTy = typeGenerator.genLLVMType(*Types::UNIT);
         Int32Ty = llvm::Type::getInt32Ty(module->getContext());
         Int64Ty = llvm::Type::getInt64Ty(module->getContext());
         Int1Ty = llvm::Type::getInt1Ty(module->getContext());
@@ -360,7 +367,7 @@ public:
     }
 
     llvm::Value *getUnitValue() {
-        return Constant::getNullValue(Types::UNIT->getLLVMType(module));
+        return Constant::getNullValue(UnitTy);
     }
 
     void deleteAddressMap(llvm::Value *val)
@@ -470,6 +477,8 @@ protected:
     llvm::Type *Int8PtrPtrTy;
     Constant *Int32Zero;
     Constant *Int32One;
+
+    LLVMTypeGenerator typeGenerator;
 
 protected:
     llvm::ConstantInt * getI32(int32_t value) { return ConstantInt::get(Int32Ty, value, true); }

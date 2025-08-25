@@ -14,7 +14,7 @@ void CodegenModule::InitDynArray(const TypeDynArray * ty, llvm::AllocaInst * all
 
     // Allocate the vector 
     {
-        llvm::Type * storeType =  ty->getValueType()->getLLVMType(module);
+        llvm::Type * storeType =  typeGenerator.genLLVMType(*ty->getValueType());
         builder->CreateStore(
             TypedGCHeapAlloc(
                 builder->CreateNSWMul(
@@ -51,8 +51,8 @@ void CodegenModule::ReallocateDynArray(const TypeDynArray& ty, llvm::Value * all
 {
     // PLAN: use DYN_ARRAY_GROW_FACTOR
 
-    auto * alloc_type = ty.getLLVMType(module); 
-    auto * ArrayElementType = ty.getValueType()->getLLVMType(module);
+    auto * alloc_type = typeGenerator.genLLVMType(ty);
+    auto * ArrayElementType = typeGenerator.genLLVMType(*ty.getValueType());
     auto * InnerArrayType = ArrayElementType->getPointerTo();
 
     Value *lenPtr = builder->CreateGEP(alloc_type, alloc, {Int32Zero, Int32One});

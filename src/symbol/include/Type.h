@@ -94,17 +94,6 @@ public:
     virtual bool isSupertype(const Type& other) const { return isSupertypeFor(other); }
     virtual bool isNotSupertype(const Type& other) const { return !isSupertypeFor(other); }
 
-    /**
-     * @brief Gets the llvm::Type* which corresponds to the current type in LLVM
-     *
-     * @param C The llvm context
-     * @return llvm::Type* The representation of this type in LLVM
-     */
-    virtual llvm::Type *getLLVMType(llvm::Module *M) const
-    {
-        return llvm::Type::getVoidTy(M->getContext());
-    }
-
     virtual bool requiresDeepCopy() const { return false; } // FIXME: WHAT TO DO?
 
     virtual const Type * getCopy() const { return this; }
@@ -196,8 +185,6 @@ public:
      * Passthrough functions required of any type
      * 
      ****************************************/
-
-    virtual llvm::Type *getLLVMType(llvm::Module *M) const override = 0;
     virtual bool requiresDeepCopy() const override = 0;
     virtual const Type * getCopy() const override = 0;
 
@@ -300,8 +287,6 @@ public:
 
     std::string toString(DisplayMode mode) const override;
 
-    llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
-
     bool requiresDeepCopy() const override { return false; }
 
     const TypeInt * getCopy() const override { return this; };
@@ -325,8 +310,6 @@ public:
     TypeU32(bool isLinear) : Type(isLinear), TypeNum(false, 32, false){}; 
 
     std::string toString(DisplayMode mode) const override;
-
-    llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override { return false; }
 
@@ -352,8 +335,6 @@ public:
 
     std::string toString(DisplayMode mode) const override;
 
-    llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
-
     bool requiresDeepCopy() const override { return false; }
 
     const TypeI64 * getCopy() const override { return this; };
@@ -376,8 +357,6 @@ public:
     TypeU64(bool isLinear) : Type(isLinear), TypeNum(false, 64, false){}; 
 
     std::string toString(DisplayMode mode) const override;
-
-    llvm::IntegerType *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override { return false; }
 
@@ -403,8 +382,6 @@ public:
 
     std::string toString(DisplayMode mode) const override;
 
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
-
     bool requiresDeepCopy() const override { return false; }
 
     const TypeBool * getCopy() const override { return this; };
@@ -428,8 +405,6 @@ public:
     TypeStr(bool isLinear) : Type(isLinear) {}; 
 
     std::string toString(DisplayMode mode) const override;
-
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override { return false; }
 
@@ -477,8 +452,6 @@ public:
     std::string toString(DisplayMode mode) const override;
 
     const TypeUnit * getCopy() const override;
-
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 
@@ -585,14 +558,6 @@ public:
      */
     uint32_t getLength() const;
 
-    /**
-     * @brief Gets the LLVM type for an array of the given valueType and length.
-     *
-     * @param C LLVM Context
-     * @return llvm::Type*
-     */
-    llvm::ArrayType *getLLVMType(llvm::Module *M) const override;
-
     bool requiresDeepCopy() const override;
 
     const TypeArray * getCopy() const override;
@@ -643,14 +608,6 @@ public:
      */
     const Type *getValueType() const;
 
-    /**
-     * @brief Gets the LLVM type for an array of the given valueType and length.
-     *
-     * @param C LLVM Context
-     * @return llvm::Type*
-     */
-    llvm::StructType *getLLVMType(llvm::Module *M) const override;
-
     bool requiresDeepCopy() const override;
 
     const TypeDynArray * getCopy() const override;
@@ -687,8 +644,6 @@ public:
     TypeChannel(const ProtocolSequence *proto) : Type(true), protocol(proto) {}
 
     std::string toString(DisplayMode mode) const override;
-
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
 
@@ -740,8 +695,6 @@ public:
     std::string toString(DisplayMode mode) const override;
 
     const Type *getInnerType() const;
-
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
 
@@ -797,11 +750,6 @@ public:
     bool setProtocol(const ProtocolSequence * p) const; 
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
-
-
-    llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const;
-
-    llvm::PointerType *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
 
@@ -890,10 +838,6 @@ public:
     bool setInvoke(std::vector<const Type *> p, const Type *r = Types::UNIT, bool v = false) const;
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
-
-    llvm::FunctionType *getLLVMFunctionType(llvm::Module *M) const;
-
-    llvm::PointerType *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
     /**
@@ -988,13 +932,6 @@ public:
      * @return std::string
      */
     std::string toString(DisplayMode mode) const override;
-    /**
-     * @brief Gets the LLVM representation of the inferred type.
-     *
-     * @param C LLVM Context
-     * @return llvm::Type* the llvm type for the inferred type.
-     */
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
 
@@ -1073,14 +1010,6 @@ public:
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
 
-    /**
-     * @brief Gets the LLVM type for an array of the given valueType and length.
-     *
-     * @param C LLVM Context
-     * @return llvm::Type*
-     */
-    llvm::StructType *getLLVMType(llvm::Module *M) const override;
-
     bool requiresDeepCopy() const override;
 
     const TypeSum * getCopy() const override;
@@ -1139,14 +1068,6 @@ public:
     optional<unsigned int> getElementIndex(std::string k) const;
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
-
-    /**
-     * @brief Gets the LLVM type for an array of the given valueType and length.
-     *
-     * @param C LLVM Context
-     * @return llvm::Type*
-     */
-    llvm::StructType *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
 
@@ -1233,14 +1154,6 @@ public:
         // return actingType->toString(mode); 
     }
 
-    llvm::Type *getLLVMType(llvm::Module *M) const override {
-        if(actingType)
-            return actingType.value()->getLLVMType(M); 
-
-        std::cerr << "1082: Attempted to take llvm type of a generic parameter" << std::endl;
-        return llvm::Type::getVoidTy(M->getContext());
-    } 
-
     bool requiresDeepCopy() const override { 
         if(actingType)
             return actingType.value()->requiresDeepCopy(); 
@@ -1319,15 +1232,7 @@ public:
     // std::string toString(DisplayMode mode) const override;
     std::string getTypeRepresentation(DisplayMode mode) const override;
 
-    std::string templateString(DisplayMode mode) const; 
-    
-    /**
-     * @brief Gets the LLVM representation of the inferred type.
-     *
-     * @param C LLVM Context
-     * @return llvm::Type* the llvm type for the inferred type.
-     */
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
+    std::string templateString(DisplayMode mode) const;
 
     bool requiresDeepCopy() const override;
 
@@ -1370,14 +1275,6 @@ public:
     bool isDefined() const { return defined; }
 
     std::string getTypeRepresentation(DisplayMode mode) const override;
-    
-    /**
-     * @brief Gets the LLVM representation of the inferred type.
-     *
-     * @param C LLVM Context
-     * @return llvm::Type* the llvm type for the inferred type.
-     */
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
 
@@ -1446,14 +1343,6 @@ public:
     optional<unsigned int> getElementIndex(std::string k) const;
 
     std::string getTypeRepresentation(DisplayMode mode) const override; 
-
-    /**
-     * @brief Gets the LLVM type for an array of the given valueType and length.
-     *
-     * @param C LLVM Context
-     * @return llvm::Type*
-     */
-    llvm::Type *getLLVMType(llvm::Module *M) const override;
 
     bool requiresDeepCopy() const override;
 
