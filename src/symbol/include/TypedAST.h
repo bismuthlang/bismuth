@@ -1,11 +1,13 @@
 #pragma once
 
-#include "Symbol.h" //Should give us symbols and yyues...
 #include <variant>
 #include <functional> // std::function
 
 #include "MacroUtils.h"
+#include "Symbol.h" //Should give us symbols and yyues...
 #include "Visitor.h"
+
+#include "llvm/IR/Value.h"
 
 
 using namespace std;

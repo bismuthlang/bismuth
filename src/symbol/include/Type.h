@@ -11,10 +11,6 @@
  *
  */
 
-#include "llvm/IR/Module.h"
-#include "llvm/IR/Type.h"
-#include "llvm/IR/Value.h"
-
 #include <climits>  // Max & min
 #include <iostream> // cout
 #include <optional> // Optionals
