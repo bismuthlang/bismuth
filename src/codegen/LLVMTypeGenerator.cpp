@@ -111,31 +111,104 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeFunc& t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeInfer& t){
-    return t.getLLVMType(mod);
+    std::optional<const Type*> inferredType = t.getValueType();
+    assert(inferredType.has_value() && "Cannot generate the LLVM type for an uninferred type");
+    return const_cast<Type *>(inferredType.value())->accept<llvm::Type *>(*this);
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeSum& t){
-return t.getLLVMType(mod);
+ // FIXME: I THINK WE HAVE TO CHANGE TOSTRING BC IF WE DONT, THEN canApplyTemplate SHOULD BREAK AS IT WONT USE FQNS! 
+    std::string name =  t.hasName() ? t.getIdentifier().value()->getFullyQualifiedName() :  t.getTypeRepresentation(DisplayMode::C_STYLE);
+
+    llvm::StructType *ty = llvm::StructType::getTypeByName(mod->getContext(), name);
+    if (ty)
+        return ty;
+
+    unsigned int min = std::numeric_limits<unsigned int>::max();
+    unsigned int max = std::numeric_limits<unsigned int>::min();
+
+    for (auto e : t.getCases())
+    {
+        // Note: This is why one has to use pointers in order to nest a type into itself
+        llvm::Type* caseType = const_cast<Type *>(e)->accept<llvm::Type *>(*this);
+
+        unsigned int t = caseType->isSized() ? mod->getDataLayout().getTypeAllocSize(caseType) : 0;
+        // FIXME: DO BETTER - ALSO WILL NOT WORK ON VARS! (there are actually a LOT of places where using a var may break things bc we only check for TypeSum)
+
+        if (t < min && t != 0 )
+        {
+            min = t;
+        }
+
+        if (t > max)
+        {
+            max = t;
+        }
+    }
+
+    // FIXME: WHY DO WE DO THIS TWICE?
+    // Probably not needed in struct, but might be. 
+    // Needed in the case that we generate the type while generating one of the subtypes...
+    ty = llvm::StructType::getTypeByName(mod->getContext(), name);
+    if (ty)
+        return ty;
+
+    // FIXME: DO BETTER
+    uint64_t len = (uint64_t)max;
+    llvm::Type *inner = llvm::Type::getInt8Ty(mod->getContext());
+    llvm::Type *arr = llvm::ArrayType::get(inner, len);
+
+    std::vector<llvm::Type *> typeVec = {llvm::Type::getInt32Ty(mod->getContext()), arr};
+
+    llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
+    auto ans = llvm::StructType::create(mod->getContext(), ref, name);
+    
+    return ans;
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeStruct& t){
-return t.getLLVMType(mod);
+    // PLAN: have to use this vs tostring bc tostring isnt fqn. Maybe change tostring to fqn?
+    std::string name =  t.hasName() ? 
+        t.getIdentifier().value()->getFullyQualifiedName() :  t.getTypeRepresentation(DisplayMode::C_STYLE);
+
+    llvm::StructType *ty = llvm::StructType::getTypeByName(mod->getContext(), name);
+    if (ty)
+        return ty;
+
+    ty = llvm::StructType::create(mod->getContext(), name);
+
+    std::vector<llvm::Type *> typeVec;
+
+    for (auto ty : t.getElements())
+    {
+        typeVec.push_back(genLLVMType(*ty.second));
+    }
+
+    llvm::ArrayRef<llvm::Type *> ref = llvm::ArrayRef(typeVec);
+    ty->setBody(ref); // Done like this to enable recursive types
+
+    return ty;
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeGeneric& t){
-return t.getLLVMType(mod);
+     if(auto actingType = t.getActingType(); actingType.has_value())
+            return genLLVMType(*actingType.value()); 
+
+    std::cerr << "1082: Attempted to take llvm type of a generic parameter" << std::endl;
+    return llvm::Type::getVoidTy(mod->getContext());
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeTemplate& t){
-return t.getLLVMType(mod);
+return llvm::Type::getVoidTy(mod->getContext()); // TODO: DO BETTER!
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeModule & t){
-return t.getLLVMType(mod);
+    assert(false && "Attempted to get LLVM type for module"); 
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeTrait& t){
-return t.getLLVMType(mod);
+  // FIXME: this is wrong, traits have a type!(a pointer to teh value + ptr to vtable)
+    assert(false && "Attempted to get LLVM type for trait"); 
 }
 
 

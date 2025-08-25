@@ -1253,7 +1253,7 @@ public:
     std::string getId() const { return identifier; }
     // const Type * getActingType() const { return actingType; }
     void setActingType(const Type * nxt) { actingType = nxt; }
-
+    std::optional<const Type *> getActingType() { return actingType; }
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
     // FIXME: IMPL
     // const Type * getCopySubst(std::map<const Type *, const Type *> existing) const override;
