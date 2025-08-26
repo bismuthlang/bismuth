@@ -55,6 +55,6 @@ class Visitor : public virtual AnyVisitor<T> {
     }
 
     virtual R visit(T& t) { // const T&
-      return any_cast<R>(t.Nuaccept_any(*this));
+      return visit_typed(t);
     }
 };

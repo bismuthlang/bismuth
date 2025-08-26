@@ -7,10 +7,13 @@
 #include "Symbol.h" //Should give us symbols and yyues...
 #include "Visitor.h"
 
-#include "llvm/IR/Value.h"
+// #include "llvm/IR/Value.h"
 
 
 using namespace std;
+namespace llvm {
+    class Value;
+};
 using llvm::Value;
 
 // TODO: HAVE COMPILER ADD COMMENTS TO DOCUMENT COMPLEX TYPES?

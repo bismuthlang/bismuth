@@ -2299,6 +2299,10 @@ std::optional<Value *> CodegenVisitor::visit_typed(TBlockNode & n)
 {
     for (auto e : n.exprs)
     {
+        // FIXME FIXME FIXME: Because we do things like this, if codegen does fail in one of the exprs, 
+        // then we'll continue to do the codegen of the subsequent ones potentially causing
+        // llvm to segfault us. We should really abort codegen if an error is detected so 
+        // that we can easily debug it. 
         e->accept<std::optional<Value *>>(*this);
     }
 

@@ -4,7 +4,6 @@ include(Semantic)
 include(Symbol)
 include(ANTLR)
 include(Utility)
-include(LLVM)
 include(FunctionalPlus)
 
 add_library(semantic_lib OBJECT
@@ -22,8 +21,6 @@ include_directories(semantic_lib
   ${SYMBOL_INCLUDE}
   ${SEMANTIC_INCLUDE}
   ${UTILITY_INCLUDE}
-  ${LLVM_BINARY_DIR}/include
-  ${LLVM_INCLUDE_DIR}
 )
 
 
