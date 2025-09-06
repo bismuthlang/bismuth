@@ -10,34 +10,42 @@
  *
 */
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeInt& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return llvm::Type::getInt32Ty(mod->getContext());
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeU32& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return llvm::Type::getInt32Ty(mod->getContext());
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeI64& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return llvm::Type::getInt64Ty(mod->getContext());
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeU64& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return llvm::Type::getInt64Ty(mod->getContext());
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeBool& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return llvm::Type::getInt1Ty(mod->getContext());
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeStr& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return llvm::Type::getInt8Ty(mod->getContext())->getPointerTo();
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeBottom& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     assert(false && "Cannot take the llvm type of bot");
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeUnit& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     llvm::StructType *ty = llvm::StructType::getTypeByName(mod->getContext(), t.toString(C_STYLE));
     if (ty)
         return ty;
@@ -53,10 +61,12 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeUnit& t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeAbsurd& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     assert(false && "Cannot take the llvm type of absurd");
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeArray& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return llvm::ArrayType::get(
         const_cast<Type *>(t.getValueType())->accept<llvm::Type *>(*this),
         (uint64_t) t.getLength()
@@ -64,6 +74,7 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeArray& t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeDynArray & t){
+    DEBUG_CERR(t.toString(C_STYLE));
     llvm::StructType *ty = llvm::StructType::getTypeByName(mod->getContext(), t.toString(C_STYLE));
     if (ty)
         return ty;
@@ -84,6 +95,7 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeDynArray & t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeChannel& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
     llvm::StructType *ty = llvm::StructType::getTypeByName(
         mod->getContext(),
@@ -99,24 +111,29 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeChannel& t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeBox& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return const_cast<Type *>(t.getInnerType())->accept<llvm::Type *>(*this)->getPointerTo();
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeProgram& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return getLLVMFunctionType(t)->getPointerTo();
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeFunc& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return getLLVMFunctionType(t)->getPointerTo();
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeInfer& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     std::optional<const Type*> inferredType = t.getValueType();
     assert(inferredType.has_value() && "Cannot generate the LLVM type for an uninferred type");
     return const_cast<Type *>(inferredType.value())->accept<llvm::Type *>(*this);
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeSum& t){
+    DEBUG_CERR(t.toString(C_STYLE));
  // FIXME: I THINK WE HAVE TO CHANGE TOSTRING BC IF WE DONT, THEN canApplyTemplate SHOULD BREAK AS IT WONT USE FQNS! 
     std::string name =  t.hasName() ? t.getIdentifier().value()->getFullyQualifiedName() :  t.getTypeRepresentation(DisplayMode::C_STYLE);
 
@@ -167,6 +184,7 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeSum& t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeStruct& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     // PLAN: have to use this vs tostring bc tostring isnt fqn. Maybe change tostring to fqn?
     std::string name =  t.hasName() ? 
         t.getIdentifier().value()->getFullyQualifiedName() :  t.getTypeRepresentation(DisplayMode::C_STYLE);
@@ -191,6 +209,7 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeStruct& t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeGeneric& t){
+    DEBUG_CERR(t.toString(C_STYLE));
      if(auto actingType = t.getActingType(); actingType.has_value())
             return genLLVMType(*actingType.value()); 
 
@@ -199,14 +218,17 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeGeneric& t){
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeTemplate& t){
+    DEBUG_CERR(t.toString(C_STYLE));
 return llvm::Type::getVoidTy(mod->getContext()); // TODO: DO BETTER!
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeModule & t){
+    DEBUG_CERR(t.toString(C_STYLE));
     assert(false && "Attempted to get LLVM type for module"); 
 }
 
 llvm::Type * LLVMTypeGenerator::visit_typed(TypeTrait& t){
+    DEBUG_CERR(t.toString(C_STYLE));
   // FIXME: this is wrong, traits have a type!(a pointer to teh value + ptr to vtable)
     assert(false && "Attempted to get LLVM type for trait"); 
 }
@@ -216,21 +238,28 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeTrait& t){
 
 
 llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(TypeProgram& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     llvm::Type *ret = const_cast<TypeUnit *>(Types::UNIT)->accept<llvm::Type *>(*this); // Types::UNIT->getLLVMType(M);
-
+std::cerr << "243" << std::endl;
      // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
     llvm::StructType *argTy = llvm::StructType::getTypeByName(mod->getContext(), "_Channel");
+    std::cerr << "246" << std::endl;
     if (!argTy)
         argTy = llvm::StructType::create(mod->getContext(), "_Channel");
+std::cerr << "249" << std::endl;
 
-
-    return llvm::FunctionType::get(
+    llvm::FunctionType * ans = llvm::FunctionType::get(
         ret,
         {argTy->getPointerTo()},
         false);
+
+std::cerr << "256" << std::endl;
+
+    return ans;
 }
 
 llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(TypeFunc& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     // Create a vector for our argument types
     std::vector<llvm::Type *> typeVec;
 
@@ -251,19 +280,23 @@ llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(TypeFunc& t){
 
 
 llvm::Type * LLVMTypeGenerator::genLLVMType(Type & t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return t.accept<llvm::Type *>(*this);
 }
 
 llvm::Type * LLVMTypeGenerator::genLLVMType(const Type& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return genLLVMType(const_cast<Type &>(t));
 }
 
 
 llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(const TypeProgram& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return getLLVMFunctionType(const_cast<TypeProgram &>(t));
 }
 
 llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(const TypeFunc& t){
+    DEBUG_CERR(t.toString(C_STYLE));
     return getLLVMFunctionType(const_cast<TypeFunc &>(t));
 }
 

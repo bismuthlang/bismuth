@@ -9,7 +9,11 @@
  * 
  */
 #pragma once
+
+
 #include "Scope.h"
+#include "TypeDefs.h"
+
 #include <vector>
 #include <optional>
 #include <functional>
@@ -45,7 +49,7 @@ public:
      * 
      * @return std::optional<Scope*> Returns empty if no parent scope to enter; otherwise returns last scope. 
      */
-    std::optional<std::reference_wrapper<Scope>> exitScope();
+    optional_ref<Scope> exitScope();
 
     /**
      * @brief Add a symbol to the current scope
@@ -54,21 +58,21 @@ public:
      * @return true if successful
      * @return false if unsuccessful (ie, name already bound to another symbol)
      */
-    std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool glob); // Symbol* symbol);
+    optional_ref<Symbol> addSymbol(std::string id, const Type * t, bool glob); // Symbol* symbol);
 
-    std::optional<DefinitionSymbol *> addDefinition(Scope & scope, VisibilityModifier m, std::string id, const Type * t, bool glob); 
+    optional_ref<DefinitionSymbol> addDefinition(Scope & scope, VisibilityModifier m, std::string id, const Type * t, bool glob); 
 
-    std::optional<AliasSymbol *> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
+    optional_ref<AliasSymbol> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
 
-    std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t); 
-    std::optional<DefinitionSymbol *> addAnonymousDefinition(std::string id, const Type * t); 
+    optional_ref<Symbol> addAnonymousSymbol(std::string id, const Type * t); 
+    optional_ref<DefinitionSymbol> addAnonymousDefinition(std::string id, const Type * t); 
 
     /**
      * @brief Removes a symbol from the scope
      * 
      * @param symbol 
      */
-    bool removeSymbol(Symbol* symbol);
+    bool removeSymbol(Symbol& symbol);
     
     /**
      * @brief Lookup a symbol across all scopes returning the first definition found
@@ -76,11 +80,11 @@ public:
      * @param id The symbol name to lookup
      * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found. 
      */
-    std::optional<Symbol*> lookupInAccessableScopes(std::string id);
+    optional_ref<Symbol> lookupInAccessableScopes(std::string id);
 
-    std::optional<std::pair<Symbol *, std::reference_wrapper<Scope>>> lookupWithScope(std::string id); 
+    std::optional<std::pair<std::reference_wrapper<Symbol>, std::reference_wrapper<Scope>>> lookupWithScope(std::string id); 
 
-    std::vector<Symbol *> getSymbols(int flags);
+    std::vector<std::reference_wrapper<Symbol>> getSymbols(int flags);
 
     /**
      * @brief Lookup a symbol only in the current scope. 
@@ -88,7 +92,7 @@ public:
      * @param id The symbol name to lookup
      * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found. 
      */
-    std::optional<Symbol *> lookupInCurrentScope(std::string id);
+    optional_ref<Symbol> lookupInCurrentScope(std::string id);
 
     /****************************************
      * Miscellaneous (useful for testing)

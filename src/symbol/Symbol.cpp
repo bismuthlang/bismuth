@@ -4,9 +4,12 @@
 
 std::string Symbol::toString() const
 {
+    std::cerr << "7 " << this << " " << type << " " << identifier << std::endl;
     std::ostringstream description;
     std::string typeName = type->toString(DisplayMode::C_STYLE);
+    std::cerr << "10" << std::endl;
     description << '[' << identifier->getScopedIdentifier() << ", " << typeName << ']';
+    std::cerr << "12" << std::endl;
     return description.str();
 }
 

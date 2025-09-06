@@ -12,10 +12,11 @@
  */
 #pragma once
 #include "Context.h"
+#include "TypeDefs.h"
+
+
 #include <vector>
 #include <optional>
-
-
 #include <functional> // std::function
 
 enum StopType
@@ -62,17 +63,17 @@ public:
    * @return true if successful
    * @return false if unsuccessful (ie, name already bound to another symbol)
    */
-  std::optional<Symbol *> addSymbol(std::string id, const Type * t, bool g); 
+  optional_ref<Symbol> addSymbol(std::string id, const Type * t, bool g); 
 
-  std::optional<DefinitionSymbol *> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
+  optional_ref<DefinitionSymbol> addDefinition(VisibilityModifier m, std::string id, const Type * t, bool glob); 
 
-  std::optional<AliasSymbol *> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
+  optional_ref<AliasSymbol> addAlias(std::string id, const Type * t, Identifier * a);//Symbol * a);
 
-  std::optional<Symbol *> addAnonymousSymbol(std::string id, const Type * t);
+  optional_ref<Symbol> addAnonymousSymbol(std::string id, const Type * t);
 
-  std::optional<DefinitionSymbol *> addAnonymousDefinition(std::string id, const Type * t);
+  optional_ref<DefinitionSymbol> addAnonymousDefinition(std::string id, const Type * t);
 
-  bool removeSymbol(Symbol *symbol);
+  bool removeSymbol(Symbol& symbol);
 
   /**
    * @brief Lookup a symbol across all scopes returning the first definition found
@@ -80,7 +81,7 @@ public:
    * @param id The symbol name to lookup
    * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found.
    */
-  std::optional<Symbol *> lookup(std::string id);
+  optional_ref<Symbol> lookup(std::string id);
 
   // Has to be std::function so they can be capturing---which is unfortunately less efficient 
   void enterNonlinearScope(std::function<void()> func); //void (*func)())
@@ -94,7 +95,7 @@ public:
    * @param id The symbol name to lookup
    * @return std::optional<Symbol*>  Empty if symbol not found; present with value if found.
    */
-  std::optional<Symbol *> lookupInCurrentScope(std::string id); 
+  optional_ref<Symbol> lookupInCurrentScope(std::string id); 
 
   /****************************************
    * Miscellaneous (useful for testing)
@@ -107,7 +108,7 @@ public:
    */
   Scope&  getCurrentScope(); 
 
-  std::vector<Symbol *> getLinears(int flags);
+  std::vector<std::reference_wrapper<Symbol>> getLinears(int flags);
 
   
   void guard(); 

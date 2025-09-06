@@ -61,15 +61,15 @@ public:
 class DefinitionNode : public TypedNode
 {
 private:
-    DefinitionSymbol * symbol;
+    DefinitionSymbol & symbol;
 
 public:
     virtual ~DefinitionNode() = default;
-    DefinitionNode(DefinitionSymbol * s, antlr4::Token *tok) : TypedNode(tok), symbol(s) {}
+    DefinitionNode(DefinitionSymbol & s, antlr4::Token *tok) : TypedNode(tok), symbol(s) {}
 
-    DefinitionSymbol * getSymbol() { return symbol; }
+    DefinitionSymbol & getSymbol() { return symbol; }
 
-    VisibilityModifier getVisibility() { return symbol->getVisibility(); }
+    VisibilityModifier getVisibility() { return symbol.getVisibility(); }
 };
 
 // From C++ Documentation for visitors
@@ -284,12 +284,12 @@ class TLambdaConstNode : public DefinitionNode, public Visitable<TLambdaConstNod
     // private:
 
 public:
-    vector<Symbol *> paramSymbols;
+    vector<std::reference_wrapper<Symbol>> paramSymbols;
     const Type *retType;
     TBlockNode *block;
     const TypeFunc *type;
 
-    TLambdaConstNode(DefinitionSymbol * sym, vector<Symbol *> p, const Type *r, TBlockNode *b, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    TLambdaConstNode(DefinitionSymbol & sym, vector<std::reference_wrapper<Symbol>> p, const Type *r, TBlockNode *b, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         // paramList = p;
         paramSymbols = p;
@@ -299,9 +299,9 @@ public:
 
         vector<const Type *> paramTypes;
 
-        for (Symbol *p : paramSymbols)
+        for (auto p : paramSymbols)
         {
-            paramTypes.push_back(p->getType());
+            paramTypes.push_back(p.get().getType());
         }
 
         // FIXME: REMOVE AS ALREADY CALCULATED?
@@ -326,16 +326,23 @@ private:
     const TypeProgram *type;
 
 public:
-    Symbol *channelSymbol;
+    Symbol &channelSymbol;
     // TypeChannel * channelType;
     TBlockNode *block;
 
-    TProgramDefNode(DefinitionSymbol * sym,  Symbol *cn, TBlockNode *b, const TypeProgram *ty, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    TProgramDefNode(
+        DefinitionSymbol & sym,  
+        Symbol &cn, 
+        TBlockNode *b, 
+        const TypeProgram *ty, 
+        antlr4::Token *tok
+    ) 
+        : DefinitionNode(sym, tok)
+        , type(ty)
+        , channelSymbol(cn)
+        , block(b)
     {
-        channelSymbol = cn;
-        // channelType = ct;
-        block = b;
-        type = ty;
+
     }
 
     const TypeProgram& getType() override
@@ -359,7 +366,7 @@ private:
 public:
 
     TImplDefNode(
-        DefinitionSymbol * sym, 
+        DefinitionSymbol & sym, 
         const TypeTrait *ty,
         antlr4::Token *tok
     ) : DefinitionNode(sym, tok)
@@ -444,15 +451,23 @@ public:
 class TProgramSendNode : public TypedNode, public ProtocolOpNode, public Visitable<TProgramSendNode>
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
     TypedNode *expr;
     const Type *lType; // Tracks type send expects. Needed for sums
 
-    TProgramSendNode(Symbol *s, bool inCloseable, TypedNode *e, const Type *l, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
+    TProgramSendNode(
+        Symbol &s, 
+        bool inCloseable, 
+        TypedNode *e, 
+        const Type *l, 
+        antlr4::Token *tok
+    ) 
+        : TypedNode(tok)
+        , ProtocolOpNode(inCloseable)
+        , sym(s)
+        , expr(e)
+        , lType(l)
     {
-        sym = s;
-        expr = e;
-        lType = l;
     }
 
     const TypeUnit& getType() override { return *Types::UNIT; }
@@ -467,12 +482,20 @@ public:
 class TProgramRecvNode : public TypedNode, public ProtocolOpNode, public Visitable<TProgramRecvNode>
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
     RecvMetadata meta;
 
-    TProgramRecvNode(Symbol *s, RecvMetadata m, bool iC, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(iC), meta(m)
+    TProgramRecvNode(
+        Symbol &s,
+         RecvMetadata m, 
+         bool iC, 
+         antlr4::Token *tok
+    ) 
+        : TypedNode(tok)
+        , ProtocolOpNode(iC)
+        , sym(s)
+        , meta(m)
     {
-        sym = s;
     }
 
     const Type& getType() override {
@@ -492,11 +515,18 @@ public:
 class TProgramIsPresetNode : public TypedNode, public ProtocolOpNode, public Visitable<TProgramIsPresetNode>
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
 
-    TProgramIsPresetNode(Symbol *s, bool inCloseable, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
+    TProgramIsPresetNode(
+        Symbol &s, 
+        bool inCloseable, 
+        antlr4::Token *tok
+    ) 
+        : TypedNode(tok)
+        , ProtocolOpNode(inCloseable)
+        , sym(s)
     {
-        sym = s;
+        
     }
 
     const Type& getType() override { return *Types::DYN_BOOL; }
@@ -510,11 +540,16 @@ public:
 class TProgramContractNode : public TypedNode, public Visitable<TProgramContractNode>
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
 
-    TProgramContractNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
+    TProgramContractNode(
+        Symbol &s, 
+        antlr4::Token *tok
+    ) 
+        : TypedNode(tok)
+        , sym(s)
     {
-        sym = s;
+
     }
 
     const TypeUnit& getType() override { return *Types::UNIT; }
@@ -529,11 +564,12 @@ public:
 class TProgramWeakenNode : public TypedNode, public Visitable<TProgramWeakenNode> // FIXME: COMBINE THIS WITH PREV AND USE ENUM FOR OP?
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
 
-    TProgramWeakenNode(Symbol *s, antlr4::Token *tok) : TypedNode(tok)
+    TProgramWeakenNode(Symbol &s, antlr4::Token *tok) 
+        : TypedNode(tok)
+        , sym(s)
     {
-        sym = s;
     }
 
     const TypeUnit& getType() override { return *Types::UNIT; }
@@ -549,13 +585,18 @@ public:
 class TProgramCancelNode : public TypedNode, public Visitable<TProgramCancelNode> // FIXME: COMBINE THIS WITH PREV AND USE ENUM FOR OP?
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
     unsigned int closeNumber;
 
-    TProgramCancelNode(Symbol *s, unsigned int cn, antlr4::Token *tok) : TypedNode(tok)
+    TProgramCancelNode(
+        Symbol &s, 
+        unsigned int cn, 
+        antlr4::Token *tok
+    ) 
+        : TypedNode(tok)
+        , sym(s)
+        , closeNumber(cn)
     {
-        sym = s;
-        closeNumber = cn;
     }
 
     const TypeUnit& getType() override { return *Types::UNIT; }
@@ -591,13 +632,21 @@ public:
 class TProgramAcceptNode : public TypedNode, public ProtocolOpNode, public Visitable<TProgramAcceptNode>
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
     TBlockNode *blk;
 
-    TProgramAcceptNode(Symbol *s, bool inCloseable, TBlockNode *b, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
+    TProgramAcceptNode(
+        Symbol &s, 
+        bool inCloseable, 
+        TBlockNode *b, 
+        antlr4::Token *tok
+    ) 
+        : TypedNode(tok)
+        , ProtocolOpNode(inCloseable)
+        , sym(s)
+        , blk(b)
     {
-        sym = s;
-        blk = b;
+
     }
 
     const TypeUnit& getType() override { return *Types::UNIT; }
@@ -612,15 +661,23 @@ public:
 class TProgramAcceptWhileNode : public TypedNode, public ProtocolOpNode, public Visitable<TProgramAcceptWhileNode>
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
     TypedNode *cond;
     TBlockNode *blk;
 
-    TProgramAcceptWhileNode(Symbol *s, bool inCloseable, TypedNode *c, TBlockNode *b, antlr4::Token *tok) : TypedNode(tok), ProtocolOpNode(inCloseable)
+    TProgramAcceptWhileNode(
+        Symbol &s, 
+        bool inCloseable, 
+        TypedNode *c, 
+        TBlockNode *b, 
+        antlr4::Token *tok
+    ) 
+        : TypedNode(tok)
+        , ProtocolOpNode(inCloseable)
+        , sym(s)
+        , cond(c)
+        , blk(b)
     {
-        sym = s;
-        cond = c;
-        blk = b;
     }
 
     const TypeUnit& getType() override { return *Types::UNIT; }
@@ -636,19 +693,29 @@ public:
 class TProgramAcceptIfNode : public TypedNode, public ProtocolOpNode, public Visitable<TProgramAcceptIfNode>
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
     TypedNode *cond;
     TBlockNode *trueBlk;
-    std::optional<TBlockNode *> falseOpt;
     std::vector<TypedNode *> post;
+    std::optional<TBlockNode *> falseOpt;
 
-    TProgramAcceptIfNode(antlr4::Token *tok, bool inCloseable, Symbol *s, TypedNode *c, TBlockNode *t, std::vector<TypedNode *> p, std::optional<TBlockNode *> f = {}) : TypedNode(tok), ProtocolOpNode(inCloseable)
+    TProgramAcceptIfNode(
+        antlr4::Token *tok, 
+        bool inCloseable, 
+        Symbol &s, 
+        TypedNode *c, 
+        TBlockNode *t, 
+        std::vector<TypedNode *> p, 
+        std::optional<TBlockNode *> f = {}
+    ) 
+        : TypedNode(tok)
+        , ProtocolOpNode(inCloseable)
+        , sym(s)
+        , cond(c)
+        , trueBlk(t)
+        , post(p)
+        , falseOpt(f)
     {
-        sym = s;
-        cond = c;
-        trueBlk = t;
-        post = p;
-        falseOpt = f;
     }
 
     const TypeUnit& getType() override { return *Types::UNIT; }
@@ -665,9 +732,13 @@ class TDefineEnumNode : public DefinitionNode, public Visitable<TDefineEnumNode>
 public:
     const TypeSum *sum;
 
-    TDefineEnumNode(DefinitionSymbol * sym, const TypeSum *s, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    TDefineEnumNode(
+        DefinitionSymbol & sym, 
+        const TypeSum *s, 
+        antlr4::Token *tok
+    ) : DefinitionNode(sym, tok)
+      , sum(s)
     {
-        sum = s;
     }
 
 
@@ -690,7 +761,7 @@ private:
     // TODO track templated names generated?
 
 public:
-    TDefineTemplateNode(DefinitionSymbol * sym, const TypeTemplate * t, DefinitionNode * n, antlr4::Token *tok) : DefinitionNode(sym, tok), type(t), templatedNodes(n) //t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
+    TDefineTemplateNode(DefinitionSymbol & sym, const TypeTemplate * t, DefinitionNode * n, antlr4::Token *tok) : DefinitionNode(sym, tok), type(t), templatedNodes(n) //t->toString(DisplayMode::C_STYLE), tok), type(t), templatedNodes(n)
     {}
 
     std::string toString() const override { return "DEF TEMPLATE NODE"; }
@@ -707,7 +778,7 @@ class TDefineStructNode : public DefinitionNode, public Visitable<TDefineStructN
 public:
     const TypeStruct *product;
 
-    TDefineStructNode(DefinitionSymbol * sym, const TypeStruct *p, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    TDefineStructNode(DefinitionSymbol & sym, const TypeStruct *p, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         product = p;
     }
@@ -871,11 +942,11 @@ public:
 class TExternNode : public TypedNode, public Visitable<TExternNode>
 {
 private:
-    Symbol *sym;
+    Symbol &sym;
     const TypeFunc *ty; // FIXME: isn't REALLY NEEDED EXCEPT FOR MAKING CASTS EASIER
 
 public:
-    TExternNode(Symbol * s, TypeFunc * func, antlr4::Token *tok) : TypedNode(tok), sym(s), ty(func)
+    TExternNode(Symbol & s, TypeFunc * func, antlr4::Token *tok) : TypedNode(tok), sym(s), ty(func)
     {}
 
     const TypeFunc& getType() override
@@ -887,7 +958,7 @@ public:
         return "EXTERN NODE";
     }
 
-    Symbol *getSymbol() { return sym; } // WHY AREN'T THINGS LIKE THIS CONST?
+    Symbol &getSymbol() { return sym; } // WHY AREN'T THINGS LIKE THIS CONST?
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
 };
 
@@ -927,13 +998,13 @@ public:
 class TPathNode: public TypedNode, public Visitable<TPathNode>
 {
 public:
-    // std::variant<Symbol *, const NameableType *> var; //const TypeProgram *, const TypeFunc *, const TypeStruct *, const TypeSum *> var;
+    // std::variant<Symbol &, const NameableType *> var; //const TypeProgram *, const TypeFunc *, const TypeStruct *, const TypeSum *> var;
     const Type * ty;
     bool is_rvalue;
 
 public:
     TPathNode(antlr4::Token *tok,
-            //   std::variant<Symbol *, const NameableType *> v,
+            //   std::variant<Symbol &, const NameableType *> v,
                 const Type * t,
                 bool rv)
         : TypedNode(tok)
@@ -944,7 +1015,7 @@ public:
 
     const Type& getType() override {
         return *ty;
-    //    return std::visit(overloaded{[](Symbol * sym)
+    //    return std::visit(overloaded{[](Symbol & sym)
     //             { return sym->getType(); },
     //             [](const NameableType * nt)
     //             { return (const Type *) nt; }},
@@ -961,21 +1032,21 @@ public:
 class TIdentifier : public TypedNode, public Visitable<TIdentifier>
 {
 private:
-    Symbol * sym; // Variant with this + Nameable type?
+    Symbol & sym; // Variant with this + Nameable type?
     bool rvalue;
 
 public:
 
     TIdentifier(antlr4::Token *tok,
-                Symbol * s,
+                Symbol & s,
                 bool rv)
         : TypedNode(tok)
         , sym(s)
         , rvalue(rv)
     {}
 
-    Symbol * getSymbol() { return sym; }
-    const Type& getType() override { return *sym->getType(); }
+    Symbol & getSymbol() { return sym; }
+    const Type& getType() override { return *sym.getType(); }
 
     bool isRValue() { return rvalue; }
 
@@ -1494,10 +1565,10 @@ public:
 class AssignmentNode
 {
 public:
-    vector<Symbol *> syms;
+    vector<std::reference_wrapper<Symbol>> syms;
     std::optional<TypedNode *> val; // FIXME: REFACTOR SUCH THAT ASSIGNMENTS ARE DIFF FROM VAR DECL?
 
-    AssignmentNode(vector<Symbol *> s, std::optional<TypedNode *> v)
+    AssignmentNode(vector<std::reference_wrapper<Symbol>> s, std::optional<TypedNode *> v)
     {
         syms = s;
         val = v;
@@ -1529,11 +1600,11 @@ class TMatchStatementNode : public TypedNode, public Visitable<TMatchStatementNo
 public:
     const TypeSum& matchType; // matchType should be the same thing as checkExpr's type! //TODO: Make static getter?
     TypedNode *checkExpr;
-    vector<pair<Symbol *, TypedNode *>> cases;
+    vector<pair<std::reference_wrapper<Symbol>, TypedNode *>> cases;
 
     vector<TypedNode *> post;
 
-    TMatchStatementNode(const TypeSum& m, TypedNode *e, vector<pair<Symbol *, TypedNode *>> c, std::vector<TypedNode *> p, antlr4::Token *tok) 
+    TMatchStatementNode(const TypeSum& m, TypedNode *e, vector<pair<std::reference_wrapper<Symbol>, TypedNode *>> c, std::vector<TypedNode *> p, antlr4::Token *tok) 
         : TypedNode(tok)
         , matchType(m)
     {
@@ -1558,20 +1629,27 @@ class TChannelCaseStatementNode : public TypedNode, public ProtocolOpNode, publi
 {
 public:
     // TypedNode *checkExpr;
-    Symbol *sym;
+    Symbol &sym;
     vector<TypedNode *> cases;
     vector<TypedNode *> post;
     bool hasElseStatement;
 
 
-    TChannelCaseStatementNode(Symbol *c, bool inCloseable, bool hasElse, vector<TypedNode *> v, vector<TypedNode *> p, antlr4::Token *tok)
+    TChannelCaseStatementNode(
+        Symbol &c, 
+        bool inCloseable, 
+        bool hasElse, 
+        vector<TypedNode *> v, 
+        vector<TypedNode *> p, 
+        antlr4::Token *tok
+    )
         : TypedNode(tok),
           ProtocolOpNode(inCloseable),
+          sym(c),
+          cases(v),
+          post(p),
           hasElseStatement(hasElse)
     {
-        sym = c;
-        cases = v;
-        post = p;
     }
 
     std::any accept_any(VisitorBase &a) override { return this->Nuaccept_any(a); }
@@ -1590,13 +1668,19 @@ public:
 class TProgramProjectNode : public TypedNode, public Visitable<TProgramProjectNode> // FIXME: DO BETTER, VERY SIMILAR TO SEND
 {
 public:
-    Symbol *sym;
+    Symbol &sym;
     unsigned int projectIndex;
 
-    TProgramProjectNode(Symbol *s, unsigned int p, antlr4::Token *tok) : TypedNode(tok)
+    TProgramProjectNode(
+        Symbol &s, 
+        unsigned int p, 
+        antlr4::Token *tok
+    ) 
+        : TypedNode(tok)
+        , sym(s)
+        , projectIndex(p)
     {
-        sym = s;
-        projectIndex = p;
+
     }
 
     const TypeUnit& getType() override { return *Types::UNIT; }
@@ -1687,7 +1771,7 @@ class TDefineTraitNode : public DefinitionNode, public Visitable<TDefineTraitNod
 public:
     const TypeTrait *traitSpec;
 
-    TDefineTraitNode(DefinitionSymbol * sym, const TypeTrait *t, antlr4::Token *tok) : DefinitionNode(sym, tok)
+    TDefineTraitNode(DefinitionSymbol & sym, const TypeTrait *t, antlr4::Token *tok) : DefinitionNode(sym, tok)
     {
         traitSpec = t;
     }

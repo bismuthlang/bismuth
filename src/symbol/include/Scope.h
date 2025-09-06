@@ -11,7 +11,10 @@
  */
 
 #include "Symbol.h"
+#include "TypeDefs.h"
+
 #include <map>
+#include <memory> // Smart pointers
 #include <optional>
 // #include <assert.h>
 
@@ -27,7 +30,10 @@ enum SymbolLookupFlags
 class Scope
 {
 public:
-    Scope(Identifier * n, bool s)
+    Scope(
+        Identifier * n, 
+        bool s
+    )
         : id(n)
         , stop(s)
     {
@@ -39,17 +45,28 @@ public:
      *
      * @param p The parent to the current scope
      */
-    Scope(std::optional<std::reference_wrapper<Scope>> p, Identifier * n, bool s)
+    Scope(
+        std::optional<std::reference_wrapper<Scope>> p, 
+        Identifier * n, 
+        bool s
+    )
     {
         parent = p;
         id = n; 
         stop = s; 
     }
 
-    Scope(std::optional<std::reference_wrapper<Scope>> p, std::map<std::string, Symbol *> syms, Identifier * n, bool s)
+    Scope(
+        std::optional<std::reference_wrapper<Scope>> p, 
+        std::map<std::string, std::shared_ptr<Symbol>> syms, 
+        std::set<std::shared_ptr<Symbol>> del,
+        Identifier * n, 
+        bool s
+    )
     {
         parent = p;
         symbols = syms;
+        deletedSymbols = del;
         id = n; 
         stop = s; 
     }
@@ -61,9 +78,9 @@ public:
      * @return true If successful
      * @return false If this could not be done (ie, due to a redeclaration)
      */
-    std::optional<Symbol *> addSymbol(Symbol *symbol);
+    optional_ref<Symbol> addSymbol(std::shared_ptr<Symbol> symbol);
 
-    bool removeSymbol(const Symbol *symbol);
+    bool removeSymbol(const Symbol& symbol);
 
     /**
      * @brief Add a symbol to the current scope
@@ -81,15 +98,15 @@ public:
      * @param id Name of the symbol
      * @return std::optional<Symbol*> Empty if could not be found; present with value if symbol found.
      */
-    std::optional<Symbol *> lookupInCurrentScope(std::string id);
+    optional_ref<Symbol> lookupInCurrentScope(std::string id);
 
-    std::optional<Symbol *> lookupInAccessableScopes(std::string id);
+    optional_ref<Symbol> lookupInAccessableScopes(std::string id);
 
-    std::optional<std::pair<Symbol *, std::reference_wrapper<Scope>>>  lookupWithScope(std::string id);
+    std::optional<std::pair<std::reference_wrapper<Symbol>, std::reference_wrapper<Scope>>>  lookupWithScope(std::string id);
 
     Scope * createNamespace(Identifier * id);
 
-    std::optional<DefinitionSymbol *> addDefinition(VisibilityModifier m, Identifier * identifier, const Type * t, bool glob);
+    optional_ref<DefinitionSymbol> addDefinition(VisibilityModifier m, Identifier * identifier, const Type * t, bool glob);
 
     /**
      * @brief Get the Parent object
@@ -122,10 +139,10 @@ public:
     std::string toString() const;
 
     
-    std::vector<Symbol *> getSymbols(int flags)
+    std::vector<std::reference_wrapper<Symbol>> getSymbols(int flags)
     {
         // Create an answer vector
-        std::vector<Symbol *> ans;
+        std::vector<std::reference_wrapper<Symbol>> ans;
 
         // if(flags & SymbolLookupFlags::NON_LINEAR)
         // {
@@ -146,7 +163,7 @@ public:
                 if (const TypeInfer *inf = dynamic_cast<const TypeInfer *>(item.second->getType()))
                 {
                     if (!inf->hasBeenInferred())
-                        ans.push_back(item.second);
+                        ans.push_back(*item.second);
                 }
             }
 
@@ -157,11 +174,11 @@ public:
                     if (
                         (include_complete || !inf->getProtocol()->isComplete()) &&
                         (include_guarded || !inf->getProtocol()->isGuarded()))
-                        ans.push_back(item.second);
+                        ans.push_back(*item.second);
                 }
                 else
                 {
-                    ans.push_back(item.second);
+                    ans.push_back(*item.second);
                 }
             }
         }
@@ -169,22 +186,28 @@ public:
         return ans;
     }
 
-    std::map<std::string, Symbol *> copySymbols()
+    std::map<std::string, std::shared_ptr<Symbol>> copySymbols()
     {
-        std::map<std::string, Symbol *> ans;
+        return symbols;
+        // map_to_shared<std::string, Symbol> ans;
 
-        for (auto itr : symbols)
-        {
-            if(itr.second->isDefinition())
-                ans.insert({
-                    itr.first, 
-                    new DefinitionSymbol(*dynamic_cast<DefinitionSymbol *>(itr.second)) // TODO: not exactly the safest, but should be fine as its the only current way to get definition symbols 
-                });
-            else
-                ans.insert({itr.first, new Symbol(*itr.second)});
-        }
+        // for (auto itr : symbols)
+        // {
+        //     if(itr.second->isDefinition())
+        //         ans.insert({
+        //             itr.first, 
+        //             new DefinitionSymbol(*dynamic_cast<DefinitionSymbol *>(itr.second)) // TODO: not exactly the safest, but should be fine as its the only current way to get definition symbols 
+        //         });
+        //     else
+        //         ans.insert({itr.first, new Symbol(*itr.second)});
+        // }
 
-        return ans;
+        // return ans;
+    }
+
+    shared_set<Symbol> copyDeletedSymbols() 
+    {
+        return deletedSymbols;
     }
 
     Identifier * getIdentifier() { return id; }
@@ -206,7 +229,7 @@ public:
       {
         Scope& scope = scopeOpt.value().get(); 
 
-        Scope * scopeCpy = new Scope(std::nullopt, scope.copySymbols(), scope.getIdentifier(), scope.isStop());
+        Scope * scopeCpy = new Scope(std::nullopt, scope.copySymbols(), scope.copyDeletedSymbols(), scope.getIdentifier(), scope.isStop());
 
         scopeCpy->setId(10 * scope.getId());
 
@@ -239,7 +262,8 @@ public:
 private:
     int scopeId = -1;
     std::optional<std::reference_wrapper<Scope>> parent = std::nullopt;
-    std::map<std::string, Symbol *> symbols;
+    std::map<std::string, std::shared_ptr<Symbol>> symbols;
+    std::set<std::shared_ptr<Symbol>> deletedSymbols;
 
     Identifier * id; 
 

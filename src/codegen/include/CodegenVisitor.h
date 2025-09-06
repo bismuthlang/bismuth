@@ -12,6 +12,7 @@
 
 #include "BismuthErrorHandler.h"
 #include "CodegenUtils.h"
+#include "Debug.h"
 #include "TypedAST.h"
 #include "DeepCopyVisitor.h"
 
@@ -52,17 +53,17 @@ private:
     // std::string currentNamespacePath;
     std::map<std::string, llvm::AllocaInst *> allocations;
 
-    std::string getCodegenID(Symbol * sym);
+    std::string getCodegenID(Symbol& sym);
 
-    std::string getCodegenAllocationID(Symbol * sym);
+    std::string getCodegenAllocationID(Symbol& sym);
 
-    void setAllocation(Symbol * sym, llvm::AllocaInst * a);
+    void setAllocation(Symbol& sym, llvm::AllocaInst * a);
 
-    std::optional<llvm::AllocaInst *> getAllocation(Symbol * sym);
+    std::optional<llvm::AllocaInst *> getAllocation(Symbol& sym);
 
-    llvm::AllocaInst * CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol * sym);
+    llvm::AllocaInst * CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol& sym);
 
-    llvm::Type * getLLVMType(Symbol * sym);
+    llvm::Type * getLLVMType(Symbol& sym);
 
 public:
     /**

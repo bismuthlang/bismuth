@@ -2,6 +2,7 @@
 
 std::optional<Value *> CodegenVisitor::visit_typed(TCompilationUnitNode & n)
 {
+    DEBUG_CERR("");
     /***********************************
      *
      *
@@ -21,10 +22,18 @@ std::optional<Value *> CodegenVisitor::visit_typed(TCompilationUnitNode & n)
     {
         if (TProgramDefNode * octx = dynamic_cast<TProgramDefNode *>(e))
         {
+            std::cerr << "25" << std::endl;
             const TypeProgram& type = octx->getType();
-
+            auto llvmTy = typeGenerator.getLLVMFunctionType(type); 
+std::cerr << "28" << std::endl;
+std::string type_str;
+llvm::raw_string_ostream rso(type_str);
+llvmTy->print(rso);
+std::cerr<<rso.str() << std::endl;
+std::cerr << type.toString(C_STYLE) << std::endl;
+std::cerr << "34 " << octx->getSymbol().toString() << std::endl;
             Function::Create(
-                typeGenerator.getLLVMFunctionType(type),
+                llvmTy,
                 getLinkageType(e->getVisibility()),
                 getCodegenID(octx->getSymbol()),
                 module
@@ -80,6 +89,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TCompilationUnitNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TMatchStatementNode & n)
 {
+    DEBUG_CERR(n.toString());
     const TypeSum& sumType = n.matchType;
 
     auto origParent = builder->GetInsertBlock()->getParent();
@@ -112,17 +122,17 @@ std::optional<Value *> CodegenVisitor::visit_typed(TMatchStatementNode & n)
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n.cases.size());
 
-    for (std::pair<Symbol *, TypedNode *> caseNode : n.cases)
+    for (auto caseNode : n.cases)
     {
-        Symbol *localSym = caseNode.first;
+        Symbol& localSym = caseNode.first;
 
         llvm::Type *toFind = getLLVMType(localSym);
 
-        unsigned int index = sumType.getIndex(*localSym->getType());
+        unsigned int index = sumType.getIndex(*localSym.getType());
 
         if (index == 0)
         {
-            errorHandler.addError(n.getStart(), "Unable to find key for type " + localSym->getType()->toString(getToStringMode()) + " in sum");
+            errorHandler.addError(n.getStart(), "Unable to find key for type " + localSym.getType()->toString(getToStringMode()) + " in sum");
             return std::nullopt;
         }
 
@@ -186,11 +196,12 @@ std::optional<Value *> CodegenVisitor::visit_typed(TMatchStatementNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TChannelCaseStatementNode & n)
 {
+    DEBUG_CERR(n.toString());
     auto origParent = builder->GetInsertBlock()->getParent();
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "match-cont");
 
     // Attempt to cast the check; if this fails, then codegen for the check failed
-    Symbol *sym = n.sym;
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
     if (!optVal)
@@ -209,7 +220,6 @@ std::optional<Value *> CodegenVisitor::visit_typed(TChannelCaseStatementNode & n
 
     llvm::SwitchInst *switchInst = builder->CreateSwitch(tag, mergeBlk, n.cases.size());
 
-    // for (std::pair<Symbol *, TypedNode *> caseNode : n.cases)
     for (unsigned int i = 0; i < n.cases.size(); i++)
     {
         // TODO: find a way to error handle cases where correct block DNE or something
@@ -261,7 +271,8 @@ std::optional<Value *> CodegenVisitor::visit_typed(TChannelCaseStatementNode & n
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramProjectNode & n)
 {
-    Symbol *sym = n.sym;
+    DEBUG_CERR(n.toString());
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
     if (!optVal)
@@ -284,6 +295,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramProjectNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TInvocationNode & n)
 {
+    DEBUG_CERR(n.toString());
     vector<TypedNode *> argNodes = n.args;
 
     // Create the argument vector
@@ -343,7 +355,8 @@ std::optional<Value *> CodegenVisitor::visit_typed(TInvocationNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramRecvNode & n)
 {
-    Symbol *sym = n.sym;
+    DEBUG_CERR(n.toString());
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
     if (!optVal)
@@ -385,7 +398,8 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramRecvNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramIsPresetNode & n)
 {
-    Symbol *sym = n.sym;
+    DEBUG_CERR(n.toString());
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
     if (!optVal)
@@ -405,6 +419,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramIsPresetNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramExecNode & n)
 {
+    DEBUG_CERR(n.toString());
     std::optional<Value *> fnOpt = n.prog->accept<std::optional<Value *>>(*this);
 
     if (!fnOpt)
@@ -429,6 +444,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramExecNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramSendNode & n)
 {
+    DEBUG_CERR(n.toString());
     auto copyNode = TExprCopyNode(n.expr, n.token);
     std::optional<Value *> valOpt = this->visit_typed(copyNode);
     if (!valOpt)
@@ -437,7 +453,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramSendNode & n)
         return std::nullopt;
     }
 
-    Symbol *sym = n.sym;
+    Symbol& sym = n.sym;
 
     Value *stoVal = valOpt.value();
 
@@ -467,7 +483,8 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramSendNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramContractNode & n)
 {
-    Symbol *sym = n.sym;
+    DEBUG_CERR(n.toString());
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
     if (!optVal)
@@ -485,7 +502,8 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramContractNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramWeakenNode & n)
 {
-    Symbol *sym = n.sym;
+    DEBUG_CERR(n.toString());
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
     if (!optVal)
@@ -508,7 +526,8 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramWeakenNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramCancelNode & n)
 {
-    Symbol *sym = n.sym;
+    DEBUG_CERR(n.toString());
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
     if (!optVal)
     {
@@ -522,9 +541,10 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramCancelNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramAcceptNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Very similar to regular loop
 
-    Symbol *sym = n.sym;
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
     if (!optVal)
@@ -572,8 +592,9 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramAcceptNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramAcceptWhileNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Very similar to regular loop & Accept while
-    Symbol *sym = n.sym;
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
     if (!optVal)
@@ -641,6 +662,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramAcceptWhileNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramAcceptIfNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Very similar to regular loop & Accept while
     std::optional<Value *> condOpt = n.cond->accept<std::optional<Value *>>(*this);
 
@@ -650,7 +672,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramAcceptIfNode & n)
         return std::nullopt;
     }
 
-    Symbol *sym = n.sym;
+    Symbol& sym = n.sym;
     std::optional<llvm::AllocaInst *> optVal = getAllocation(sym);
 
     if (!optVal)
@@ -721,6 +743,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramAcceptIfNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TImplDefNode & n)
 {
+    DEBUG_CERR(n.toString());
     //FIXME: IMPL TRAITS
     return std::nullopt;
 }
@@ -729,6 +752,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TImplDefNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TDefineEnumNode & n)
 {
+    DEBUG_CERR(n.toString());
     typeGenerator.genLLVMType(*n.sum);
     return std::nullopt;
 }
@@ -736,18 +760,21 @@ std::optional<Value *> CodegenVisitor::visit_typed(TDefineEnumNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TDefineStructNode & n)
 {
+    DEBUG_CERR(n.toString());
     typeGenerator.genLLVMType(*n.product);
     return std::nullopt;
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TDefineTraitNode & n)
 {
+    DEBUG_CERR(n.toString());
     typeGenerator.genLLVMType(*n.traitSpec); // FIXME: WRONG, NEED TO TRACK THE VTABLE
     return std::nullopt;
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TInitProductNode & n)
 {
+    DEBUG_CERR(n.toString());
     std::vector<std::pair<std::reference_wrapper<const Type>, Value *>> args;
 
     for (TypedNode *e : n.exprs)
@@ -792,6 +819,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TInitProductNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TArrayRValue & n)
 {
+    DEBUG_CERR(n.toString());
     // FIXME: ADD OPTIMIZATION TO USE GLOBAL CONSTANT WHEN ABLE!
     std::variant<const TypeArray *, const TypeDynArray *> typeVariant = n.getTypeVariant();
 
@@ -877,6 +905,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TArrayRValue & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TInitBoxNode & n)
 {
+    DEBUG_CERR(n.toString());
     std::optional<Value *> valOpt = n.expr->accept<std::optional<Value *>>(*this);
     if (!valOpt)
     {
@@ -908,6 +937,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TInitBoxNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TArrayAccessNode & n) // TODO: COnsider refactoring/ improving generated IR
 {
+    DEBUG_CERR(n.toString());
     std::optional<Value *> indexOpt = n.indexExpr->accept<std::optional<Value*>>(*this);
 
     if (!indexOpt)
@@ -1009,6 +1039,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TArrayAccessNode & n) // TODO
 
 std::optional<Value *> CodegenVisitor::visit_typed(TDynArrayAccessNode & n) // TODO: COnsider refactoring/ improving generated IR
 {
+    DEBUG_CERR(n.toString());
     std::optional<Value *> indexOpt = n.indexExpr->accept<std::optional<Value *>>(*this);
 
     if (!indexOpt)
@@ -1217,26 +1248,31 @@ std::optional<Value *> CodegenVisitor::visit_typed(TDynArrayAccessNode & n) // T
 
 std::optional<Value *> CodegenVisitor::visit_typed(TInt32ConstExprNode & n)
 {
+    DEBUG_CERR(n.toString());
     return getI32(n.value);
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TInt64ConstExprNode & n)
 {
+    DEBUG_CERR(n.toString());
     return getI64(n.value);
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TIntU32ConstExprNode & n)
 {
+    DEBUG_CERR(n.toString());
     return getU32(n.value);
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TIntU64ConstExprNode & n)
 {
+    DEBUG_CERR(n.toString());
     return getU64(n.value);
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TNumConstExprNode & n)
 {
+    DEBUG_CERR(n.toString());
     std::size_t pos{};
     int base = 10; //dat.first;
     std::string text = n.value_str; // dat.second;
@@ -1276,6 +1312,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TNumConstExprNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TStringConstNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Create a constant to represent our string (now with the escape characters corrected)
     llvm::Constant *dat = llvm::ConstantDataArray::getString(module->getContext(), n.value);
 
@@ -1305,6 +1342,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TStringConstNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TUnaryExprNode & n)
 {
+    DEBUG_CERR(n.toString());
     switch (n.op)
     {
     case UNARY_MINUS:
@@ -1338,6 +1376,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TUnaryExprNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TBinaryArithNode & n)
 {
+    DEBUG_CERR(n.toString());
     std::optional<Value *> lhs = n.lhs->accept<std::optional<Value *>>(*this);
     std::optional<Value *> rhs = n.rhs->accept<std::optional<Value *>>(*this);
 
@@ -1377,6 +1416,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TBinaryArithNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TEqExprNode & n)
 {
+    DEBUG_CERR(n.toString());
     std::optional<Value *> lhs = n.lhs->accept<std::optional<Value *>>(*this);
     std::optional<Value *> rhs = n.rhs->accept<std::optional<Value *>>(*this);
 
@@ -1414,6 +1454,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TEqExprNode & n)
  */
 std::optional<Value *> CodegenVisitor::visit_typed(TLogAndExprNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Create the basic block for our conditions
     BasicBlock *current = builder->GetInsertBlock();
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "mergeBlkAnd");
@@ -1486,6 +1527,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TLogAndExprNode & n)
  */
 std::optional<Value *> CodegenVisitor::visit_typed(TLogOrExprNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Create the basic block for our conditions
     BasicBlock *current = builder->GetInsertBlock();
     BasicBlock *mergeBlk = BasicBlock::Create(module->getContext(), "mergeBlkOr");
@@ -1551,6 +1593,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TLogOrExprNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TFieldAccessNode & n)
 {
+    DEBUG_CERR(n.toString());
     if(n.accesses.size() == 0)
     {
         errorHandler.addCompilerError(n.getStart(), "TFieldAccessNode: accesses.size() == 0!");
@@ -1635,9 +1678,10 @@ std::optional<Value *> CodegenVisitor::visit_typed(TFieldAccessNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TIdentifier & n)
 {
-    Symbol * sym = n.getSymbol();
+    DEBUG_CERR(n.toString());
+    Symbol& sym = n.getSymbol();
 
-    llvm::Type *type = typeGenerator.genLLVMType(*sym->getType());
+    llvm::Type *type = typeGenerator.genLLVMType(*sym.getType());
     if (!type)
     {
         errorHandler.addError(n.getStart(), "Unable to find type for variable: " + getCodegenID(sym));
@@ -1649,15 +1693,15 @@ std::optional<Value *> CodegenVisitor::visit_typed(TIdentifier & n)
     if(!optVal)
     {
         // TODO: better erro checking (as seen later)
-        if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym->getType()))
+        if (const TypeProgram *inv = dynamic_cast<const TypeProgram *>(sym.getType()))
         {
             return module->getFunction(getCodegenID(sym));
         }
-        else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym->getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
+        else if (const TypeFunc *inv = dynamic_cast<const TypeFunc *>(sym.getType())) // This is annoying that we have to have duplicate code despite both APIs being the same
         {
             return module->getFunction(getCodegenID(sym));
         }
-        else if(sym->isGlobal())
+        else if(sym.isGlobal())
         {
             // TODO: not sure if this could cause problems in the future by not differentiating lvalue vs rvalue
             // Lookup the global var for the symbol
@@ -1666,7 +1710,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TIdentifier & n)
             // Check that we found the variable. If not, throw an error.
             if (!glob)
             {
-                errorHandler.addError(n.getStart(),"Unable to find global variable: " + getCodegenID(sym) + " " + sym->toString());
+                errorHandler.addError(n.getStart(),"Unable to find global variable: " + getCodegenID(sym) + " " + sym.toString());
                 return std::nullopt;
             }
 
@@ -1691,6 +1735,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TIdentifier & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TPathNode & n)
 {
+    DEBUG_CERR(n.toString());
     if(const NameableType * nt = dynamic_cast<const NameableType *>(&n.getType()))
     {
 
@@ -1738,6 +1783,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TPathNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TDerefBoxNode & n)
 {
+    DEBUG_CERR(n.toString());
     std::optional<Value *> baseOpt = n.getExpr().accept<std::optional<Value *>>(*this);
 
     if (!baseOpt)
@@ -1752,6 +1798,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TDerefBoxNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TBinaryRelNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Generate code for LHS and RHS
     std::optional<Value *> lhs = n.lhs->accept<std::optional<Value *>>(*this);
     std::optional<Value *> rhs = n.rhs->accept<std::optional<Value *>>(*this);
@@ -1793,9 +1840,10 @@ std::optional<Value *> CodegenVisitor::visit_typed(TBinaryRelNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TExternNode & n)
 {
-    Symbol *symbol = n.getSymbol(); // WHY ARE SOME PRIVATE AND OTHERS PUBLIC?
+    DEBUG_CERR(n.toString());
+    Symbol& symbol = n.getSymbol(); // WHY ARE SOME PRIVATE AND OTHERS PUBLIC?
 
-    if (!symbol->getType())
+    if (!symbol.getType())
     {
         errorHandler.addCompilerError(n.getStart(), "Type for extern statement not correctly bound.");
         return std::nullopt;
@@ -1815,7 +1863,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TExternNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TAssignNode & n)
 {
-
+    DEBUG_CERR(n.toString());
     std::optional<Value *> val = n.var->accept<std::optional<Value *>>(*this); // varSym->val;
     // Sanity check to ensure that we now have a value for the variable
     if (!val)
@@ -1925,6 +1973,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TAssignNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TVarDeclNode & n)
 {
+    DEBUG_CERR(n.toString());
     /*
      * Visit each of the assignments in the context (variables paired with an expression)
      */
@@ -1939,14 +1988,14 @@ std::optional<Value *> CodegenVisitor::visit_typed(TVarDeclNode & n)
         }
 
         // For each of the variables being assigned to that value
-        for (Symbol *varSymbol : e->syms)
+        for (Symbol& varSymbol : e->syms)
         {
             //  Get the type of the symbol
             llvm::Type *ty = getLLVMType(varSymbol);
 
 
             // Branch depending on if the var is global or not
-            if (varSymbol->isGlobal())
+            if (varSymbol.isGlobal())
             {
                 // If it is global, then we need to insert a new global variable of this type.
                 // A lot of these options are done to make it match what a C program would
@@ -1988,7 +2037,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TVarDeclNode & n)
                 if (e->val)
                 {
                     Value *stoVal = exVal.value();
-                    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol->getType()))
+                    if (std::optional<const TypeSum *> sumOpt = type_cast<TypeSum>(varSymbol.getType()))
                     {
                         uint32_t index = sumOpt.value()->getIndex(e->val.value()->getType());
                         auto * sum_type = typeGenerator.genLLVMType(*sumOpt.value());
@@ -2021,7 +2070,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TVarDeclNode & n)
                         builder->CreateStore(stoVal, v);
                     }
                 }
-                else if(const TypeDynArray * dynArray = dynamic_cast<const TypeDynArray*>(varSymbol->getType()))
+                else if(const TypeDynArray * dynArray = dynamic_cast<const TypeDynArray*>(varSymbol.getType()))
                 {
                     InitDynArray(dynArray, v, 1); // FIXME: change to 0 and add push_back
                 }
@@ -2033,6 +2082,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TVarDeclNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TWhileLoopNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Very similar to conditionals
     std::optional<Value *> check = n.cond->accept<std::optional<Value *>>(*this);
 
@@ -2081,6 +2131,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TWhileLoopNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TConditionalStatementNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Get the condition that the if statement is for
     std::optional<Value *> cond = n.cond->accept<std::optional<Value *>>(*this);
 
@@ -2158,6 +2209,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TConditionalStatementNode & n
 
 std::optional<Value *> CodegenVisitor::visit_typed(TSelectStatementNode & n)
 {
+    DEBUG_CERR(n.toString());
     /*
      * Set up the merge block that all cases go to after the select statement
      */
@@ -2256,6 +2308,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TSelectStatementNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TReturnNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Check if we are returning an expression or not
     if (n.expr)
     {
@@ -2286,17 +2339,20 @@ std::optional<Value *> CodegenVisitor::visit_typed(TReturnNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TExitNode & n)
 {
+    DEBUG_CERR(n.toString());
     // If there is no value, return void. We ensure no following code and type-correctness in the semantic pass.
     return builder->CreateRet(getUnitValue());
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TBooleanConstNode & n)
 {
+    DEBUG_CERR(n.toString());
     return n.value ? builder->getTrue() : builder->getFalse();
 }
 
 std::optional<Value *> CodegenVisitor::visit_typed(TBlockNode & n)
 {
+    DEBUG_CERR(n.toString());
     for (auto e : n.exprs)
     {
         // FIXME FIXME FIXME: Because we do things like this, if codegen does fail in one of the exprs, 
@@ -2311,6 +2367,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TBlockNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TLambdaConstNode & n)
 {
+    DEBUG_CERR(n.toString());
     // Get the current insertion point
     BasicBlock *ins = builder->GetInsertBlock();
 
@@ -2329,7 +2386,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TLambdaConstNode & n)
             module
         );
 
-    std::vector<Symbol *> paramList = n.paramSymbols;
+    auto paramList = n.paramSymbols;
 
     // Create basic block
     BasicBlock *bBlk = BasicBlock::Create(module->getContext(), "entry", fn);
@@ -2345,7 +2402,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TLambdaConstNode & n)
         llvm::Type *type = fnType->params()[argNumber];
 
         // Get the argument name (This even works for arrays!)
-        Symbol *param = paramList.at(argNumber);
+        Symbol& param = paramList.at(argNumber);
 
         // Create an allocation for the argument
         llvm::AllocaInst *v = CreateAndLinkEntryBlockAlloc(type, param);
@@ -2385,6 +2442,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TLambdaConstNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TProgramDefNode & n)
 {
+    DEBUG_CERR(n.toString());
     BasicBlock *ins = builder->GetInsertBlock();
 
     const TypeProgram& prog = n.getType();
@@ -2433,6 +2491,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TProgramDefNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TDefineTemplateNode & n)
 {
+    DEBUG_CERR(n.toString());
     if(!n.getType().getTemplateInfo())
     {
         errorHandler.addCompilerError(n.getStart(), "Missing template info in TDefineTemplateNode");
@@ -2454,7 +2513,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TDefineTemplateNode & n)
         {
             if(t.second->getIdentifier())
             {
-                defNode->getSymbol()->updateIdentifier(t.second->getIdentifier().value());
+                defNode->getSymbol().updateIdentifier(t.second->getIdentifier().value());
             }
         }
 
@@ -2467,6 +2526,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TDefineTemplateNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TExprCopyNode & n)
 {
+    DEBUG_CERR(n.toString());
     std::optional<Value *> valOpt = n.expr->accept<std::optional<Value *>>(*this);
     if (!valOpt)
     {
@@ -2489,6 +2549,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TExprCopyNode & n)
 
 std::optional<Value *> CodegenVisitor::visit_typed(TAsChannelNode & n) // TODO: POSSIBLE PROBLEM AS THIS DUPLICATES THE LENGTH OF AN ARRAY!
 {
+    DEBUG_CERR(n.toString());
     std::optional<Value *> valOpt = n.expr->accept<std::optional<Value *>>(*this); // TExprCopyNode(n.expr, n.token)->accept<std::optional<Value *>>(*this); // FIXME: WILL THIS LEAK THE TOPLEVEL ARRAY? CANT DEEP COPY EACH INDEPENDENTLY OR ELSE WE WOULD BREAK REFERENCES!
 
     if (!valOpt)
@@ -2615,6 +2676,7 @@ std::optional<Value *> CodegenVisitor::visit_typed(TAsChannelNode & n) // TODO: 
 
 std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata meta, Value *original)
 {
+    DEBUG_CERR("");
     if(!meta.actingType)
     {
          errorHandler.addError(nullptr, "Trying to correct a nullOptional to a sum, but we aren't a null optional");
@@ -2706,38 +2768,45 @@ std::optional<Value *> CodegenVisitor::correctNullOptionalToSum(RecvMetadata met
 }
 
 
-std::string CodegenVisitor::getCodegenAllocationID(Symbol * sym)
+std::string CodegenVisitor::getCodegenAllocationID(Symbol& sym)
 {
-    return sym->getFullyQualifiedName();
+    DEBUG_CERR(sym.toString());
+    return sym.getFullyQualifiedName();
 }
 
-std::string CodegenVisitor::getCodegenID(Symbol * sym)
+std::string CodegenVisitor::getCodegenID(Symbol& sym)
 {
-    if(!sym->isDefinition())
-        return sym->getUniqueNameInScope();
+    DEBUG_CERR("");
+    DEBUG_CERR(sym.toString());
+    if(!sym.isDefinition())
+        return sym.getUniqueNameInScope();
 
     return getCodegenAllocationID(sym);
 }
 
-void CodegenVisitor::setAllocation(Symbol * sym, llvm::AllocaInst * a)
+void CodegenVisitor::setAllocation(Symbol& sym, llvm::AllocaInst * a)
 {
+    DEBUG_CERR(sym.toString());
     allocations.insert({getCodegenAllocationID(sym), a});
 }
 
-std::optional<llvm::AllocaInst *> CodegenVisitor::getAllocation(Symbol * sym) {
+std::optional<llvm::AllocaInst *> CodegenVisitor::getAllocation(Symbol& sym) {
+    DEBUG_CERR(sym.toString());
     auto it = allocations.find(getCodegenAllocationID(sym));
     if(it == allocations.end()) return std::nullopt;
     return it->second;
 }
 
-llvm::AllocaInst * CodegenVisitor::CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol * sym)
+llvm::AllocaInst * CodegenVisitor::CreateAndLinkEntryBlockAlloc(llvm::Type * ty, Symbol& sym)
 {
+    DEBUG_CERR(sym.toString());
     llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, getCodegenID(sym));
     setAllocation(sym, v);
     return v;
 }
 
-llvm::Type * CodegenVisitor::getLLVMType(Symbol * sym)
+llvm::Type * CodegenVisitor::getLLVMType(Symbol& sym)
 {
-    return typeGenerator.genLLVMType(*sym->getType());
+    DEBUG_CERR(sym.toString());
+    return typeGenerator.genLLVMType(*sym.getType());
 }

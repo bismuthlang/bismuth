@@ -8,26 +8,26 @@
  * @return true If the symbol was added
  * @return false If the symbol was already defined
  */
-std::optional<Symbol *> Scope::addSymbol(Symbol *symbol)
+optional_ref<Symbol> Scope::addSymbol(std::shared_ptr<Symbol> symbol)
 {
   std::string id = symbol->getScopedIdentifier();
   if (symbols.find(id) != symbols.end())
   {
     // Symbol already defined
-    delete symbol; // Save the memory FIXME: IS THIS UNSAFE? It should be safe now that we create the symbol in context and only return it to user if valid
     return std::nullopt;
   }
 
-  auto ret = symbols.insert({id, symbol}).first;
-return ret->second;
+  symbols.insert({id, symbol});
+  return *symbol.get();
 }
 
-bool Scope::removeSymbol(const Symbol *symbol)
+bool Scope::removeSymbol(const Symbol& symbol)
 {
-  std::string id = symbol->getScopedIdentifier();
-  if (symbols.find(id) != symbols.end())
+  std::string id = symbol.getScopedIdentifier();
+  if (auto it = symbols.find(id); it != symbols.end())
   {
-    symbols.erase(symbols.find(id));
+    deletedSymbols.insert(it->second);
+    symbols.erase(symbols.find(id)); 
     return true;
   }
 
@@ -35,7 +35,7 @@ bool Scope::removeSymbol(const Symbol *symbol)
 }
 
 
-std::optional<std::pair<Symbol *, std::reference_wrapper<Scope>>> Scope::lookupWithScope(std::string id)
+std::optional<std::pair<std::reference_wrapper<Symbol>, std::reference_wrapper<Scope>>> Scope::lookupWithScope(std::string id)
 {
     std::optional<std::reference_wrapper<Scope>> opt = *this;
     bool foundStop = false; 
@@ -44,10 +44,10 @@ std::optional<std::pair<Symbol *, std::reference_wrapper<Scope>>> Scope::lookupW
     {
         Scope& scope = opt.value().get();
 
-        if (std::optional<Symbol *> symOpt = scope.lookupInCurrentScope(id); symOpt.has_value())
+        if (optional_ref<Symbol> symOpt = scope.lookupInCurrentScope(id); symOpt.has_value())
         {
-            Symbol * sym = symOpt.value(); 
-            if (!foundStop || sym->isDefinition() || sym->isGlobal())
+            auto sym = symOpt.value(); 
+            if (!foundStop || sym.get().isDefinition() || sym.get().isGlobal())
             {
                 return std::make_pair(sym, opt.value());
             }
@@ -62,20 +62,20 @@ std::optional<std::pair<Symbol *, std::reference_wrapper<Scope>>> Scope::lookupW
 }
 
 
-std::optional<Symbol *> Scope::lookupInAccessableScopes(std::string id)
+optional_ref<Symbol> Scope::lookupInAccessableScopes(std::string id)
 {
-  std::optional<std::reference_wrapper<Scope>> opt = *this;
+  optional_ref<Scope> opt = *this;
   bool foundStop = false; 
 
   while (opt)
   {
     Scope& scope = opt.value().get();
 
-    std::optional<Symbol *> symOpt = scope.lookupInCurrentScope(id);
+    optional_ref<Symbol> symOpt = scope.lookupInCurrentScope(id);
     if (symOpt)
     {
-      Symbol * sym = symOpt.value(); 
-      if (!foundStop || sym->isDefinition() || sym->isGlobal())
+      auto sym = symOpt.value(); 
+      if (!foundStop || sym.get().isDefinition() || sym.get().isGlobal())
           return sym;
       return std::nullopt;
     }
@@ -94,18 +94,16 @@ Scope * Scope::createNamespace(Identifier * id)
 }
 
 
-std::optional<DefinitionSymbol *> Scope::addDefinition(VisibilityModifier m, Identifier * identifier, const Type * t, bool glob)
+optional_ref<DefinitionSymbol> Scope::addDefinition(VisibilityModifier m, Identifier * identifier, const Type * t, bool glob)
 {
     Scope* innerScope = this->createNamespace(identifier);
 
-    DefinitionSymbol * sym = new DefinitionSymbol(m, identifier, t, glob, *this, innerScope);
-
     // Need to do this hack just to preserve type safety. No need to add duplicate function. 
-    if(this->addSymbol(sym))
-        return sym; 
-
-    delete sym; 
-
+    auto ans = this->addSymbol(std::make_shared<DefinitionSymbol>(m, identifier, t, glob, *this, innerScope));
+    if(ans)
+    {
+      return *dynamic_cast<DefinitionSymbol *>(&ans.value().get());
+    }
     return std::nullopt; 
 }
 
@@ -115,12 +113,12 @@ std::optional<DefinitionSymbol *> Scope::addDefinition(VisibilityModifier m, Ide
  * @param id The identifier of the token to search for
  * @return std::optional<Symbol*> - Empty if not found; value provided if found.
  */
-std::optional<Symbol *> Scope::lookupInCurrentScope(std::string id)
+optional_ref<Symbol> Scope::lookupInCurrentScope(std::string id)
 {
   auto symbol = symbols.find(id);
   if (symbol == symbols.end())
     return std::nullopt;
-  return symbol->second;
+  return *symbol->second;
 }
 
 // Modified from starter
@@ -148,17 +146,20 @@ std::string Scope::toString() const
 
   description << '{'; 
   description << "\tid: " << scopeId << ", " << std::endl;
+  std::cerr << "149" << std::endl;
   if(parent) 
     description << "\tparent: " << parent.value().get().scopeId << ", " << std::endl; 
+  std::cerr << "152 " << description.str() << std::endl;
   description << "\tsymbols: {" << std::endl; 
-
+std::cerr << "154 " << symbols.size() << std::endl;
   for (auto sym : symbols)
   {
+    std::cerr << "157" << std::endl;
     description << "\t\t" << sym.second->toString() << ", " << std::endl;
   }
-
+std::cerr << "160" << std::endl;
   description << "\t}," << std::endl; 
-
+std::cerr << "162" << std::endl;
   description << "}," << std::endl; 
   return description.str();
 }

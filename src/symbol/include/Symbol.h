@@ -14,6 +14,7 @@
 #include <string>  //Includes strings
 
 #include "Type.h"
+#include "TypeDefs.h"
 #include "FQN.h"
 
 class Scope; 
@@ -56,7 +57,9 @@ public:
         // FIXME: is this constructor needed? If so, do we need to add uniqName and scope?
     }
 
-    virtual ~Symbol() = default; 
+    virtual ~Symbol() {
+        std::cerr << "61 - SYMBOL DELETED - " << toString() << std::endl;
+    }; 
 
     std::string toString() const;
     const Type * getType() const; 
@@ -110,7 +113,8 @@ public:
     DefinitionSymbol(DefinitionSymbol& sym) 
         : LocatableSymbol(sym)
     {
-        sym.innerScope = this->innerScope; 
+        this->innerScope = sym.innerScope;
+        this->visibility = sym.visibility;
     }
 
     virtual ~DefinitionSymbol() = default; 
@@ -145,3 +149,41 @@ public:
     private:
         Identifier * orig; 
 };
+
+
+
+/****************************************
+ * Utility Functions
+ ****************************************/
+
+template<typename T> 
+inline optional_ref<T> symbol_cast(Symbol & sym) 
+{
+    if(T* ans = dynamic_cast<T*>(&sym))
+    {
+        return *ans; 
+    }
+    return std::nullopt;
+}
+
+template<typename T> 
+inline optional_ref<T> symbol_cast(std::reference_wrapper<Symbol> sym) 
+{
+    return symbol_cast<T>(sym.get());
+}
+
+template<typename T> 
+inline optional_ref<const T> symbol_cast(const Symbol & sym) 
+{
+    if(T* ans = dynamic_cast<T*>(&sym))
+    {
+        return *ans; 
+    }
+    return std::nullopt;
+}
+
+template<typename T> 
+inline optional_ref<const T> symbol_cast(std::reference_wrapper<const Symbol> sym) 
+{
+    return symbol_cast<T>(sym.get());
+}

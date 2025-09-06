@@ -64,8 +64,8 @@ std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthPars
 
         std::string id = opt.value().first;
 
-        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
-            DefinitionSymbol*,
+        DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(
+            DefinitionSymbol,
             defSym,
             stmgr.addDefinition(VisibilityModifier::PUBLIC, id, opt.value().second, true),
             ctx,
@@ -82,8 +82,10 @@ std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser:
     for (auto e : ctx->defs)
     {
         // Wastes a bit of memory in allocating type even for duplicates
+        DEBUG_CERR("Forward Decl " + e->getText());
         defineAndGetSymbolFor(e, VisibilityModifier::PUBLIC);
     }
+    std::cerr << "88" << std::endl;
 
     // FIXME: do basic checks on traits
     // Needs to be two phases: 
@@ -94,6 +96,7 @@ std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser:
     // Phase 1: Uniqueness -> Needs to be moved after all traits across all files are processed
     for(auto implCtx : ctx->implementations)
     {
+        DEBUG_CERR("Forward Decl Impl." + implCtx->getText());
         DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, lhsTy, visitPathType(implCtx->traitPath), implCtx, "Unknown trait requested");
         DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
             const TypeTrait *,
@@ -108,19 +111,24 @@ std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser:
         // FIXME: track uniqueness
     }
 
+    DEBUG_CERR("Finished Forward Decl ");
     return std::nullopt;
 }
 
 std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visitFwdDecls(BismuthParser::CompilationUnitContext *ctx)
 {
+    DEBUG_CERR(ctx->getText());
     return collect_results<DefinitionNode *>(
         fplus::transform(
             [this, ctx](auto e) -> std::variant<DefinitionNode *, ErrorChain *>
             {
+                DEBUG_CERR(e->getText());
                 // Note: re-applying template symbols happens in each visitor for now!
                 if (auto progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
                 {
+                    std::cerr << "129" << std::endl;
                     DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
+                    std::cerr << "131" << std::endl;
                     return prog;
                 }
                 else if (auto fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
@@ -159,7 +167,7 @@ std::variant<std::vector<TExternNode *>, ErrorChain *> SemanticVisitor::visitExt
         
                 if (flags & CompilerFlags::DEMO_MODE)
                 {
-                    if (!(node->getSymbol()->getScopedIdentifier() == "printf" && node->getType().getParamTypes().size() == 1 && node->getType().getParamTypes().at(0)->isSubtype(*Types::DYN_STR) && node->getType().getReturnType()->isSubtype(*Types::DYN_INT) && node->getType().isVariadic()))
+                    if (!(node->getSymbol().getScopedIdentifier() == "printf" && node->getType().getParamTypes().size() == 1 && node->getType().getParamTypes().at(0)->isSubtype(*Types::DYN_STR) && node->getType().getReturnType()->isSubtype(*Types::DYN_INT) && node->getType().isVariadic()))
                     {
                         errorHandler.addError(e->getStart(), "Unsupported extern; only 'extern int func printf(str, ...)' supported in demo mode");
                     }
@@ -180,11 +188,12 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
 
     bool demoMode = flags & CompilerFlags::DEMO_MODE;
     
-    if (std::optional<Symbol *> opt = stmgr.lookup("main"); opt.has_value())
+    if (auto opt = stmgr.lookup("main"); opt.has_value())
     {
-        Symbol *sym = opt.value();
-        std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym->getType());
-        if (progOpt)
+        Symbol& sym = opt.value().get();
+        
+        if (std::optional<const TypeProgram *> progOpt = type_cast<TypeProgram>(sym.getType());
+            progOpt.has_value())
         {
             const TypeProgram *inv = progOpt.value();
             // FIXME: DO SUBTYPING BETTER!
@@ -194,7 +203,7 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
             }
             else
             {
-                sym->getIdentifier()->promoteToGlobalMain();
+                sym.getIdentifier()->promoteToGlobalMain();
             }
         }
         else if(demoMode)
@@ -211,8 +220,8 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
     // we know what types are possible to infer, so we can just
     // pick one if the code doesn't make it clear which variant we need)
     fplus::for_each(
-        [](Symbol * sym) {
-            if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym->getType()))
+        [](Symbol& sym) {
+            if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym.getType()))
             {
                 inf->unify();
             }
@@ -223,16 +232,17 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
 
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
-    if (std::vector<Symbol *> unInf = stmgr.getCurrentScope().getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); unInf.size() > 0)
+    if (auto unInf = stmgr.getCurrentScope().getSymbols(SymbolLookupFlags::UNINFERRED_TYPE);
+        unInf.size() > 0)
     {
         std::ostringstream details;
 
-        for (auto e : unInf)
+        for (Symbol& e : unInf)
         {
-            details << e->toString() << "; ";
+            details << e.toString() << "; ";
         }
 
-        errorHandler.addError(ctx->getStart(), "230 Uninferred types in context: " + details.str());
+        errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
     }
     return std::nullopt;
 }
@@ -295,10 +305,10 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
 
             return [this, ctx, cuScope, externs]() -> SemanticVisitor::PhaseNResult {
                 stmgr.enterScope(cuScope.get());
-
+                DEBUG_CERR("Start Phase N w/ " + ctx->getText());
                 DEFINE_OR_PROPAGATE_VARIANT(std::vector<DefinitionNode *>, defs, visitFwdDecls(ctx), ctx); 
                 // Visit the statements contained in the unit
-
+                std::cerr << "307" << std::endl;
                 auto errOpt = postCUVisitChecks(ctx);
                 if(errOpt) return errOpt.value();
 
@@ -418,28 +428,30 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
  */
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineProgramContext *ctx)
 {
-    DEFINE_OR_PROPAGATE_VARIANT(
-        DefinitionSymbol *,
+    DEBUG_CERR(ctx->getText());
+    DEFINE_OR_PROPAGATE_VARIANT_REF(
+        DefinitionSymbol,
         defSym,
         defineAndGetSymbolFor(ctx),
         ctx
     );
 
+    std::cerr << "439" << std::endl;
     auto generateProgram = [this, ctx, defSym](const TypeProgram * progType) -> std::variant<DefinitionNode *, ErrorChain *> {
         std::string funcId = ctx->name->getText();
         // Lookup the function in the current scope and prevent re-declarations
 
         // Add the symbol to the stmgr and enter the scope.
         Scope& orig = stmgr.getCurrentScope();
-        stmgr.enterScope(defSym->getInnerScope());
-
-        Symbol *channelSymbol = stmgr.addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
+        stmgr.enterScope(defSym.getInnerScope());
+std::cerr << "447 " << stmgr.toString() << std::endl;
+        Symbol& channelSymbol = stmgr.addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
         // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
         stmgr.addSymbol("@EXIT", Types::UNIT, false);
-
+std::cerr << "451" << std::endl;
         // Safe visit the program block without creating a new scope (as we are managing the scope)
         DEFINE_OR_PROPAGATE_VARIANT_WMSG(TBlockNode *, blk, this->safeVisitBlock(ctx->block(), false), ctx, "Failed to save visit block");
-
+std::cerr << "454" << std::endl;
         // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
         // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<BismuthParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
         // {
@@ -448,13 +460,18 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
         // Safe exit the scope.
         safeExitScope(ctx);
+        std::cerr << "463" << std::endl;
         stmgr.enterScope(orig);
-
-        return new TProgramDefNode(defSym, channelSymbol, blk, progType, ctx->getStart());
+std::cerr << "465 "  << defSym.toString() << std::endl;
+std::cerr << "466 "  << const_cast<DefinitionSymbol&>(defSym).toString() << std::endl;
+auto ans = new TProgramDefNode(const_cast<DefinitionSymbol&>(defSym), channelSymbol, blk, progType, ctx->getStart());
+std::cerr << "468 " << ans->getSymbol().toString() << std::endl;
+        return ans;
     };
 
-    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate*>(defSym->getType()))
+    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate*>(defSym.getType()))
     {
+        std::cerr << "470" << std::endl;
         if(!templateTy->getValueType())
             return errorHandler.addCompilerError(ctx->getStart(), "template type does not have value type to template");
 
@@ -470,23 +487,24 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
             );
         }
     }
-    else if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym->getType()))
+    else if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym.getType()))
     {
+        std::cerr << "488" << std::endl;
         return generateProgram(progType);
     }
 
-    return errorHandler.addError(ctx->getStart(), "Cannot execute " + defSym->toString());
+    return errorHandler.addError(ctx->getStart(), "Cannot execute " + defSym.toString());
 }
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
-    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSymbol *, defSym, defineAndGetSymbolFor(ctx), ctx);
+    DEFINE_OR_PROPAGATE_VARIANT_REF(DefinitionSymbol, defSym, defineAndGetSymbolFor(ctx), ctx);
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(TLambdaConstNode *, lam, visitCtx(ctx->lam, defSym), ctx, "Unable to generate lambda");
 
     /*
      *  Check if this is a template or not, and handle it accordingly
      */
-    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(defSym->getType()))
+    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(defSym.getType()))
     {
         TDefineTemplateNode * templateNode = new TDefineTemplateNode(
             defSym,
@@ -1033,9 +1051,9 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 std::variant<TIdentifier *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IdentifierExprContext * ctx, bool is_rvalue)
 {
     // Determine the type of the expression we are visiting
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(ctx->VARIABLE()->getText()), ctx, "Undefined variable reference: " + ctx->VARIABLE()->getText());
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol , sym, stmgr.lookup(ctx->VARIABLE()->getText()), ctx, "Undefined variable reference: " + ctx->VARIABLE()->getText());
 
-    if (sym->getType()->isLinear())
+    if (sym.getType()->isLinear())
     {
         if (!is_rvalue)
         {
@@ -1044,7 +1062,7 @@ std::variant<TIdentifier *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
         if (!stmgr.removeSymbol(sym))
         {
-            errorHandler.addError(ctx->getStart(), "Failed to unbind local var: " + sym->toString());
+            errorHandler.addError(ctx->getStart(), "Failed to unbind local var: " + sym.toString());
         }
     }
 
@@ -1193,8 +1211,8 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     );
 
 
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(
-        DefinitionSymbol *, 
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(
+        DefinitionSymbol, 
         sym, 
         stmgr.addDefinition(
             VisibilityModifier::PUBLIC_LINK,
@@ -1211,7 +1229,7 @@ std::variant<TExternNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     // which *probably* shouldn't be allowed. Instead, make
     // a separate ExternSymbol class which we would use instead.
     // This would also be more accurate as externs wouldn't belong to a scope per say
-    sym->getIdentifier()->promoteToGlobal();
+    sym.getIdentifier()->promoteToGlobal();
 
     TExternNode *node = new TExternNode(sym, funcTy, ctx->getStart());
 
@@ -1276,7 +1294,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
     for (auto var : e->VARIABLE())
     {
       std::string id = var->getText();
-      std::optional<Symbol *> symOpt = stmgr.lookupInCurrentScope(id);
+      auto symOpt = stmgr.lookupInCurrentScope(id);
       if (symOpt)
       {
         return errorHandler.addError(e->getStart(), "Redeclaration of " + id);
@@ -1308,7 +1326,7 @@ std::variant<TVarDeclNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPars
       // Done with exprType for later type inference purposes
       // .value() should be safe as we already checked name uniqueness
       // FIXME: isGlobalScope probably doesnt work anymore with paths and namespaces. Revise it!
-      Symbol * symbol = stmgr.addSymbol(id, newExprType, stmgr.isGlobalScope()).value();
+      Symbol& symbol = stmgr.addSymbol(id, newExprType, stmgr.isGlobalScope()).value();
 
       // This is somewhat inefficient to have to repeat this for every single value, but needed if for linear resources and if we aren't purely FP.
       a.push_back(new AssignmentNode({symbol}, exprOpt)); // FIXME: Does assignment node need to be list?
@@ -1325,7 +1343,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
   std::set<const Type *> foundCaseTypes = {};
   // TODO: Maybe make so these can return values?
 
-  auto branchOpt = checkBranch<BismuthParser::MatchStatementContext, BismuthParser::MatchAlternativeContext, std::pair<Symbol *, TypedNode *>>(
+  auto branchOpt = checkBranch<BismuthParser::MatchStatementContext, BismuthParser::MatchAlternativeContext, std::pair<std::reference_wrapper<Symbol>, TypedNode *>>(
     ctx,
     [this, ctx](std::deque<DeepRestData *> *rest) {
       for (auto b : ctx->matchAlternative())
@@ -1335,8 +1353,8 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
     },
     ctx->matchAlternative(),
     false,
-    [](std::pair<Symbol *, TypedNode *> pair) -> TypedNode * { return pair.second; },
-    [this, ctx, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<std::pair<Symbol *, TypedNode *>, ErrorChain *>
+    [](std::pair<std::reference_wrapper<Symbol>, TypedNode *> pair) -> TypedNode * { return pair.second; },
+    [this, ctx, sumType, &foundCaseTypes](BismuthParser::MatchAlternativeContext *altCtx) -> std::variant<std::pair<std::reference_wrapper<Symbol>, TypedNode *>, ErrorChain *>
     {
       DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseType, anyOpt2VarError<const Type>(errorHandler, altCtx->type()->accept(this)), ctx, "Failed to generate case type");
 
@@ -1358,7 +1376,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
       }
 
       stmgr.enterScope(StopType::NONE);
-      DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, local, stmgr.addSymbol(altCtx->name->getText(), caseType, false), altCtx, "Duplicate case name"); // TODO: may provide duplicate errors to prior checks!
+      DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, local, stmgr.addSymbol(altCtx->name->getText(), caseType, false), altCtx, "Duplicate case name"); // TODO: may provide duplicate errors to prior checks!
 
       std::variant<TypedNode *, ErrorChain *> tnOpt = anyOpt2VarError<TypedNode>(errorHandler, altCtx->eval->accept(this));
       // this->safeExitScope(altCtx);
@@ -1371,7 +1389,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
         return errorHandler.addError(altCtx->getStart(), "Dead code: definition as select alternative");
       }
 
-      return std::make_pair(local, ans);
+      return std::make_pair(std::ref(local), ans);
     });
 
   if (foundCaseTypes.size() != sumType.get().getCases().size())
@@ -1380,7 +1398,7 @@ std::variant<TMatchStatementNode *, ErrorChain *> SemanticVisitor::visitCtx(Bism
   }
 
   DEFINE_OR_PROPAGATE_VARIANT_WMSG(
-    MACRO_ARG(ConditionalData<std::pair<Symbol *, TypedNode *>>),
+    MACRO_ARG(ConditionalData<std::pair<std::reference_wrapper<Symbol>, TypedNode *>>),
     dat,
     branchOpt,
     ctx, 
@@ -1574,7 +1592,7 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
     /*
      * Lookup the @RETURN symbol which can ONLY be defined by entering a function
      */
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup("@RETURN"), ctx, "Cannot use return outside of a function");
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol , sym, stmgr.lookup("@RETURN"), ctx, "Cannot use return outside of a function");
 
     // If the return statement has an expression...
     if (ctx->expression())
@@ -1586,31 +1604,29 @@ std::variant<TReturnNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
         // Check return type.
         // TODO: improve error as if the return type is Unit, then simply return; is valid.
-        if (valType.isNotSubtype(*sym->getType()))
+        if (valType.isNotSubtype(*sym.getType()))
         {
-            return errorHandler.addError(ctx->getStart(), "Expected return type of " + sym->getType()->toString(toStringMode) + " but got " + valType.toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Expected return type of " + sym.getType()->toString(toStringMode) + " but got " + valType.toString(toStringMode));
         }
 
-        std::pair<const Type *, TypedNode *> ans = {sym->getType(), val};
+        std::pair<const Type *, TypedNode *> ans = {sym.getType(), val};
 
         return new TReturnNode(ctx->getStart(), ans);
     }
 
     // We do not have an expression to return, so make sure that the return type is also a BOT.
-    if (sym->getType()->isSubtype(*Types::UNIT))
+    if (sym.getType()->isSubtype(*Types::UNIT))
     {
         return new TReturnNode(ctx->getStart());
     }
 
-    return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym->getType()->toString(toStringMode) + " but received nothing");
+    return errorHandler.addError(ctx->getStart(), "Expected to return a " + sym.getType()->toString(toStringMode) + " but received nothing");
 }
 
 std::variant<TExitNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ExitStatementContext *ctx)
 {
-    std::optional<Symbol *> symOpt = stmgr.lookup("@EXIT");
-
     // If we don't have the symbol, we're not in a place that we can return from.
-    if (!symOpt)
+    if (auto symOpt = stmgr.lookup("@EXIT"); !symOpt.has_value())
     {
         return errorHandler.addError(ctx->getStart(), "Cannot use exit outside of program");
     }
@@ -1634,18 +1650,18 @@ SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
     return anyOpt2VarError<const Type>(errorHandler, ctx->type()->accept(this));
 }
 
-std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<DefinitionSymbol *> symOpt)
+std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx, optional_ref<DefinitionSymbol> symOpt)
 {
     // FIXME: technically could be bad opt access, but should never happen
-    DefinitionSymbol * sym = lazy_value_or<DefinitionSymbol *>(symOpt,
+    DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(symOpt,
         [this]() {return stmgr.addAnonymousDefinition("lambda", new TypeFunc()).value(); });
 
     Scope& origScope = stmgr.getCurrentScope();
-    stmgr.enterScope(sym->getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
+    stmgr.enterScope(sym.getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
 
     DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params,  visitCtx(ctx->parameterList()), ctx); 
 
-    std::vector<Symbol *> ps;
+    std::vector<std::reference_wrapper<Symbol>> ps;
     std::variant<const Type *, ErrorChain *> retTypeOpt = ctx->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->ret->accept(this))
                                                                    : (const Type *)Types::UNIT;
 
@@ -1659,7 +1675,7 @@ std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
     }
 
     // While we could get a template, only actually have to define if we are visiting it for the first time -> why not refactor this out?
-    if(const TypeFunc * funcTy = dynamic_cast<const TypeFunc *>(sym->getType()))
+    if(const TypeFunc * funcTy = dynamic_cast<const TypeFunc *>(sym.getType()))
     {
         if(!funcTy->isDefined())
             funcTy->setInvoke(paramTypes, retType, false);
@@ -1773,9 +1789,9 @@ SemanticVisitor::visitCtx(BismuthParser::TemplatedTypeContext *ctx)
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
 {
-    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSymbol *, sym, defineAndGetSymbolFor(ctx), ctx);
+    DEFINE_OR_PROPAGATE_VARIANT_REF(DefinitionSymbol, sym, defineAndGetSymbolFor(ctx), ctx);
 
-    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
     {
         if(!templateTy->getValueType()) return errorHandler.addCompilerError(ctx->getStart(), "Template has no value type");
 
@@ -1783,7 +1799,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Template Type Value expected to be sum, but got: " + templateTy->getValueType().value()->toString(toStringMode));
 
         Scope& origScope = stmgr.getCurrentScope();
-        stmgr.enterScope(sym->getInnerScope());
+        stmgr.enterScope(sym.getInnerScope());
         TDefineEnumNode * enumNode = new TDefineEnumNode(
             sym,
             sumTy,
@@ -1801,8 +1817,8 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return templateNode;
     }
 
-    const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym->getType());
-    if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected sum type but got: " + sym->getType()->toString(toStringMode));
+    const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym.getType());
+    if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected sum type but got: " + sym.getType()->toString(toStringMode));
 
     TDefineEnumNode * enumNode = new TDefineEnumNode(
         sym,
@@ -1814,9 +1830,9 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
 {
-    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSymbol *, sym, defineAndGetSymbolFor(ctx), ctx);
+    DEFINE_OR_PROPAGATE_VARIANT_REF(DefinitionSymbol, sym, defineAndGetSymbolFor(ctx), ctx);
 
-    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
     {
 
         if(!templateTy->getValueType()) return errorHandler.addCompilerError(ctx->getStart(), "Template type does not have a value type");
@@ -1839,8 +1855,8 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return templateNode;
     }
 
-    const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym->getType());
-    if(!structTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected Struct but got: " + sym->getType()->toString(toStringMode));
+    const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym.getType());
+    if(!structTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected Struct but got: " + sym.getType()->toString(toStringMode));
 
     TDefineStructNode * structNode = new TDefineStructNode(
         sym,
@@ -1854,9 +1870,9 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineTraitContext *ctx)
 {
     // FIXME THIS IMPL PROBS WRONG
-    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSymbol *, sym, defineAndGetSymbolFor(ctx), ctx);
+    DEFINE_OR_PROPAGATE_VARIANT_REF(DefinitionSymbol, sym, defineAndGetSymbolFor(ctx), ctx);
 
-    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
     {
 
         if(!templateTy->getValueType()) return errorHandler.addCompilerError(ctx->getStart(), "Template type does not have a value type");
@@ -1879,8 +1895,8 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         return templateNode;
     }
 
-    const TypeTrait * traitTy = dynamic_cast<const TypeTrait *>(sym->getType());
-    if(!traitTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected Struct but got: " + sym->getType()->toString(toStringMode));
+    const TypeTrait * traitTy = dynamic_cast<const TypeTrait *>(sym.getType());
+    if(!traitTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected Struct but got: " + sym.getType()->toString(toStringMode));
 
     TDefineTraitNode * traitNode = new TDefineTraitNode(
         sym,
@@ -1899,26 +1915,26 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
 
         std::string name = pCtx->id->getText();
 
-        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(name), pCtx, "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
+        DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(name), pCtx, "Undefined type: " + name); // TODO: address inefficiency in var decl where this is called multiple times
 
-        if (!sym->getType() || !sym->isDefinition())
+        if (!sym.getType() || !sym.isDefinition())
         {
             return errorHandler.addError(pCtx->getStart(), "Cannot use: " + name + " as a type");
         }
 
         if(!pCtx->genericSpecifier())
         {
-          return sym->getType();
+          return sym.getType();
         }
 
         // Copied from templated Type
-        if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+        if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
         {
           DEFINE_OR_PROPAGATE_VARIANT(std::vector<const Type *>, innerTys, TvisitGenericSpecifier(pCtx->genericSpecifier()), ctx);
           DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const Type*, applied, templateTy->canApplyTemplate(innerTys), ctx, "Failed to apply template. FIXME: Improve this error message!!");
           return applied;
         }
-        return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + sym->getType()->toString(toStringMode));
+        return errorHandler.addError(pCtx->genericSpecifier()->getStart(), "Cannot apply generic to non-template type: " + sym.getType()->toString(toStringMode));
     }
 
     // FIXME: add visibility modifiers & checks!
@@ -1929,7 +1945,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
     for(auto pCtx : ctx->eles)
     {
         std::string stepId = pCtx->id->getText();
-        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, lookupScope.get().lookupInAccessableScopes(stepId), pCtx, "Could not find " + stepId + " in " + lookupScope.get().getIdentifier()->getFullyQualifiedName());
+        DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, lookupScope.get().lookupInAccessableScopes(stepId), pCtx, "Could not find " + stepId + " in " + lookupScope.get().getIdentifier()->getFullyQualifiedName());
         // if (sym->getType()->isLinear())
         // {
         //     if (!is_rvalue)
@@ -1957,18 +1973,18 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
         // Or, to allow an inline function to return something, and have that apply
         // within the bounds of the outside fn
 
-        auto defSym = dynamic_cast<const DefinitionSymbol *>(sym);
+        auto defSym = symbol_cast<const DefinitionSymbol>(sym);
         if(!defSym)
             return errorHandler.addError(
                 pCtx->getStart(),
-                sym->toString() + " is not a definition."); // TODO: better error! Can only use this on definitions. For instance variables, try .
+                sym.toString() + " is not a definition."); // TODO: better error! Can only use this on definitions. For instance variables, try .
 
-        const Type * symType = sym->getType();
+        const Type * symType = sym.getType();
         auto nt = dynamic_cast<const NameableType *>(symType);
         if(!nt)
             return errorHandler.addError(
                 pCtx->getStart(),
-                sym->toString() + " expected a named type."); // TODO: better error!
+                sym.toString() + " expected a named type."); // TODO: better error!
 
         if(pCtx->genericSpecifier())
         {
@@ -1988,7 +2004,7 @@ SemanticVisitor::visitPathType(BismuthParser::PathContext *ctx)
         {
             pathVar = nt;
         }
-        lookupScope = defSym->getInnerScope();
+        lookupScope = defSym.value().get().getInnerScope();
     }
 
     return pathVar;
@@ -2094,8 +2110,8 @@ SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(BismuthParser::ProgramSendContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot send on non-channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot send on non-channel: " + id);
 
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, tn, anyOpt2VarError<TypedNode>(errorHandler, ctx->expr->accept(this)), ctx);
     const Type& ty = tn->getType();
@@ -2105,7 +2121,7 @@ std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSen
 
     if (!canSend)
     {
-      return errorHandler.addError(ctx->getStart(), "Failed to send " + ty.toString(toStringMode) + " over channel " + sym->toString());
+      return errorHandler.addError(ctx->getStart(), "Failed to send " + ty.toString(toStringMode) + " over channel " + sym.toString());
     }
     return new TProgramSendNode(sym, inCloseable, tn, canSend.value().get().getCopy(), ctx->getStart());
 }
@@ -2113,14 +2129,14 @@ std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSen
 std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot recv on non-channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot recv on non-channel: " + id);
 
     bool closeState = channel->getProtocol()->isInCloseable();
     std::optional<RecvMetadata> ty = channel->getProtocol()->recv();
     if (!ty)
     {
-      return errorHandler.addError(ctx->getStart(), "Failed to recv over channel: " + sym->toString());
+      return errorHandler.addError(ctx->getStart(), "Failed to recv over channel: " + sym.toString());
     }
 
     return new TProgramRecvNode(sym, ty.value(), closeState, ctx->getStart());
@@ -2129,13 +2145,13 @@ std::variant<TProgramRecvNode *, ErrorChain *> SemanticVisitor::TvisitAssignable
 std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot recv on non-channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot recv on non-channel: " + id);
 
     bool isInCloseable = channel->getProtocol()->isInCloseable();
     if (!channel->getProtocol()->isOC(true))
     {
-      return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym->toString() + " as it is not a ! loop");
+      return errorHandler.addError(ctx->getStart(), "is_present() could not be applied to " + sym.toString() + " as it is not a ! loop");
     }
 
     return new TProgramIsPresetNode(sym, isInCloseable, ctx->getStart());
@@ -2144,8 +2160,8 @@ std::variant<TProgramIsPresetNode *, ErrorChain *> SemanticVisitor::TvisitAssign
 std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitProgramCase(BismuthParser::ProgramCaseContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot case on non-channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot case on non-channel: " + id);
     
     std::set<
       std::pair<
@@ -2233,8 +2249,8 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
       [this, fullSequences, &branch, id](BismuthParser::StatementContext *alt) -> std::variant<TypedNode *, ErrorChain *>
       {
         const ProtocolSequence *proto = fullSequences.at(branch++);
-        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), alt, "Could find channel: " + id);
-        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), alt, "Channel identifier does not have a channel type in external choice.");
+        DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), alt, "Could find channel: " + id);
+        DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), alt, "Channel identifier does not have a channel type in external choice.");
         channel->setProtocol(proto);
         std::variant<TypedNode *, ErrorChain *> optEval = anyOpt2VarError<TypedNode>(errorHandler, alt->accept(this));
         return optEval;
@@ -2246,8 +2262,8 @@ std::variant<TChannelCaseStatementNode *, ErrorChain *> SemanticVisitor::TvisitP
 std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgramProject(BismuthParser::ProgramProjectContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot project on non-channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot project on non-channel: " + id);
 
     if(ctx->lbl)
     {
@@ -2255,7 +2271,7 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
       if (!projectIndex)
       {
-        return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ctx->lbl->getText());
+        return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym.toString() + " vs " + ctx->lbl->getText());
       }
 
       return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
@@ -2271,7 +2287,7 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 
     if (!projectIndex)
     {
-      return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym->toString() + " vs " + ps->toString(toStringMode));
+      return errorHandler.addError(ctx->getStart(), "Failed to project over channel: " + sym.toString() + " vs " + ps->toString(toStringMode));
     }
 
     return new TProgramProjectNode(sym, projectIndex, ctx->getStart());
@@ -2279,8 +2295,8 @@ std::variant<TProgramProjectNode *, ErrorChain *> SemanticVisitor::TvisitProgram
 std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgramContract(BismuthParser::ProgramContractContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot contract on non-channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot contract on non-channel: " + id);
     if (!channel->getProtocol()->contract())
     {
       return errorHandler.addError(ctx->getStart(), "Failed to contract: " + id + " : " + channel->getProtocol()->toString(toStringMode));
@@ -2305,8 +2321,8 @@ std::variant<TProgramContractNode *, ErrorChain *> SemanticVisitor::TvisitProgra
 std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot weaken on non-channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot weaken on non-channel: " + id);
     if (!channel->getProtocol()->weaken())
     {
         return errorHandler.addError(ctx->getStart(), "Failed to weaken: " + id + " against " + channel->toString(toStringMode));
@@ -2317,8 +2333,8 @@ std::variant<TProgramWeakenNode *, ErrorChain *> SemanticVisitor::TvisitProgramW
 std::variant<TProgramCancelNode *, ErrorChain *> SemanticVisitor::TvisitProgramCancel(BismuthParser::ProgramCancelContext *ctx)
 {
     std::string id = ctx->channel->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot cancel on non-channel: " + id); // TODO: better error messages (expected type XYZ but got...)
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot cancel on non-channel: " + id); // TODO: better error messages (expected type XYZ but got...)
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const ProtocolClose *, proto_post_close, channel->getProtocol()->cancel(), ctx, "Failed to cancel: " + id + " : "  + channel->toString(toStringMode));
 
     return new TProgramCancelNode(sym, proto_post_close->getCloseNumber(), ctx->getStart());
@@ -2327,8 +2343,8 @@ std::variant<TProgramCancelNode *, ErrorChain *> SemanticVisitor::TvisitProgramC
 std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramAccept(BismuthParser::ProgramAcceptContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Unbound identifier: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel*, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot accept: " + sym->toString());
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Unbound identifier: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel*, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot accept: " + sym.toString());
     bool isInCloseable = channel->getProtocol()->isInCloseable();
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const ProtocolSequence *, proto_post_accept, channel->getProtocol()->acceptLoop(), ctx, "Cannot accept on " + channel->toString(toStringMode));
 
@@ -2340,19 +2356,20 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
     channel->setProtocol(proto_post_accept);
 
     std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-    std::vector<Symbol *> lins = stmgr.getLinears(SymbolLookupFlags::PENDING_LINEAR);
+    
 
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
-    if (lins.size() > 0)
+    if (auto lins = stmgr.getLinears(SymbolLookupFlags::PENDING_LINEAR);
+        lins.size() > 0)
     {
       std::ostringstream details;
-      for (auto e : lins)
+      for (Symbol& e : lins)
       {
-        details << e->toString() << "; ";
+        details << e.toString() << "; ";
       }
 
-      errorHandler.addError(ctx->getStart(), "2114 Unused linear types in context: " + details.str());
+      errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
     }
 
     channel->setProtocol(postC);
@@ -2369,8 +2386,8 @@ std::variant<TProgramAcceptNode *, ErrorChain *> SemanticVisitor::TvisitProgramA
 std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Unbound identifier: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot accept: " + sym->toString());
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Unbound identifier: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot accept: " + sym.toString());
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, condition, this->visitCondition(ctx->ex), ctx);
 
     bool isInCloseable = channel->getProtocol()->isInCloseable();
@@ -2383,19 +2400,19 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
     channel->setProtocol(proto_post_accept);
 
     std::variant<TBlockNode *, ErrorChain *> blkOpt = safeVisitBlock(ctx->block(), true);
-    std::vector<Symbol *> lins = stmgr.getLinears(SymbolLookupFlags::PENDING_LINEAR);
 
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
-    if (lins.size() > 0)
+    if (auto lins = stmgr.getLinears(SymbolLookupFlags::PENDING_LINEAR);
+        lins.size() > 0)
     {
       std::ostringstream details;
-      for (auto e : lins)
+      for (Symbol& e : lins)
       {
-        details << e->toString() << "; ";
+        details << e.toString() << "; ";
       }
 
-      errorHandler.addError(ctx->getStart(), "2196 Unused linear types in context: " + details.str());
+      errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
     }
 
     channel->setProtocol(postC);
@@ -2412,8 +2429,8 @@ std::variant<TProgramAcceptWhileNode *, ErrorChain *> SemanticVisitor::TvisitPro
 std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx)
 {
     std::string id = ctx->VARIABLE()->getText();
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), ctx, "Unbound identifier: " + id);
-    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), ctx, "Cannot accept: " + sym->toString());
+    DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Unbound identifier: " + id);
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot accept: " + sym.toString());
 
     DEFINE_OR_PROPAGATE_VARIANT(TypedNode *, condition, this->visitCondition(ctx->check), ctx);
 
@@ -2444,8 +2461,8 @@ std::variant<TProgramAcceptIfNode *, ErrorChain *> SemanticVisitor::TvisitProgra
         if (idx == 0)
         {
           idx++;
-          DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(Symbol *, sym, stmgr.lookup(id), blk, "Could not find channel: " + id); // FIXME: FIND BETTER WAY TO MAP AND CHANGE CHANNEL VALUES IN SPECIFIC BRANCHES
-          DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym->getType()), blk, "Channel identifier does not have a channel type in accept if.");
+          DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), blk, "Could not find channel: " + id); // FIXME: FIND BETTER WAY TO MAP AND CHANGE CHANNEL VALUES IN SPECIFIC BRANCHES
+          DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), blk, "Channel identifier does not have a channel type in accept if.");
           channel->setProtocol(proto_post_accept);
           return this->safeVisitBlock(blk, false);
         }
@@ -2682,17 +2699,16 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
         // Note: this will throw errors if it fails, but we cannot detect them here
         safeExitScope(ctx);
 
-        std::vector<Symbol *> lins = stmgr.getLinears(SymbolLookupFlags::PENDING_LINEAR);
-
         // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
         // due to the var leaving the scope
-        if (lins.size() > 0)
+        if (auto lins = stmgr.getLinears(SymbolLookupFlags::PENDING_LINEAR);
+            lins.size() > 0)
         {
             std::ostringstream details;
 
-            for (auto e : lins)
+            for (Symbol& e : lins)
             {
-                details << e->toString() << "; ";
+                details << e.toString() << "; ";
             }
             // SUM TYPE: ALLOW OPS THAT COULD BE POSSIBLE BOTH WAYS?
             // But problem here is that we need the whole environment to converge.... and not just subtypes, but exactly the same.... but then why would the channels be allowed to be sums>
@@ -2760,250 +2776,313 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
     return ConditionalData<Y>(cases, restDat->post);
 }
 
-std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m)
+
+
+
+
+
+
+
+// FORWARD DECL STUFF
+
+
+
+
+// FIXME: REFACTOR SO THAT visitors for functions and externs can use this!
+std::optional<ErrorChain *> SemanticVisitor::defineFunctionType(BismuthParser::DefineFunctionContext *ctx, const TypeFunc *funcType, bool variadic)
 {
-    // TODO: maybe refactor with visitCtx for Lambda?
-    auto defineFunction = [this](BismuthParser::DefineFunctionContext *ctx, const TypeFunc *funcType) -> std::optional<ErrorChain *> {
-        if(funcType->isDefined()) return std::nullopt;
+    DEBUG_CERR("Visit " + ctx->getText());
+    if(funcType->isDefined()) return std::nullopt;
 
-        DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params, visitCtx(ctx->lam->parameterList()), ctx);
+    DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params, visitCtx(ctx->lam->parameterList()), ctx);
 
-        std::vector<const Type *> ps = fplus::transform([](auto param){ return param.type; }, params);
+    std::vector<const Type *> ps = fplus::transform([](auto param){ return param.type; }, params);
 
-        std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->lam->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->lam->ret->accept(this))
-                            : (const Type*) Types::UNIT;
+    std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->lam->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->lam->ret->accept(this))
+                        : (const Type*) Types::UNIT;
 
-        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, retType, retTypeOpt, ctx, "Error generating return type");
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, retType, retTypeOpt, ctx, "Error generating return type");
 
-        funcType->setInvoke(ps, retType);
+    funcType->setInvoke(ps, retType, variadic);
 
-        return std::nullopt;
-    };
+    return std::nullopt;
+}
 
-    auto defineProgram = [this](BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType) -> std::optional<ErrorChain *> {
-        if (progType->isDefined()) return std::nullopt;
+// FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS
+std::optional<ErrorChain *> SemanticVisitor::defineProgramType(BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType)
+{
+    DEBUG_CERR("Visit " + ctx->getText());
+    std::cerr << "2799 " << ctx << " and " << progType << std::endl;
+    if (progType->isDefined()) return std::nullopt;
+std::cerr << "2800" << std::endl;
+    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const ProtocolSequence *, proto, visitProtocolAsSeq(ctx->proto), ctx, "Failed to generate channel type for program " + ctx->name->getText());
+std::cerr << "2802" << std::endl;
+    progType->setProtocol(proto);
+    return std::nullopt;
+}
 
-        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const ProtocolSequence *, proto, visitProtocolAsSeq(ctx->proto), ctx, "Failed to generate channel type for program " + ctx->name->getText());
+// FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS
+std::optional<ErrorChain *> SemanticVisitor::defineEnumType(BismuthParser::DefineEnumContext *ctx, const TypeSum *sumTy)
+{
+    DEBUG_CERR("Visit " + ctx->getText());
+    if (sumTy->isDefined()) return std::nullopt;
 
-        progType->setProtocol(proto);
-        return std::nullopt;
-    };
+    std::set<const Type *, TypeCompare> cases = {};
 
-    auto defineEnum = [this](BismuthParser::DefineEnumContext *ctx, const TypeSum *sumTy) -> std::optional<ErrorChain *> {
-        if (sumTy->isDefined()) return std::nullopt;
+    for (auto e : ctx->cases)
+    {
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseType, anyOpt2VarError<const Type>(errorHandler, e->accept(this)), ctx, "Failed to generate case type");
 
-        std::set<const Type *, TypeCompare> cases = {};
-
-        for (auto e : ctx->cases)
+        if (caseType->isLinear())
         {
-            DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseType, anyOpt2VarError<const Type>(errorHandler, e->accept(this)), ctx, "Failed to generate case type");
-
-            if (caseType->isLinear())
-            {
-                return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString(toStringMode) + ", in non-linear container");
-            }
-
-            cases.insert(caseType);
+            return errorHandler.addError(e->getStart(), "Unable to store linear type, " + caseType->toString(toStringMode) + ", in non-linear container");
         }
 
-        if (cases.size() != ctx->cases.size())
+        cases.insert(caseType);
+    }
+
+    if (cases.size() != ctx->cases.size())
+    {
+        return errorHandler.addError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
+    }
+
+    sumTy->define(cases);
+    return std::nullopt;
+}
+
+// FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS
+std::optional<ErrorChain *> SemanticVisitor::defineStructType(BismuthParser::DefineStructContext *ctx, const TypeStruct *structType)
+{
+    DEBUG_CERR("Visit " + ctx->getText());
+    if (structType->isDefined()) return std::nullopt;
+    LinkedMap<std::string, const Type *> el;
+
+    for (BismuthParser::StructCaseContext *caseCtx : ctx->cases)
+    {
+        std::string caseName = caseCtx->name->getText();
+        if (el.lookup(caseName))
         {
-            return errorHandler.addError(ctx->getStart(), "Duplicate arguments to enum type, or failed to generate types");
+            return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
         }
 
-        sumTy->define(cases);
-        return std::nullopt;
-    };
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseTy, anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this)), ctx, "Failed to generate case type");
 
-    auto defineStruct = [this](BismuthParser::DefineStructContext *ctx, const TypeStruct *structType) -> std::optional<ErrorChain *> {
-        if (structType->isDefined()) return std::nullopt;
-        LinkedMap<std::string, const Type *> el;
-
-        for (BismuthParser::StructCaseContext *caseCtx : ctx->cases)
+        if (caseTy->isLinear())
         {
-            std::string caseName = caseCtx->name->getText();
-            if (el.lookup(caseName))
-            {
-                return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
-            }
-
-            DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseTy, anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this)), ctx, "Failed to generate case type");
-
-            if (caseTy->isLinear())
-            {
-                return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString(toStringMode) + ", in non-linear container");
-            }
-
-            el.insert({caseName, caseTy});
-
+            return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString(toStringMode) + ", in non-linear container");
         }
-        structType->define(el);
-        return std::nullopt;
-    };
 
-    // FIXME: This will never get called...
-    auto defineTrait = [this](BismuthParser::DefineTraitContext *ctx, const TypeTrait *traitTy) -> std::optional<ErrorChain *> {
-        if (traitTy->isDefined()) return std::nullopt;
-        LinkedMap<std::string, const TypeFunc *> el;
+        el.insert({caseName, caseTy});
 
-        for (BismuthParser::TraitEntryContext *caseCtx : ctx->traitEntry()) // FIXME: ADD AUTO TRAITS
+    }
+    structType->define(el);
+    return std::nullopt;
+}
+
+// FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS
+// FIXME: This will never get called...
+std::optional<ErrorChain *> SemanticVisitor::defineTraitType(BismuthParser::DefineTraitContext *ctx, const TypeTrait *traitTy)
+{
+    DEBUG_CERR("Visit " + ctx->getText());
+    if (traitTy->isDefined()) return std::nullopt;
+    LinkedMap<std::string, const TypeFunc *> el;
+
+    for (BismuthParser::TraitEntryContext *caseCtx : ctx->traitEntry()) // FIXME: ADD AUTO TRAITS
+    {
+        std::string caseName = caseCtx->name->getText();
+        if (el.lookup(caseName))
         {
-            std::string caseName = caseCtx->name->getText();
-            if (el.lookup(caseName))
-            {
-                return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
-            }
-
-            DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseTy, anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this)), ctx, "Failed to generate case type");
-
-            if (caseTy->isLinear())
-            {
-                return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString(toStringMode) + ", in non-linear container");
-            }
-
-            if(auto caseFnTy = dynamic_cast<const TypeFunc*>(caseTy))
-            {
-                el.insert({caseName, caseFnTy});
-            }
-            else 
-            {
-                return errorHandler.addError(
-                    caseCtx->getStart(),
-                    "Only functions can be specified in a trait; got non-function kind " + caseTy->toString(toStringMode)
-                );
-            }
-
-
+            return errorHandler.addError(caseCtx->getStart(), "Unsupported redeclaration of " + caseName);
         }
-        traitTy->define(el);
-        return std::nullopt;
-    };
 
-    auto defineTemplate = [this, m, defineFunction, defineProgram, defineEnum, defineStruct, defineTrait](BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol * defSym) -> std::optional<ErrorChain *> {
-        if (templateTy->isDefined()) return std::nullopt;
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, caseTy, anyOpt2VarError<const Type>(errorHandler, caseCtx->ty->accept(this)), ctx, "Failed to generate case type");
 
-        auto applyTemplate = [this, m, defSym, ctx](TemplateInfo info, std::function<std::optional<ErrorChain *>()> fn) -> std::optional<ErrorChain *> {
-            Scope& origScope = stmgr.getCurrentScope();
-            stmgr.enterScope(defSym->getInnerScope());
+        if (caseTy->isLinear())
+        {
+            return errorHandler.addError(caseCtx->getStart(), "Unable to store linear type, " + caseTy->toString(toStringMode) + ", in non-linear container");
+        }
 
-            for(auto i : info.templates)
-            {
-                std::optional<DefinitionSymbol *> symOpt =  stmgr.addDefinition(m, i.first, i.second, false);
-
-                // FIXME: WRITE BETTER ERROR!
-                if(!symOpt)
-                    return errorHandler.addError(nullptr, "Failed to get template symbol for " + i.first);
-
-            }
-
-            std::optional<ErrorChain *> ans = fn();
-
-            stmgr.enterScope(origScope);
-            return ans;
-        };
-
-        return defineTypeCase<std::optional<ErrorChain *>>(ctx,
-            [this, templateTy, defineFunction, applyTemplate](BismuthParser::DefineFunctionContext * fnCtx) -> std::optional<ErrorChain *> {
-                // TODO: get errors from this?
-                TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
-
-                TypeFunc * funcTy = new TypeFunc();
-
-                templateTy->define(info, funcTy);
-
-                return applyTemplate(info, [defineFunction, fnCtx, funcTy](){
-                    return defineFunction(fnCtx, funcTy);
-                });
-            },
-
-            [this, templateTy, defineProgram, applyTemplate](BismuthParser::DefineProgramContext * ctx) -> std::optional<ErrorChain *> {
-                // TODO: get errors from this?
-                TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
-
-                TypeProgram * progTy = new TypeProgram();
-
-                templateTy->define(info, progTy);
-
-                return applyTemplate(info, [defineProgram, ctx, progTy](){
-                    return defineProgram(ctx, progTy);
-                });
-            },
-
-            [this, templateTy, defineStruct, applyTemplate](BismuthParser::DefineStructContext * ctx) -> std::optional<ErrorChain *> {
-                // TODO: get errors from this?
-                TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
-
-                TypeStruct * structTy = new TypeStruct(); //ctx->name->getText());
-
-                // if(templateTy->getIdentifier())
-                //     structTy->setIdentifier(templateTy->getIdentifier().value());
-
-                templateTy->define(info, structTy);
-
-                return applyTemplate(info, [defineStruct, ctx, structTy](){
-                    return defineStruct(ctx, structTy);
-                });
-            },
-
-            [this, templateTy, defineEnum, applyTemplate](BismuthParser::DefineEnumContext * ctx) -> std::optional<ErrorChain *> {
-                TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
-
-                TypeSum * sumTy = new TypeSum();//ctx->name->getText());
-
-                templateTy->define(info, sumTy);
-
-                return applyTemplate(info, [defineEnum, ctx, sumTy](){
-                    return defineEnum(ctx, sumTy);
-                });
-            },
+        if(auto caseFnTy = dynamic_cast<const TypeFunc*>(caseTy))
+        {
+            el.insert({caseName, caseFnTy});
+        }
+        else 
+        {
+            return errorHandler.addError(
+                caseCtx->getStart(),
+                "Only functions can be specified in a trait; got non-function kind " + caseTy->toString(toStringMode)
+            );
+        }
 
 
-            [this, templateTy, defineTrait, applyTemplate](BismuthParser::DefineTraitContext * ctx) -> std::optional<ErrorChain *> {
-                // TODO: get errors from this?
-                TemplateInfo info = TvisitGenericTemplate(ctx->genericTemplate());
+    }
+    traitTy->define(el);
+    return std::nullopt;
+}
 
-                TypeTrait * traitTy = new TypeTrait(); //ctx->name->getText());
 
-                // if(templateTy->getIdentifier())
-                //     traitTy->setIdentifier(templateTy->getIdentifier().value());
+/// NOTE: THIS RETURNS THE ORIG SCOPE
+std::variant<std::reference_wrapper<Scope>, ErrorChain*> SemanticVisitor::enterTemplateScope(DefinitionSymbol& defSym, VisibilityModifier m, TemplateInfo info)
+{
+    Scope& origScope = stmgr.getCurrentScope();
+    stmgr.enterScope(defSym.getInnerScope());
 
-                templateTy->define(info, traitTy);
+    for(auto i : info.templates)
+    {
+        optional_ref<DefinitionSymbol> symOpt =  stmgr.addDefinition(m, i.first, i.second, false);
 
-                return applyTemplate(info, [defineTrait, ctx, traitTy](){
-                    return defineTrait(ctx, traitTy);
-                });
-            },
+        // FIXME: WRITE BETTER ERROR!
+        if(!symOpt)
+            return errorHandler.addError(nullptr, "Failed to get template symbol for " + i.first);
 
-            [this](BismuthParser::DefineTypeContext * ctx) -> std::optional<ErrorChain *> {
-                return errorHandler.addCompilerError(ctx->getStart(), "Attempted to apply a template to an unknown/unimplemented type definition.");
-            }
+    }
+    return origScope;
+}
+
+// FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS  (IF APPLICABLE)
+std::optional<ErrorChain *> SemanticVisitor::defineTemplateType(BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol& defSym, VisibilityModifier m)
+{
+    DEBUG_CERR("Visit " + ctx->getText());
+    if (templateTy->isDefined()) return std::nullopt;
+
+    if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
+    {
+        // TODO: get errors from this?
+        TemplateInfo info = TvisitGenericTemplate(fnCtx->genericTemplate());
+
+        TypeFunc * funcTy = new TypeFunc();
+
+        templateTy->define(info, funcTy);
+        DEFINE_OR_PROPAGATE_VARIANT_REF(
+            Scope,
+            origScope,
+            enterTemplateScope(const_cast<DefinitionSymbol&>(defSym), m, info),
+            fnCtx
         );
-    };
 
-    auto getTemplateSymbol = [this, m, defineTemplate](std::optional<DefinitionSymbol *> opt, std::string symName, BismuthParser::DefineTypeContext* innerCtx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
-        DefinitionSymbol * defSym = lazy_value_or<DefinitionSymbol *>(opt,
+        auto ans = defineFunctionType(fnCtx, funcTy);
+        stmgr.enterScope(origScope);
+        return ans; 
+    }
+    
+
+    if(BismuthParser::DefineProgramContext * progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(ctx)) {
+        // TODO: get errors from this?
+        TemplateInfo info = TvisitGenericTemplate(progCtx->genericTemplate());
+
+        TypeProgram * progTy = new TypeProgram();
+
+        templateTy->define(info, progTy);
+
+        DEFINE_OR_PROPAGATE_VARIANT_REF(
+            Scope,
+            origScope,
+            enterTemplateScope(const_cast<DefinitionSymbol&>(defSym), m, info),
+            progCtx
+        );
+
+        auto ans = defineProgramType(progCtx, progTy);
+        std::cout << "2969" << std::endl;
+        stmgr.enterScope(origScope);
+        return ans; 
+    }
+
+    if(BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(ctx)) {
+        // TODO: get errors from this?
+        TemplateInfo info = TvisitGenericTemplate(structCtx->genericTemplate());
+
+        TypeStruct * structTy = new TypeStruct(); //structCtx->name->getText());
+
+        // if(templateTy->getIdentifier())
+        //     structTy->setIdentifier(templateTy->getIdentifier().value());
+
+        templateTy->define(info, structTy);
+        DEFINE_OR_PROPAGATE_VARIANT_REF(
+            Scope,
+            origScope,
+            enterTemplateScope(const_cast<DefinitionSymbol&>(defSym), m, info),
+            structCtx
+        );
+
+        auto ans = defineStructType(structCtx, structTy);
+        stmgr.enterScope(origScope);
+        return ans; 
+    }
+
+    if(BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(ctx)) {
+        TemplateInfo info = TvisitGenericTemplate(enumCtx->genericTemplate());
+
+        TypeSum * sumTy = new TypeSum();//enumCtx->name->getText());
+
+        templateTy->define(info, sumTy);
+        DEFINE_OR_PROPAGATE_VARIANT_REF(
+            Scope,
+            origScope,
+            enterTemplateScope(const_cast<DefinitionSymbol&>(defSym), m, info),
+            enumCtx
+        );
+
+        auto ans = defineEnumType(enumCtx, sumTy);
+        stmgr.enterScope(origScope);
+        return ans; 
+    }
+
+    if(BismuthParser::DefineTraitContext * traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(ctx)) {
+        // TODO: get errors from this?
+        TemplateInfo info = TvisitGenericTemplate(traitCtx->genericTemplate());
+
+        TypeTrait * traitTy = new TypeTrait(); //traitCtx->name->getText());
+
+        // if(templateTy->getIdentifier())
+        //     traitTy->setIdentifier(templateTy->getIdentifier().value());
+
+        templateTy->define(info, traitTy);
+        DEFINE_OR_PROPAGATE_VARIANT_REF(
+            Scope,
+            origScope,
+            enterTemplateScope(const_cast<DefinitionSymbol&>(defSym), m, info),
+            traitCtx
+        );
+
+        auto ans = defineTraitType(traitCtx, traitTy);
+        stmgr.enterScope(origScope);
+        return ans;
+    }
+
+    return errorHandler.addCompilerError(ctx->getStart(), "Attempted to apply a template to an unknown/unimplemented type definition.");
+}
+
+std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m)
+{
+    DEBUG_CERR("Visit " + ctx->getText());
+    auto getTemplateSymbol = [this, m](
+        optional_ref<DefinitionSymbol> opt, 
+        std::string symName, 
+        BismuthParser::DefineTypeContext* innerCtx
+    ) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+        DefinitionSymbol& defSym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
             [this, m, symName]() {
-                DefinitionSymbol * sym = stmgr.addDefinition(m, symName, new TypeTemplate(), false).value(); //should be safe as we checked for redeclarations
-                return sym;
+                auto ans = stmgr.addDefinition(m, symName, new TypeTemplate(), false).value(); //should be safe as we checked for redeclarations
+                return ans;
             });
 
-        if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(defSym->getType()))
+        if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(defSym.getType()))
         {
-            std::optional<ErrorChain *> optErr = defineTemplate(innerCtx, templateTy, defSym);
+            std::optional<ErrorChain *> optErr = defineTemplateType(innerCtx, templateTy, defSym, m);
 
             if(optErr) return optErr.value();
 
             return defSym;
         }
 
-        return errorHandler.addError(innerCtx->getStart(), "Expected template but got: " + defSym->getType()->toString(toStringMode));
+        return errorHandler.addError(innerCtx->getStart(), "Expected template but got: " + defSym.getType()->toString(toStringMode));
     };
 
     // Essentially a type-case
-    return defineTypeCase<std::variant<DefinitionSymbol *, ErrorChain *>>(ctx,
-        [this, m, defineTemplate, defineFunction](BismuthParser::DefineFunctionContext * fnCtx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
+    return defineTypeCase<std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>>(ctx,
+        [this, m](BismuthParser::DefineFunctionContext * fnCtx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
 
-            std::optional<DefinitionSymbol *> opt = symBindings.getBinding(fnCtx);
+            optional_ref<DefinitionSymbol> opt = symBindings.getBinding(fnCtx);
 
             if (!opt && stmgr.lookupInCurrentScope(fnCtx->name->getText()))
             {
@@ -3013,7 +3092,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
 
             if(isTemplate)
             {
-                DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
+                DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
                     [this, m, fnCtx](){
                         return stmgr.addDefinition(
                             m,
@@ -3022,9 +3101,9 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                             false).value(); //should be safe as we checked for redeclarations
                     });
 
-                if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym->getType()))
+                if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
                 {
-                    std::optional<ErrorChain *> optErr = defineTemplate(fnCtx, templateTy, sym);
+                    std::optional<ErrorChain *> optErr = defineTemplateType(fnCtx, templateTy, sym, m);
 
                     if(optErr) return optErr.value();
 
@@ -3038,13 +3117,13 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                         return sym;
                     }
                     // TODO: print templateTy->getValueType().value()?
-                    return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym->getType()->toString(toStringMode));
+                    return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym.getType()->toString(toStringMode));
                 }
 
-                return errorHandler.addError(fnCtx->getStart(), "Expected template but got: " + sym->getType()->toString(toStringMode));
+                return errorHandler.addError(fnCtx->getStart(), "Expected template but got: " + sym.getType()->toString(toStringMode));
             }
 
-            DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
+            DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
                 [this, m, fnCtx]() {
                     return stmgr.addDefinition(
                         m,
@@ -3053,19 +3132,19 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                         false).value(); //should be safe as we checked for redeclarations
                 });
 
-            if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(sym->getType()))
+            if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(sym.getType()))
             {
-                std::optional<ErrorChain *> optErr = defineFunction(fnCtx, funcType);
+                std::optional<ErrorChain *> optErr = defineFunctionType(fnCtx, funcType);
 
                 if(optErr) return optErr.value();
                 return sym;
             }
 
-            return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym->getType()->toString(toStringMode));
+            return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym.getType()->toString(toStringMode));
         },
 
-        [this, m, getTemplateSymbol, defineProgram](BismuthParser::DefineProgramContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
-            std::optional<DefinitionSymbol *> opt = symBindings.getBinding((BismuthParser::DefineTypeContext *)ctx);
+        [this, m, getTemplateSymbol](BismuthParser::DefineProgramContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+            optional_ref<DefinitionSymbol> opt = symBindings.getBinding((BismuthParser::DefineTypeContext *)ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
             {
@@ -3077,7 +3156,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                 return getTemplateSymbol(opt, ctx->name->getText(), ctx);
             }
 
-            DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
+            DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
                 [this, m, ctx]() { return stmgr.addDefinition(
                     m,
                     ctx->name->getText(),
@@ -3085,19 +3164,20 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                     false).value(); //should be safe as we checked for redeclarations
                 });
 
-            if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym->getType()))
+            if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym.getType()))
             {
-                std::optional<ErrorChain *> optErr = defineProgram(ctx, progType);
-
+                std::optional<ErrorChain *> optErr = defineProgramType(ctx, progType);
+std::cout << "3153" << std::endl;
                 if(optErr) return optErr.value();
+                std::cout << "3162" << std::endl;
                 return sym;
             }
 
-            return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym->getType()->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym.getType()->toString(toStringMode));
         },
 
-        [this, m, getTemplateSymbol, defineStruct](BismuthParser::DefineStructContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
-            std::optional<DefinitionSymbol *> opt = symBindings.getBinding(ctx);
+        [this, m, getTemplateSymbol](BismuthParser::DefineStructContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+            optional_ref<DefinitionSymbol> opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
             {
@@ -3111,7 +3191,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                 return getTemplateSymbol(opt, name, ctx);
             }
 
-            DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
+            DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
                 [this, m, name]() { return stmgr.addDefinition(
                     m,
                     name,
@@ -3120,19 +3200,19 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                     .value(); //should be safe as we checked for redeclarations
                 });
 
-            if(const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym->getType()))
+            if(const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym.getType()))
             {
-                std::optional<ErrorChain *> errOpt = defineStruct(ctx, structTy);
+                std::optional<ErrorChain *> errOpt = defineStructType(ctx, structTy);
 
                 if(errOpt) return errOpt.value();
                 return sym;
             }
 
-            return errorHandler.addError(ctx->getStart(), "Expected struct/product but got: " + sym->getType()->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Expected struct/product but got: " + sym.getType()->toString(toStringMode));
         },
 
-        [this, m, getTemplateSymbol, defineEnum](BismuthParser::DefineEnumContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
-            std::optional<DefinitionSymbol *> opt = symBindings.getBinding(ctx);
+        [this, m, getTemplateSymbol](BismuthParser::DefineEnumContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+            optional_ref<DefinitionSymbol> opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
             {
@@ -3146,7 +3226,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                 return getTemplateSymbol(opt, name, ctx);
             }
 
-            DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
+            DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
                 [this, m, name](){
                     return stmgr.addDefinition(
                         m,
@@ -3156,20 +3236,20 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                     ).value(); //should be safe as we checked for redeclarations
             });
 
-            if(const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym->getType()))
+            if(const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym.getType()))
             {
-                std::optional<ErrorChain *> errOpt = defineEnum(ctx, sumTy);
+                std::optional<ErrorChain *> errOpt = defineEnumType(ctx, sumTy);
 
                 if(errOpt) return errOpt.value();
                 return sym;
             }
 
-            return errorHandler.addError(ctx->getStart(), "Expected enum/sum but got: " + sym->getType()->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Expected enum/sum but got: " + sym.getType()->toString(toStringMode));
         },
 
 
-        [this, m, getTemplateSymbol, defineTrait](BismuthParser::DefineTraitContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *> {
-            std::optional<DefinitionSymbol *> opt = symBindings.getBinding(ctx);
+        [this, m, getTemplateSymbol](BismuthParser::DefineTraitContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+            optional_ref<DefinitionSymbol> opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
             {
@@ -3183,7 +3263,7 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                 return getTemplateSymbol(opt, name, ctx);
             }
 
-            DefinitionSymbol *sym = lazy_value_or<DefinitionSymbol *>(opt,
+            DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
                 [this, m, name]() { return stmgr.addDefinition(
                     m,
                     name,
@@ -3192,18 +3272,18 @@ std::variant<DefinitionSymbol *, ErrorChain *>  SemanticVisitor::defineAndGetSym
                     .value(); //should be safe as we checked for redeclarations
                 });
 
-            if(const TypeTrait * structTy = dynamic_cast<const TypeTrait *>(sym->getType()))
+            if(const TypeTrait * structTy = dynamic_cast<const TypeTrait *>(sym.getType()))
             {
-                std::optional<ErrorChain *> errOpt = defineTrait(ctx, structTy);
+                std::optional<ErrorChain *> errOpt = defineTraitType(ctx, structTy);
 
                 if(errOpt) return errOpt.value();
                 return sym;
             }
 
-            return errorHandler.addError(ctx->getStart(), "Expected trait but got: " + sym->getType()->toString(toStringMode));
+            return errorHandler.addError(ctx->getStart(), "Expected trait but got: " + sym.getType()->toString(toStringMode));
         },
 
-        [this](BismuthParser::DefineTypeContext * ctx) -> std::variant<DefinitionSymbol *, ErrorChain *>{
+        [this](BismuthParser::DefineTypeContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>{
             return errorHandler.addCompilerError(ctx->getStart(), "Failed to generate the type for a definition; Unknown and unimplemented case for define type.");
         }
 
@@ -3247,6 +3327,7 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitLValue(antlr4::Par
 std::variant<const ProtocolSequence *, ErrorChain *>
 SemanticVisitor::visitProtocolAsSeq(BismuthParser::ProtocolContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     ProtocolVisitor *protoVisitor = new ProtocolVisitor(errorHandler, this);
     std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
     delete protoVisitor;
@@ -3257,6 +3338,7 @@ SemanticVisitor::visitProtocolAsSeq(BismuthParser::ProtocolContext *ctx)
 std::variant<const TypeChannel *, ErrorChain *>
 SemanticVisitor::visitProtocolAsChannel(BismuthParser::ProtocolContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const ProtocolSequence *, proto, visitProtocolAsSeq(ctx), ctx, "Failed to generate channel protocol");
     return new TypeChannel(proto);
 }

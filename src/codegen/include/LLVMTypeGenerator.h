@@ -9,6 +9,7 @@
  */
 #pragma once
 
+#include "Debug.h"
 #include "Type.h"
 
 #include "llvm/ADT/StringRef.h"

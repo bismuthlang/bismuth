@@ -33,6 +33,12 @@
   } \
   type id = tmp.value(); \
 
+# define DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(type, id, expr, ctx, message) IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, message, IMPL_MACRO_CONCAT(id, _COUNTER__))
+
+
+
+
+
 #define IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_WPROTO(type, id, expr, message, tmp) \
   std::optional<type> tmp = expr; \
   if(!tmp) { \
@@ -41,6 +47,39 @@
   type id = tmp.value(); \
 
 # define DEFINE_OR_PROPAGATE_OPTIONAL_WPROTO(type, id, expr, message) IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_WPROTO(MACRO_ARG(type), id, MACRO_ARG(expr), message, IMPL_MACRO_CONCAT(id, _COUNTER__))
+
+
+
+
+
+
+#define IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(type, id, expr, ctx, message, tmp) \
+  optional_ref<type> tmp = expr; \
+  if(!tmp) { \
+    return errorHandler.addError(ctx->getStart(), message); \
+  } \
+  type& id = tmp.value().get(); \
+
+# define DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(type, id, expr, ctx, message) IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, message, IMPL_MACRO_CONCAT(id, _COUNTER__))
+
+
+
+
+
+#define IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_REF_WPROTO(type, id, expr, message, tmp) \
+  optional_ref<type> tmp = expr; \
+  if(!tmp) { \
+    return message; \
+  } \
+  type& id = tmp.value().get(); \
+
+# define DEFINE_OR_PROPAGATE_OPTIONAL_REF_WPROTO(type, id, expr, message) IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_REF_WPROTO(MACRO_ARG(type), id, MACRO_ARG(expr), message, IMPL_MACRO_CONCAT(id, _COUNTER__))
+
+
+
+
+
+
 
 #define IMPL_DEFINE_OR_PROPAGATE_VARIANT_IERR(type, id, expr, ctx, tmp) \
     std::variant<type, InternalBismuthError> tmp = expr; \
@@ -67,6 +106,15 @@
   type id = std::get<type>(tmp); \
 
 
+#define IMPL_DEFINE_OR_PROPAGATE_VARIANT_REF(type, id, expr, ctx, tmp) \
+  std::variant<std::reference_wrapper<type>, ErrorChain*> tmp = expr; \
+  if (ErrorChain **e = std::get_if<ErrorChain *>(&tmp)) \
+  { \
+    return (*e)->addErrorAt(ctx->getStart()); \
+  } \
+  type& id = std::get<std::reference_wrapper<type>>(tmp).get(); \
+
+
 #define IMPL_PROPAGATE_PROTO(type, expr, ctx, tmp) \
   std::variant<type, std::string> tmp = expr; \
   if (std::string *e = std::get_if<std::string>(&tmp)) \
@@ -78,11 +126,11 @@
 # define PROPAGATE_PROTO(type, expr, ctx) IMPL_PROPAGATE_PROTO(MACRO_ARG(type), MACRO_ARG(expr), ctx, IMPL_MACRO_CONCAT(id, _COUNTER__))
 
 
-# define DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(type, id, expr, ctx, message) IMPL_DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, message, IMPL_MACRO_CONCAT(id, _COUNTER__))
+
 # define DEFINE_OR_PROPAGATE_VARIANT_WMSG(type, id, expr, ctx, message) IMPL_DEFINE_OR_PROPAGATE_VARIANT_WMSG(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, message, IMPL_MACRO_CONCAT(id, __COUNTER__))
 # define DEFINE_OR_PROPAGATE_VARIANT(type, id, expr, ctx) IMPL_DEFINE_OR_PROPAGATE_VARIANT(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, IMPL_MACRO_CONCAT(id, __COUNTER__))
 # define DEFINE_OR_PROPAGATE_VARIANT_IERR(type, id, expr, ctx) IMPL_DEFINE_OR_PROPAGATE_VARIANT_IERR(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, IMPL_MACRO_CONCAT(id, __COUNTER__))
-
+# define DEFINE_OR_PROPAGATE_VARIANT_REF(type, id, expr, ctx) IMPL_DEFINE_OR_PROPAGATE_VARIANT_REF(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, IMPL_MACRO_CONCAT(id, __COUNTER__))
 
 
 #define STR1(x) #x

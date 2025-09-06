@@ -122,6 +122,7 @@ bool TypeBottom::isSupertypeFor(const Type& other) const
  *******************************************/
 std::string TypeUnit::toString(DisplayMode mode) const 
 {
+    std::cerr << "125" << std::endl;
     switch (mode)
     {
     case C_STYLE:
@@ -162,6 +163,7 @@ bool TypeAbsurd::isSupertypeFor(const Type& other) const
 
 std::string TypeArray::toString(DisplayMode mode) const
 {
+    std::cerr << "166" << std::endl;
     std::ostringstream description;
     description << valueType->toString(mode) << "[" << length << "]";
 
@@ -214,6 +216,7 @@ const Type * TypeArray::getCopySubst(std::map<const Type *, const Type *> existi
 
 std::string TypeDynArray::toString(DisplayMode mode=C_STYLE) const
 {
+    std::cerr << "219" << std::endl;
     return valueType->toString(mode) + "[]";
 }
 
@@ -262,6 +265,7 @@ const Type * TypeDynArray::getCopySubst(std::map<const Type *, const Type *> exi
  *******************************************/
 std::string TypeChannel::toString(DisplayMode mode) const
 {
+    std::cerr << "268" << std::endl;
     switch(mode)
     {
         case C_STYLE:
@@ -345,6 +349,7 @@ bool TypeChannel::isSupertypeFor(const Type& other) const
  *******************************************/
 std::string TypeBox::toString(DisplayMode mode) const
 {
+    std::cerr << "352" << std::endl;
     return "Box<" + innerType->toString(mode) + ">";
 }
 
@@ -398,6 +403,7 @@ bool TypeProgram::setProtocol(const ProtocolSequence * p) const
 
 std::string TypeProgram::getTypeRepresentation(DisplayMode mode) const 
 {
+    std::cerr << "401" << std::endl;
     std::ostringstream description;
     description << "PROGRAM : " << (protocol ? protocol->toString(mode) : "PARTIAL DEFINITION");
 
@@ -499,6 +505,7 @@ bool TypeFunc::setInvoke(std::vector<const Type *> p, const Type *r, bool v) con
 // PLAN: should improve tostring, make it match syntax + math
 std::string TypeFunc::getTypeRepresentation(DisplayMode mode) const 
 {
+    std::cerr << "508" << std::endl;
     if(!isDefined()) return "Undefined Function"; // FIXME: ADD SUCH CHECKS EVERYWHERE!
     std::ostringstream description;
 
@@ -630,6 +637,7 @@ std::optional<const Type*> TypeInfer::getValueType() const
  */
 std::string TypeInfer::toString(DisplayMode mode) const
 {
+    std::cerr << "639" << std::endl;
     if (hasBeenInferred())
     {
         // return "{VAR/" + valueType->value()->toString(mode) + "}";
@@ -854,6 +862,7 @@ unsigned int TypeSum::getIndex(const Type& toFind) const
 
 std::string TypeSum::getTypeRepresentation(DisplayMode mode) const
 {
+    std::cerr << "864" << std::endl;
     std::ostringstream description;
 
     description << "(";
@@ -979,6 +988,7 @@ optional<unsigned int> TypeStruct::getElementIndex(std::string k) const { return
 
 std::string TypeStruct::getTypeRepresentation(DisplayMode mode) const
 {
+    std::cerr << "990" << std::endl;
     std::ostringstream description;
 
     description << "(";
@@ -1211,6 +1221,7 @@ std::string TypeTemplate::templateString(DisplayMode mode) const
 
 std::string TypeTemplate::getTypeRepresentation(DisplayMode mode) const 
 {
+    std::cerr << "1223" << std::endl;
     // FIXME: DO BETTER!
     // FIXME: BAD OPTIONAL ACCESS SHOULDNT BE A PROBLEM, BUT VERIFY!
     return this->templateString(mode)  + 
@@ -1359,6 +1370,7 @@ optional<unsigned int> TypeTrait::getElementIndex(std::string k) const { return 
 
 std::string TypeTrait::getTypeRepresentation(DisplayMode mode) const
 {
+    std::cerr << "1372" << std::endl;
     std::ostringstream description;
 
     description << "(";

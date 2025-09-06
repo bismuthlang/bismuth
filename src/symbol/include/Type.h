@@ -165,13 +165,16 @@ public:
 
     std::string toString(DisplayMode mode) const override
     {
+        std::cerr << "168" << std::endl;
         // std::string metaInfo = (meta.has_value() ? meta.value()() : "");
         // return this->getName().value_or("") + (meta.has_value() ? meta.value()() : "");
         // DO NOT USE value_or, as it will force the evaluation of getTypeRepresentation -- leading to infinite recursion
         if (this->hasName())
         {
+            std::cerr << "174" << std::endl;
             return this->getIdentifier().value()->getUniqueNameInScope(); // FIXME: VERIFY
         }
+        std::cerr << "177" << std::endl;
             // return this->getName().value() + metaInfo;
         return getTypeRepresentation(mode);
     } 
@@ -1145,6 +1148,7 @@ public:
     TypeGeneric(bool isLinear, std::string id) : Type(isLinear), identifier(id) {}; 
 
     std::string toString(DisplayMode mode) const override { 
+        std::cerr << "1151" << std::endl;
         if(actingType) return actingType.value()->toString(mode); 
         return identifier;
         // return actingType->toString(mode); 

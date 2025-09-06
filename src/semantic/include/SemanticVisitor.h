@@ -1,4 +1,5 @@
 #pragma once
+#include "Debug.h"
 #include "BismuthBaseVisitor.h"
 #include "STManager.h"
 #include "PropertyManager.h"
@@ -48,186 +49,186 @@ public:
     overloaded(Ts...) -> overloaded<Ts...>;
 
     std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::IConstExprContext *ctx);
-    std::any visitIConstExpr(BismuthParser::IConstExprContext *ctx) override { return visitCtx(ctx); }
+    std::any visitIConstExpr(BismuthParser::IConstExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); }
 
     std::variant<TBooleanConstNode *, ErrorChain *> visitCtx(BismuthParser::BConstExprContext *ctx) { return visitCtx(ctx->booleanConst()); }
-    std::any visitBConstExpr(BismuthParser::BConstExprContext *ctx) override { return TNVariantCast<TBooleanConstNode>(visitCtx(ctx)); }
+    std::any visitBConstExpr(BismuthParser::BConstExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TBooleanConstNode>(visitCtx(ctx)); }
 
     std::variant<TBooleanConstNode *, ErrorChain *> visitCtx(BismuthParser::BooleanConstContext *ctx);
-    std::any visitBooleanConst(BismuthParser::BooleanConstContext *ctx) override { return TNVariantCast<TBooleanConstNode>(visitCtx(ctx)); }
+    std::any visitBooleanConst(BismuthParser::BooleanConstContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TBooleanConstNode>(visitCtx(ctx)); }
 
     std::variant<TStringConstNode *, ErrorChain *> visitCtx(BismuthParser::SConstExprContext *ctx);
-    std::any visitSConstExpr(BismuthParser::SConstExprContext *ctx) override { return TNVariantCast<TStringConstNode>(visitCtx(ctx)); }
+    std::any visitSConstExpr(BismuthParser::SConstExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TStringConstNode>(visitCtx(ctx)); }
 
     std::variant<TLogAndExprNode *, ErrorChain *> visitCtx(BismuthParser::LogAndExprContext *ctx);
-    std::any visitLogAndExpr(BismuthParser::LogAndExprContext *ctx) override { return TNVariantCast<TLogAndExprNode>(visitCtx(ctx)); }
+    std::any visitLogAndExpr(BismuthParser::LogAndExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TLogAndExprNode>(visitCtx(ctx)); }
 
     std::variant<TLogOrExprNode *, ErrorChain *> visitCtx(BismuthParser::LogOrExprContext *ctx);
-    std::any visitLogOrExpr(BismuthParser::LogOrExprContext *ctx) override { return TNVariantCast<TLogOrExprNode>(visitCtx(ctx)); }
+    std::any visitLogOrExpr(BismuthParser::LogOrExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TLogOrExprNode>(visitCtx(ctx)); }
 
     std::variant<TEqExprNode *, ErrorChain *> visitCtx(BismuthParser::EqExprContext *ctx);
-    std::any visitEqExpr(BismuthParser::EqExprContext *ctx) override { return TNVariantCast<TEqExprNode>(visitCtx(ctx)); }
+    std::any visitEqExpr(BismuthParser::EqExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TEqExprNode>(visitCtx(ctx)); }
 
     std::variant<TUnaryExprNode *, ErrorChain *> visitCtx(BismuthParser::UnaryExprContext *ctx);
-    std::any visitUnaryExpr(BismuthParser::UnaryExprContext *ctx) override { return TNVariantCast<TUnaryExprNode>(visitCtx(ctx)); }
+    std::any visitUnaryExpr(BismuthParser::UnaryExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TUnaryExprNode>(visitCtx(ctx)); }
 
     std::variant<TBinaryArithNode *, ErrorChain *> visitCtx(BismuthParser::BinaryArithExprContext *ctx);
-    std::any visitBinaryArithExpr(BismuthParser::BinaryArithExprContext *ctx) override { return TNVariantCast<TBinaryArithNode>(visitCtx(ctx)); }
+    std::any visitBinaryArithExpr(BismuthParser::BinaryArithExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TBinaryArithNode>(visitCtx(ctx)); }
 
     std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::ParenExprContext *ctx);
-    std::any visitParenExpr(BismuthParser::ParenExprContext *ctx) override { return TNVariantCast<TypedNode>(visitCtx(ctx)); }
+    std::any visitParenExpr(BismuthParser::ParenExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TypedNode>(visitCtx(ctx)); }
 
     std::variant<TPathNode *, ErrorChain*> visitCtx(BismuthParser::PathContext * ctx, bool is_rvalue);
-    std::any visitPath(BismuthParser::PathContext *ctx) override { return TNVariantCast<TPathNode>(visitCtx(ctx, true)); }
+    std::any visitPath(BismuthParser::PathContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TPathNode>(visitCtx(ctx, true)); }
 
     std::variant<TFieldAccessNode *, ErrorChain *> visitCtx(BismuthParser::FieldAccessExprContext *ctx, bool is_rvalue);
-    std::any visitFieldAccessExpr(BismuthParser::FieldAccessExprContext *ctx) override { return TNVariantCast<TFieldAccessNode>(visitCtx(ctx, true)); }
+    std::any visitFieldAccessExpr(BismuthParser::FieldAccessExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TFieldAccessNode>(visitCtx(ctx, true)); }
 
     std::variant<TIdentifier *, ErrorChain *> visitCtx(BismuthParser::IdentifierExprContext * ctx, bool is_rvalue);
-    std::any visitIdentifierExpr(BismuthParser::IdentifierExprContext * ctx) override { return TNVariantCast<TIdentifier>(visitCtx(ctx, true)); }
+    std::any visitIdentifierExpr(BismuthParser::IdentifierExprContext * ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TIdentifier>(visitCtx(ctx, true)); }
 
-    std::any visitPathExpr(BismuthParser::PathExprContext *ctx) override { return TNVariantCast<TPathNode>(visitCtx(ctx->path(), true)); }
+    std::any visitPathExpr(BismuthParser::PathExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TPathNode>(visitCtx(ctx->path(), true)); }
 
     std::variant<TDerefBoxNode *, ErrorChain *> visitCtx(BismuthParser::DerefContext *ctx, bool is_rvalue);
-    std::any visitDeref(BismuthParser::DerefContext *ctx) override { return TNVariantCast<TDerefBoxNode>(visitCtx(ctx, true)); }
+    std::any visitDeref(BismuthParser::DerefContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TDerefBoxNode>(visitCtx(ctx, true)); }
 
     std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::ArrayAccessContext *ctx, bool is_rvalue);
-    std::any visitArrayAccess(BismuthParser::ArrayAccessContext *ctx) override { return visitCtx(ctx, true); }
+    std::any visitArrayAccess(BismuthParser::ArrayAccessContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx, true); }
 
     std::variant<TAssignNode *, ErrorChain *> visitCtx(BismuthParser::AssignmentStatementContext *ctx);
-    std::any visitAssignmentStatement(BismuthParser::AssignmentStatementContext * ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx)); }
-    std::any visitAssignStatement(BismuthParser::AssignStatementContext *ctx) override { return TNVariantCast<TAssignNode>(visitCtx(ctx->assignmentStatement())); }
+    std::any visitAssignmentStatement(BismuthParser::AssignmentStatementContext * ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TAssignNode>(visitCtx(ctx)); }
+    std::any visitAssignStatement(BismuthParser::AssignStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TAssignNode>(visitCtx(ctx->assignmentStatement())); }
 
     std::variant<ParameterListNode, ErrorChain *> visitCtx(BismuthParser::ParameterListContext *ctx);
-    std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { return visitCtx(ctx); }
+    std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); }
 
-    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, std::optional<DefinitionSymbol *> sym);
-    std::any visitLambdaConstExpr(BismuthParser::LambdaConstExprContext *ctx) override { return TNVariantCast<TLambdaConstNode>(visitCtx(ctx, std::nullopt)); }
+    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, optional_ref<DefinitionSymbol> sym);
+    std::any visitLambdaConstExpr(BismuthParser::LambdaConstExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TLambdaConstNode>(visitCtx(ctx, std::nullopt)); }
 
     std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::BlockStatementContext *ctx) { return this->visitCtx(ctx->block()); }
-    std::any visitBlockStatement(BismuthParser::BlockStatementContext *ctx) override { return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
+    std::any visitBlockStatement(BismuthParser::BlockStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
 
     std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::BlockContext *ctx) { return this->safeVisitBlock(ctx, true); }
-    std::any visitBlock(BismuthParser::BlockContext *ctx) override { return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
+    std::any visitBlock(BismuthParser::BlockContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
 
     std::variant<TExternNode *, ErrorChain *> visitCtx(BismuthParser::ExternStatementContext *ctx);
-    std::any visitExternStatement(BismuthParser::ExternStatementContext *ctx) override { return TNVariantCast<TExternNode>(visitCtx(ctx)); }
+    std::any visitExternStatement(BismuthParser::ExternStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TExternNode>(visitCtx(ctx)); }
 
     std::variant<ParameterNode, ErrorChain *> visitCtx(BismuthParser::ParameterContext *ctx);
-    std::any visitParameter(BismuthParser::ParameterContext *ctx) override { return visitCtx(ctx); }
+    std::any visitParameter(BismuthParser::ParameterContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); }
 
     std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::ExpressionStatementContext *ctx);
-    std::any visitExpressionStatement(BismuthParser::ExpressionStatementContext *ctx) override { return visitCtx(ctx); }
+    std::any visitExpressionStatement(BismuthParser::ExpressionStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); }
 
     std::variant<TInvocationNode *, ErrorChain *> visitCtx(BismuthParser::CallExprContext *ctx);// { return this->visitCtx(ctx->call); }
-    std::any visitCallExpr(BismuthParser::CallExprContext *ctx) override { return TNVariantCast<TInvocationNode>(visitCtx(ctx)); }
+    std::any visitCallExpr(BismuthParser::CallExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TInvocationNode>(visitCtx(ctx)); }
 
     std::variant<TypedNode *, ErrorChain *> visitCtx(BismuthParser::ConditionContext *ctx) { return this->visitCondition(ctx->ex); }
-    std::any visitCondition(BismuthParser::ConditionContext *ctx) override { return visitCtx(ctx); }
+    std::any visitCondition(BismuthParser::ConditionContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); }
 
     std::variant<TBinaryRelNode *, ErrorChain *> visitCtx(BismuthParser::BinaryRelExprContext *ctx);
-    std::any visitBinaryRelExpr(BismuthParser::BinaryRelExprContext *ctx) override { return TNVariantCast<TBinaryRelNode>(visitCtx(ctx)); }
+    std::any visitBinaryRelExpr(BismuthParser::BinaryRelExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TBinaryRelNode>(visitCtx(ctx)); }
 
     std::variant<TSelectAlternativeNode *, ErrorChain *> visitCtx(BismuthParser::SelectAlternativeContext *ctx);
-    std::any visitSelectAlternative(BismuthParser::SelectAlternativeContext *ctx) override { return TNVariantCast<TSelectAlternativeNode>(visitCtx(ctx)); }
+    std::any visitSelectAlternative(BismuthParser::SelectAlternativeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TSelectAlternativeNode>(visitCtx(ctx)); }
 
-    std::any visitTypeDef(BismuthParser::TypeDefContext *ctx) override { return ctx->defineType()->accept(this); }
+    std::any visitTypeDef(BismuthParser::TypeDefContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return ctx->defineType()->accept(this); }
 
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineImplContext *ctx);
-    std::any visitDefineImpl(BismuthParser::DefineImplContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
+    std::any visitDefineImpl(BismuthParser::DefineImplContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineProgramContext *ctx);
-    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
+    std::any visitDefineProgram(BismuthParser::DefineProgramContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineFunctionContext *ctx);
-    std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
+    std::any visitDefineFunction(BismuthParser::DefineFunctionContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<TSelectStatementNode *, ErrorChain *> visitCtx(BismuthParser::SelectStatementContext *ctx);
-    std::any visitSelectStatement(BismuthParser::SelectStatementContext *ctx) override { return TNVariantCast<TSelectStatementNode>(visitCtx(ctx)); }
+    std::any visitSelectStatement(BismuthParser::SelectStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TSelectStatementNode>(visitCtx(ctx)); }
 
     std::variant<TConditionalStatementNode *, ErrorChain *> visitCtx(BismuthParser::ConditionalStatementContext *ctx);
-    std::any visitConditionalStatement(BismuthParser::ConditionalStatementContext *ctx) override { return TNVariantCast<TConditionalStatementNode>(visitCtx(ctx)); }
+    std::any visitConditionalStatement(BismuthParser::ConditionalStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TConditionalStatementNode>(visitCtx(ctx)); }
 
     std::variant<TWhileLoopNode *, ErrorChain *> visitCtx(BismuthParser::ProgramLoopContext *ctx);
-    std::any visitProgramLoop(BismuthParser::ProgramLoopContext *ctx) override { return TNVariantCast<TWhileLoopNode>(visitCtx(ctx)); }
+    std::any visitProgramLoop(BismuthParser::ProgramLoopContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TWhileLoopNode>(visitCtx(ctx)); }
 
 
     std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::ForStatementContext *ctx);
-    std::any visitForStatement(BismuthParser::ForStatementContext *ctx) override { return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
+    std::any visitForStatement(BismuthParser::ForStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
 
     std::variant<TReturnNode *, ErrorChain *> visitCtx(BismuthParser::ReturnStatementContext *ctx);
-    std::any visitReturnStatement(BismuthParser::ReturnStatementContext *ctx) override { return TNVariantCast<TReturnNode>(visitCtx(ctx)); }
+    std::any visitReturnStatement(BismuthParser::ReturnStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TReturnNode>(visitCtx(ctx)); }
 
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineEnumContext *ctx);
-    std::any visitDefineEnum(BismuthParser::DefineEnumContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
+    std::any visitDefineEnum(BismuthParser::DefineEnumContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineStructContext *ctx);
-    std::any visitDefineStruct(BismuthParser::DefineStructContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
+    std::any visitDefineStruct(BismuthParser::DefineStructContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::DefineTraitContext *ctx);
-    std::any visitDefineTrait(BismuthParser::DefineTraitContext *ctx) override { return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
+    std::any visitDefineTrait(BismuthParser::DefineTraitContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<DefinitionNode>(visitCtx(ctx)); }
 
     std::variant<TInitProductNode *, ErrorChain *> visitCtx(BismuthParser::InitProductContext *ctx);
-    std::any visitInitProduct(BismuthParser::InitProductContext *ctx) override { return TNVariantCast<TInitProductNode>(visitCtx(ctx)); }
+    std::any visitInitProduct(BismuthParser::InitProductContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TInitProductNode>(visitCtx(ctx)); }
 
     std::variant<TArrayRValue *, ErrorChain *> visitCtx(BismuthParser::ArrayExpressionContext * ctx);
-    std::any visitArrayExpression(BismuthParser::ArrayExpressionContext * ctx) override { return TNVariantCast<TArrayRValue>(visitCtx(ctx)); }
+    std::any visitArrayExpression(BismuthParser::ArrayExpressionContext * ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TArrayRValue>(visitCtx(ctx)); }
 
     std::variant<TInitBoxNode *, ErrorChain *> visitCtx(BismuthParser::InitBoxContext *ctx);
-    std::any visitInitBox(BismuthParser::InitBoxContext *ctx) override { return TNVariantCast<TInitBoxNode>(visitCtx(ctx)); }
+    std::any visitInitBox(BismuthParser::InitBoxContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TInitBoxNode>(visitCtx(ctx)); }
 
     std::variant<TProgramSendNode *, ErrorChain *> TvisitProgramSend(BismuthParser::ProgramSendContext *ctx);
-    std::any visitProgramSend(BismuthParser::ProgramSendContext *ctx) override { return TNVariantCast<TProgramSendNode>(TvisitProgramSend(ctx)); }
+    std::any visitProgramSend(BismuthParser::ProgramSendContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramSendNode>(TvisitProgramSend(ctx)); }
 
     std::variant<TProgramRecvNode *, ErrorChain *> TvisitAssignableRecv(BismuthParser::AssignableRecvContext *ctx);
-    std::any visitAssignableRecv(BismuthParser::AssignableRecvContext *ctx) override { return TNVariantCast<TProgramRecvNode>(TvisitAssignableRecv(ctx)); }
+    std::any visitAssignableRecv(BismuthParser::AssignableRecvContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramRecvNode>(TvisitAssignableRecv(ctx)); }
 
     std::variant<TProgramIsPresetNode *, ErrorChain *> TvisitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx);
-    std::any visitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx) override { return TNVariantCast<TProgramIsPresetNode>(TvisitAssignableIsPresent(ctx)); }
+    std::any visitAssignableIsPresent(BismuthParser::AssignableIsPresentContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramIsPresetNode>(TvisitAssignableIsPresent(ctx)); }
 
     std::variant<TProgramContractNode *, ErrorChain *> TvisitProgramContract(BismuthParser::ProgramContractContext *ctx);
-    std::any visitProgramContract(BismuthParser::ProgramContractContext *ctx) override { return TNVariantCast<TProgramContractNode>(TvisitProgramContract(ctx)); }
+    std::any visitProgramContract(BismuthParser::ProgramContractContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramContractNode>(TvisitProgramContract(ctx)); }
 
     std::variant<TProgramWeakenNode *, ErrorChain *> TvisitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx);
-    std::any visitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx) override { return TNVariantCast<TProgramWeakenNode>(TvisitProgramWeaken(ctx)); }
+    std::any visitProgramWeaken(BismuthParser::ProgramWeakenContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramWeakenNode>(TvisitProgramWeaken(ctx)); }
 
     std::variant<TProgramCancelNode *, ErrorChain *> TvisitProgramCancel(BismuthParser::ProgramCancelContext *ctx);
-    std::any visitProgramCancel(BismuthParser::ProgramCancelContext *ctx) override { return TNVariantCast<TProgramCancelNode>(TvisitProgramCancel(ctx)); }
+    std::any visitProgramCancel(BismuthParser::ProgramCancelContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramCancelNode>(TvisitProgramCancel(ctx)); }
 
     std::variant<TProgramExecNode *, ErrorChain *> TvisitAssignableExec(BismuthParser::AssignableExecContext *ctx);
-    std::any visitAssignableExec(BismuthParser::AssignableExecContext *ctx) override { return TNVariantCast<TProgramExecNode>(TvisitAssignableExec(ctx)); }
+    std::any visitAssignableExec(BismuthParser::AssignableExecContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramExecNode>(TvisitAssignableExec(ctx)); }
 
     std::variant<TProgramAcceptNode *, ErrorChain *> TvisitProgramAccept(BismuthParser::ProgramAcceptContext *ctx);
-    std::any visitProgramAccept(BismuthParser::ProgramAcceptContext *ctx) override { return TNVariantCast<TProgramAcceptNode>(TvisitProgramAccept(ctx)); }
+    std::any visitProgramAccept(BismuthParser::ProgramAcceptContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramAcceptNode>(TvisitProgramAccept(ctx)); }
 
     std::variant<TProgramAcceptWhileNode *, ErrorChain *> TvisitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx);
-    std::any visitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx) override { return TNVariantCast<TProgramAcceptWhileNode>(TvisitProgramAcceptWhile(ctx)); }
+    std::any visitProgramAcceptWhile(BismuthParser::ProgramAcceptWhileContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramAcceptWhileNode>(TvisitProgramAcceptWhile(ctx)); }
 
     std::variant<TProgramAcceptIfNode *, ErrorChain *> TvisitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx);
-    std::any visitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx) override { return TNVariantCast<TProgramAcceptIfNode>(TvisitProgramAcceptIf(ctx)); }
+    std::any visitProgramAcceptIf(BismuthParser::ProgramAcceptIfContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramAcceptIfNode>(TvisitProgramAcceptIf(ctx)); }
 
-    std::any visitCompilationUnit(BismuthParser::CompilationUnitContext *ctx) override { assert(false && "Compiler got lost; use phased visit instead!"); }
+    std::any visitCompilationUnit(BismuthParser::CompilationUnitContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); assert(false && "Compiler got lost; use phased visit instead!"); }
 
     std::variant<TVarDeclNode *, ErrorChain *> visitCtx(BismuthParser::VariableDeclarationContext *ctx);
-    std::any visitVariableDeclaration(BismuthParser::VariableDeclarationContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); };
-    std::any visitVarDeclStatement(BismuthParser::VarDeclStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx->variableDeclaration())); }
+    std::any visitVariableDeclaration(BismuthParser::VariableDeclarationContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<>(visitCtx(ctx)); };
+    std::any visitVarDeclStatement(BismuthParser::VarDeclStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<>(visitCtx(ctx->variableDeclaration())); }
 
     std::variant<TMatchStatementNode *, ErrorChain *> visitCtx(BismuthParser::MatchStatementContext *ctx);
-    std::any visitMatchStatement(BismuthParser::MatchStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); } // NOTE: CASTS NEEDED B/C OF HOW C++ HANDLES ANYs BY MANGLED NAME!
+    std::any visitMatchStatement(BismuthParser::MatchStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<>(visitCtx(ctx)); } // NOTE: CASTS NEEDED B/C OF HOW C++ HANDLES ANYs BY MANGLED NAME!
 
     std::variant<TExitNode *, ErrorChain *> visitCtx(BismuthParser::ExitStatementContext *ctx);
-    std::any visitExitStatement(BismuthParser::ExitStatementContext *ctx) override { return TNVariantCast<>(visitCtx(ctx)); }
+    std::any visitExitStatement(BismuthParser::ExitStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<>(visitCtx(ctx)); }
 
     std::variant<TExprCopyNode *, ErrorChain *> TvisitCopyExpr(BismuthParser::CopyExprContext *ctx);
-    std::any visitCopyExpr(BismuthParser::CopyExprContext *ctx) override { return TNVariantCast<TExprCopyNode>(TvisitCopyExpr(ctx)); }
+    std::any visitCopyExpr(BismuthParser::CopyExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TExprCopyNode>(TvisitCopyExpr(ctx)); }
 
     std::variant<TAsChannelNode *, ErrorChain *> TvisitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx);
-    std::any visitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx) override { return TNVariantCast<TAsChannelNode>(TvisitAsChannelExpr(ctx)); }
+    std::any visitAsChannelExpr(BismuthParser::AsChannelExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TAsChannelNode>(TvisitAsChannelExpr(ctx)); }
 
 
     // Note: this method doesn't actually add anything to codegen---it just adds symbols or throws errors
     std::optional<ErrorChain *> TVisitImportStatement(BismuthParser::ImportStatementContext * ctx);
-    std::any visitImportStatement(BismuthParser::ImportStatementContext * ctx) override { return TVisitImportStatement(ctx); }
+    std::any visitImportStatement(BismuthParser::ImportStatementContext * ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TVisitImportStatement(ctx); }
 
     const Type *visitCtx(BismuthParser::AssignmentContext *ctx);
 
@@ -235,38 +236,38 @@ public:
      *  Types
      */
     std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::BaseTypeContext *ctx);
-    std::any visitBaseType(BismuthParser::BaseTypeContext *ctx) override { return visitCtx(ctx); } // casting done in the function
+    std::any visitBaseType(BismuthParser::BaseTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); } // casting done in the function
 
     std::variant<const TypeDynArray *, ErrorChain*> visitCtx(BismuthParser::DynArrayTypeContext * ctx);
-    std::any visitDynArrayType(BismuthParser::DynArrayTypeContext * ctx) override { return TypeVariantCast<TypeDynArray>(visitCtx(ctx)); }
+    std::any visitDynArrayType(BismuthParser::DynArrayTypeContext * ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TypeVariantCast<TypeDynArray>(visitCtx(ctx)); }
 
     std::variant<const TypeArray *, ErrorChain *> visitCtx(BismuthParser::ArrayTypeContext *ctx);
-    std::any visitArrayType(BismuthParser::ArrayTypeContext *ctx) override { return TypeVariantCast<TypeArray>(visitCtx(ctx)); } // { return visitCtx(ctx); }
+    std::any visitArrayType(BismuthParser::ArrayTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TypeVariantCast<TypeArray>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
     std::variant<const TypeFunc *, ErrorChain *> visitCtx(BismuthParser::LambdaTypeContext *ctx);
-    std::any visitLambdaType(BismuthParser::LambdaTypeContext *ctx) override { return TypeVariantCast<TypeFunc>(visitCtx(ctx)); } // { return visitCtx(ctx); }
+    std::any visitLambdaType(BismuthParser::LambdaTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TypeVariantCast<TypeFunc>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
     std::variant<const TypeChannel *, ErrorChain *> visitCtx(BismuthParser::ChannelTypeContext *ctx);
-    std::any visitChannelType(BismuthParser::ChannelTypeContext *ctx) override { return TypeVariantCast<TypeChannel>(visitCtx(ctx)); } // { return visitCtx(ctx); }
+    std::any visitChannelType(BismuthParser::ChannelTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TypeVariantCast<TypeChannel>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
     std::variant<const TypeBox *, ErrorChain *> visitCtx(BismuthParser::BoxTypeContext *ctx);
-    std::any visitBoxType(BismuthParser::BoxTypeContext *ctx) override { return TypeVariantCast<TypeBox>(visitCtx(ctx)); } // { return visitCtx(ctx); }
+    std::any visitBoxType(BismuthParser::BoxTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TypeVariantCast<TypeBox>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
     std::variant<const TypeProgram *, ErrorChain *> visitCtx(BismuthParser::ProgramTypeContext *ctx);
-    std::any visitProgramType(BismuthParser::ProgramTypeContext *ctx) override { return TypeVariantCast<TypeProgram>(visitCtx(ctx)); } // { return visitCtx(ctx); }
+    std::any visitProgramType(BismuthParser::ProgramTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TypeVariantCast<TypeProgram>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
     // std::variant<const, ErrorChain*> visitCtx(BismuthParser::PathContext * ctx, bool is_rvalue);
     std::variant<const Type *, ErrorChain *> visitPathType(BismuthParser::PathContext *ctx);
-    std::any visitCustomType(BismuthParser::CustomTypeContext *ctx) override { return visitPathType(ctx->path()); } // Casting done by lower level call
+    std::any visitCustomType(BismuthParser::CustomTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitPathType(ctx->path()); } // Casting done by lower level call
 
     std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::TypeOrVarContext *ctx);
-    std::any visitTypeOrVar(BismuthParser::TypeOrVarContext *ctx) override { return visitCtx(ctx); }
+    std::any visitTypeOrVar(BismuthParser::TypeOrVarContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); }
 
     std::variant<const TypeSum *, ErrorChain *>  visitCtx(BismuthParser::SumTypeContext *ctx);
-    std::any visitSumType(BismuthParser::SumTypeContext *ctx) override { return TypeVariantCast<TypeSum>(visitCtx(ctx)); } // { return visitCtx(ctx); }
+    std::any visitSumType(BismuthParser::SumTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TypeVariantCast<TypeSum>(visitCtx(ctx)); } // { return visitCtx(ctx); }
 
     std::variant<const Type *, ErrorChain *> visitCtx(BismuthParser::TemplatedTypeContext * ctx);
-    std::any visitTemplatedType(BismuthParser::TemplatedTypeContext * ctx) override { return visitCtx(ctx); }
+    std::any visitTemplatedType(BismuthParser::TemplatedTypeContext * ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); }
 
     // std::optional<ErrorChain *> calculatePredeclarations(BismuthParser::CompilationUnitContext *ctx);
     std::optional<ErrorChain *> provisionFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx);
@@ -295,13 +296,13 @@ std::variant<
      * Traditional visitor methods all overridden with our typed versions
      */
     // std::any visitVariableExpr(BismuthParser::VariableExprContext *ctx) override { return visitCtx(ctx); }
-    std::any visitAssignment(BismuthParser::AssignmentContext *ctx) override { return visitCtx(ctx); }
+    std::any visitAssignment(BismuthParser::AssignmentContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); }
 
     std::variant<TChannelCaseStatementNode *, ErrorChain *> TvisitProgramCase(BismuthParser::ProgramCaseContext *ctx);
-    std::any visitProgramCase(BismuthParser::ProgramCaseContext *ctx) override { return TNVariantCast<TChannelCaseStatementNode>(TvisitProgramCase(ctx)); }
+    std::any visitProgramCase(BismuthParser::ProgramCaseContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TChannelCaseStatementNode>(TvisitProgramCase(ctx)); }
 
     std::variant<TProgramProjectNode *, ErrorChain *> TvisitProgramProject(BismuthParser::ProgramProjectContext *ctx);
-    std::any visitProgramProject(BismuthParser::ProgramProjectContext *ctx) override { return TNVariantCast<TProgramProjectNode>(TvisitProgramProject(ctx)); }
+    std::any visitProgramProject(BismuthParser::ProgramProjectContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TProgramProjectNode>(TvisitProgramProject(ctx)); }
 
 
     /*
@@ -319,10 +320,10 @@ std::variant<
     */
 
     TemplateInfo TvisitGenericTemplate(BismuthParser::GenericTemplateContext *ctx);
-    std::any visitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) override { return TvisitGenericTemplate(ctx); }
+    std::any visitGenericTemplate(BismuthParser::GenericTemplateContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TvisitGenericTemplate(ctx); }
 
     std::variant<std::vector<const Type *>, ErrorChain *> TvisitGenericSpecifier(BismuthParser::GenericSpecifierContext *ctx);
-    std::any visitGenericSpecifier(BismuthParser::GenericSpecifierContext *ctx) override { return TvisitGenericSpecifier(ctx); }
+    std::any visitGenericSpecifier(BismuthParser::GenericSpecifierContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TvisitGenericSpecifier(ctx); }
 
 
     std::variant<TypedNode *, ErrorChain *> visitCondition(BismuthParser::ExpressionContext *ex)
@@ -491,8 +492,8 @@ public:
 private:
     STManager& stmgr;
     DisplayMode toStringMode;
-    PropertyManager<DefinitionSymbol> symBindings = PropertyManager<DefinitionSymbol>();
-    PropertyManager<std::deque<DeepRestData *>> restBindings = PropertyManager<std::deque<DeepRestData *>>();
+    PropertyManager<std::reference_wrapper<DefinitionSymbol>> symBindings = PropertyManager<std::reference_wrapper<DefinitionSymbol>>();
+    PropertyManager<std::deque<DeepRestData *>*> restBindings = PropertyManager<std::deque<DeepRestData *>*>();
     BismuthErrorHandler errorHandler = BismuthErrorHandler(SEMANTIC);
 
 
@@ -517,6 +518,13 @@ private:
     //     stmgr.exitScope();
     // }
 
+    std::optional<ErrorChain *> defineFunctionType(BismuthParser::DefineFunctionContext *ctx, const TypeFunc *funcType, bool variadic=false);
+    std::optional<ErrorChain *> defineProgramType(BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType);
+    std::optional<ErrorChain *> defineEnumType(BismuthParser::DefineEnumContext *ctx, const TypeSum *sumTy);
+    std::optional<ErrorChain *> defineStructType(BismuthParser::DefineStructContext *ctx, const TypeStruct *structType);
+    std::optional<ErrorChain *> defineTraitType(BismuthParser::DefineTraitContext *ctx, const TypeTrait *traitTy);
+    std::optional<ErrorChain *> defineTemplateType(BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol& defSym, VisibilityModifier m);
+    std::variant<std::reference_wrapper<Scope>, ErrorChain*> enterTemplateScope(DefinitionSymbol& defSym, VisibilityModifier m, TemplateInfo info);
 
     void safeExitScope(antlr4::ParserRuleContext *ctx)
     {
@@ -532,42 +540,40 @@ private:
             // Try to unify symbols (really needed for things like nums wherein
             // we know what types are possible to infer, so we can just
             // pick one if the code doesn't make it clear which variant we need)
-            for(Symbol * sym : scope.getSymbols(SymbolLookupFlags::UNINFERRED_TYPE))
+            for(Symbol& sym : scope.getSymbols(SymbolLookupFlags::UNINFERRED_TYPE))
             {
                 // Should always be inferrable
-                if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym->getType()))
+                if(const TypeInfer * inf = dynamic_cast<const TypeInfer *>(sym.getType()))
                 {
                     inf->unify();
                 }
             }
 
-            std::vector<Symbol *> unInf = scope.getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE BACK TO CONST?
-
             // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
             // due to the var leaving the scope
-            if (unInf.size() > 0)
+            if (auto unInf = scope.getSymbols(SymbolLookupFlags::UNINFERRED_TYPE); // TODO: CHANGE getSymbols BACK TO CONST?
+                unInf.size() > 0)
             {
                 std::ostringstream details;
 
                 for (auto e : unInf)
                 {
-                    details << e->toString() << "; ";
+                    details << e.get().toString() << "; ";
                 }
 
-                errorHandler.addError(ctx->getStart(), "700 Uninferred types in context: " + details.str());
+                errorHandler.addError(ctx->getStart(), "Uninferred types in context: " + details.str());
             }
-
-            std::vector<Symbol *> lins = scope.getSymbols(SymbolLookupFlags::PENDING_LINEAR);
 
             // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
             // due to the var leaving the scope
-            if (lins.size() > 0)
+            if (auto lins = scope.getSymbols(SymbolLookupFlags::PENDING_LINEAR);
+                lins.size() > 0)
             {
                 std::ostringstream details;
 
                 for (auto e : lins)
                 {
-                    details << e->toString() << "; ";
+                    details << e.get().toString() << "; ";
                 }
 
                 errorHandler.addError(ctx->getStart(), "Unused linear types in context: " + details.str());
@@ -601,7 +607,7 @@ private:
     }
 
 
-    std::variant<DefinitionSymbol *, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m = VisibilityModifier::PRIVATE);
+    std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m = VisibilityModifier::PRIVATE);
 
     void bindRestData(antlr4::ParserRuleContext *ctx, std::deque<DeepRestData *> *rd)
     { // DeepRestData * rd) {

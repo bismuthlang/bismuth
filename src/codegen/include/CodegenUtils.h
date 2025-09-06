@@ -44,6 +44,7 @@ using llvm::Value;
 
 inline GlobalValue::LinkageTypes getLinkageType(VisibilityModifier m)
 {
+    std::cerr << "47 - get linkage type - " << m << std::endl;
     switch(m)
     {
         case VisibilityModifier::PUBLIC:
@@ -55,6 +56,7 @@ inline GlobalValue::LinkageTypes getLinkageType(VisibilityModifier m)
         case VisibilityModifier::PRIVATE:
             return GlobalValue::PrivateLinkage; 
     }
+    assert(false && "No linkage defined for specified visibility modifier");
 }
 
 
