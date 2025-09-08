@@ -13,7 +13,7 @@ std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthPars
     for (auto e : ctx->defs)
     {
         // Wastes a bit of memory in allocating type even for duplicates
-        std::optional<std::pair<std::string, const Type *>> opt = defineTypeCase<std::optional<std::pair<std::string, const Type *>>>(
+        auto opt = defineTypeCase<std::optional<std::pair<std::string, const Type *>>>(
             e,
             [](BismuthParser::DefineFunctionContext *ctx) -> std::pair<std::string, const Type *>{
                 return {
@@ -125,28 +125,23 @@ std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visit
                 // Note: re-applying template symbols happens in each visitor for now!
                 if (auto progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
                 {
-                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
-                    return prog;
+                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
                 }
                 else if (auto fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
                 {
-                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, func, visitCtx(fnCtx), ctx, "Failed to type check function");
-                    return func;
+                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, func, visitCtx(fnCtx), ctx, "Failed to type check function");
                 }
                 else if (auto structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
                 {
-                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, structNode, visitCtx(structCtx), ctx, "Failed to type check struct");
-                    return structNode;
+                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, structNode, visitCtx(structCtx), ctx, "Failed to type check struct");
                 }
                 else if (auto enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
                 {
-                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, enumNode, visitCtx(enumCtx), ctx, "Failed to type check enum");
-                    return enumNode;
+                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, enumNode, visitCtx(enumCtx), ctx, "Failed to type check enum");
                 }
                 else if (auto traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(e))
                 {
-                    DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, traitNode, visitCtx(traitCtx), ctx, "Failed to type check trait");
-                    return traitNode;
+                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, traitNode, visitCtx(traitCtx), ctx, "Failed to type check trait");
                 }
                 assert(false && "Unknown definition kind");
             },
@@ -258,7 +253,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
         }
         else
         {
-            std::optional<std::reference_wrapper<Scope>> scopeOpt = stmgr.getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
+            optional_ref<Scope> scopeOpt = stmgr.getOrProvisionScope(steps, VisibilityModifier::PUBLIC);
 
             if(!scopeOpt)
             {

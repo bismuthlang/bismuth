@@ -133,6 +133,11 @@
 # define DEFINE_OR_PROPAGATE_VARIANT_REF(type, id, expr, ctx) IMPL_DEFINE_OR_PROPAGATE_VARIANT_REF(MACRO_ARG(type), id, MACRO_ARG(expr), ctx, IMPL_MACRO_CONCAT(id, __COUNTER__))
 
 
+
+# define PROPAGATE_VARIANT_WMSG(type, id, expr, ctx, message) \
+  DEFINE_OR_PROPAGATE_VARIANT_WMSG(type, id, expr, ctx, message); \
+  return id;
+
 #define STR1(x) #x
 #define STR(x) STR1(x)
 
