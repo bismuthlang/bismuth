@@ -107,7 +107,7 @@ TEST_CASE("programs/test1a", "[codegen]")
     EnsureErrors(antlr4::ANTLRInputStream(stream), 
 R""""(
 Error (SEMANTIC): 
-<unknown>:4:0: 700 Uninferred types in context: [a, VAR]; [b, VAR]; 
+<unknown>:4:0: Uninferred types in context: [a, VAR]; [b, VAR]; 
 
 
 Error (SEMANTIC): 

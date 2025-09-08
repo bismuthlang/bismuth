@@ -30,6 +30,9 @@ enum SymbolLookupFlags
 class Scope
 {
 public:
+    ~Scope() {
+        std::cerr << "DELETING SCOPE!!!!!" << std::endl;
+    }
     Scope(
         Identifier * n, 
         bool s
@@ -188,26 +191,27 @@ public:
 
     std::map<std::string, std::shared_ptr<Symbol>> copySymbols()
     {
-        return symbols;
-        // map_to_shared<std::string, Symbol> ans;
+        map_to_shared<std::string, Symbol> ans;
 
-        // for (auto itr : symbols)
-        // {
-        //     if(itr.second->isDefinition())
-        //         ans.insert({
-        //             itr.first, 
-        //             new DefinitionSymbol(*dynamic_cast<DefinitionSymbol *>(itr.second)) // TODO: not exactly the safest, but should be fine as its the only current way to get definition symbols 
-        //         });
-        //     else
-        //         ans.insert({itr.first, new Symbol(*itr.second)});
-        // }
+        for (auto itr : symbols)
+        {
+            ans.emplace(
+                itr.first, 
+                itr.second->getCopy()
+            );
+        }
 
-        // return ans;
+        return ans;
     }
 
     shared_set<Symbol> copyDeletedSymbols() 
     {
-        return deletedSymbols;
+        shared_set<Symbol> ans;
+        for(auto itr : deletedSymbols)
+        {
+            ans.insert(itr->getCopy());
+        }
+        return ans;
     }
 
     Identifier * getIdentifier() { return id; }

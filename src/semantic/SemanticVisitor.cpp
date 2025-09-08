@@ -437,7 +437,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     );
 
     std::cerr << "439" << std::endl;
-    auto generateProgram = [this, ctx, defSym](const TypeProgram * progType) -> std::variant<DefinitionNode *, ErrorChain *> {
+    auto generateProgram = [this, ctx, &defSym](const TypeProgram * progType) -> std::variant<DefinitionNode *, ErrorChain *> {
         std::string funcId = ctx->name->getText();
         // Lookup the function in the current scope and prevent re-declarations
 
@@ -1050,11 +1050,13 @@ std::variant<TFieldAccessNode *, ErrorChain *> SemanticVisitor::visitCtx(Bismuth
 
 std::variant<TIdentifier *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::IdentifierExprContext * ctx, bool is_rvalue)
 {
+    DEBUG_CERR(ctx->getText());
     // Determine the type of the expression we are visiting
     DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol , sym, stmgr.lookup(ctx->VARIABLE()->getText()), ctx, "Undefined variable reference: " + ctx->VARIABLE()->getText());
 
     if (sym.getType()->isLinear())
     {
+        std::cout << "Found Linear!!!!" << std::endl;
         if (!is_rvalue)
         {
             errorHandler.addError(ctx->getStart(), "Cannot redefine linear variable!");
@@ -2109,7 +2111,13 @@ SemanticVisitor::visitCtx(BismuthParser::ProgramTypeContext *ctx)
 
 std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSend(BismuthParser::ProgramSendContext *ctx)
 {
+    DEBUG_CERR(ctx->getText());
     std::string id = ctx->channel->getText();
+    {
+        std::cerr << "2117" << std::endl;
+        DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
+        std::cerr << "2119" << std::endl;
+    }
     DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot send on non-channel: " + id);
 

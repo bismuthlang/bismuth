@@ -17,13 +17,15 @@ optional_ref<Symbol> Scope::addSymbol(std::shared_ptr<Symbol> symbol)
     return std::nullopt;
   }
 
-  symbols.insert({id, symbol});
-  return *symbol.get();
+  symbols.emplace(id, symbol);
+  std::cerr << "21 Add symbol " << (*symbol).getIdentifier()->getFullyQualifiedName() << "@" << symbol.get() << ", " << symbol.get()->getType() << ", " << symbol.get()->getIdentifier() << " w/ refs " << symbol.use_count() << std::endl;
+  return *symbol;
 }
 
 bool Scope::removeSymbol(const Symbol& symbol)
 {
   std::string id = symbol.getScopedIdentifier();
+  std::cerr << "SCOPE - REMOVE - " << id << std::endl;
   if (auto it = symbols.find(id); it != symbols.end())
   {
     deletedSymbols.insert(it->second);

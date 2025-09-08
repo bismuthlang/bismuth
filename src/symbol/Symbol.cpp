@@ -31,4 +31,37 @@ void Symbol::updateIdentifier(Identifier * nxt)
     this->identifier = nxt; 
 }
 
+
+std::shared_ptr<Symbol> Symbol::getCopy() {
+    return std::make_shared<Symbol>(
+        this->identifier,
+        this->type->getCopy(),
+        this->global
+    );
+}
+
+
+
 Scope& LocatableSymbol::getScope() const { return scope; }
+
+
+std::shared_ptr<Symbol> DefinitionSymbol::getCopy() {
+    return std::make_shared<DefinitionSymbol>(
+        this->visibility,
+        this->getIdentifier(),
+        this->getType()->getCopy(),
+        this->isGlobal(),
+        this->getScope(), // FIXME: if we are copying into new scope, this isn't right
+        this->innerScope // FIXME: This is similarly dubious!
+    );
+}
+
+
+std::shared_ptr<Symbol> AliasSymbol::getCopy() {
+    return std::make_shared<AliasSymbol>(
+        this->getIdentifier(),
+        this->getScope(), // FIXME: if we are copying into new scope, this isn't right
+        this->getType()->getCopy(),
+        this->orig
+    );
+}

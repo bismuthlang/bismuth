@@ -12,6 +12,7 @@
  */
 
 #include <string>  //Includes strings
+#include <memory>
 
 #include "Type.h"
 #include "TypeDefs.h"
@@ -49,13 +50,13 @@ public:
         global = glob;
     }
 
-    Symbol(Symbol& sym)
-    {
-        identifier = sym.identifier; 
-        type = sym.type->getCopy(); 
-        global = sym.global;
-        // FIXME: is this constructor needed? If so, do we need to add uniqName and scope?
-    }
+    Symbol(Symbol& sym) = delete;
+    // {
+    //     identifier = sym.identifier; 
+    //     type = sym.type->getCopy(); 
+    //     global = sym.global;
+    //     // FIXME: is this constructor needed? If so, do we need to add uniqName and scope?
+    // }
 
     virtual ~Symbol() {
         std::cerr << "61 - SYMBOL DELETED - " << toString() << std::endl;
@@ -73,7 +74,7 @@ public:
 
     Identifier * getIdentifier() const { return identifier; }
 
-    
+    virtual std::shared_ptr<Symbol> getCopy();
 
 
     void updateIdentifier(Identifier * nxt); // TODO: DO BETTER, USED ONLY FOR TEMPLATES!
@@ -87,12 +88,12 @@ public:
         , scope(s)
     {}
 
-    LocatableSymbol(LocatableSymbol& sym) 
-        : Symbol(sym)
-        , scope(sym.scope)
-    {
-        // sym.scope = scope;  
-    }
+    LocatableSymbol(LocatableSymbol& sym) = delete;
+    //     : Symbol(sym)
+    //     , scope(sym.scope)
+    // {
+    //     // sym.scope = scope;  
+    // }
 
 
     Scope& getScope() const; 
@@ -110,12 +111,12 @@ public:
         , visibility(v)
     {} 
 
-    DefinitionSymbol(DefinitionSymbol& sym) 
-        : LocatableSymbol(sym)
-    {
-        this->innerScope = sym.innerScope;
-        this->visibility = sym.visibility;
-    }
+    DefinitionSymbol(DefinitionSymbol& sym) = delete;
+    //     : LocatableSymbol(sym)
+    // {
+    //     this->innerScope = sym.innerScope;
+    //     this->visibility = sym.visibility;
+    // }
 
     virtual ~DefinitionSymbol() = default; 
 
@@ -124,6 +125,9 @@ public:
     Scope& getInnerScope() const { return *innerScope; }
 
     VisibilityModifier getVisibility() { return visibility; }
+
+    std::shared_ptr<Symbol> getCopy() override;
+
 private:
     Scope * innerScope; 
     VisibilityModifier visibility; 
@@ -143,6 +147,8 @@ public:
     // std::string getUniqueNameInScope() const override {
     //     return orig->getUniqueNameInScope();
     // }
+
+    std::shared_ptr<Symbol> getCopy() override;
 
     bool isDefinition() const override { return true; }
 
