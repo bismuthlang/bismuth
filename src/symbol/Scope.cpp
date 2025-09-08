@@ -18,14 +18,12 @@ optional_ref<Symbol> Scope::addSymbol(std::shared_ptr<Symbol> symbol)
   }
 
   symbols.emplace(id, symbol);
-  std::cerr << "21 Add symbol " << (*symbol).getIdentifier()->getFullyQualifiedName() << "@" << symbol.get() << ", " << symbol.get()->getType() << ", " << symbol.get()->getIdentifier() << " w/ refs " << symbol.use_count() << std::endl;
   return *symbol;
 }
 
 bool Scope::removeSymbol(const Symbol& symbol)
 {
   std::string id = symbol.getScopedIdentifier();
-  std::cerr << "SCOPE - REMOVE - " << id << std::endl;
   if (auto it = symbols.find(id); it != symbols.end())
   {
     deletedSymbols.insert(it->second);
@@ -148,20 +146,18 @@ std::string Scope::toString() const
 
   description << '{'; 
   description << "\tid: " << scopeId << ", " << std::endl;
-  std::cerr << "149" << std::endl;
+  
   if(parent) 
     description << "\tparent: " << parent.value().get().scopeId << ", " << std::endl; 
-  std::cerr << "152 " << description.str() << std::endl;
+  
   description << "\tsymbols: {" << std::endl; 
-std::cerr << "154 " << symbols.size() << std::endl;
+
   for (auto sym : symbols)
   {
-    std::cerr << "157" << std::endl;
     description << "\t\t" << sym.second->toString() << ", " << std::endl;
   }
-std::cerr << "160" << std::endl;
+
   description << "\t}," << std::endl; 
-std::cerr << "162" << std::endl;
   description << "}," << std::endl; 
   return description.str();
 }

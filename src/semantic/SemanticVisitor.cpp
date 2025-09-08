@@ -85,7 +85,6 @@ std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser:
         DEBUG_CERR("Forward Decl " + e->getText());
         defineAndGetSymbolFor(e, VisibilityModifier::PUBLIC);
     }
-    std::cerr << "88" << std::endl;
 
     // FIXME: do basic checks on traits
     // Needs to be two phases: 
@@ -126,9 +125,7 @@ std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visit
                 // Note: re-applying template symbols happens in each visitor for now!
                 if (auto progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
                 {
-                    std::cerr << "129" << std::endl;
                     DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
-                    std::cerr << "131" << std::endl;
                     return prog;
                 }
                 else if (auto fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
@@ -308,7 +305,7 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
                 DEBUG_CERR("Start Phase N w/ " + ctx->getText());
                 DEFINE_OR_PROPAGATE_VARIANT(std::vector<DefinitionNode *>, defs, visitFwdDecls(ctx), ctx); 
                 // Visit the statements contained in the unit
-                std::cerr << "307" << std::endl;
+                
                 auto errOpt = postCUVisitChecks(ctx);
                 if(errOpt) return errOpt.value();
 
@@ -436,7 +433,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         ctx
     );
 
-    std::cerr << "439" << std::endl;
     auto generateProgram = [this, ctx, &defSym](const TypeProgram * progType) -> std::variant<DefinitionNode *, ErrorChain *> {
         std::string funcId = ctx->name->getText();
         // Lookup the function in the current scope and prevent re-declarations
@@ -444,14 +440,14 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         // Add the symbol to the stmgr and enter the scope.
         Scope& orig = stmgr.getCurrentScope();
         stmgr.enterScope(defSym.getInnerScope());
-std::cerr << "447 " << stmgr.toString() << std::endl;
+
         Symbol& channelSymbol = stmgr.addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
         // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
         stmgr.addSymbol("@EXIT", Types::UNIT, false);
-std::cerr << "451" << std::endl;
+
         // Safe visit the program block without creating a new scope (as we are managing the scope)
         DEFINE_OR_PROPAGATE_VARIANT_WMSG(TBlockNode *, blk, this->safeVisitBlock(ctx->block(), false), ctx, "Failed to save visit block");
-std::cerr << "454" << std::endl;
+
         // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
         // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<BismuthParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
         // {
@@ -460,18 +456,15 @@ std::cerr << "454" << std::endl;
 
         // Safe exit the scope.
         safeExitScope(ctx);
-        std::cerr << "463" << std::endl;
+        
         stmgr.enterScope(orig);
-std::cerr << "465 "  << defSym.toString() << std::endl;
-std::cerr << "466 "  << const_cast<DefinitionSymbol&>(defSym).toString() << std::endl;
+
 auto ans = new TProgramDefNode(const_cast<DefinitionSymbol&>(defSym), channelSymbol, blk, progType, ctx->getStart());
-std::cerr << "468 " << ans->getSymbol().toString() << std::endl;
         return ans;
     };
 
     if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate*>(defSym.getType()))
     {
-        std::cerr << "470" << std::endl;
         if(!templateTy->getValueType())
             return errorHandler.addCompilerError(ctx->getStart(), "template type does not have value type to template");
 
@@ -489,7 +482,6 @@ std::cerr << "468 " << ans->getSymbol().toString() << std::endl;
     }
     else if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym.getType()))
     {
-        std::cerr << "488" << std::endl;
         return generateProgram(progType);
     }
 
@@ -1056,7 +1048,6 @@ std::variant<TIdentifier *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParse
 
     if (sym.getType()->isLinear())
     {
-        std::cout << "Found Linear!!!!" << std::endl;
         if (!is_rvalue)
         {
             errorHandler.addError(ctx->getStart(), "Cannot redefine linear variable!");
@@ -2114,9 +2105,7 @@ std::variant<TProgramSendNode *, ErrorChain *> SemanticVisitor::TvisitProgramSen
     DEBUG_CERR(ctx->getText());
     std::string id = ctx->channel->getText();
     {
-        std::cerr << "2117" << std::endl;
         DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
-        std::cerr << "2119" << std::endl;
     }
     DEFINE_OR_PROPAGATE_OPTIONAL_REF_WMSG(Symbol, sym, stmgr.lookup(id), ctx, "Could not find channel: " + id);
     DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const TypeChannel *, channel, type_cast<TypeChannel>(sym.getType()), ctx, "Cannot send on non-channel: " + id);
@@ -2820,11 +2809,10 @@ std::optional<ErrorChain *> SemanticVisitor::defineFunctionType(BismuthParser::D
 std::optional<ErrorChain *> SemanticVisitor::defineProgramType(BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType)
 {
     DEBUG_CERR("Visit " + ctx->getText());
-    std::cerr << "2799 " << ctx << " and " << progType << std::endl;
     if (progType->isDefined()) return std::nullopt;
-std::cerr << "2800" << std::endl;
+
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const ProtocolSequence *, proto, visitProtocolAsSeq(ctx->proto), ctx, "Failed to generate channel type for program " + ctx->name->getText());
-std::cerr << "2802" << std::endl;
+
     progType->setProtocol(proto);
     return std::nullopt;
 }
@@ -2990,7 +2978,6 @@ std::optional<ErrorChain *> SemanticVisitor::defineTemplateType(BismuthParser::D
         );
 
         auto ans = defineProgramType(progCtx, progTy);
-        std::cout << "2969" << std::endl;
         stmgr.enterScope(origScope);
         return ans; 
     }
@@ -3175,9 +3162,9 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
             if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym.getType()))
             {
                 std::optional<ErrorChain *> optErr = defineProgramType(ctx, progType);
-std::cout << "3153" << std::endl;
+
                 if(optErr) return optErr.value();
-                std::cout << "3162" << std::endl;
+                
                 return sym;
             }
 

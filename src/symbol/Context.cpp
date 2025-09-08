@@ -227,16 +227,11 @@ std::string Context::toString() const
 {
     std::ostringstream description;
     optional_ref<Scope> scopeOpt = currentScope; 
-    std::cerr << "230" << std::endl;
     while(scopeOpt)
     {
-        std::cerr << "233" << std::endl;
         Scope& scope = scopeOpt.value().get(); 
-        std::cerr << "235" << std::endl;
         description << scope.toString(); 
-        std::cerr << "237"  << scope.toString() << std::endl;
         scopeOpt = scope.getParent(); 
-        std::cerr << "239" << std::endl;
     }
     // for (auto scope : scopes)
     // {

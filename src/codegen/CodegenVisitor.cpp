@@ -22,16 +22,9 @@ std::optional<Value *> CodegenVisitor::visit_typed(TCompilationUnitNode & n)
     {
         if (TProgramDefNode * octx = dynamic_cast<TProgramDefNode *>(e))
         {
-            std::cerr << "25" << std::endl;
             const TypeProgram& type = octx->getType();
             auto llvmTy = typeGenerator.getLLVMFunctionType(type); 
-std::cerr << "28" << std::endl;
-std::string type_str;
-llvm::raw_string_ostream rso(type_str);
-llvmTy->print(rso);
-std::cerr<<rso.str() << std::endl;
-std::cerr << type.toString(C_STYLE) << std::endl;
-std::cerr << "34 " << octx->getSymbol().toString() << std::endl;
+            
             Function::Create(
                 llvmTy,
                 getLinkageType(e->getVisibility()),

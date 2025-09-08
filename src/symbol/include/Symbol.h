@@ -42,6 +42,8 @@ private:
     bool global;                    // Determines if the symbol is globally defined or not
 
 public:
+    virtual ~Symbol() = default;
+
     // Constructs a symbol from an ID and symbol type.
     Symbol(Identifier * id, const Type *t, bool glob) 
     {
@@ -51,16 +53,6 @@ public:
     }
 
     Symbol(Symbol& sym) = delete;
-    // {
-    //     identifier = sym.identifier; 
-    //     type = sym.type->getCopy(); 
-    //     global = sym.global;
-    //     // FIXME: is this constructor needed? If so, do we need to add uniqName and scope?
-    // }
-
-    virtual ~Symbol() {
-        std::cerr << "61 - SYMBOL DELETED - " << toString() << std::endl;
-    }; 
 
     std::string toString() const;
     const Type * getType() const; 

@@ -30,9 +30,6 @@ enum SymbolLookupFlags
 class Scope
 {
 public:
-    ~Scope() {
-        std::cerr << "DELETING SCOPE!!!!!" << std::endl;
-    }
     Scope(
         Identifier * n, 
         bool s

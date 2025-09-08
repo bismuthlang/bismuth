@@ -240,20 +240,18 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeTrait& t){
 llvm::FunctionType * LLVMTypeGenerator::getLLVMFunctionType(TypeProgram& t){
     DEBUG_CERR(t.toString(C_STYLE));
     llvm::Type *ret = const_cast<TypeUnit *>(Types::UNIT)->accept<llvm::Type *>(*this); // Types::UNIT->getLLVMType(M);
-std::cerr << "243" << std::endl;
+
      // TODO: bring in line w/ definition in CodegenUtils! (if a change was made in either, itd break the other)
     llvm::StructType *argTy = llvm::StructType::getTypeByName(mod->getContext(), "_Channel");
-    std::cerr << "246" << std::endl;
+    
     if (!argTy)
         argTy = llvm::StructType::create(mod->getContext(), "_Channel");
-std::cerr << "249" << std::endl;
+
 
     llvm::FunctionType * ans = llvm::FunctionType::get(
         ret,
         {argTy->getPointerTo()},
         false);
-
-std::cerr << "256" << std::endl;
 
     return ans;
 }

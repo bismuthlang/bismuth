@@ -44,7 +44,6 @@ using llvm::Value;
 
 inline GlobalValue::LinkageTypes getLinkageType(VisibilityModifier m)
 {
-    std::cerr << "47 - get linkage type - " << m << std::endl;
     switch(m)
     {
         case VisibilityModifier::PUBLIC:
