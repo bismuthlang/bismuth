@@ -421,7 +421,6 @@ public:
     llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
         DEBUG_CERR("Visit");
-        std::cerr << "424 " << identifier << " ty " << ty << std::endl;
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
         // fn->front(); // Do this?
         IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());

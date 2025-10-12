@@ -212,8 +212,7 @@ llvm::Type * LLVMTypeGenerator::visit_typed(TypeGeneric& t){
     DEBUG_CERR(t.toString(C_STYLE));
      if(auto actingType = t.getActingType(); actingType.has_value())
             return genLLVMType(*actingType.value()); 
-
-    std::cerr << "1082: Attempted to take llvm type of a generic parameter" << std::endl;
+        
     return llvm::Type::getVoidTy(mod->getContext());
 }
 

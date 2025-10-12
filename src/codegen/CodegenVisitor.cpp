@@ -36,7 +36,6 @@ std::optional<Value *> CodegenVisitor::visit_typed(TCompilationUnitNode & n)
         else if (TLambdaConstNode *octx = dynamic_cast<TLambdaConstNode *>(e))
         {
             const TypeFunc& type = octx->getType();
-            std::cerr << "39 " << getCodegenID(octx->getSymbol()) << std::endl;
             Function::Create(
                 typeGenerator.getLLVMFunctionType(type),
                 getLinkageType(e->getVisibility()),
@@ -2369,9 +2368,6 @@ std::optional<Value *> CodegenVisitor::visit_typed(TLambdaConstNode & n)
     llvm::FunctionType *fnType = typeGenerator.getLLVMFunctionType(type);
 
     std::string funcFullName = getCodegenID(n.getSymbol());
-    std::cerr << "2372 " << funcFullName << std::endl;
-
-    modPrint();
 
     Function *fn = module->getFunction(funcFullName);
     if(!fn)
@@ -2797,9 +2793,7 @@ llvm::AllocaInst * CodegenVisitor::CreateAndLinkEntryBlockAlloc(llvm::Type * ty,
 {
     DEBUG_CERR(sym.toString());
     llvm::AllocaInst *v = CreateEntryBlockAlloc(ty, getCodegenID(sym));
-    std::cerr << "2796" << std::endl;
     setAllocation(sym, v);
-    std::cerr << "2799" << std::endl;
     return v;
 }
 

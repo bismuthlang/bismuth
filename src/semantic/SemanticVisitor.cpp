@@ -131,29 +131,6 @@ std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visit
             [this](auto e) -> std::variant<DefinitionNode *, ErrorChain *>
             {
                 return e->generateAST(*this);
-                // DEBUG_CERR(e->getText());
-                // Note: re-applying template symbols happens in each visitor for now!
-                // if (auto progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
-                // {
-                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
-                // }
-                // else if (auto fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
-                // {
-                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, func, visitCtx(fnCtx), ctx, "Failed to type check function");
-                // }
-                // else if (auto structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
-                // {
-                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, structNode, visitCtx(structCtx), ctx, "Failed to type check struct");
-                // }
-                // else if (auto enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
-                // {
-                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, enumNode, visitCtx(enumCtx), ctx, "Failed to type check enum");
-                // }
-                // else if (auto traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(e))
-                // {
-                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, traitNode, visitCtx(traitCtx), ctx, "Failed to type check trait");
-                // }
-                // assert(false && "Unknown definition kind");
             },
             sigs
         )
@@ -333,7 +310,6 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         * The symbol is something we can invoke, so check that we provide it with valid parameters
         */
     std::vector<const Type *> fnParams = funcTy.get().getParamTypes();
-    std::cerr << funcTy.get().getTypeRepresentation(C_STYLE) << std::endl;
 
     /*
         *  If the symbol is NOT a variadic and the number of arguments we provide
@@ -447,8 +423,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
     DEFINE_OR_PROPAGATE_VARIANT(DefinitionSignature *, sig, defineAndGetSymbolFor(ctx), ctx);
-    // auto& defSym = sig->getSymbol();
-    // DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, lam, visitCtx(ctx->lam, defSym), ctx, "Unable to generate lambda");
     return sig->generateAST(*this);
 
 }
@@ -1102,7 +1076,6 @@ std::variant<ParameterListNode, ErrorChain *>  SemanticVisitor::visitCtx(Bismuth
 std::variant<ParameterNode, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ParameterContext *ctx)
 {
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, paramType, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this)), ctx, "Failed to generate case type");
-    std::cerr << "1121 " << ctx->name->getText() << " " << paramType->toString(C_STYLE) << std::endl;
     return ParameterNode(paramType, ctx->name->getText());
 }
 
@@ -1588,8 +1561,6 @@ SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx, optional_ref<DefinitionSymbol> symOpt)
 {
-    // FIXME: technically could be bad opt access, but should never happen
-    /// FIXME FIXME FIXME USE getLambdaSignature
     DEFINE_OR_PROPAGATE_VARIANT(
         FunctionSignature *,
         sig,
@@ -1598,41 +1569,6 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
     );
 
     return sig->generateAST(*this);
-
-    // DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(symOpt,
-    //     [this]() {return stmgr.addAnonymousDefinition("lambda", new TypeFunc()).value(); });
-
-    // DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const Type *, unwrappedType, sym.getType()->getTemplatedType(), ctx, "Bad function def; internal error");
-
-    // if(auto typeFunc = dynamic_cast<const TypeFunc *>(unwrappedType))
-    // {
-    //     defineFunctionType(sym, ctx, typeFunc, false);
-    //     auto retType = typeFunc->getReturnType(); 
-
-    //     Scope& origScope = stmgr.getCurrentScope();
-    //     stmgr.enterScope(sym.getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
-
-    //     DEFINE_OR_PROPAGATE_VARIANT(TBlockNode *, blk, this->safeVisitBlock(ctx->block(), false), ctx);
-
-    //     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
-    //     if (!TypedAST::endsInReturn(*blk))
-    //     {
-    //         if(retType->isNotSubtype(*Types::UNIT))
-    //         {
-    //             errorHandler.addError(ctx->getStart(), "Expected function to return type of " + retType->toString(toStringMode) + "; however, no return instruction was provided.");
-    //         }
-    //         else
-    //         {
-    //             // One of the first bits of syntactic sugar in bismuth!
-    //             blk->exprs.push_back(new TReturnNode(nullptr, std::nullopt));
-    //         }
-    //     }
-    //     safeExitScope(ctx);
-    //     stmgr.enterScope(origScope);
-
-    //     return new TLambdaConstNode(sym, ps, retType, blk, ctx->getStart());
-    // }
-
 }
 
 std::variant<const TypeFunc *, ErrorChain *>
@@ -2679,7 +2615,6 @@ SemanticVisitor::defineFunctionType(DefinitionSymbol& sym, BismuthParser::Lambda
     for (ParameterNode param : params)
     {
         auto optParam = stmgr.addSymbol(param.name, param.type->getCopy(), false);
-        // std::cerr << "2698 " << param.name << " " << param.type->toString(C_STYLE)
         ps.push_back(
             optParam.value() // TODO: should this be error checked? Based on global stop it should be fine unless duplicates.. but that's likely already caught?
         );
