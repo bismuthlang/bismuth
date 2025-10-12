@@ -497,7 +497,7 @@ std::optional<std::string> compile(
                 toStringMode
             ))(
                 pattern | as<CodegenInput*>(semanticResults) = [&]{
-                    std::cout << stm.toString() << std::endl;
+                    // std::cout << stm.toString() << std::endl;
                     return Stage_CodeGen(
                         *semanticResults,
                         outputFileName,

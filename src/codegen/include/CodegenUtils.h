@@ -424,7 +424,6 @@ public:
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
         // fn->front(); // Do this?
         IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-        std::cout << "428" << std::endl;
         llvm::AllocaInst* alloc = tempBuilder.CreateAlloca(ty, 0, identifier);
         DEBUG_CERR("VisitE");
         return alloc;
