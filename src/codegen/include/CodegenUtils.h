@@ -10,6 +10,7 @@
  */
 #pragma once
 
+#include "Debug.h"
 #include "BismuthErrorHandler.h"
 #include "llvm/ADT/StringRef.h"
 #include "llvm/IR/IRBuilder.h"
@@ -419,10 +420,15 @@ public:
     // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl07.html#adjusting-existing-variables-for-mutation
     llvm::AllocaInst *CreateEntryBlockAlloc(llvm::Type *ty, std::string identifier)
     {
+        DEBUG_CERR("Visit");
+        std::cerr << "424 " << identifier << " ty " << ty << std::endl;
         llvm::Function *fn = builder->GetInsertBlock()->getParent();
         // fn->front(); // Do this?
         IRBuilder<> tempBuilder(&fn->getEntryBlock(), fn->getEntryBlock().begin());
-        return tempBuilder.CreateAlloca(ty, 0, identifier);
+        std::cout << "428" << std::endl;
+        llvm::AllocaInst* alloc = tempBuilder.CreateAlloca(ty, 0, identifier);
+        DEBUG_CERR("VisitE");
+        return alloc;
     }
 
 

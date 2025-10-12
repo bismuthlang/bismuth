@@ -19,8 +19,140 @@ concept RestRuleContext = requires(T a) {
     std::is_base_of<antlr4::ParserRuleContext, T>::value;
     { a.rest };
 };
+
+class SemanticVisitor;
+
+class DefinitionSignature {
+    private: 
+    DefinitionSymbol& sym; 
+    public: 
+        DefinitionSignature(
+            DefinitionSymbol & s
+        ) : sym(s) {}
+
+        DefinitionSignature(DefinitionSignature&) = delete; 
+        virtual ~DefinitionSignature() = default; 
+
+        // virtual antlr4::ParserRuleContext * getInnerContext(); 
+        DefinitionSymbol& getSymbol() { return sym; }
+
+
+        virtual std::variant<DefinitionNode *, ErrorChain *> generateAST(SemanticVisitor& sv) = 0;
+    
+    // antlr4::ParserRuleContext * innerCtx;
+};
+
+class FunctionSignature : public DefinitionSignature {
+    public: 
+        FunctionSignature(
+            DefinitionSymbol& s, 
+            vector<std::reference_wrapper<Symbol>> p, 
+            BismuthParser::BlockContext * i
+        ) : DefinitionSignature(s)
+            , params(p)
+            , innerCtx(i)
+        {}
+            
+        BismuthParser::BlockContext * getInnerContext() { return innerCtx; }
+        vector<std::reference_wrapper<Symbol>> getParams() { return params; }
+        
+        std::variant<DefinitionNode *, ErrorChain *> generateAST(SemanticVisitor& sv) override;
+    private:
+    vector<std::reference_wrapper<Symbol>> params;
+    BismuthParser::BlockContext * innerCtx;
+};
+
+class ProgramSignature : public DefinitionSignature {
+    public: 
+        ProgramSignature(
+            DefinitionSymbol& s, 
+            std::reference_wrapper<Symbol> c, 
+            BismuthParser::BlockContext * i
+        ) : DefinitionSignature(s)
+            , channel(c)
+            , innerCtx(i)
+        {}
+            
+        BismuthParser::BlockContext * getInnerContext() { return innerCtx; }
+        std::reference_wrapper<Symbol> getChannelSymbol() { return channel; }
+
+        std::variant<DefinitionNode *, ErrorChain *> generateAST(SemanticVisitor& sv) override;
+
+    private:
+    std::reference_wrapper<Symbol> channel;
+    BismuthParser::BlockContext * innerCtx;
+};
+
+class EnumSignature : public DefinitionSignature {
+    public: 
+        EnumSignature(
+            DefinitionSymbol& s,
+            BismuthParser::DefineEnumContext * c
+            // BismuthParser::BlockContext * i
+        ) : DefinitionSignature(s)
+            , ctx(c)
+        {}
+            
+        // BismuthParser::BlockContext * getInnerContext() override { return innerCtx; }
+        // std::reference_wrapper<Symbol> getChannelSymbol() { return channel; }
+
+        std::variant<DefinitionNode *, ErrorChain *> generateAST(SemanticVisitor& sv) override;
+
+    private:
+    BismuthParser::DefineEnumContext *ctx;
+};
+
+class StructSignature : public DefinitionSignature {
+    public: 
+        StructSignature(
+            DefinitionSymbol& s,
+            BismuthParser::DefineStructContext *c
+            // BismuthParser::BlockContext * i
+        ) : DefinitionSignature(s)
+            , ctx(c)
+        //   , channel(c)
+        //   , innerCtx(i)
+        {}
+            
+        // BismuthParser::BlockContext * getInnerContext() override { return innerCtx; }
+        // std::reference_wrapper<Symbol> getChannelSymbol() { return channel; }
+
+        std::variant<DefinitionNode *, ErrorChain *> generateAST(SemanticVisitor& sv) override;
+
+    private:
+    BismuthParser::DefineStructContext *ctx;
+    // std::reference_wrapper<Symbol> channel;
+    // BismuthParser::BlockContext * innerCtx;
+};
+
+
+
+class TraitSignature : public DefinitionSignature {
+    public: 
+        TraitSignature(
+            DefinitionSymbol& s
+            // BismuthParser::BlockContext * i
+        ) : DefinitionSignature(s)
+        //   , channel(c)
+        //   , innerCtx(i)
+        {}
+            
+        // BismuthParser::BlockContext * getInnerContext() override { return innerCtx; }
+        // std::reference_wrapper<Symbol> getChannelSymbol() { return channel; }
+
+        std::variant<DefinitionNode *, ErrorChain *> generateAST(SemanticVisitor& sv) override;
+
+    private:
+    // std::reference_wrapper<Symbol> channel;
+    // BismuthParser::BlockContext * innerCtx;
+};
+
+  
+
 class SemanticVisitor : public BismuthBaseVisitor
 {
+
+  
 
 public:
     /**
@@ -102,8 +234,8 @@ public:
     std::variant<ParameterListNode, ErrorChain *> visitCtx(BismuthParser::ParameterListContext *ctx);
     std::any visitParameterList(BismuthParser::ParameterListContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return visitCtx(ctx); }
 
-    std::variant<TLambdaConstNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, optional_ref<DefinitionSymbol> sym);
-    std::any visitLambdaConstExpr(BismuthParser::LambdaConstExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TLambdaConstNode>(visitCtx(ctx, std::nullopt)); }
+    std::variant<DefinitionNode *, ErrorChain *> visitCtx(BismuthParser::LambdaConstExprContext *ctx, optional_ref<DefinitionSymbol> sym);
+    std::any visitLambdaConstExpr(BismuthParser::LambdaConstExprContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<DefinitionNode>(visitCtx(ctx, std::nullopt)); }
 
     std::variant<TBlockNode *, ErrorChain *> visitCtx(BismuthParser::BlockStatementContext *ctx) { return this->visitCtx(ctx->block()); }
     std::any visitBlockStatement(BismuthParser::BlockStatementContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return TNVariantCast<TBlockNode>(visitCtx(ctx)); }
@@ -271,8 +403,8 @@ public:
 
     // std::optional<ErrorChain *> calculatePredeclarations(BismuthParser::CompilationUnitContext *ctx);
     std::optional<ErrorChain *> provisionFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx);
-    std::optional<ErrorChain *> defineFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx);
-    std::variant<std::vector<DefinitionNode *>, ErrorChain *> visitFwdDecls(BismuthParser::CompilationUnitContext *ctx);
+    std::variant<std::vector<DefinitionSignature *>, ErrorChain *> defineFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx);
+    std::variant<std::vector<DefinitionNode *>, ErrorChain *> visitFwdDecls(std::vector<DefinitionSignature *> sigs);
     std::variant<std::vector<TExternNode *>, ErrorChain *> visitExterns(BismuthParser::CompilationUnitContext *ctx);
     std::optional<ErrorChain *> postCUVisitChecks(BismuthParser::CompilationUnitContext *ctx);
 
@@ -490,6 +622,12 @@ public:
     DisplayMode getToStringMode() { return toStringMode; }
 
 private:
+friend class DefinitionSignature;
+friend class ProgramSignature;
+friend class FunctionSignature;
+friend class EnumSignature;
+friend class StructSignature;
+friend class TraitSignature;
     STManager& stmgr;
     DisplayMode toStringMode;
     PropertyManager<std::reference_wrapper<DefinitionSymbol>> symBindings = PropertyManager<std::reference_wrapper<DefinitionSymbol>>();
@@ -518,12 +656,12 @@ private:
     //     stmgr.exitScope();
     // }
 
-    std::optional<ErrorChain *> defineFunctionType(BismuthParser::DefineFunctionContext *ctx, const TypeFunc *funcType, bool variadic=false);
-    std::optional<ErrorChain *> defineProgramType(BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType);
-    std::optional<ErrorChain *> defineEnumType(BismuthParser::DefineEnumContext *ctx, const TypeSum *sumTy);
-    std::optional<ErrorChain *> defineStructType(BismuthParser::DefineStructContext *ctx, const TypeStruct *structType);
-    std::optional<ErrorChain *> defineTraitType(BismuthParser::DefineTraitContext *ctx, const TypeTrait *traitTy);
-    std::optional<ErrorChain *> defineTemplateType(BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol& defSym, VisibilityModifier m);
+    std::variant<FunctionSignature *, ErrorChain *> defineFunctionType(DefinitionSymbol& sym, BismuthParser::LambdaConstExprContext *ctx, const TypeFunc *funcType, bool variadic=false);
+    std::variant<ProgramSignature *, ErrorChain *> defineProgramType(DefinitionSymbol& sym, BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType);
+    std::variant<EnumSignature *, ErrorChain *> defineEnumType(DefinitionSymbol& sym, BismuthParser::DefineEnumContext *ctx, const TypeSum *sumTy);
+    std::variant<StructSignature *, ErrorChain *> defineStructType(DefinitionSymbol& sym, BismuthParser::DefineStructContext *ctx, const TypeStruct *structType);
+    std::variant<TraitSignature *, ErrorChain *> defineTraitType(DefinitionSymbol& sym, BismuthParser::DefineTraitContext *ctx, const TypeTrait *traitTy);
+    std::variant<DefinitionSignature *, ErrorChain *> defineTemplateType(BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol& defSym, VisibilityModifier m);
     std::variant<std::reference_wrapper<Scope>, ErrorChain*> enterTemplateScope(DefinitionSymbol& defSym, VisibilityModifier m, TemplateInfo info);
 
     void safeExitScope(antlr4::ParserRuleContext *ctx)
@@ -606,8 +744,18 @@ private:
         return errFn(ctx);
     }
 
+    std::variant<DefinitionSignature *, ErrorChain *> getTemplateSignature(
+        VisibilityModifier m,
+        optional_ref<DefinitionSymbol> opt, 
+        std::string symName, 
+        BismuthParser::DefineTypeContext* innerCtx
+    );
 
-    std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m = VisibilityModifier::PRIVATE);
+    std::variant<DefinitionSignature *, ErrorChain *>  defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m = VisibilityModifier::PRIVATE);
+    
+    // std::variant<ProgramSignature*, ErrorChain *> getProgramSignature(BismuthParser::DefineProgramContext * ctx, VisibilityModifier m);
+    // std::variant<DefinitionSignature*, ErrorChain *> getFunctionSignature(BismuthParser::DefineFunctionContext * fnCtx, VisibilityModifier m);
+    std::variant<FunctionSignature*, ErrorChain *> getLambdaSignature(BismuthParser::LambdaConstExprContext *ctx, optional_ref<DefinitionSymbol> sym);
 
     void bindRestData(antlr4::ParserRuleContext *ctx, std::deque<DeepRestData *> *rd)
     { // DeepRestData * rd) {

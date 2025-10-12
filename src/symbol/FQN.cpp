@@ -27,6 +27,7 @@ std::string Identifier::getFullyQualifiedName() const
 
 std::string Identifier::getUniqueNameInScope() const
 {
+    DEBUG_CERR("Visit");
     return this->uniqueNameInScope + (meta.has_value() ? meta.value()() : "");
 }
 

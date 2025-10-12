@@ -38,6 +38,17 @@ std::variant<T *, ErrorChain*> anyOpt2VarError(BismuthErrorHandler& errorHandler
     return errorHandler.addCompilerError(nullptr, details.str());
 }
 
+template<typename T, typename K, typename std::enable_if<std::is_base_of<K, T>::value>::type* = nullptr>
+std::variant<K *, ErrorChain*> VariantCast(std::variant<T*, ErrorChain*> base) {
+    // if(std::variant<T*, ErrorChain*>)
+    if(std::holds_alternative<T*>(base)) {
+        return (K*) std::get<T*>(base);
+    }
+
+    return std::get<ErrorChain*>(base);
+}
+
+
 template<typename T, typename std::enable_if<std::is_base_of<TypedNode, T>::value>::type* = nullptr>
 std::variant<TypedNode *, ErrorChain*> TNVariantCast(std::variant<T*, ErrorChain*> base) {
     // if(std::variant<T*, ErrorChain*>)

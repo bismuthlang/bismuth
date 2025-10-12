@@ -96,8 +96,9 @@ optional_ref<Symbol> STManager::lookupInCurrentScope(std::string id)
     return context.lookupInCurrentScope(id);
 }
 
-Scope& STManager::getCurrentScope()
+std::reference_wrapper<Scope> STManager::getCurrentScope()
 {
+    DEBUG_CERR("");
     return context.getCurrentScope();
 }
 

@@ -51,14 +51,14 @@ public:
     std::variant<const ProtocolIChoice *, ErrorChain *> visitProto(BismuthParser::IntChoiceProtoContext *ctx);
     std::variant<const ProtocolClose *, ErrorChain *> visitProto(BismuthParser::CloseableProtoContext *ctx);
 
-    std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { return ProtoVariantCast<ProtocolSequence>(visitProto(ctx)); }            //{ return visitProto(ctx); }
-    std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { return ProtoVariantCast<ProtocolRecv>(visitProto(ctx)); }                //{ return visitProto(ctx); }
-    std::any visitSendType(BismuthParser::SendTypeContext *ctx) override { return ProtoVariantCast<ProtocolSend>(visitProto(ctx)); }                //{ return visitProto(ctx); }
-    std::any visitWnProto(BismuthParser::WnProtoContext *ctx) override { return ProtoVariantCast<ProtocolWN>(visitProto(ctx)); }                    //{ return visitProto(ctx); }
-    std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { return ProtoVariantCast<ProtocolOC>(visitProto(ctx)); }                    //{ return visitProto(ctx); }
-    std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { return ProtoVariantCast<ProtocolEChoice>(visitProto(ctx)); } //{ return visitProto(ctx); }
-    std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { return ProtoVariantCast<ProtocolIChoice>(visitProto(ctx)); } //{ return visitProto(ctx); }
-    std::any visitCloseableProto(BismuthParser::CloseableProtoContext *ctx) override { return ProtoVariantCast<ProtocolClose>(visitProto(ctx)); }   //{ return visitProto(ctx); }
+    std::any visitProtocol(BismuthParser::ProtocolContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return ProtoVariantCast<ProtocolSequence>(visitProto(ctx)); }            //{ return visitProto(ctx); }
+    std::any visitRecvType(BismuthParser::RecvTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return ProtoVariantCast<ProtocolRecv>(visitProto(ctx)); }                //{ return visitProto(ctx); }
+    std::any visitSendType(BismuthParser::SendTypeContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return ProtoVariantCast<ProtocolSend>(visitProto(ctx)); }                //{ return visitProto(ctx); }
+    std::any visitWnProto(BismuthParser::WnProtoContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return ProtoVariantCast<ProtocolWN>(visitProto(ctx)); }                    //{ return visitProto(ctx); }
+    std::any visitOcProto(BismuthParser::OcProtoContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return ProtoVariantCast<ProtocolOC>(visitProto(ctx)); }                    //{ return visitProto(ctx); }
+    std::any visitExtChoiceProto(BismuthParser::ExtChoiceProtoContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return ProtoVariantCast<ProtocolEChoice>(visitProto(ctx)); } //{ return visitProto(ctx); }
+    std::any visitIntChoiceProto(BismuthParser::IntChoiceProtoContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return ProtoVariantCast<ProtocolIChoice>(visitProto(ctx)); } //{ return visitProto(ctx); }
+    std::any visitCloseableProto(BismuthParser::CloseableProtoContext *ctx) override { DEBUG_CERR("Visit " + ctx->getText()); return ProtoVariantCast<ProtocolClose>(visitProto(ctx)); }   //{ return visitProto(ctx); }
 
 private:
     BismuthErrorHandler &errorHandler;

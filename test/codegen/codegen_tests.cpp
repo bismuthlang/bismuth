@@ -107,7 +107,7 @@ TEST_CASE("programs/test1a", "[codegen]")
     EnsureErrors(antlr4::ANTLRInputStream(stream), 
 R""""(
 Error (SEMANTIC): 
-<unknown>:4:0: Uninferred types in context: [a, VAR]; [b, VAR]; 
+<unknown>:4:26: Uninferred types in context: [a, VAR]; [b, VAR]; 
 
 
 Error (SEMANTIC): 
@@ -115,8 +115,7 @@ Error (SEMANTIC):
 <unknown>:33:27: Failed to type check statement in block
 at <unknown>:33:4
 <unknown>:28:30: Failed to type check statement in block
-<unknown>:28:0: Failed to save visit block
-<unknown>:1:0: Failed to type check program
+<unknown>:28:30: Failed to safe visit block
 at <unknown>:1:0
 
 Number of Errors: 2

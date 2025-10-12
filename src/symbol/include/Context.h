@@ -10,7 +10,7 @@
  */
 #pragma once
 
-
+#include "Debug.h"
 #include "Scope.h"
 #include "TypeDefs.h"
 
@@ -103,7 +103,7 @@ public:
      * 
      * @return std::optional<Scope*> 
      */
-    Scope& getCurrentScope() { return currentScope.get(); }
+    std::reference_wrapper<Scope> getCurrentScope() { DEBUG_CERR(""); return currentScope; }
 
     /**
      * @brief Gets the number of scopes

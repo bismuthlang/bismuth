@@ -9,6 +9,7 @@
 // const Protocol *
 std::variant<const ProtocolSequence *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::ProtocolContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     std::vector<const Protocol *> steps;
 
     for (auto e : ctx->protos)
@@ -17,35 +18,41 @@ std::variant<const ProtocolSequence *, ErrorChain *> ProtocolVisitor::visitProto
         steps.push_back(proto);
     }
 
+    DEBUG_CERR("EVisit " + ctx->getText());
     return new ProtocolSequence(this->inClose, steps);
 }
 
 std::variant<const ProtocolRecv *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::RecvTypeContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, ty, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(semanticVisitor)),  ctx, "Failed to generate receive type");
     
     if(this->inClose && !ty->isLossy())
     {
+        DEBUG_CERR("EVisit " + ctx->getText());
         return errorHandler.addError(ctx->getStart(), "Cannot receive non-lossy type " + ty->toString(semanticVisitor->getToStringMode()) + " in a closeable protocol"); 
     }
 
+    DEBUG_CERR("EVisit " + ctx->getText());
     return new ProtocolRecv(this->inClose, ty);
 }
 
 // FIXME: ADD TEST CASES WITH BRANCHES, LOOPS, SEQ, ETC TO VERIFY THIS'LL CATCH, POTENTIALLY METHODIZE THESE ALL
 std::variant<const ProtocolSend *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::SendTypeContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, ty, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(semanticVisitor)), ctx, "Failed to generate send type");
     if(this->inClose && !ty->isLossy())
     {
         return errorHandler.addError(ctx->getStart(), "Cannot send non-lossy type " + ty->toString(semanticVisitor->getToStringMode()) + " in a closeable protocol"); 
     }
-
+DEBUG_CERR("EVisit " + ctx->getText());
     return new ProtocolSend(this->inClose, ty);
 }
 
 std::variant<const ProtocolWN *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::WnProtoContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     bool origStatus = this->inLoop; 
     this->inLoop = true;
     std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, ctx->proto->accept(this));
@@ -53,11 +60,13 @@ std::variant<const ProtocolWN *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Protocol *, proto, protoOpt, ctx, "Error in ? loop protocol");  // PLAN: refactor symbols into constants/pull from parser rule?
 
+    DEBUG_CERR("EVisit " + ctx->getText());
     return new ProtocolWN(this->inClose, toSequence(proto));
 }
 
 std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::OcProtoContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     bool origStatus = this->inLoop; 
     this->inLoop = true;
     std::variant<const Protocol *, ErrorChain *> protoOpt = anyOpt2VarError<const Protocol>(errorHandler, ctx->proto->accept(this));
@@ -65,11 +74,13 @@ std::variant<const ProtocolOC *, ErrorChain *> ProtocolVisitor::visitProto(Bismu
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Protocol *, proto, protoOpt, ctx, "Error in ! loop protocol");
     
+    DEBUG_CERR("EVisit " + ctx->getText());
     return new ProtocolOC(this->inClose, toSequence(proto));
 }
 
 std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::ExtChoiceProtoContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     // std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
     std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
     unsigned int origCloseNumber = this->closeNumber; 
@@ -99,16 +110,19 @@ std::variant<const ProtocolEChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 
     if (ctx->protoOpts.size() != opts.size())
     {
+        DEBUG_CERR("EVisit " + ctx->getText());
         return errorHandler.addError(ctx->getStart(), "Duplicate protocols in choice");
     }
     
     this->closeNumber = maxCloseNumber; 
 
+    DEBUG_CERR("EVisit " + ctx->getText());
     return new ProtocolEChoice(this->inClose, opts);
 }
 
 std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::IntChoiceProtoContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     // std::set<const ProtocolSequence *, ProtocolCompare> opts = {};
     std::set<const ProtocolBranchOption *, BranchOptCompare> opts;
     unsigned int origCloseNumber = this->closeNumber;  // We do this logic regardless as probably faster to not branch, and will remain zero in the case that were not in a close block
@@ -139,18 +153,22 @@ std::variant<const ProtocolIChoice *, ErrorChain *> ProtocolVisitor::visitProto(
 
     if (ctx->protoOpts.size() != opts.size())
     {
+        DEBUG_CERR("EVisit " + ctx->getText());
         return errorHandler.addError(ctx->getStart(), "Duplicate protocols in choice");
     }
 
     this->closeNumber = maxCloseNumber; 
 
+    DEBUG_CERR("EVisit " + ctx->getText());
     return new ProtocolIChoice(this->inClose, opts);
 }
 
 std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(BismuthParser::CloseableProtoContext *ctx)
 {
+    DEBUG_CERR("Visit " + ctx->getText());
     if(this->inLoop) // PLAN: Potentially report this and lower down proto errors?
     {
+        DEBUG_CERR("EVisit " + ctx->getText());
         return errorHandler.addError(ctx->getStart(), "Currently cannot include looping protocol within cancelable block. Instead, move loop outside block or use higher-order channels.");
     }
      
@@ -161,5 +179,6 @@ std::variant<const ProtocolClose *, ErrorChain *> ProtocolVisitor::visitProto(Bi
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Protocol *, proto, protoOpt, ctx, "Error in close protocol");
 
+    DEBUG_CERR("EVisit " + ctx->getText());
     return new ProtocolClose(origStatus, toSequence(proto), ++closeNumber); // NOTE, must be ++i otherwise first would be zero, which could potentially be a problem?
 }

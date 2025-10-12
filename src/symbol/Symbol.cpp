@@ -15,7 +15,7 @@ const Type * Symbol::getType() const { return type; }
 bool Symbol::isGlobal() const { return global; }
 bool Symbol::isDefinition() const { return false; }
 
-std::string Symbol::getUniqueNameInScope() const { return identifier->getUniqueNameInScope(); }
+std::string Symbol::getUniqueNameInScope() const { DEBUG_CERR("Visit"); return identifier->getUniqueNameInScope(); }
 
 std::string Symbol::getScopedIdentifier() const { return identifier->getScopedIdentifier(); } //identifier; }
 

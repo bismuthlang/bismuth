@@ -14,6 +14,7 @@
 #include <string>  //Includes strings
 #include <memory>
 
+#include "Debug.h"
 #include "Type.h"
 #include "TypeDefs.h"
 #include "FQN.h"

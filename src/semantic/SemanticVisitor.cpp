@@ -77,13 +77,22 @@ std::optional<ErrorChain *> SemanticVisitor::provisionFwdDeclSymbols(BismuthPars
     return std::nullopt;
 }
 
-std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx)
+std::variant<std::vector<DefinitionSignature *>, ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser::CompilationUnitContext *ctx)
 {
+    std::vector<DefinitionSignature *> signatures; 
     for (auto e : ctx->defs)
     {
         // Wastes a bit of memory in allocating type even for duplicates
         DEBUG_CERR("Forward Decl " + e->getText());
-        defineAndGetSymbolFor(e, VisibilityModifier::PUBLIC);
+        auto temp = defineAndGetSymbolFor(e, VisibilityModifier::PUBLIC);
+        DEFINE_OR_PROPAGATE_VARIANT(
+            DefinitionSignature *,
+            sig,
+            temp,
+            ctx
+        );
+        
+        signatures.push_back(sig);
     }
 
     // FIXME: do basic checks on traits
@@ -111,41 +120,42 @@ std::optional<ErrorChain *> SemanticVisitor::defineFwdDeclSymbols(BismuthParser:
     }
 
     DEBUG_CERR("Finished Forward Decl ");
-    return std::nullopt;
+    return signatures;
 }
 
-std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visitFwdDecls(BismuthParser::CompilationUnitContext *ctx)
+std::variant<std::vector<DefinitionNode *>, ErrorChain *> SemanticVisitor::visitFwdDecls(std::vector<DefinitionSignature *> sigs)
 {
-    DEBUG_CERR(ctx->getText());
+    // DEBUG_CERR(ctx->getText());
     return collect_results<DefinitionNode *>(
         fplus::transform(
-            [this, ctx](auto e) -> std::variant<DefinitionNode *, ErrorChain *>
+            [this](auto e) -> std::variant<DefinitionNode *, ErrorChain *>
             {
-                DEBUG_CERR(e->getText());
+                return e->generateAST(*this);
+                // DEBUG_CERR(e->getText());
                 // Note: re-applying template symbols happens in each visitor for now!
-                if (auto progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
-                {
-                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
-                }
-                else if (auto fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
-                {
-                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, func, visitCtx(fnCtx), ctx, "Failed to type check function");
-                }
-                else if (auto structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
-                {
-                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, structNode, visitCtx(structCtx), ctx, "Failed to type check struct");
-                }
-                else if (auto enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
-                {
-                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, enumNode, visitCtx(enumCtx), ctx, "Failed to type check enum");
-                }
-                else if (auto traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(e))
-                {
-                    PROPAGATE_VARIANT_WMSG(DefinitionNode *, traitNode, visitCtx(traitCtx), ctx, "Failed to type check trait");
-                }
-                assert(false && "Unknown definition kind");
+                // if (auto progCtx = dynamic_cast<BismuthParser::DefineProgramContext *>(e))
+                // {
+                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, prog, visitCtx(progCtx), ctx, "Failed to type check program");
+                // }
+                // else if (auto fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(e))
+                // {
+                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, func, visitCtx(fnCtx), ctx, "Failed to type check function");
+                // }
+                // else if (auto structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(e))
+                // {
+                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, structNode, visitCtx(structCtx), ctx, "Failed to type check struct");
+                // }
+                // else if (auto enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(e))
+                // {
+                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, enumNode, visitCtx(enumCtx), ctx, "Failed to type check enum");
+                // }
+                // else if (auto traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(e))
+                // {
+                //     PROPAGATE_VARIANT_WMSG(DefinitionNode *, traitNode, visitCtx(traitCtx), ctx, "Failed to type check trait");
+                // }
+                // assert(false && "Unknown definition kind");
             },
-            ctx->defs
+            sigs
         )
     );
 }
@@ -218,13 +228,13 @@ std::optional<ErrorChain *> SemanticVisitor::postCUVisitChecks(BismuthParser::Co
                 inf->unify();
             }
         },
-        stmgr.getCurrentScope().getSymbols(SymbolLookupFlags::UNINFERRED_TYPE)
+        stmgr.getCurrentScope().get().getSymbols(SymbolLookupFlags::UNINFERRED_TYPE)
     );
     
 
     // If there are any uninferred symbols, then add it as an error as we won't be able to resolve them
     // due to the var leaving the scope
-    if (auto unInf = stmgr.getCurrentScope().getSymbols(SymbolLookupFlags::UNINFERRED_TYPE);
+    if (auto unInf = stmgr.getCurrentScope().get().getSymbols(SymbolLookupFlags::UNINFERRED_TYPE);
         unInf.size() > 0)
     {
         std::ostringstream details;
@@ -289,16 +299,18 @@ SemanticVisitor::phasedVisit(BismuthParser::CompilationUnitContext *ctx, std::ve
 
         return [this, ctx, cuScope, externs]() -> SemanticVisitor::DefineFwdDeclsPhaseResult {
             stmgr.enterScope(cuScope.get());
-            {
-                auto fwdDeclErrors = defineFwdDeclSymbols(ctx);
-                if(fwdDeclErrors.has_value())
-                    return fwdDeclErrors.value();
-            }
+            // {
+                DEFINE_OR_PROPAGATE_VARIANT(std::vector<DefinitionSignature *>, sigs, defineFwdDeclSymbols(ctx), ctx);
+                // FIXME FIXME FIXME USE SIGS!!!
+                // auto fwdDeclErrors = defineFwdDeclSymbols(ctx);
+                // if(fwdDeclErrors.has_value())
+                //     return fwdDeclErrors.value();
+            // }
 
-            return [this, ctx, cuScope, externs]() -> SemanticVisitor::PhaseNResult {
+            return [this, ctx, cuScope, externs, sigs]() -> SemanticVisitor::PhaseNResult {
                 stmgr.enterScope(cuScope.get());
                 DEBUG_CERR("Start Phase N w/ " + ctx->getText());
-                DEFINE_OR_PROPAGATE_VARIANT(std::vector<DefinitionNode *>, defs, visitFwdDecls(ctx), ctx); 
+                DEFINE_OR_PROPAGATE_VARIANT(std::vector<DefinitionNode *>, defs, visitFwdDecls(sigs), ctx); 
                 // Visit the statements contained in the unit
                 
                 auto errOpt = postCUVisitChecks(ctx);
@@ -321,6 +333,7 @@ std::variant<TInvocationNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthP
         * The symbol is something we can invoke, so check that we provide it with valid parameters
         */
     std::vector<const Type *> fnParams = funcTy.get().getParamTypes();
+    std::cerr << funcTy.get().getTypeRepresentation(C_STYLE) << std::endl;
 
     /*
         *  If the symbol is NOT a variadic and the number of arguments we provide
@@ -421,89 +434,23 @@ std::variant<TypedNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser:
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineProgramContext *ctx)
 {
     DEBUG_CERR(ctx->getText());
-    DEFINE_OR_PROPAGATE_VARIANT_REF(
-        DefinitionSymbol,
-        defSym,
+    DEFINE_OR_PROPAGATE_VARIANT(
+        DefinitionSignature *,
+        sig,
         defineAndGetSymbolFor(ctx),
         ctx
     );
 
-    auto generateProgram = [this, ctx, &defSym](const TypeProgram * progType) -> std::variant<DefinitionNode *, ErrorChain *> {
-        std::string funcId = ctx->name->getText();
-        // Lookup the function in the current scope and prevent re-declarations
-
-        // Add the symbol to the stmgr and enter the scope.
-        Scope& orig = stmgr.getCurrentScope();
-        stmgr.enterScope(defSym.getInnerScope());
-
-        Symbol& channelSymbol = stmgr.addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
-        // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
-        stmgr.addSymbol("@EXIT", Types::UNIT, false);
-
-        // Safe visit the program block without creating a new scope (as we are managing the scope)
-        DEFINE_OR_PROPAGATE_VARIANT_WMSG(TBlockNode *, blk, this->safeVisitBlock(ctx->block(), false), ctx, "Failed to save visit block");
-
-        // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
-        // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<BismuthParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
-        // {
-        //     errorHandler.addError(ctx->getStart(), "Function must end in return statement");
-        // }
-
-        // Safe exit the scope.
-        safeExitScope(ctx);
-        
-        stmgr.enterScope(orig);
-
-auto ans = new TProgramDefNode(const_cast<DefinitionSymbol&>(defSym), channelSymbol, blk, progType, ctx->getStart());
-        return ans;
-    };
-
-    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate*>(defSym.getType()))
-    {
-        if(!templateTy->getValueType())
-            return errorHandler.addCompilerError(ctx->getStart(), "template type does not have value type to template");
-
-        if(const TypeProgram * progTy = dynamic_cast<const TypeProgram *>(templateTy->getValueType().value()))
-        {
-           DEFINE_OR_PROPAGATE_VARIANT(DefinitionNode*, programNode, generateProgram(progTy), ctx);
-
-            return new TDefineTemplateNode(
-                defSym,
-                templateTy,
-                programNode,
-                ctx->getStart()
-            );
-        }
-    }
-    else if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym.getType()))
-    {
-        return generateProgram(progType);
-    }
-
-    return errorHandler.addError(ctx->getStart(), "Cannot execute " + defSym.toString());
+    return sig->generateAST(*this);
 }
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineFunctionContext *ctx)
 {
-    DEFINE_OR_PROPAGATE_VARIANT_REF(DefinitionSymbol, defSym, defineAndGetSymbolFor(ctx), ctx);
-    DEFINE_OR_PROPAGATE_VARIANT_WMSG(TLambdaConstNode *, lam, visitCtx(ctx->lam, defSym), ctx, "Unable to generate lambda");
+    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSignature *, sig, defineAndGetSymbolFor(ctx), ctx);
+    // auto& defSym = sig->getSymbol();
+    // DEFINE_OR_PROPAGATE_VARIANT_WMSG(DefinitionNode *, lam, visitCtx(ctx->lam, defSym), ctx, "Unable to generate lambda");
+    return sig->generateAST(*this);
 
-    /*
-     *  Check if this is a template or not, and handle it accordingly
-     */
-    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(defSym.getType()))
-    {
-        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
-            defSym,
-            templateTy,
-            lam,
-            ctx->getStart()
-        );
-
-        return templateNode;
-    }
-
-    return lam;
 }
 
 std::variant<TInitProductNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::InitProductContext *ctx)
@@ -1155,6 +1102,7 @@ std::variant<ParameterListNode, ErrorChain *>  SemanticVisitor::visitCtx(Bismuth
 std::variant<ParameterNode, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::ParameterContext *ctx)
 {
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, paramType, anyOpt2VarError<const Type>(errorHandler, ctx->ty->accept(this)), ctx, "Failed to generate case type");
+    std::cerr << "1121 " << ctx->name->getText() << " " << paramType->toString(C_STYLE) << std::endl;
     return ParameterNode(paramType, ctx->name->getText());
 }
 
@@ -1638,65 +1586,53 @@ SemanticVisitor::visitCtx(BismuthParser::TypeOrVarContext *ctx)
     return anyOpt2VarError<const Type>(errorHandler, ctx->type()->accept(this));
 }
 
-std::variant<TLambdaConstNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx, optional_ref<DefinitionSymbol> symOpt)
+std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::LambdaConstExprContext *ctx, optional_ref<DefinitionSymbol> symOpt)
 {
     // FIXME: technically could be bad opt access, but should never happen
-    DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(symOpt,
-        [this]() {return stmgr.addAnonymousDefinition("lambda", new TypeFunc()).value(); });
+    /// FIXME FIXME FIXME USE getLambdaSignature
+    DEFINE_OR_PROPAGATE_VARIANT(
+        FunctionSignature *,
+        sig,
+        getLambdaSignature(ctx, symOpt),
+        ctx
+    );
 
-    Scope& origScope = stmgr.getCurrentScope();
-    stmgr.enterScope(sym.getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
+    return sig->generateAST(*this);
 
-    DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params,  visitCtx(ctx->parameterList()), ctx); 
+    // DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(symOpt,
+    //     [this]() {return stmgr.addAnonymousDefinition("lambda", new TypeFunc()).value(); });
 
-    std::vector<std::reference_wrapper<Symbol>> ps;
-    std::variant<const Type *, ErrorChain *> retTypeOpt = ctx->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->ret->accept(this))
-                                                                   : (const Type *)Types::UNIT;
+    // DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const Type *, unwrappedType, sym.getType()->getTemplatedType(), ctx, "Bad function def; internal error");
 
-    DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, retType, retTypeOpt, ctx, "Error generating return type");
+    // if(auto typeFunc = dynamic_cast<const TypeFunc *>(unwrappedType))
+    // {
+    //     defineFunctionType(sym, ctx, typeFunc, false);
+    //     auto retType = typeFunc->getReturnType(); 
 
-    std::vector<const Type *> paramTypes;
+    //     Scope& origScope = stmgr.getCurrentScope();
+    //     stmgr.enterScope(sym.getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
 
-    for (auto p : params)
-    {
-        paramTypes.push_back(p.type);
-    }
+    //     DEFINE_OR_PROPAGATE_VARIANT(TBlockNode *, blk, this->safeVisitBlock(ctx->block(), false), ctx);
 
-    // While we could get a template, only actually have to define if we are visiting it for the first time -> why not refactor this out?
-    if(const TypeFunc * funcTy = dynamic_cast<const TypeFunc *>(sym.getType()))
-    {
-        if(!funcTy->isDefined())
-            funcTy->setInvoke(paramTypes, retType, false);
-    }
+    //     // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
+    //     if (!TypedAST::endsInReturn(*blk))
+    //     {
+    //         if(retType->isNotSubtype(*Types::UNIT))
+    //         {
+    //             errorHandler.addError(ctx->getStart(), "Expected function to return type of " + retType->toString(toStringMode) + "; however, no return instruction was provided.");
+    //         }
+    //         else
+    //         {
+    //             // One of the first bits of syntactic sugar in bismuth!
+    //             blk->exprs.push_back(new TReturnNode(nullptr, std::nullopt));
+    //         }
+    //     }
+    //     safeExitScope(ctx);
+    //     stmgr.enterScope(origScope);
 
-    stmgr.addSymbol("@RETURN", retType, false); // Because of inserting a global stop, this will always go through
+    //     return new TLambdaConstNode(sym, ps, retType, blk, ctx->getStart());
+    // }
 
-    for (ParameterNode param : params)
-    {
-        ps.push_back(
-            stmgr.addSymbol(param.name, param.type, false).value() // TODO: should this be error checked? Based on global stop it should be fine unless duplicates.. but that's likely already caught?
-        );
-    }
-
-    DEFINE_OR_PROPAGATE_VARIANT(TBlockNode *, blk, this->safeVisitBlock(ctx->block(), false), ctx);
-
-    // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
-    if (!TypedAST::endsInReturn(*blk))
-    {
-        if(retType->isNotSubtype(*Types::UNIT))
-        {
-            errorHandler.addError(ctx->getStart(), "Expected function to return type of " + retType->toString(toStringMode) + "; however, no return instruction was provided.");
-        }
-        else
-        {
-            // One of the first bits of syntactic sugar in bismuth!
-            blk->exprs.push_back(new TReturnNode(nullptr, std::nullopt));
-        }
-    }
-    safeExitScope(ctx);
-    stmgr.enterScope(origScope);
-
-    return new TLambdaConstNode(sym, ps, retType, blk, ctx->getStart());
 }
 
 std::variant<const TypeFunc *, ErrorChain *>
@@ -1777,88 +1713,24 @@ SemanticVisitor::visitCtx(BismuthParser::TemplatedTypeContext *ctx)
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineEnumContext *ctx)
 {
-    DEFINE_OR_PROPAGATE_VARIANT_REF(DefinitionSymbol, sym, defineAndGetSymbolFor(ctx), ctx);
+    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSignature *, sig, defineAndGetSymbolFor(ctx), ctx);
+    return sig->generateAST(*this);
 
-    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
-    {
-        if(!templateTy->getValueType()) return errorHandler.addCompilerError(ctx->getStart(), "Template has no value type");
-
-        const TypeSum * sumTy = dynamic_cast<const TypeSum *>(templateTy->getValueType().value());
-        if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Template Type Value expected to be sum, but got: " + templateTy->getValueType().value()->toString(toStringMode));
-
-        Scope& origScope = stmgr.getCurrentScope();
-        stmgr.enterScope(sym.getInnerScope());
-        TDefineEnumNode * enumNode = new TDefineEnumNode(
-            sym,
-            sumTy,
-            ctx->getStart());
-
-        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
-            sym,
-            templateTy,
-            enumNode,
-            ctx->getStart()
-        );
-
-        stmgr.enterScope(origScope);
-
-        return templateNode;
-    }
-
-    const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym.getType());
-    if(!sumTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected sum type but got: " + sym.getType()->toString(toStringMode));
-
-    TDefineEnumNode * enumNode = new TDefineEnumNode(
-        sym,
-        sumTy,
-        ctx->getStart());
-
-    return enumNode;
 }
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineStructContext *ctx)
 {
-    DEFINE_OR_PROPAGATE_VARIANT_REF(DefinitionSymbol, sym, defineAndGetSymbolFor(ctx), ctx);
-
-    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
-    {
-
-        if(!templateTy->getValueType()) return errorHandler.addCompilerError(ctx->getStart(), "Template type does not have a value type");
-
-        const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(templateTy->getValueType().value());
-        if(!structTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected template to be applied to a struct type but got: " + templateTy->getValueType().value()->toString(toStringMode));
-
-        TDefineStructNode * structNode = new TDefineStructNode(
-            sym,
-            structTy,
-            ctx->getStart());
-
-        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
-            sym,
-            templateTy,
-            structNode,
-            ctx->getStart()
-        );
-
-        return templateNode;
-    }
-
-    const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym.getType());
-    if(!structTy) return errorHandler.addCompilerError(ctx->getStart(), "Expected Struct but got: " + sym.getType()->toString(toStringMode));
-
-    TDefineStructNode * structNode = new TDefineStructNode(
-        sym,
-        structTy,
-        ctx->getStart());
-
-    return structNode;
+    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSignature *, sig, defineAndGetSymbolFor(ctx), ctx);
+    return sig->generateAST(*this);
 }
 
 
 std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthParser::DefineTraitContext *ctx)
 {
     // FIXME THIS IMPL PROBS WRONG
-    DEFINE_OR_PROPAGATE_VARIANT_REF(DefinitionSymbol, sym, defineAndGetSymbolFor(ctx), ctx);
+    assert(false && "FIXME: IMPLEMENT ME");
+    /*
+    DEFINE_OR_PROPAGATE_VARIANT(DefinitionSymbol, sym, defineAndGetSymbolFor(ctx), ctx);
 
     if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
     {
@@ -1892,6 +1764,7 @@ std::variant<DefinitionNode *, ErrorChain *> SemanticVisitor::visitCtx(BismuthPa
         ctx->getStart());
 
     return traitNode;
+    */
 }
 
 std::variant<const Type *, ErrorChain *>
@@ -2781,42 +2654,71 @@ inline std::variant<SemanticVisitor::ConditionalData<Y>, ErrorChain *> SemanticV
 
 
 // FIXME: REFACTOR SO THAT visitors for functions and externs can use this!
-std::optional<ErrorChain *> SemanticVisitor::defineFunctionType(BismuthParser::DefineFunctionContext *ctx, const TypeFunc *funcType, bool variadic)
+std::variant<FunctionSignature *, ErrorChain *> 
+SemanticVisitor::defineFunctionType(DefinitionSymbol& sym, BismuthParser::LambdaConstExprContext *ctx, const TypeFunc *funcType, bool variadic)
 {
     DEBUG_CERR("Visit " + ctx->getText());
-    if(funcType->isDefined()) return std::nullopt;
+    if(funcType->isDefined()) return errorHandler.addCompilerError(ctx->getStart(), "Internal error; Function already defined");
 
-    DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params, visitCtx(ctx->lam->parameterList()), ctx);
+    DEFINE_OR_PROPAGATE_VARIANT(ParameterListNode, params, visitCtx(ctx->parameterList()), ctx);
 
-    std::vector<const Type *> ps = fplus::transform([](auto param){ return param.type; }, params);
+    std::vector<const Type *> paramTys = fplus::transform([](auto param){ return param.type; }, params);
 
-    std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->lam->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->lam->ret->accept(this))
+    std::variant<const Type *, ErrorChain *>  retTypeOpt = ctx->ret ? anyOpt2VarError<const Type>(errorHandler, ctx->ret->accept(this))
                         : (const Type*) Types::UNIT;
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const Type *, retType, retTypeOpt, ctx, "Error generating return type");
 
-    funcType->setInvoke(ps, retType, variadic);
+    funcType->setInvoke(paramTys, retType, variadic);
 
-    return std::nullopt;
+    auto origScope = stmgr.getCurrentScope();
+    stmgr.enterScope(sym.getInnerScope());
+    stmgr.addSymbol("@RETURN", retType->getCopy(), false); // Because of inserting a global stop, this will always go through
+
+    std::vector<std::reference_wrapper<Symbol>> ps;
+    for (ParameterNode param : params)
+    {
+        auto optParam = stmgr.addSymbol(param.name, param.type->getCopy(), false);
+        // std::cerr << "2698 " << param.name << " " << param.type->toString(C_STYLE)
+        ps.push_back(
+            optParam.value() // TODO: should this be error checked? Based on global stop it should be fine unless duplicates.. but that's likely already caught?
+        );
+    }
+
+    stmgr.enterScope(origScope);
+
+
+    DEBUG_CERR("VisitE " + ctx->getText());
+    return new FunctionSignature(sym, ps, ctx->block());
 }
 
 // FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS
-std::optional<ErrorChain *> SemanticVisitor::defineProgramType(BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType)
+std::variant<ProgramSignature *, ErrorChain *> SemanticVisitor::defineProgramType(DefinitionSymbol& sym, BismuthParser::DefineProgramContext *ctx, const TypeProgram *progType)
 {
     DEBUG_CERR("Visit " + ctx->getText());
-    if (progType->isDefined()) return std::nullopt;
+    if (progType->isDefined()) return errorHandler.addCompilerError(ctx->getStart(), "Internal error; Program already defined");
 
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const ProtocolSequence *, proto, visitProtocolAsSeq(ctx->proto), ctx, "Failed to generate channel type for program " + ctx->name->getText());
 
     progType->setProtocol(proto);
-    return std::nullopt;
+
+    auto origScope = stmgr.getCurrentScope();
+    stmgr.enterScope(sym.getInnerScope());
+
+    Symbol& channelSymbol = stmgr.addSymbol(ctx->channelName->getText(), new TypeChannel(progType->getProtocol()->getCopy()), false).value();
+    // In the new scope. set our return type. We use @RETURN as it is not a valid symbol the programmer could write in the language
+    stmgr.addSymbol("@EXIT", Types::UNIT, false);
+    stmgr.enterScope(origScope);
+
+    DEBUG_CERR("EVisit " + ctx->getText());
+    return new ProgramSignature(sym, channelSymbol, ctx->block());
 }
 
 // FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS
-std::optional<ErrorChain *> SemanticVisitor::defineEnumType(BismuthParser::DefineEnumContext *ctx, const TypeSum *sumTy)
+std::variant<EnumSignature *, ErrorChain *> SemanticVisitor::defineEnumType(DefinitionSymbol& sym, BismuthParser::DefineEnumContext *ctx, const TypeSum *sumTy)
 {
     DEBUG_CERR("Visit " + ctx->getText());
-    if (sumTy->isDefined()) return std::nullopt;
+    if (sumTy->isDefined()) errorHandler.addCompilerError(ctx->getStart(), "Internal error; Enum already defined");
 
     std::set<const Type *, TypeCompare> cases = {};
 
@@ -2838,14 +2740,14 @@ std::optional<ErrorChain *> SemanticVisitor::defineEnumType(BismuthParser::Defin
     }
 
     sumTy->define(cases);
-    return std::nullopt;
+    return new EnumSignature(sym, ctx);
 }
 
 // FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS
-std::optional<ErrorChain *> SemanticVisitor::defineStructType(BismuthParser::DefineStructContext *ctx, const TypeStruct *structType)
+std::variant<StructSignature *, ErrorChain *> SemanticVisitor::defineStructType(DefinitionSymbol& sym, BismuthParser::DefineStructContext *ctx, const TypeStruct *structType)
 {
     DEBUG_CERR("Visit " + ctx->getText());
-    if (structType->isDefined()) return std::nullopt;
+    if (structType->isDefined()) errorHandler.addCompilerError(ctx->getStart(), "Internal error; Struct already defined");
     LinkedMap<std::string, const Type *> el;
 
     for (BismuthParser::StructCaseContext *caseCtx : ctx->cases)
@@ -2867,15 +2769,15 @@ std::optional<ErrorChain *> SemanticVisitor::defineStructType(BismuthParser::Def
 
     }
     structType->define(el);
-    return std::nullopt;
+    return new StructSignature(sym, ctx);
 }
 
 // FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS
 // FIXME: This will never get called...
-std::optional<ErrorChain *> SemanticVisitor::defineTraitType(BismuthParser::DefineTraitContext *ctx, const TypeTrait *traitTy)
+std::variant<TraitSignature *, ErrorChain *> SemanticVisitor::defineTraitType(DefinitionSymbol& sym, BismuthParser::DefineTraitContext *ctx, const TypeTrait *traitTy)
 {
     DEBUG_CERR("Visit " + ctx->getText());
-    if (traitTy->isDefined()) return std::nullopt;
+    if (traitTy->isDefined()) errorHandler.addCompilerError(ctx->getStart(), "Internal error; Trait already defined");
     LinkedMap<std::string, const TypeFunc *> el;
 
     for (BismuthParser::TraitEntryContext *caseCtx : ctx->traitEntry()) // FIXME: ADD AUTO TRAITS
@@ -2908,7 +2810,8 @@ std::optional<ErrorChain *> SemanticVisitor::defineTraitType(BismuthParser::Defi
 
     }
     traitTy->define(el);
-    return std::nullopt;
+    // return std::nullopt;
+    assert(false && "IMPLEMENT ME!");
 }
 
 
@@ -2931,10 +2834,11 @@ std::variant<std::reference_wrapper<Scope>, ErrorChain*> SemanticVisitor::enterT
 }
 
 // FIXME: REFACTOR SO THAT OTHER VISITORS USE THIS  (IF APPLICABLE)
-std::optional<ErrorChain *> SemanticVisitor::defineTemplateType(BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol& defSym, VisibilityModifier m)
+std::variant<DefinitionSignature *, ErrorChain *>
+SemanticVisitor::defineTemplateType(BismuthParser::DefineTypeContext *ctx, const TypeTemplate *templateTy, DefinitionSymbol& defSym, VisibilityModifier m)
 {
     DEBUG_CERR("Visit " + ctx->getText());
-    if (templateTy->isDefined()) return std::nullopt;
+    if (templateTy->isDefined()) errorHandler.addCompilerError(ctx->getStart(), "Internal error; Template already defined");
 
     if(BismuthParser::DefineFunctionContext * fnCtx = dynamic_cast<BismuthParser::DefineFunctionContext *>(ctx))
     {
@@ -2951,9 +2855,9 @@ std::optional<ErrorChain *> SemanticVisitor::defineTemplateType(BismuthParser::D
             fnCtx
         );
 
-        auto ans = defineFunctionType(fnCtx, funcTy);
+        auto ans = defineFunctionType(defSym, fnCtx->lam, funcTy);
         stmgr.enterScope(origScope);
-        return ans; 
+        return VariantCast<FunctionSignature, DefinitionSignature>(ans); 
     }
     
 
@@ -2972,9 +2876,9 @@ std::optional<ErrorChain *> SemanticVisitor::defineTemplateType(BismuthParser::D
             progCtx
         );
 
-        auto ans = defineProgramType(progCtx, progTy);
+        auto ans = defineProgramType(defSym, progCtx, progTy);
         stmgr.enterScope(origScope);
-        return ans; 
+        return VariantCast<ProgramSignature, DefinitionSignature>(ans); 
     }
 
     if(BismuthParser::DefineStructContext * structCtx = dynamic_cast<BismuthParser::DefineStructContext *>(ctx)) {
@@ -2994,9 +2898,9 @@ std::optional<ErrorChain *> SemanticVisitor::defineTemplateType(BismuthParser::D
             structCtx
         );
 
-        auto ans = defineStructType(structCtx, structTy);
+        auto ans = defineStructType(defSym, structCtx, structTy);
         stmgr.enterScope(origScope);
-        return ans; 
+        return VariantCast<StructSignature, DefinitionSignature>(ans); 
     }
 
     if(BismuthParser::DefineEnumContext * enumCtx = dynamic_cast<BismuthParser::DefineEnumContext *>(ctx)) {
@@ -3012,9 +2916,9 @@ std::optional<ErrorChain *> SemanticVisitor::defineTemplateType(BismuthParser::D
             enumCtx
         );
 
-        auto ans = defineEnumType(enumCtx, sumTy);
+        auto ans = defineEnumType(defSym, enumCtx, sumTy);
         stmgr.enterScope(origScope);
-        return ans; 
+        return VariantCast<EnumSignature, DefinitionSignature>(ans); 
     }
 
     if(BismuthParser::DefineTraitContext * traitCtx = dynamic_cast<BismuthParser::DefineTraitContext *>(ctx)) {
@@ -3034,84 +2938,102 @@ std::optional<ErrorChain *> SemanticVisitor::defineTemplateType(BismuthParser::D
             traitCtx
         );
 
-        auto ans = defineTraitType(traitCtx, traitTy);
+        auto ans = defineTraitType(defSym, traitCtx, traitTy);
         stmgr.enterScope(origScope);
-        return ans;
+        return VariantCast<TraitSignature, DefinitionSignature>(ans);
     }
 
     return errorHandler.addCompilerError(ctx->getStart(), "Attempted to apply a template to an unknown/unimplemented type definition.");
 }
 
-std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m)
+std::variant<DefinitionSignature *, ErrorChain *> 
+SemanticVisitor::getTemplateSignature(
+    VisibilityModifier m, 
+    optional_ref<DefinitionSymbol> opt, 
+    std::string symName, 
+    BismuthParser::DefineTypeContext* innerCtx
+) 
+{
+    DefinitionSymbol& defSym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
+        [this, m, symName]() {
+            auto ans = stmgr.addDefinition(m, symName, new TypeTemplate(), false).value(); //should be safe as we checked for redeclarations
+            return ans;
+        });
+
+    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(defSym.getType()))
+    {
+        return defineTemplateType(innerCtx, templateTy, defSym, m);
+    }
+
+    return errorHandler.addError(innerCtx->getStart(), "Expected template but got: " + defSym.getType()->toString(toStringMode));
+}
+
+
+std::variant<FunctionSignature*, ErrorChain *> SemanticVisitor::getLambdaSignature(BismuthParser::LambdaConstExprContext * ctx, optional_ref<DefinitionSymbol> symOpt)
+{
+  // FIXME: technically could be bad opt access, but should never happen
+    DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(symOpt,
+        [this]() {return stmgr.addAnonymousDefinition("lambda", new TypeFunc()).value(); });
+
+    DEFINE_OR_PROPAGATE_OPTIONAL_WMSG(const Type *, unwrappedType, sym.getType()->getTemplatedType(), ctx, "Bad function def; internal error");
+
+    if(auto typeFunc = dynamic_cast<const TypeFunc *>(unwrappedType))
+    {
+        return defineFunctionType(sym, ctx, typeFunc, false);
+    }
+    assert(false && "FIXME FIXME FIXME");
+}
+
+
+std::variant<DefinitionSignature *, ErrorChain *>  SemanticVisitor::defineAndGetSymbolFor(BismuthParser::DefineTypeContext * ctx, VisibilityModifier m)
 {
     DEBUG_CERR("Visit " + ctx->getText());
-    auto getTemplateSymbol = [this, m](
-        optional_ref<DefinitionSymbol> opt, 
-        std::string symName, 
-        BismuthParser::DefineTypeContext* innerCtx
-    ) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
-        DefinitionSymbol& defSym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
-            [this, m, symName]() {
-                auto ans = stmgr.addDefinition(m, symName, new TypeTemplate(), false).value(); //should be safe as we checked for redeclarations
-                return ans;
-            });
-
-        if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(defSym.getType()))
-        {
-            std::optional<ErrorChain *> optErr = defineTemplateType(innerCtx, templateTy, defSym, m);
-
-            if(optErr) return optErr.value();
-
-            return defSym;
-        }
-
-        return errorHandler.addError(innerCtx->getStart(), "Expected template but got: " + defSym.getType()->toString(toStringMode));
-    };
+    
 
     // Essentially a type-case
-    return defineTypeCase<std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>>(ctx,
-        [this, m](BismuthParser::DefineFunctionContext * fnCtx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+    return defineTypeCase<std::variant<DefinitionSignature *, ErrorChain *>>(ctx,
+        [this, m](BismuthParser::DefineFunctionContext * fnCtx) -> std::variant<DefinitionSignature *, ErrorChain *> {
+                optional_ref<DefinitionSymbol> opt = symBindings.getBinding(fnCtx);
 
-            optional_ref<DefinitionSymbol> opt = symBindings.getBinding(fnCtx);
-
-            if (!opt && stmgr.lookupInCurrentScope(fnCtx->name->getText()))
-            {
-                return errorHandler.addError(fnCtx->getStart(), "Unsupported redeclaration of " + fnCtx->name->getText());
-            }
-            bool isTemplate = fnCtx->genericTemplate();
-
-            if(isTemplate)
-            {
-                DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
-                    [this, m, fnCtx](){
-                        return stmgr.addDefinition(
-                            m,
-                            fnCtx->name->getText(),
-                            new TypeTemplate(),
-                            false).value(); //should be safe as we checked for redeclarations
-                    });
-
-                if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
+                if (!opt && stmgr.lookupInCurrentScope(fnCtx->name->getText()))
                 {
-                    std::optional<ErrorChain *> optErr = defineTemplateType(fnCtx, templateTy, sym, m);
-
-                    if(optErr) return optErr.value();
-
-                    if(!templateTy->getValueType())
-                    {
-                        return errorHandler.addCompilerError(fnCtx->getStart(), "Cannot find the type to apply a template to.");
-                    }
-
-                    if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
-                    {
-                        return sym;
-                    }
-                    // TODO: print templateTy->getValueType().value()?
-                    return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym.getType()->toString(toStringMode));
+                    return errorHandler.addError(fnCtx->getStart(), "Unsupported redeclaration of " + fnCtx->name->getText());
                 }
+                bool isTemplate = fnCtx->genericTemplate();
 
-                return errorHandler.addError(fnCtx->getStart(), "Expected template but got: " + sym.getType()->toString(toStringMode));
-            }
+                if(isTemplate)
+                {
+                    DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
+                        [this, m, fnCtx](){
+                            return stmgr.addDefinition(
+                                m,
+                                fnCtx->name->getText(),
+                                new TypeTemplate(),
+                                false).value(); //should be safe as we checked for redeclarations
+                        });
+
+                    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
+                    {
+                        // std::optional<ErrorChain *> optErr = 
+                        return defineTemplateType(fnCtx, templateTy, sym, m);
+
+                        // if(optErr) return optErr.value();
+
+                        // if(!templateTy->getValueType())
+                        // {
+                        //     return errorHandler.addCompilerError(fnCtx->getStart(), "Cannot find the type to apply a template to.");
+                        // }
+
+                        // if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(templateTy->getValueType().value()))
+                        // {
+                        //     return sym;
+                        // }
+                        // // TODO: print templateTy->getValueType().value()?
+                        // return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym.getType()->toString(toStringMode));
+                    }
+
+                    return errorHandler.addError(fnCtx->getStart(), "Expected template but got: " + sym.getType()->toString(toStringMode));
+                }
 
             DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
                 [this, m, fnCtx]() {
@@ -3124,16 +3046,13 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if (const TypeFunc *funcType = dynamic_cast<const TypeFunc *>(sym.getType()))
             {
-                std::optional<ErrorChain *> optErr = defineFunctionType(fnCtx, funcType);
-
-                if(optErr) return optErr.value();
-                return sym;
+                return VariantCast<FunctionSignature, DefinitionSignature>(defineFunctionType(sym, fnCtx->lam, funcType));
             }
 
             return errorHandler.addError(fnCtx->getStart(), "Expected function but got: " + sym.getType()->toString(toStringMode));
         },
 
-        [this, m, getTemplateSymbol](BismuthParser::DefineProgramContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+        [this, m](BismuthParser::DefineProgramContext * ctx) -> std::variant<DefinitionSignature*, ErrorChain *> {
             optional_ref<DefinitionSymbol> opt = symBindings.getBinding((BismuthParser::DefineTypeContext *)ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
@@ -3143,7 +3062,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if(ctx->genericTemplate())
             {
-                return getTemplateSymbol(opt, ctx->name->getText(), ctx);
+                return getTemplateSignature(m, opt, ctx->name->getText(), ctx);
             }
 
             DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
@@ -3156,17 +3075,13 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(sym.getType()))
             {
-                std::optional<ErrorChain *> optErr = defineProgramType(ctx, progType);
-
-                if(optErr) return optErr.value();
-                
-                return sym;
+                return VariantCast<ProgramSignature, DefinitionSignature>(defineProgramType(sym, ctx, progType));
             }
 
             return errorHandler.addError(ctx->getStart(), "Expected program but got: " + sym.getType()->toString(toStringMode));
         },
 
-        [this, m, getTemplateSymbol](BismuthParser::DefineStructContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+        [this, m](BismuthParser::DefineStructContext * ctx) -> std::variant<DefinitionSignature*, ErrorChain *> {
             optional_ref<DefinitionSymbol> opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
@@ -3178,7 +3093,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if(ctx->genericTemplate())
             {
-                return getTemplateSymbol(opt, name, ctx);
+                return getTemplateSignature(m, opt, name, ctx);
             }
 
             DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
@@ -3192,16 +3107,13 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if(const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym.getType()))
             {
-                std::optional<ErrorChain *> errOpt = defineStructType(ctx, structTy);
-
-                if(errOpt) return errOpt.value();
-                return sym;
+                return VariantCast<StructSignature, DefinitionSignature>(defineStructType(sym, ctx, structTy));
             }
 
             return errorHandler.addError(ctx->getStart(), "Expected struct/product but got: " + sym.getType()->toString(toStringMode));
         },
 
-        [this, m, getTemplateSymbol](BismuthParser::DefineEnumContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+        [this, m](BismuthParser::DefineEnumContext * ctx) -> std::variant<DefinitionSignature*, ErrorChain *> {
             optional_ref<DefinitionSymbol> opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
@@ -3213,7 +3125,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if(ctx->genericTemplate())
             {
-                return getTemplateSymbol(opt, name, ctx);
+                return getTemplateSignature(m, opt, name, ctx);
             }
 
             DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
@@ -3228,17 +3140,14 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if(const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym.getType()))
             {
-                std::optional<ErrorChain *> errOpt = defineEnumType(ctx, sumTy);
-
-                if(errOpt) return errOpt.value();
-                return sym;
+                return VariantCast<EnumSignature, DefinitionSignature>(defineEnumType(sym, ctx, sumTy));
             }
 
             return errorHandler.addError(ctx->getStart(), "Expected enum/sum but got: " + sym.getType()->toString(toStringMode));
         },
 
 
-        [this, m, getTemplateSymbol](BismuthParser::DefineTraitContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *> {
+        [this, m](BismuthParser::DefineTraitContext * ctx) -> std::variant<DefinitionSignature*, ErrorChain *> {
             optional_ref<DefinitionSymbol> opt = symBindings.getBinding(ctx);
 
             if (!opt && stmgr.lookupInCurrentScope(ctx->name->getText()))
@@ -3250,7 +3159,7 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if(ctx->genericTemplate())
             {
-                return getTemplateSymbol(opt, name, ctx);
+                return getTemplateSignature(m, opt, name, ctx);
             }
 
             DefinitionSymbol& sym = lazy_value_or<std::reference_wrapper<DefinitionSymbol>>(opt,
@@ -3264,16 +3173,13 @@ std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>  SemanticVi
 
             if(const TypeTrait * structTy = dynamic_cast<const TypeTrait *>(sym.getType()))
             {
-                std::optional<ErrorChain *> errOpt = defineTraitType(ctx, structTy);
-
-                if(errOpt) return errOpt.value();
-                return sym;
+                return VariantCast<TraitSignature, DefinitionSignature>(defineTraitType(sym, ctx, structTy));
             }
 
             return errorHandler.addError(ctx->getStart(), "Expected trait but got: " + sym.getType()->toString(toStringMode));
         },
 
-        [this](BismuthParser::DefineTypeContext * ctx) -> std::variant<std::reference_wrapper<DefinitionSymbol>, ErrorChain *>{
+        [this](BismuthParser::DefineTypeContext * ctx) -> std::variant<DefinitionSignature*, ErrorChain *>{
             return errorHandler.addCompilerError(ctx->getStart(), "Failed to generate the type for a definition; Unknown and unimplemented case for define type.");
         }
 
@@ -3322,6 +3228,7 @@ SemanticVisitor::visitProtocolAsSeq(BismuthParser::ProtocolContext *ctx)
     std::variant<const ProtocolSequence *, ErrorChain *> protoOpt = protoVisitor->visitProto(ctx); // TODO: how to prevent calls to bad overrides? ie, ProtocolVisitor visit type ctx?
     delete protoVisitor;
 
+    DEBUG_CERR("EVisit " + ctx->getText());
     return protoOpt;
 }
 
@@ -3330,5 +3237,189 @@ SemanticVisitor::visitProtocolAsChannel(BismuthParser::ProtocolContext *ctx)
 {
     DEBUG_CERR("Visit " + ctx->getText());
     DEFINE_OR_PROPAGATE_VARIANT_WMSG(const ProtocolSequence *, proto, visitProtocolAsSeq(ctx), ctx, "Failed to generate channel protocol");
+    
+    DEBUG_CERR("EVisit " + ctx->getText());
     return new TypeChannel(proto);
+}
+
+
+
+std::variant<DefinitionNode *, ErrorChain *> FunctionSignature::generateAST(SemanticVisitor& sv)
+{
+    auto& defSym = this->getSymbol(); // FIXME FIXME FIXME DO BETTER!
+    auto typeFunc = dynamic_cast<const TypeFunc *>(defSym.getType()->getTemplatedType().value());
+    assert(typeFunc != nullptr && "3246");
+    auto retType = typeFunc->getReturnType(); 
+
+        Scope& origScope = sv.stmgr.getCurrentScope();
+        sv.stmgr.enterScope(getSymbol().getInnerScope()); // FIXME: WITH EARLY RETURNS, WE MIGHT NOT PROPERLY EXIT SCOPES!
+
+        auto ctx = getInnerContext(); 
+        DEFINE_OR_PROPAGATE_VARIANT(TBlockNode *, blk, sv.safeVisitBlock(ctx, false), ctx);
+
+        // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
+        if (!TypedAST::endsInReturn(*blk))
+        {
+            if(retType->isNotSubtype(*Types::UNIT))
+            {
+                sv.errorHandler.addError(ctx->getStart(), "Expected function to return type of " + retType->toString(sv.toStringMode) + "; however, no return instruction was provided.");
+            }
+            else
+            {
+                // One of the first bits of syntactic sugar in bismuth!
+                blk->exprs.push_back(new TReturnNode(nullptr, std::nullopt));
+            }
+        }
+        sv.safeExitScope(ctx);
+        sv.stmgr.enterScope(origScope);
+
+        auto lam = new TLambdaConstNode(getSymbol(), getParams(), retType, blk, ctx->getStart());
+
+    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate *>(defSym.getType()))
+    {
+        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
+            defSym,
+            templateTy,
+            lam,
+            ctx->getStart()
+        );
+
+        return templateNode;
+    }
+
+    return lam;
+}
+
+std::variant<DefinitionNode *, ErrorChain *> ProgramSignature::generateAST(SemanticVisitor& sv)
+{
+    auto& defSym = this->getSymbol(); // FIXME FIXME FIXME DO BETTER!
+    auto ctx = this->getInnerContext(); 
+    auto generateProgram = [&](const TypeProgram * progType) -> std::variant<DefinitionNode *, ErrorChain *> {
+        // std::string funcId = ctx->name->getText();
+        // Lookup the function in the current scope and prevent re-declarations
+
+        // Add the symbol to the stmgr and enter the scope.
+        Scope& orig = sv.stmgr.getCurrentScope();
+        sv.stmgr.enterScope(defSym.getInnerScope());
+        // Safe visit the program block without creating a new scope (as we are managing the scope)
+        DEFINE_OR_PROPAGATE_VARIANT_WMSG(TBlockNode *, blk, sv.safeVisitBlock(ctx, false), ctx, "Failed to safe visit block");
+
+        // If we have a return type, make sure that we return as the last statement in the FUNC. The type of the return is managed when we visited it.
+        // if (ty && (ctx->block()->stmts.size() == 0 || !dynamic_cast<BismuthParser::ReturnStatementContext *>(ctx->block()->stmts.at(ctx->block()->stmts.size() - 1))))
+        // {
+        //     errorHandler.addError(ctx->getStart(), "Function must end in return statement");
+        // }
+
+        // Safe exit the scope.
+        sv.safeExitScope(ctx);
+        
+        sv.stmgr.enterScope(orig);
+
+        auto ans = new TProgramDefNode(const_cast<DefinitionSymbol&>(defSym), this->getChannelSymbol(), blk, progType, ctx->getStart());
+        return ans;
+    };
+
+    if(const TypeTemplate * templateTy = dynamic_cast<const TypeTemplate*>(defSym.getType()))
+    {
+        if(!templateTy->getValueType())
+            return sv.errorHandler.addCompilerError(ctx->getStart(), "template type does not have value type to template");
+
+        if(const TypeProgram * progTy = dynamic_cast<const TypeProgram *>(templateTy->getValueType().value()))
+        {
+           DEFINE_OR_PROPAGATE_VARIANT(DefinitionNode*, programNode, generateProgram(progTy), ctx);
+
+            return new TDefineTemplateNode(
+                defSym,
+                templateTy,
+                programNode,
+                ctx->getStart()
+            );
+        }
+    }
+    else if (const TypeProgram *progType = dynamic_cast<const TypeProgram *>(defSym.getType()))
+    {
+        return generateProgram(progType);
+    }
+
+    return sv.errorHandler.addError(ctx->getStart(), "Cannot execute " + defSym.toString());
+}
+
+
+std::variant<DefinitionNode *, ErrorChain *> EnumSignature::generateAST(SemanticVisitor& sv)
+{
+    auto& sym = this->getSymbol(); 
+
+    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
+    {
+        if(!templateTy->getValueType()) return sv.errorHandler.addCompilerError(ctx->getStart(), "Template has no value type");
+
+        const TypeSum * sumTy = dynamic_cast<const TypeSum *>(templateTy->getValueType().value());
+        if(!sumTy) return sv.errorHandler.addCompilerError(ctx->getStart(), "Template Type Value expected to be sum, but got: " + templateTy->getValueType().value()->toString(sv.toStringMode));
+
+        Scope& origScope = sv.stmgr.getCurrentScope();
+        sv.stmgr.enterScope(sym.getInnerScope());
+        TDefineEnumNode * enumNode = new TDefineEnumNode(
+            sym,
+            sumTy,
+            ctx->getStart());
+
+        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
+            sym,
+            templateTy,
+            enumNode,
+            ctx->getStart()
+        );
+
+        sv.stmgr.enterScope(origScope);
+
+        return templateNode;
+    }
+
+    const TypeSum * sumTy = dynamic_cast<const TypeSum *>(sym.getType());
+    if(!sumTy) return sv.errorHandler.addCompilerError(ctx->getStart(), "Expected sum type but got: " + sym.getType()->toString(sv.toStringMode));
+
+    TDefineEnumNode * enumNode = new TDefineEnumNode(
+        sym,
+        sumTy,
+        ctx->getStart());
+
+    return enumNode;
+}
+
+
+std::variant<DefinitionNode *, ErrorChain *> StructSignature::generateAST(SemanticVisitor& sv)
+{
+    auto& sym = this->getSymbol(); 
+    if (const TypeTemplate *templateTy = dynamic_cast<const TypeTemplate *>(sym.getType()))
+    {
+
+        if(!templateTy->getValueType()) return sv.errorHandler.addCompilerError(ctx->getStart(), "Template type does not have a value type");
+
+        const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(templateTy->getValueType().value());
+        if(!structTy) return sv.errorHandler.addCompilerError(ctx->getStart(), "Expected template to be applied to a struct type but got: " + templateTy->getValueType().value()->toString(sv.toStringMode));
+
+        TDefineStructNode * structNode = new TDefineStructNode(
+            sym,
+            structTy,
+            ctx->getStart());
+
+        TDefineTemplateNode * templateNode = new TDefineTemplateNode(
+            sym,
+            templateTy,
+            structNode,
+            ctx->getStart()
+        );
+
+        return templateNode;
+    }
+
+    const TypeStruct * structTy = dynamic_cast<const TypeStruct *>(sym.getType());
+    if(!structTy) return sv.errorHandler.addCompilerError(ctx->getStart(), "Expected Struct but got: " + sym.getType()->toString(sv.toStringMode));
+
+    TDefineStructNode * structNode = new TDefineStructNode(
+        sym,
+        structTy,
+        ctx->getStart());
+
+    return structNode;
 }

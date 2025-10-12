@@ -10,6 +10,8 @@
  *
  */
 
+#include "Debug.h"
+#include <iostream>
 
 #include <string>  //Includes strings
 

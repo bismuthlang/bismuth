@@ -127,6 +127,8 @@ public:
         return this; 
     }
 
+    virtual std::optional<const Type *> getTemplatedType() const { return this; }
+
 protected:
     mutable unsigned int guardCount = 0;
 
@@ -1239,6 +1241,8 @@ public:
     const std::map<std::vector<const Type *>, const NameableType *> getRegisteredTemplates() const { return registeredTemplates; }
 
     virtual std::any accept_any(VisitorBase &b) override { return this->Nuaccept_any(b); }
+
+    std::optional<const Type*> getTemplatedType() const override { return this->getValueType(); }
 
 protected:
     /**

@@ -13,7 +13,5 @@ using shared_set = std::set<std::shared_ptr<T>>;
 template <class K, class V>
 using map_to_shared = std::map<K, std::shared_ptr<V>>;
 
-template <class T>
-using ref = std::reference_wrapper<T>;
 
 

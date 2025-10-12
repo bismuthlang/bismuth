@@ -12,6 +12,7 @@
  */
 #pragma once
 #include "Context.h"
+#include "Debug.h"
 #include "TypeDefs.h"
 
 
@@ -106,7 +107,7 @@ public:
    *
    * @return std::optional<Scope*>
    */
-  Scope&  getCurrentScope(); 
+  std::reference_wrapper<Scope>  getCurrentScope(); 
 
   std::vector<std::reference_wrapper<Symbol>> getLinears(int flags);
 
